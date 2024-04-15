@@ -15,8 +15,9 @@
 #' @importFrom summarytools descr
 #' @export
 CreateSummaryTable <- function(Data, Variables, numdecimals = 2, Relabel = TRUE) {
+  # Wrap the entire function body in suppressWarnings()
+  suppressWarnings({
 
-  library(kableExtra)
 
   d <- summarytools::descr(Data %>% select(all_of(Variables)))
   statVars <- c('Mean', 'Std.Dev', 'Median', 'IQR', 'Min', 'Max', 'Skewness', 'Kurtosis', 'N.Valid', 'Pct.Valid')
@@ -49,4 +50,5 @@ CreateSummaryTable <- function(Data, Variables, numdecimals = 2, Relabel = TRUE)
     scroll_box(width = "100%", height = "500px")
 
   return(SummaryTable)
+  })
 }
