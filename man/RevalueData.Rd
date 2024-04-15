@@ -4,7 +4,7 @@
 \alias{RevalueData}
 \title{Revalue Data}
 \usage{
-RevalueData(DatatoRevalue, VarTypes, missingVal = -999, splitchar = ",")
+RevalueData(DatatoRevalue, VarTypes, missingVal = -999, splitchar = ";")
 }
 \arguments{
 \item{DatatoRevalue}{The dataset to be revalued.}
@@ -15,7 +15,7 @@ Code (the revalue codes separated by ","), Type (Categorical, Double, or Ordinal
 
 \item{missingVal}{The value to use for missing values (default is -999).}
 
-\item{splitchar}{The character used to split codes in the Code column (default is ",").}
+\item{splitchar}{The character used to split codes in the Code column (default is ";").}
 }
 \value{
 A list containing the revalued dataset, a warning list, and a list of recoded variables.

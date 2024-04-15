@@ -1,5 +1,6 @@
 #' Revalue Data
 #'
+#'
 #' This function revalues variables in a dataset according to the specifications provided in a codebook.
 #'
 #' @param DatatoRevalue The dataset to be revalued.
@@ -7,10 +8,10 @@
 #'                 It should have columns: Variable (variable names), Recode (yes/no for recoding),
 #'                 Code (the revalue codes separated by ","), Type (Categorical, Double, or Ordinal), and Label (optional label for the variable).
 #' @param missingVal The value to use for missing values (default is -999).
-#' @param splitchar The character used to split codes in the Code column (default is ",").
+#' @param splitchar The character used to split codes in the Code column (default is ";").
 #' @return A list containing the revalued dataset, a warning list, and a list of recoded variables.
 #' @export
-RevalueData <- function(DatatoRevalue, VarTypes, missingVal = -999, splitchar = ",") {
+RevalueData <- function(DatatoRevalue, VarTypes, missingVal = -999, splitchar = ";") {
   library(sjlabelled)
 
   # Remove NA variables from VarTypes
@@ -52,7 +53,7 @@ RevalueData <- function(DatatoRevalue, VarTypes, missingVal = -999, splitchar = 
       d <- sjlabelled::set_labels(RevaluedData[[var]], labels = nameList, force.labels = TRUE, force.values = TRUE)
       RevaluedData[[var]] <- as_label(d)
       freqs2 <- as.factor(RevaluedData[[var]]) %>% summary()
-      IsSame <- if_else(length(setdiff(freqs1, freqs2)) > 0, 0, 1)
+      IsSame <- if_else(length(base::setdiff(freqs1, freqs2)) > 0, 0, 1)
       if (!IsSame) {
         warninglist <- append(warninglist, paste(var, ": final frequencies not consistent"))
       }
