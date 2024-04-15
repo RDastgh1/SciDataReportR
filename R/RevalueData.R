@@ -51,7 +51,7 @@ RevalueData <- function(DatatoRevalue, VarTypes, missingVal = -999, splitchar = 
       nameList <- lookup$X2
       names(nameList) <- lookup$X1
       d <- sjlabelled::set_labels(RevaluedData[[var]], labels = nameList, force.labels = TRUE, force.values = TRUE)
-      RevaluedData[[var]] <- as_label(d)
+      RevaluedData[[var]] <- sjlabelled::as_label(d)
       freqs2 <- as.factor(RevaluedData[[var]]) %>% summary()
       IsSame <- if_else(length(base::setdiff(freqs1, freqs2)) > 0, 0, 1)
       if (!IsSame) {
