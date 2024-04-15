@@ -25,4 +25,6 @@ Imports:
     suggests,
     tidyr,
     rstatix,
-    ggstatsplot
+    ggstatsplot,
+    gt,
+    codebook
