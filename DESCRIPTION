@@ -1,10 +1,10 @@
 Package: SciDataReportR
-Title: What the Package Does (One Line, Title Case)
+Title: Package for Generating Scientific Data Reports
 Version: 0.0.0.9000
 Authors@R: 
     person("First", "Last", , "first.last@example.com", role = c("aut", "cre"),
            comment = c(ORCID = "YOUR-ORCID-ID"))
-Description: What the package does (one paragraph).
+Description: SciDataReportR is a package designed to facilitate the generation of scientific data reports. It provides functions for creating descriptive summary tables, formatting data for analysis, and enhancing data visualization.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
@@ -12,7 +12,17 @@ RoxygenNote: 7.3.1
 URL: https://github.com/RDastgh1/SciDataReportR
 BugReports: https://github.com/RDastgh1/SciDataReportR/issues
 Imports: 
+    arsenal,
+    data.table,
     dplyr,
     ggplot2,
+    kableExtra,
     labelled,
-    suggests
+    magrittr,
+    sjlabelled,
+    stats,
+    summarytools,
+    suggests,
+    tidyr,
+    rstatix,
+    ggstatsplot
