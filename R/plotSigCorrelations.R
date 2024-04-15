@@ -9,7 +9,6 @@
 #' @return A list of scatterplot objects for significant correlations.
 #' @importFrom ggstatsplot ggscatterstats
 #' @importFrom dplyr filter
-#' @importFrom tidyeval sym
 #' @importFrom sjlabelled get_label
 #' @export
 plotSigCorrelations <- function(DataFrame, Plot, PVar = "P", Pthresh = 0.05) {
