@@ -27,4 +27,6 @@ Imports:
     rstatix,
     ggstatsplot,
     gt,
-    codebook
+    codebook,
+    xtable,
+    psych
