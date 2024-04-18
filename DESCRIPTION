@@ -2,8 +2,8 @@ Package: SciDataReportR
 Title: Package for Generating Scientific Data Reports
 Version: 0.8.0
 Authors@R: 
-    person("First", "Last", , "first.last@example.com", role = c("aut", "cre"),
-           comment = c(ORCID = "YOUR-ORCID-ID"))
+    person("Raha", "Dastgheyb", , "raha@jhmi.edu", role = c("aut", "cre"),
+           comment = c(ORCID = "https://orcid.org/signin"))
 Description: SciDataReportR is a package designed to facilitate the generation of scientific data reports. It provides functions for creating descriptive summary tables, formatting data for analysis, and enhancing data visualization.
 License: MIT + file LICENSE
 Encoding: UTF-8
