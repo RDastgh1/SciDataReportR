@@ -78,5 +78,5 @@ RevalueData <- function(DatatoRevalue, VarTypes, missingVal = -999, splitchar = 
     }
   }
 
-  return(list(RevaluedData = RevaluedData, warninglist = warninglist, recodvars = recodedvars))
+  return(list(RevaluedData = RevaluedData, warninglist = warninglist, recodedvars = recodedvars))
 }
