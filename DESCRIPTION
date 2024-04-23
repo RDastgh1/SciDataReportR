@@ -29,4 +29,6 @@ Imports:
     gt,
     codebook,
     xtable,
-    psych
+    psych,
+    gtools,
+    missRanger

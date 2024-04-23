@@ -34,7 +34,7 @@ Make_DataDictionary <- function(DataFrame, numdecimals = 2) {
   CB <- data.frame(Variable = colnames(DataFrame), Label = df.var)
   CB <- left_join(CB, c_skim %>% select(Variable, skim_type, factor.ordered, n_missing, complete_rate,
                                         n_unique, factor.top_counts, numeric.mean, numeric.median,
-                                        numeric.sd, numeric.min, numeric.max, numeric.hist))
+                                        numeric.sd, numeric.min, numeric.max, numeric.hist), by = "Variable")
 
   # Calculate unique values for numeric variables
   numVars <- CB$Variable[CB$skim_type == "numeric"]
