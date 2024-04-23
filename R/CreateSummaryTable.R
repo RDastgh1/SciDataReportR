@@ -49,6 +49,7 @@ CreateSummaryTable <- function(Data, Variables, numdecimals = 2, Relabel = TRUE)
     kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive")) %>%
     scroll_box(width = "100%", height = "500px")
 
-  return(SummaryTable)
   })
+
+  return(SummaryTable)
 }
