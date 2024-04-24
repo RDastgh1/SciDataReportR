@@ -10,8 +10,7 @@
 #' @importFrom sjlabelled get_label
 #' @import dplyr
 #' @import tidyr
-#'
-
+#' @export
 createFacetLabels <- function(DataFrame) {
   # Extract labels from DataFrame
   l <- sjlabelled::get_label(DataFrame) %>% as.data.frame() %>% rownames_to_column()
