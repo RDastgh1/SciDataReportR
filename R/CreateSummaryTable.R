@@ -18,8 +18,8 @@ CreateSummaryTable <- function(Data, Variables, numdecimals = 2, Relabel = TRUE)
   # Wrap the entire function body in suppressWarnings()
   suppressWarnings({
 
-
-  d <- summarytools::descr(Data %>% select(all_of(Variables)))
+Data <- Data %>% select(all_of(Variables))
+  d <- summarytools::descr(Data)
   statVars <- c('Mean', 'Std.Dev', 'Median', 'IQR', 'Min', 'Max', 'Skewness', 'Kurtosis', 'N.Valid', 'Pct.Valid')
   d2 <- as.data.frame(t(as.data.frame(d)))
   d2 <- d2 %>% select(all_of(statVars))
@@ -28,7 +28,7 @@ CreateSummaryTable <- function(Data, Variables, numdecimals = 2, Relabel = TRUE)
   d2[statVars] <- lapply(d2[statVars], round, numdecimals)
 
   if (Relabel) {
-    labels <- sjlabelled::get_label(Data %>% select(all_of(Variables)), def.value = colnames(Data[Variables])) %>%
+    labels <- sjlabelled::get_label(Data, def.value = colnames(Data)) %>%
       as.data.frame() %>%
       rownames_to_column()
     colnames(labels) <- c("Variable", "label")
