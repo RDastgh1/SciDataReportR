@@ -6,6 +6,7 @@
 #' @param Ordinal Logical, indicating whether to include ordinal variables.
 #' @return A character vector containing the names of categorical variables.
 #' @importFrom dplyr select where
+#' @importFrom magrittr "%>%"
 #' @export
 getCatVars <- function(DataFrame, Ordinal = TRUE) {
   if (Ordinal) {

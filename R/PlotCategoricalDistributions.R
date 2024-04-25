@@ -11,8 +11,7 @@
 #' @importFrom ggplot2 scale_x_discrete
 #' @importFrom magrittr "%>%"
 #' @export
-#' @examples
-#' PlotCategoricalDistributions(df)
+
 PlotCategoricalDistributions <- function(DataFrame, Variables = NULL, Relabel = TRUE){
   if (is.null(Variables)) {
     Variables <- getCatVars(DataFrame)
@@ -20,13 +19,13 @@ PlotCategoricalDistributions <- function(DataFrame, Variables = NULL, Relabel = 
 
   if (Relabel == TRUE) {
     DataFrame <- ReplaceMissingLabels(DataFrame)
-    facetlabels <- sjlabelled::get_label(DataFrame %>% select(all_of(Variables)))
+    facetlabels <- sjlabelled::get_label(DataFrame %>% dplyr::select(all_of(Variables)))
     names(facetlabels) <- NULL
   } else {
     facetlabels <- Variables
   }
 
-  df <- inspectdf::inspect_cat(DataFrame %>% select(all_of(Variables)), include_int = TRUE)
+  df <- inspectdf::inspect_cat(DataFrame %>% dplyr::select(all_of(Variables)), include_int = TRUE)
   d <- df %>%
     inspectdf::show_plot(col_palette = 1)
 

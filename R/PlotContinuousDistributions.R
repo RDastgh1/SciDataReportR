@@ -14,7 +14,7 @@
 #' @importFrom ggplot2 ggplot theme_bw guides coord_flip facet_wrap scale_fill_manual element_blank
 #' @export
 
-c {
+PlotContinuousDistributions <- function (DataFrame, Variables = NULL, Relabel = TRUE, ncol = 3) {
   # If Variables argument is NULL, use all numeric variables
   if (is.null(Variables)) {
     Variables <- getNumVars(DataFrame)
