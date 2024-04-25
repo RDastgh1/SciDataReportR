@@ -121,6 +121,7 @@ PlotCorrelationsHeatmap <- function(Data, xVars, yVars = NULL, covars = NULL, FS
   plot.data$stars_FDR <- cut(plot.data$P_adj, breaks = c(-Inf, 0.001, 0.01, 0.05, Inf), label = c("***", "**", "*", ""))
 
   if (Relabel) {
+    Data <- ReplaceMissingLabels(Data)
     xlabels <- sjlabelled::get_label(Data[plot.data$XVar], def.value = colnames(Data[plot.data$XVar])) %>%
       as.data.frame() %>% rownames_to_column()
 

@@ -28,6 +28,7 @@ Data <- Data %>% select(all_of(Variables))
   d2[statVars] <- lapply(d2[statVars], round, numdecimals)
 
   if (Relabel) {
+    Data <- ReplaceMissingLabels(Data)
     labels <- sjlabelled::get_label(Data, def.value = colnames(Data)) %>%
       as.data.frame() %>%
       rownames_to_column()

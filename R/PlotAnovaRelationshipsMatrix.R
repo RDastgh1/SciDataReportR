@@ -78,6 +78,7 @@ PlotAnovaRelationshipsMatrix <- function(Data, CatVars, ContVars, Covariates = N
 
   # Retrieve variable labels if Relabel is TRUE
   if (Relabel) {
+    Data<- ReplaceMissingLabels(Data)
     xlabels <- sjlabelled::get_label(Data[stat.test$CategoricalVariable], def.value = colnames(Data[stat.test$CategoricalVariable])) %>% as.data.frame() %>% rownames_to_column()
     colnames(xlabels) <- c("Variable", "label")
     ylabels <- sjlabelled::get_label(Data[stat.test$ContinuousVariable], def.value = colnames(Data[stat.test$ContinuousVariable])) %>% as.data.frame() %>% rownames_to_column()

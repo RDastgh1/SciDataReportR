@@ -64,6 +64,7 @@ PlotChiSqCovar <- function(Data, xVars, yVars, covars = NULL, Relabel = TRUE) {
   stat.test[stat.test$name == stat.test$Covariate, 3:ncol(stat.test)] <- NA
 
   if(Relabel == TRUE){
+    Data<- ReplaceMissingLabels(Data)
     xlabels <- sjlabelled::get_label(Data[stat.test$Covariate], def.value = colnames(Data[stat.test$Covariate])) %>% as.data.frame() %>% rownames_to_column()
     colnames(xlabels) <- c("Variable", "label")
 
