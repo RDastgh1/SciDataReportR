@@ -32,4 +32,5 @@ Imports:
     psych,
     gtools,
     missRanger,
-    ggrain
+    ggrain,
+    gtsummary
