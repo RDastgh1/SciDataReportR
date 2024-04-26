@@ -10,6 +10,7 @@
 #' @import naniar
 #' @import ggplot2
 #' @importFrom ggplot2 coord_flip
+#' @export
 #'
 PlotMissingData <- function(DataFrame, Variables = NULL, Relabel = TRUE){
   # If Variables argument is not provided, use all columns of the DataFrame
