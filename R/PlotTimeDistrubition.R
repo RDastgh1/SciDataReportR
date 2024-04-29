@@ -10,13 +10,12 @@
 #' @importFrom lubridate decimal_date
 #' @importFrom scales scale_y_reverse
 #' @importFrom dplyr %>%
-#' @importFrom rlang .data
 #' @import ggdist
 #' @export
 PlotTimeDistribution <- function(Data, DateVariable = "Date") {
 
   # Convert date variable to numeric year
-  Data$Year <- lubridate::decimal_date(.data[[DateVariable]])
+  Data$Year <- lubridate::decimal_date(Data[[DateVariable]])
 
   # Create ggplot object
   pTimeline <- Data %>%
