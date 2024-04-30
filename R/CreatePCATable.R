@@ -13,7 +13,7 @@
 #' @importFrom ggplot2 ggplot geom_line geom_point geom_col geom_hline geom_segment geom_point scale_color_manual facet_wrap theme element_text
 #' @importFrom xtable xtable
 #' @export
-function (Data, VarsToReduce, minThresh = 0.85, scale = TRUE,
+CreatePCATable<- function (Data, VarsToReduce, minThresh = 0.85, scale = TRUE,
           center = TRUE, Relabel = T)
 {
 
