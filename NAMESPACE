@@ -3,7 +3,6 @@
 export("%!in%")
 export("%notin%")
 export(AddToCodebook)
-export(CreatePCATable)
 export(CreateStatisticsTable)
 export(CreateSummaryTable)
 export(FormattedDataDictionary)
