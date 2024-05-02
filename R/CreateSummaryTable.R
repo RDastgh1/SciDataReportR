@@ -19,17 +19,18 @@ CreateSummaryTable <- function(Data, Variables = NULL, numdecimals = 2, Relabel 
     Variables = colnames(Data)
   }
 
-  # Extract labels before conversion
-  l <- get_label(Data)
 
 
   # Wrap the entire function body in suppressWarnings()
   suppressWarnings({
 
 Data <- Data %>% select(all_of(Variables))
+# Extract labels before conversion
+l <- get_label(Data)
+
 Data <- ConvertOrdinalToNumeric(Data)
 # Now Convert everything to numeric
-Data <- lapply(Data, as.numeric)
+Data <- lapply(Data, as.numeric) %>% as.data.frame()
 
 # Readd labels
 set_label(Data)<- l
