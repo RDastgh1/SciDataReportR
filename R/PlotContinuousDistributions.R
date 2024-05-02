@@ -24,7 +24,7 @@ PlotContinuousDistributions <- function (DataFrame, Variables = NULL, Relabel = 
 
       # Then Convert to Numeric
 
-      DataFrame <- DataFrame %>% ConvertOrdinalToNumeric(DataFrame, Variables)
+      DataFrame <- ConvertOrdinalToNumeric(DataFrame, Variables)
       DataFrame[Variables] <- lapply(DataFrame[Variables], as.numeric)
     }
 
