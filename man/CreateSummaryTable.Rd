@@ -4,7 +4,7 @@
 \alias{CreateSummaryTable}
 \title{Create Summary Table}
 \usage{
-CreateSummaryTable(Data, Variables, numdecimals = 2, Relabel = TRUE)
+CreateSummaryTable(Data, Variables = NULL, numdecimals = 2, Relabel = TRUE)
 }
 \arguments{
 \item{Data}{The dataset containing the variables of interest.}

@@ -14,10 +14,18 @@
 #' @importFrom ggplot2 ggplot theme_bw guides coord_flip facet_wrap scale_fill_manual element_blank
 #' @export
 
-PlotContinuousDistributions <- function (DataFrame, Variables = NULL, Relabel = TRUE, ncol = 3) {
+PlotContinuousDistributions <- function (DataFrame, Variables = NULL, Relabel = TRUE, ncol = 3, Ordinal = T) {
   # If Variables argument is NULL, use all numeric variables
   if (is.null(Variables)) {
-    Variables <- getNumVars(DataFrame)
+    Variables <- getNumVars(DataFrame, Ordinal = F)
+    if(Ordinal){
+      Variables <- getNumVars(DataFrame, Ordinal = T)
+
+      # Then Convert to Numeric
+
+      DataFrame <- DataFrame %>% ConvertOrdinalToNumeric(DataFrame, Variables)
+      DataFrame[Variables] <- lapply(DataFrame[Variables], as.numeric)
+    }
   }
 
   # If Relabel is TRUE, create facet labels using variable labels

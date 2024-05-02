@@ -8,7 +8,8 @@ PlotContinuousDistributions(
   DataFrame,
   Variables = NULL,
   Relabel = TRUE,
-  ncol = 3
+  ncol = 3,
+  Ordinal = T
 )
 }
 \arguments{

@@ -14,11 +14,20 @@
 #' @importFrom sjlabelled get_label
 #' @importFrom summarytools descr
 #' @export
-CreateSummaryTable <- function(Data, Variables, numdecimals = 2, Relabel = TRUE) {
+CreateSummaryTable <- function(Data, Variables = NULL, numdecimals = 2, Relabel = TRUE) {
+  if(is.null(Variables)){
+    Variables = colnames(Data)
+  }
+
   # Wrap the entire function body in suppressWarnings()
   suppressWarnings({
 
 Data <- Data %>% select(all_of(Variables))
+Data <- ConvertOrdinalToNumeric(Data)
+# Now Convert everything to numeric
+Data <- lapply(Data, as.numeric)
+
+
   d <- summarytools::descr(Data)
   statVars <- c('Mean', 'Std.Dev', 'Median', 'IQR', 'Min', 'Max', 'Skewness', 'Kurtosis', 'N.Valid', 'Pct.Valid')
   d2 <- as.data.frame(t(as.data.frame(d)))
