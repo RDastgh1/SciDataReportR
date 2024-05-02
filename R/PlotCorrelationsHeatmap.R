@@ -13,6 +13,14 @@
 #' @export
 PlotCorrelationsHeatmap <- function(Data, xVars, yVars = NULL, covars = NULL, FS = 3, method = "pearson", Relabel = TRUE) {
 
+  Data <- ReplaceMissingLabels(Data)
+
+  # if any of the variables in x or y are ordinal, convert them to numeric
+  allvars <- c(xVars, yVars)
+  Data <- ConvertOrdinalToNumeric(Data, allvars)
+
+
+
   removediag <- FALSE
   if (is.null(yVars)) {
     yVars <- xVars
@@ -57,9 +65,9 @@ PlotCorrelationsHeatmap <- function(Data, xVars, yVars = NULL, covars = NULL, FS
       MN[xi, yi] <- nrow(d)
       tryCatch({
         if (nrow(cdata) > 0) {
-          o <- pcor.test(d[, 1], d[, 2], d[, seq(3, 2 + length(covars))], method = method)
+          o <- ppcor::pcor.test(d[, 1], d[, 2], d[, seq(3, 2 + length(covars))], method = method)
         } else {
-          o <- cor.test(d[, 1], d[, 2] %>% as.numeric(), method = method)
+          o <- stats::cor.test(d[, 1], d[, 2] %>% as.numeric(), method = method)
         }
       },
       error = function(e) {
