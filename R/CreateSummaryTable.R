@@ -11,13 +11,17 @@
 #' @importFrom kableExtra kable kable_styling scroll_box cell_spec
 #' @importFrom magrittr %>%
 #' @importFrom dplyr select rownames_to_column mutate if_else
-#' @importFrom sjlabelled get_label
+#' @importFrom sjlabelled get_label set_label
 #' @importFrom summarytools descr
 #' @export
 CreateSummaryTable <- function(Data, Variables = NULL, numdecimals = 2, Relabel = TRUE) {
   if(is.null(Variables)){
     Variables = colnames(Data)
   }
+
+  # Extract labels before conversion
+  l <- labels(Data) %>% as.array()
+
 
   # Wrap the entire function body in suppressWarnings()
   suppressWarnings({
@@ -26,6 +30,9 @@ Data <- Data %>% select(all_of(Variables))
 Data <- ConvertOrdinalToNumeric(Data)
 # Now Convert everything to numeric
 Data <- lapply(Data, as.numeric)
+
+# Readd labels
+Data <- set_label(Data, l)
 
 
   d <- summarytools::descr(Data)

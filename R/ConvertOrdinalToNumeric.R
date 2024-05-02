@@ -4,7 +4,7 @@
 #'
 #' @param Data The dataframe containing the variables.
 #' @param Variables A character vector specifying the names of variables to consider. If NULL, all columns of the dataframe will be considered.
-#'
+#' @importFrom sjlabelled get_label set_label
 #' @return The dataframe with ordinal variables potentially converted to numeric.
 #'
 #' @export
@@ -18,6 +18,9 @@ ConvertOrdinalToNumeric <- function(Data, Variables = NULL) {
   # Identify ordered variables
   orderedVars <- names(Data[Variables])[sapply(Data, is.ordered)]
 
+  # get original labels to reset them later
+  l <- labels(Data) %>% as.array()
+
   # Iterate through ordered variables
   for (col in orderedVars) {
     # Convert ordered variable to character
@@ -28,9 +31,14 @@ ConvertOrdinalToNumeric <- function(Data, Variables = NULL) {
 
     # If all character values are numeric, convert to numeric
     if(sum(!numeric_values) == 0){
+      # preserve label
+
+
       Data[[col]] <- as.numeric(x)
     }
   }
 
+  # Readd labels
+  Data <- set_label(Data, l)
   return(Data)
 }
