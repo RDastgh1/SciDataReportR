@@ -4,7 +4,7 @@
 \alias{ConvertOrdinalToNumeric}
 \title{ConvertOrdinalToNumeric}
 \usage{
-ConvertOrdinalToNumeric(Data, Variables)
+ConvertOrdinalToNumeric(Data, Variables = NULL)
 }
 \arguments{
 \item{Data}{The dataframe containing the variables.}

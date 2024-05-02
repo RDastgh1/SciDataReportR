@@ -8,7 +8,7 @@
 #' @return The dataframe with ordinal variables potentially converted to numeric.
 #'
 #' @export
-ConvertOrdinalToNumeric <- function(Data, Variables) {
+ConvertOrdinalToNumeric <- function(Data, Variables = NULL) {
 
   # If Variables argument is NULL, consider all columns of the dataframe
   if(is.null(Variables)){
