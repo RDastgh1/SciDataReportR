@@ -16,7 +16,7 @@ ConvertOrdinalToNumeric <- function(Data, Variables = NULL) {
   }
 
   # Identify ordered variables
-  orderedVars <- names(Data[Variables])[sapply(Data, is.ordered)]
+  orderedVars <- names(Data[Variables])[sapply(Data, is.ordered)] %>% na.omit()
 
   # get original labels to reset them later
   l <- get_label(Data)

@@ -8,7 +8,7 @@
 #'
 #' @return A formatted data dictionary table.
 #'
-#' @importFrom gt gt tab_style tab_footnote cells_body cells_column_labels everything cell_fill
+#' @importFrom gt gt tab_style tab_footnote cells_body cells_column_labels everything cell_fill cell_borders
 #'
 #' @export
 FormattedDataDictionary <- function(DataFrame, numdecimals = 2) {
