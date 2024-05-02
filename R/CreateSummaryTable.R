@@ -20,7 +20,7 @@ CreateSummaryTable <- function(Data, Variables = NULL, numdecimals = 2, Relabel 
   }
 
   # Extract labels before conversion
-  l <- labels(Data) %>% as.array()
+  l <- get_label(Data)
 
 
   # Wrap the entire function body in suppressWarnings()
@@ -32,7 +32,7 @@ Data <- ConvertOrdinalToNumeric(Data)
 Data <- lapply(Data, as.numeric)
 
 # Readd labels
-Data <- set_label(Data, l)
+set_label(Data)<- l
 
 
   d <- summarytools::descr(Data)
