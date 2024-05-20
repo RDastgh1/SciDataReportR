@@ -4,16 +4,21 @@
 \alias{plotSigCorrelations}
 \title{Plot Significant Correlations}
 \usage{
-plotSigCorrelations(DataFrame, Plot, PVar = "P", Pthresh = 0.05)
+plotSigCorrelations(
+  DataFrame,
+  CorrelationHeatmapObject,
+  PVar = "P",
+  Pthresh = 0.05
+)
 }
 \arguments{
 \item{DataFrame}{The dataset used to generate the scatterplots.}
 
-\item{Plot}{The output of the PlotCorrelationsHeatmap function.}
-
 \item{PVar}{The name of the column used to filter for significance (default is "P").}
 
 \item{Pthresh}{The significance threshold (default is 0.05).}
+
+\item{Plot}{The output of the PlotCorrelationsHeatmap function.}
 }
 \value{
 A list of scatterplot objects for significant correlations.
