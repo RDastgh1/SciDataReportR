@@ -1,7 +1,7 @@
 #' Plot ANOVA Relationships Matrix
 #'
 #' This function plots the relationship between continuous and categorical variables
-#' using ANOVA or Kruskal-Wallis tests. It generates scatter plots with points
+#' using ANOVA or Kruskal-Wallis tests. It generates a "heatmap" with points
 #' colored and shaped based on statistical significance and effect size.
 #'
 #' @param Data The data frame containing the variables of interest.
@@ -18,6 +18,7 @@
 #' @importFrom rstatix anova_test kruskal_test get_summary_stats add_significance adjust_pvalue
 #' @importFrom stats var
 #' @importFrom utils na.omit
+#' @importFrom RColorBrewer brewer.pal
 #' @export
 PlotAnovaRelationshipsMatrix <- function(Data, CatVars, ContVars, Covariates = NULL, Relabel = TRUE, Parametric = TRUE) {
   DataSubset <- Data[c(CatVars, ContVars, Covariates)]
@@ -117,7 +118,8 @@ PlotAnovaRelationshipsMatrix <- function(Data, CatVars, ContVars, Covariates = N
                                                                                  colour = p)) + theme(axis.text.x = element_text(angle = 90),
                                                                                                       axis.title.x = element_blank(), axis.title.y = element_blank()) +
     scale_shape_manual(values = c(7, 16, 17, 15, 18), drop = FALSE) +
-    scale_color_gradientn(trans = "log", colours = rev(brewer.pal(9,
+    scale_color_gradientn(trans = "log", colours = rev(
+      RColorBrewer::brewer.pal(9,
                                                                   "RdPu")), limits = c(1e-07, 1), oob = scales::squish,
                           breaks = c(1, 0.05, 0.01, 0.001, 1e-04, 1e-05, 1e-06,
                                      1e-07, 1e-08)) + guides(size = FALSE) + labs(subtitle = "No Multiple Comparison Correction") +

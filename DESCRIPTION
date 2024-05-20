@@ -37,4 +37,5 @@ Imports:
     naniar,
     ggdist,
     lubridate,
-    rlang
+    rlang,
+    RColorBrewer

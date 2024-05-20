@@ -31,6 +31,6 @@ A list containing three ggplot objects: p (scatter plot without multiple compari
 }
 \description{
 This function plots the relationship between continuous and categorical variables
-using ANOVA or Kruskal-Wallis tests. It generates scatter plots with points
+using ANOVA or Kruskal-Wallis tests. It generates a "heatmap" with points
 colored and shaped based on statistical significance and effect size.
 }
