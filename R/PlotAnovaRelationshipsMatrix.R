@@ -100,19 +100,19 @@ PlotAnovaRelationshipsMatrix <- function(Data, CatVars, ContVars, Covariates = N
                     stat.test$p.adj, stat.test$p.adj.signif)
   stat.test$PlotText <- PlotText
   if (Relabel) {
-    stat.test$ContinuousVariable <- factor(stat.test$ContinuousVariable,
-                                           levels = ContVars, labels = sjlabelled::get_label(Data[ContVars],
-                                                                                             def.value = colnames(Data[ContVars])))
-    stat.test$CategoricalVariable <- factor(stat.test$CategoricalVariable,
-                                            levels = CatVars, labels = sjlabelled::get_label(Data[CatVars],
-                                                                                             def.value = colnames(Data[CatVars])))
+    stat.test$YLabel <- factor(stat.test$ContinuousVariable,
+                               levels = ContVars, labels = sjlabelled::get_label(Data[ContVars],
+                                                                                 def.value = colnames(Data[ContVars])))
+    stat.test$XLabel <- factor(stat.test$CategoricalVariable,
+                               levels = CatVars, labels = sjlabelled::get_label(Data[CatVars],
+                                                                                def.value = colnames(Data[CatVars])))
   } else {
-    stat.test$ContinuousVariable <- factor(stat.test$ContinuousVariable,
-                                           levels = ContVars)
-    stat.test$CategoricalVariable <- factor(stat.test$CategoricalVariable,
-                                            levels = CatVars)
+    stat.test$YLabel <- factor(stat.test$ContinuousVariable,
+                               levels = ContVars)
+    stat.test$XLabel <- factor(stat.test$CategoricalVariable,
+                               levels = CatVars)
   }
-  p <- ggplot(stat.test, aes(y = ContinuousVariable, x = CategoricalVariable,
+  p <- ggplot(stat.test, aes(y = YLabel, x = XLabel,
                              shape = `p<.05`, text = PlotText)) + geom_point(aes(size = logp,
                                                                                  colour = p)) + theme(axis.text.x = element_text(angle = 90),
                                                                                                       axis.title.x = element_blank(), axis.title.y = element_blank()) +
@@ -123,7 +123,7 @@ PlotAnovaRelationshipsMatrix <- function(Data, CatVars, ContVars, Covariates = N
       breaks = c(1, 0.05, 0.01, 0.001, 1e-04, 1e-05, 1e-06,
                  1e-07, 1e-08)) + guides(size = FALSE) + labs(subtitle = "No Multiple Comparison Correction") +
     xlab("") + ylab("")
-  p_FDR <- ggplot(stat.test, aes(y = ContinuousVariable, x = CategoricalVariable,
+  p_FDR <- ggplot(stat.test, aes(y = YLabel, x = XLabel,
                                  shape = p.adj.signif, text = PlotText)) + geom_point(aes(size = logp_FDR,
                                                                                           colour = p.adj)) + theme(axis.text.x = element_text(angle = 90),
                                                                                                                    axis.title.x = element_blank(), axis.title.y = element_blank()) +

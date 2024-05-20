@@ -3,7 +3,7 @@
 #' Generate scatterplots for significant correlations based on a previously generated correlation heatmap.
 #'
 #' @param DataFrame The dataset used to generate the scatterplots.
-#' @param Plot The output of the PlotCorrelationsHeatmap function.
+#' @param CorrelationHeatmapObject The output of the PlotCorrelationsHeatmap function.
 #' @param PVar The name of the column used to filter for significance (default is "P").
 #' @param Pthresh The significance threshold (default is 0.05).
 #' @return A list of scatterplot objects for significant correlations.
