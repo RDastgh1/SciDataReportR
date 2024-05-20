@@ -43,8 +43,7 @@ PlotAnovaRelationshipsMatrix <- function(Data, CatVars, ContVars, Covariates = N
                                              paste("+", Covariates, collapse = "+")))) %>%
       rstatix::add_significance() %>%  rstatix::adjust_pvalue(method = "fdr") %>%
       rstatix::add_significance()
-  }
-  else {
+  }else {
     stat.test <- mData %>% group_by(ContinuousVariable, CategoricalVariable) %>%
       rstatix::kruskal_test(as.formula(paste("ContinuousValue ~ CategoricalValue",
                                              if (!is.null(Covariates))
@@ -127,12 +126,12 @@ PlotAnovaRelationshipsMatrix <- function(Data, CatVars, ContVars, Covariates = N
                                                                                           colour = p.adj)) + theme(axis.text.x = element_text(angle = 90),
                                                                                                                    axis.title.x = element_blank(), axis.title.y = element_blank()) +
     scale_shape_manual(values = c(7, 16, 17, 15, 18), drop = FALSE) +
-    scale_color_gradientn(trans = "log", colours = rev(brewer.pal(9,
-                                                                  "RdPu")), limits = c(1e-07, 1), oob = scales::squish,
+    scale_color_gradientn(trans = "log", colours = rev(RColorBrewer::brewer.pal(9,
+                                                                                "RdPu")), limits = c(1e-07, 1), oob = scales::squish,
                           breaks = c(1, 0.05, 0.01, 0.001, 1e-04, 1e-05, 1e-06,
                                      1e-07, 1e-08)) + guides(size = FALSE) + labs(subtitle = "FDR Correction") +
     scale_x_discrete(limits = levels(stat.test$CategoricalVariable)) +
     scale_y_discrete(limits = levels(stat.test$ContinuousVariable))
-  return(list(p = p, pvaltable = pvaltable, p_FDR = p_FDR,
+  return(list(p = p, pvaltable = stat.test, p_FDR = p_FDR,
               FCStats = FCStats))
 }
