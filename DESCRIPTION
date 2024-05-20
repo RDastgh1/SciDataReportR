@@ -1,6 +1,6 @@
 Package: SciDataReportR
 Title: Package for Generating Scientific Data Reports
-Version: 0.33.0
+Version: 0.34.0
 Authors@R: 
     person("Raha", "Dastgheyb", , "raha@jhmi.edu", role = c("aut", "cre"),
            comment = c(ORCID = "https://orcid.org/signin"))
