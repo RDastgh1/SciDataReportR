@@ -134,8 +134,6 @@ PlotAnovaRelationshipsMatrix <- function(Data, CatVars, ContVars, Covariates = N
                                      1e-07, 1e-08)) + guides(size = FALSE) + labs(subtitle = "FDR Correction") +
     scale_x_discrete(limits = levels(stat.test$CategoricalVariable)) +
     scale_y_discrete(limits = levels(stat.test$ContinuousVariable))
-  return(list(p = p, pvaltable = stat.test, p_FDR = p_FDR,
-              FCStats = FCStats))
 
 
   # Set up for return List
