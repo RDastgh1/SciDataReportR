@@ -19,6 +19,7 @@
 #' @importFrom stats var
 #' @importFrom utils na.omit
 #' @importFrom RColorBrewer brewer.pal
+#' @importFrom rstatix add_significance adjust_pvalue anova_test kruskal_test get_summary_stats
 #' @export
 PlotAnovaRelationshipsMatrix <- function(Data, CatVars, ContVars, Covariates = NULL, Relabel = TRUE, Parametric = TRUE) {
   DataSubset <- Data[c(CatVars, ContVars, Covariates)]
@@ -37,23 +38,23 @@ PlotAnovaRelationshipsMatrix <- function(Data, CatVars, ContVars, Covariates = N
   mData <- mData[nlevels.test$n > 1, ]
   if (Parametric) {
     stat.test <- mData %>% group_by(ContinuousVariable, CategoricalVariable) %>%
-      anova_test(as.formula(paste("ContinuousValue ~ CategoricalValue",
-                                  if (!is.null(Covariates))
-                                    paste("+", Covariates, collapse = "+")))) %>%
-      add_significance() %>% adjust_pvalue(method = "fdr") %>%
-      add_significance()
+      rstatix::anova_test(as.formula(paste("ContinuousValue ~ CategoricalValue",
+                                           if (!is.null(Covariates))
+                                             paste("+", Covariates, collapse = "+")))) %>%
+      rstatix::add_significance() %>%  rstatix::adjust_pvalue(method = "fdr") %>%
+      rstatix::add_significance()
   }
   else {
     stat.test <- mData %>% group_by(ContinuousVariable, CategoricalVariable) %>%
-      kruskal_test(as.formula(paste("ContinuousValue ~ CategoricalValue",
-                                    if (!is.null(Covariates))
-                                      paste("+", Covariates, collapse = "+")))) %>%
-      add_significance() %>% adjust_pvalue(method = "fdr") %>%
-      add_significance()
+      rstatix::kruskal_test(as.formula(paste("ContinuousValue ~ CategoricalValue",
+                                             if (!is.null(Covariates))
+                                               paste("+", Covariates, collapse = "+")))) %>%
+      rstatix::add_significance() %>%  rstatix::adjust_pvalue(method = "fdr") %>%
+      rstatix::add_significance()
   }
   summstats <- mData %>% group_by(ContinuousVariable, CategoricalVariable,
-                                  CategoricalValue) %>% get_summary_stats() %>% filter(variable ==
-                                                                                         "ContinuousValue")
+                                  CategoricalValue) %>% rstatix::get_summary_stats() %>% filter(variable ==
+                                                                                                  "ContinuousValue")
   ngroups <- length(unique(summstats$CategoricalValue))
   if (ngroups == 2) {
     FCStats <- summstats %>% select(CategoricalVariable,
@@ -63,8 +64,7 @@ PlotAnovaRelationshipsMatrix <- function(Data, CatVars, ContVars, Covariates = N
     GroupMeanLabels <- paste0("mean_", Groups)
     FCStats$FoldChange <- FCStats[[GroupMeanLabels[2]]]/FCStats[[GroupMeanLabels[1]]]
     FCStats$Log2FC <- log2(FCStats$FoldChange)
-  }
-  else {
+  } else {
     FCStats <- data.frame()
   }
   stat.test$logp <- -log10(stat.test$p)
@@ -88,8 +88,7 @@ PlotAnovaRelationshipsMatrix <- function(Data, CatVars, ContVars, Covariates = N
     colnames(ylabels) <- c("Variable", "label")
     stat.test$XLabel <- xlabels$label
     stat.test$YLabel <- ylabels$label
-  }
-  else {
+  }else {
     stat.test$XLabel <- stat.test$CategoricalVariable
     stat.test$YLabel <- stat.test$ContinuousVariable
   }
@@ -106,8 +105,7 @@ PlotAnovaRelationshipsMatrix <- function(Data, CatVars, ContVars, Covariates = N
     stat.test$CategoricalVariable <- factor(stat.test$CategoricalVariable,
                                             levels = CatVars, labels = sjlabelled::get_label(Data[CatVars],
                                                                                              def.value = colnames(Data[CatVars])))
-  }
-  else {
+  } else {
     stat.test$ContinuousVariable <- factor(stat.test$ContinuousVariable,
                                            levels = ContVars)
     stat.test$CategoricalVariable <- factor(stat.test$CategoricalVariable,
@@ -120,9 +118,9 @@ PlotAnovaRelationshipsMatrix <- function(Data, CatVars, ContVars, Covariates = N
     scale_shape_manual(values = c(7, 16, 17, 15, 18), drop = FALSE) +
     scale_color_gradientn(trans = "log", colours = rev(
       RColorBrewer::brewer.pal(9,
-                                                                  "RdPu")), limits = c(1e-07, 1), oob = scales::squish,
-                          breaks = c(1, 0.05, 0.01, 0.001, 1e-04, 1e-05, 1e-06,
-                                     1e-07, 1e-08)) + guides(size = FALSE) + labs(subtitle = "No Multiple Comparison Correction") +
+                               "RdPu")), limits = c(1e-07, 1), oob = scales::squish,
+      breaks = c(1, 0.05, 0.01, 0.001, 1e-04, 1e-05, 1e-06,
+                 1e-07, 1e-08)) + guides(size = FALSE) + labs(subtitle = "No Multiple Comparison Correction") +
     xlab("") + ylab("")
   p_FDR <- ggplot(stat.test, aes(y = ContinuousVariable, x = CategoricalVariable,
                                  shape = p.adj.signif, text = PlotText)) + geom_point(aes(size = logp_FDR,
