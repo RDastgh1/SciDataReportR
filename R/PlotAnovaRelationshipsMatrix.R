@@ -37,6 +37,7 @@ PlotAnovaRelationshipsMatrix <- function(Data, CatVars, ContVars, Covariates = N
     mutate(n = length(unique(CategoricalValue)))
   mData <- mData[nlevels.test$n > 1, ]
   if (Parametric) {
+    method <- "Anova"
     stat.test <- mData %>% group_by(ContinuousVariable, CategoricalVariable) %>%
       rstatix::anova_test(as.formula(paste("ContinuousValue ~ CategoricalValue",
                                            if (!is.null(Covariates))
@@ -44,6 +45,7 @@ PlotAnovaRelationshipsMatrix <- function(Data, CatVars, ContVars, Covariates = N
       rstatix::add_significance() %>%  rstatix::adjust_pvalue(method = "fdr") %>%
       rstatix::add_significance()
   }else {
+    method <- "Kruskal"
     stat.test <- mData %>% group_by(ContinuousVariable, CategoricalVariable) %>%
       rstatix::kruskal_test(as.formula(paste("ContinuousValue ~ CategoricalValue",
                                              if (!is.null(Covariates))
@@ -134,4 +136,18 @@ PlotAnovaRelationshipsMatrix <- function(Data, CatVars, ContVars, Covariates = N
     scale_y_discrete(limits = levels(stat.test$ContinuousVariable))
   return(list(p = p, pvaltable = stat.test, p_FDR = p_FDR,
               FCStats = FCStats))
+
+
+  # Set up for return List
+  M <- list()
+  M$PvalTable <- stat.test
+  M$plot <- p
+
+  M_FDR <- list()
+  M_FDR$PvalTable <- stat.test
+  M_FDR$plot <- p_FDR
+
+
+
+  return(list(Unadjusted = M, FDRCorrected = M_FDR, method = method, Relabel = Relabel, Covariates = Covariates))
 }

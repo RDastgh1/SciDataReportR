@@ -11,7 +11,9 @@
 #' @importFrom dplyr filter
 #' @importFrom sjlabelled get_label
 #' @export
-plotSigCorrelations <- function(DataFrame, Plot, PVar = "P", Pthresh = 0.05) {
+plotSigCorrelations <- function(DataFrame, CorrelationHeatmapObject, PVar = "P", Pthresh = 0.05) {
+
+  Plot <- CorrelationHeatmapObject
 
   # Extract relevant data from the Plot object
   Relabeled <- Plot$Relabel
