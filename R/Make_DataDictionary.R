@@ -25,9 +25,19 @@ Make_DataDictionary <- function(DataFrame, numdecimals = 2) {
     rename(Variable = skim_variable)
 
   # Rename the 'factor.n_unique' column to 'n_unique' and handle missing values
-  c_skim$n_unique <- c_skim$factor.n_unique
+  if(exists("c_skim$factor.n_unique")){
+    c_skim$n_unique <- c_skim$factor.n_unique}else{
+      c_skim$n_unique <- NA
+      c_skim$factor.n_unique <- NA
+    }
   if("character.n_unique" %in% colnames(c_skim)){
     c_skim$n_unique <- replace(c_skim$factor.n_unique, is.na(c_skim$factor.n_unique), c_skim$character.n_unique)
+  }
+  if("factor.ordered" %notin% colnames(c_skim)){
+    c_skim$factor.ordered <- NA
+  }
+  if("factor.top_counts" %notin% colnames(c_skim)){
+    c_skim$factor.top_counts <- NA
   }
 
   # Merge dataframes
