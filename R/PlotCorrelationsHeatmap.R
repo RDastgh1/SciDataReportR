@@ -11,13 +11,30 @@
 #' @param Relabel A logical indicating whether to relabel variables. Defaults to TRUE.
 #' @return A list containing matrices, ggplot objects for visualizations, and details of the method used.
 #' @export
-PlotCorrelationsHeatmap <- function(Data, xVars, yVars = NULL, covars = NULL, FS = 3, method = "pearson", Relabel = TRUE) {
+PlotCorrelationsHeatmap <- function(Data, xVars = NULL, yVars = NULL, covars = NULL, FS = 3, method = "pearson", Relabel = TRUE, Ordinal = TRUE) {
 
   Data <- ReplaceMissingLabels(Data)
+
+  if (is.null(xVars)) {
+    xVars <- getNumVars(Data, Ordinal = F)
+
+    if(Ordinal){
+      xVars <- getNumVars(Data, Ordinal = T)
+    }
+  }
+      # Then Convert to Numeric
+  if(Ordinal){
+      Data <- ConvertOrdinalToNumeric(DataFrame, xVars)
+      Data[xVars] <- lapply(DataFrame[Variables], as.numeric)
+    }
+
+
 
   # if any of the variables in x or y are ordinal, convert them to numeric
   allvars <- c(xVars, yVars)
   Data <- ConvertOrdinalToNumeric(Data, allvars)
+
+
 
 
 
