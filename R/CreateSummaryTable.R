@@ -32,8 +32,8 @@ Data <- ConvertOrdinalToNumeric(Data)
 # Now Convert everything to numeric
 Data <- lapply(Data, as.numeric) %>% as.data.frame()
 
-# Readd labels
-set_label(Data)<- l
+# Read labels
+sjlabelled::set_label(Data)<- l
 
 
   d <- summarytools::descr(Data)
