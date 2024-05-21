@@ -18,7 +18,7 @@ PlotContinuousDistributions <- function (DataFrame, Variables = NULL, Relabel = 
   # If Variables argument is NULL, use all numeric variables
   if (is.null(Variables)) {
     Variables <- getNumVars(DataFrame, Ordinal = F)
-  }
+
     if(Ordinal){
       Variables <- getNumVars(DataFrame, Ordinal = T)
 
@@ -27,6 +27,7 @@ PlotContinuousDistributions <- function (DataFrame, Variables = NULL, Relabel = 
       DataFrame <- ConvertOrdinalToNumeric(DataFrame, Variables)
       DataFrame[Variables] <- lapply(DataFrame[Variables], as.numeric)
     }
+  }
 
 
   # If Relabel is TRUE, create facet labels using variable labels
