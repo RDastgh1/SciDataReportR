@@ -12,7 +12,7 @@
 #' @return A list containing matrices, ggplot objects for visualizations, and details of the method used.
 #' @export
 PlotCorrelationsHeatmap <- function(Data, xVars = NULL, yVars = NULL, covars = NULL, FS = 3, method = "pearson", Relabel = TRUE, Ordinal = TRUE) {
-
+  Variables <- c(xVars, yVars)
   Data <- ReplaceMissingLabels(Data)
 
   if (is.null(xVars)) {
