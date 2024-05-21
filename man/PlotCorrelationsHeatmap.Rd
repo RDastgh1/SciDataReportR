@@ -6,12 +6,13 @@
 \usage{
 PlotCorrelationsHeatmap(
   Data,
-  xVars,
+  xVars = NULL,
   yVars = NULL,
   covars = NULL,
   FS = 3,
   method = "pearson",
-  Relabel = TRUE
+  Relabel = TRUE,
+  Ordinal = TRUE
 )
 }
 \arguments{
