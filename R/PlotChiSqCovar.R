@@ -9,7 +9,7 @@
 #' @param Relabel Logical indicating whether to relabel the variables based on their labels in the dataset. Defaults to TRUE.
 #' @return A list containing ggplot objects for visualizations and tables of p-values.
 #' @export
-PlotChiSqCovar <- function(Data, xVars, yVars, covars = NULL, Relabel = TRUE) {
+PlotChiSqCovar <- function(Data, xVars, yVars, covars = NULL, Relabel = TRUE, Ordinal = TRUE) {
   if(is.null(yVars)){
     yVars = xVars
   }

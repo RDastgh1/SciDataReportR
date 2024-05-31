@@ -12,7 +12,7 @@
 #' @importFrom magrittr "%>%"
 #' @export
 
-PlotCategoricalDistributions <- function(DataFrame, Variables = NULL, Relabel = TRUE){
+PlotCategoricalDistributions <- function(DataFrame, Variables = NULL, Relabel = TRUE, Ordinal = TRUE){
   if (is.null(Variables)) {
     Variables <- getCatVars(DataFrame)
   }

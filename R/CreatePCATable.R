@@ -14,7 +14,7 @@
 #' @importFrom xtable xtable
 #' @export
 CreatePCATable<- function (Data, VarsToReduce, minThresh = 0.85, scale = TRUE,
-          center = TRUE, Relabel = T)
+          center = TRUE, Relabel = T, Ordinal = FALSE)
 {
 
   if(Relabel == TRUE){

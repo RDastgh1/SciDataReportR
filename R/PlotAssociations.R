@@ -8,7 +8,7 @@
 #' @return A ggplot object representing the relationship between the variables.
 #' @import ggplot2 ggstatsplot dplyr
 #' @export
-PlotAssociations <- function (DataFrame, Var1, Var2)
+PlotAssociations <- function (DataFrame, Var1, Var2, Ordinal = FALSE)
 {
   TestFrame <- na.omit(DataFrame[c(Var1, Var2)])
   if (nrow(TestFrame) == 0) {

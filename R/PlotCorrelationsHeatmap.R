@@ -11,7 +11,13 @@
 #' @param Relabel A logical indicating whether to relabel variables. Defaults to TRUE.
 #' @return A list containing matrices, ggplot objects for visualizations, and details of the method used.
 #' @export
-PlotCorrelationsHeatmap <- function(Data, xVars = NULL, yVars = NULL, covars = NULL, FS = 3, method = "pearson", Relabel = TRUE, Ordinal = TRUE) {
+PlotCorrelationsHeatmap <- function(Data, xVars = NULL, yVars = NULL, covars = NULL, method = "pearson", Relabel = TRUE, Ordinal = TRUE) {
+  removediag <- FALSE
+  if (is.null(yVars)) {
+    yVars <- xVars
+    removediag <- TRUE
+  }
+
   Variables <- c(xVars, yVars)
   Data <- ReplaceMissingLabels(Data)
 
@@ -38,11 +44,7 @@ PlotCorrelationsHeatmap <- function(Data, xVars = NULL, yVars = NULL, covars = N
 
 
 
-  removediag <- FALSE
-  if (is.null(yVars)) {
-    yVars <- xVars
-    removediag <- TRUE
-  }
+
 
   if (length(covars) > 0) {
     char_vars <- sapply(Data, is.character)

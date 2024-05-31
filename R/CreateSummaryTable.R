@@ -14,7 +14,7 @@
 #' @importFrom sjlabelled get_label set_label
 #' @importFrom summarytools descr
 #' @export
-CreateSummaryTable <- function(Data, Variables = NULL, numdecimals = 2, Relabel = TRUE) {
+CreateSummaryTable <- function(Data, Variables = NULL, numdecimals = 2, Relabel = TRUE, Ordinal = FALSE, ScrollBoxHeight = "700px") {
   if(is.null(Variables)){
     Variables = colnames(Data)
   }
@@ -65,7 +65,7 @@ sjlabelled::set_label(Data)<- l
     kable(format = "html", escape = FALSE, digits = 2, row.names = TRUE,
           caption = "Descriptive Summary Table. IQR, Skewness, and Kurtosis are highlighted in yellow if they are indicative of a non-normal distribution. Pct.Valid is highlighted in red if over 30% of data is missing") %>%
     kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive")) %>%
-    scroll_box(width = "100%", height = "500px")
+    scroll_box(width = "100%", height = ScrollBoxHeight)
 
   })
 

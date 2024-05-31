@@ -21,7 +21,7 @@
 #' @importFrom RColorBrewer brewer.pal
 #' @importFrom rstatix add_significance adjust_pvalue anova_test kruskal_test get_summary_stats
 #' @export
-PlotAnovaRelationshipsMatrix <- function(Data, CatVars, ContVars, Covariates = NULL, Relabel = TRUE, Parametric = TRUE) {
+PlotAnovaRelationshipsMatrix <- function(Data, CatVars, ContVars, Covariates = NULL, Relabel = TRUE, Parametric = TRUE, Ordinal = FALSE) {
   DataSubset <- Data[c(CatVars, ContVars, Covariates)]
   # Convert all Categorical Variables to Categorical (in case they were ordered)
   DataSubset[CatVars] <- lapply(DataSubset[CatVars], factor, ordered = FALSE) %>% as.data.frame()

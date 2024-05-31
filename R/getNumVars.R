@@ -7,7 +7,7 @@
 #' @return A character vector containing the names of numeric variables.
 #' @importFrom dplyr select where
 #' @export
-getNumVars <- function(DataFrame, Ordinal = TRUE) {
+getNumVars <- function(DataFrame, Ordinal = FALSE) {
   NumVars <- DataFrame %>% select(where(is.numeric)) %>% names()
   if (Ordinal) {
     NumVars <- DataFrame %>% select(where(is.numeric) | where(is.ordered)) %>% names()
