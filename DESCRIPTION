@@ -38,4 +38,5 @@ Imports:
     ggdist,
     lubridate,
     rlang,
-    RColorBrewer
+    RColorBrewer,
+    plotly
