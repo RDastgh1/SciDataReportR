@@ -46,7 +46,7 @@ CreatePCATable<- function (Data, VarsToReduce, minThresh = 0.85, scale = TRUE,
   p_scree <- ggplot(Vaccounted, aes(x = Component)) + geom_line(aes(y = `Cumulative Proportion`,
                                                                     group = 1)) + geom_point(aes(y = `Cumulative Proportion`)) +
     geom_col(aes(y = `Proportion Var`)) + geom_hline(aes(yintercept = minThresh),
-                                                     linetype = "dashed")
+                                                     linetype = "dashed") + theme_bw()
   fit <- psych::principal(DataSubset, nfactors = nc, rotate = "varimax")
   fit <- psych::fa.sort(fit)
   LoadingTable <- as.data.frame(xtable(unclass(fit$loadings)))

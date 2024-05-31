@@ -39,8 +39,8 @@ CreateVariableTypesTemplate <- function(DataFrame, CSVFileName = NULL) {
   Types <- sapply(DataFrame, class)
 
   # Convert to a more user-friendly factor
-  Types <- factor(Types, levels = c("numeric", "integer", "factor", "character", "Date"),
-                  labels = c("Double", "Double", "Categorical", "String", "Date"))
+  Types <- factor(Types, levels = c("numeric", "integer", "factor", "character", "Date", "logical"),
+                  labels = c("Double", "Double", "Categorical", "String", "Date", "Categorical"))
 
   # Get labels of the variables, use column names as default
   DataLabels <- sjlabelled::get_label(DataFrame, def.value = colnames(DataFrame))

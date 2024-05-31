@@ -121,7 +121,7 @@ PlotAnovaRelationshipsMatrix <- function(Data, CatVars, ContVars, Covariates = N
       RColorBrewer::brewer.pal(9,
                                "RdPu")), limits = c(1e-07, 1), oob = scales::squish,
       breaks = c(1, 0.05, 0.01, 0.001, 1e-04, 1e-05, 1e-06,
-                 1e-07, 1e-08)) + guides(size = FALSE) + labs(subtitle = "No Multiple Comparison Correction") +
+                 1e-07, 1e-08)) + guides(size = "none") + labs(subtitle = "No Multiple Comparison Correction") +
     xlab("") + ylab("")
   p_FDR <- ggplot(stat.test, aes(y = YLabel, x = XLabel,
                                  shape = p.adj.signif, text = PlotText)) + geom_point(aes(size = logp_FDR,
@@ -131,7 +131,7 @@ PlotAnovaRelationshipsMatrix <- function(Data, CatVars, ContVars, Covariates = N
     scale_color_gradientn(trans = "log", colours = rev(RColorBrewer::brewer.pal(9,
                                                                                 "RdPu")), limits = c(1e-07, 1), oob = scales::squish,
                           breaks = c(1, 0.05, 0.01, 0.001, 1e-04, 1e-05, 1e-06,
-                                     1e-07, 1e-08)) + guides(size = FALSE) + labs(subtitle = "FDR Correction") +
+                                     1e-07, 1e-08)) + guides(size = "none") + labs(subtitle = "FDR Correction") +
     scale_x_discrete(limits = levels(stat.test$CategoricalVariable)) +
     scale_y_discrete(limits = levels(stat.test$ContinuousVariable))
 
