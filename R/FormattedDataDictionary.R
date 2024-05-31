@@ -8,10 +8,12 @@
 #'
 #' @return A formatted data dictionary table.
 #'
-#' @importFrom gt gt tab_style tab_footnote cells_body cells_column_labels everything cell_fill cell_borders px
+#' @importFrom gt gt tab_style tab_footnote cells_body cells_column_labels everything cell_fill cell_borders px cell_text
 #'
 #' @export
 FormattedDataDictionary <- function(DataFrame, numdecimals = 2) {
+  # Import necessary packages
+  require(gt)
 
   # Generate the initial data dictionary
   CB <- Make_DataDictionary(DataFrame, numdecimals)
