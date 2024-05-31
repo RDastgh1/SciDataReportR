@@ -8,7 +8,7 @@
 #'
 #' @return A formatted data dictionary table.
 #'
-#' @importFrom gt gt tab_style tab_footnote cells_body cells_column_labels everything cell_fill cell_borders
+#' @importFrom gt gt tab_style tab_footnote cells_body cells_column_labels everything cell_fill cell_borders px
 #'
 #' @export
 FormattedDataDictionary <- function(DataFrame, numdecimals = 2) {
@@ -30,7 +30,7 @@ FormattedDataDictionary <- function(DataFrame, numdecimals = 2) {
     tab_style(
       locations = cells_column_labels(columns = everything()),
       style = list(
-        cell_borders(sides = "bottom", weight = px(3)),
+        cell_borders(sides = "bottom", weight = gt::px(3)),
         cell_text(weight = "bold")
       )) %>%
 
@@ -39,7 +39,7 @@ FormattedDataDictionary <- function(DataFrame, numdecimals = 2) {
       style = cell_borders(
         side = "left",
         color = "grey",
-        weight = px(0.1),
+        weight = gt::px(0.1),
         style = "dashed"
       ),
       locations = list(
