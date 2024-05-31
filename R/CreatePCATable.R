@@ -53,7 +53,7 @@ CreatePCATable<- function (Data, VarsToReduce, minThresh = 0.85, scale = TRUE,
   scores <- fit$scores
   CombinedData <- cbind(Data, scores)
   LoadingTable$Variable <- rownames(LoadingTable)
-  LoadingTable <- left_join(LoadingTable, LabelCodebook)
+  LoadingTable <- left_join(LoadingTable, LabelCodebook, by = "Variable")
 
   #LoadingTable$Variable <- factor(rownames(LoadingTable), levels = rev(rownames(LoadingTable)))
 
