@@ -28,7 +28,7 @@ CreateZScorePlot <- function(Data, TargetVar, Variables, VariableCategories = NU
     #DataFrame[Variables] <- lapply(DataFrame[Variables], as.numeric)
   }
 
-}
+
 # Relabeling (if required)
 if (Relabel) {
   TargetVar <- sjlabelled::get_label(Data[TargetVar], def.value = colnames(Data[TargetVar]))
