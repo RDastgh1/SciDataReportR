@@ -4,7 +4,12 @@
 \alias{PlotCategoricalDistributions}
 \title{Plot Categorical Distributions}
 \usage{
-PlotCategoricalDistributions(DataFrame, Variables = NULL, Relabel = TRUE)
+PlotCategoricalDistributions(
+  DataFrame,
+  Variables = NULL,
+  Relabel = TRUE,
+  Ordinal = TRUE
+)
 }
 \arguments{
 \item{DataFrame}{The dataframe containing the variables to be plotted.}

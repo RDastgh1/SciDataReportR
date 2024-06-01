@@ -9,7 +9,6 @@ PlotCorrelationsHeatmap(
   xVars = NULL,
   yVars = NULL,
   covars = NULL,
-  FS = 3,
   method = "pearson",
   Relabel = TRUE,
   Ordinal = TRUE
@@ -24,11 +23,11 @@ PlotCorrelationsHeatmap(
 
 \item{covars}{A character vector of the names of covariate variables. Defaults to NULL.}
 
-\item{FS}{The font size for the plot. Defaults to 3.}
-
 \item{method}{The correlation method. Defaults to "pearson".}
 
 \item{Relabel}{A logical indicating whether to relabel variables. Defaults to TRUE.}
+
+\item{FS}{The font size for the plot. Defaults to 3.}
 }
 \value{
 A list containing matrices, ggplot objects for visualizations, and details of the method used.

@@ -10,7 +10,8 @@ CreatePCATable(
   minThresh = 0.85,
   scale = TRUE,
   center = TRUE,
-  Relabel = T
+  Relabel = T,
+  Ordinal = FALSE
 )
 }
 \arguments{

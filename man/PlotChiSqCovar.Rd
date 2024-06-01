@@ -4,7 +4,14 @@
 \alias{PlotChiSqCovar}
 \title{Plot Chi-Square Test with Covariate}
 \usage{
-PlotChiSqCovar(Data, xVars, yVars, covars = NULL, Relabel = TRUE)
+PlotChiSqCovar(
+  Data,
+  xVars,
+  yVars,
+  covars = NULL,
+  Relabel = TRUE,
+  Ordinal = TRUE
+)
 }
 \arguments{
 \item{Data}{The dataset containing the variables.}

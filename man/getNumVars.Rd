@@ -4,7 +4,7 @@
 \alias{getNumVars}
 \title{Get Numeric Variables}
 \usage{
-getNumVars(DataFrame, Ordinal = TRUE)
+getNumVars(DataFrame, Ordinal = FALSE)
 }
 \arguments{
 \item{DataFrame}{The data frame from which to extract numeric variables.}

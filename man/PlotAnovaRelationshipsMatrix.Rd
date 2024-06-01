@@ -10,7 +10,8 @@ PlotAnovaRelationshipsMatrix(
   ContVars,
   Covariates = NULL,
   Relabel = TRUE,
-  Parametric = TRUE
+  Parametric = TRUE,
+  Ordinal = FALSE
 )
 }
 \arguments{

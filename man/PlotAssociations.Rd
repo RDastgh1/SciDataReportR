@@ -4,7 +4,7 @@
 \alias{PlotAssociations}
 \title{Plot Associations}
 \usage{
-PlotAssociations(DataFrame, Var1, Var2)
+PlotAssociations(DataFrame, Var1, Var2, Ordinal = FALSE)
 }
 \arguments{
 \item{DataFrame}{The data frame containing the variables of interest.}
