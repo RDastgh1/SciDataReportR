@@ -28,17 +28,19 @@ PlotCorrelationsHeatmap <- function(Data, xVars = NULL, yVars = NULL, covars = N
       xVars <- getNumVars(Data, Ordinal = T)
     }
   }
-      # Then Convert to Numeric
+  # Then Convert to Numeric
   if(Ordinal){
-      Data <- ConvertOrdinalToNumeric(Data, xVars)
-      Data[xVars] <- lapply(Data[Variables], as.numeric)
-    }
+    Data <- ConvertOrdinalToNumeric(Data, xVars)
+    Data[xVars] <- lapply(Data[Variables], as.numeric)
+
+    # if any of the variables in x or y are ordinal, convert them to numeric
+    #allvars <- c(xVars, yVars)
+    #Data <- ConvertOrdinalToNumeric(Data, allvars)
+  }
 
 
 
-  # if any of the variables in x or y are ordinal, convert them to numeric
-  allvars <- c(xVars, yVars)
-  Data <- ConvertOrdinalToNumeric(Data, allvars)
+
 
 
 
@@ -115,7 +117,7 @@ PlotCorrelationsHeatmap <- function(Data, xVars = NULL, yVars = NULL, covars = N
 
   M <- list()
   M$r <- MC
-  M$p <- MP
+  M$p <- pvals
   M$npairs <- MN
 
   M_FDR <- M
@@ -123,7 +125,13 @@ PlotCorrelationsHeatmap <- function(Data, xVars = NULL, yVars = NULL, covars = N
   M_FDR$p <- matrix(padjusted, ncol = length(yVars))
 
   pvals_FDR <- M_FDR$p
-  pvals_FDR[is.na(pvals_FDR)] <- 1
+  #pvals_FDR[is.na(pvals_FDR)] <- 1
+
+
+  if (removediag) {
+    diag(M_FDR$p) <- NaN
+    diag(M_FDR$r) <- NaN
+  }
 
   colnames(M$r) <- yVars
   rownames(M$r) <- xVars
