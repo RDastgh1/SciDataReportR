@@ -17,7 +17,7 @@
 #' @return A list containing matrices of interaction coefficients, p-values, ggplot objects for visualizations,
 #'         and tables of FDR-corrected p-values.
 #' @export
-PlotCatInteractionEffectsMatrix <- function(Data, xVars, yVars = NULL, xVarLabels = NULL, yVarLabels = NULL, interVar) {
+PlotCatInteractionEffectsMatrix <- function(Data, xVars, yVars = NULL, xVarLabels = NULL, yVarLabels = NULL, interVar ) {
   if(is.null(yVars)){
     yVars = xVars
   }
