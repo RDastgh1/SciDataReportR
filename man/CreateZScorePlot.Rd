@@ -12,7 +12,7 @@ CreateZScorePlot(
   Relabel = TRUE,
   sort = TRUE,
   RemoveXAxisLabels = TRUE,
-  Ordinal = TRUE
+  Ordinal = FALSE
 )
 }
 \arguments{

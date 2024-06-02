@@ -19,7 +19,7 @@
 #' @importFrom tidyr pivot_longer
 #' @export
 CreateZScorePlot <- function (Data, TargetVar, Variables, VariableCategories = NULL,
-                              Relabel = TRUE, sort = TRUE, RemoveXAxisLabels = TRUE, Ordinal = FALSE)
+                              Relabel = TRUE, sort = TRUE, RemoveXAxisLabels = TRUE, Ordinal = TRUE)
 {
   if (Ordinal) {
     Data <- ConvertOrdinalToNumeric(Data, Variables)
