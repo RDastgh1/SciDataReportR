@@ -48,7 +48,7 @@ sjlabelled::set_label(Data)<- l
     Data <- ReplaceMissingLabels(Data)
     labels <- sjlabelled::get_label(Data, def.value = colnames(Data)) %>%
       as.data.frame() %>%
-      rownames_to_column()
+      tibble::rownames_to_column()
     colnames(labels) <- c("Variable", "label")
     d2$label <- labels$label
     d2 <- d2 %>% select(label, all_of(statVars))
