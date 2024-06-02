@@ -39,4 +39,6 @@ Imports:
     lubridate,
     rlang,
     RColorBrewer,
-    plotly
+    plotly,
+    plotrix,
+    paletteer
