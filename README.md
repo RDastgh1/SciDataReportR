@@ -1,15 +1,14 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# SciDataReportR
+# SciDataReportR <img src="man/figures/logo.png" align="right" height="88" alt="" />
 
 <!-- badges: start -->
 
-bing c SciDataReportR combines custom wrappers and new functions to
-streamline scientific data reporting in a reproducible manner. The goal
-is to allow for easy EDA and data analysis with many combinations of
-variables to allow for both hypothesis generation and hypothesis-driven
-analysis.
+SciDataReportR combines custom wrappers and new functions to streamline
+scientific data reporting in a reproducible manner. The goal is to allow
+for easy EDA and data analysis with many combinations of variables to
+allow for both hypothesis generation and hypothesis-driven analysis.
 
 ## Installation
 

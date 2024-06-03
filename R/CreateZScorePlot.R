@@ -25,10 +25,9 @@ CreateZScorePlot <- function (Data, TargetVar, Variables, VariableCategories = N
     Data <- ConvertOrdinalToNumeric(Data, Variables)
   }
   if (Relabel) {
-    TargetVar <- sjlabelled::get_label(Data[TargetVar], def.value = colnames(Data[TargetVar]))
-    Variables <- sjlabelled::get_label(Data[Variables], def.value = Variables)
-    colnames(Data) <- sjlabelled::get_label(Data,
-                                            def.value = colnames(Data ))
+    TargetVar <- sjlabelled::get_label(Data[TargetVar], def.value = colnames(Data[TargetVar])) %>% unname()
+    Variables <- sjlabelled::get_label(Data[Variables], def.value = Variables) %>% unname()
+    colnames(Data) <- sjlabelled::get_label(Data, def.value = colnames(Data)) %>% unname()
   }
   classcolors <- c(paletteer::paletteer_d("calecopal::superbloom2"),
                    paletteer::paletteer_d("calecopal::vermillion"), paletteer::paletteer_d("fishualize::Antennarius_commerson"),
