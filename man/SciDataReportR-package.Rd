@@ -6,6 +6,8 @@
 \alias{SciDataReportR-package}
 \title{SciDataReportR: Package for Generating Scientific Data Reports}
 \description{
+\if{html}{\figure{logo.png}{options: style='float: right' alt='logo' width='120'}}
+
 SciDataReportR is a package designed to facilitate the generation of scientific data reports. It provides functions for creating descriptive summary tables, formatting data for analysis, and enhancing data visualization.
 }
 \seealso{
