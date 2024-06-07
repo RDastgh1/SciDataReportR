@@ -40,9 +40,8 @@ PlotAssociations <- function (DataFrame, Var1, Var2, Ordinal = FALSE)
   if (type == "NumNum") {
     p <- ggscatterstats(data = DataFrame, x = !!Var1, y = !!Var2,
                         bf.message = FALSE)
-    s <- p$labels$subtitle %>% as.character()
-    pval <- parse_number(get_pval(s))
-    rval <- parse_number(get_rval(s))
+    pval <- extract_stats(p)[["subtitle_data"]][["p.value"]][1]
+    rval <- extract_stats(p)[["subtitle_data"]][["estimate"]][1]
     if (is.na(pval)) {
       p <- p + theme(panel.background = element_rect(fill = "#ff6347"))
     }
@@ -65,8 +64,8 @@ PlotAssociations <- function (DataFrame, Var1, Var2, Ordinal = FALSE)
       p <- p + theme(panel.background = element_rect(fill = "#ff6347"))
     }
     else {
-      pval <- parse_number(get_pval(s))
-      rval <- parse_number(get_rval(s))
+      pval <- extract_stats(p)[["subtitle_data"]][["p.value"]][1]
+      rval <- extract_stats(p)[["subtitle_data"]][["estimate"]][1]
       if (pval < 0.05) {
         p <- p + theme(panel.background = element_rect(fill = "lightblue"))
       }
@@ -85,7 +84,7 @@ PlotAssociations <- function (DataFrame, Var1, Var2, Ordinal = FALSE)
       p <- p + theme(panel.background = element_rect(fill = "#ff6347"))
     }
     else {
-      pval <- parse_number(get_pval(s))
+      pval <- extract_stats(p)[["subtitle_data"]][["p.value"]][1]
       if (pval < 0.05) {
         p <- p + theme(panel.background = element_rect(fill = "lightblue"))
       }
