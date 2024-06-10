@@ -25,12 +25,6 @@ CreateZScorePlot <- function (Data, TargetVar, Variables, VariableCategories = N
     Data <- ConvertOrdinalToNumeric(Data, Variables)
   }
   if (Relabel) {
-    #  TargetVar <- sjlabelled::get_label(Data[TargetVar], def.value = colnames(Data[TargetVar])) %>%
-    #   unname()
-    #Variables <- sjlabelled::get_label(Data[Variables], def.value = Variables) %>%
-    #  unname()
-    #colnames(Data) <- sjlabelled::get_label(Data, def.value = colnames(Data)) %>%
-    # unname()
   }
   classcolors <- c(paletteer::paletteer_d("calecopal::superbloom2"),
                    paletteer::paletteer_d("calecopal::vermillion"), paletteer::paletteer_d("fishualize::Antennarius_commerson"),
@@ -59,35 +53,30 @@ CreateZScorePlot <- function (Data, TargetVar, Variables, VariableCategories = N
   GroupMeans$FDRpval <- stat.test$p.adj[match(GroupMeans$variable,
                                               stat.test$variable)]
   if (Relabel) {
-    #  TargetVar <- sjlabelled::get_label(Data[TargetVar], def.value = colnames(Data[TargetVar])) %>%
-    #   unname()
-    #Variables <- sjlabelled::get_label(Data[Variables], def.value = Variables) %>%
-    #  unname()
-    #colnames(Data) <- sjlabelled::get_label(Data, def.value = colnames(Data)) %>%
-    # unname()
-    DataMergeTable <- data.frame(variable = colnames(Data), Label = sjlabelled::get_label(Data, def.value = colnames(Data)) %>%unname() )
-    GroupMeans<- left_join(GroupMeans, DataMergeTable)
-  }else{
+    DataMergeTable <- data.frame(variable = colnames(Data),
+                                 Label = sjlabelled::get_label(Data, def.value = colnames(Data)) %>%
+                                   unname())
+    GroupMeans <- left_join(GroupMeans, DataMergeTable, by = "variable")
+  }else {
     GroupMeans$Label <- GroupMeans$variable
   }
-
-  if(is.null(VariableCategories)){
-    GroupMeans$Category <- NULL
-  }else{
-    GroupMeans$Category <- VariableCategories[match(GroupMeans$variable, Variables)]
+  if (is.null(VariableCategories)) {
+    GroupMeans$Category <- NA
+  }else {
+    GroupMeans$Category <- VariableCategories[match(GroupMeans$variable,
+                                                    Variables)]
   }
-
   GroupMeans <- as.data.frame(GroupMeans)
   if (sort) {
-    GroupMeans <- GroupMeans[order(GroupMeans$Category, GroupMeans$pval),
-    ]
+    GroupMeans <- GroupMeans[order(GroupMeans$Category, GroupMeans$pval), ]
     GroupMeans$variable <- factor(GroupMeans$variable, levels = unique(GroupMeans$variable))
     GroupMeans$Label <- factor(GroupMeans$Label, levels = unique(GroupMeans$Label))
-  }else{
+  }else {
     GroupMeans$variable <- factor(GroupMeans$variable, levels = unique(GroupMeans$variable))
     GroupMeans$Label <- factor(GroupMeans$Label, levels = unique(GroupMeans$Label))
   }
-  pvaldata <- data.frame(variable = levels(GroupMeans$variable), Label <- levels(GroupMeans$Label))
+  pvaldata <- data.frame(variable = levels(GroupMeans$variable),
+                         Label <- levels(GroupMeans$Label))
   pvaldata <- dplyr::right_join(pvaldata, stat.test, by = "variable")
   pvaldata$pvalline <- ifelse(pvaldata$p < 0.05, 1.5, NaN)
   pvaldata$FDRline <- ifelse(pvaldata$p.adj < 0.05, 1.6, NaN)
@@ -96,18 +85,13 @@ CreateZScorePlot <- function (Data, TargetVar, Variables, VariableCategories = N
                               NA, VariableCategories)
   GroupMeans$Category[is.na(GroupMeans$Category)] <- "Unknown"
   GroupMeans <- GroupMeans %>% dplyr::mutate(Text = paste0("</br> Variable: ",
-                                                           variable,
-                                                           "</br> Label: ",
-                                                           Label,
-                                                           "</br> p-value: ", round(pval, 4), "</br> Group: ",
-                                                           Group, "</br> FDR: ", round(FDRpval, 4), "</br> Category: ",
-                                                           Category))
+                                                           variable, "</br> Label: ", Label, "</br> p-value: ",
+                                                           round(pval, 4), "</br> Group: ", Group, "</br> FDR: ",
+                                                           round(FDRpval, 4), "</br> Category: ", Category))
   pvaldata <- pvaldata %>% dplyr::mutate(Text = paste0("</br> Variable: ",
-                                                       variable,
-                                                       "</br> Label: ",
-                                                       Label,
-                                                       "</br> p-value: ", round(p, 4), "</br> FDR: ",
-                                                       round(p.adj, 4), "</br> Category: ", Category))
+                                                       variable, "</br> Label: ", Label, "</br> p-value: ",
+                                                       round(p, 4), "</br> FDR: ", round(p.adj, 4), "</br> Category: ",
+                                                       Category))
   pZ <- GroupMeans %>% ggplot(aes(x = Label, text = Text)) +
     geom_point(aes(y = mean, shape = Group, color = Category)) +
     geom_errorbar(aes(ymin = mean - stderror, ymax = mean +
