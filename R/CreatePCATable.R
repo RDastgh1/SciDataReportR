@@ -8,6 +8,7 @@
 #' @param scale Logical, indicating whether to scale the data (default is TRUE).
 #' @param center Logical, indicating whether to center the data (default is TRUE).
 #' @return A list containing PCA results and visualizations.
+#' @import paletteer
 #' @importFrom psych principal fa.sort
 #' @importFrom tidyr pivot_longer
 #' @importFrom ggplot2 ggplot geom_line geom_point geom_col geom_hline geom_segment geom_point scale_color_manual facet_wrap theme element_text
@@ -16,15 +17,18 @@
 CreatePCATable<- function (Data, VarsToReduce, minThresh = 0.85, scale = TRUE,
           center = TRUE, Relabel = T, Ordinal = FALSE)
 {
+  classcolors <- c(paletteer::paletteer_d("calecopal::superbloom2"),
+                   paletteer::paletteer_d("calecopal::vermillion"), paletteer::paletteer_d("fishualize::Antennarius_commerson"),
+                   paletteer::paletteer_d("fishualize::Bodianus_rufus"))
 
-  if(Relabel == TRUE){
-    Data<- ReplaceMissingLabels(Data)
-    LabelCodebook <- data.frame(Variable = colnames(Data), Labels = sjlabelled::get_label(Data))
-  }else{
-    LabelCodebook <- data.frame(Variable = colnames(Data), Labels = colnames(Data))
+  if (Relabel == TRUE) {
+    Data <- ReplaceMissingLabels(Data)
+    LabelCodebook <- data.frame(Variable = colnames(Data),
+                                Labels = sjlabelled::get_label(Data))
+  }else {
+    LabelCodebook <- data.frame(Variable = colnames(Data),
+                                Labels = colnames(Data))
   }
-
-
   DataSubset <- Data[VarsToReduce]
   if (sum(is.na(DataSubset)) > 0) {
     set.seed(123456)
@@ -34,8 +38,7 @@ CreatePCATable<- function (Data, VarsToReduce, minThresh = 0.85, scale = TRUE,
   }
   if (length(VarsToReduce) < 20) {
     n <- length(VarsToReduce)
-  }
-  else {
+  }else {
     n <- 20
   }
   fit1 <- psych::principal(scale(DataSubset, center = center,
@@ -54,27 +57,38 @@ CreatePCATable<- function (Data, VarsToReduce, minThresh = 0.85, scale = TRUE,
   CombinedData <- cbind(Data, scores)
   LoadingTable$Variable <- rownames(LoadingTable)
   LoadingTable <- left_join(LoadingTable, LabelCodebook, by = "Variable")
-
-  #LoadingTable$Variable <- factor(rownames(LoadingTable), levels = rev(rownames(LoadingTable)))
-
-
-
   meltedLoading <- LoadingTable %>% tidyr::pivot_longer(cols = matches("RC"))
   meltedLoading$name <- factor(meltedLoading$name, levels = colnames(LoadingTable)[1:length(LoadingTable) -
                                                                                      1])
   meltedLoading <- meltedLoading %>% group_by(Variable) %>%
     arrange(value) %>% mutate(color = abs(value) > 0.4)
   meltedLoading$TopContributor <- meltedLoading$color
-  meltedLoading$color <- "black"
+
+  if (is.null(VariableCategories)) {
+    meltedLoading$color <- "black"
+  }else {
+    meltedLoading$color <- VariableCategories[match(meltedLoading$Variable,
+                                                    VarsToReduce)]
+  }
   meltedLoading$Labels <- factor(meltedLoading$Labels, levels = rev(LoadingTable$Labels))
-  p <- ggplot(meltedLoading, aes(x = Labels, y = value, alpha = TopContributor,
-                                 color = color)) + coord_flip()
-  p <- p + geom_segment(size = 2, aes(x = Labels, xend = Labels,
-                                      y = 0, yend = value))
-  p <- p + facet_wrap(vars(name), nrow = 1)
-  p <- p + theme(legend.position = "none", strip.text.y = element_text(angle = 45),
-                 axis.title.x = element_blank(), axis.title.y = element_blank())
-  p <- p + geom_point() + scale_color_manual(values = c("black"))
+  if(is.null(VariableCategories)){
+    p <- ggplot(meltedLoading, aes(x = Labels, y = value, alpha = TopContributor,
+                                   color = colof)) + coord_flip()
+    p <- p + geom_segment(size = 2, aes(x = Labels, xend = Labels,
+                                        y = 0, yend = value))
+    p <- p + facet_wrap(vars(name), nrow = 1)
+    p <- p + theme(legend.position = "none", strip.text.y = element_text(angle = 45),
+                   axis.title.x = element_blank(), axis.title.y = element_blank())
+    p <- p + geom_point() + scale_color_manual(values = c("black"))} else{
+      p <- ggplot(meltedLoading, aes(x = Labels, y = value, alpha = TopContributor,
+                                     color = color)) + coord_flip()
+      p <- p + geom_segment(size = 2, aes(x = Labels, xend = Labels,
+                                          y = 0, yend = value))
+      p <- p + facet_wrap(vars(name), nrow = 1)
+      p <- p + theme(legend.position = "none", strip.text.y = element_text(angle = 45),
+                     axis.title.x = element_blank(), axis.title.y = element_blank())
+      p <- p + geom_point() + scale_color_manual(values = classcolors)
+    }
   return(list(p_scree = p_scree, pcaresults = fit, LoadingTable = LoadingTable,
               Scores = scores, CombinedData = CombinedData, Lollipop = p))
 }

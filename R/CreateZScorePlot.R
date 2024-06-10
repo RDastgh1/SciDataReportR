@@ -24,8 +24,7 @@ CreateZScorePlot <- function (Data, TargetVar, Variables, VariableCategories = N
   if (Ordinal) {
     Data <- ConvertOrdinalToNumeric(Data, Variables)
   }
-  if (Relabel) {
-  }
+
   classcolors <- c(paletteer::paletteer_d("calecopal::superbloom2"),
                    paletteer::paletteer_d("calecopal::vermillion"), paletteer::paletteer_d("fishualize::Antennarius_commerson"),
                    paletteer::paletteer_d("fishualize::Bodianus_rufus"))
@@ -36,6 +35,7 @@ CreateZScorePlot <- function (Data, TargetVar, Variables, VariableCategories = N
   melted <- tidyr::pivot_longer(scaledData, cols = all_of(Variables),
                                 names_to = "variable", values_to = "value")
   melted$variable <- factor(melted$variable, levels = unique(melted$variable))
+
   if (n_groups == 2) {
     stat.test <- melted %>% dplyr::group_by(variable) %>%
       rstatix::t_test(value ~ Group, var.equal = TRUE) %>%
