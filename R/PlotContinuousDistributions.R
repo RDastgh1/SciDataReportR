@@ -16,50 +16,37 @@
 
 PlotContinuousDistributions <- function (DataFrame, Variables = NULL, Relabel = TRUE, ncol = 3, Ordinal = T) {
   # If Variables argument is NULL, use all numeric variables
-  if (is.null(Variables)) {
-    Variables <- getNumVars(DataFrame, Ordinal = F)
+    if (is.null(Variables)) {
+      Variables <- getNumVars(DataFrame, Ordinal = F)
+      if (Ordinal) {
+        Variables <- getNumVars(DataFrame, Ordinal = T)
+      }
+    }
+    if (Ordinal) {
 
-    if(Ordinal){
-      Variables <- getNumVars(DataFrame, Ordinal = T)
-
-
-  }}
-
-  if(Ordinal){
-
-    # Then Convert to Numeric
-
-    DataFrame <- ConvertOrdinalToNumeric(DataFrame, Variables)
-    DataFrame[Variables] <- lapply(DataFrame[Variables], as.numeric)
+      OriginalLabels <- sjlabelled::get_label(DataFrame, def.value = colnames(DataFrame))
+      DataFrame <- ConvertOrdinalToNumeric(DataFrame, Variables)
+      DataFrame[Variables] <- lapply(DataFrame[Variables],
+                                     as.numeric)
+      for (var in Variables) {
+        DataFrame[[var]] <- set_label(DataFrame[[var]], OriginalLabels[[var]])
+      }
+    }
+    if (Relabel == TRUE) {
+      facetlabels <- createFacetLabels(DataFrame %>% select(all_of(Variables)))
+    }
+    else {
+      facetlabels <- Variables
+    }
+    ContData <- DataFrame %>% pivot_longer(cols = all_of(Variables)) %>%
+      group_by(name) %>% mutate(Mean = mean(value, na.rm = TRUE)) %>%
+      ungroup()
+    ContData$name <- factor(ContData$name, levels = Variables,
+                            labels = facetlabels)
+    p <- ggplot(ContData, aes(y = value, x = 1, fill = "1")) +
+      ggrain::geom_rain(alpha = 0.5) + theme_bw() + guides(fill = "none",
+                                                           color = "none") + coord_flip() + facet_wrap(~name, scales = "free",
+                                                                                                       ncol = ncol) + scale_fill_manual(values = c("#6EC259")) +
+      theme(axis.title.y = element_blank())
+    return(p)
   }
-
-
-  # If Relabel is TRUE, create facet labels using variable labels
-  if (Relabel == TRUE) {
-    facetlabels <- createFacetLabels(DataFrame %>% select(all_of(Variables)))
-  } else {
-    facetlabels <- Variables
-  }
-
-  # Reshape data and calculate mean for each variable
-  ContData <- DataFrame %>%
-    pivot_longer(cols = all_of(Variables)) %>%
-    group_by(name) %>%
-    mutate(Mean = mean(value, na.rm = TRUE)) %>%
-    ungroup()
-
-  # Use custom facet labels if available
-  ContData$name <- factor(ContData$name, levels = Variables, labels = facetlabels)
-
-  # Create raincloud plot
-  p <- ggplot(ContData, aes(y = value, x = 1, fill = "1")) +
-    ggrain::geom_rain(alpha = 0.5) +
-    theme_bw() +
-    guides(fill = 'none', color = 'none') +
-    coord_flip() +
-    facet_wrap(~name, scales = "free", ncol = ncol) +
-    scale_fill_manual(values = c("#6EC259")) +
-    theme(axis.title.y = element_blank())
-
-  return(p)
-}
