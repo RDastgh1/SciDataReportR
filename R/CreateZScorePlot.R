@@ -20,10 +20,108 @@
 #' @export
 CreateZScorePlot <- function (Data, TargetVar, Variables, VariableCategories = NULL,
                               Relabel = TRUE, sort = TRUE, RemoveXAxisLabels = TRUE, Ordinal = TRUE)
-  roupMeans <- as.data.frame(GroupMeans)
-if (sort) {
-  GroupMeans <- GroupMeans[order(GroupMeans$Category, GroupMeans$pval),
-  ]
-  GroupMeans$variable <- factor(GroupMeans$variable, levels = unique(GroupMeans$variable))
-  GroupMeans$Label <- factor(GroupMeans$Label, levels = unique(GroupMeans$Label))
+{
+  if (Ordinal) {
+    Data <- ConvertOrdinalToNumeric(Data, Variables)
+  }
+  if (Relabel) {
+    #  TargetVar <- sjlabelled::get_label(Data[TargetVar], def.value = colnames(Data[TargetVar])) %>%
+    #   unname()
+    #Variables <- sjlabelled::get_label(Data[Variables], def.value = Variables) %>%
+    #  unname()
+    #colnames(Data) <- sjlabelled::get_label(Data, def.value = colnames(Data)) %>%
+    # unname()
+  }
+  classcolors <- c(paletteer::paletteer_d("calecopal::superbloom2"),
+                   paletteer::paletteer_d("calecopal::vermillion"), paletteer::paletteer_d("fishualize::Antennarius_commerson"),
+                   paletteer::paletteer_d("fishualize::Bodianus_rufus"))
+  scaledData <- Data[c(TargetVar, Variables)]
+  scaledData[Variables] <- scale(scaledData[Variables])
+  colnames(scaledData)[1] <- "Group"
+  n_groups <- length(unique(scaledData$Group))
+  melted <- tidyr::pivot_longer(scaledData, cols = all_of(Variables),
+                                names_to = "variable", values_to = "value")
+  melted$variable <- factor(melted$variable, levels = unique(melted$variable))
+  if (n_groups == 2) {
+    stat.test <- melted %>% dplyr::group_by(variable) %>%
+      rstatix::t_test(value ~ Group, var.equal = TRUE) %>%
+      rstatix::adjust_pvalue(method = "BH") %>% rstatix::add_significance()
+  }else {
+    stat.test <- melted %>% dplyr::group_by(variable) %>%
+      rstatix::anova_test(value ~ Group) %>% rstatix::adjust_pvalue(method = "BH") %>%
+      rstatix::add_significance()
+  }
+  GroupMeans <- melted %>% dplyr::group_by(variable, Group) %>%
+    dplyr::summarize(mean = mean(value, na.rm = TRUE), stderror = plotrix::std.error(value),
+                     std = sd(value), n = n(), .groups = "drop")
+  GroupMeans$pval <- stat.test$p[match(GroupMeans$variable,
+                                       stat.test$variable)]
+  GroupMeans$FDRpval <- stat.test$p.adj[match(GroupMeans$variable,
+                                              stat.test$variable)]
+  if (Relabel) {
+    #  TargetVar <- sjlabelled::get_label(Data[TargetVar], def.value = colnames(Data[TargetVar])) %>%
+    #   unname()
+    #Variables <- sjlabelled::get_label(Data[Variables], def.value = Variables) %>%
+    #  unname()
+    #colnames(Data) <- sjlabelled::get_label(Data, def.value = colnames(Data)) %>%
+    # unname()
+    DataMergeTable <- data.frame(variable = colnames(Data), Label = sjlabelled::get_label(Data, def.value = colnames(Data)) %>%unname() )
+    GroupMeans<- left_join(GroupMeans, DataMergeTable)
+  }else{
+    GroupMeans$Label <- GroupMeans$variable
+  }
+
+  if(is.null(VariableCategories)){
+    GroupMeans$Category <- NULL
+  }else{
+    GroupMeans$Category <- VariableCategories[match(GroupMeans$variable, Variables)]
+  }
+
+  GroupMeans <- as.data.frame(GroupMeans)
+  if (sort) {
+    GroupMeans <- GroupMeans[order(GroupMeans$Category, GroupMeans$pval),
+    ]
+    GroupMeans$variable <- factor(GroupMeans$variable, levels = unique(GroupMeans$variable))
+    GroupMeans$Label <- factor(GroupMeans$Label, levels = unique(GroupMeans$Label))
+  }else{
+    GroupMeans$variable <- factor(GroupMeans$variable, levels = unique(GroupMeans$variable))
+    GroupMeans$Label <- factor(GroupMeans$Label, levels = unique(GroupMeans$Label))
+  }
+  pvaldata <- data.frame(variable = levels(GroupMeans$variable), Label <- levels(GroupMeans$Label))
+  pvaldata <- dplyr::right_join(pvaldata, stat.test, by = "variable")
+  pvaldata$pvalline <- ifelse(pvaldata$p < 0.05, 1.5, NaN)
+  pvaldata$FDRline <- ifelse(pvaldata$p.adj < 0.05, 1.6, NaN)
+  pvaldata$variable <- factor(pvaldata$variable, levels = levels(GroupMeans$variable))
+  pvaldata$Category <- ifelse(is.null(VariableCategories),
+                              NA, VariableCategories)
+  GroupMeans$Category[is.na(GroupMeans$Category)] <- "Unknown"
+  GroupMeans <- GroupMeans %>% dplyr::mutate(Text = paste0("</br> Variable: ",
+                                                           variable,
+                                                           "</br> Label: ",
+                                                           Label,
+                                                           "</br> p-value: ", round(pval, 4), "</br> Group: ",
+                                                           Group, "</br> FDR: ", round(FDRpval, 4), "</br> Category: ",
+                                                           Category))
+  pvaldata <- pvaldata %>% dplyr::mutate(Text = paste0("</br> Variable: ",
+                                                       variable,
+                                                       "</br> Label: ",
+                                                       Label,
+                                                       "</br> p-value: ", round(p, 4), "</br> FDR: ",
+                                                       round(p.adj, 4), "</br> Category: ", Category))
+  pZ <- GroupMeans %>% ggplot(aes(x = Label, text = Text)) +
+    geom_point(aes(y = mean, shape = Group, color = Category)) +
+    geom_errorbar(aes(ymin = mean - stderror, ymax = mean +
+                        stderror, color = Category), alpha = 0.5) + theme_minimal() +
+    geom_point(data = pvaldata, aes(y = pvalline), color = "blue") +
+    geom_point(data = pvaldata, aes(y = FDRline), color = "green") +
+    guides(shape = FALSE, linetype = FALSE) + scale_y_continuous(limits = c(-2,
+                                                                            2)) + ylab("Z-Score") + scale_color_manual(values = classcolors)
+  if (RemoveXAxisLabels) {
+    pZ <- pZ + theme(axis.text.x = element_blank())
+  }
+  else {
+    pZ <- pZ + theme(axis.text.x = element_text(angle = 45,
+                                                vjust = 1, hjust = 1))
+  }
+  return(pZ)
 }
