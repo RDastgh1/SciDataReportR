@@ -7,6 +7,7 @@
 CreatePCATable(
   Data,
   VarsToReduce,
+  VariableCategories = NULL,
   minThresh = 0.85,
   scale = TRUE,
   center = TRUE,
@@ -18,6 +19,8 @@ CreatePCATable(
 \item{Data}{The dataset containing the variables for PCA.}
 
 \item{VarsToReduce}{A character vector specifying the variables to include in the PCA.}
+
+\item{VariableCategories, }{categorical, annotates the lollipop plot with color}
 
 \item{minThresh}{The minimum threshold for cumulative proportion of variance (default is 0.85).}
 
