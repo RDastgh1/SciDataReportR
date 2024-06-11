@@ -6,6 +6,7 @@
 #' @param VarsToReduce A character vector specifying the variables to include in the PCA.
 #' @param minThresh The minimum threshold for cumulative proportion of variance (default is 0.85).
 #' @param scale Logical, indicating whether to scale the data (default is TRUE).
+#' @param VariableCategories, categorical, annotates the lollipop plot with color
 #' @param center Logical, indicating whether to center the data (default is TRUE).
 #' @return A list containing PCA results and visualizations.
 #' @import paletteer
@@ -14,7 +15,7 @@
 #' @importFrom ggplot2 ggplot geom_line geom_point geom_col geom_hline geom_segment geom_point scale_color_manual facet_wrap theme element_text
 #' @importFrom xtable xtable
 #' @export
-CreatePCATable<- function (Data, VarsToReduce, minThresh = 0.85, scale = TRUE,
+CreatePCATable<- function (Data, VarsToReduce, VariableCategories = NULL, minThresh = 0.85, scale = TRUE,
           center = TRUE, Relabel = T, Ordinal = FALSE)
 {
   classcolors <- c(paletteer::paletteer_d("calecopal::superbloom2"),
