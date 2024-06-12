@@ -74,7 +74,7 @@ CreatePCATable<- function (Data, VarsToReduce, VariableCategories = NULL, minThr
   meltedLoading$Labels <- factor(meltedLoading$Labels, levels = rev(LoadingTable$Labels))
   if(is.null(VariableCategories)){
     p <- ggplot(meltedLoading, aes(x = Labels, y = value, alpha = TopContributor,
-                                   color = colof)) + coord_flip()
+                                   color = color)) + coord_flip()
     p <- p + geom_segment(size = 2, aes(x = Labels, xend = Labels,
                                         y = 0, yend = value))
     p <- p + facet_wrap(vars(name), nrow = 1)
