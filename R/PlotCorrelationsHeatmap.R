@@ -30,8 +30,9 @@ PlotCorrelationsHeatmap <- function(Data, xVars = NULL, yVars = NULL, covars = N
   }
   # Then Convert to Numeric
   if(Ordinal){
-    Data <- ConvertOrdinalToNumeric(Data, xVars)
-    Data[xVars] <- lapply(Data[Variables], as.numeric)
+    Variables <- c(xVars, yVars)
+    Data <- ConvertOrdinalToNumeric(Data, Variables)
+    Data[Variables] <- lapply(Data[Variables], as.numeric)
 
     # if any of the variables in x or y are ordinal, convert them to numeric
     #allvars <- c(xVars, yVars)
