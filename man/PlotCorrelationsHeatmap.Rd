@@ -11,7 +11,7 @@ PlotCorrelationsHeatmap(
   covars = NULL,
   method = "pearson",
   Relabel = TRUE,
-  Ordinal = TRUE
+  Ordinal = FALSE
 )
 }
 \arguments{
