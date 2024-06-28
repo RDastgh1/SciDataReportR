@@ -31,7 +31,7 @@ PlotMissingData <- function(DataFrame, Variables = NULL, Relabel = TRUE){
   }
 
   # Plot missing data and flip coordinates
-  pMissing <- naniar::vis_miss(DataFrame) + coord_flip()
+  pMissing <- naniar::vis_miss(DataFrame,warn_large_data = FALSE) + coord_flip()
 
   return(pMissing)
 }
