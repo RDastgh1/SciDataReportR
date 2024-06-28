@@ -53,7 +53,8 @@ CreateVariableTypesTemplate <- function(DataFrame, CSVFileName = NULL) {
                               Recode = NA,
                               Code = NA,
                               Notes = "",
-                              Exclude = NA)
+                              Exclude = NA,
+                              MissingCode = "")
 
   # If a CSV file name is provided, write the data frame to a CSV file
   if (!is.null(CSVFileName)) {
