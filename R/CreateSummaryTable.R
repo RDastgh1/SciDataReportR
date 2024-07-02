@@ -26,7 +26,7 @@ CreateSummaryTable <- function(Data, Variables = NULL, numdecimals = 2, Relabel 
 
 Data <- Data %>% select(all_of(Variables))
 # Extract labels before conversion
-l <- get_label(Data)
+l <- sjlabelled::get_label(Data)
 
 Data <- ConvertOrdinalToNumeric(Data)
 # Now Convert everything to numeric

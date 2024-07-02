@@ -19,7 +19,7 @@ ConvertOrdinalToNumeric <- function(Data, Variables = NULL) {
   orderedVars <- names(Data[Variables])[sapply(Data, is.ordered)] %>% na.omit()
 
   # get original labels to reset them later
-  l <- get_label(Data)
+  l <- sjlabelled::get_label(Data)
 
   # Iterate through ordered variables
   for (col in orderedVars) {
@@ -39,6 +39,6 @@ ConvertOrdinalToNumeric <- function(Data, Variables = NULL) {
   }
 
   # Readd labels
-  set_label(Data)<- l
+  sjlabelled::set_label(Data)<- l
   return(Data)
 }
