@@ -71,6 +71,8 @@ RevalueData <- function(DatatoRevalue, VarTypes, missingVal = -999, splitchar = 
       if (type == "Ordinal") {
         RevaluedData[[var]] <- as.ordered(RevaluedData[[var]])
       }
+      }else{
+        RevaluedData[[var]] <- RevaluedData[[var]]
       }
     }
 
