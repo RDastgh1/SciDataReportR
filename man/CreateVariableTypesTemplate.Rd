@@ -7,7 +7,7 @@
 CreateVariableTypesTemplate(
   DataFrame,
   CSVFileName = NULL,
-  GuessCategorical = NULL
+  GuessCategorical = TRUE
 )
 }
 \arguments{
