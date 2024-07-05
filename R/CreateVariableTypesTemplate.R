@@ -6,6 +6,7 @@
 #' @param DataFrame A data frame containing the variables to be summarized.
 #' @param CSVFileName A string specifying the path and name of the CSV file to save the summary.
 #'                    If NULL (the default), the CSV file will not be created.
+#' @param GuessCategorical A logical variable specifying if the function should guess what variables are categorical based on having <= 5 unique values
 #'
 #' @return A data frame with the following columns:
 #' \describe{
@@ -33,33 +34,34 @@
 #' @importFrom sjlabelled get_label
 #' @importFrom utils write.csv
 #' @export
-CreateVariableTypesTemplate <- function(DataFrame, CSVFileName = NULL) {
+CreateVariableTypesTemplate <- function(DataFrame, CSVFileName = NULL, GuessCategorical = NULL) {
 
   # Get the classes of the variables in the DataFrame
   Types <- sapply(DataFrame, class)
+  Types <- factor(Types, levels = c("numeric", "integer", "factor",
+                                    "character", "Date", "logical"), labels = c("Double",
+                                                                                "Double", "Categorical", "String", "Date", "Categorical"))
 
-  # Convert to a more user-friendly factor
-  Types <- factor(Types, levels = c("numeric", "integer", "factor", "character", "Date", "logical"),
-                  labels = c("Double", "Double", "Categorical", "String", "Date", "Categorical"))
 
-  # Get labels of the variables, use column names as default
+  # Decide if categorical Values need to be calculated based on whether there were any categorical variables or not.
+  if(GuessCategorical == T || (is.null(GuessCategorical) & sum(Types == "Categorical", na.rm = T) ==0)){
+
+    # Get the number of unique values for each. If it's <=5, decide that it is categorical
+    unique_counts <- sapply(DataFrame, function(x) length(unique(x)))
+
+    Types[unique_counts <= 5] <- "Categorical"
+  }
+
+
   DataLabels <- sjlabelled::get_label(DataFrame, def.value = colnames(DataFrame))
-
-  # Create the VariableTypes data frame
   VariableTypes <- data.frame(Variable = colnames(DataFrame),
-                              Label = DataLabels,
-                              Type = Types,
-                              Category = NA,
-                              Recode = NA,
-                              Code = NA,
-                              Notes = "",
-                              Exclude = NA,
-                              MissingCode = "")
+                              Label = DataLabels, Type = Types, Category = NA, Recode = NA,
+                              Code = NA, Notes = "", Exclude = NA, MissingCode = "")
 
-  # If a CSV file name is provided, write the data frame to a CSV file
+
+
   if (!is.null(CSVFileName)) {
     write.csv(VariableTypes, CSVFileName, row.names = FALSE)
   }
-
   return(VariableTypes)
 }
