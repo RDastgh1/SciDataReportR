@@ -4,13 +4,19 @@
 \alias{CreateVariableTypesTemplate}
 \title{Create a Template for Variable Types}
 \usage{
-CreateVariableTypesTemplate(DataFrame, CSVFileName = NULL)
+CreateVariableTypesTemplate(
+  DataFrame,
+  CSVFileName = NULL,
+  GuessCategorical = NULL
+)
 }
 \arguments{
 \item{DataFrame}{A data frame containing the variables to be summarized.}
 
 \item{CSVFileName}{A string specifying the path and name of the CSV file to save the summary.
 If NULL (the default), the CSV file will not be created.}
+
+\item{GuessCategorical}{A logical variable specifying if the function should guess what variables are categorical based on having <= 5 unique values}
 }
 \value{
 A data frame with the following columns:

@@ -34,7 +34,7 @@
 #' @importFrom sjlabelled get_label
 #' @importFrom utils write.csv
 #' @export
-CreateVariableTypesTemplate <- function(DataFrame, CSVFileName = NULL, GuessCategorical = NULL) {
+CreateVariableTypesTemplate <- function(DataFrame, CSVFileName = NULL, GuessCategorical = TRUE) {
 
   # Get the classes of the variables in the DataFrame
   Types <- sapply(DataFrame, class)
