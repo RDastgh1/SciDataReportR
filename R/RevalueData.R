@@ -61,7 +61,7 @@ RevalueData <- function(DatatoRevalue, VarTypes, missingVal = -999, splitchar = 
       # Don't recode, but set to appropriate type
 
       type <- VarTypes$Type[VarTypes$Variable == var]
-      if(!is.na(Type)){
+      if(!is.na(type)){
       if (type == "Categorical") {
         RevaluedData[[var]] <- to_factor(RevaluedData[[var]])
       }
