@@ -59,7 +59,9 @@ RevalueData <- function(DatatoRevalue, VarTypes, missingVal = -999, splitchar = 
       }
     } else {
       # Don't recode, but set to appropriate type
+
       type <- VarTypes$Type[VarTypes$Variable == var]
+      if(!is.na(Type)){
       if (type == "Categorical") {
         RevaluedData[[var]] <- to_factor(RevaluedData[[var]])
       }
@@ -68,6 +70,7 @@ RevalueData <- function(DatatoRevalue, VarTypes, missingVal = -999, splitchar = 
       }
       if (type == "Ordinal") {
         RevaluedData[[var]] <- as.ordered(RevaluedData[[var]])
+      }
       }
     }
 
