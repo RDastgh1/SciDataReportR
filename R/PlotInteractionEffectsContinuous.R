@@ -114,6 +114,12 @@ PlotInteractionEffectsContinuous <- function(Data, interVar = NULL,
     }
   }
 
+  rownames(r_C) <- xVars
+  colnames(r_C) <- yVars
+  rownames(r_P) <- xVars
+  colnames(r_P) <- yVars
+  rownames(r_S) <- xVars
+  colnames(r_S) <- yVars
   # Convert matrices to data frames and add variable names
   m_r_C <- r_C %>% as.data.frame %>% rownames_to_column(var = "X") %>%  pivot_longer(cols = all_of(yVars), names_to = "Y", values_to = "C")
 
