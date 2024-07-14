@@ -183,7 +183,7 @@ PlotInteractionEffectsContinuous <- function(Data, interVar = NULL,
 
 
                    # Create ggplot objects
-                   p <- m_G %>% ggplot(aes(x = X, y = Y, fill = sigsign)) +
+                   p <- m_G %>% ggplot(aes(x = XLabel, y = YLabel, fill = sigsign)) +
                    geom_tile(aes(text = PlotText), show.legend = T) +
                    scale_fill_manual(values = rev(c("red4", "firebrick3", "pink2", "white",
                                                     "lightblue2", "steelblue3", "blue")), drop = F) +
@@ -193,7 +193,7 @@ PlotInteractionEffectsContinuous <- function(Data, interVar = NULL,
                          legend.title=element_blank()) +
                    labs(title = interVar, subtitle = "No Multiple Comparison Correction")
 
-                 p_FDR <- m_G %>% ggplot(aes(x = X, y = Y, fill = sig_FDR)) +
+                 p_FDR <- m_G %>% ggplot(aes(x = XLabel, y = YLabel, fill = sig_FDR)) +
                    geom_tile(show.legend = T) +
                    scale_fill_manual(values = rev(c("red4", "firebrick3", "pink2", "white",
                                                     "lightblue2", "steelblue3", "blue")), drop = F) +
