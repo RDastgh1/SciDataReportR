@@ -222,5 +222,5 @@ PlotInteractionEffectsContinuous <- function(Data, interVar = NULL,
                  M$pvaltable <- pvaltable
 
                  # Return output list
-                 return(list(Unadjusted = M, FDRCorrected = M_FDR, Relabel = Relabel, Covariates = covars))
+                 return(list(Unadjusted = M, FDRCorrected = M_FDR, Relabel = Relabel, Covariates = covars, interVar = interVar))
                  }
