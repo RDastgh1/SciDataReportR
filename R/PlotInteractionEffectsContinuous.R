@@ -97,7 +97,7 @@ PlotInteractionEffectsContinuous <- function(Data, interVar = NULL,
         interC <- dd$Estimate %>% tail(1)
         interP <- dd$`Pr(>|t|)` %>% tail(1)
         s <- sign(dd$Estimate %>% tail(2))
-        interS <- prod(s) * -1
+        interS <- prod(s) * -1 # The final result, interS, will be -1 if the interaction term reverses the main effect, and 1 if it magnifies the main effect.
       }
 
       # If xVar is equal to yVar, set results to NA
