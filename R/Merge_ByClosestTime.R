@@ -27,9 +27,6 @@ Merge_ByClosestTime <- function(DataFrame1, DataFrame2, TimeVar1, TimeVar2, IDVa
   if (is_date) {
     DataFrame1[[TimeVar1]] <- as_date(DataFrame1[[TimeVar1]])
     DataFrame2[[TimeVar2]] <- as_date(DataFrame2[[TimeVar2]])
-  } else {
-    DataFrame1[[TimeVar1]] <- as.POSIXct(DataFrame1[[TimeVar1]])
-    DataFrame2[[TimeVar2]] <- as.POSIXct(DataFrame2[[TimeVar2]])
   }
 
   # Add time columns for merge and row numbers for later reference
@@ -47,12 +44,12 @@ Merge_ByClosestTime <- function(DataFrame1, DataFrame2, TimeVar1, TimeVar2, IDVa
   }
 
   # Calculate the time difference
-  merged_df$TimeDiff <- abs(difftime(merged_df$FunctionTime2, merged_df$FunctionTime1, units = "secs"))
+  merged_df$TimeDiff <- merged_df$FunctionTime2 - merged_df$FunctionTime1
 
   # Find the closest time match for each row in DataFrame1
   closest_matches <- merged_df %>%
     group_by(DataFrame1Row) %>%
-    arrange(TimeDiff) %>%
+    arrange(abs(TimeDiff)) %>%
     slice(1) %>%
     ungroup()
 
