@@ -60,7 +60,7 @@ Merge_ByClosestTime <- function(DataFrame1, DataFrame2, TimeVar1, TimeVar2, IDVa
 
   # Remove unnecessary columns
   merged_dataframe <- closest_matches %>%
-    select(-FunctionTime1, -FunctionTime2, DataFrame1Row)
+    select(-FunctionTime1, -FunctionTime2, -DataFrame1Row, -FunctionID)
 
   return(list(merged_dataframe = merged_dataframe, time_differences = time_differences))
 }
