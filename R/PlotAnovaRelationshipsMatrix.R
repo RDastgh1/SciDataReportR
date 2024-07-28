@@ -36,6 +36,12 @@ PlotAnovaRelationshipsMatrix <- function(Data, CatVars, ContVars, Covariates = N
   nlevels.test <- mData %>% group_by(ContinuousVariable, CategoricalVariable) %>%
     mutate(n = length(unique(CategoricalValue)))
   mData <- mData[nlevels.test$n > 1, ]
+
+
+  # remove variable combos with no variance
+  nvar.test <- mData %>% group_by(ContinuousVariable) %>% mutate(v = var(ContinuousValue))
+  mData <- mData[nvar.test$v > 0, ]
+
   if (Parametric) {
     method <- "Anova"
     stat.test <- mData %>% group_by(ContinuousVariable, CategoricalVariable) %>%
