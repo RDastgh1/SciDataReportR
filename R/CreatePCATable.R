@@ -57,7 +57,7 @@ CreatePCATable<- function (Data, VarsToReduce, VariableCategories = NULL, minThr
   scores <- fit$scores
   CombinedData <- cbind(Data, scores)
   LoadingTable$Variable <- rownames(LoadingTable)
-  LoadingTable <- left_join(LoadingTable, LabelCodebook, by = "Variable")
+  LoadingTable <- left_join(LoadingTable, LabelCodebook, by = "Variable", multiple = "first")
   meltedLoading <- LoadingTable %>% tidyr::pivot_longer(cols = matches("RC"))
   meltedLoading$name <- factor(meltedLoading$name, levels = colnames(LoadingTable)[1:length(LoadingTable) -
                                                                                      1])
