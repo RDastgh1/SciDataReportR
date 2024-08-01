@@ -54,11 +54,12 @@ UnivariateRegressionTable <- function(Data, YVars, XVars, Covars = NULL, Standar
           # Get variable labels
           labels <- get_label(Data, def.value = colnames(Data))
           labels <- labels[c(XVars, YVars)]
+          label_list <- setNames(as.list(labels), c(XVars, YVars))
 
           # Create regression table with labels
           modTableP <- tbl_regression(mod,
                                       pvalue_fun = ~style_pvalue(.x, digits = 2),
-                                      label = labels) %>%
+                                      label = label_list) %>%
             bold_p() %>%
             bold_labels() %>%
             italicize_levels()
