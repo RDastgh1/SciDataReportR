@@ -33,45 +33,53 @@ UnivariateRegressionTable <- function(Data, YVars, XVars, Covars = NULL, Standar
     for (xVarIndex in seq_along(XVars)) {
       xVar <- XVars[xVarIndex]
 
-      # Create formula for regression model
-      f <- as.formula(paste(YVar, paste(c(xVar, Covars), collapse = "+"), sep = " ~ "))
+      tryCatch(
+        expr = {
+          # Create formula for regression model
+          f <- as.formula(paste(YVar, paste(c(xVar, Covars), collapse = "+"), sep = " ~ "))
 
-      # Standardize numeric variables if specified
-      if (Standardize) {
-        ModelData <- Data %>% select(all_of(c(YVar, xVar, Covars)))
-        numeric_cols <- sapply(ModelData, is.numeric)
-        ModelData[, numeric_cols] <- scale(ModelData[, numeric_cols])
-        mod <- lm(formula = f, data = ModelData)
-      } else {
-        mod <- lm(formula = f, data = Data)
-      }
+          # Standardize numeric variables if specified
+          if (Standardize) {
+            ModelData <- Data %>% select(all_of(c(YVar, xVar, Covars)))
+            numeric_cols <- sapply(ModelData, is.numeric)
+            ModelData[, numeric_cols] <- scale(ModelData[, numeric_cols])
+            mod <- lm(formula = f, data = ModelData)
+          } else {
+            mod <- lm(formula = f, data = Data)
+          }
 
-      # Store model summary
-      mod_list[[xVar]] <- mod
+          # Store model summary
+          mod_list[[xVar]] <- mod
 
-      # Get variable labels
-      labels <- get_label(Data, def.value = colnames(Data))
-      labels <- labels[c(XVars, YVars)]
-      # Create regression table with labels
-      modTableP <- tbl_regression(mod,
-                                  pvalue_fun = ~style_pvalue(.x, digits = 2),
-                                  label = labels) %>%
-        bold_p() %>%
-        bold_labels() %>%
-        italicize_levels()
-      modTableP$table_body <- modTableP$table_body %>% filter(variable %notin% Covars)
-      modTableP$table_body$var_label <- as.character(modTableP$table_body$var_label)
+          # Get variable labels
+          labels <- get_label(Data, def.value = colnames(Data))
+          labels <- labels[c(XVars, YVars)]
 
-      # Store regression table
-      tbl_list[[xVar]] <- modTableP
+          # Create regression table with labels
+          modTableP <- tbl_regression(mod,
+                                      pvalue_fun = ~style_pvalue(.x, digits = 2),
+                                      label = labels) %>%
+            bold_p() %>%
+            bold_labels() %>%
+            italicize_levels()
+          modTableP$table_body <- modTableP$table_body %>% filter(variable %notin% Covars)
+          modTableP$table_body$var_label <- as.character(modTableP$table_body$var_label)
 
-      # Create formatted regression table
-      modTableCombined <- modTableP %>%
-        add_significance_stars() %>%
-        modify_table_styling(columns = "estimate", cols_merge_pattern = "{estimate} ({std.error}){stars}")
+          # Store regression table
+          tbl_list[[xVar]] <- modTableP
 
-      # Store formatted regression table
-      tblformatted_list[[xVar]] <- modTableCombined
+          # Create formatted regression table
+          modTableCombined <- modTableP %>%
+            add_significance_stars() %>%
+            modify_table_styling(columns = "estimate", cols_merge_pattern = "{estimate} ({std.error}){stars}")
+
+          # Store formatted regression table
+          tblformatted_list[[xVar]] <- modTableCombined
+        },
+        error = function(e) {
+          stop(paste("Error processing", YVar, "and", xVar, ": ", e$message))
+        }
+      )
     }
 
     # Stack tables for this outcome variable
@@ -80,6 +88,7 @@ UnivariateRegressionTable <- function(Data, YVars, XVars, Covars = NULL, Standar
     Wide_tblformatted_list[[YVar]] <- tbl_stack(tblformatted_list) %>% remove_row_type(type = "reference")
   }
 
+  # Get official names for outcome variables
   # Get official names for outcome variables
   s <- sjlabelled::get_label(Data[YVars], def.value = YVars)
 
