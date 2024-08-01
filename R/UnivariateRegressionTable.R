@@ -7,11 +7,13 @@
 #' @param XVars Character vector of predictor variable names
 #' @param Covars Character vector of covariate variable names (default: NULL)
 #' @param Standardize Logical indicating whether to standardize numeric variables (default: FALSE)
-#'
+#' @importFrom sjlabelled get_label set_label
 #' @return A list containing:
 #'   - FormattedTable: A merged table with formatted regression results
 #'   - LargeTable: A merged table with unformatted regression results
 #'   - ModelSummaries: A list of lm model summaries
+#' @export
+#'
 UnivariateRegressionTable <- function(Data, YVars, XVars, Covars = NULL, Standardize = FALSE) {
   # Initialize empty lists to store results
   Wide_tbl_list <- list()
