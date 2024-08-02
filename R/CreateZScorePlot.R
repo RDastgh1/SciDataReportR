@@ -36,6 +36,15 @@ CreateZScorePlot <- function (Data, TargetVar, Variables, VariableCategories = N
                                 names_to = "variable", values_to = "value")
   melted$variable <- factor(melted$variable, levels = unique(melted$variable))
 
+  # Add contingency for when one group doesn't have much data
+  melted$variable <- factor(melted$variable, levels = unique(melted$variable))
+  melted <- melted[!is.na(melted$value),]
+  melted <- melted %>% group_by(Group, variable)%>% filter(n() > 2) %>% ungroup() %>%
+    group_by(variable) %>%
+    filter(n_distinct(Group) > 1) %>% filter(n() > 2) %>%# filter out variables with few observations
+    ungroup()
+
+
   if (n_groups == 2) {
     stat.test <- melted %>% dplyr::group_by(variable) %>%
       rstatix::t_test(value ~ Group, var.equal = TRUE) %>%
