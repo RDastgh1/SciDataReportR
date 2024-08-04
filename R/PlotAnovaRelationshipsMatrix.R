@@ -49,7 +49,7 @@ PlotAnovaRelationshipsMatrix <- function(Data, CatVars, ContVars, Covariates = N
                                            if (!is.null(Covariates))
                                              paste("+", Covariates, collapse = "+")))) %>%
       rstatix::add_significance() %>%  rstatix::adjust_pvalue(method = "fdr") %>%
-      rstatix::add_significance()
+      rstatix::add_significance() %>% mutate(Test = "ANOVA")
   }else {
     method <- "Kruskal"
     stat.test <- mData %>% group_by(ContinuousVariable, CategoricalVariable) %>%
@@ -57,7 +57,7 @@ PlotAnovaRelationshipsMatrix <- function(Data, CatVars, ContVars, Covariates = N
                                              if (!is.null(Covariates))
                                                paste("+", Covariates, collapse = "+")))) %>%
       rstatix::add_significance() %>%  rstatix::adjust_pvalue(method = "fdr") %>%
-      rstatix::add_significance()
+      rstatix::add_significance() %>% mutate (Test = "ANOVA")
   }
   summstats <- mData %>% group_by(ContinuousVariable, CategoricalVariable,
                                   CategoricalValue) %>% rstatix::get_summary_stats() %>% filter(variable ==

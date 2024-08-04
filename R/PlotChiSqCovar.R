@@ -50,7 +50,7 @@ PlotChiSqCovar <- function(Data, xVars, yVars, covars = NULL, Relabel = TRUE, Or
 
   stat.test <- mData %>% group_by(name, Covariate) %>%
     summarise(pval = chisq.test(value, Category)$p.value) %>% add_significance() %>%
-    adjust_pvalue(method = "fdr") %>% add_significance()
+    adjust_pvalue(method = "fdr") %>% add_significance() %>% mutate(Test = "Chi Squared")
 
   stat.test$logp <- -log10(stat.test$pval)
   stat.test$`p<.05` <- stat.test$pval.signif
