@@ -49,7 +49,7 @@ PlotAnovaRelationshipsMatrix <- function(Data, CatVars, ContVars, Covariates = N
                                            if (!is.null(Covariates))
                                              paste("+", Covariates, collapse = "+")))) %>%
       rstatix::add_significance() %>%  rstatix::adjust_pvalue(method = "fdr") %>%
-      rstatix::add_significance() %>% mutate(Test = "ANOVA")
+      rstatix::add_significance()
   }else {
     method <- "Kruskal"
     stat.test <- mData %>% group_by(ContinuousVariable, CategoricalVariable) %>%
@@ -57,7 +57,7 @@ PlotAnovaRelationshipsMatrix <- function(Data, CatVars, ContVars, Covariates = N
                                              if (!is.null(Covariates))
                                                paste("+", Covariates, collapse = "+")))) %>%
       rstatix::add_significance() %>%  rstatix::adjust_pvalue(method = "fdr") %>%
-      rstatix::add_significance() %>% mutate (Test = "ANOVA")
+      rstatix::add_significance()
   }
   summstats <- mData %>% group_by(ContinuousVariable, CategoricalVariable,
                                   CategoricalValue) %>% rstatix::get_summary_stats() %>% filter(variable ==
@@ -144,11 +144,11 @@ PlotAnovaRelationshipsMatrix <- function(Data, CatVars, ContVars, Covariates = N
 
   # Set up for return List
   M <- list()
-  M$PvalTable <- stat.test
+  M$PvalTable <- stat.test %>% ungroup() %>% as.data.frame() %>% mutate(Test = method)
   M$plot <- p
 
   M_FDR <- list()
-  M_FDR$PvalTable <- stat.test
+  M_FDR$PvalTable <- stat.test  %>% ungroup() %>% as.data.frame()%>% mutate(Test = method)
   M_FDR$plot <- p_FDR
 
 
