@@ -9,7 +9,8 @@ Plot2GroupStats(
   Variables,
   VariableCategories = NULL,
   impClust,
-  normalClust
+  normalClust,
+  GroupVar
 )
 }
 \arguments{

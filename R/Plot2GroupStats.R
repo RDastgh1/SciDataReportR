@@ -19,22 +19,15 @@
 #' @import paletteer
 #' @import stringr
 
-Plot2GroupStats <- function(Data, Variables, VariableCategories = NULL, impClust, normalClust) {
-  library(dplyr)
-  library(ggplot2)
-  library(ggrepel)
-  library(VIM)
-  library(fastDummies)
-  library(gtsummary)
-  library(gtools)
-  library(paletteer)
-  library(stringr)
+Plot2GroupStats <- function(Data, Variables, VariableCategories = NULL, impClust, normalClust, GroupVar) {
 
+  tData <- Data
+  tData$GroupVar <- Data[[GroupVar]]
   # Filter and prepare data
-  tData <- Data %>%
-    select(Cluster, all_of(Variables)) %>%
-    filter(Cluster %in% c(normalClust, impClust))
-  tData$Cluster <- factor(tData$Cluster, levels = c(normalClust, impClust))
+  tData <-tData %>%
+    select(GroupVar, all_of(Variables)) %>%
+    filter(GroupVar %in% c(normalClust, impClust))
+  tData$GroupVar <- factor(tData$GroupVar, levels = c(normalClust, impClust))
 
   # Remove variables with over 80% missing data
   aggr_plot_all <- VIM::aggr(tData, col = c('navyblue', 'red'), numbers = TRUE, sortVars = TRUE,
@@ -58,14 +51,14 @@ Plot2GroupStats <- function(Data, Variables, VariableCategories = NULL, impClust
   # Generate summary table
   gtabp <- tData %>%
     tbl_summary(
-      by = Cluster,
+      by =GroupVar,
       type = list(where(is.numeric) ~ "continuous"),
       statistic = list(all_continuous() ~ "{mean} ({sd})", all_categorical() ~ "{n} ({p}%)")
     ) %>%
     add_n() %>%
-    add_p(test = list(all_continuous() ~ "aov", all_categorical() ~ "chisq.test")) %>%
+    add_p(test = list(all_continuous() ~ "oneway.test", all_categorical() ~ "chisq.test")) %>%
     bold_p() %>%
-    modify_header(label = "**Cluster**") %>%
+    # modify_header(label = "**Group**") %>%
     bold_labels()
 
   # Remove factor variables with more than 10 levels
@@ -75,8 +68,8 @@ Plot2GroupStats <- function(Data, Variables, VariableCategories = NULL, impClust
 
   # Create dummy variables if necessary
   if (sum(lapply(tData, class) == "factor") > 1) {
-    d <- fastDummies::dummy_cols(tData %>% select(-Cluster), remove_selected_columns = TRUE, remove_first_dummy = TRUE)
-    d$Cluster <- tData$Cluster
+    d <- fastDummies::dummy_cols(tData %>% select(-GroupVar), remove_selected_columns = TRUE, remove_first_dummy = TRUE)
+    d$GroupVar <- tData$GroupVar
 
     l <- d %>%
       summarise_if(is.factor, funs(nlevels(factor(.)))) %>% as.list()
@@ -100,13 +93,13 @@ Plot2GroupStats <- function(Data, Variables, VariableCategories = NULL, impClust
   # Generate dummy summary table
   gtabd <- d %>%
     tbl_summary(
-      by = Cluster,
-      type = list(where(is.numeric) ~ "continuous", where(is.factor) ~ "dichotomous"),
-      statistic = list(all_continuous() ~ "{mean} ({sd})", all_categorical() ~ "{n} ({p}%)", all_dichotomous() ~ "{p}%")
+      by = GroupVar,
+      type = list(where(is.numeric) ~ "continuous", where(is.factor) ~ "categorical"),
+      statistic = list(all_continuous() ~ "{mean} ({sd})", all_categorical() ~ "{n} ({p}%)")
     ) %>%
     add_n() %>%
-    add_difference()
-
+    add_p(test = list(all_continuous() ~ "oneway.test", all_categorical() ~ "chisq.test")) %>%
+    bold_p() %>% add_difference()
   # Prepare p-value table
   pvaltable <- gtabd$table_body %>% filter(row_type == "label")
   pvaltable <- pvaltable[!is.na(pvaltable$p.value), ]
