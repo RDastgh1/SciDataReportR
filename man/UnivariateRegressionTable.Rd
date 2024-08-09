@@ -6,8 +6,8 @@
 \usage{
 UnivariateRegressionTable(
   Data,
-  YVars,
-  XVars,
+  OutcomeVars,
+  PredictorVars,
   Covars = NULL,
   Standardize = FALSE
 )
@@ -15,9 +15,9 @@ UnivariateRegressionTable(
 \arguments{
 \item{Data}{Dataframe containing the variables}
 
-\item{YVars}{Character vector of outcome variable names}
+\item{OutcomeVars}{Character vector of outcome variable names}
 
-\item{XVars}{Character vector of predictor variable names}
+\item{PredictorVars}{Character vector of predictor variable names}
 
 \item{Covars}{Character vector of covariate variable names (default: NULL)}
 
