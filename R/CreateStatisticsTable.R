@@ -7,9 +7,7 @@
 #' @param TargetVar The target variable for which statistics will be calculated.
 #' @return A formatted HTML table displaying statistics.
 #' @importFrom arsenal tableby tests
-#' @importFrom kableExtra kable kable_styling scroll_box cell_spec
 #' @importFrom data.table as.data.table
-#' @importFrom stats as.formula
 #' @export
 
 CreateStatisticsTable <- function(Data,  TargetVar){
@@ -28,8 +26,8 @@ CreateStatisticsTable <- function(Data,  TargetVar){
   options(kableExtra.auto_format = T)
 
   sd<-as.data.table(sd)
-  StatTable <- sd%>% mutate(p_value = cell_spec(p_value , "html", background = ifelse(pvals<0.05, "yellow", "")))%>%dplyr::rename("p-value" = p_value)%>%
-    kable(format = "html", escape = F)%>% kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))%>%
-    scroll_box(width = "100%", height = "500px")
+  StatTable <- sd%>% mutate(p_value = kableExtra::cell_spec(p_value , "html", background = ifelse(pvals<0.05, "yellow", "")))%>%dplyr::rename("p-value" = p_value)%>%
+    kableExtra:: kable(format = "html", escape = F)%>% kableExtra::kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))%>%
+    kableExtra::scroll_box(width = "100%", height = "500px")
   return(StatTable)
 }

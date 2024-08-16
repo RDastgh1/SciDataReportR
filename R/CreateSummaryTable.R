@@ -8,7 +8,6 @@
 #' @param numdecimals Number of decimal places to round the summary statistics.
 #' @param Relabel Logical, indicating whether to use variable labels as column headers.
 #' @return A formatted HTML table displaying summary statistics.
-#' @importFrom kableExtra kable kable_styling scroll_box cell_spec
 #' @importFrom magrittr %>%
 #' @importFrom dplyr select rownames_to_column mutate if_else
 #' @importFrom sjlabelled get_label set_label
@@ -45,8 +44,8 @@ CreateSummaryTable <- function(Data, Variables = NULL, numdecimals = 2, Relabel 
         d2$label <- labels$label
         d2 <- d2 %>% select(label, all_of(statVars))
       }
-      SummaryTable <- d2 %>% rownames_to_column("Variable") %>%
-        mutate(Skewness = cell_spec(round(Skewness, numdecimals), "html",
+      SummaryTable <- d2 %>% tibble::rownames_to_column("Variable") %>%
+        mutate(Skewness = kableExtra::cell_spec(round(Skewness, numdecimals), "html",
                                     background = if_else(abs(Skewness) > 10, "yellow",
                                                          "", missing = "grey")), Kurtosis = cell_spec(round(Kurtosis,
                                                                                                             numdecimals), "html", background = if_else(abs(Kurtosis) >
@@ -56,8 +55,8 @@ CreateSummaryTable <- function(Data, Variables = NULL, numdecimals = 2, Relabel 
                                                                                                                                                                                                                                                                                                                           numdecimals), "html", background = if_else(Pct.Valid <
                                                                                                                                                                                                                                                                                                                                                              70, "red", "", missing = "grey"))) %>% kable(format = "html",
                                                                                                                                                                                                                                                                                                                                                                                                           escape = FALSE, digits = numdecimals, row.names = TRUE, caption = "Descriptive Summary Table. IQR, Skewness, and Kurtosis are highlighted in yellow if they are indicative of a non-normal distribution. Pct.Valid is highlighted in red if over 30% of data is missing") %>%
-        kable_styling(bootstrap_options = c("striped", "hover",
-                                            "condensed", "responsive")) %>% scroll_box(width = "100%",
+        kableExtra::kable_styling(bootstrap_options = c("striped", "hover",
+                                            "condensed", "responsive")) %>% kableExtra::scroll_box(width = "100%",
                                                                                        height = ScrollBoxHeight)
     })
     return(SummaryTable)
