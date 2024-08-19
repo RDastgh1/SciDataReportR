@@ -47,9 +47,9 @@ CreateSummaryTable <- function(Data, Variables = NULL, numdecimals = 2, Relabel 
       SummaryTable <- d2 %>% tibble::rownames_to_column("Variable") %>%
         mutate(Skewness = kableExtra::cell_spec(round(Skewness, numdecimals), "html",
                                     background = if_else(abs(Skewness) > 10, "yellow",
-                                                         "", missing = "grey")), Kurtosis = cell_spec(round(Kurtosis,
+                                                         "", missing = "grey")), Kurtosis = kableExtra::cell_spec(round(Kurtosis,
                                                                                                             numdecimals), "html", background = if_else(abs(Kurtosis) >
-                                                                                                                                               10, "yellow", "", missing = "grey")), IQR = cell_spec(round(IQR,
+                                                                                                                                               10, "yellow", "", missing = "grey")), IQR = kableExtra::cell_spec(round(IQR,
                                                                                                                                                                                                            numdecimals), "html", background = if_else(abs((IQR/Std.Dev/1.34) -
                                                                                                                                                                                                                                                   1) > 0.5, "yellow", "", missing = "grey")), Pct.Valid = kableExtra::cell_spec(round(Pct.Valid,
                                                                                                                                                                                                                                                                                                                           numdecimals), "html", background = if_else(Pct.Valid <
