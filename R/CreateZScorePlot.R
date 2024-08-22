@@ -19,7 +19,8 @@
 #' @importFrom tidyr pivot_longer
 #' @export
 CreateZScorePlot <- function (Data, TargetVar, Variables, VariableCategories = NULL,
-                              Relabel = TRUE, sort = TRUE, RemoveXAxisLabels = TRUE, Ordinal = TRUE)
+                              Relabel = TRUE, sort = TRUE, RemoveXAxisLabels = TRUE, Ordinal = TRUE,
+                              Parametric = TRUE, SigP_YCoord = 1.5, SigFDR_YCoord = 1.6)
 {
   if (Ordinal) {
     Data <- ConvertOrdinalToNumeric(Data, Variables)
@@ -44,7 +45,7 @@ CreateZScorePlot <- function (Data, TargetVar, Variables, VariableCategories = N
     filter(n_distinct(Group) > 1) %>% filter(n() > 2) %>%# filter out variables with few observations
     ungroup()
 
-
+if(Parametric){
   if (n_groups == 2) {
     stat.test <- melted %>% dplyr::group_by(variable) %>%
       rstatix::t_test(value ~ Group, var.equal = TRUE) %>%
@@ -53,7 +54,20 @@ CreateZScorePlot <- function (Data, TargetVar, Variables, VariableCategories = N
     stat.test <- melted %>% dplyr::group_by(variable) %>%
       rstatix::anova_test(value ~ Group) %>% rstatix::adjust_pvalue(method = "BH") %>%
       rstatix::add_significance()
+  }}else{ # Do the nonparametric tests
+
+    if (n_groups == 2) {
+      stat.test <- melted %>% dplyr::group_by(variable) %>%
+        rstatix::wilcox_test(value ~ Group, var.equal = TRUE) %>%
+        rstatix::adjust_pvalue(method = "BH") %>% rstatix::add_significance()
+    }else {
+      stat.test <- melted %>% dplyr::group_by(variable) %>%
+        rstatix::kruskal_test(value ~ Group) %>% rstatix::adjust_pvalue(method = "BH") %>%
+        rstatix::add_significance()
   }
+
+
+
   GroupMeans <- melted %>% dplyr::group_by(variable, Group) %>%
     dplyr::summarize(mean = mean(value, na.rm = TRUE), stderror = plotrix::std.error(value),
                      std = sd(value), n = n(), .groups = "drop")
@@ -87,8 +101,8 @@ CreateZScorePlot <- function (Data, TargetVar, Variables, VariableCategories = N
   pvaldata <- data.frame(variable = levels(GroupMeans$variable),
                          Label <- levels(GroupMeans$Label))
   pvaldata <- dplyr::right_join(pvaldata, stat.test, by = "variable")
-  pvaldata$pvalline <- ifelse(pvaldata$p < 0.05, 1.5, NaN)
-  pvaldata$FDRline <- ifelse(pvaldata$p.adj < 0.05, 1.6, NaN)
+  pvaldata$pvalline <- ifelse(pvaldata$p < 0.05, SigP_YCoord, NaN)
+  pvaldata$FDRline <- ifelse(pvaldata$p.adj < 0.05, SigFDR_YCoord, NaN)
   pvaldata$variable <- factor(pvaldata$variable, levels = levels(GroupMeans$variable))
   pvaldata$Category <- ifelse(is.null(VariableCategories),
                               NA, VariableCategories)
