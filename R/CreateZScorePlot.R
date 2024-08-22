@@ -72,7 +72,7 @@ CreateZScorePlot <- function (Data, TargetVar, Variables, VariableCategories = N
     if (n_groups == 2) {
       stat.test <- melted %>%
         dplyr::group_by(variable) %>%
-        rstatix::wilcox_test(value ~ Group, var.equal = TRUE) %>%
+        rstatix::wilcox_test(value ~ Group) %>%
         rstatix::adjust_pvalue(method = "BH") %>%
         rstatix::add_significance()
     } else {
