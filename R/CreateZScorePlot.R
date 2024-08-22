@@ -1,14 +1,22 @@
 #' Create a Z-Score Plot with Statistical Significance
 #'
-#' This function generates a Z-score plot for the provided data, highlighting the mean values, standard errors, and p-values for significance testing between groups.
+#' This function generates a Z-score plot to compare multiple variables across
+#' different groups. It offers options for parametric or non-parametric tests,
+#' ordinal variable conversion, and custom labeling. Significant p-values and
+#' FDR-adjusted p-values are highlighted on the plot.
 #'
-#' @param Data A data frame containing the target variable and variables of interest.
-#' @param TargetVar A string specifying the name of the target variable (grouping variable).
-#' @param Variables A vector of strings specifying the names of the variables to be plotted.
-#' @param VariableCategories An optional vector of categories corresponding to the variables.
-#' @param Relabel A logical value indicating whether to relabel the variables. Default is TRUE.
-#' @param sort A logical value indicating whether to sort the variables by p-value and category. Default is TRUE.
-#' @param RemoveXAxisLabels A logical value indicating whether to remove X-axis labels. Default is TRUE.
+#'
+#' @param Data A dataframe containing the data to be analyzed.
+#' @param TargetVar A string specifying the column name of the grouping variable.
+#' @param Variables A vector of strings specifying the column names of the variables to be analyzed.
+#' @param VariableCategories An optional vector categorizing the variables.
+#' @param Relabel Logical; if TRUE, variables will be relabeled using their labels from the dataframe.
+#' @param sort Logical; if TRUE, variables will be sorted by category and p-value.
+#' @param RemoveXAxisLabels Logical; if TRUE, X-axis labels will be removed.
+#' @param Ordinal Logical; if TRUE, ordinal variables will be converted to numeric.
+#' @param Parametric Logical; if TRUE, parametric tests (t-test/ANOVA) will be used; otherwise, non-parametric tests (Wilcoxon/Kruskal-Wallis) will be used.
+#' @param SigP_YCoord Numeric; the y-coordinate for marking significant p-values.
+#' @param SigFDR_YCoord Numeric; the y-coordinate for marking significant FDR-adjusted p-values.
 #' @return A ggplot object representing the Z-score plot.
 #' @import dplyr
 #' @import ggplot2
@@ -20,8 +28,7 @@
 #' @export
 CreateZScorePlot <- function (Data, TargetVar, Variables, VariableCategories = NULL,
                               Relabel = TRUE, sort = TRUE, RemoveXAxisLabels = TRUE, Ordinal = TRUE,
-                              Parametric = TRUE, SigP_YCoord = 1.5, SigFDR_YCoord = 1.6)
-{
+                              Parametric = TRUE, SigP_YCoord = 1.5, SigFDR_YCoord = 1.6){
   if (Ordinal) {
     Data <- ConvertOrdinalToNumeric(Data, Variables)
   }
@@ -45,27 +52,37 @@ CreateZScorePlot <- function (Data, TargetVar, Variables, VariableCategories = N
     filter(n_distinct(Group) > 1) %>% filter(n() > 2) %>%# filter out variables with few observations
     ungroup()
 
-if(Parametric){
-  if (n_groups == 2) {
-    stat.test <- melted %>% dplyr::group_by(variable) %>%
-      rstatix::t_test(value ~ Group, var.equal = TRUE) %>%
-      rstatix::adjust_pvalue(method = "BH") %>% rstatix::add_significance()
-  }else {
-    stat.test <- melted %>% dplyr::group_by(variable) %>%
-      rstatix::anova_test(value ~ Group) %>% rstatix::adjust_pvalue(method = "BH") %>%
-      rstatix::add_significance()
-  }}else{ # Do the nonparametric tests
-
+  # Perform statistical tests based on the number of groups and Parametric flag
+  if (Parametric) {
     if (n_groups == 2) {
-      stat.test <- melted %>% dplyr::group_by(variable) %>%
-        rstatix::wilcox_test(value ~ Group, var.equal = TRUE) %>%
-        rstatix::adjust_pvalue(method = "BH") %>% rstatix::add_significance()
-    }else {
-      stat.test <- melted %>% dplyr::group_by(variable) %>%
-        rstatix::kruskal_test(value ~ Group) %>% rstatix::adjust_pvalue(method = "BH") %>%
+      stat.test <- melted %>%
+        dplyr::group_by(variable) %>%
+        rstatix::t_test(value ~ Group, var.equal = TRUE) %>%
+        rstatix::adjust_pvalue(method = "BH") %>%
         rstatix::add_significance()
+    } else {
+      stat.test <- melted %>%
+        dplyr::group_by(variable) %>%
+        rstatix::anova_test(value ~ Group) %>%
+        rstatix::adjust_pvalue(method = "BH") %>%
+        rstatix::add_significance()
+    }
+  } else {
+    # Non-parametric tests
+    if (n_groups == 2) {
+      stat.test <- melted %>%
+        dplyr::group_by(variable) %>%
+        rstatix::wilcox_test(value ~ Group, var.equal = TRUE) %>%
+        rstatix::adjust_pvalue(method = "BH") %>%
+        rstatix::add_significance()
+    } else {
+      stat.test <- melted %>%
+        dplyr::group_by(variable) %>%
+        rstatix::kruskal_test(value ~ Group) %>%
+        rstatix::adjust_pvalue(method = "BH") %>%
+        rstatix::add_significance()
+    }
   }
-
 
 
   GroupMeans <- melted %>% dplyr::group_by(variable, Group) %>%
