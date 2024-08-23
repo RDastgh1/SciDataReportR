@@ -20,6 +20,7 @@
 #'
 #' @export
 #'
+#' @note This function is adapted from code written by Eran Shorer.
 #'
 PlotBlandAltman <- function(DataFrame, Variable1, Variable2) {
 
