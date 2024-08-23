@@ -26,7 +26,7 @@ PlotBlandAltman <- function(DataFrame, Variable1, Variable2) {
   }
 
   # Remove rows with missing values
-  DataFrame <- dplyr::na.omit(DataFrame)
+  DataFrame <- na.omit(DataFrame)
 
   # Calculate Bland-Altman statistics
   BAstats <- BlandAltmanLeh::bland.altman.stats(DataFrame[[Variable1]], DataFrame[[Variable2]])
