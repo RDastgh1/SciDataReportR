@@ -43,15 +43,15 @@ plotSigCorrelations <- function(DataFrame, CorrelationHeatmapObject, PVar = "P",
       if (!Relabeled) {
         p$labels$caption <- paste("Adjusted for", covars)
       } else {
-        covarlabels <- sjlabelled::get_label(DataFrame %>% select(all_of(covars)))
+        covarlabels <- sjlabelled::get_label(DataFrame %>% select(all_of(covars)), def.value = covars)
         p$labels$caption <- paste("Adjusted for", covarlabels)
       }
     }
 
     # Change labels if Relabel is TRUE
     if (Relabeled) {
-      p$labels$x <- sjlabelled::get_label(DataFrame %>% select(all_of(SigVarCombos$XVar[i])))[[1]]
-      p$labels$y <- sjlabelled::get_label(DataFrame %>% select(all_of(SigVarCombos$YVar[i])))[[1]]
+      p$labels$x <- sjlabelled::get_label(DataFrame %>% select(all_of(SigVarCombos$XVar[i])), def.value = SigVarCombos$XVar[i])[[1]]
+      p$labels$y <- sjlabelled::get_label(DataFrame %>% select(all_of(SigVarCombos$YVar[i])), def.value = SigVarCombos$YVar[i])[[1]]
     }
 
     # Add scatterplot object to the list
