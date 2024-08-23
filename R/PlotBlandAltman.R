@@ -14,11 +14,6 @@
 #' @import dplyr
 #' @importFrom tibble rownames_to_column
 #'
-#' @examples
-#' data(mtcars)
-#' # Ensure BlandAltmanLeh is installed if you want to use this function
-#' # install.packages("BlandAltmanLeh")
-#' PlotBlandAltman(mtcars, "mpg", "hp")
 #'
 #' @export
 #'
