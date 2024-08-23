@@ -12,17 +12,23 @@
 #'
 #' @import ggplot2
 #' @import dplyr
-#' @import BlandAltmanLeh
+#' @importFrom tibble rownames_to_column
 #'
 #' @examples
 #' data(mtcars)
+#' # Ensure BlandAltmanLeh is installed if you want to use this function
+#' # install.packages("BlandAltmanLeh")
 #' PlotBlandAltman(mtcars, "mpg", "hp")
 #'
 #' @export
 #'
 #' @note This function is adapted from code written by Eran Shorer.
-#'
 PlotBlandAltman <- function(DataFrame, Variable1, Variable2) {
+
+  # Check if BlandAltmanLeh package is available
+  if (!requireNamespace("BlandAltmanLeh", quietly = TRUE)) {
+    stop("The package 'BlandAltmanLeh' is required for this function. Please install it using install.packages('BlandAltmanLeh').")
+  }
 
   # Remove rows with missing values
   DataFrame <- dplyr::na.omit(DataFrame)
