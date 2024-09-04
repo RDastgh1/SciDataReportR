@@ -16,7 +16,7 @@
 #' @importFrom xtable xtable
 #' @export
 CreatePCATable<- function (Data, VarsToReduce, VariableCategories = NULL, minThresh = 0.85, scale = TRUE,
-          center = TRUE, Relabel = T, Ordinal = FALSE)
+          center = TRUE, Relabel = T, Ordinal = FALSE, numComponents = NULL)
 {
   classcolors <- c(paletteer::paletteer_d("calecopal::superbloom2"),
                    paletteer::paletteer_d("calecopal::vermillion"), paletteer::paletteer_d("fishualize::Antennarius_commerson"),
@@ -37,17 +37,18 @@ CreatePCATable<- function (Data, VarsToReduce, VariableCategories = NULL, minThr
     DataSubset <- missRanger::missRanger(DataSubset, num.trees = 100)
     colnames(DataSubset) <- VarsToReduce
   }
-  if (length(VarsToReduce) < 20) {
-    n <- length(VarsToReduce)
-  }else {
-    n <- 20
-  }
+
+  n <- length(VarsToReduce)
+
   fit1 <- psych::principal(scale(DataSubset, center = center,
                                  scale = center), nfactors = n, rotate = "none")
-  nc <- min(which(fit1$Vaccounted[3, ] > minThresh))
+  if(is.null(numComponents)){
+  nc <- min(which(fit1$Vaccounted[3, ] > minThresh))}else{
+    nc <- numComponents
+  }
   Vaccounted <- as.data.frame(t(fit1$Vaccounted))
   Vaccounted$Component <- factor(rownames(Vaccounted), levels = rownames(Vaccounted))
-  p_scree <- ggplot(Vaccounted, aes(x = Component)) + geom_line(aes(y = `Cumulative Proportion`,
+  p_scree <- ggplot(Vaccounted, aes(x = Component)) + geom_line(aes(y = `Cumulative Var`,
                                                                     group = 1)) + geom_point(aes(y = `Cumulative Proportion`)) +
     geom_col(aes(y = `Proportion Var`)) + geom_hline(aes(yintercept = minThresh),
                                                      linetype = "dashed") + theme_bw()
