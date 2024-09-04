@@ -44,7 +44,7 @@ CreatePCATable<- function (Data, VarsToReduce, VariableCategories = NULL, minThr
   }
   fit1 <- psych::principal(scale(DataSubset, center = center,
                                  scale = center), nfactors = n, rotate = "none")
-  nc <- min(which(fit1$Vaccounted[5, ] > minThresh))
+  nc <- min(which(fit1$Vaccounted[3, ] > minThresh))
   Vaccounted <- as.data.frame(t(fit1$Vaccounted))
   Vaccounted$Component <- factor(rownames(Vaccounted), levels = rownames(Vaccounted))
   p_scree <- ggplot(Vaccounted, aes(x = Component)) + geom_line(aes(y = `Cumulative Proportion`,
