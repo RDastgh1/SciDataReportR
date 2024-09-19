@@ -25,7 +25,8 @@
 #'
 #' @export
 PlotMiningMatrix <- function(Data, OutcomeVars, PredictorVars, Covariates = NULL, Relabel = TRUE, Parametric = TRUE) {
-
+  # Reverse order of OutcomeVars for the y axis
+  OutcomeVars <- rev(OutcomeVars)
   # Determine correlation method based on Parametric flag
   method <- ifelse(Parametric, "pearson", "spearman")
 
