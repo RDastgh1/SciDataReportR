@@ -12,7 +12,8 @@ CreatePCATable(
   scale = TRUE,
   center = TRUE,
   Relabel = T,
-  Ordinal = FALSE
+  Ordinal = FALSE,
+  numComponents = NULL
 )
 }
 \arguments{

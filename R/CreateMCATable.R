@@ -30,7 +30,6 @@
 #' @importFrom tidyr pivot_longer
 #' @importFrom dplyr select group_by arrange mutate
 #' @importFrom tibble rownames_to_column
-#' @importFrom scales removeString
 #'
 #' @export
 #'
