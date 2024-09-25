@@ -130,8 +130,8 @@ CreateMCATable <- function(Data, VarsToReduce, VariableCategories = NULL,
 
   # Create a lollipop plot for loadings
   p <- ggplot(mLoading, aes(x = rowname, y = Contribution,
-                            alpha = TopContributor, color = color)) +
-    geom_segment(aes(xend = rowname, y = 0, yend = Contribution)) +
+                            alpha = TopContributor)) +
+    geom_segment(aes(xend = rowname, y = 0, yend = Contribution), color = "black") +
     geom_point() +
     facet_wrap(~Dimension, nrow = 1) +
     coord_flip() +
