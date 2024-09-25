@@ -1,7 +1,51 @@
+#' CreateMCATable
+#'
+#' This function performs Multiple Correspondence Analysis (MCA) on a set of categorical variables, imputes missing data if needed, and generates a set of visualizations and tables to interpret the results.
+#'
+#' @param Data A dataframe containing the data to be analyzed.
+#' @param VarsToReduce A vector of column names in `Data` to be included in the MCA.
+#' @param VariableCategories An optional vector to assign specific categories to the variables in `VarsToReduce`. These will be used to color the loadings plot.
+#' @param minThresh A numeric value representing the minimum cumulative variance threshold to determine the number of components. Default is 75%.
+#' @param scale Logical, indicating whether to scale the variables. Default is TRUE.
+#' @param center Logical, indicating whether to center the variables. Default is TRUE.
+#' @param Relabel Logical, if TRUE, the function will replace missing labels in the data using an external helper function `ReplaceMissingLabels`. Default is TRUE.
+#' @param Ordinal Logical, if TRUE, the function will treat variables as ordinal for MCA. Default is FALSE.
+#' @param numComponents An optional integer specifying the number of components to retain. If NULL, the number of components will be determined based on `minThresh`.
+#'
+#' @return A list with the following elements:
+#' \item{p_scree}{A `ggplot` object representing the scree plot, showing the cumulative and percentage of variance explained by each component.}
+#' \item{pcaresults}{The MCA results object, which includes component scores and contributions.}
+#' \item{LoadingTable}{A data frame with the variable loadings for each component.}
+#' \item{Scores}{A data frame with the MCA scores for each individual in the data.}
+#' \item{CombinedData}{The original data combined with the MCA scores.}
+#' \item{Lollipop}{A `ggplot` object showing a lollipop plot of variable loadings across components.}
+#'
+#' @details
+#' The `CreateMCATable` function is designed to reduce the dimensionality of categorical variables through MCA. It first checks for missing values and imputes them using `missRanger` if necessary. It then calculates the MCA and returns plots for interpretation.
+#'
+#' The scree plot (`p_scree`) helps determine the number of components to retain based on cumulative variance. The lollipop plot (`Lollipop`) provides a visualization of variable loadings across the retained dimensions.
+#'
+#' If `VariableCategories` is provided, each variable in the loadings plot will be colored according to its assigned category.
+#'
+#'
+#' @importFrom ggplot2 ggplot aes geom_line geom_point geom_col geom_segment coord_flip theme_bw facet_wrap geom_hline scale_x_discrete
+#' @importFrom paletteer paletteer_d
+#' @importFrom missRanger missRanger
+#' @importFrom FactoMineR MCA
+#' @importFrom sjlabelled get_label
+#' @importFrom psych fa.sort
+#' @importFrom tidyr pivot_longer
+#' @importFrom dplyr select group_by arrange mutate
+#' @importFrom tibble rownames_to_column
+#' @importFrom scales removeString
+#'
+#' @export
 CreateMCATable <- function(Data, VarsToReduce, VariableCategories = NULL,
                            minThresh = 75, scale = TRUE, center = TRUE,
                            Relabel = TRUE, Ordinal = FALSE,
                            numComponents = NULL) {
+
+
 
   # Define custom colors for different classes
   classcolors <- c(paletteer::paletteer_d("calecopal::superbloom2"),
