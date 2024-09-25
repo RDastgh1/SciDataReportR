@@ -139,12 +139,12 @@ CreateMCATable <- function(Data, VarsToReduce, VariableCategories = NULL,
     theme_bw()
 
   # Combine original data with participant scores from MCA
-  CombinedData <- cbind(Data, MCAind)
+  CombinedData <- cbind(Data, MCAind$coord)
 
   # Return results as a list
   return(list(p_scree = p_scree,
               pcaresults = mca_result,
-              LoadingTable = LoadingTable,
+              LoadingTable = LoadingTable %>% select(-order),
               Scores = MCAind,
               CombinedData = CombinedData,
               Lollipop = p))
