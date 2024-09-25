@@ -1,6 +1,6 @@
 Package: SciDataReportR
 Title: Package for Generating Scientific Data Reports
-Version: 2.4.0
+Version: 2.5.0
 Authors@R: 
     person("Raha", "Dastgheyb", , "raha@jhmi.edu", role = c("aut", "cre"),
            comment = c(ORCID = "https://orcid.org/signin"))
@@ -45,7 +45,8 @@ Imports:
     fastDummies,
     ggrepel,
     stringr,
-    tibble
+    tibble,
+    FactoMineR
 Suggests:
     BlandAltmanLeh,
     kableExtra
