@@ -143,7 +143,7 @@ CreateMCATable <- function(Data, VarsToReduce, VariableCategories = NULL,
 
   # Return results as a list
   return(list(p_scree = p_scree,
-              pcaresults = mca_result,
+              mcaresults = mca_result,
               LoadingTable = LoadingTable %>% select(-order),
               Scores = MCAind,
               CombinedData = CombinedData,
