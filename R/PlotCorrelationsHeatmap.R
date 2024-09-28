@@ -56,6 +56,8 @@ PlotCorrelationsHeatmap <- function(Data, xVars = NULL, yVars = NULL, covars = N
     Data[factor_vars] <- lapply(Data[factor_vars], as.numeric)
     num_vars <- sapply(Data, is.numeric)
     cdata <- Data[covars]
+  }else{
+    cdata<- data.frame()
   }
 
 
