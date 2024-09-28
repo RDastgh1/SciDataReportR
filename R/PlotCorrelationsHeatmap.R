@@ -58,7 +58,7 @@ PlotCorrelationsHeatmap <- function(Data, xVars = NULL, yVars = NULL, covars = N
     cdata <- Data[covars]
   }
 
-  cdata <- data.frame()
+
 
   cdata <- scale(cdata)
 
