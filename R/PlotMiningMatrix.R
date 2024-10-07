@@ -54,6 +54,7 @@ PlotMiningMatrix <- function(Data, OutcomeVars, PredictorVars, Covariates = NULL
     ungroup() %>%
     as.data.frame() %>%
     select(-p.adj, -p.adj.signif, -logp_FDR)
+  P_Anova2$npairs <- P_Anova2$DFd
   }else{
     P_Anova1 <- NULL
   }
@@ -66,6 +67,7 @@ PlotMiningMatrix <- function(Data, OutcomeVars, PredictorVars, Covariates = NULL
       ungroup() %>%
       as.data.frame() %>%
       select(-p.adj, -p.adj.signif, -logp_FDR)
+    P_Anova2$npairs <- P_Anova2$DFd
   }else{
     P_Anova2 <- NULL
   }
