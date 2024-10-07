@@ -49,17 +49,37 @@ PlotMiningMatrix <- function(Data, OutcomeVars, PredictorVars, Covariates = NULL
 
   # Categorical Predictors and Continuous Outcomes: ANOVA or t-test
   if(length(cat_Predictors)>0){
-  P_Anova <- PlotAnovaRelationshipsMatrix(Data, cat_Predictors, num_Outcomes, Covariates = Covariates, Parametric = Parametric)
-  P_Anova <- P_Anova$Unadjusted$PvalTable %>%
+  P_Anova1 <- PlotAnovaRelationshipsMatrix(Data, cat_Predictors, num_Outcomes, Covariates = Covariates, Parametric = Parametric)
+  P_Anova1 <- P_Anova1$Unadjusted$PvalTable %>%
     ungroup() %>%
     as.data.frame() %>%
     select(-p.adj, -p.adj.signif, -logp_FDR)
   }else{
-    P_Anova <- NULL
+    P_Anova1 <- NULL
   }
 
+
+  # Continuous Predictors and Categorical Outcomes: ANOVA or t-test
+  if(length(cat_Outcomes)>0){
+    P_Anova2 <- PlotAnovaRelationshipsMatrix(Data, num_Predictors, cat_Outcomes, Covariates = Covariates, Parametric = Parametric)
+    P_Anova2 <- P_Anova2$Unadjusted$PvalTable %>%
+      ungroup() %>%
+      as.data.frame() %>%
+      select(-p.adj, -p.adj.signif, -logp_FDR)
+  }else{
+    P_Anova2 <- NULL
+  }
+
+  # Categorical Predictors and Categorical Outcomes: ChiSquared
+  if(length(cat_Outcomes)>0 & length(cat_Predictors)>0){
+    P_Chi <- PlotChiSqCovar(Data, cat_Predictors, cat_Outcomes, Covariates = Covariates, Parametric = Parametric)
+  }else{
+   # P_Anova2 <- NULL
+  }
+
+
   # Combine Correlations and ANOVA results
-  P_Combined <- full_join(P_Correlations, P_Anova) %>%
+  P_Combined <- full_join(P_Correlations, P_Anova1) %>% full_join(P_Anova2)
     select(-stars, -stars_FDR, -CategoricalVariable, -ContinuousVariable,
            -p.signif, -PlotText, -ges, -Effect)
 
