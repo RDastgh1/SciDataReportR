@@ -38,17 +38,25 @@ PlotMiningMatrix <- function(Data, OutcomeVars, PredictorVars, Covariates = NULL
   cat_Predictors <- getCatVars(Data %>% select(all_of(PredictorVars)))
 
   # Continuous Predictors and Continuous Outcomes: Correlation heatmap
+  if(length(num_Outcomes) >0 & length(num_Predictors)>0){
   P_Correlations <- PlotCorrelationsHeatmap(Data, num_Predictors, num_Outcomes, covars = Covariates, Relabel = Relabel)
   P_Correlations <- P_Correlations$Unadjusted$plot$data %>%
     select(-P_adj) %>%
-    mutate(Test = method, p = P)
+    mutate(Test = method, p = P)}else{
+      P_Correlations<- NULL
+    }
+
 
   # Categorical Predictors and Continuous Outcomes: ANOVA or t-test
+  if(length(cat_Predictors)>0){
   P_Anova <- PlotAnovaRelationshipsMatrix(Data, cat_Predictors, num_Outcomes, Covariates = Covariates, Parametric = Parametric)
   P_Anova <- P_Anova$Unadjusted$PvalTable %>%
     ungroup() %>%
     as.data.frame() %>%
     select(-p.adj, -p.adj.signif, -logp_FDR)
+  }else{
+    P_Anova <- NULL
+  }
 
   # Combine Correlations and ANOVA results
   P_Combined <- full_join(P_Correlations, P_Anova) %>%
