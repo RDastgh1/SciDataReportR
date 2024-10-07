@@ -79,7 +79,15 @@ PlotMiningMatrix <- function(Data, OutcomeVars, PredictorVars, Covariates = NULL
 
 
   # Combine Correlations and ANOVA results
-  P_Combined <- full_join(P_Correlations, P_Anova1) %>% full_join(P_Anova2)
+  dfs <- list(P_Correlations, P_Anova1, P_Anova2)
+
+  # Filter out NULL dataframes
+  non_null_dfs <- dfs[!sapply(dfs, is.null)]
+
+  # Merge the remaining dataframes
+  P_Combined <- Reduce(function(x, y) full_join(x, y), non_null_dfs)
+
+  P_Combined <- P_Combined %>%
     select(-stars, -stars_FDR, -CategoricalVariable, -ContinuousVariable,
            -p.signif, -PlotText, -ges, -Effect)
 
