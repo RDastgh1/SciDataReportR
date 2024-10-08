@@ -125,7 +125,7 @@ PlotMiningMatrix <- function(Data, OutcomeVars, PredictorVars, Covariates = NULL
   xorder <- sjlabelled::get_label(Data %>% select(OutcomeVars), def.value = OutcomeVars)
   P_Combined$XLabel <- factor(P_Combined$XLabel, levels = xorder)
   P_Combined$YLabel <- factor(P_Combined$YLabel, levels = yorder)
-
+  P_Combined<- P_Combined%>% filter(!is.na(P))
   # Create plot for unadjusted p-values
   p <- ggplot(P_Combined, aes(y = YLabel, x = XLabel)) +
     geom_point(aes(size = stars, colour = stars), shape = 18) +
