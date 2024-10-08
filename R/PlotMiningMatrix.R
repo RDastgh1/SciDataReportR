@@ -42,16 +42,22 @@ PlotMiningMatrix <- function(Data, OutcomeVars, PredictorVars, Covariates = NULL
   P_Correlations <- PlotCorrelationsHeatmap(Data, num_Predictors, num_Outcomes, covars = Covariates, Relabel = Relabel)
   P_Correlations <- P_Correlations$Unadjusted$plot$data %>%
     select(-P_adj) %>%
-    mutate(Test = method, p = P)}else{
-      P_Correlations<- NULL
+    mutate(Test = method, p = P)
 
-      P_Correlations <- P_Correlations %>%
-        dplyr::mutate(
-          temp = XLabel,     # Create a temporary column
-          XLabel = YLabel,   # Switch XLabel with YLabel
-          YLabel = temp      # Assign temp to YLabel
-        ) %>%
-        dplyr::select(-temp)
+
+  P_Correlations <- P_Correlations %>%
+    dplyr::mutate(
+      temp = XLabel,     # Create a temporary column
+      XLabel = YLabel,   # Switch XLabel with YLabel
+      YLabel = temp      # Assign temp to YLabel
+    ) %>%
+    dplyr::select(-temp)
+
+
+  }else{
+      P_Correlations<- NULL}
+
+
 
 
   # Categorical Predictors and Continuous Outcomes: ANOVA or t-test
