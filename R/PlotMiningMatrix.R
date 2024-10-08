@@ -44,7 +44,14 @@ PlotMiningMatrix <- function(Data, OutcomeVars, PredictorVars, Covariates = NULL
     select(-P_adj) %>%
     mutate(Test = method, p = P)}else{
       P_Correlations<- NULL
-    }
+
+      P_Correlations <- P_Correlations %>%
+        dplyr::mutate(
+          temp = XLabel,     # Create a temporary column
+          XLabel = YLabel,   # Switch XLabel with YLabel
+          YLabel = temp      # Assign temp to YLabel
+        ) %>%
+        dplyr::select(-temp)
 
 
   # Categorical Predictors and Continuous Outcomes: ANOVA or t-test
