@@ -67,7 +67,7 @@ PlotMiningMatrix <- function(Data, OutcomeVars, PredictorVars, Covariates = NULL
     ungroup() %>%
     as.data.frame() %>%
     select(-p.adj, -p.adj.signif, -logp_FDR)
-  P_Anova2$npairs <- P_Anova2$DFd
+  P_Anova1$nPairs <- P_Anova2$DFd
   }else{
     P_Anova1 <- NULL
   }
@@ -80,7 +80,7 @@ PlotMiningMatrix <- function(Data, OutcomeVars, PredictorVars, Covariates = NULL
       ungroup() %>%
       as.data.frame() %>%
       select(-p.adj, -p.adj.signif, -logp_FDR)
-    P_Anova2$npairs <- P_Anova2$DFd
+    P_Anova2$nPairs <- P_Anova2$DFd
   }else{
     P_Anova2 <- NULL
   }
@@ -125,7 +125,7 @@ PlotMiningMatrix <- function(Data, OutcomeVars, PredictorVars, Covariates = NULL
   xorder <- sjlabelled::get_label(Data %>% select(OutcomeVars), def.value = OutcomeVars)
   P_Combined$XLabel <- factor(P_Combined$XLabel, levels = xorder)
   P_Combined$YLabel <- factor(P_Combined$YLabel, levels = yorder)
-  P_Combined<- P_Combined%>% filter(!is.na(P))
+  P_Combined<- P_Combined%>% filter(!is.na(p))
   # Create plot for unadjusted p-values
   p <- ggplot(P_Combined, aes(y = YLabel, x = XLabel)) +
     geom_point(aes(size = stars, colour = stars), shape = 18) +
