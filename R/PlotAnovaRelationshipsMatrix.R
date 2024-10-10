@@ -103,7 +103,8 @@ PlotAnovaRelationshipsMatrix <- function(Data, CatVars, ContVars, Covariates = N
                     "</br> Cat Var:", stat.test$CategoricalVariable, "</br> Cont Var Label:",
                     stat.test$YLabel, "</br> Cont Var:", stat.test$ContinuousVariable,
                     "</br> P-Value: ", stat.test$p, stat.test$p.signif, "</br> FDR-corrected P: ",
-                    stat.test$p.adj, stat.test$p.adj.signif)
+                    stat.test$p.adj, stat.test$p.adj.signif,"</br> GES Effect size: ", stat.test$ges,
+                    "</br> npairs: ", stat.test$DFd)
   stat.test$PlotText <- PlotText
   if (Relabel) {
     stat.test$YLabel <- factor(stat.test$ContinuousVariable,
@@ -118,27 +119,55 @@ PlotAnovaRelationshipsMatrix <- function(Data, CatVars, ContVars, Covariates = N
     stat.test$XLabel <- factor(stat.test$CategoricalVariable,
                                levels = CatVars)
   }
-  p <- ggplot(stat.test, aes(y = YLabel, x = XLabel,
-                             shape = `p<.05`, text = PlotText)) + geom_point(aes(size = logp,
-                                                                                 colour = p)) + theme(axis.text.x = element_text(angle = 90),
-                                                                                                      axis.title.x = element_blank(), axis.title.y = element_blank()) +
-    scale_shape_manual(values = c(7, 16, 17, 15, 18), drop = FALSE) +
-    scale_color_gradientn(trans = "log", colours = rev(
-      RColorBrewer::brewer.pal(9,
-                               "RdPu")), limits = c(1e-07, 1), oob = scales::squish,
-      breaks = c(1, 0.05, 0.01, 0.001, 1e-04, 1e-05, 1e-06,
-                 1e-07, 1e-08)) + guides(size = "none") + labs(subtitle = "No Multiple Comparison Correction") +
-    xlab("") + ylab("")
-  p_FDR <- ggplot(stat.test, aes(y = YLabel, x = XLabel,
-                                 shape = p.adj.signif, text = PlotText)) + geom_point(aes(size = logp_FDR,
-                                                                                          colour = p.adj)) + theme(axis.text.x = element_text(angle = 90),
-                                                                                                                   axis.title.x = element_blank(), axis.title.y = element_blank()) +
-    scale_shape_manual(values = c(7, 16, 17, 15, 18), drop = FALSE) +
-    scale_color_gradientn(trans = "log", colours = rev(RColorBrewer::brewer.pal(9,
-                                                                                "RdPu")), limits = c(1e-07, 1), oob = scales::squish,
-                          breaks = c(1, 0.05, 0.01, 0.001, 1e-04, 1e-05, 1e-06,
-                                     1e-07, 1e-08)) + guides(size = "none") + labs(subtitle = "FDR Correction")
+  library(ggplot2)
+  library(paletteer)
 
+  # Modify your plot with additional adjustments for better color distinction
+  p <- ggplot(stat.test, aes(y = YLabel, x = XLabel, shape = `p<.05`, text = PlotText)) +
+    geom_point(aes(size = `p<.05`, colour = ges)) +
+    theme(axis.text.x = element_text(angle = 90),
+          axis.title.x = element_blank(),
+          axis.title.y = element_blank()) +
+
+    # Adjust color palette and color scale
+    scale_shape_manual(values = c(7, 16, 17, 15, 18), drop = FALSE) +
+    scale_color_gradientn(
+      transform = "log1p",
+      colours = rev(paletteer::paletteer_c("grDevices::Viridis", n = 20)),  # Increase color steps for smoother transitions
+      values = scales::rescale(c(0, 0.01, 0.05, 0.1, 0.2, 0.5, 1)),        # Focus on emphasizing lower values
+      limits = c(0, 0.3),
+      breaks = c( 0.01, 0.06, 0.14, 0.3),
+      labels = c("0.01: Small", "0.06: Medium", "0.14: Large", "0.3-1"),
+      oob = scales::squish# Specify the breaks for better separation
+    ) +
+
+    guides(size = "none") +
+    labs(subtitle = "No Multiple Comparison Correction") +
+    xlab("") + ylab("")
+
+
+  p_FDR <- ggplot(stat.test, aes(y = YLabel, x = XLabel,
+                                 shape = p.adj.signif, text = PlotText)) +
+    geom_point(aes(size = p.adj.signif,colour = ges)) +
+    theme(axis.text.x = element_text(angle = 90),
+          axis.title.x = element_blank(),
+          axis.title.y = element_blank()) +
+
+    # Adjust color palette and color scale
+    scale_shape_manual(values = c(7, 16, 17, 15, 18), drop = FALSE) +
+    scale_color_gradientn(
+      transform = "log1p",
+      colours = rev(paletteer::paletteer_c("grDevices::Viridis", n = 20)),  # Increase color steps for smoother transitions
+      values = scales::rescale(c(0, 0.01, 0.05, 0.1, 0.2, 0.5, 1)),        # Focus on emphasizing lower values
+      limits = c(0, 0.3),
+      breaks = c( 0.01, 0.06, 0.14, 0.3),
+      labels = c("0.01: Small", "0.06: Medium", "0.14: Large", "0.3-1"),
+      oob = scales::squish# Specify the breaks for better separation
+    ) +
+
+    guides(size = "none") +
+    labs(subtitle = "No Multiple Comparison Correction") +
+    xlab("") + ylab("")
 
 
   # Set up for return List
