@@ -137,9 +137,8 @@ PlotAnovaRelationshipsMatrix <- function(Data, CatVars, ContVars, Covariates = N
     scale_color_gradientn(trans = "log", colours = rev(RColorBrewer::brewer.pal(9,
                                                                                 "RdPu")), limits = c(1e-07, 1), oob = scales::squish,
                           breaks = c(1, 0.05, 0.01, 0.001, 1e-04, 1e-05, 1e-06,
-                                     1e-07, 1e-08)) + guides(size = "none") + labs(subtitle = "FDR Correction") +
-    scale_x_discrete(limits = levels(stat.test$CategoricalVariable)) +
-    scale_y_discrete(limits = levels(stat.test$ContinuousVariable))
+                                     1e-07, 1e-08)) + guides(size = "none") + labs(subtitle = "FDR Correction")
+
 
 
   # Set up for return List
