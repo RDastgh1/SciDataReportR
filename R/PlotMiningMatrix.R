@@ -39,35 +39,47 @@ PlotMiningMatrix <- function(Data, OutcomeVars, PredictorVars, Covariates = NULL
 
   # Continuous Predictors and Continuous Outcomes: Correlation heatmap
   if(length(num_Outcomes) >0 & length(num_Predictors)>0){
-  P_Correlations <- PlotCorrelationsHeatmap(Data, num_Predictors, num_Outcomes, covars = Covariates, Relabel = Relabel)
-  P_Correlations <- P_Correlations$Unadjusted$plot$data %>%
-    select(-P_adj) %>%
-    mutate(Test = method, p = P)
+    P_Correlations <- PlotCorrelationsHeatmap(Data, num_Predictors, num_Outcomes, covars = Covariates, Relabel = Relabel)
+    P_Correlations <- P_Correlations$Unadjusted$plot$data %>%
+      select(-P_adj) %>%
+      mutate(Test = method, p = P)
 
 
-  P_Correlations <- P_Correlations %>%
-    dplyr::mutate(
-      temp = XLabel,     # Create a temporary column
-      XLabel = YLabel,   # Switch XLabel with YLabel
-      YLabel = temp      # Assign temp to YLabel
-    ) %>%
-    dplyr::select(-temp)
+    P_Correlations <- P_Correlations %>%
+      dplyr::mutate(
+        temp = XLabel,     # Create a temporary column
+        XLabel = YLabel,   # Switch XLabel with YLabel
+        YLabel = temp      # Assign temp to YLabel
+      ) %>%
+      dplyr::select(-temp)
 
 
   }else{
-      P_Correlations<- NULL}
+    P_Correlations<- NULL}
 
 
 
 
   # Categorical Predictors and Continuous Outcomes: ANOVA or t-test
   if(length(cat_Predictors)>0){
-  P_Anova1 <- PlotAnovaRelationshipsMatrix(Data, cat_Predictors, num_Outcomes, Covariates = Covariates, Parametric = Parametric)
-  P_Anova1 <- P_Anova1$Unadjusted$PvalTable %>%
-    ungroup() %>%
-    as.data.frame() %>%
-    select(-p.adj, -p.adj.signif, -logp_FDR)
-  P_Anova1$nPairs <- P_Anova1$DFd
+    P_Anova1 <- PlotAnovaRelationshipsMatrix(Data, cat_Predictors, num_Outcomes, Covariates = Covariates, Parametric = Parametric)
+    P_Anova1 <- P_Anova1$Unadjusted$PvalTable %>%
+      ungroup() %>%
+      as.data.frame() %>%
+      select(-p.adj, -p.adj.signif, -logp_FDR)
+    P_Anova1$nPairs <- P_Anova1$DFd
+
+    # Switch Order
+
+    P_Anova1 <- P_Anova1 %>%
+      dplyr::mutate(
+        temp = XLabel,     # Create a temporary column
+        XLabel = YLabel,   # Switch XLabel with YLabel
+        YLabel = temp      # Assign temp to YLabel
+      ) %>%
+      dplyr::select(-temp)
+
+
   }else{
     P_Anova1 <- NULL
   }
@@ -87,14 +99,28 @@ PlotMiningMatrix <- function(Data, OutcomeVars, PredictorVars, Covariates = NULL
 
   # Categorical Predictors and Categorical Outcomes: ChiSquared
   if(length(cat_Outcomes)>0 & length(cat_Predictors)>0){
-    P_Chi <- PlotChiSqCovar(Data, cat_Predictors, cat_Outcomes, Covariates = Covariates, Parametric = Parametric)
+    P_Chi <- PlotChiSqCovar(Data, cat_Predictors, cat_Outcomes, covars = Covariates)
+    P_Chi <- P_Chi$p$data
+    P_Chi$p <- P_Chi$pval
+    P_Chi$p.adj <- P_Chi$pval.adj
+
+    # Switch Order
+
+    # P_Chi <- P_Chi %>%
+    #   dplyr::mutate(
+    #     temp = XLabel,     # Create a temporary column
+    #     XLabel = YLabel,   # Switch XLabel with YLabel
+    #     YLabel = temp      # Assign temp to YLabel
+    #   ) %>%
+    #   dplyr::select(-temp)
+
   }else{
-   # P_Anova2 <- NULL
+    # P_Anova2 <- NULL
   }
 
 
   # Combine Correlations and ANOVA results
-  dfs <- list(P_Correlations, P_Anova1, P_Anova2)
+  dfs <- list(P_Correlations, P_Anova1, P_Anova2, P_Chi)
 
   # Filter out NULL dataframes
   non_null_dfs <- dfs[!sapply(dfs, is.null)]
@@ -111,7 +137,7 @@ PlotMiningMatrix <- function(Data, OutcomeVars, PredictorVars, Covariates = NULL
 
   # Add significance stars for p-values and FDR-adjusted p-values
   P_Combined <- P_Combined %>%
-    rstatix::add_significance(output.col = "stars") %>%
+    rstatix::add_significance(p.col = "p", output.col = "stars") %>%
     rstatix::add_significance(p.col = "p_adj", output.col = "stars_fdr")
 
   # Reorder factors and calculate log-transformed p-values
