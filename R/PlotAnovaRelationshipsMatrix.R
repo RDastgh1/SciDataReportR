@@ -168,7 +168,7 @@ PlotAnovaRelationshipsMatrix <- function(Data, CatVars, ContVars, Covariates = N
     ) +
 
     guides(size = "none") +
-    labs(subtitle = "No Multiple Comparison Correction") +
+    labs(subtitle = "FDR Correction") +
     xlab("") + ylab("")
 
 
