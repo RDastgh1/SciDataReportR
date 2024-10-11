@@ -122,7 +122,8 @@ PlotAnovaRelationshipsMatrix <- function(Data, CatVars, ContVars, Covariates = N
   library(ggplot2)
   library(paletteer)
 
-  stat.test <- stat.test %>% filter(Effect == "CategoricalValue")
+  stat.test <- stat.test %>% ungroup() %>% ungroup () %>% as.data.frame() %>% filter(Effect == "CategoricalValue")
+
   # Modify your plot with additional adjustments for better color distinction
   p <- ggplot(stat.test, aes(y = YLabel, x = XLabel, shape = `p<.05`, text = PlotText)) +
     geom_point(aes(size = `p<.05`, colour = ges)) +
