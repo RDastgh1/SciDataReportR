@@ -65,7 +65,7 @@ RevalueData <- function(DatatoRevalue, VarTypes, missingVal = -999, splitchar = 
       if (type == "Categorical") {
         RevaluedData[[var]] <- to_factor(RevaluedData[[var]])
       }
-      if (type == "Double") {
+      if (type %in% c("Double", "Numeric", "Numerical", "numeric", "numerical", "double") {
         RevaluedData[[var]] <- as.numeric(RevaluedData[[var]])
       }
       if (type == "Ordinal") {
