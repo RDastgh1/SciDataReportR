@@ -77,13 +77,13 @@ RevalueData <- function(DatatoRevalue, VarTypes, missingVal = -999, splitchar = 
 
       type <- VarTypes$Type[VarTypes$Variable == var]
       if(!is.na(type)){
-      if (type == "Categorical") {
+      if (type %in% c("Categorical", "categorical", "factor", "Factor")) {
         RevaluedData[[var]] <- to_factor(RevaluedData[[var]])
       }
       if (type %in% c("Double", "Numeric", "Numerical", "numeric", "numerical", "double")) {
         RevaluedData[[var]] <- as.numeric(RevaluedData[[var]])
       }
-      if (type == "Ordinal") {
+      if (type %in% c("Ordinal", "ordinal", "ordered factor")) {
         RevaluedData[[var]] <- as.ordered(RevaluedData[[var]])
       }
       }else{
