@@ -36,8 +36,23 @@ RevalueData <- function(DatatoRevalue, VarTypes, missingVal = -999, splitchar = 
     VarTypes$Recode <- "NA"
   }
 
+  # Check to see if there is a "Missing" Column, and if there is, add what the missing value should be
+  if (!("Missing" %in% colnames(VarTypes))) {
+    VarTypes$Missing <- missingVal
+  }else{
+    VarTypes$Missing[is.na(VarTypes$Missing)] <- missingVal
+  }
+
   # Iterate over variables
   for (var in vars) {
+
+    # Missing?
+
+    mV <- VarTypes$Missing[VarTypes$Variable == var]
+    x<- RevaluedData[[var]]
+    x[x == mV] <- NA
+    RevaluedData[[var]] <-x
+
     # Recode?
     rc <- VarTypes$Recode[VarTypes$Variable == var]
     if (!is.na(rc) && (rc == "yes" || rc == 1)) {
