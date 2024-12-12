@@ -116,6 +116,7 @@ PlotMiningMatrix <- function(Data, OutcomeVars, PredictorVars, Covariates = NULL
 
   }else{
     # P_Anova2 <- NULL
+    P_Chi <- NULL
   }
 
 
