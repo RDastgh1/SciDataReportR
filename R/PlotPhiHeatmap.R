@@ -109,7 +109,7 @@ plotPhiHeatmap <- function(Data, xVars = NULL, yVars = NULL, Relabel = TRUE, Ord
 
   # Store unadjusted results
   M <- list()
-  M$r <- MC
+  M$phi <- MC
   M$p <- pvals
   M$npairs <- MN
 
@@ -120,26 +120,26 @@ plotPhiHeatmap <- function(Data, xVars = NULL, yVars = NULL, Relabel = TRUE, Ord
   pvals_FDR <- M_FDR$p
   if (removediag) {
     diag(M_FDR$p) <- NaN
-    diag(M_FDR$r) <- NaN
+    diag(M_FDR$phi) <- NaN
   }
 
   # Set row and column names for the results
-  colnames(M$r) <- yVars
-  rownames(M$r) <- xVars
+  colnames(M$phi) <- yVars
+  rownames(M$phi) <- xVars
   colnames(M$p) <- yVars
   rownames(M$p) <- xVars
-  colnames(M_FDR$r) <- yVars
-  rownames(M_FDR$r) <- xVars
+  colnames(M_FDR$phi) <- yVars
+  rownames(M_FDR$phi) <- xVars
   colnames(M_FDR$p) <- yVars
   rownames(M_FDR$p) <- xVars
 
   # Reshape the results for plotting
-  plot.data_R <- pivot_longer(as.data.frame(M$r) %>% rownames_to_column(var = "XVar"),
-                              cols = colnames(M$r), names_to = "YVar", values_to = "R")
+  plot.data_R <- pivot_longer(as.data.frame(M$phi) %>% rownames_to_column(var = "XVar"),
+                              cols = colnames(M$phi), names_to = "YVar", values_to = "Phi")
   plot.data_P <- pivot_longer(as.data.frame(M$p) %>% rownames_to_column(var = "XVar"),
-                              cols = colnames(M$r), names_to = "YVar", values_to = "P")
+                              cols = colnames(M$p), names_to = "YVar", values_to = "P")
   plot.data_P_adj <- pivot_longer(as.data.frame(M_FDR$p) %>%
-                                    rownames_to_column(var = "XVar"), cols = colnames(M$r),
+                                    rownames_to_column(var = "XVar"), cols = colnames(M$p),
                                   names_to = "YVar", values_to = "P_adj")
   plot.data_npairs <- pivot_longer(as.data.frame(M$npairs) %>%
                                      rownames_to_column(var = "XVar"), cols = colnames(M$npairs),
@@ -178,17 +178,25 @@ plotPhiHeatmap <- function(Data, xVars = NULL, yVars = NULL, Relabel = TRUE, Ord
   plot.data$YLabel <- factor(plot.data$YLabel, ordered = FALSE,
                              levels = rev(unique(plot.data$YLabel)))
 
-  plot.data$Variable <- paste(plot.data$XLabel, plot.data$YLabel, sep = "_")
+  PlotText <- paste("YVar", plot.data$YVar, "</br> XVAR: ",
+                    plot.data$XVar, "</br> P-Value: ", plot.data$P, plot.data$stars,
+                    "</br> FDR-corrected P: ", plot.data$P_adj, plot.data$stars_FDR)
+  P <- plot.data %>% ggplot(aes(y = XLabel, x = YLabel, fill = Phi,
+                                text = PlotText)) + geom_tile() +
+    geom_text(aes(label = stars), color = "black") +
+    scale_fill_gradient2(limits = c(-1,  1), low = scales::muted("purple"),  high = scales::muted("green")) +
+    theme(axis.title.x = element_blank(), axis.title.y = element_blank(),   axis.text.y = ggplot2::element_text(size = 7), legend.text = ggplot2::element_text(size = 15),
+          axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+  P_FDR <- plot.data %>% ggplot(aes(y = XLabel, x = YLabel,
+                                    fill = Phi, text = PlotText)) + geom_tile() +
+    geom_text(aes(label = stars_FDR),
+              color = "black") +
+    scale_fill_gradient2(limits = c(-1,  1), low = scales::muted("purple"),  high = scales::muted("green")) +
 
-  # Generate the heatmap plot
-  plot <- ggplot(plot.data, aes(x = XLabel, y = YLabel, fill = R)) +
-    geom_tile() +
-    scale_fill_gradient2(low = "blue", high = "red", midpoint = 0,
-                         name = "Phi", limits = c(-1, 1)) +
-    theme_minimal() +
-    theme(axis.text.x = element_text(angle = 45, hjust = 1),
-          axis.title.x = element_blank(),
-          axis.title.y = element_blank())
-
-  return(list(Unadjusted = M, FDRCorrected = M_FDR, method = "Phi", Relabel = Relabel, Covariates = NULL, plot = plot))
-}
+    theme(axis.title.x = element_blank(), axis.title.y = element_blank(),
+          axis.text.y = ggplot2::element_text(size = 7), legend.text = ggplot2::element_text(size = 15),
+          axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+  M$plot <- P
+  M_FDR$plot <- P_FDR
+  return(list(Unadjusted = M, FDRCorrected = M_FDR, method = "Phi",
+              Relabel = Relabel, Covariates = NULL))}
