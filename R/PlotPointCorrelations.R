@@ -16,7 +16,7 @@
 #'   - `Relabel`: Logical indicating whether relabeling was applied.
 #'   - `Covariates`: The covariates used.
 #' @export
-PlotPointCorrelations <- function (Data, CatVars, ContVars, Covariates = NULL, Relabel = TRUE, Ordinal = TRUE)
+PlotPointCorrelationsHeatmap <- function (Data, CatVars, ContVars, Covariates = NULL, Relabel = TRUE, Ordinal = TRUE)
 {
   # Create a subset of the data
   DataSubset <- Data[c(CatVars, ContVars, Covariates)]
