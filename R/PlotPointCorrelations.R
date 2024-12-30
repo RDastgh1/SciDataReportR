@@ -19,7 +19,8 @@
 PlotPointCorrelationsHeatmap <- function (Data, CatVars, ContVars, Covariates = NULL, Relabel = TRUE, Ordinal = TRUE)
 {
   # Create a subset of the data
-  DataSubset <- Data[c(CatVars, ContVars, Covariates)]
+  DataSubset <- Data[c(CatVars, ContVars, if (!is.null(Covariates)) Covariates)]
+
   DataSubset <- ReplaceMissingLabels(DataSubset)  # Replace missing labels in the data
 
   # Function to check if variables are binary
