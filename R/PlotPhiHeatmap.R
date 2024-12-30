@@ -17,7 +17,7 @@
 #'   \item{Relabel}{The relabel parameter.}
 #'   \item{Covariates}{Currently set to NULL, as covariates are not implemented in this function.
 #' @export
-plotPhiHeatmap <- function(Data, xVars = NULL, yVars = NULL, Relabel = TRUE, Ordinal = TRUE) {
+PlotPhiHeatmap <- function(Data, xVars = NULL, yVars = NULL, Relabel = TRUE, Ordinal = TRUE) {
   # Check if all variables in xVars and yVars are binary (i.e., have two or fewer unique values)
   checkBinaryVars <- function(vars) {
     sapply(Data[vars], function(col) length(unique(na.omit(col))) <= 2)
