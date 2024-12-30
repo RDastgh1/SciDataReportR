@@ -16,8 +16,7 @@
 #'   - `Relabel`: Logical indicating whether relabeling was applied.
 #'   - `Covariates`: The covariates used.
 #' @export
-PlotPointCorrelationsHeatmap <- function (Data, CatVars, ContVars, Covariates = NULL, Relabel = TRUE, Ordinal = TRUE)
-{
+PlotPointCorrelationsHeatmap <- function (Data, CatVars, ContVars, Covariates = NULL, Relabel = TRUE, Ordinal = TRUE) {
   # Create a subset of the data
   DataSubset <- Data[c(CatVars, ContVars, if (!is.null(Covariates)) Covariates)]
 
@@ -57,14 +56,15 @@ PlotPointCorrelationsHeatmap <- function (Data, CatVars, ContVars, Covariates = 
   nvar.test <- mData %>% group_by(ContinuousVariable) %>% mutate(v = var(ContinuousValue))
   mData <- mData[nvar.test$v > 0, ]
 
-  # Calculate point-biserial correlation
-  stat.test <- mData %>% group_by(ContinuousVariable, CategoricalVariable) %>%
-    do({
-      categorical_numeric <- as.numeric(factor(.$CategoricalValue))
-      r_pb <- cor(.$ContinuousValue, categorical_numeric, use = "complete.obs")
-      p_value <- cor.test(.$ContinuousValue, categorical_numeric)$p.value
-      data.frame(correlation = r_pb, p_value = p_value)
-    })
+  # Calculate point-biserial correlation and number of valid pairs
+  stat.test <- mData %>%
+    group_by(ContinuousVariable, CategoricalVariable) %>%
+    summarise(
+      nPairs = sum(!is.na(CategoricalValue) & !is.na(ContinuousValue)),
+      correlation = cor(ContinuousValue, as.numeric(factor(CategoricalValue)), use = "complete.obs"),
+      p_value = cor.test(ContinuousValue, as.numeric(factor(CategoricalValue)))$p.value,
+      .groups = "drop"
+    )
 
   # Adjust p-values for multiple comparisons
   stat.test$p.adj <- p.adjust(stat.test$p_value, method = "fdr")
@@ -98,7 +98,7 @@ PlotPointCorrelationsHeatmap <- function (Data, CatVars, ContVars, Covariates = 
                     "</br> Cat Var:", stat.test$CategoricalVariable, "</br> Cont Var Label:",
                     stat.test$YLabel, "</br> Cont Var:", stat.test$ContinuousVariable,
                     "</br> P-Value: ", stat.test$p_value, stat.test$`p<.05`, "</br> FDR-corrected P: ",
-                    stat.test$p.adj, stat.test$p.adj.signif)
+                    stat.test$p.adj, stat.test$p.adj.signif, "</br> nPairs:", stat.test$nPairs)
 
   # Create unadjusted plot
   p <- ggplot(stat.test, aes(y = YLabel, x = XLabel,
