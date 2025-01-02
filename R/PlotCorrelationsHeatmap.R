@@ -151,9 +151,9 @@ PlotCorrelationsHeatmap <- function(Data, xVars = NULL, yVars = NULL, covars = N
   plot.data_P_adj <- pivot_longer(as.data.frame(M_FDR$p) %>% rownames_to_column(var = "XVar"), cols = colnames(M$r), names_to = "YVar", values_to = "P_adj")
   plot.data_npairs <- pivot_longer(as.data.frame(M$npairs) %>% rownames_to_column(var = "XVar"), cols = colnames(M$npairs), names_to = "YVar", values_to = "nPairs")
 
-  plot.data <- left_join(plot.data_R, plot.data_P) %>%
+  plot.data <- suppressMessages(left_join(plot.data_R, plot.data_P) %>%
     left_join(plot.data_P_adj) %>%
-    left_join(plot.data_npairs)
+    left_join(plot.data_npairs))
 
   plot.data$stars <- cut(plot.data$P, breaks = c(-Inf, 0.001, 0.01, 0.05, Inf), label = c("***", "**", "*", ""))
   plot.data$stars_FDR <- cut(plot.data$P_adj, breaks = c(-Inf, 0.001, 0.01, 0.05, Inf), label = c("***", "**", "*", ""))

@@ -72,9 +72,11 @@ PlotPointCorrelationsHeatmap <- function (Data, CatVars, ContVars, Covariates = 
     rstatix::add_significance("p_value", output.col = "p<.05")
   stat.test$`p<.05`[stat.test$`p<.05` == "ns"] <- ""
   stat.test$p.adj.signif[stat.test$p.adj.signif == "ns"] <- ""
-  stat.test$`p<.05` <- factor(stat.test$`p<.05`, levels = c("", "*", "**", "***", "****"))
+  stat.test$`p<.05` <- factor(stat.test$`p<.05`, levels = c("ns", "*", "**", "***", "****"),
+                              labels = c("ns", "*", "**", "***", "***"))
   stat.test$p.adj.signif <- factor(stat.test$p.adj.signif,
-                                   levels = c("", "*", "**", "***", "****"))
+                                   levels = c("ns", "*", "**", "***", "****"),
+                                   labels = c("ns", "*", "**", "***", "***"))
   stat.test$test <- "point biserial correlation"
 
   if (Relabel) {
