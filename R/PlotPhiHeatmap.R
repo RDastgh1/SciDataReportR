@@ -144,8 +144,8 @@ PlotPhiHeatmap <- function(Data, xVars = NULL, yVars = NULL, Relabel = TRUE, Ord
   plot.data_npairs <- pivot_longer(as.data.frame(M$npairs) %>%
                                      rownames_to_column(var = "XVar"), cols = colnames(M$npairs),
                                    names_to = "YVar", values_to = "nPairs")
-  plot.data <- left_join(plot.data_R, plot.data_P) %>% left_join(plot.data_P_adj) %>%
-    left_join(plot.data_npairs)
+  plot.data <- suppressMessages(left_join(plot.data_R, plot.data_P) %>% left_join(plot.data_P_adj) %>%
+    left_join(plot.data_npairs))
 
   # Assign stars based on p-value thresholds
   plot.data$stars <- cut(plot.data$P, breaks = c(-Inf, 0.001,
@@ -199,4 +199,5 @@ PlotPhiHeatmap <- function(Data, xVars = NULL, yVars = NULL, Relabel = TRUE, Ord
   M$plot <- P
   M_FDR$plot <- P_FDR
   return(list(Unadjusted = M, FDRCorrected = M_FDR, method = "Phi",
-              Relabel = Relabel, Covariates = NULL))}
+              Relabel = Relabel, Covariates = NULL))
+  }
