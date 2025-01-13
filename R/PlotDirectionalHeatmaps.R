@@ -7,7 +7,7 @@
 #'@param Relabel Logical. If TRUE, variables are relabeled for better readability in the plots.
 #'@param Ordinal Logical. If TRUE, treats binary variables as ordinal for certain calculations (future functionality).
 #'@return A list containing two plots (Unadjusted and FDR Corrected), along with corresponding data.
-
+#' @export
   PlotDirectionalHeatmaps <- function (Data, xVars = NULL, yVars = NULL,  Relabel = TRUE, Ordinal = TRUE) {
 
     if (is.null(xVars)) {
