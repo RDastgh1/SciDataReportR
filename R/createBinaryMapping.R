@@ -10,7 +10,11 @@
 createBinaryMapping <- function(Data, CatVars) {
   # Check for binary variables and create the mapping table
   binaryMappingTable <- do.call(rbind, lapply(CatVars, function(var) {
+    if (is.factor(Data[[var]])){
+      unique_levels <- levels(na.omit(Data[[var]]))
+    } else{
     unique_levels <- unique(na.omit(Data[[var]]))
+    }
     if (length(unique_levels) == 2) {
       # Get the label for the variable (default to variable name if no label is set)
       label <- sjlabelled::get_label(Data[[var]], def.value = var)
