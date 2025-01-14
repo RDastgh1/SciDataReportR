@@ -63,7 +63,7 @@ plotForestFromTable <- function(UnivariateRegressionTables, pSize = 2) {
       axis.text.y = element_text(size = 10),
       axis.title.y = element_blank()
     ) +
-    scale_color_manual(values = c("darkgrey", "black"))
+    scale_color_manual(values = c("darkgrey", "black"))+ theme(legend.position="none")
 
   return(p)
 }
