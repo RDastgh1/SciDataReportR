@@ -198,6 +198,7 @@ PlotPhiHeatmap <- function(Data, xVars = NULL, yVars = NULL, Relabel = TRUE, Ord
           axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
   M$plot <- P
   M_FDR$plot <- P_FDR
+  BinaryMapping <- createBinaryMapping(Data, CatVars)
   return(list(Unadjusted = M, FDRCorrected = M_FDR, method = "Phi",
-              Relabel = Relabel, Covariates = NULL))
+              Relabel = Relabel, Covariates = NULL, BinaryMapping = BinaryMapping))
   }

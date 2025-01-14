@@ -122,6 +122,6 @@
 
     FDRCorrected <- Unadjusted
     FDRCorrected$plot <- p_FDR
-
-    return(list(Unadjusted = Unadjusted, FDRCorrected = FDRCorrected, Relabel = Relabel))
+    BinaryMapping <- createBinaryMapping(Data, CatVars)
+    return(list(Unadjusted = Unadjusted, FDRCorrected = FDRCorrected, Relabel = Relabel, BinaryMapping = BinaryMapping))
   }
