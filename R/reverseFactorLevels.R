@@ -22,9 +22,22 @@ reverseFactorLevels <- function(df, variables) {
     stop("The following variables are not factors: ", paste(non_factors, collapse = ", "))
   }
 
-  # Reverse levels of specified variables
-  df[variables] <- lapply(df[variables], function(var) {
-    factor(var, levels = rev(levels(var)))
+  # Reverse levels of specified variables, retaining labels
+  df[variables] <- lapply(variables, function(var_name) {
+    var <- df[[var_name]]
+
+    # Get the label if it exists
+    var_label <- attr(var, "label")
+
+    # Reverse the factor levels
+    reversed_var <- factor(var, levels = rev(levels(var)))
+
+    # Reassign the label
+    if (!is.null(var_label)) {
+      attr(reversed_var, "label") <- var_label
+    }
+
+    return(reversed_var)
   })
 
   return(df)
