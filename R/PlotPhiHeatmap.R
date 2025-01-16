@@ -64,6 +64,8 @@ PlotPhiHeatmap <- function(Data, xVars = NULL, yVars = NULL, Relabel = TRUE, Ord
   # Loop through all combinations of xVars and yVars to compute Phi and Chi-square tests
   for (xi in 1:ncol(xdata)) {
     for (yi in 1:ncol(ydata)) {
+      phi <- NA
+      chi_p <- NA
       x <- xdata[, xi]
       y <- ydata[, yi]
       d <- cbind(x, y)
