@@ -22,6 +22,7 @@
 #' @import gtools
 #' @import sjlabelled
 #' @import dplyr
+#' @export
 PlotPValueComparisons <- function(Data, GroupVariable, Variables = NULL, VariableCategories = NULL, Relabel = TRUE) {
   # If Variables is not specified, include all columns except GroupVariable
   if (is.null(Variables)) {
