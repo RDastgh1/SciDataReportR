@@ -104,15 +104,6 @@ PlotMiningMatrix <- function(Data, OutcomeVars, PredictorVars, Covariates = NULL
     P_Chi$p <- P_Chi$pval
     P_Chi$p.adj <- P_Chi$pval.adj
 
-    # Switch Order
-
-    # P_Chi <- P_Chi %>%
-    #   dplyr::mutate(
-    #     temp = XLabel,     # Create a temporary column
-    #     XLabel = YLabel,   # Switch XLabel with YLabel
-    #     YLabel = temp      # Assign temp to YLabel
-    #   ) %>%
-    #   dplyr::select(-temp)
 
   }else{
     # P_Anova2 <- NULL
@@ -130,8 +121,8 @@ PlotMiningMatrix <- function(Data, OutcomeVars, PredictorVars, Covariates = NULL
   P_Combined <- Reduce(function(x, y) full_join(x, y), non_null_dfs)
 
   P_Combined <- P_Combined %>%
-    select(-stars, -stars_FDR, -CategoricalVariable, -ContinuousVariable,
-           -p.signif, -PlotText, -ges, -Effect)
+    select(-any_of(c("stars", "stars_FDR", "CategoricalVariable", "ContinuousVariable",
+           "p.signif", "PlotText", "ges", "Effect")))
 
   # Apply FDR Adjustment
   P_Combined$p_adj <- p.adjust(P_Combined$p, method = "fdr")
