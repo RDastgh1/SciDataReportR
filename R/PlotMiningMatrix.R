@@ -61,7 +61,7 @@ PlotMiningMatrix <- function(Data, OutcomeVars, PredictorVars, Covariates = NULL
 
 
   # Categorical Predictors and Continuous Outcomes: ANOVA or t-test
-  if(length(cat_Predictors)>0){
+  if(length(cat_Predictors)>0 & length(num_Outcomes)>0){
     P_Anova1 <- PlotAnovaRelationshipsMatrix(Data, cat_Predictors, num_Outcomes, Covariates = Covariates, Parametric = Parametric)
     P_Anova1 <- P_Anova1$Unadjusted$PvalTable %>%
       ungroup() %>%
@@ -86,7 +86,7 @@ PlotMiningMatrix <- function(Data, OutcomeVars, PredictorVars, Covariates = NULL
 
 
   # Continuous Predictors and Categorical Outcomes: ANOVA or t-test
-  if(length(cat_Outcomes)>0){
+  if(length(cat_Outcomes)>0 & length(num_Predictors)>0){
     P_Anova2 <- PlotAnovaRelationshipsMatrix(Data,  cat_Outcomes, num_Predictors, Covariates = Covariates, Parametric = Parametric)
     P_Anova2 <- P_Anova2$Unadjusted$PvalTable %>%
       ungroup() %>%
