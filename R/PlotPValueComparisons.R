@@ -24,43 +24,44 @@
 #' @import dplyr
 #' @export
 PlotPValueComparisons <- function(Data, GroupVariable, Variables = NULL, VariableCategories = NULL, Relabel = TRUE) {
-  # If Variables is not specified, include all columns except GroupVariable
+  # Validate and prepare Variables
   if (is.null(Variables)) {
     Variables <- Data %>% select(-all_of(GroupVariable)) %>% colnames()
   }
 
-  # Create a new column for the group variable
+  # Preserve original GroupVariable and create a temporary column
   Data$GroupVariablex <- Data[[GroupVariable]]
-
-  # Remove the original group variable column
   Data <- Data %>% select(-all_of(GroupVariable))
 
-  # Remove zero-length variables
+  # Select relevant variables
   tData <- Data %>% select(GroupVariablex, all_of(Variables))
-  l <- tData %>%
-    summarise_if(is.factor, funs(nlevels(factor(.)))) %>% as.list()
+
+  # Remove factor variables with zero levels
+  l <- tData %>% summarise_if(is.factor, ~ nlevels(factor(.))) %>% as.list()
   tData <- tData %>% select(-all_of(names(l[l < 2])))
-  l <- tData %>%
-    summarise_if(is.numeric, funs(sd(., na.rm = T))) %>% as.list()
+
+  # Remove numeric variables with zero or missing standard deviation
+  l <- tData %>% summarise_if(is.numeric, ~ sd(., na.rm = TRUE)) %>% as.list()
   tData <- tData %>% select(-all_of(names(l[is.na(l) | l == 0])))
 
-  # Perform statistical tests
+  # Perform statistical tests using arsenal::tableby
   tab1 <- arsenal::tableby(GroupVariablex ~ ., data = tData)
   pvaltable <- arsenal::tests(tab1)
-  pvaltable$logp <- -log10(pvaltable$p.value)
 
-  # Add significance stars
+  # Calculate log-transformed p-values and significance levels
+  pvaltable$logp <- -log10(pvaltable$p.value)
   pvaltable$Sig <- gtools::stars.pval(pvaltable$p.value)
-  pvaltable$Sig[pvaltable$Sig == "." | pvaltable$Sig == "+" | pvaltable$Sig == " "] <- "ns"
+  pvaltable$Sig[pvaltable$Sig %in% c(".", "+", " ")] <- "ns"
   pvaltable$Sig <- factor(pvaltable$Sig, levels = c("ns", "*", "**", "***", "****", "*****"))
 
-  # Adjust p-values for multiple comparisons
+  # Adjust p-values for multiple testing
   pvaltable$p.adj <- p.adjust(pvaltable$p.value, method = "fdr")
 
-  # Relabel variables if necessary
+  # Optionally relabel variables
   if (Relabel) {
     Data <- ReplaceMissingLabels(Data)
-    VarLabels <- sjlabelled::get_label(Data[pvaltable$Variable], def.value = colnames(Data[pvaltable$Variable])) %>%
+    VarLabels <- sjlabelled::get_label(Data[pvaltable$Variable],
+                                       def.value = colnames(Data[pvaltable$Variable])) %>%
       as.data.frame() %>% rownames_to_column()
     pvaltable$VarLabel <- VarLabels$.
   } else {
@@ -68,19 +69,23 @@ PlotPValueComparisons <- function(Data, GroupVariable, Variables = NULL, Variabl
   }
   pvaltable$VarLabel <- factor(pvaltable$VarLabel, levels = unique(pvaltable$VarLabel))
 
-  # Create the plot
+  # Generate the plot
   if (is.null(VariableCategories)) {
-    p <- pvaltable %>% ggplot(aes(y = VarLabel, x = logp, shape = Sig))
+    p <- pvaltable %>% ggplot(aes(y = Variable, x = logp, shape = Sig))
   } else {
     pvaltable$Category <- VariableCategories[match(pvaltable$Variable, Variables)]
     p <- pvaltable %>% ggplot(aes(y = Variable, x = logp, color = Category, shape = Sig))
   }
-  p <- p + geom_point() +
-    ggrepel::geom_text_repel(data = subset(pvaltable, `p.adj` < 0.1),
-                             aes(label = VarLabel)) +
-    scale_y_discrete(limits = rev(pvaltable$VarLabel)) +
-    xlab("-log10(pval)") +
-    scale_shape_manual(values = c(21, 16, 17, 15, 18, 8), breaks = c("ns", "*", "**", "***", "****"), drop = F)
+
+  # Add points, text labels for significant variables, and customize scales
+  p <- p +
+    geom_point() +
+    ggrepel::geom_text_repel(data = subset(pvaltable, p.adj < 0.1),
+                             aes(label = Variable)) +
+    scale_y_discrete(limits = rev(pvaltable$Variable)) +
+    xlab("-log10(p-value)") +
+    scale_shape_manual(values = c(21, 16, 17, 15, 18, 8),
+                       breaks = c("ns", "*", "**", "***", "****"), drop = FALSE)
 
   return(p)
 }
