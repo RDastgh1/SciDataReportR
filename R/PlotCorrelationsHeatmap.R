@@ -10,7 +10,7 @@
 #' @param method The correlation method. Defaults to "pearson".
 #' @param Relabel A logical indicating whether to relabel variables. Defaults to TRUE.
 #' @return A list containing matrices, ggplot objects for visualizations, and details of the method used.
-
+#' @export
 PlotCorrelationsHeatmap <- function(Data, xVars = NULL, yVars = NULL, covars = NULL, method = "pearson", Relabel = TRUE, Ordinal = FALSE) {
   removediag <- FALSE
   if (is.null(yVars)) {
