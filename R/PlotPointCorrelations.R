@@ -68,7 +68,7 @@ PlotPointCorrelationsHeatmap <- function (Data, CatVars, ContVars, Covariates = 
   if (Relabel) {
 
     xlabels <- sjlabelled::get_label(DataSubset[stat.test$CategoricalVariable],
-                                     def.value = colnames(Data[stat.test$CategoricalVariable])) %>%
+                                     def.value = stat.test$CategoricalVariable) %>%
       as.data.frame() %>% rownames_to_column()
     colnames(xlabels) <- c("Variable", "label")
     ylabels <- sjlabelled::get_label(DataSubset[stat.test$ContinuousVariable],
@@ -106,7 +106,7 @@ PlotPointCorrelationsHeatmap <- function (Data, CatVars, ContVars, Covariates = 
                                      hjust = 1)) + labs(fill = expression(r[pb]))
   M <- list(PvalTable = stat.test, plot = p)
   M_FDR <- list(PvalTable = stat.test, plot = p_FDR)
-  BinaryMapping <- createBinaryMapping(Data, CatVars)
+  BinaryMapping <- createBinaryMapping(DataSubset, CatVars)
   return(list(Unadjusted = M, FDRCorrected = M_FDR, method = "R_pb",
               Relabel = Relabel, Covariates = Covariates, BinaryMapping = BinaryMapping))
 }
