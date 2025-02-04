@@ -68,11 +68,11 @@ PlotPointCorrelationsHeatmap <- function (Data, CatVars, ContVars, Covariates = 
     if (Relabel) {
       Data <- ReplaceMissingLabels(Data)
       xlabels <- sjlabelled::get_label(Data[stat.test$CategoricalVariable],
-                                       def.value = colnames(Data[stat.test$CategoricalVariable])) %>%
+                                       def.value = colnames(Data %>% select(all_of(stat.test$CategorcalVariable)))) %>%
         as.data.frame() %>% rownames_to_column()
       colnames(xlabels) <- c("Variable", "label")
       ylabels <- sjlabelled::get_label(Data[stat.test$ContinuousVariable],
-                                       def.value = colnames(Data[stat.test$ContinuousVariable])) %>%
+                                       def.value = colnames(Data %>% select(all_of(stat.test$ContinuousVariable)))) %>%
         as.data.frame() %>% rownames_to_column()
       colnames(ylabels) <- c("Variable", "label")
       stat.test$XLabel <- xlabels$label
