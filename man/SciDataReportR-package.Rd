@@ -14,6 +14,7 @@ SciDataReportR is a package designed to facilitate the generation of scientific 
 Useful links:
 \itemize{
   \item \url{https://github.com/RDastgh1/SciDataReportR}
+  \item \url{https://rdastgh1.github.io/SciDataReportR/}
   \item Report bugs at \url{https://github.com/RDastgh1/SciDataReportR/issues}
 }
 
