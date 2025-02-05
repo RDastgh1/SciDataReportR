@@ -1,0 +1,6 @@
+"Variable","Label","Type","Category","Recode","Code","Notes","Exclude","MissingCode"
+"num","num","Categorical",NA,NA,NA,"",NA,""
+"int","int","Categorical",NA,NA,NA,"",NA,""
+"fact","fact","Categorical",NA,NA,NA,"",NA,""
+"char","char","Categorical",NA,NA,NA,"",NA,""
+"date","date","Categorical",NA,NA,NA,"",NA,""
