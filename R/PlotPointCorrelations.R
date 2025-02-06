@@ -67,11 +67,11 @@ PlotPointCorrelationsHeatmap <- function (Data, CatVars, ContVars, Covariates = 
   stat.test$test <- "point biserial correlation"
   if (Relabel) {
 
-    xlabels <- sjlabelled::get_label(DataSubset[stat.test$CategoricalVariable],
+    xlabels <- sjlabelled::get_label(DataSubset[as.character(stat.test$CategoricalVariable)],
                                      def.value = stat.test$CategoricalVariable) %>%
       as.data.frame() %>% rownames_to_column()
     colnames(xlabels) <- c("Variable", "label")
-    ylabels <- sjlabelled::get_label(DataSubset[stat.test$ContinuousVariable],
+    ylabels <- sjlabelled::get_label(DataSubset[as.character(stat.test$ContinuousVariable)],
                                      def.value = stat.test$ContinuousVariable) %>%
       as.data.frame() %>% rownames_to_column()
     colnames(ylabels) <- c("Variable", "label")

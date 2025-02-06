@@ -15,7 +15,7 @@
 #'   \item{FDRCorrected}{A list containing FDR-corrected p-values.}
 #'   \item{method}{A string indicating that the method used is "Phi".}
 #'   \item{Relabel}{The relabel parameter.}
-#'   \item{Covariates}{Currently set to NULL, as covariates are not implemented in this function.
+#'   \item{Covariates}{Currently set to NULL, as covariates are not implemented in this function.}
 #' @export
 PlotPhiHeatmap <- function(Data, xVars = NULL, yVars = NULL, Relabel = TRUE, Ordinal = TRUE) {
   # Check if all variables in xVars and yVars are binary (i.e., have two or fewer unique values)

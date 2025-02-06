@@ -29,7 +29,7 @@ A list containing the following components:
 \item{FDRCorrected}{A list containing FDR-corrected p-values.}
 \item{method}{A string indicating that the method used is "Phi".}
 \item{Relabel}{The relabel parameter.}
-\item{Covariates}{Currently set to NULL, as covariates are not implemented in this function.
+\item{Covariates}{Currently set to NULL, as covariates are not implemented in this function.}
 }
 \description{
 This function generates a heatmap of the Phi coefficient for the association between binary variables
