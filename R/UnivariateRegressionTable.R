@@ -66,7 +66,7 @@ UnivariateRegressionTable <- function (Data, OutcomeVars, PredictorVars, Covars 
     Wide_tblformatted_list[[YVar]] <- tbl_stack(tblformatted_list) %>%
       remove_row_type(type = "reference")
   }
-  s <- sjlabelled::get_label(Data[OutcomeVars], def.value = OutcomeVars)
+  s <- sjlabelled::get_label(Data[as.character(OutcomeVars)], def.value = OutcomeVars)
   FinalTable <- tbl_merge(Wide_tbl_list, tab_spanner = unname(s))
   FinalFormattedTable <- tbl_merge(Wide_tblformatted_list,
                                    tab_spanner = unname(s))

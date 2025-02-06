@@ -85,12 +85,12 @@ PlotAnovaRelationshipsMatrix <- function(Data, CatVars, ContVars, Covariates = N
                                    levels = c("ns", "*", "**", "***", "****"))
   if (Relabel) {
     Data <- ReplaceMissingLabels(Data)
-    xlabels <- sjlabelled::get_label(Data[stat.test$CategoricalVariable],
-                                     def.value = colnames(Data[stat.test$CategoricalVariable])) %>%
+    xlabels <- sjlabelled::get_label(Data[as.character(stat.test$CategoricalVariable)],
+                                     def.value = stat.test$CategoricalVariable) %>%
       as.data.frame() %>% rownames_to_column()
     colnames(xlabels) <- c("Variable", "label")
-    ylabels <- sjlabelled::get_label(Data[stat.test$ContinuousVariable],
-                                     def.value = colnames(Data[stat.test$ContinuousVariable])) %>%
+    ylabels <- sjlabelled::get_label(Data[as.character(stat.test$ContinuousVariable)],
+                                     def.value = stat.test$ContinuousVariable) %>%
       as.data.frame() %>% rownames_to_column()
     colnames(ylabels) <- c("Variable", "label")
     stat.test$XLabel <- xlabels$label
@@ -108,11 +108,11 @@ PlotAnovaRelationshipsMatrix <- function(Data, CatVars, ContVars, Covariates = N
   stat.test$PlotText <- PlotText
   if (Relabel) {
     stat.test$YLabel <- factor(stat.test$ContinuousVariable,
-                               levels = ContVars, labels = sjlabelled::get_label(Data[ContVars],
-                                                                                 def.value = colnames(Data[ContVars])))
+                               levels = ContVars, labels = sjlabelled::get_label(Data[as.character(ContVars)]),
+                                                                                 def.value = ContVars)
     stat.test$XLabel <- factor(stat.test$CategoricalVariable,
-                               levels = CatVars, labels = sjlabelled::get_label(Data[CatVars],
-                                                                                def.value = colnames(Data[CatVars])))
+                               levels = CatVars, labels = sjlabelled::get_label(Data[as.character(CatVars)]),
+                                                                                def.value = CatVars)
   } else {
     stat.test$YLabel <- factor(stat.test$ContinuousVariable,
                                levels = ContVars)

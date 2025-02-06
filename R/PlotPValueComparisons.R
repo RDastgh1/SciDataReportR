@@ -60,8 +60,8 @@ PlotPValueComparisons <- function(Data, GroupVariable, Variables = NULL, Variabl
   # Optionally relabel variables
   if (Relabel) {
     Data <- ReplaceMissingLabels(Data)
-    VarLabels <- sjlabelled::get_label(Data[pvaltable$Variable],
-                                       def.value = colnames(Data[pvaltable$Variable])) %>%
+    VarLabels <- sjlabelled::get_label(Data[as.character(pvaltable$Variable)],
+                                       def.value = pvaltable$Variable) %>%
       as.data.frame() %>% rownames_to_column()
     pvaltable$VarLabel <- VarLabels$.
   } else {

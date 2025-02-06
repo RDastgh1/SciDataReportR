@@ -139,8 +139,8 @@ PlotMiningMatrix <- function(Data, OutcomeVars, PredictorVars, Covariates = NULL
   P_Combined$logpfdr <- -log10(P_Combined$p_adj)
 
   # Reorder labels for plotting
-  yorder <- sjlabelled::get_label(Data %>% select(PredictorVars), def.value = PredictorVars)
-  xorder <- sjlabelled::get_label(Data %>% select(OutcomeVars), def.value = OutcomeVars)
+  yorder <- sjlabelled::get_label(Data %>% select(as.character(PredictorVars)), def.value = PredictorVars)
+  xorder <- sjlabelled::get_label(Data %>% select(as.character(OutcomeVars)), def.value = OutcomeVars)
   P_Combined$XLabel <- factor(P_Combined$XLabel, levels = xorder)
   P_Combined$YLabel <- factor(P_Combined$YLabel, levels = yorder)
   P_Combined<- P_Combined%>% filter(!is.na(p))

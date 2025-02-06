@@ -160,12 +160,12 @@ PlotCorrelationsHeatmap <- function(Data, xVars = NULL, yVars = NULL, covars = N
 
   if (Relabel) {
     Data <- ReplaceMissingLabels(Data)
-    xlabels <- sjlabelled::get_label(Data[plot.data$XVar], def.value = colnames(Data[plot.data$XVar])) %>%
+    xlabels <- sjlabelled::get_label(Data[as.character(plot.data$XVar)], def.value = plot.data$XVar) %>%
       as.data.frame() %>% rownames_to_column()
 
     colnames(xlabels) <- c("Variable", "label")
 
-    ylabels <- sjlabelled::get_label(Data[plot.data$YVar], def.value = colnames(Data[plot.data$YVar])) %>%
+    ylabels <- sjlabelled::get_label(Data[as.character(plot.data$YVar)], def.value = plot.data$YVar) %>%
       as.data.frame() %>% rownames_to_column()
 
     colnames(ylabels) <- c("Variable", "label")

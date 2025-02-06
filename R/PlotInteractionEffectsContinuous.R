@@ -155,12 +155,12 @@ PlotInteractionEffectsContinuous <- function(Data, interVar = NULL,
 
   if (Relabel) {
     Data <- ReplaceMissingLabels(Data)
-    xlabels <- sjlabelled::get_label(Data[m_G$X],
-                                     def.value = colnames(Data[m_G$X])) %>% as.data.frame() %>%
+    xlabels <- sjlabelled::get_label(Data[as.character(m_G$X)],
+                                     def.value = m_G$X) %>% as.data.frame() %>%
       rownames_to_column()
     colnames(xlabels) <- c("Variable", "label")
-    ylabels <- sjlabelled::get_label(Data[m_G$Y],
-                                     def.value = colnames(Data[m_G$Y])) %>% as.data.frame() %>%
+    ylabels <- sjlabelled::get_label(Data[as.character(m_G$Y)],
+                                     def.value = m_G$Y) %>% as.data.frame() %>%
       rownames_to_column()
     colnames(ylabels) <- c("Variable", "label")
     m_G$XLabel <- xlabels$label

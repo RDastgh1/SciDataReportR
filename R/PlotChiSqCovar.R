@@ -65,10 +65,10 @@ PlotChiSqCovar <- function(Data, xVars, yVars, covars = NULL, Relabel = TRUE, Or
 
   if(Relabel == TRUE){
     Data<- ReplaceMissingLabels(Data)
-    xlabels <- sjlabelled::get_label(Data[stat.test$Covariate], def.value = colnames(Data[stat.test$Covariate])) %>% as.data.frame() %>% rownames_to_column()
+    xlabels <- sjlabelled::get_label(Data[as.character(stat.test$Covariate)], def.value = stat.test$Covariate) %>% as.data.frame() %>% rownames_to_column()
     colnames(xlabels) <- c("Variable", "label")
 
-    ylabels <- sjlabelled::get_label(Data[stat.test$name], def.value = colnames(Data[stat.test$name])) %>% as.data.frame() %>% rownames_to_column()
+    ylabels <- sjlabelled::get_label(Data[as.character(stat.test$name)], def.value = stat.test$name) %>% as.data.frame() %>% rownames_to_column()
     colnames(ylabels) <- c("Variable", "label")
 
     stat.test$XLabel <- xlabels$label
@@ -88,8 +88,8 @@ PlotChiSqCovar <- function(Data, xVars, yVars, covars = NULL, Relabel = TRUE, Or
 
   if(Relabel == TRUE){
     # Convert to factor and set labels
-    stat.test$name <- factor(stat.test$name, levels = xVars, labels = sjlabelled::get_label(Data[xVars], def.value = colnames(Data[xVars])))
-    stat.test$Covariate <- factor(stat.test$Covariate, levels = yVars, labels = sjlabelled::get_label(Data[yVars], def.value = colnames(Data[yVars])))
+    stat.test$name <- factor(stat.test$name, levels = xVars, labels = sjlabelled::get_label(Data[as.character(xVars)], def.value = xVars))
+    stat.test$Covariate <- factor(stat.test$Covariate, levels = yVars, labels = sjlabelled::get_label(Data[as.character(yVars)], def.value = yVars))
   } else {
     stat.test$name <- factor(stat.test$name, levels = xVars)
     stat.test$Covariate <- factor(stat.test$Covariate, levels = yVars)
