@@ -50,3 +50,6 @@ Imports:
 Suggests:
     BlandAltmanLeh,
     kableExtra
+Depends: 
+    R (>= 2.10)
+LazyData: true
