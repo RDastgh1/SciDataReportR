@@ -7,18 +7,14 @@
 #' @param VariableCategories A data frame containing variable categories (optional).
 #' @param impClust A character string representing the important cluster.
 #' @param normalClust A character string representing the normal cluster.
+#' @param GroupVar The grouping variable used for the comparison.
 #' @return A list containing a plot, a summary table, and a p-value table.
 #' @export
 #' @import dplyr
 #' @import ggplot2
-#' @import ggrepel
-#' @import VIM
-#' @import fastDummies
 #' @import gtsummary
-#' @import gtools
-#' @import paletteer
-#' @import stringr
-
+#' @suggests VIM, gtools, paletteer, ggrepel, fastDummies, stringr
+#'
 Plot2GroupStats <- function(Data, Variables, VariableCategories = NULL, impClust, normalClust, GroupVar) {
 
   tData <- Data
@@ -58,7 +54,6 @@ Plot2GroupStats <- function(Data, Variables, VariableCategories = NULL, impClust
     add_n() %>%
     add_p(test = list(all_continuous() ~ "oneway.test", all_categorical() ~ "chisq.test")) %>%
     bold_p() %>%
-    # modify_header(label = "**Group**") %>%
     bold_labels()
 
   # Remove factor variables with more than 10 levels
@@ -80,7 +75,7 @@ Plot2GroupStats <- function(Data, Variables, VariableCategories = NULL, impClust
 
     if (!is.null(VariableCategories)) {
       for (var in newVars) {
-        oldvar <- str_split(var, "_")[[1]][1]
+        oldvar <- stringr::str_split(var, "_")[[1]][1]
         newline <- VariableCategories %>% filter(Variable == oldvar)
         newline$Variable <- var
         VariableCategories <- rbind(VariableCategories, newline)

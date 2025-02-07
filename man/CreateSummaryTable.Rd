@@ -4,14 +4,7 @@
 \alias{CreateSummaryTable}
 \title{Create Summary Table}
 \usage{
-CreateSummaryTable(
-  Data,
-  Variables = NULL,
-  numdecimals = 2,
-  Relabel = TRUE,
-  Ordinal = FALSE,
-  ScrollBoxHeight = "700px"
-)
+CreateSummaryTable(data, Ordinal = FALSE, ScrollBoxHeight = 400)
 }
 \arguments{
 \item{Data}{The dataset containing the variables of interest.}
@@ -21,6 +14,10 @@ CreateSummaryTable(
 \item{numdecimals}{Number of decimal places to round the summary statistics.}
 
 \item{Relabel}{Logical, indicating whether to use variable labels as column headers.}
+
+\item{Ordinal}{Logical, indicating whether ordinal variables should be included in the summary.}
+
+\item{ScrollBoxHeight}{Height of the scroll box for displaying the table.}
 }
 \value{
 A formatted HTML table displaying summary statistics.

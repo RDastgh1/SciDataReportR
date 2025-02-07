@@ -16,12 +16,9 @@
 #'
 #' @return A ggplot object displaying the p-value comparisons.
 #'
-#' @import arsenal
-#' @import ggplot2
-#' @import ggrepel
-#' @import gtools
-#' @import sjlabelled
-#' @import dplyr
+#' @importFrom dplyr select summarise_if
+#' @importFrom ggplot2 ggplot geom_point scale_y_discrete xlab
+#' @suggests sjlabelled, arsenal, ggrepel, gtools
 #' @export
 PlotPValueComparisons <- function(Data, GroupVariable, Variables = NULL, VariableCategories = NULL, Relabel = TRUE) {
   # Validate and prepare Variables

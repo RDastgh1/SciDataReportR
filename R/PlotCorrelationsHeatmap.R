@@ -9,6 +9,7 @@
 #' @param FS The font size for the plot. Defaults to 3.
 #' @param method The correlation method. Defaults to "pearson".
 #' @param Relabel A logical indicating whether to relabel variables. Defaults to TRUE.
+#' @param Ordinal Logical, indicating whether ordinal variables should be included.
 #' @return A list containing matrices, ggplot objects for visualizations, and details of the method used.
 #' @export
 PlotCorrelationsHeatmap <- function(Data, xVars = NULL, yVars = NULL, covars = NULL, method = "pearson", Relabel = TRUE, Ordinal = FALSE) {

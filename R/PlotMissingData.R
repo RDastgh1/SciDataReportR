@@ -7,9 +7,7 @@
 #' @param Relabel Logical indicating whether to relabel the columns based on their labels. Default is TRUE.
 #' @return A ggplot object visualizing missing data with flipped coordinates.
 #'
-#' @import naniar
 #' @import ggplot2
-#' @importFrom ggplot2 coord_flip
 #' @export
 #'
 PlotMissingData <- function(DataFrame, Variables = NULL, Relabel = TRUE){

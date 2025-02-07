@@ -81,7 +81,7 @@
       p <- p + geom_tile(data = df_Combined_plot %>% filter(test == "spearman"),
                          aes(x = XLabel, y = YLabel, fill = correlation)) +
         scale_fill_gradient2(limits = c(-1, 1),
-                             name = "ρ") +
+                             name = "\u03C1") +  # Unicode for "ρ"
         ggnewscale::new_scale_fill()
     }
 
@@ -89,9 +89,11 @@
       p <- p + geom_tile(data = df_Combined_plot %>% filter(test == "Phi"),
                          aes(x = XLabel, y = YLabel, fill = correlation)) +
         scale_fill_gradient2(limits = c(-1, 1),
-                             name = "Φ",
-                             low = scales::muted("purple"), high = scales::muted("green")) +
+                             name = "\u03A6",  # Unicode for "Φ"
+                             low = scales::muted("purple"),
+                             high = scales::muted("green")) +
         ggnewscale::new_scale_fill()
+
     }
 
     if (nrow(df_Combined_plot %>% filter(test == "Point Correlation"))) {

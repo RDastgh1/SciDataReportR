@@ -23,6 +23,8 @@ PlotChiSqCovar(
 \item{covars}{A character vector of the names of covariate variables. Defaults to NULL.}
 
 \item{Relabel}{Logical indicating whether to relabel the variables based on their labels in the dataset. Defaults to TRUE.}
+
+\item{Ordinal}{Logical, indicating whether ordinal variables should be included.}
 }
 \value{
 A list containing ggplot objects for visualizations and tables of p-values.

@@ -9,6 +9,7 @@
 #' @param ContVars Character vector of continuous variable names.
 #' @param Covariates Optional character vector of covariate names for ANCOVA analysis.
 #' @param Relabel Logical indicating whether to relabel variables with their labels (default is TRUE).
+#' @param Ordinal Logical, indicating whether ordinal variables should be considered.
 #' @param Parametric Logical indicating whether to use parametric (ANOVA) or non-parametric (Kruskal-Wallis) tests (default is TRUE).
 #' @return A list containing three ggplot objects: p (scatter plot without multiple comparison correction), p_FDR (scatter plot with FDR correction), and pvaltable (data frame of p-values and significance).
 #' @import dplyr
@@ -18,7 +19,6 @@
 #' @importFrom rstatix anova_test kruskal_test get_summary_stats add_significance adjust_pvalue
 #' @importFrom stats var
 #' @importFrom utils na.omit
-#' @importFrom RColorBrewer brewer.pal
 #' @importFrom rstatix add_significance adjust_pvalue anova_test kruskal_test get_summary_stats
 #' @export
 PlotAnovaRelationshipsMatrix <- function(Data, CatVars, ContVars, Covariates = NULL, Relabel = TRUE, Parametric = TRUE, Ordinal = FALSE) {
@@ -108,19 +108,17 @@ PlotAnovaRelationshipsMatrix <- function(Data, CatVars, ContVars, Covariates = N
   stat.test$PlotText <- PlotText
   if (Relabel) {
     stat.test$YLabel <- factor(stat.test$ContinuousVariable,
-                               levels = ContVars, labels = sjlabelled::get_label(Data[as.character(ContVars)]),
-                                                                                 def.value = ContVars)
+                               levels = ContVars, labels = sjlabelled::get_label(Data[as.character(ContVars)],  def.value = ContVars),
+                                                                                )
     stat.test$XLabel <- factor(stat.test$CategoricalVariable,
-                               levels = CatVars, labels = sjlabelled::get_label(Data[as.character(CatVars)]),
-                                                                                def.value = CatVars)
+                               levels = CatVars, labels = sjlabelled::get_label(Data[as.character(CatVars)], def.value = CatVars),
+                                                                                )
   } else {
     stat.test$YLabel <- factor(stat.test$ContinuousVariable,
                                levels = ContVars)
     stat.test$XLabel <- factor(stat.test$CategoricalVariable,
                                levels = CatVars)
   }
-  library(ggplot2)
-  library(paletteer)
 
   stat.test <- stat.test %>% ungroup() %>% ungroup () %>% as.data.frame() %>% dplyr::filter(Effect == "CategoricalValue")
 

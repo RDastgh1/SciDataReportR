@@ -6,6 +6,7 @@
 #' @param xVars A character vector of the names of the x-axis categorical variables.
 #' @param yVars A character vector of the names of the y-axis categorical variables.
 #' @param covars A character vector of the names of covariate variables. Defaults to NULL.
+#' @param Ordinal Logical, indicating whether ordinal variables should be included.
 #' @param Relabel Logical indicating whether to relabel the variables based on their labels in the dataset. Defaults to TRUE.
 #' @return A list containing ggplot objects for visualizations and tables of p-values.
 #' @export

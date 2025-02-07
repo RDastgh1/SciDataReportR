@@ -18,10 +18,10 @@
 #' \item{Relabel}{The value of the Relabel parameter.}
 #' \item{Covariates}{The covariates used in the analysis, if any.}
 #'
-#' @import dplyr ggplot2 paletteer rstatix sjlabelled
+#' @import dplyr ggplot2 rstatix sjlabelled
 #' @importFrom stats p.adjust
 #' @importFrom magrittr %>%
-#'
+#' @suggests paletteer
 #'
 #' @export
 PlotMiningMatrix <- function(Data, OutcomeVars, PredictorVars, Covariates = NULL, Relabel = TRUE, Parametric = TRUE) {
@@ -122,7 +122,7 @@ PlotMiningMatrix <- function(Data, OutcomeVars, PredictorVars, Covariates = NULL
 
   P_Combined <- P_Combined %>%
     select(-any_of(c("stars", "stars_FDR", "CategoricalVariable", "ContinuousVariable",
-           "p.signif", "PlotText", "ges", "Effect")))
+                     "p.signif", "PlotText", "ges", "Effect")))
 
   # Apply FDR Adjustment
   P_Combined$p_adj <- p.adjust(P_Combined$p, method = "fdr")

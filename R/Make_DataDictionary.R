@@ -8,10 +8,11 @@
 #'
 #' @return A data frame representing the data dictionary.
 #'
-#'
 #' @importFrom sjlabelled get_label get_labels
-#' @importFrom codebook skim_codebook
 #' @importFrom dplyr select rename left_join
+#' @importFrom tibble as_tibble
+#'
+#' @suggests sjlabelled, codebook, dplyr, tibble
 #'
 #' @export
 Make_DataDictionary <- function(DataFrame, numdecimals = 2) {

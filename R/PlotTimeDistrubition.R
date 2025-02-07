@@ -6,11 +6,9 @@
 #' @param DateVariable The name of the column in the data frame containing the date information. Default is "Date".
 #' @return A ggplot object displaying the distribution of time-based data.
 #' @importFrom ggplot2 ggplot geom_boxplot theme_linedraw
-#' @importFrom ggdist stat_halfeye stat_dots
-#' @importFrom lubridate decimal_date
 #' @importFrom scales scale_y_reverse
 #' @importFrom dplyr %>%
-#' @import ggdist
+#' @suggests ggdist, lubridate
 #' @export
 PlotTimeDistribution <- function(Data, DateVariable = "Date") {
 

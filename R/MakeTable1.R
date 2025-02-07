@@ -10,6 +10,7 @@
 #' @return A summary table created using gtsummary.
 #' @importFrom gtsummary tbl_summary
 #' @importFrom dplyr select all_of
+#' @suggests gtsummary, dplyr
 #' @export
 MakeTable1 <- function(DataFrame, Variables = NULL, TreatOrdinalAs = "Continuous", AutoDetectDistribution = FALSE, IncludeMissing = "ifany"){
   if (is.null(Variables)) {

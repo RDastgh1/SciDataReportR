@@ -12,6 +12,8 @@ PlotAssociations(DataFrame, Var1, Var2, Ordinal = FALSE)
 \item{Var1}{The name of the first variable.}
 
 \item{Var2}{The name of the second variable.}
+
+\item{Ordinal}{Logical, indicating whether ordinal variables should be included.}
 }
 \value{
 A ggplot object representing the relationship between the variables.

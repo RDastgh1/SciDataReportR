@@ -5,6 +5,7 @@
 #' @param DataFrame The dataframe containing the variables to be plotted.
 #' @param Variables Optional. A character vector specifying the names of the categorical variables to be plotted. If NULL, categorical variables are automatically detected.
 #' @param Relabel Logical. If TRUE, missing labels in the dataframe are replaced with column names as labels for plotting.
+#' @param Ordinal Logical, indicating whether ordinal variables should be included.
 #' @return A plot visualizing the distributions of categorical variables.
 #' @importFrom sjlabelled get_label
 #' @importFrom dplyr select

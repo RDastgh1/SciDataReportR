@@ -27,6 +27,8 @@ PlotCorrelationsHeatmap(
 
 \item{Relabel}{A logical indicating whether to relabel variables. Defaults to TRUE.}
 
+\item{Ordinal}{Logical, indicating whether ordinal variables should be included.}
+
 \item{FS}{The font size for the plot. Defaults to 3.}
 }
 \value{

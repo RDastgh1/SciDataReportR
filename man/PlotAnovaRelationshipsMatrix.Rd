@@ -26,6 +26,8 @@ PlotAnovaRelationshipsMatrix(
 \item{Relabel}{Logical indicating whether to relabel variables with their labels (default is TRUE).}
 
 \item{Parametric}{Logical indicating whether to use parametric (ANOVA) or non-parametric (Kruskal-Wallis) tests (default is TRUE).}
+
+\item{Ordinal}{Logical, indicating whether ordinal variables should be considered.}
 }
 \value{
 A list containing three ggplot objects: p (scatter plot without multiple comparison correction), p_FDR (scatter plot with FDR correction), and pvaltable (data frame of p-values and significance).

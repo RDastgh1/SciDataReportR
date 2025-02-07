@@ -3,7 +3,7 @@ Title: Package for Generating Scientific Data Reports
 Version: 5.0.0
 Authors@R: 
     person("Raha", "Dastgheyb", , "raha@jhmi.edu", role = c("aut", "cre"),
-           comment = c(ORCID = "https://orcid.org/signin"))
+           comment = c(ORCID = "0000-0002-4992-711X"))
 Description: SciDataReportR is a package designed to facilitate the generation of scientific data reports. It provides functions for creating descriptive summary tables, formatting data for analysis, and enhancing data visualization.
 License: MIT + file LICENSE
 Encoding: UTF-8
@@ -12,8 +12,6 @@ RoxygenNote: 7.3.1
 URL: https://github.com/RDastgh1/SciDataReportR, https://rdastgh1.github.io/SciDataReportR/
 BugReports: https://github.com/RDastgh1/SciDataReportR/issues
 Imports: 
-    arsenal,
-    data.table,
     dplyr,
     ggplot2,
     labelled,
@@ -21,35 +19,37 @@ Imports:
     sjlabelled,
     stats,
     summarytools,
-    suggests,
     tidyr,
     rstatix,
     ggstatsplot,
     gt,
-    codebook,
-    xtable,
-    psych,
+    plotly,
+    tibble,
+    kableExtra,
+    gtsummary
+Suggests:
+    BlandAltmanLeh,
+    ggrepel,
     gtools,
     missRanger,
     ggrain,
     gtsummary,
-    naniar,
-    ggdist,
-    lubridate,
-    rlang,
-    RColorBrewer,
-    plotly,
-    plotrix,
+    xtable,
+    codebook,
+    psych,
     paletteer,
     VIM,
     fastDummies,
-    ggrepel,
     stringr,
-    tibble,
-    FactoMineR
-Suggests:
-    BlandAltmanLeh,
-    kableExtra
+    naniar,
+    plotrix,
+    ggdist,
+    lubridate,
+    rlang,
+    FactoMineR,
+    RColorBrewer,
+    arsenal,
+    data.table,
 Depends: 
     R (>= 2.10)
 LazyData: true

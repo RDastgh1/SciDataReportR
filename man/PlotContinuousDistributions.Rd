@@ -20,6 +20,8 @@ PlotContinuousDistributions(
 \item{Relabel}{Logical, whether to relabel the variables using their labels if available. Default is TRUE.}
 
 \item{ncol}{Number of columns in the facet grid. Default is 3.}
+
+\item{Ordinal}{Logical, indicating whether ordinal variables should be included.}
 }
 \value{
 A raincloud plot visualizing the distributions of continuous variables.

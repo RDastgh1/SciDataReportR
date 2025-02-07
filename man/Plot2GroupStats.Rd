@@ -23,6 +23,8 @@ Plot2GroupStats(
 \item{impClust}{A character string representing the important cluster.}
 
 \item{normalClust}{A character string representing the normal cluster.}
+
+\item{GroupVar}{The grouping variable used for the comparison.}
 }
 \value{
 A list containing a plot, a summary table, and a p-value table.

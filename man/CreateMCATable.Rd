@@ -13,7 +13,8 @@ CreateMCATable(
   center = TRUE,
   Relabel = TRUE,
   Ordinal = FALSE,
-  numComponents = NULL
+  numComponents = NULL,
+  ImputeMissing = FALSE
 )
 }
 \arguments{
@@ -34,6 +35,8 @@ CreateMCATable(
 \item{Ordinal}{Logical, if TRUE, the function will treat variables as ordinal for MCA. Default is FALSE.}
 
 \item{numComponents}{An optional integer specifying the number of components to retain. If NULL, the number of components will be determined based on \code{minThresh}.}
+
+\item{ImputeMissing}{Logical, if TRUE, missing values will be imputed using \code{missRanger}. Default is FALSE.}
 }
 \value{
 A list with the following elements:

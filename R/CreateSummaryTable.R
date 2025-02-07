@@ -7,11 +7,16 @@
 #' @param Variables A character vector specifying the variables for which summary statistics will be calculated.
 #' @param numdecimals Number of decimal places to round the summary statistics.
 #' @param Relabel Logical, indicating whether to use variable labels as column headers.
+#' @param Ordinal Logical, indicating whether ordinal variables should be included in the summary.
+#' @param ScrollBoxHeight Height of the scroll box for displaying the table.
+#' @usage CreateSummaryTable(data, Ordinal = FALSE, ScrollBoxHeight = 400)
 #' @return A formatted HTML table displaying summary statistics.
 #' @importFrom magrittr %>%
 #' @importFrom dplyr select rownames_to_column mutate if_else
 #' @importFrom sjlabelled get_label set_label
 #' @importFrom summarytools descr
+#' @importFrom kableExtra cell_spec kable kable_styling scroll_box
+#' @suggests kableExtra
 #' @export
 
 

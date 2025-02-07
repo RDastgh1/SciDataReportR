@@ -5,6 +5,7 @@
 #' @param DataFrame The data frame containing the variables of interest.
 #' @param Var1 The name of the first variable.
 #' @param Var2 The name of the second variable.
+#' @param Ordinal Logical, indicating whether ordinal variables should be included.
 #' @return A ggplot object representing the relationship between the variables.
 #' @import ggplot2 ggstatsplot dplyr
 #' @export

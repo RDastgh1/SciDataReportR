@@ -17,7 +17,7 @@
 #' \item{time_differences}{A numeric vector of time differences for each closest match.}
 #'
 #' @import dplyr
-#' @importFrom lubridate as_date
+#' @suggests lubridate
 #' @export
 Merge_ByClosestTime <- function(DataFrame1, DataFrame2, TimeVar1, TimeVar2, IDVar1 = NULL, IDVar2 = NULL, is_date = FALSE) {
   library(dplyr)
@@ -25,8 +25,8 @@ Merge_ByClosestTime <- function(DataFrame1, DataFrame2, TimeVar1, TimeVar2, IDVa
 
   # Convert time variables to Date or POSIXct
   if (is_date) {
-    DataFrame1[[TimeVar1]] <- as_date(DataFrame1[[TimeVar1]])
-    DataFrame2[[TimeVar2]] <- as_date(DataFrame2[[TimeVar2]])
+    DataFrame1[[TimeVar1]] <- lubridate::as_date(DataFrame1[[TimeVar1]])
+    DataFrame2[[TimeVar2]] <- lubridate::as_date(DataFrame2[[TimeVar2]])
   }
 
   # Add time columns for merge and row numbers for later reference

@@ -18,12 +18,8 @@
 #' @param SigP_YCoord Numeric; the y-coordinate for marking significant p-values.
 #' @param SigFDR_YCoord Numeric; the y-coordinate for marking significant FDR-adjusted p-values.
 #' @return A ggplot object representing the Z-score plot.
-#' @import dplyr
-#' @import ggplot2
-#' @import plotly
-#' @import rstatix
-#' @import paletteer
-#' @import plotrix
+#' @importFrom ggplot2 ggplot aes geom_line geom_point theme_minimal labs
+#' @importFrom dplyr filter mutate group_by summarise
 #' @importFrom tidyr pivot_longer
 #' @export
 CreateZScorePlot <- function (Data, TargetVar, Variables, VariableCategories = NULL,

@@ -12,9 +12,12 @@ FormattedDataDictionary(DataFrame, numdecimals = 2)
 \item{numdecimals}{Number of decimals to display for numeric variables (default: 2).}
 }
 \value{
-A formatted data dictionary table.
+A formatted data dictionary table (gt object).
 }
 \description{
 This function generates a formatted data dictionary table using the specified data frame.
 The table includes variable names, labels, types, and additional formatting based on variable types.
+}
+\details{
+This function requires the \code{gt} package. If not installed, the function will return an error.
 }
