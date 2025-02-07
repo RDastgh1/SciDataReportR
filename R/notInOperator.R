@@ -14,3 +14,8 @@
   # Return the negation of the result of the %in% operator
   !('%in%'(x, y))
 }
+
+`%notin%` <- function(x, y) {
+  # Return the negation of the result of the %in% operator
+  !('%in%'(x, y))
+}

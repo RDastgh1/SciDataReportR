@@ -17,6 +17,8 @@ PlotCategoricalDistributions(
 \item{Variables}{Optional. A character vector specifying the names of the categorical variables to be plotted. If NULL, categorical variables are automatically detected.}
 
 \item{Relabel}{Logical. If TRUE, missing labels in the dataframe are replaced with column names as labels for plotting.}
+
+\item{Ordinal}{Logical, indicating whether ordinal variables should be included.}
 }
 \value{
 A plot visualizing the distributions of categorical variables.
