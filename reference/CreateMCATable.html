@@ -27,7 +27,7 @@
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>CreateMCATable</h1>
-      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/v5.0.0/R/CreateMCATable.R" class="external-link"><code>R/CreateMCATable.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/master/R/CreateMCATable.R" class="external-link"><code>R/CreateMCATable.R</code></a></small>
       <div class="d-none name"><code>CreateMCATable.Rd</code></div>
     </div>
 
@@ -46,7 +46,8 @@
 <span>  center <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  Relabel <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  Ordinal <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  numComponents <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  numComponents <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  ImputeMissing <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -88,6 +89,10 @@
 
 <dt id="arg-numcomponents">numComponents<a class="anchor" aria-label="anchor" href="#arg-numcomponents"></a></dt>
 <dd><p>An optional integer specifying the number of components to retain. If NULL, the number of components will be determined based on <code>minThresh</code>.</p></dd>
+
+
+<dt id="arg-imputemissing">ImputeMissing<a class="anchor" aria-label="anchor" href="#arg-imputemissing"></a></dt>
+<dd><p>Logical, if TRUE, missing values will be imputed using <code>missRanger</code>. Default is FALSE.</p></dd>
 
 </dl></div>
     <div class="section level2">
