@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">SciDataReportR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">5.0.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">6.1.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -27,7 +27,7 @@
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Create PCA Table and Visualization</h1>
-      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/v5.0.0/R/CreatePCATable.R" class="external-link"><code>R/CreatePCATable.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/master/R/CreatePCATable.R" class="external-link"><code>R/CreatePCATable.R</code></a></small>
       <div class="d-none name"><code>CreatePCATable.Rd</code></div>
     </div>
 
@@ -44,7 +44,7 @@
 <span>  minThresh <span class="op">=</span> <span class="fl">0.85</span>,</span>
 <span>  scale <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  center <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  Relabel <span class="op">=</span> <span class="cn">T</span>,</span>
+<span>  Relabel <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  Ordinal <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  numComponents <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -76,6 +76,18 @@
 
 <dt id="arg-center">center<a class="anchor" aria-label="anchor" href="#arg-center"></a></dt>
 <dd><p>Logical, indicating whether to center the data (default is TRUE).</p></dd>
+
+
+<dt id="arg-relabel">Relabel<a class="anchor" aria-label="anchor" href="#arg-relabel"></a></dt>
+<dd><p>Optional argument to relabel the components.</p></dd>
+
+
+<dt id="arg-ordinal">Ordinal<a class="anchor" aria-label="anchor" href="#arg-ordinal"></a></dt>
+<dd><p>Logical, indicating whether ordinal variables should be handled.</p></dd>
+
+
+<dt id="arg-numcomponents">numComponents<a class="anchor" aria-label="anchor" href="#arg-numcomponents"></a></dt>
+<dd><p>Number of principal components to compute.</p></dd>
 
 </dl></div>
     <div class="section level2">
