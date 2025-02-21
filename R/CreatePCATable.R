@@ -17,7 +17,7 @@
 #' @importFrom tidyr pivot_longer
 #' @suggests missRanger, paletteer, psych
 #' @export
-CreatePCAVisualization <- function(Data, VarsToReduce, VariableCategories = NULL, minThresh = 0.85, scale = TRUE,
+CreatePCATable <- function(Data, VarsToReduce, VariableCategories = NULL, minThresh = 0.85, scale = TRUE,
                                    center = TRUE, Relabel = TRUE, Ordinal = FALSE, numComponents = NULL) {
   classcolors <- c(paletteer::paletteer_d("calecopal::superbloom2"),
                    paletteer::paletteer_d("calecopal::vermillion"),
