@@ -11,7 +11,7 @@ CreatePCATable(
   minThresh = 0.85,
   scale = TRUE,
   center = TRUE,
-  Relabel = TRUE,
+  Relabel = T,
   Ordinal = FALSE,
   numComponents = NULL
 )
