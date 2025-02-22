@@ -63,7 +63,7 @@ CreatePCATable<- function (Data, VarsToReduce, VariableCategories = NULL, minThr
 
   fit <- psych::principal(DataSubset, nfactors = nc, rotate = "varimax")
   fit <- psych::fa.sort(fit)
-  LoadingTable <- as.data.frame(xtable(unclass(fit$loadings)))
+  LoadingTable <- as.data.frame(xtable::xtable(unclass(fit$loadings)))
   scores <- fit$scores
   CombinedData <- cbind(Data, scores)
   LoadingTable$Variable <- rownames(LoadingTable)
