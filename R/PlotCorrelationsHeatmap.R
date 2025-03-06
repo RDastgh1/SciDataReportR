@@ -12,6 +12,7 @@
 #' @param Ordinal Logical, indicating whether ordinal variables should be included.
 #' @return A list containing matrices, ggplot objects for visualizations, and details of the method used.
 #' @export
+
 PlotCorrelationsHeatmap <- function(Data, xVars = NULL, yVars = NULL, covars = NULL, method = "pearson", Relabel = TRUE, Ordinal = FALSE) {
   removediag <- FALSE
   if (is.null(yVars)) {
@@ -94,13 +95,14 @@ PlotCorrelationsHeatmap <- function(Data, xVars = NULL, yVars = NULL, covars = N
         } else {
           o <- stats::cor.test(d[, 1], d[, 2] %>% as.numeric(), method = method)
         }
-      },
-      error = function(e) {
-        hadError <- TRUE
-      },
-      interrupt = function() {
-        hadError <- FALSE
+      }, error = function(e) {
+        o <- list(estimate = NA, p.value = NA)
+        print(paste("Error occurred: ", e$message))
+      }, interrupt = function() {
+        o <- list(estimate = NA, p.value = NA)
+        print("Calculation interrupted")
       })
+
 
       if (hadError) {
         MC[xi, yi] <- NA
@@ -153,8 +155,8 @@ PlotCorrelationsHeatmap <- function(Data, xVars = NULL, yVars = NULL, covars = N
   plot.data_npairs <- pivot_longer(as.data.frame(M$npairs) %>% rownames_to_column(var = "XVar"), cols = colnames(M$npairs), names_to = "YVar", values_to = "nPairs")
 
   plot.data <- suppressMessages(left_join(plot.data_R, plot.data_P) %>%
-    left_join(plot.data_P_adj) %>%
-    left_join(plot.data_npairs))
+                                  left_join(plot.data_P_adj) %>%
+                                  left_join(plot.data_npairs))
 
   plot.data$stars <- cut(plot.data$P, breaks = c(-Inf, 0.001, 0.01, 0.05, Inf), label = c("***", "**", "*", ""))
   plot.data$stars_FDR <- cut(plot.data$P_adj, breaks = c(-Inf, 0.001, 0.01, 0.05, Inf), label = c("***", "**", "*", ""))
