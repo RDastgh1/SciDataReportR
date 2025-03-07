@@ -15,9 +15,8 @@ plotForestFromTable <- function(UnivariateRegressionTables, pSize = 2) {
 
   # Extract tables and headers
   list_Tables <- UnivariateRegressionTables$FormattedTable$tbls
-  title_Tables <- UnivariateRegressionTables$LargeTable$table_styling$header %>%
-    filter(label == "tbl_id1") %>%
-    pull(spanning_header)
+  title_Tables <- UnivariateRegressionTables$LargeTable$table_styling$spanning_header %>%
+    pull(spanning_header) %>% unique()
 
   # Combine all tables into a single dataframe
   for (i in seq_along(list_Tables)) {
