@@ -4,7 +4,7 @@
 #' @param filename The name to save the Quarto file as (default: "EDA_Report.qmd").
 #' @export
 use_EDATemplate <- function(filename = "EDA_Report.qmd") {
-  template_path <- system.file("rmarkdown/templates/EDATemplate/skeleton/EDATemplate.qmd", package = "SciDataReportR")
+  template_path <- system.file("rmarkdown/templates/quarto/skeleton/EDATemplate.qmd", package = "SciDataReportR")
   if (template_path == "") {
     stop("Template not found. Please reinstall the package.", call. = FALSE)
   }
