@@ -104,7 +104,7 @@ PlotChiSqCovar <- function(Data, xVars, yVars, covars = NULL, Relabel = TRUE, Or
     theme(axis.text.x = element_text(angle = 90),
           axis.title.x = element_blank(), axis.title.y = element_blank()) +
     scale_shape_manual(values = c(7, 16, 17, 15, 18), breaks = c("ns", "*", "**", "***", "****"), drop = FALSE) +
-    scale_color_gradientn(trans = "log", colours = rev(brewer.pal(9, "Oranges")[-1]), limits = c(0.0000001, 1), oob = scales::squish, breaks = c(1, 0.05, 0.01, 0.001, 0.0001, 0.00001, 0.000001, 0.0000001, 0.00000001)) +
+    scale_color_gradientn(trans = "log", colours = rev(RColorBrewer::brewer.pal(9, "Oranges")[-1]), limits = c(0.0000001, 1), oob = scales::squish, breaks = c(1, 0.05, 0.01, 0.001, 0.0001, 0.00001, 0.000001, 0.0000001, 0.00000001)) +
     scale_size_continuous(breaks = seq(0, 10, 0.5), limits = c(0, 5)) + guides(size = FALSE) +
     labs(subtitle = "No Multiple Comparison Correction")
 
@@ -113,7 +113,7 @@ PlotChiSqCovar <- function(Data, xVars, yVars, covars = NULL, Relabel = TRUE, Or
     theme(axis.text.x = element_text(angle = 90),
           axis.title.x = element_blank(), axis.title.y = element_blank()) +
     scale_shape_manual(values = c(7, 16, 17, 15, 18), breaks = c("ns", "*", "**", "***", "****"), drop = FALSE) +
-    scale_color_gradientn(trans = "log", colours = rev(brewer.pal(9, "Oranges")), limits = c(0.0000001, 1), oob = scales::squish, breaks = c(1, 0.05, 0.01, 0.001, 0.0001, 0.00001, 0.000001, 0.0000001, 0.00000001)) +
+    scale_color_gradientn(trans = "log", colours = rev(RColorBrewer::brewer.pal(9, "Oranges")), limits = c(0.0000001, 1), oob = scales::squish, breaks = c(1, 0.05, 0.01, 0.001, 0.0001, 0.00001, 0.000001, 0.0000001, 0.00000001)) +
     scale_size_continuous(breaks = seq(0, 10, 0.5), limits = c(0, 5)) + guides(size = FALSE) +
     labs(subtitle = "FDR Correction")
 
