@@ -4,7 +4,7 @@
 \alias{use_EDATemplate}
 \title{Use the EDATemplate Quarto Template}
 \usage{
-use_EDATemplate(filename = "EDA_Report.qmd")
+use_EDATemplate(filename = "Reports/EDA_Report.qmd")
 }
 \arguments{
 \item{filename}{The name to save the Quarto file as (default: "EDA_Report.qmd").}
