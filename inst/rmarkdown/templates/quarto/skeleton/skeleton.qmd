@@ -1,0 +1,220 @@
+---
+title: "Exploratory EDA"
+author: "Raha Dastgheyb"
+title-block-banner: true
+date: "last-modified"
+format:
+  html:
+    embed-resources: true
+    toc: true
+    smooth-scroll: true
+    theme: zephyr
+execute:
+  echo: false
+  message: false
+  warning: false
+code-fold: true
+---
+
+```{r LoadPackages}
+#| include: false
+library(readxl)
+library(readr)
+library(ggplot2)
+library(tidyverse)
+library(gtsummary)
+library(SciDataReportR)
+library(here)
+```
+
+
+
+```{r LoadData}
+#| include: false
+
+DataFile <- "sasp.csv" ## Replace this with the name of your data file
+
+VariableTypesFile <- "VariableTypes_RD_2024_03_05.csv" ## Replace this with the name of your VariableTypes file.  If you don't have one, then prior to generating this report run the CreateVariableTypesTemplate() function which you can then edit in excel 
+  
+AllData <- read_csv(here("Data", "Raw", DataFile ))
+VariableTypes<- read_csv(here("Data", "Raw", VariableTypesFile ))
+# Revalue the data based on the variable types file to adjust categorical values, missing values, labels, etc.
+
+Data_Revalued <- RevalueData(AllData, VariableTypes)
+## Check the warnings on Data_Revalued to make sure it matches
+df_All <- Data_Revalued$RevaluedData
+
+
+
+```
+
+::: callout-note
+## Files Used
+
+Data File: `r DataFile`
+
+Codebook: `r VariableTypesFile`
+:::
+
+```{r FilterData}
+#| fig-width: 8
+#| include: true
+
+VariableTypes <- VariableTypes %>% filter(Exclude !=1 | is.na(Exclude)) # only focus on variable you are not excluding
+
+## Make sure Variable Types ONLY includes variables
+
+vars_Continuous <- getNumVars(df_All)
+vars_Categorical <- getCatVars(df_All)
+vars_All <- VariableTypes$Variable
+
+## For the purposes of this example, we are limiting the number of variables. You do not need to do this with your own data
+if(length(vars_Continuous)>15){vars_Continuous <- vars_Continuous[1:15]}
+if(length(vars_Categorical)>15){vars_Categorical <- vars_Categorical[1:15]}
+if(length(vars_All)>15){vars_All <- vars_All[1:15]}
+##Sample Code to get lists of over variables from codebook
+# vars_Table1 <- VariableTypes %>% filter(Table1 ==1) %>% pull(Variable)
+```
+
+
+# Codebook
+
+```{r Codebook}
+#| fig-width: 8
+#| fig-height: 8
+#| column: screen
+
+
+FormattedDataDictionary(df_All %>% select(all_of(vars_All))) %>% gt::tab_options(container.height = 900)
+
+```
+
+# Data Exploration
+
+## Distributions of Continuous Variables
+
+```{r ContinuousDistributions}
+#| fig-width: 8
+#| fig-height: 10
+#| column: screen
+
+
+CreateSummaryTable(df_All, vars_Continuous)
+
+
+PlotContinuousDistributions(df_All, Variables = vars_Continuous)
+
+
+```
+
+## Distributions of Categorical Variables
+
+```{r CategoricalDistributions}
+#| fig-width: 8
+#| fig-height: 10
+
+
+
+PlotCategoricalDistributions(df_All, vars_Categorical)
+
+
+```
+
+## MissingData
+
+```{r MissingData}
+#| fig-width: 8
+#| fig-height: 7
+#| column: screen
+
+PlotMissingData(df_All%>% select(all_of(vars_All)))
+
+  
+```
+
+## Table 1
+
+```{r Table1}
+
+
+
+MakeTable1(df_All %>% select(all_of(vars_All))) %>% as_gt() %>% gt::tab_options(container.height = 900)
+
+  
+```
+
+## Exploratory Associations
+
+FDR adjusted
+
+```{r ExploratoryAssociations}
+#| fig-width: 10
+#| fig-height: 5
+#| column: screen
+
+PM<- PlotMiningMatrix(df_All, vars_All, vars_All)
+p<- PM$FDRCorrected$plot
+
+p 
+
+## if you want it interactive in a scrollbox:
+#plotly::ggplotly(p, width = 1600, height = 1000)
+  
+  
+```
+
+# Dimension Reduction
+
+## Scree Plot
+
+```{r PCAScree}
+#| fig-width: 10
+#| fig-height: 4
+#| column: screen
+
+PCAObj <- CreatePCATable(df_All, vars_Continuous)
+PCAObj$p_scree
+```
+
+## Lollipop
+
+```{r PCALollipop}
+#| fig-width: 10
+#| fig-height: 4
+#| column: screen
+
+PCAObj$Lollipop
+```
+
+## PCA Associations
+
+Correlations for now, but can be any of the options
+
+```{r PCAAssociations}
+#| fig-width: 8
+#| fig-height: 5
+#| column: screen
+
+#extract component names
+vars_PCA <- PCAObj$Scores %>% colnames()
+
+# Create Vizualizations
+
+PCACorrObj <- PlotCorrelationsHeatmap(PCAObj$CombinedData, vars_PCA, vars_Continuous)
+
+PCACorrObj$Unadjusted$plot
+```
+# Version Info For Reproducibility
+
+```{r PrintAndSave, warning = FALSE,  include=TRUE,cache=FALSE, fig.width = 10, fig.height = 26}
+
+filename<- paste0( "Step1_EDA_", format(Sys.time(), "%Y-%m-%d %I-%p"), ".RData") # Change this to change the filename
+
+### Uncomment this section to save the RData file
+# save.image(file = paste0(here("Data", "Clean"),"/", filename))
+# print(paste("For future reference, the analyzed data shown here has been saved as", filename))
+
+
+print(sessionInfo())
+ 
+```
