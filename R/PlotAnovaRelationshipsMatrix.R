@@ -21,7 +21,7 @@
 #' @importFrom utils na.omit
 #' @importFrom rstatix add_significance adjust_pvalue anova_test kruskal_test get_summary_stats
 #' @export
-function (Data, CatVars, ContVars, Covariates = NULL, Relabel = TRUE,
+PlotAnovaRelationshipsMatrix<- function (Data, CatVars, ContVars, Covariates = NULL, Relabel = TRUE,
           Parametric = TRUE, Ordinal = FALSE)
 {
   DataSubset <- Data[c(CatVars, ContVars, Covariates)]
