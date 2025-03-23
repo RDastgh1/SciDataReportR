@@ -42,9 +42,8 @@ CreateVariableTypesTemplate <- function(DataFrame, CSVFileName = NULL, GuessCate
                                     "character", "Date", "logical"), labels = c("Double",
                                                                                 "Double", "Categorical", "String", "Date", "Categorical"))
 
-
   # Decide if categorical Values need to be calculated based on whether there were any categorical variables or not.
-  if(GuessCategorical == T || (is.null(GuessCategorical) & sum(Types == "Categorical", na.rm = T) ==0)){
+  if(GuessCategorical == T || (is.null(GuessCategorical) & sum(Types == "Categorical", na.rm = T) == 0)){
 
     # Get the number of unique values for each. If it's <=5, decide that it is categorical
     unique_counts <- sapply(DataFrame, function(x) length(unique(x)))
@@ -52,16 +51,37 @@ CreateVariableTypesTemplate <- function(DataFrame, CSVFileName = NULL, GuessCate
     Types[unique_counts <= 5] <- "Categorical"
   }
 
-
+  # Get variable labels (if available)
   DataLabels <- sjlabelled::get_label(DataFrame, def.value = colnames(DataFrame))
+
+  # Create the template dataframe
   VariableTypes <- data.frame(Variable = colnames(DataFrame),
                               Label = DataLabels, Type = Types, Category = NA, Recode = NA,
                               Code = NA, Notes = "", Exclude = NA, MissingCode = "")
 
+  # Handle labelled factors (e.g., variables loaded from SPSS using `haven`)
+  labelled_factors <- sapply(DataFrame, inherits, "labelled")
 
+  for (i in which(labelled_factors)) {
+    var_name <- colnames(DataFrame)[i]
 
+    # Set Recode to 1 for labelled factors
+    VariableTypes$Recode[i] <- 1
+
+    # Get the labels for the factor and create a recoding string
+    labels <- levels(as.factor(DataFrame[[var_name]]))
+    codes <- sjlabelled::get_labels(DataFrame[[var_name]])
+
+    recode_str <- paste0(paste(codes, labels, sep = "=", collapse = "; "), ";")
+
+    # Set the Code column to show recoding
+    VariableTypes$Code[i] <- recode_str
+  }
+
+  # Optionally save the output to a CSV file
   if (!is.null(CSVFileName)) {
     write.csv(VariableTypes, CSVFileName, row.names = FALSE)
   }
+
   return(VariableTypes)
 }
