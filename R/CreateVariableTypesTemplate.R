@@ -72,8 +72,8 @@ CreateVariableTypesTemplate <- function(DataFrame, CSVFileName = NULL, GuessCate
     labels <- levels(as.factor(DataFrame[[var_name]]))
     codes <- sjlabelled::get_labels(DataFrame[[var_name]])
 
-    recode_str <- paste0(paste(codes, labels, sep = "=", collapse = "; "), ";")
-
+    recode_str <- paste0(paste(labels, codes, sep = "=",
+                               collapse = "; "))
     # Set the Code column to show recoding
     VariableTypes$Code[i] <- recode_str
   }
