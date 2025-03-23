@@ -60,7 +60,7 @@ CreateVariableTypesTemplate <- function(DataFrame, CSVFileName = NULL, GuessCate
                               Code = NA, Notes = "", Exclude = NA, MissingCode = "")
 
   # Handle labelled factors (e.g., variables loaded from SPSS using `haven`)
-  labelled_factors <- sapply(DataFrame, inherits, "labelled")
+  labelled_factors <- sapply(DataFrame, sjlabelled::is_labelled)
 
   for (i in which(labelled_factors)) {
     var_name <- colnames(DataFrame)[i]
