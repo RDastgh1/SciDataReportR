@@ -95,6 +95,9 @@ PlotCorrelationsHeatmap <- function(Data, xVars = NULL, yVars = NULL, covars = N
         } else {
           o <- stats::cor.test(d[, 1], d[, 2] %>% as.numeric(), method = method)
         }
+        if(nrow(d)==0){
+          o <- list(estimate = NA, p.value = NA)
+        }
       }, error = function(e) {
         o <- list(estimate = NA, p.value = NA)
         print(paste("Error occurred: ", e$message))
