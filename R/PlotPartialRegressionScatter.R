@@ -24,6 +24,8 @@
 #' @import ggplot2
 #' @importFrom sjlabelled get_label
 #' @export
+#'
+#'
 PlotPartialRegressionScatter <- function(DataFrame, IndepVar, DepVar, Covariates = NULL, Relabel = TRUE) {
 
   # Subset complete cases for the relevant variables.
