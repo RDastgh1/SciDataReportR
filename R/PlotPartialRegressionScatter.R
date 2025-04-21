@@ -98,7 +98,6 @@ PlotPartialRegressionScatter <- function(DataFrame, IndepVar, DepVar, Covariates
   # Return a list with the plot and key parameters.
   return(list(
     plot = plotObj,
-    method = method,
     Relabel = Relabel,
     Covariates = Covariates,
     r2 = r2,
