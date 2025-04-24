@@ -129,6 +129,11 @@ PlotCorrelationsHeatmap <- function(Data, xVars = NULL, yVars = NULL, covars = N
   M$p <- pvals
   M$npairs <- MN
 
+
+  # if npairs <2, set r and p to NA
+  M$r[M$npairs<2]<- NaN
+  M$p[M$npairs<2]<- NaN
+
   M_FDR <- M
   padjusted <- p.adjust(MP, method = "fdr")
   M_FDR$p <- matrix(padjusted, ncol = length(yVars))
