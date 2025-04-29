@@ -36,8 +36,7 @@ UnivariateRegressionTable <- function (Data, OutcomeVars, PredictorVars, Covars 
           ModelData[, numeric_cols] <- scale(ModelData[,
                                                        numeric_cols])
           mod <- lm(formula = f, data = ModelData)
-        }
-        else {
+        }else {
           mod <- lm(formula = f, data = Data)
         }
         mod_list[[xVar]] <- mod
@@ -46,10 +45,10 @@ UnivariateRegressionTable <- function (Data, OutcomeVars, PredictorVars, Covars 
         label_list <- setNames(as.list(labels), c(PredictorVars,
                                                   OutcomeVars))
         modTableP <- tbl_regression(mod, pvalue_fun = ~style_pvalue(.x,
-                                                                    digits = 2), label = label_list[xVar]) %>% bold_p() %>%
-          bold_labels() %>% italicize_levels()
+                                                                    digits = 2), label = label_list[xVar]) %>%
+          bold_p() %>% bold_labels() %>% italicize_levels()
         modTableP$table_body <- modTableP$table_body %>%
-          filter(variable %notin% Covars)
+          filter(variable %!in% Covars)
         modTableP$table_body$var_label <- as.character(modTableP$table_body$var_label)
         tbl_list[[xVar]] <- modTableP
         modTableCombined <- modTableP %>% add_significance_stars() %>%
@@ -66,7 +65,16 @@ UnivariateRegressionTable <- function (Data, OutcomeVars, PredictorVars, Covars 
     Wide_tblformatted_list[[YVar]] <- tbl_stack(tblformatted_list) %>%
       remove_row_type(type = "reference")
   }
-  s <- sjlabelled::get_label(Data[as.character(OutcomeVars)], def.value = OutcomeVars)
+  s <- vapply(
+    OutcomeVars,
+    function(var) {
+      # for each var: if it has an sjlabel, use it; otherwise fall back to the var name
+      sjlabelled::get_label(Data[[var]], def.value = var) %>% as.character()
+    },
+    FUN.VALUE = character(1),
+    USE.NAMES = FALSE
+  )
+
   FinalTable <- tbl_merge(Wide_tbl_list, tab_spanner = unname(s))
   FinalFormattedTable <- tbl_merge(Wide_tblformatted_list,
                                    tab_spanner = unname(s))
