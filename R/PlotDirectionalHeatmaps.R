@@ -15,7 +15,7 @@
       CatVars <- getBinaryVars(Data)
       xVars <- colnames(Data)[colnames(Data) %in% c(CatVars, ContVars)]
     }
-
+    xVars <- rev(xVars)
     if (is.null(yVars)) {
       yVars <- xVars
     }
@@ -64,9 +64,26 @@
     }
 
     df_Combined_plot <- df_Combined %>% filter(XVar %in% xVars) %>% filter(YVar %in% yVars)
-    df_Combined_plot$XLabel <- factor(df_Combined_plot$XLabel, levels = unique(df_Combined_plot$XLabel[df_Combined_plot$XVar %in% xVars]))
-    df_Combined_plot$YLabel <- factor(df_Combined_plot$YLabel, levels = unique(df_Combined_plot$YLabel[df_Combined_plot$YVar %in% yVars]))
-
+    #df_Combined_plot$XLabel <- factor(df_Combined_plot$XLabel, levels = unique(df_Combined_plot$XLabel[df_Combined_plot$XVar %in% xVars]))
+    #df_Combined_plot$YLabel <- factor(df_Combined_plot$YLabel, levels = unique(df_Combined_plot$YLabel[df_Combined_plot$YVar %in% yVars]))
+    ordered_xlabels <- sapply(xVars, function(var) {
+      # take the first label that corresponds to each xVar
+      df_Combined_plot$XLabel[df_Combined_plot$XVar == var][1]
+    })
+    ordered_xlabels <- unique(ordered_xlabels)
+    ordered_ylabels <- sapply(yVars, function(v) {
+      df_plot$YLabel[df_plot$YVar == v][1]
+    })
+    ordered_ylabels <- unique(ordered_ylabels)
+    # 3) Now use that vector (with unique()) to set your factor levels:
+    df_Combined_plot$XLabel <- factor(
+      df_Combined_plot$XLabel,
+      levels = ordered_xlabels
+    )
+    df_Combined_plot$YLabel <- factor(
+      df_Combined_plot$YLabel,
+      levels = ordered_ylabels
+    )
     p <- ggplot()
 
     if (nrow(df_Combined_plot %>% filter(test == "pearson"))) {
