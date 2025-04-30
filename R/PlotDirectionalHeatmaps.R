@@ -72,7 +72,7 @@
     })
     ordered_xlabels <- unique(ordered_xlabels)
     ordered_ylabels <- sapply(yVars, function(v) {
-      df_plot$YLabel[df_plot$YVar == v][1]
+      df_Combined_plot$YLabel[df_Combined_plot$YVar == v][1]
     })
     ordered_ylabels <- unique(ordered_ylabels)
     # 3) Now use that vector (with unique()) to set your factor levels:
