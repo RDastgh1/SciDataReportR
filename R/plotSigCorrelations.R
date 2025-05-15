@@ -41,10 +41,10 @@ plotSigCorrelations <- function(DataFrame, CorrelationHeatmapObject, PVar = "P",
       p$labels$caption = "Not adjusted for any covariates"
     } else {
       if (!Relabeled) {
-        p$labels$caption <- paste("Adjusted for", covars)
+        p$labels$caption <- paste("Adjusted for", paste(covars, collapse = ", "))
       } else {
         covarlabels <- sjlabelled::get_label(DataFrame %>% select(all_of(covars)), def.value = covars)
-        p$labels$caption <- paste("Adjusted for", covarlabels)
+        p$labels$caption <- paste("Adjusted for", paste(covarlabels, collapse = ", "))
       }
     }
 

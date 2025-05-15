@@ -2,6 +2,7 @@
 
 export("%!in%")
 export(AddToCodebook)
+export(CombineCodebooks)
 export(ConvertOrdinalToNumeric)
 export(CreateMCATable)
 export(CreatePCATable)
