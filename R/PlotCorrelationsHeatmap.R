@@ -89,22 +89,29 @@ PlotCorrelationsHeatmap <- function(Data, xVars = NULL, yVars = NULL, covars = N
       hadError <- FALSE
 
       MN[xi, yi] <- nrow(d)
-      tryCatch({
-        if (nrow(cdata) > 0) {
-          o <- ppcor::pcor.test(d[, 1], d[, 2], d[, seq(3, 2 + length(covars))], method = method)
-        } else {
-          o <- stats::cor.test(d[, 1], d[, 2] %>% as.numeric(), method = method)
-        }
-        if(nrow(d)==0){
-          o <- list(estimate = NA, p.value = NA)
-        }
-      }, error = function(e) {
-        o <- list(estimate = NA, p.value = NA)
-        print(paste("Error occurred: ", e$message))
-      }, interrupt = function() {
-        o <- list(estimate = NA, p.value = NA)
-        print("Calculation interrupted")
-      })
+
+      #default output if we never successfully compute
+      o <- list(estimate = NA_real_, p.value = NA_real_)
+
+      # only try the test if we have ≥3 rows
+      if (nrow(d) >= 3) {
+        tryCatch({
+          if (nrow(cdata) > 0) {
+            tmp <- ppcor::pcor.test(d[,1], d[,2],
+                                    d[, seq(3, 2 + length(covars))],
+                                    method = method)
+            o$estimate <- unname(tmp$estimate)
+            o$p.value  <- tmp$p.value
+          } else {
+            tmp <- stats::cor.test(d[,1], d[,2], method = method)
+            o$estimate <- unname(tmp$estimate)
+            o$p.value  <- tmp$p.value
+          }
+        }, error = function(e) {
+          message("Correlation failed for ", xi, ",", yi, ": ", e$message)
+          # o stays as NA
+        })
+      }
 
 
       if (hadError) {
