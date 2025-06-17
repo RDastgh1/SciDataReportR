@@ -27,7 +27,7 @@
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Make a Group Comparison Table (gtsummary wrapper)</h1>
-      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/v7.21.0/R/MakeComparisonTable.R" class="external-link"><code>R/MakeComparisonTable.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/master/R/MakeComparisonTable.R" class="external-link"><code>R/MakeComparisonTable.R</code></a></small>
       <div class="d-none name"><code>MakeComparisonTable.Rd</code></div>
     </div>
 
@@ -41,8 +41,14 @@
 <span>  <span class="va">DataFrame</span>,</span>
 <span>  Variables <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  <span class="va">CompVariable</span>,</span>
+<span>  Covariates <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  ValueDigits <span class="op">=</span> <span class="fl">2</span>,</span>
-<span>  pDigits <span class="op">=</span> <span class="fl">3</span></span>
+<span>  pDigits <span class="op">=</span> <span class="fl">3</span>,</span>
+<span>  AddEffectSize <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  EffectSizeDigits <span class="op">=</span> <span class="fl">2</span>,</span>
+<span>  AddPairwise <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  PairwiseMethod <span class="op">=</span> <span class="st">"bonferroni"</span>,</span>
+<span>  ReferentGroup <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -69,14 +75,36 @@
 <dt id="arg-pdigits">pDigits<a class="anchor" aria-label="anchor" href="#arg-pdigits"></a></dt>
 <dd><p>An integer specifying the number of digits to display for p-values. Default is 3.</p></dd>
 
+
+<dt id="arg-addeffectsize">AddEffectSize<a class="anchor" aria-label="anchor" href="#arg-addeffectsize"></a></dt>
+<dd><p>A logical value indicating whether to add effect size measures. Default is FALSE.</p></dd>
+
+
+<dt id="arg-effectsizedigits">EffectSizeDigits<a class="anchor" aria-label="anchor" href="#arg-effectsizedigits"></a></dt>
+<dd><p>An integer specifying the number of digits to display for effect size statistics. Default is 2.</p></dd>
+
+
+<dt id="arg-addpairwise">AddPairwise<a class="anchor" aria-label="anchor" href="#arg-addpairwise"></a></dt>
+<dd><p>A logical value indicating whether to add pairwise post-hoc comparisons for multi-group analyses. Default is FALSE.</p></dd>
+
+
+<dt id="arg-pairwisemethod">PairwiseMethod<a class="anchor" aria-label="anchor" href="#arg-pairwisemethod"></a></dt>
+<dd><p>A character string specifying the p-value adjustment method for pairwise comparisons. Default is "bonferroni". Other options include "holm", "hochberg", "hommel", "BH", "BY", "fdr", "none".</p></dd>
+
+
+<dt id="arg-referentgroup">ReferentGroup<a class="anchor" aria-label="anchor" href="#arg-referentgroup"></a></dt>
+<dd><p>An optional character string specifying a reference group for pairwise comparisons. If provided, only comparisons between this group and other groups will be shown. Default is NULL (all pairwise comparisons).</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>A <code>tbl_summary</code> object containing the comparison table.</p>
+    <p>A gtsummary table object with the comparison results.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p>The function first determines the set of variables to analyze. If <code>Variables</code> is <code>NULL</code>, all variables from <code>DataFrame</code> are used; otherwise, it ensures that <code>CompVariable</code> is included once in the analysis. Next, it filters the data frame to include only the selected variables and excludes any factor variables with more than 15 unique levels. The summary is then created using <code><a href="https://www.danieldsjoberg.com/gtsummary/reference/tbl_summary.html" class="external-link">tbl_summary</a></code> with continuous variables summarized as "mean (sd)" and categorical variables summarized as "n (p)". Additional information, such as sample sizes and p-values, is appended to the table.</p>
+    <p>The function first determines the set of variables to analyze. If <code>Variables</code> is <code>NULL</code>, all variables from <code>DataFrame</code> are used; otherwise, it ensures that <code>CompVariable</code> is included once in the analysis. Next, it filters the data frame to include only the selected variables and excludes any factor variables with more than 15 unique levels. The summary is then created using <code><a href="https://www.danieldsjoberg.com/gtsummary/reference/tbl_summary.html" class="external-link">tbl_summary</a></code> with continuous variables summarized as "mean (sd)" and categorical variables summarized as "n (p)". Additional information, such as sample sizes, p-values, and optionally effect sizes, is appended to the table.</p>
+<p>When effect sizes are requested, the function calculates Cohen's d for continuous variables and Cramer's V for categorical variables.</p>
+<p>For multi-group comparisons, post-hoc pairwise tests can be added when <code>AddPairwise = TRUE</code>. Significant p-values are displayed in bold. If <code>ReferentGroup</code> is specified, only comparisons between the reference group and other groups will be shown.</p>
     </div>
     <div class="section level2">
     <h2 id="note">Note<a class="anchor" aria-label="anchor" href="#note"></a></h2>
