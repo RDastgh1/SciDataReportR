@@ -2,11 +2,11 @@
 % Please edit documentation in R/MakeComparisonTable.R
 \name{MakeComparisonTable}
 \alias{MakeComparisonTable}
-\title{Make a Group Comparison Table (gtsummary wrapper)}
+\title{Make Comparison Table with Covariate Adjustment, Effect Sizes, and Pairwise Contrasts}
 \usage{
 MakeComparisonTable(
   DataFrame,
-  Variables = NULL,
+  Variables,
   CompVariable,
   Covariates = NULL,
   ValueDigits = 2,
@@ -15,43 +15,40 @@ MakeComparisonTable(
   EffectSizeDigits = 2,
   AddPairwise = FALSE,
   PairwiseMethod = "bonferroni",
-  ReferentGroup = NULL
+  Parametric = TRUE,
+  suppress_warnings = FALSE
 )
 }
 \arguments{
-\item{DataFrame}{A data frame containing the data for generating the comparison table.}
+\item{DataFrame}{A \code{data.frame} containing the raw data.}
 
-\item{Variables}{An optional character vector of variable names (besides the grouping variable) to include in the comparison table. If \code{NULL}, all variables in \code{DataFrame} are used.}
+\item{Variables}{Character vector of column names to include in the comparison.}
 
-\item{CompVariable}{A character string specifying the name of the variable used to divide the data into comparison groups.}
+\item{CompVariable}{Character string specifying the grouping (comparison) variable.}
 
-\item{ValueDigits}{An integer specifying the number of digits to display for continuous variable statistics (mean and standard deviation). Default is 2.}
+\item{Covariates}{Optional character vector of covariate column names for adjustment (default \code{NULL}).}
 
-\item{pDigits}{An integer specifying the number of digits to display for p-values. Default is 3.}
+\item{ValueDigits}{Integer; number of digits for summary statistics (default \code{2}).}
 
-\item{AddEffectSize}{A logical value indicating whether to add effect size measures. Default is FALSE.}
+\item{pDigits}{Integer; number of digits for formatted p-values (default \code{3}).}
 
-\item{EffectSizeDigits}{An integer specifying the number of digits to display for effect size statistics. Default is 2.}
+\item{AddEffectSize}{Logical; include an effect-size column? (default \code{FALSE}).}
 
-\item{AddPairwise}{A logical value indicating whether to add pairwise post-hoc comparisons for multi-group analyses. Default is FALSE.}
+\item{EffectSizeDigits}{Integer; number of digits for effect sizes (default \code{2}).}
 
-\item{PairwiseMethod}{A character string specifying the p-value adjustment method for pairwise comparisons. Default is "bonferroni". Other options include "holm", "hochberg", "hommel", "BH", "BY", "fdr", "none".}
+\item{AddPairwise}{Logical; include pairwise contrast columns? (default \code{FALSE}).}
 
-\item{ReferentGroup}{An optional character string specifying a reference group for pairwise comparisons. If provided, only comparisons between this group and other groups will be shown. Default is NULL (all pairwise comparisons).}
+\item{PairwiseMethod}{Character; p-value adjustment method for contrasts (e.g. "bonferroni", default). Use "none" for unadjusted.}
+
+\item{Parametric}{Logical; use parametric tests (ANOVA/ANCOVA) if \code{TRUE}, or nonparametric (Kruskal–Wallis) if \code{FALSE} (default \code{TRUE}).}
+
+\item{suppress_warnings}{Logical; suppress intermediate warnings from gtsummary (default \code{FALSE}).}
 }
 \value{
-A gtsummary table object with the comparison results.
+A \code{gtsummary::tbl_summary} object augmented with formatted p-values, effect sizes, and contrasts.
 }
 \description{
-This function creates a summary comparison table from a given data frame. It summarizes continuous variables with their mean (and standard deviation) and categorical variables with counts and percentages. Comparisons between groups are performed based on a specified grouping (comparison) variable.
-}
-\details{
-The function first determines the set of variables to analyze. If \code{Variables} is \code{NULL}, all variables from \code{DataFrame} are used; otherwise, it ensures that \code{CompVariable} is included once in the analysis. Next, it filters the data frame to include only the selected variables and excludes any factor variables with more than 15 unique levels. The summary is then created using \code{\link[gtsummary]{tbl_summary}} with continuous variables summarized as "mean (sd)" and categorical variables summarized as "n (p)". Additional information, such as sample sizes, p-values, and optionally effect sizes, is appended to the table.
-
-When effect sizes are requested, the function calculates Cohen's d for continuous variables and Cramer's V for categorical variables.
-
-For multi-group comparisons, post-hoc pairwise tests can be added when \code{AddPairwise = TRUE}. Significant p-values are displayed in bold. If \code{ReferentGroup} is specified, only comparisons between the reference group and other groups will be shown.
-}
-\note{
-This wrapper function is adapted from code written by Aparna Bhattacharyya.
+Creates a comparison table using {gtsummary} summarizing continuous and categorical variables
+by a grouping factor, with optional covariate adjustment for continuous outcomes only (ANCOVA),
+effect-size calculations, and pairwise contrasts with p-value adjustments (or logistic regression for binary outcomes).
 }
