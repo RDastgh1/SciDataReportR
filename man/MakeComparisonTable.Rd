@@ -16,6 +16,8 @@ MakeComparisonTable(
   AddPairwise = FALSE,
   PairwiseMethod = "bonferroni",
   Parametric = TRUE,
+  IncludeOverallN = FALSE,
+  IncludeMissing = FALSE,
   suppress_warnings = FALSE
 )
 }
@@ -30,25 +32,32 @@ MakeComparisonTable(
 
 \item{ValueDigits}{Integer; number of digits for summary statistics (default \code{2}).}
 
-\item{pDigits}{Integer; number of digits for formatted p-values (default \code{3}).}
+\item{pDigits}{Integer; number of digits for formatted p‐values (default \code{3}).}
 
-\item{AddEffectSize}{Logical; include an effect-size column? (default \code{FALSE}).}
+\item{AddEffectSize}{Logical; include an effect‐size column? (default \code{FALSE}).}
 
 \item{EffectSizeDigits}{Integer; number of digits for effect sizes (default \code{2}).}
 
 \item{AddPairwise}{Logical; include pairwise contrast columns? (default \code{FALSE}).}
 
-\item{PairwiseMethod}{Character; p-value adjustment method for contrasts (e.g. "bonferroni", default). Use "none" for unadjusted.}
+\item{PairwiseMethod}{Character; p‐value adjustment method for contrasts (default \code{"bonferroni"}; \code{"none"} for unadjusted).}
 
-\item{Parametric}{Logical; use parametric tests (ANOVA/ANCOVA) if \code{TRUE}, or nonparametric (Kruskal–Wallis) if \code{FALSE} (default \code{TRUE}).}
+\item{Parametric}{Logical; use parametric tests if \code{TRUE} (ANOVA/ANCOVA), otherwise nonparametric (Kruskal–Wallis) (default \code{TRUE}).}
+
+\item{IncludeOverallN}{Logical; include a column with the overall N in the table? (default \code{FALSE}).}
+
+\item{IncludeMissing}{Logical; include a row summarizing missing data (“Unknown”)? (default \code{FALSE}).}
 
 \item{suppress_warnings}{Logical; suppress intermediate warnings from gtsummary (default \code{FALSE}).}
 }
 \value{
-A \code{gtsummary::tbl_summary} object augmented with formatted p-values, effect sizes, and contrasts.
+A \code{gtsummary::tbl_summary} object.  Variables or group‐levels with fewer than two observations yield NA p‐values.
 }
 \description{
 Creates a comparison table using {gtsummary} summarizing continuous and categorical variables
 by a grouping factor, with optional covariate adjustment for continuous outcomes only (ANCOVA),
-effect-size calculations, and pairwise contrasts with p-value adjustments (or logistic regression for binary outcomes).
+effect‐size calculations, and pairwise contrasts with p‐value adjustments (or logistic regression for binary outcomes),
+with optional inclusion of overall N and missing (“Unknown”) rows.  Variables with fewer than
+two unique non‐NA values are dropped automatically.  Categorical tests that would error (e.g. perfect separation)
+are caught and yield NA p‐values.
 }
