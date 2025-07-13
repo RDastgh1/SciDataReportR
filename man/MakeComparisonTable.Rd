@@ -40,7 +40,7 @@ MakeComparisonTable(
 
 \item{AddPairwise}{Logical; include pairwise contrast columns? (default \code{FALSE}).}
 
-\item{PairwiseMethod}{Character; p-value adjustment method for contrasts (e.g. "bonferroni", default). Use "none" for unadjusted.}
+\item{PairwiseMethod}{Character; p-value adjustment method for contrasts (default \code{"bonferroni"}; \code{"none"} for unadjusted).}
 
 \item{Parametric}{Logical; use parametric tests (ANOVA/ANCOVA) if \code{TRUE}, or nonparametric (Kruskal–Wallis) if \code{FALSE} (default \code{TRUE}).}
 
@@ -57,5 +57,6 @@ A \code{gtsummary::tbl_summary} object augmented with formatted p-values, effect
 Creates a comparison table using {gtsummary} summarizing continuous and categorical variables
 by a grouping factor, with optional covariate adjustment for continuous outcomes only (ANCOVA),
 effect-size calculations, pairwise contrasts with p-value adjustments (or logistic regression for binary outcomes),
-and optional suppression of the "Unknown" (missing) row.
+and optional suppression of the "Unknown" (missing) row.  Variables with fewer than
+two unique non-NA values are dropped automatically before any tests.
 }
