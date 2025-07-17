@@ -18,7 +18,8 @@ MakeComparisonTable(
   Parametric = TRUE,
   IncludeOverallN = FALSE,
   IncludeMissing = FALSE,
-  suppress_warnings = FALSE
+  suppress_warnings = FALSE,
+  Referent = NULL
 )
 }
 \arguments{
@@ -49,6 +50,8 @@ MakeComparisonTable(
 \item{IncludeMissing}{Logical; include a row summarizing missing data ("Unknown")? (default \code{FALSE}).}
 
 \item{suppress_warnings}{Logical; suppress intermediate warnings from gtsummary (default \code{FALSE}).}
+
+\item{Referent}{Optional character string specifying the reference level for pairwise contrasts. When provided and \code{AddPairwise} is \code{TRUE}, only comparisons to this referent are included (default \code{NULL}).}
 }
 \value{
 A \code{gtsummary::tbl_summary} object augmented with formatted p-values, effect sizes, and contrasts.
@@ -57,6 +60,6 @@ A \code{gtsummary::tbl_summary} object augmented with formatted p-values, effect
 Creates a comparison table using {gtsummary} summarizing continuous and categorical variables
 by a grouping factor, with optional covariate adjustment for continuous outcomes only (ANCOVA),
 effect-size calculations, pairwise contrasts with p-value adjustments (or logistic regression for binary outcomes),
-and optional suppression of the "Unknown" (missing) row.  Variables with fewer than
+and optional suppression of the "Unknown" (missing) row. Variables with fewer than
 two unique non-NA values are dropped automatically before any tests.
 }
