@@ -46,7 +46,7 @@ MakeComparisonTable <- function(
   ok <- vapply(req_pkgs, requireNamespace, FUN.VALUE=logical(1), quietly=TRUE)
   if(any(!ok)) stop("Please install: ", paste(req_pkgs[!ok], collapse=", "))
 
-  # Basic input validation
+  # Validate inputs
   if(!CompVariable %in% names(DataFrame)) stop("Grouping var not found: ", CompVariable)
   if(!all(Variables %in% names(DataFrame))) stop(
     "Variable(s) not found: ", paste(setdiff(Variables, names(DataFrame)), collapse=", ")
@@ -55,24 +55,21 @@ MakeComparisonTable <- function(
     "Covariate(s) not found: ", paste(setdiff(Covariates, names(DataFrame)), collapse=", ")
   )
 
-  # Subset and factorize grouping variable
   df <- DataFrame %>% dplyr::select(all_of(c(CompVariable, Variables, Covariates)))
   df[[CompVariable]] <- factor(df[[CompVariable]])
 
-  # Drop variables with <2 unique non-NA values
-  keep <- Variables[sapply(Variables, function(v)
-    length(unique(df[[v]][!is.na(df[[v]])])) >= 2
-  )]
+  # Drop constant variables
+  keep <- Variables[sapply(Variables, function(v) length(unique(df[[v]][!is.na(df[[v]])])) >= 2)]
   dropped <- setdiff(Variables, keep)
   if(length(dropped)) warning("Dropping: ", paste(dropped, collapse=", "))
   Variables <- keep
   if(length(Variables) == 0) stop("No variables to compare after dropping constants.")
 
-  # Tag continuous variables
+  # Identify continuous variables
   numeric_vars <- Variables[sapply(df[Variables], is.numeric)]
   type_list    <- rlang::set_names(as.list(rep("continuous", length(numeric_vars))), numeric_vars)
 
-  # Build initial summary table
+  # Create initial summary
   tbl <- gtsummary::tbl_summary(
     df,
     by        = CompVariable,
@@ -86,53 +83,59 @@ MakeComparisonTable <- function(
   )
   if(IncludeOverallN) tbl <- tbl %>% gtsummary::add_n()
   if(suppress_warnings) tbl <- suppressWarnings(tbl)
-
   if(nlevels(df[[CompVariable]]) < 2) {
     warning("Only one level of ", CompVariable, "; returning summary.")
     return(tbl)
   }
 
-  # Compute unadjusted and adjusted p-values
+  # Compute p-values (unadjusted and ANCOVA/logistic when parametric)
   pvals <- purrr::map_dfr(Variables, function(var) {
     df_var <- df[!is.na(df[[var]]), , drop=FALSE]
     df_var[[CompVariable]] <- droplevels(df_var[[CompVariable]])
+    safe_var <- paste0("`", var, "`")
+
     if(nlevels(df_var[[CompVariable]]) < 2) {
       return(tibble::tibble(variable=var, p_unadj=NA_real_, p_adj=NA_real_))
     }
-    # Unadjusted
-    pu <- if(is.numeric(df_var[[var]])) {
-      if(Parametric) {
-        summary(aov(reformulate(CompVariable, response=var), data=df_var))[[1]][CompVariable, "Pr(>F)"]
+
+    # Unadjusted test
+    if(is.numeric(df_var[[var]])) {
+      fmla_unadj <- as.formula(paste0(safe_var, " ~ ", CompVariable))
+      pu <- if(Parametric) {
+        summary(aov(fmla_unadj, data=df_var))[[1]][CompVariable, "Pr(>F)"]
       } else {
-        kruskal.test(reformulate(CompVariable, response=var), data=df_var)$p.value
+        kruskal.test(fmla_unadj, data=df_var)$p.value
       }
     } else {
       tbl0 <- table(df_var[[var]], df_var[[CompVariable]])
       tbl0 <- tbl0[rowSums(tbl0)>0, colSums(tbl0)>0, drop=FALSE]
-      if(nrow(tbl0)<2 || ncol(tbl0)<2) NA_real_
-      else if(any(suppressWarnings(chisq.test(tbl0)$expected)<5)) {
+      pu <- if(nrow(tbl0)<2 || ncol(tbl0)<2) NA_real_
+      else if(any(suppressWarnings(chisq.test(tbl0)$expected) < 5)) {
         fisher.test(tbl0, simulate.p.value=TRUE, B=1e5)$p.value
       } else {
         chisq.test(tbl0)$p.value
       }
     }
-    # Adjusted (ANCOVA/logistic)
+
+    # Adjusted (parametric only)
     pad <- NA_real_
-    if(Parametric && !is.null(Covariates)) {
-      if(is.numeric(df_var[[var]])) {
-        fmla <- reformulate(c(CompVariable, Covariates), response=var)
-        m1   <- lm(fmla, data=df_var)
-        pad  <- car::Anova(m1, type=2)[CompVariable, "Pr(>F)"]
-      } else if(nlevels(df_var[[var]])==2) {
-        fmla <- reformulate(c(CompVariable, Covariates), response=var)
-        gm   <- glm(fmla, data=df_var, family=binomial)
-        pad  <- drop1(gm, test="Chisq")[CompVariable, "Pr(>Chi)"]
-      }
+    if(Parametric && !is.null(Covariates) && is.numeric(df_var[[var]])) {
+      cov_terms <- paste(c(CompVariable, Covariates), collapse=" + ")
+      fmla_adj  <- as.formula(paste0(safe_var, " ~ ", cov_terms))
+      m1        <- lm(fmla_adj, data=df_var)
+      pad       <- car::Anova(m1, type=2)[CompVariable, "Pr(>F)"]
+    } else if(Parametric && !is.null(Covariates) && !is.numeric(df_var[[var]]) &&
+              nlevels(df_var[[var]]) == 2) {
+      cov_terms <- paste(c(CompVariable, Covariates), collapse=" + ")
+      fmla_adj  <- as.formula(paste0(safe_var, " ~ ", cov_terms))
+      gm        <- glm(fmla_adj, data=df_var, family=binomial)
+      pad       <- drop1(gm, test="Chisq")[CompVariable, "Pr(>Chi)"]
     }
+
     tibble::tibble(variable=var, p_unadj=pu, p_adj=pad)
   })
 
-  test_note <- if(Parametric)
+  note <- if(Parametric)
     "Continuous: ANOVA/ANCOVA; Categorical: chi-square/Fisher or logistic regression adj"
   else
     "Continuous: Kruskal-Wallis; Categorical: chi-square/Fisher"
@@ -144,53 +147,56 @@ MakeComparisonTable <- function(
                                      p.value     = coalesce(p_adj, p_unadj),
                                      p.value_fmt = gtsummary::style_pvalue(p.value, digits=pDigits),
                                      p.value_fmt = ifelse(row_type=="label", p.value_fmt, NA_character_)
-                                   )
-    ) %>%
+                                   )) %>%
     gtsummary::modify_table_styling(
       columns="p.value_fmt",
-      rows   = p.value <= 0.05 & row_type=="label",
-      text_format="bold"
+      rows   = p.value <= 0.05 & row_type == "label",
+      text_format = "bold"
     ) %>%
     gtsummary::modify_header(p.value_fmt ~ "**p-value**") %>%
-    gtsummary::modify_footnote(p.value_fmt ~ test_note)
+    gtsummary::modify_footnote(p.value_fmt ~ note)
 
   # Effect sizes
   if(AddEffectSize) {
     es_df <- purrr::map_dfr(Variables, function(var) {
-      k <- nlevels(df[[CompVariable]])
-      n <- nrow(df)
+      k <- nlevels(df[[CompVariable]]); n <- nrow(df)
+      safe_var <- paste0("`", var, "`")
       if(is.numeric(df[[var]])) {
-        if(Parametric && k==2 && is.null(Covariates)) {
-          es <- abs(effectsize::cohens_d(reformulate(CompVariable, response=var), data=df)$Cohens_d)
+        if(Parametric && k == 2 && is.null(Covariates)) {
+          fmla_es <- as.formula(paste0(safe_var, " ~ ", CompVariable))
+          es_val  <- abs(effectsize::cohens_d(fmla_es, data=df)$Cohens_d)
           method <- "|Cohen's d|"
         } else if(Parametric && !is.null(Covariates)) {
-          m1 <- lm(reformulate(c(CompVariable, Covariates), response=var), data=df)
-          et <- effectsize::eta_squared(car::Anova(m1, type=2), partial=TRUE)
-          es <- et$Eta2_partial[1]; method <- "Partial η²"
+          cov_terms <- paste(c(CompVariable, Covariates), collapse=" + ")
+          fmla_es   <- as.formula(paste0(safe_var, " ~ ", cov_terms))
+          et        <- effectsize::eta_squared(car::Anova(lm(fmla_es, data=df), type=2), partial=TRUE)
+          es_val    <- et$Eta2_partial[1]; method <- "Partial η²"
         } else if(Parametric) {
-          m0 <- aov(reformulate(CompVariable, response=var), data=df)
-          et <- effectsize::eta_squared(m0, partial=FALSE)
-          es <- et$Eta2[1]; method <- "η²"
+          fmla_es <- as.formula(paste0(safe_var, " ~ ", CompVariable))
+          et      <- effectsize::eta_squared(aov(fmla_es, data=df), partial=FALSE)
+          es_val  <- et$Eta2[1]; method <- "η²"
         } else {
-          H  <- kruskal.test(reformulate(CompVariable, response=var), data=df)$statistic
-          es <- (H - k + 1)/(n - k); method <- "ε²"
+          fmla_es <- as.formula(paste0(safe_var, " ~ ", CompVariable))
+          H       <- kruskal.test(fmla_es, data=df)$statistic
+          es_val  <- (H - k + 1)/(n - k); method <- "ε²"
         }
       } else {
         tbl0 <- table(df[[var]], df[[CompVariable]])
         chi  <- suppressWarnings(chisq.test(tbl0)$statistic)
-        es   <- sqrt(chi/(sum(tbl0)*(min(nrow(tbl0),ncol(tbl0))-1)))
+        es_val <- sqrt(chi/(sum(tbl0)*(min(nrow(tbl0), ncol(tbl0))) - 1))
         method <- "Cramer's V"
       }
-      tibble::tibble(variable=var, effect_size=round(es, EffectSizeDigits), es_method=method)
+      tibble::tibble(variable=var, effect_size=round(es_val, EffectSizeDigits), es_method=method)
     })
     cont_methods <- unique(es_df$es_method[es_df$es_method != "Cramer's V"])
-    footnote_es  <- sprintf(
+    footnote_es <- sprintf(
       "Effect size: Continuous—%s; Categorical—Cramer's V",
       paste(cont_methods, collapse=", ")
     )
     tbl <- tbl %>%
-      gtsummary::modify_table_body(~ .x %>% dplyr::left_join(es_df, by="variable") %>%
-                                     dplyr::mutate(effect_size = ifelse(row_type=="label", effect_size, NA_real_))
+      gtsummary::modify_table_body(~ .x %>%
+                                     dplyr::left_join(es_df, by="variable") %>%
+                                     dplyr::mutate(effect_size = ifelse(row_type == "label", effect_size, NA_real_))
       ) %>%
       gtsummary::modify_fmt_fun(effect_size ~ function(x) formatC(x, digits=EffectSizeDigits, format="f")) %>%
       gtsummary::modify_header(effect_size ~ "**Effect Size**") %>%
@@ -200,32 +206,31 @@ MakeComparisonTable <- function(
   # Pairwise contrasts
   if(AddPairwise && nlevels(df[[CompVariable]]) > 1) {
     lvls <- levels(df[[CompVariable]])
-    if(!is.null(Referent)) {
+    combos <- if(!is.null(Referent)) {
       if(!Referent %in% lvls) stop("Referent level not found: ", Referent)
-      combos <- lapply(setdiff(lvls, Referent), function(x) c(Referent, x))
-    } else {
-      combos <- combn(lvls, 2, simplify=FALSE)
-    }
+      lapply(setdiff(lvls, Referent), function(x) c(Referent, x))
+    } else combn(lvls, 2, simplify=FALSE)
 
     pw <- purrr::map_dfr(Variables, function(var) {
+      safe_var <- paste0("`", var, "`")
       if(is.numeric(df[[var]])) {
         if(Parametric) {
-          fit <- aov(reformulate(CompVariable, response=var), data=df)
-          em  <- emmeans::emmeans(fit, CompVariable)
-          ct  <- if(!is.null(Referent)) {
+          fit     <- aov(as.formula(paste0(safe_var, " ~ ", CompVariable)), data=df)
+          em      <- emmeans::emmeans(fit, CompVariable)
+          ct      <- if(!is.null(Referent)) {
             emmeans::contrast(em, method="trt.vs.ctrl", ref=Referent, adjust=PairwiseMethod)
           } else {
             emmeans::contrast(em, method="pairwise", adjust=PairwiseMethod)
           }
-          r   <- broom::tidy(ct)
-          pcol<- intersect(c("adj.p.value","p.value"), names(r))[1]
+          r       <- broom::tidy(ct)
+          pcol    <- intersect(c("adj.p.value","p.value"), names(r))[1]
           tibble::tibble(variable=var, contrast=r$contrast, p_val=r[[pcol]])
         } else {
           purrr::map_dfr(combos, function(cp) {
             res <- pairwise.wilcox.test(
               df[[var]][df[[CompVariable]] %in% cp],
               df[[CompVariable]][df[[CompVariable]] %in% cp],
-              p.adjust.method = PairwiseMethod
+              p.adjust.method=PairwiseMethod
             )$p.value
             as.data.frame(as.table(res)) %>%
               transmute(variable=var,
@@ -238,22 +243,20 @@ MakeComparisonTable <- function(
           sub <- df[df[[CompVariable]] %in% cp, ]
           x_sub <- droplevels(as.factor(sub[[var]]))
           g_sub <- droplevels(sub[[CompVariable]])
-          tbl0 <- table(x_sub, g_sub)
-          tbl0 <- tbl0[rowSums(tbl0)>0, colSums(tbl0)>0, drop=FALSE]
-          if(nrow(tbl0)<2||ncol(tbl0)<2) pv <- NA_real_
+          tbl0  <- table(x_sub, g_sub)
+          tbl0  <- tbl0[rowSums(tbl0)>0, colSums(tbl0)>0, drop=FALSE]
+          pv    <- if(nrow(tbl0)<2||ncol(tbl0)<2) NA_real_
           else if(any(suppressWarnings(chisq.test(tbl0)$expected)<5)) {
-            pv <- fisher.test(tbl0, simulate.p.value=TRUE, B=1e5)$p.value
+            fisher.test(tbl0, simulate.p.value=TRUE, B=1e5)$p.value
           } else {
-            pv <- chisq.test(tbl0)$p.value
+            chisq.test(tbl0)$p.value
           }
           tibble::tibble(variable=var,
-                         contrast=if(!is.null(Referent)) paste(Referent, cp[2], sep="-")
-                         else paste(sort(cp), collapse="-"),
+                         contrast=if(!is.null(Referent)) paste(Referent, cp[2], sep="-") else paste(sort(cp), collapse="-"),
                          p_val=pv)
-        }) %>%
-          dplyr::mutate(
-            p_val = if(PairwiseMethod != "none") p.adjust(p_val, method=PairwiseMethod) else p_val
-          )
+        }) %>% dplyr::mutate(
+          p_val = if(PairwiseMethod!="none") p.adjust(p_val, method=PairwiseMethod) else p_val
+        )
       }
     })
 
@@ -262,37 +265,29 @@ MakeComparisonTable <- function(
       id_cols     = "variable",
       names_from  = "contrast",
       values_from = "p_val",
-      values_fn   = list(p_val = mean)
+      values_fn   = list(p_val=mean)
     )
 
     tbl <- tbl %>%
       gtsummary::modify_table_body(~ .x %>%
                                      dplyr::left_join(pw_wide, by="variable") %>%
-                                     dplyr::mutate(across(
-                                       all_of(setdiff(names(pw_wide), "variable")),
-                                       ~ ifelse(row_type=="label", ., NA_real_)
-                                     ))
+                                     dplyr::mutate(across(all_of(setdiff(names(pw_wide),"variable")),
+                                                          ~ ifelse(row_type=="label", ., NA_real_)))
       )
-
     for(col in setdiff(names(pw_wide), "variable")) {
       tbl <- tbl %>%
-        gtsummary::modify_fmt_fun(
-          !!rlang::sym(col) ~ function(x) gtsummary::style_pvalue(x, digits=pDigits)
-        ) %>%
+        gtsummary::modify_fmt_fun(!!rlang::sym(col) ~ function(x) gtsummary::style_pvalue(x, digits=pDigits)) %>%
         gtsummary::modify_table_styling(
           columns     = col,
           rows        = .data[[col]] <= 0.05 & row_type=="label",
           text_format = "bold"
         ) %>%
         gtsummary::modify_header(!!rlang::sym(col) := paste0("**", col, "**")) %>%
-        gtsummary::modify_footnote(
-          !!rlang::sym(col) ~ paste0("Pairwise p-value (", PairwiseMethod,
-                                     if(!is.null(Referent)) paste0("; vs ", Referent), ")")
-        )
+        gtsummary::modify_footnote(!!rlang::sym(col) ~ paste0("Pairwise p-value (", PairwiseMethod,
+                                                              if(!is.null(Referent)) paste0("; vs ", Referent), ")"))
     }
   }
 
-  # Final caption
   cap <- sprintf(
     "Comparison Table (%s analysis%s)",
     if(Parametric) "parametric" else "non-parametric",
