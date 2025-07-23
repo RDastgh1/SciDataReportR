@@ -26,7 +26,8 @@ Imports:
     plotly,
     tibble,
     kableExtra,
-    gtsummary
+    gtsummary,
+    paletteer
 Suggests:
     BlandAltmanLeh,
     ggrepel,
@@ -37,7 +38,6 @@ Suggests:
     xtable,
     codebook,
     psych,
-    paletteer,
     VIM,
     fastDummies,
     stringr,
@@ -49,7 +49,7 @@ Suggests:
     FactoMineR,
     RColorBrewer,
     arsenal,
-    data.table,
+    data.table
 Depends: 
     R (>= 2.10)
 LazyData: true
