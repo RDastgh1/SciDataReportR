@@ -105,8 +105,11 @@ PlotMiningMatrix <- function(Data,
   P_Combined <- P_Combined %>%
     mutate(p_adj = p.adjust(p, method = "fdr")) %>%
     rstatix::add_significance(p.col = "p",     output.col = "stars") %>%
-    rstatix::add_significance(p.col = "p_adj", output.col = "stars_fdr")
-
+    rstatix::add_significance(p.col = "p_adj", output.col = "stars_fdr") %>%
+    mutate( # max at 3
+      stars     = ifelse(stars     == "****", "***", as.character(stars)),
+      stars_fdr = ifelse(stars_fdr == "****", "***", as.character(stars_fdr))
+    )
   # prepare factor levels for axes
   if (Relabel) {
     xorder <- sjlabelled::get_label(
