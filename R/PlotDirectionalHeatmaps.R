@@ -15,7 +15,7 @@ PlotDirectionalHeatmaps <- function (Data, xVars = NULL, yVars = NULL,  Relabel 
     CatVars <- getBinaryVars(Data)
     xVars <- colnames(Data)[colnames(Data) %in% c(CatVars, ContVars)]
   }
-  xVars <- rev(xVars)
+  #xVars <- rev(xVars)
   if (is.null(yVars)) {
     yVars <- xVars
   }
