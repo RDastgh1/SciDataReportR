@@ -23,7 +23,7 @@
 #' @param suppress_warnings Logical; suppress intermediate warnings from gtsummary (default `FALSE`).
 #' @param Referent Optional character string specifying the reference level for pairwise contrasts. When provided and `AddPairwise` is `TRUE`, only comparisons to this referent are included (default `NULL`).
 #'
-#' @return A `gtsummary::tbl_summary` object augmented with formatted p-values, effect sizes, and contrasts.
+#' @return A `gtsummary::tbl_summary` object augmented with formatted p-values, effect sizes, contrasts, and a per-variable test label.
 #' @export
 MakeComparisonTable <- function(
     DataFrame,
@@ -74,7 +74,7 @@ MakeComparisonTable <- function(
   numeric_vars <- Variables[sapply(df[Variables], is.numeric)]
   type_list    <- rlang::set_names(as.list(rep("continuous", length(numeric_vars))), numeric_vars)
 
-  # Initial summary; ensure categorical shows n(%) with percent sign
+  # Initial summary; categorical as n(%) with a percent sign
   tbl <- gtsummary::tbl_summary(
     df,
     by        = CompVariable,
@@ -93,65 +93,78 @@ MakeComparisonTable <- function(
     return(tbl)
   }
 
-  # Compute p-values (unadjusted + adjusted where applicable)
-  pvals <- purrr::map_dfr(Variables, function(var) {
+  # ---- P-values + precise test labels ---------------------------------------
+  pdat <- purrr::map_dfr(Variables, function(var) {
     df_var <- df[!is.na(df[[var]]), , drop = FALSE]
     df_var[[CompVariable]] <- droplevels(df_var[[CompVariable]])
     safe_var <- paste0("`", var, "`")
 
     if (nlevels(df_var[[CompVariable]]) < 2) {
-      return(tibble::tibble(variable = var, p_unadj = NA_real_, p_adj = NA_real_))
+      return(tibble::tibble(variable = var, p_unadj = NA_real_, p_adj = NA_real_, test_label = NA_character_))
     }
 
-    # Unadjusted test
     if (is.numeric(df_var[[var]])) {
+      # Continuous
       fmla_unadj <- stats::as.formula(paste0(safe_var, " ~ ", CompVariable))
-      pu <- if (Parametric) {
-        summary(stats::aov(fmla_unadj, data = df_var))[[1]][CompVariable, "Pr(>F)"]
+      if (Parametric) {
+        pu <- summary(stats::aov(fmla_unadj, data = df_var))[[1]][CompVariable, "Pr(>F)"]
+        # Adjusted?
+        if (!is.null(Covariates)) {
+          cov_terms <- paste(c(CompVariable, Covariates), collapse = " + ")
+          fmla_adj  <- stats::as.formula(paste0(safe_var, " ~ ", cov_terms))
+          m1        <- stats::lm(fmla_adj, data = df_var)
+          pad       <- car::Anova(m1, type = 2)[CompVariable, "Pr(>F)"]
+          tl        <- "ANCOVA (Type II)"
+        } else {
+          pad <- NA_real_
+          tl  <- "ANOVA"
+        }
       } else {
-        stats::kruskal.test(fmla_unadj, data = df_var)$p.value
+        pu <- stats::kruskal.test(fmla_unadj, data = df_var)$p.value
+        pad <- NA_real_
+        tl  <- "Kruskal–Wallis"
       }
     } else {
+      # Categorical
       tbl0 <- table(df_var[[var]], df_var[[CompVariable]])
       tbl0 <- tbl0[rowSums(tbl0) > 0, colSums(tbl0) > 0, drop = FALSE]
-      pu <- if (nrow(tbl0) < 2 || ncol(tbl0) < 2) NA_real_
-      else if (any(suppressWarnings(stats::chisq.test(tbl0)$expected) < 5)) {
-        stats::fisher.test(tbl0, simulate.p.value = TRUE, B = 1e4)$p.value
+
+      if (nrow(tbl0) < 2 || ncol(tbl0) < 2) {
+        pu <- NA_real_; pad <- NA_real_; tl <- "Insufficient categories"
+      } else if (Parametric && !is.null(Covariates) && nlevels(droplevels(df_var[[var]])) == 2) {
+        # Logistic regression (binary outcome) with covariates
+        cov_terms <- paste(c(CompVariable, Covariates), collapse = " + ")
+        fmla_adj  <- stats::as.formula(paste0(safe_var, " ~ ", cov_terms))
+        gm        <- stats::glm(fmla_adj, data = df_var, family = stats::binomial())
+        pad       <- stats::drop1(gm, test = "Chisq")[CompVariable, "Pr(>Chi)"]
+        # unadjusted fallback for display
+        pu        <- suppressWarnings(stats::chisq.test(tbl0)$p.value)
+        tl        <- "Logistic regression (LR test)"
       } else {
-        stats::chisq.test(tbl0)$p.value
+        # Chi-square vs Fisher based on expected counts
+        expct <- suppressWarnings(stats::chisq.test(tbl0)$expected)
+        if (any(expct < 5)) {
+          pu <- stats::fisher.test(tbl0, simulate.p.value = TRUE, B = 1e4)$p.value
+          tl <- "Fisher's exact (simulated)"
+        } else {
+          pu <- stats::chisq.test(tbl0)$p.value
+          tl <- "Chi-squared"
+        }
+        pad <- NA_real_
       }
     }
 
-    # Adjusted (parametric only): continuous via ANCOVA; binary via logistic regression
-    pad <- NA_real_
-    if (Parametric && !is.null(Covariates) && is.numeric(df_var[[var]])) {
-      cov_terms <- paste(c(CompVariable, Covariates), collapse = " + ")
-      fmla_adj  <- stats::as.formula(paste0(safe_var, " ~ ", cov_terms))
-      m1        <- stats::lm(fmla_adj, data = df_var)
-      pad       <- car::Anova(m1, type = 2)[CompVariable, "Pr(>F)"]
-    } else if (Parametric && !is.null(Covariates) && !is.numeric(df_var[[var]]) &&
-               nlevels(df_var[[var]]) == 2) {
-      cov_terms <- paste(c(CompVariable, Covariates), collapse = " + ")
-      fmla_adj  <- stats::as.formula(paste0(safe_var, " ~ ", cov_terms))
-      gm        <- stats::glm(fmla_adj, data = df_var, family = stats::binomial())
-      pad       <- stats::drop1(gm, test = "Chisq")[CompVariable, "Pr(>Chi)"]
-    }
-
-    tibble::tibble(variable = var, p_unadj = pu, p_adj = pad)
+    tibble::tibble(variable = var, p_unadj = pu, p_adj = pad, test_label = tl)
   })
-
-  note <- if (Parametric)
-    "Continuous: ANOVA/ANCOVA; Categorical: chi-square/Fisher or logistic regression adj"
-  else
-    "Continuous: Kruskal-Wallis; Categorical: chi-square/Fisher"
 
   tbl <- tbl %>%
     gtsummary::modify_table_body(~ .x %>%
-                                   dplyr::left_join(pvals, by = "variable") %>%
+                                   dplyr::left_join(pdat, by = "variable") %>%
                                    dplyr::mutate(
                                      p.value     = dplyr::coalesce(.data$p_adj, .data$p_unadj),
                                      p.value_fmt = gtsummary::style_pvalue(.data$p.value, digits = pDigits),
-                                     p.value_fmt = ifelse(.data$row_type == "label", .data$p.value_fmt, NA_character_)
+                                     p.value_fmt = ifelse(.data$row_type == "label", .data$p.value_fmt, NA_character_),
+                                     Test        = ifelse(.data$row_type == "label", .data$test_label, NA_character_)
                                    )) %>%
     gtsummary::modify_table_styling(
       columns = "p.value_fmt",
@@ -159,9 +172,9 @@ MakeComparisonTable <- function(
       text_format = "bold"
     ) %>%
     gtsummary::modify_header(p.value_fmt ~ "**p-value**") %>%
-    gtsummary::modify_footnote(p.value_fmt ~ note)
+    gtsummary::modify_header(Test ~ "**Test**")
 
-  # Effect sizes (align NA handling with tests by filtering per-variable)
+  # ---- Effect sizes (now guaranteed for categorical where table >= 2x2) ------
   if (AddEffectSize) {
     es_df <- purrr::map_dfr(Variables, function(var) {
       df_var <- df[!is.na(df[[var]]), , drop = FALSE]
@@ -175,6 +188,7 @@ MakeComparisonTable <- function(
       }
 
       if (is.numeric(df_var[[var]])) {
+        # Continuous ES
         if (Parametric && k == 2 && is.null(Covariates)) {
           fmla_es <- stats::as.formula(paste0(safe_var, " ~ ", CompVariable))
           es_val  <- abs(effectsize::cohens_d(fmla_es, data = df_var)$Cohens_d)
@@ -184,14 +198,12 @@ MakeComparisonTable <- function(
           fmla_es   <- stats::as.formula(paste0(safe_var, " ~ ", cov_terms))
           aov_tab   <- car::Anova(stats::lm(fmla_es, data = df_var), type = 2)
           et        <- effectsize::eta_squared(aov_tab, partial = TRUE)
-          # pick the row corresponding to CompVariable if present
           idx       <- which(rownames(aov_tab) == CompVariable)
           es_val    <- if (length(idx) == 1) et$Eta2_partial[idx] else et$Eta2_partial[1]
           method    <- "Partial η²"
         } else if (Parametric) {
           fmla_es <- stats::as.formula(paste0(safe_var, " ~ ", CompVariable))
           et      <- effectsize::eta_squared(stats::aov(fmla_es, data = df_var), partial = FALSE)
-          # row for CompVariable is typically first
           es_val  <- et$Eta2[1]
           method  <- "η²"
         } else {
@@ -201,6 +213,7 @@ MakeComparisonTable <- function(
           method  <- "ε²"
         }
       } else {
+        # Categorical ES: Cramer's V from counts irrespective of small expected
         tbl0   <- table(df_var[[var]], df_var[[CompVariable]])
         tbl0   <- tbl0[rowSums(tbl0) > 0, colSums(tbl0) > 0, drop = FALSE]
         if (nrow(tbl0) < 2 || ncol(tbl0) < 2) {
@@ -221,25 +234,23 @@ MakeComparisonTable <- function(
       )
     })
 
-    cont_methods <- unique(es_df$es_method[es_df$es_method != "Cramer's V"])
-    footnote_es <- sprintf(
-      "Effect size: Continuous—%s; Categorical—Cramer's V",
-      paste(cont_methods, collapse = ", ")
-    )
-
+    # Show ES and method; keep ES only on label rows
     tbl <- tbl %>%
       gtsummary::modify_table_body(~ .x %>%
                                      dplyr::left_join(es_df, by = "variable") %>%
-                                     dplyr::mutate(effect_size = ifelse(.data$row_type == "label", .data$effect_size, NA_real_))
+                                     dplyr::mutate(
+                                       effect_size = ifelse(.data$row_type == "label", .data$effect_size, NA_real_),
+                                       ES_Method   = ifelse(.data$row_type == "label", .data$es_method, NA_character_)
+                                     )
       ) %>%
       gtsummary::modify_fmt_fun(effect_size ~ function(x) {
         ifelse(is.na(x), NA_character_, formatC(x, digits = EffectSizeDigits, format = "f"))
       }) %>%
       gtsummary::modify_header(effect_size ~ "**Effect Size**") %>%
-      gtsummary::modify_footnote(effect_size ~ footnote_es)
+      gtsummary::modify_header(ES_Method   ~ "**ES Method**")
   }
 
-  # Pairwise contrasts
+  # ---- Pairwise contrasts ----------------------------------------------------
   if (AddPairwise && nlevels(df[[CompVariable]]) > 1) {
     lvls <- levels(df[[CompVariable]])
     combos <- if (!is.null(Referent)) {
@@ -264,7 +275,6 @@ MakeComparisonTable <- function(
           pcol <- intersect(c("adj.p.value", "p.value"), names(r))[1]
           tibble::tibble(variable = var, contrast = r$contrast, p_val = r[[pcol]])
         } else {
-          # Nonparametric pairwise (Wilcoxon rank-sum)
           purrr::map_dfr(combos, function(cp) {
             idx <- df[[CompVariable]] %in% cp
             res <- stats::pairwise.wilcox.test(
@@ -281,7 +291,6 @@ MakeComparisonTable <- function(
           })
         }
       } else {
-        # Categorical pairwise via chisq/Fisher per 2-level group subset
         purrr::map_dfr(combos, function(cp) {
           sub   <- df[df[[CompVariable]] %in% cp, ]
           x_sub <- droplevels(as.factor(sub[[var]]))
@@ -335,8 +344,9 @@ MakeComparisonTable <- function(
     }
   }
 
+  # Caption stays succinct; tests are shown per variable in the "Test" column
   cap <- sprintf(
-    "Comparison Table (%s analysis%s)",
+    "Comparison Table (%s analysis%s) — see **Test** column for method used per variable",
     if (Parametric) "parametric" else "non-parametric",
     if (!is.null(Covariates) && Parametric) paste0("; adjusted for ", paste(Covariates, collapse = ", ")) else ""
   )

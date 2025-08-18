@@ -54,7 +54,7 @@ MakeComparisonTable(
 \item{Referent}{Optional character string specifying the reference level for pairwise contrasts. When provided and \code{AddPairwise} is \code{TRUE}, only comparisons to this referent are included (default \code{NULL}).}
 }
 \value{
-A \code{gtsummary::tbl_summary} object augmented with formatted p-values, effect sizes, and contrasts.
+A \code{gtsummary::tbl_summary} object augmented with formatted p-values, effect sizes, contrasts, and a per-variable test label.
 }
 \description{
 Creates a comparison table using {gtsummary} summarizing continuous and categorical variables
