@@ -17,7 +17,7 @@
 #' @param EffectSizeDigits Integer; number of digits for effect sizes (default `2`).
 #' @param AddPairwise Logical; include pairwise contrast columns? (default `FALSE`).
 #' @param PairwiseMethod Character; p-value adjustment method for contrasts (default `"bonferroni"`; `"none"` for unadjusted).
-#' @param Parametric Logical; use parametric tests (ANOVA/ANCOVA) if `TRUE`, or nonparametric (Kruskal–Wallis) if `FALSE` (default `TRUE`).
+#' @param Parametric Logical; use parametric tests if `TRUE` (ANOVA/ANCOVA or Welch t-test), or nonparametric if `FALSE` (Kruskal–Wallis / Wilcoxon) (default `TRUE`).
 #' @param IncludeOverallN Logical; include a column with the overall N in the table? (default `FALSE`).
 #' @param IncludeMissing Logical; include a row summarizing missing data ("Unknown")? (default `FALSE`).
 #' @param suppress_warnings Logical; suppress intermediate warnings from gtsummary (default `FALSE`).
@@ -50,6 +50,7 @@ MakeComparisonTable <- function(
   ok <- vapply(req_pkgs, requireNamespace, FUN.VALUE = logical(1), quietly = TRUE)
   if (any(!ok)) stop("Please install: ", paste(req_pkgs[!ok], collapse = ", "))
 
+  # ---- helper: robust Cramér's V (uses DescTools if available) --------------
   .cramers_v_rc <- function(tab) {
     tab <- tab[rowSums(tab) > 0, , drop = FALSE]
     tab <- tab[, colSums(tab) > 0, drop = FALSE]
@@ -63,6 +64,7 @@ MakeComparisonTable <- function(
     sqrt(as.numeric(chi) / (n_tot * m))
   }
 
+  # ---- validate --------------------------------------------------------------
   if (!CompVariable %in% names(DataFrame)) stop("Grouping var not found: ", CompVariable)
   if (!all(Variables %in% names(DataFrame))) stop(
     "Variable(s) not found: ", paste(setdiff(Variables, names(DataFrame)), collapse = ", ")
@@ -82,7 +84,7 @@ MakeComparisonTable <- function(
   Variables <- keep
   if (length(Variables) == 0) stop("No variables to compare after dropping constants.")
 
-  # Continuous typing
+  # Explicit typing for continuous only
   numeric_vars <- Variables[sapply(df[Variables], is.numeric)]
   type_list    <- rlang::set_names(as.list(rep("continuous", length(numeric_vars))), numeric_vars)
 
@@ -90,7 +92,7 @@ MakeComparisonTable <- function(
   tbl <- gtsummary::tbl_summary(
     df,
     by        = CompVariable,
-    include   = tidyselect::all_of(Variables),     # <-- key fix
+    include   = tidyselect::all_of(Variables),
     missing   = if (IncludeMissing) "ifany" else "no",
     statistic = list(
       gtsummary::all_continuous()  ~ if (Parametric) "{mean} ({sd})" else "{median} ({p25}, {p75})",
@@ -106,34 +108,51 @@ MakeComparisonTable <- function(
     return(tbl)
   }
 
-  # ---- p-values + per-variable test label -----------------------------------
+  # ---- p-values + precise per-variable test label ---------------------------
   pdat <- purrr::map_dfr(Variables, function(var) {
     df_var <- df[!is.na(df[[var]]), , drop = FALSE]
     df_var[[CompVariable]] <- droplevels(df_var[[CompVariable]])
     safe_var <- paste0("`", var, "`")
+    k <- nlevels(df_var[[CompVariable]])
 
-    if (nlevels(df_var[[CompVariable]]) < 2) {
+    if (k < 2) {
       return(tibble::tibble(variable = var, p_unadj = NA_real_, p_adj = NA_real_, test_label = NA_character_))
     }
 
     if (is.numeric(df_var[[var]])) {
+      # Continuous
       fmla_unadj <- stats::as.formula(paste0(safe_var, " ~ ", CompVariable))
       if (Parametric) {
-        pu <- summary(stats::aov(fmla_unadj, data = df_var))[[1]][CompVariable, "Pr(>F)"]
         if (!is.null(Covariates)) {
+          # ANCOVA
           cov_terms <- paste(c(CompVariable, Covariates), collapse = " + ")
           fmla_adj  <- stats::as.formula(paste0(safe_var, " ~ ", cov_terms))
           m1        <- stats::lm(fmla_adj, data = df_var)
+          pu        <- summary(stats::aov(fmla_unadj, data = df_var))[[1]][CompVariable, "Pr(>F)"]
           pad       <- car::Anova(m1, type = 2)[CompVariable, "Pr(>F)"]
           tl        <- "ANCOVA (Type II)"
+        } else if (k == 2) {
+          # Welch two-sample t-test (more standard default)
+          pu <- stats::t.test(fmla_unadj, data = df_var, var.equal = FALSE)$p.value
+          pad <- NA_real_
+          tl  <- "Welch t-test"
         } else {
-          pad <- NA_real_; tl <- "ANOVA"
+          pu  <- summary(stats::aov(fmla_unadj, data = df_var))[[1]][CompVariable, "Pr(>F)"]
+          pad <- NA_real_
+          tl  <- "ANOVA"
         }
       } else {
-        pu <- stats::kruskal.test(fmla_unadj, data = df_var)$p.value
-        pad <- NA_real_; tl <- "Kruskal–Wallis"
+        if (k == 2) {
+          pu <- stats::wilcox.test(fmla_unadj, data = df_var)$p.value
+          tl <- "Wilcoxon rank-sum"
+        } else {
+          pu <- stats::kruskal.test(fmla_unadj, data = df_var)$p.value
+          tl <- "Kruskal–Wallis"
+        }
+        pad <- NA_real_
       }
     } else {
+      # Categorical
       tbl0 <- table(df_var[[var]], df_var[[CompVariable]])
       tbl0 <- tbl0[rowSums(tbl0) > 0, , drop = FALSE]
       tbl0 <- tbl0[, colSums(tbl0) > 0, drop = FALSE]
@@ -180,7 +199,7 @@ MakeComparisonTable <- function(
     gtsummary::modify_header(p.value_fmt ~ "**p-value**") %>%
     gtsummary::modify_header(Test ~ "**Test**")
 
-  # ---- effect sizes ----------------------------------------------------------
+  # ---- effect sizes (continuous + categorical) -------------------------------
   if (AddEffectSize) {
     es_df <- purrr::map_dfr(Variables, function(var) {
       df_var <- df[!is.na(df[[var]]), , drop = FALSE]
@@ -245,7 +264,7 @@ MakeComparisonTable <- function(
       gtsummary::modify_header(ES_Method   ~ "**ES Method**")
   }
 
-  # ---- pairwise contrasts (unchanged) ---------------------------------------
+  # ---- pairwise contrasts ----------------------------------------------------
   if (AddPairwise && nlevels(df[[CompVariable]]) > 1) {
     lvls <- levels(df[[CompVariable]])
     combos <- if (!is.null(Referent)) {

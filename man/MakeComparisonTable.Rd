@@ -43,7 +43,7 @@ MakeComparisonTable(
 
 \item{PairwiseMethod}{Character; p-value adjustment method for contrasts (default \code{"bonferroni"}; \code{"none"} for unadjusted).}
 
-\item{Parametric}{Logical; use parametric tests (ANOVA/ANCOVA) if \code{TRUE}, or nonparametric (Kruskal–Wallis) if \code{FALSE} (default \code{TRUE}).}
+\item{Parametric}{Logical; use parametric tests if \code{TRUE} (ANOVA/ANCOVA or Welch t-test), or nonparametric if \code{FALSE} (Kruskal–Wallis / Wilcoxon) (default \code{TRUE}).}
 
 \item{IncludeOverallN}{Logical; include a column with the overall N in the table? (default \code{FALSE}).}
 
