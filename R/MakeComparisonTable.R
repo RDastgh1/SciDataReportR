@@ -49,7 +49,25 @@ MakeComparisonTable <- function(
   ok <- vapply(req_pkgs, requireNamespace, FUN.VALUE = logical(1), quietly = TRUE)
   if (any(!ok)) stop("Please install: ", paste(req_pkgs[!ok], collapse = ", "))
 
-  # Validate inputs
+  # ---- helpers ---------------------------------------------------------------
+  .cramers_v_rc <- function(tab) {
+    # drop only truly empty rows/cols (all zeros)
+    tab <- tab[rowSums(tab) > 0, , drop = FALSE]
+    tab <- tab[, colSums(tab) > 0, drop = FALSE]
+    r <- nrow(tab); c <- ncol(tab)
+    if (r < 2 || c < 2) return(NA_real_)
+    n_tot <- sum(tab)
+    # Use DescTools::CramerV if available (bias-corrected), else manual
+    if (requireNamespace("DescTools", quietly = TRUE)) {
+      return(as.numeric(DescTools::CramerV(tab, method = "bias.corrected")))
+    }
+    chi <- suppressWarnings(stats::chisq.test(tab)$statistic)
+    chi <- as.numeric(chi)
+    m   <- min(r, c) - 1
+    sqrt(chi / (n_tot * m))
+  }
+
+  # ---- validate --------------------------------------------------------------
   if (!CompVariable %in% names(DataFrame)) stop("Grouping var not found: ", CompVariable)
   if (!all(Variables %in% names(DataFrame))) stop(
     "Variable(s) not found: ", paste(setdiff(Variables, names(DataFrame)), collapse = ", ")
@@ -58,7 +76,6 @@ MakeComparisonTable <- function(
     "Covariate(s) not found: ", paste(setdiff(Covariates, names(DataFrame)), collapse = ", ")
   )
 
-  # Work data
   df <- DataFrame %>%
     dplyr::select(tidyselect::all_of(c(CompVariable, Variables, Covariates)))
   df[[CompVariable]] <- factor(df[[CompVariable]])
@@ -70,11 +87,11 @@ MakeComparisonTable <- function(
   Variables <- keep
   if (length(Variables) == 0) stop("No variables to compare after dropping constants.")
 
-  # Identify continuous variables for explicit typing
+  # Explicit typing for continuous only
   numeric_vars <- Variables[sapply(df[Variables], is.numeric)]
   type_list    <- rlang::set_names(as.list(rep("continuous", length(numeric_vars))), numeric_vars)
 
-  # Initial summary; categorical as n(%) with a percent sign
+  # Summary; categorical as n(%) with percent sign
   tbl <- gtsummary::tbl_summary(
     df,
     by        = CompVariable,
@@ -108,7 +125,6 @@ MakeComparisonTable <- function(
       fmla_unadj <- stats::as.formula(paste0(safe_var, " ~ ", CompVariable))
       if (Parametric) {
         pu <- summary(stats::aov(fmla_unadj, data = df_var))[[1]][CompVariable, "Pr(>F)"]
-        # Adjusted?
         if (!is.null(Covariates)) {
           cov_terms <- paste(c(CompVariable, Covariates), collapse = " + ")
           fmla_adj  <- stats::as.formula(paste0(safe_var, " ~ ", cov_terms))
@@ -116,18 +132,18 @@ MakeComparisonTable <- function(
           pad       <- car::Anova(m1, type = 2)[CompVariable, "Pr(>F)"]
           tl        <- "ANCOVA (Type II)"
         } else {
-          pad <- NA_real_
-          tl  <- "ANOVA"
+          pad <- NA_real_; tl <- "ANOVA"
         }
       } else {
         pu <- stats::kruskal.test(fmla_unadj, data = df_var)$p.value
-        pad <- NA_real_
-        tl  <- "Kruskal–Wallis"
+        pad <- NA_real_; tl <- "Kruskal–Wallis"
       }
     } else {
       # Categorical
       tbl0 <- table(df_var[[var]], df_var[[CompVariable]])
-      tbl0 <- tbl0[rowSums(tbl0) > 0, colSums(tbl0) > 0, drop = FALSE]
+      # keep genuinely empty margins out
+      tbl0 <- tbl0[rowSums(tbl0) > 0, , drop = FALSE]
+      tbl0 <- tbl0[, colSums(tbl0) > 0, drop = FALSE]
 
       if (nrow(tbl0) < 2 || ncol(tbl0) < 2) {
         pu <- NA_real_; pad <- NA_real_; tl <- "Insufficient categories"
@@ -137,11 +153,10 @@ MakeComparisonTable <- function(
         fmla_adj  <- stats::as.formula(paste0(safe_var, " ~ ", cov_terms))
         gm        <- stats::glm(fmla_adj, data = df_var, family = stats::binomial())
         pad       <- stats::drop1(gm, test = "Chisq")[CompVariable, "Pr(>Chi)"]
-        # unadjusted fallback for display
+        # Unadjusted χ² for reference
         pu        <- suppressWarnings(stats::chisq.test(tbl0)$p.value)
         tl        <- "Logistic regression (LR test)"
       } else {
-        # Chi-square vs Fisher based on expected counts
         expct <- suppressWarnings(stats::chisq.test(tbl0)$expected)
         if (any(expct < 5)) {
           pu <- stats::fisher.test(tbl0, simulate.p.value = TRUE, B = 1e4)$p.value
@@ -174,7 +189,7 @@ MakeComparisonTable <- function(
     gtsummary::modify_header(p.value_fmt ~ "**p-value**") %>%
     gtsummary::modify_header(Test ~ "**Test**")
 
-  # ---- Effect sizes (now guaranteed for categorical where table >= 2x2) ------
+  # ---- Effect sizes (continuous + categorical) -------------------------------
   if (AddEffectSize) {
     es_df <- purrr::map_dfr(Variables, function(var) {
       df_var <- df[!is.na(df[[var]]), , drop = FALSE]
@@ -213,18 +228,10 @@ MakeComparisonTable <- function(
           method  <- "ε²"
         }
       } else {
-        # Categorical ES: Cramer's V from counts irrespective of small expected
-        tbl0   <- table(df_var[[var]], df_var[[CompVariable]])
-        tbl0   <- tbl0[rowSums(tbl0) > 0, colSums(tbl0) > 0, drop = FALSE]
-        if (nrow(tbl0) < 2 || ncol(tbl0) < 2) {
-          es_val <- NA_real_; method <- "Cramer's V"
-        } else {
-          chi    <- suppressWarnings(stats::chisq.test(tbl0)$statistic)
-          n_tot  <- sum(tbl0)
-          m      <- min(nrow(tbl0), ncol(tbl0)) - 1
-          es_val <- sqrt(as.numeric(chi) / (n_tot * m))
-          method <- "Cramer's V"
-        }
+        # Categorical ES: Cramer's V (robust)
+        tab    <- table(df_var[[var]], df_var[[CompVariable]])
+        es_val <- .cramers_v_rc(tab)
+        method <- "Cramer's V"
       }
 
       tibble::tibble(
@@ -234,7 +241,6 @@ MakeComparisonTable <- function(
       )
     })
 
-    # Show ES and method; keep ES only on label rows
     tbl <- tbl %>%
       gtsummary::modify_table_body(~ .x %>%
                                      dplyr::left_join(es_df, by = "variable") %>%
@@ -344,7 +350,6 @@ MakeComparisonTable <- function(
     }
   }
 
-  # Caption stays succinct; tests are shown per variable in the "Test" column
   cap <- sprintf(
     "Comparison Table (%s analysis%s) — see **Test** column for method used per variable",
     if (Parametric) "parametric" else "non-parametric",
