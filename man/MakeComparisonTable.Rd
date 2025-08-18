@@ -51,10 +51,11 @@ MakeComparisonTable(
 
 \item{suppress_warnings}{Logical; suppress intermediate warnings from gtsummary (default \code{FALSE}).}
 
-\item{Referent}{Optional character string specifying the reference level for pairwise contrasts. When provided and \code{AddPairwise} is \code{TRUE}, only comparisons to this referent are included (default \code{NULL}).}
+\item{Referent}{Optional character string specifying the reference level for pairwise contrasts.}
 }
 \value{
-A \code{gtsummary::tbl_summary} object augmented with formatted p-values, effect sizes, contrasts, and a per-variable test label.
+A \code{gtsummary::tbl_summary} object with p-values, a per-variable \strong{Test} label,
+effect sizes (incl. Cramér's V for categorical), and optional pairwise contrasts.
 }
 \description{
 Creates a comparison table using {gtsummary} summarizing continuous and categorical variables

@@ -21,9 +21,10 @@
 #' @param IncludeOverallN Logical; include a column with the overall N in the table? (default `FALSE`).
 #' @param IncludeMissing Logical; include a row summarizing missing data ("Unknown")? (default `FALSE`).
 #' @param suppress_warnings Logical; suppress intermediate warnings from gtsummary (default `FALSE`).
-#' @param Referent Optional character string specifying the reference level for pairwise contrasts. When provided and `AddPairwise` is `TRUE`, only comparisons to this referent are included (default `NULL`).
+#' @param Referent Optional character string specifying the reference level for pairwise contrasts.
 #'
-#' @return A `gtsummary::tbl_summary` object augmented with formatted p-values, effect sizes, contrasts, and a per-variable test label.
+#' @return A `gtsummary::tbl_summary` object with p-values, a per-variable **Test** label,
+#'         effect sizes (incl. Cramér's V for categorical), and optional pairwise contrasts.
 #' @export
 MakeComparisonTable <- function(
     DataFrame,
@@ -49,22 +50,18 @@ MakeComparisonTable <- function(
   ok <- vapply(req_pkgs, requireNamespace, FUN.VALUE = logical(1), quietly = TRUE)
   if (any(!ok)) stop("Please install: ", paste(req_pkgs[!ok], collapse = ", "))
 
-  # ---- helpers ---------------------------------------------------------------
+  # ---- helper: robust Cramér's V (uses DescTools if available) --------------
   .cramers_v_rc <- function(tab) {
-    # drop only truly empty rows/cols (all zeros)
     tab <- tab[rowSums(tab) > 0, , drop = FALSE]
     tab <- tab[, colSums(tab) > 0, drop = FALSE]
     r <- nrow(tab); c <- ncol(tab)
     if (r < 2 || c < 2) return(NA_real_)
-    n_tot <- sum(tab)
-    # Use DescTools::CramerV if available (bias-corrected), else manual
     if (requireNamespace("DescTools", quietly = TRUE)) {
       return(as.numeric(DescTools::CramerV(tab, method = "bias.corrected")))
     }
     chi <- suppressWarnings(stats::chisq.test(tab)$statistic)
-    chi <- as.numeric(chi)
-    m   <- min(r, c) - 1
-    sqrt(chi / (n_tot * m))
+    n_tot <- sum(tab); m <- min(r, c) - 1
+    sqrt(as.numeric(chi) / (n_tot * m))
   }
 
   # ---- validate --------------------------------------------------------------
@@ -76,6 +73,7 @@ MakeComparisonTable <- function(
     "Covariate(s) not found: ", paste(setdiff(Covariates, names(DataFrame)), collapse = ", ")
   )
 
+  # Work data
   df <- DataFrame %>%
     dplyr::select(tidyselect::all_of(c(CompVariable, Variables, Covariates)))
   df[[CompVariable]] <- factor(df[[CompVariable]])
@@ -87,11 +85,11 @@ MakeComparisonTable <- function(
   Variables <- keep
   if (length(Variables) == 0) stop("No variables to compare after dropping constants.")
 
-  # Explicit typing for continuous only
+  # Identify continuous variables for explicit typing (categoricals default)
   numeric_vars <- Variables[sapply(df[Variables], is.numeric)]
   type_list    <- rlang::set_names(as.list(rep("continuous", length(numeric_vars))), numeric_vars)
 
-  # Summary; categorical as n(%) with percent sign
+  # Initial summary; categorical as n(%) with percent sign
   tbl <- gtsummary::tbl_summary(
     df,
     by        = CompVariable,
@@ -110,7 +108,7 @@ MakeComparisonTable <- function(
     return(tbl)
   }
 
-  # ---- P-values + precise test labels ---------------------------------------
+  # ---- p-values + precise per-variable test label ---------------------------
   pdat <- purrr::map_dfr(Variables, function(var) {
     df_var <- df[!is.na(df[[var]]), , drop = FALSE]
     df_var[[CompVariable]] <- droplevels(df_var[[CompVariable]])
@@ -141,19 +139,16 @@ MakeComparisonTable <- function(
     } else {
       # Categorical
       tbl0 <- table(df_var[[var]], df_var[[CompVariable]])
-      # keep genuinely empty margins out
       tbl0 <- tbl0[rowSums(tbl0) > 0, , drop = FALSE]
       tbl0 <- tbl0[, colSums(tbl0) > 0, drop = FALSE]
 
       if (nrow(tbl0) < 2 || ncol(tbl0) < 2) {
         pu <- NA_real_; pad <- NA_real_; tl <- "Insufficient categories"
       } else if (Parametric && !is.null(Covariates) && nlevels(droplevels(df_var[[var]])) == 2) {
-        # Logistic regression (binary outcome) with covariates
         cov_terms <- paste(c(CompVariable, Covariates), collapse = " + ")
         fmla_adj  <- stats::as.formula(paste0(safe_var, " ~ ", cov_terms))
         gm        <- stats::glm(fmla_adj, data = df_var, family = stats::binomial())
         pad       <- stats::drop1(gm, test = "Chisq")[CompVariable, "Pr(>Chi)"]
-        # Unadjusted χ² for reference
         pu        <- suppressWarnings(stats::chisq.test(tbl0)$p.value)
         tl        <- "Logistic regression (LR test)"
       } else {
@@ -189,7 +184,7 @@ MakeComparisonTable <- function(
     gtsummary::modify_header(p.value_fmt ~ "**p-value**") %>%
     gtsummary::modify_header(Test ~ "**Test**")
 
-  # ---- Effect sizes (continuous + categorical) -------------------------------
+  # ---- effect sizes (continuous + categorical) -------------------------------
   if (AddEffectSize) {
     es_df <- purrr::map_dfr(Variables, function(var) {
       df_var <- df[!is.na(df[[var]]), , drop = FALSE]
@@ -203,7 +198,6 @@ MakeComparisonTable <- function(
       }
 
       if (is.numeric(df_var[[var]])) {
-        # Continuous ES
         if (Parametric && k == 2 && is.null(Covariates)) {
           fmla_es <- stats::as.formula(paste0(safe_var, " ~ ", CompVariable))
           es_val  <- abs(effectsize::cohens_d(fmla_es, data = df_var)$Cohens_d)
@@ -228,7 +222,6 @@ MakeComparisonTable <- function(
           method  <- "ε²"
         }
       } else {
-        # Categorical ES: Cramer's V (robust)
         tab    <- table(df_var[[var]], df_var[[CompVariable]])
         es_val <- .cramers_v_rc(tab)
         method <- "Cramer's V"
@@ -245,8 +238,8 @@ MakeComparisonTable <- function(
       gtsummary::modify_table_body(~ .x %>%
                                      dplyr::left_join(es_df, by = "variable") %>%
                                      dplyr::mutate(
-                                       effect_size = ifelse(.data$row_type == "label", .data$effect_size, NA_real_),
-                                       ES_Method   = ifelse(.data$row_type == "label", .data$es_method, NA_character_)
+                                       effect_size = dplyr::if_else(.data$row_type == "label", .data$effect_size, NA_real_),
+                                       ES_Method   = dplyr::if_else(.data$row_type == "label", .data$es_method, NA_character_)
                                      )
       ) %>%
       gtsummary::modify_fmt_fun(effect_size ~ function(x) {
@@ -256,7 +249,7 @@ MakeComparisonTable <- function(
       gtsummary::modify_header(ES_Method   ~ "**ES Method**")
   }
 
-  # ---- Pairwise contrasts ----------------------------------------------------
+  # ---- pairwise contrasts ----------------------------------------------------
   if (AddPairwise && nlevels(df[[CompVariable]]) > 1) {
     lvls <- levels(df[[CompVariable]])
     combos <- if (!is.null(Referent)) {
@@ -350,6 +343,7 @@ MakeComparisonTable <- function(
     }
   }
 
+  # Caption stays succinct; details in the Test column
   cap <- sprintf(
     "Comparison Table (%s analysis%s) — see **Test** column for method used per variable",
     if (Parametric) "parametric" else "non-parametric",
