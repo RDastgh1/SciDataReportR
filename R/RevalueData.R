@@ -1,101 +1,154 @@
 #' Revalue Data
 #'
+#' Revalues variables in a dataset according to the specifications in a codebook.
 #'
-#' This function revalues variables in a dataset according to the specifications provided in a codebook.
-#'
-#' @param DatatoRevalue The dataset to be revalued.
-#' @param VarTypes A data frame containing information about the variables and how they should be revalued.
-#'                 It should have columns: Variable (variable names), Recode (yes/no for recoding),
-#'                 Code (the revalue codes separated by ","), Type (Categorical, Double, or Ordinal), and Label (optional label for the variable).
-#' @param missingVal The value to use for missing values (default is -999).
-#' @param splitchar The character used to split codes in the Code column (default is ";").
-#' @return A list containing the revalued dataset, a warning list, and a list of recoded variables.
+#' @param DatatoRevalue A data.frame/tibble to be revalued.
+#' @param VarTypes A data.frame with columns:
+#'   - Variable (variable names)
+#'   - Recode ("yes"/"no", 1/0; optional)
+#'   - Code (revalue codes separated by `splitchar`, e.g., "1=A;2=B"; optional)
+#'   - Type (Categorical/Double/Ordinal; optional)
+#'   - Label (optional variable label)
+#'   - Missing (optional; value to treat as missing for that variable)
+#' @param missingVal The value to use for missing values when VarTypes$Missing is absent/NA (default -999).
+#' @param splitchar The character used to split codes in the Code column (default ";").
+#' @return A list with:
+#'   - RevaluedData: the revalued dataset
+#'   - warninglist: character vector of warnings
+#'   - recodedvars: character vector of variables that were recoded
+#'   - not_in_data: character vector of VarTypes variables not found in DatatoRevalue
 #' @export
 RevalueData <- function(DatatoRevalue, VarTypes, missingVal = -999, splitchar = ";") {
-  library(sjlabelled)
-  VarTypes <- VarTypes %>% filter(!is.na(Variable))
+  # deps
+  if (!requireNamespace("sjlabelled", quietly = TRUE)) {
+    stop("Package 'sjlabelled' is required.")
+  }
+  # dplyr only for convenience; fall back if absent
+  has_dplyr <- requireNamespace("dplyr", quietly = TRUE)
+  `%>%` <- if (has_dplyr) get("%>%", asNamespace("dplyr")) else NULL
+
+  # sanitize VarTypes
+  if (has_dplyr) {
+    VarTypes <- VarTypes %>% dplyr::filter(!is.na(Variable))
+  } else {
+    VarTypes <- VarTypes[!is.na(VarTypes$Variable), , drop = FALSE]
+  }
+
   RevaluedData <- DatatoRevalue
   VariablesinData <- colnames(DatatoRevalue)
-  VariablesinVarTypes <- VarTypes$Variable
-  vars <- VariablesinData[VariablesinData %in% VariablesinVarTypes]
-  warninglist <- list()
-  recodedvars <- list()
+  VariablesinVarTypes <- as.character(VarTypes$Variable)
 
-  if (!("Recode" %in% colnames(VarTypes))) {
-    VarTypes$Recode <- "NA"
-  }
-  if (!("Missing" %in% colnames(VarTypes))) {
-    VarTypes$Missing <- missingVal
+  # NEW: capture variables listed in VarTypes but absent from the data
+  not_in_data <- setdiff(unique(VariablesinVarTypes), VariablesinData)
+
+  # Only operate on variables that exist in the data
+  if (has_dplyr) {
+    VarTypes_in_data <- VarTypes %>% dplyr::filter(.data$Variable %in% VariablesinData)
   } else {
-    VarTypes$Missing[is.na(VarTypes$Missing)] <- missingVal
+    VarTypes_in_data <- VarTypes[VarTypes$Variable %in% VariablesinData, , drop = FALSE]
+  }
+  vars <- unique(as.character(VarTypes_in_data$Variable))
+
+  warninglist <- character(0)
+  recodedvars <- character(0)
+
+  # Ensure helper columns exist/are filled
+  if (!("Recode" %in% colnames(VarTypes_in_data))) {
+    VarTypes_in_data$Recode <- NA
+  }
+  if (!("Missing" %in% colnames(VarTypes_in_data))) {
+    VarTypes_in_data$Missing <- missingVal
+  }
+  VarTypes_in_data$Missing[is.na(VarTypes_in_data$Missing)] <- missingVal
+
+  # normalize Recode flag
+  recode_flag <- function(x) {
+    x <- tolower(trimws(as.character(x)))
+    isTRUE(x %in% c("yes", "y", "1", "true"))
   }
 
   for (var in vars) {
-    mV <- VarTypes$Missing[VarTypes$Variable == var]
+    mV <- VarTypes_in_data$Missing[match(var, VarTypes_in_data$Variable)]
     x <- RevaluedData[[var]]
     x[x == mV] <- NA
     RevaluedData[[var]] <- x
-    rc <- VarTypes$Recode[VarTypes$Variable == var]
 
-    if (!is.na(rc) && (rc == "yes" || rc == 1)) {
-      recodedvars <- append(recodedvars, var)
-      newcode <- VarTypes$Code[VarTypes$Variable == var]
+    rc_raw <- VarTypes_in_data$Recode[match(var, VarTypes_in_data$Variable)]
+    do_recode <- recode_flag(rc_raw)
 
-      # Try to create lookup and catch errors
+    if (isTRUE(do_recode)) {
+      recodedvars <- c(recodedvars, var)
+      newcode <- VarTypes_in_data$Code[match(var, VarTypes_in_data$Variable)]
+
       lookup <- tryCatch({
-        df <- data.frame(t(sapply(strsplit(as.character(newcode), splitchar)[[1]], function(x) {
-          strsplit(x, "=")[[1]]
-        })), row.names = NULL)
-
-        df$X1 <- tryCatch(trimws(df$X1), error = function(e) {
-          warninglist <<- append(warninglist, paste(var, ": recoding failed at trimws(X1) -", e$message))
-          return(NULL)
-        })
-
-        df$X2 <- tryCatch(trimws(df$X2), error = function(e) {
-          warninglist <<- append(warninglist, paste(var, ": recoding failed at trimws(X2) -", e$message))
-          return(NULL)
-        })
-
+        # Split like "1=A; 2=B"
+        parts <- strsplit(as.character(newcode), splitchar)[[1]]
+        kv <- lapply(parts, function(p) strsplit(p, "=", fixed = TRUE)[[1]])
+        df <- as.data.frame(do.call(rbind, kv), stringsAsFactors = FALSE)
+        if (ncol(df) != 2) stop("Code parsing produced malformed key/value pairs.")
+        names(df) <- c("X1", "X2")
+        df$X1 <- trimws(df$X1)
+        df$X2 <- trimws(df$X2)
         df
       }, error = function(e) {
-        warninglist <<- append(warninglist, paste(var, ": recoding failed during lookup creation -", e$message))
-        return(NULL)
+        warninglist <<- c(warninglist, paste0(var, ": recoding failed during lookup creation - ", e$message))
+        NULL
       })
 
       if (!is.null(lookup)) {
-        freqs1 <- as.factor(RevaluedData[[var]]) %>% summary()
+        freqs1 <- summary(as.factor(RevaluedData[[var]]))
         nameList <- lookup$X2
         names(nameList) <- lookup$X1
-        d <- sjlabelled::set_labels(RevaluedData[[var]],
-                                    labels = nameList, force.labels = TRUE, force.values = TRUE)
-        RevaluedData[[var]] <- sjlabelled::as_label(d)
-        freqs2 <- as.factor(RevaluedData[[var]]) %>% summary()
 
-        if (length(base::setdiff(freqs1, freqs2)) > 0) {
-          warninglist <- append(warninglist, paste(var, ": final frequencies not consistent"))
+        # apply labels and then convert to labelled -> factor with value labels
+        d <- sjlabelled::set_labels(RevaluedData[[var]],
+                                    labels = nameList,
+                                    force.labels = TRUE,
+                                    force.values = TRUE)
+        RevaluedData[[var]] <- sjlabelled::as_label(d)
+        freqs2 <- summary(as.factor(RevaluedData[[var]]))
+
+        # simple consistency check on totals
+        if (!identical(sum(freqs1), sum(freqs2))) {
+          warninglist <- c(warninglist, paste0(var, ": final frequencies not consistent"))
         }
       }
     } else {
-      type <- VarTypes$Type[VarTypes$Variable == var]
+      type <- VarTypes_in_data$Type[match(var, VarTypes_in_data$Variable)]
       if (!is.na(type)) {
-        if (type %in% c("Categorical", "categorical", "factor", "Factor")) {
-          RevaluedData[[var]] <- to_factor(RevaluedData[[var]])
+        type <- tolower(trimws(as.character(type)))
+        if (type %in% c("categorical", "factor")) {
+          RevaluedData[[var]] <- sjlabelled::to_factor(RevaluedData[[var]])
         }
-        if (type %in% c("Double", "Numeric", "Numerical", "numeric", "numerical", "double")) {
-          RevaluedData[[var]] <- as.numeric(RevaluedData[[var]])
+        if (type %in% c("double", "numeric", "numerical")) {
+          RevaluedData[[var]] <- suppressWarnings(as.numeric(RevaluedData[[var]]))
         }
-        if (type %in% c("Ordinal", "ordinal", "ordered factor")) {
+        if (type %in% c("ordinal", "ordered factor", "ordered")) {
           RevaluedData[[var]] <- as.ordered(RevaluedData[[var]])
         }
       }
     }
 
-    newVarLabel <- VarTypes$Label[VarTypes$Variable == var]
-    if (!is.null(newVarLabel)) {
-      set_label(RevaluedData[var]) <- newVarLabel
+    # variable label (if provided)
+    newVarLabel <- VarTypes_in_data$Label[match(var, VarTypes_in_data$Variable)]
+    if (length(newVarLabel) == 1 && !is.na(newVarLabel) && nzchar(newVarLabel)) {
+      RevaluedData[[var]] <- sjlabelled::set_label(RevaluedData[[var]], label = newVarLabel)
     }
   }
 
-  return(list(RevaluedData = RevaluedData, warninglist = warninglist, recodedvars = recodedvars))
+  # If there were any absent variables, note them in warnings, too
+  if (length(not_in_data) > 0) {
+    warninglist <- c(
+      warninglist,
+      paste0("Variables listed in VarTypes but not found in data (ignored): ",
+             paste(not_in_data, collapse = ", "))
+    )
+  }
+
+  return(list(
+    RevaluedData = RevaluedData,
+    warninglist  = warninglist,
+    recodedvars  = recodedvars,
+    not_in_data  = not_in_data
+  ))
 }
