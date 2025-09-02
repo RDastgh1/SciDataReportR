@@ -27,6 +27,7 @@
 #'         effect sizes (incl. Cramér's V for categorical), and optional pairwise contrasts.
 #' @export
 
+
 MakeComparisonTable <- function(
     DataFrame,
     Variables,
@@ -243,12 +244,10 @@ MakeComparisonTable <- function(
                               effect_size = NA_real_, es_method = NA_character_))
 
       if (is.numeric(df_var[[var]])) {
-
         if (Parametric && k == 2 && is.null(Covariates)) {
           fmla_es <- stats::as.formula(paste0(safe_var, " ~ ", safe_comp))
           es_val  <- abs(effectsize::cohens_d(fmla_es, df_var)$Cohens_d)
           method  <- "|d|"
-
         } else if (Parametric && !is.null(Covariates)) {
           cov_terms <- paste(c(safe_comp, Covariates), collapse = " + ")
           fmla_es   <- stats::as.formula(paste0(safe_var, " ~ ", cov_terms))
@@ -257,20 +256,17 @@ MakeComparisonTable <- function(
           idx       <- match(CompVariable, rownames(aov_tab))
           es_val    <- et$Eta2_partial[idx]
           method    <- "partial η²"
-
         } else if (Parametric) {
           fmla_es <- stats::as.formula(paste0(safe_var, " ~ ", safe_comp))
           et      <- effectsize::eta_squared(
             stats::aov(fmla_es, df_var), partial = FALSE)
           es_val  <- et$Eta2[1]; method <- "η²"
-
         } else {
           fmla_es <- stats::as.formula(paste0(safe_var, " ~ ", safe_comp))
           H       <- stats::kruskal.test(fmla_es, df_var)$statistic
           es_val  <- as.numeric((H - k + 1) / (n - k))
           method  <- "ε²"
         }
-
       } else {
         tab    <- table(df_var[[var]], df_var[[CompVariable]])
         es_val <- .cramers_v_rc(tab)
@@ -312,19 +308,30 @@ MakeComparisonTable <- function(
     } else utils::combn(lvls, 2, simplify = FALSE)
 
     pw <- purrr::map_dfr(Variables, function(var) {
-      safe_var <- paste0("`", var, "`")
+
+      # default empty tibble for this variable; ensures columns always exist
+      empty_pw <- tibble::tibble(
+        variable = character(), contrast = character(), p_val = numeric()
+      )
 
       if (is.numeric(df[[var]])) {                         # continuous
         if (Parametric) {
           # Welch pairwise t-tests across all groups
-          res <- stats::pairwise.t.test(
-            x = df[[var]],
-            g = df[[CompVariable]],
-            p.adjust.method = PairwiseMethod,
-            pool.sd = FALSE
+          res <- tryCatch(
+            stats::pairwise.t.test(
+              x = df[[var]],
+              g = df[[CompVariable]],
+              p.adjust.method = PairwiseMethod,
+              pool.sd = FALSE
+            ),
+            error = function(e) NULL
           )
+          if (is.null(res) || is.null(res$p.value)) return(empty_pw)
 
-          r <- as.data.frame(as.table(res$p.value)) %>%
+          r <- as.data.frame(as.table(res$p.value))
+          if (!all(c("Var1","Var2","Freq") %in% names(r))) return(empty_pw)
+
+          r <- r %>%
             dplyr::filter(!is.na(Freq)) %>%
             dplyr::transmute(
               variable = var,
@@ -338,15 +345,23 @@ MakeComparisonTable <- function(
             r <- dplyr::filter(r, g1 == Referent | g2 == Referent)
           }
 
+          r <- dplyr::select(r, variable, contrast, p_val)
+
+          if (nrow(r) == 0) return(empty_pw)
+          r
+
         } else {                                          # Wilcoxon
-          r <- purrr::map_dfr(combos, function(cp) {
+          if (length(combos) == 0) return(empty_pw)
+          purrr::map_dfr(combos, function(cp) {
             idx <- df[[CompVariable]] %in% cp
             res <- stats::pairwise.wilcox.test(
               x = df[[var]][idx],
               g = droplevels(df[[CompVariable]][idx]),
               p.adjust.method = PairwiseMethod
             )$p.value
-            as.data.frame(as.table(res)) %>%
+            rr <- as.data.frame(as.table(res))
+            if (!all(c("Var1","Var2","Freq") %in% names(rr))) return(empty_pw)
+            rr %>%
               dplyr::transmute(
                 variable = var,
                 contrast = .canonical_label(.pair_label(Var1, Var2)),
@@ -356,7 +371,8 @@ MakeComparisonTable <- function(
         }
 
       } else {                                            # categorical
-        r <- purrr::map_dfr(combos, function(cp) {
+        if (length(combos) == 0) return(empty_pw)
+        purrr::map_dfr(combos, function(cp) {
           sub   <- df[df[[CompVariable]] %in% cp, ]
           tbl0  <- table(droplevels(as.factor(sub[[var]])),
                          droplevels(sub[[CompVariable]]))
@@ -378,36 +394,45 @@ MakeComparisonTable <- function(
       }
     })
 
-    pw_wide <- tidyr::pivot_wider(
-      pw, id_cols = "variable",
-      names_from = "contrast",
-      values_from = "p_val",
-      values_fn = list(p_val = ~ mean(.x, na.rm = TRUE))
-    )
+    # Ensure expected columns exist even if pw is empty
+    if (!all(c("variable","contrast","p_val") %in% names(pw))) {
+      pw <- tibble::tibble(
+        variable = character(), contrast = character(), p_val = numeric()
+      )
+    }
 
-    tbl <- tbl %>%
-      gtsummary::modify_table_body(~ .x %>%
-                                     dplyr::left_join(pw_wide, by = "variable") %>%
-                                     dplyr::mutate(
-                                       dplyr::across(tidyselect::all_of(
-                                         setdiff(names(pw_wide), "variable")),
-                                         ~ ifelse(.data$row_type == "label", ., NA_real_))
-                                     ))
+    if (nrow(pw) > 0) {
+      pw_wide <- tidyr::pivot_wider(
+        pw, id_cols = "variable",
+        names_from = "contrast",
+        values_from = "p_val",
+        values_fn = list(p_val = ~ mean(.x, na.rm = TRUE))
+      )
 
-    for (col in setdiff(names(pw_wide), "variable")) {
       tbl <- tbl %>%
-        gtsummary::modify_fmt_fun(!!rlang::sym(col) ~
-                                    function(x) gtsummary::style_pvalue(x, digits = pDigits)) %>%
-        gtsummary::modify_table_styling(
-          columns     = col,
-          rows        = .data[[col]] <= 0.05 & .data$row_type == "label",
-          text_format = "bold"
-        ) %>%
-        gtsummary::modify_header(
-          !!rlang::sym(col) := paste0("**", col, "**")) %>%
-        gtsummary::modify_footnote(
-          !!rlang::sym(col) ~ paste0("Pairwise p-value (", PairwiseMethod,
-                                     if (!is.null(Referent)) paste0("; vs ", Referent), ")"))
+        gtsummary::modify_table_body(~ .x %>%
+                                       dplyr::left_join(pw_wide, by = "variable") %>%
+                                       dplyr::mutate(
+                                         dplyr::across(tidyselect::all_of(
+                                           setdiff(names(pw_wide), "variable")),
+                                           ~ ifelse(.data$row_type == "label", ., NA_real_))
+                                       ))
+
+      for (col in setdiff(names(pw_wide), "variable")) {
+        tbl <- tbl %>%
+          gtsummary::modify_fmt_fun(!!rlang::sym(col) ~
+                                      function(x) gtsummary::style_pvalue(x, digits = pDigits)) %>%
+          gtsummary::modify_table_styling(
+            columns     = col,
+            rows        = .data[[col]] <= 0.05 & .data$row_type == "label",
+            text_format = "bold"
+          ) %>%
+          gtsummary::modify_header(
+            !!rlang::sym(col) := paste0("**", col, "**")) %>%
+          gtsummary::modify_footnote(
+            !!rlang::sym(col) ~ paste0("Pairwise p-value (", PairwiseMethod,
+                                       if (!is.null(Referent)) paste0("; vs ", Referent), ")"))
+      }
     }
   }
 
@@ -420,8 +445,3 @@ MakeComparisonTable <- function(
     else "")
   tbl %>% gtsummary::modify_caption(cap)
 }
-
-
-
-
-
