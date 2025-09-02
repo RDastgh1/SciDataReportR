@@ -100,12 +100,11 @@ MakeComparisonTable <- function(
   drop <- setdiff(Variables, keep)
   if (length(drop))
     warning("Dropping: ", paste(drop, collapse = ", "))
-
   Variables <- keep
   if (!length(Variables))
     stop("No variables to compare after dropping constants.")
 
-  ## ── base gtsummary table ────────────────────────────────────────────────
+  ## ── base table ──────────────────────────────────────────────────────────
   tbl <- gtsummary::tbl_summary(
     df,
     by      = CompVariable,
@@ -327,13 +326,14 @@ MakeComparisonTable <- function(
                                  adjust = PairwiseMethod)
 
           r <- broom::tidy(ct)
-          if (!"adj.p.value" %in% names(r))           # ensure column exists
-            r$adj.p.value <- NA_real_
+          if (!"adj.p.value" %in% names(r)) r$adj.p.value <- NA_real_
+          if (!"p.value"      %in% names(r)) r$p.value      <- NA_real_
           r <- r %>%
-            dplyr::transmute(variable = var,
-                             contrast = .canonical_label(contrast),
-                             p_val    = dplyr::coalesce(adj.p.value,
-                                                        p.value))
+            dplyr::transmute(
+              variable = var,
+              contrast = .canonical_label(contrast),
+              p_val    = dplyr::coalesce(adj.p.value, p.value)
+            )
 
         } else {                                          # Wilcoxon
           r <- purrr::map_dfr(combos, function(cp) {
@@ -417,5 +417,6 @@ MakeComparisonTable <- function(
     else "")
   tbl %>% gtsummary::modify_caption(cap)
 }
+
 
 
