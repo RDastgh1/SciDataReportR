@@ -97,15 +97,15 @@ MakeComparisonTable <- function(
   keep <- Variables[sapply(Variables, function(v)
     length(unique(df[[v]][!is.na(df[[v]])])) >= 2)]
 
-  drop <- setdiff(Variables, keep)          # assign first
-  if (length(drop))                         # then test
+  drop <- setdiff(Variables, keep)
+  if (length(drop))
     warning("Dropping: ", paste(drop, collapse = ", "))
 
   Variables <- keep
   if (!length(Variables))
     stop("No variables to compare after dropping constants.")
 
-  ## ── base table ──────────────────────────────────────────────────────────
+  ## ── base gtsummary table ────────────────────────────────────────────────
   tbl <- gtsummary::tbl_summary(
     df,
     by      = CompVariable,
@@ -229,14 +229,85 @@ MakeComparisonTable <- function(
     gtsummary::modify_header(p.value_fmt ~ "**p-value**") %>%
     gtsummary::modify_header(Test ~ "**Test**")
 
-  ## ── effect sizes (unchanged) ────────────────────────────────────────────
-  # ... keep identical to previous full version ...
+  ## ── effect sizes ─────────────────────────────────────────────────────────
+  if (AddEffectSize) {
+    es_df <- purrr::map_dfr(Variables, function(var) {
+      df_var <- df[!is.na(df[[var]]), , drop = FALSE]
+      df_var[[CompVariable]] <- droplevels(df_var[[CompVariable]])
+      k <- nlevels(df_var[[CompVariable]])
+      n <- nrow(df_var)
+      safe_var <- paste0("`", var, "`")
 
-  ## ── pairwise contrasts (canonicalised labels) ───────────────────────────
+      if (n < 2 || k < 2)
+        return(tibble::tibble(variable = var,
+                              effect_size = NA_real_, es_method = NA_character_))
+
+      if (is.numeric(df_var[[var]])) {
+
+        if (Parametric && k == 2 && is.null(Covariates)) {
+          fmla_es <- stats::as.formula(paste0(safe_var, " ~ ", safe_comp))
+          es_val  <- abs(effectsize::cohens_d(fmla_es, df_var)$Cohens_d)
+          method  <- "|d|"
+
+        } else if (Parametric && !is.null(Covariates)) {
+          cov_terms <- paste(c(safe_comp, Covariates), collapse = " + ")
+          fmla_es   <- stats::as.formula(paste0(safe_var, " ~ ", cov_terms))
+          aov_tab   <- car::Anova(stats::lm(fmla_es, df_var), type = 2)
+          et        <- effectsize::eta_squared(aov_tab, partial = TRUE)
+          idx       <- match(CompVariable, rownames(aov_tab))
+          es_val    <- et$Eta2_partial[idx]
+          method    <- "partial η²"
+
+        } else if (Parametric) {
+          fmla_es <- stats::as.formula(paste0(safe_var, " ~ ", safe_comp))
+          et      <- effectsize::eta_squared(
+            stats::aov(fmla_es, df_var), partial = FALSE)
+          es_val  <- et$Eta2[1]; method <- "η²"
+
+        } else {
+          fmla_es <- stats::as.formula(paste0(safe_var, " ~ ", safe_comp))
+          H       <- stats::kruskal.test(fmla_es, df_var)$statistic
+          es_val  <- as.numeric((H - k + 1) / (n - k))
+          method  <- "ε²"
+        }
+
+      } else {
+        tab    <- table(df_var[[var]], df_var[[CompVariable]])
+        es_val <- .cramers_v_rc(tab)
+        method <- "Cramer's V"
+      }
+
+      tibble::tibble(
+        variable    = var,
+        effect_size = ifelse(is.finite(es_val),
+                             round(es_val, EffectSizeDigits), NA_real_),
+        es_method   = method
+      )
+    })
+
+    tbl <- tbl %>%
+      gtsummary::modify_table_body(~ .x %>%
+                                     dplyr::left_join(es_df, by = "variable") %>%
+                                     dplyr::mutate(
+                                       effect_size = dplyr::if_else(.data$row_type == "label",
+                                                                    .data$effect_size, NA_real_),
+                                       ES_Method   = dplyr::if_else(.data$row_type == "label",
+                                                                    .data$es_method,   NA_character_)
+                                     )) %>%
+      gtsummary::modify_fmt_fun(effect_size ~ function(x)
+        ifelse(is.na(x), NA_character_,
+               formatC(x, digits = EffectSizeDigits, format = "f"))) %>%
+      gtsummary::modify_header(effect_size ~ "**Effect Size**") %>%
+      gtsummary::modify_header(ES_Method   ~ "**ES Method**")
+  }
+
+  ## ── pairwise contrasts ──────────────────────────────────────────────────
   if (AddPairwise && nlevels(df[[CompVariable]]) > 1) {
 
     lvls   <- levels(df[[CompVariable]])
     combos <- if (!is.null(Referent)) {
+      if (!Referent %in% lvls)
+        stop("Referent level not found: ", Referent)
       lapply(setdiff(lvls, Referent), function(x) c(Referent, x))
     } else utils::combn(lvls, 2, simplify = FALSE)
 
@@ -255,7 +326,10 @@ MakeComparisonTable <- function(
           else emmeans::contrast(em, "pairwise",
                                  adjust = PairwiseMethod)
 
-          r <- broom::tidy(ct) %>%
+          r <- broom::tidy(ct)
+          if (!"adj.p.value" %in% names(r))           # ensure column exists
+            r$adj.p.value <- NA_real_
+          r <- r %>%
             dplyr::transmute(variable = var,
                              contrast = .canonical_label(contrast),
                              p_val    = dplyr::coalesce(adj.p.value,
@@ -336,11 +410,12 @@ MakeComparisonTable <- function(
 
   ## ── caption & return ────────────────────────────────────────────────────
   cap <- sprintf(
-    "Comparison Table (%s analysis%s) — see **Test** column for method used",
+    "Comparison Table (%s analysis%s) — see **Test** column for method used per variable",
     if (Parametric) "parametric" else "non-parametric",
     if (!is.null(Covariates) && Parametric)
       paste0("; adjusted for ", paste(Covariates, collapse = ", "))
     else "")
   tbl %>% gtsummary::modify_caption(cap)
 }
+
 
