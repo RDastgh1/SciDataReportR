@@ -96,7 +96,6 @@ MakeComparisonTable <- function(
   ## drop constants ----------------------------------------------------------
   keep <- Variables[sapply(Variables, function(v)
     length(unique(df[[v]][!is.na(df[[v]])])) >= 2)]
-
   drop <- setdiff(Variables, keep)
   if (length(drop))
     warning("Dropping: ", paste(drop, collapse = ", "))
@@ -104,7 +103,7 @@ MakeComparisonTable <- function(
   if (!length(Variables))
     stop("No variables to compare after dropping constants.")
 
-  ## ── base table ──────────────────────────────────────────────────────────
+  ## ── base gtsummary table ────────────────────────────────────────────────
   tbl <- gtsummary::tbl_summary(
     df,
     by      = CompVariable,
@@ -315,24 +314,25 @@ MakeComparisonTable <- function(
 
       if (is.numeric(df[[var]])) {                         # continuous
         if (Parametric) {
-          fit <- stats::aov(
-            stats::as.formula(paste0(safe_var, " ~ ", safe_comp)), df)
-          em  <- emmeans::emmeans(fit, CompVariable)
-          ct  <- if (!is.null(Referent))
-            emmeans::contrast(em, "trt.vs.ctrl",
-                              ref = match(Referent, lvls),
-                              adjust = PairwiseMethod)
-          else emmeans::contrast(em, "pairwise",
-                                 adjust = PairwiseMethod)
-
-          r <- broom::tidy(ct)
-          if (!"adj.p.value" %in% names(r)) r$adj.p.value <- NA_real_
-          if (!"p.value"      %in% names(r)) r$p.value      <- NA_real_
-          r <- r %>%
+          # Welch pairwise t-tests across all groups
+          res <- stats::pairwise.t.test(
+            x = df[[var]],
+            g = df[[CompVariable]],
+            p.adjust.method = PairwiseMethod,
+            pool.sd = FALSE
+          )
+          r <- as.data.frame(as.table(res$p.value)) %>%
+            dplyr::filter(!is.na(Freq)) %>%
+            dplyr::mutate(
+              g1 = as.character(Var1),
+              g2 = as.character(Var2),
+              keep = is.null(Referent) | g1 == Referent | g2 == Referent
+            ) %>%
+            dplyr::filter(keep) %>%
             dplyr::transmute(
               variable = var,
-              contrast = .canonical_label(contrast),
-              p_val    = dplyr::coalesce(adj.p.value, p.value)
+              contrast = .canonical_label(.pair_label(g1, g2)),
+              p_val    = Freq
             )
 
         } else {                                          # Wilcoxon
@@ -417,6 +417,7 @@ MakeComparisonTable <- function(
     else "")
   tbl %>% gtsummary::modify_caption(cap)
 }
+
 
 
 
