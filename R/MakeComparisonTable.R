@@ -96,9 +96,11 @@ MakeComparisonTable <- function(
   ## drop constants ----------------------------------------------------------
   keep <- Variables[sapply(Variables, function(v)
     length(unique(df[[v]][!is.na(df[[v]])])) >= 2)]
+
   drop <- setdiff(Variables, keep)
   if (length(drop))
     warning("Dropping: ", paste(drop, collapse = ", "))
+
   Variables <- keep
   if (!length(Variables))
     stop("No variables to compare after dropping constants.")
@@ -321,19 +323,20 @@ MakeComparisonTable <- function(
             p.adjust.method = PairwiseMethod,
             pool.sd = FALSE
           )
+
           r <- as.data.frame(as.table(res$p.value)) %>%
             dplyr::filter(!is.na(Freq)) %>%
-            dplyr::mutate(
-              g1 = as.character(Var1),
-              g2 = as.character(Var2),
-              keep = is.null(Referent) | g1 == Referent | g2 == Referent
-            ) %>%
-            dplyr::filter(keep) %>%
             dplyr::transmute(
               variable = var,
+              g1 = as.character(Var1),
+              g2 = as.character(Var2),
               contrast = .canonical_label(.pair_label(g1, g2)),
               p_val    = Freq
             )
+
+          if (!is.null(Referent)) {
+            r <- dplyr::filter(r, g1 == Referent | g2 == Referent)
+          }
 
         } else {                                          # Wilcoxon
           r <- purrr::map_dfr(combos, function(cp) {
@@ -417,6 +420,7 @@ MakeComparisonTable <- function(
     else "")
   tbl %>% gtsummary::modify_caption(cap)
 }
+
 
 
 
