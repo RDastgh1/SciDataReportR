@@ -23,44 +23,44 @@ MakeComparisonTable(
 )
 }
 \arguments{
-\item{DataFrame}{A \code{data.frame} containing the raw data.}
+\item{DataFrame}{Data frame with the raw data.}
 
-\item{Variables}{Character vector of column names to include in the comparison.}
+\item{Variables}{Character vector of columns to compare.}
 
-\item{CompVariable}{Character string specifying the grouping (comparison) variable.}
+\item{CompVariable}{Grouping / comparison variable.}
 
-\item{Covariates}{Optional character vector of covariate column names for adjustment (default \code{NULL}).}
+\item{Covariates}{Optional covariates (default \code{NULL}).}
 
-\item{ValueDigits}{Integer; number of digits for summary statistics (default \code{2}).}
+\item{ValueDigits}{Digits in summary stats (default \code{2}).}
 
-\item{pDigits}{Integer; number of digits for formatted p-values (default \code{3}).}
+\item{pDigits}{Digits in p-values (default \code{3}).}
 
-\item{AddEffectSize}{Logical; include an effect-size column? (default \code{FALSE}).}
+\item{AddEffectSize}{Logical; add effect sizes? (default \code{FALSE}).}
 
-\item{EffectSizeDigits}{Integer; number of digits for effect sizes (default \code{2}).}
+\item{EffectSizeDigits}{Digits in effect sizes (default \code{2}).}
 
-\item{AddPairwise}{Logical; include pairwise contrast columns? (default \code{FALSE}).}
+\item{AddPairwise}{Logical; add pair-wise contrasts? (default \code{FALSE}).}
 
-\item{PairwiseMethod}{Character; p-value adjustment method for contrasts (default \code{"bonferroni"}; \code{"none"} for unadjusted).}
+\item{PairwiseMethod}{P-adjustment method (default \code{"bonferroni"}).}
 
-\item{Parametric}{Logical; use parametric tests if \code{TRUE} (ANOVA/ANCOVA or Welch t-test), or nonparametric if \code{FALSE} (Kruskal–Wallis / Wilcoxon) (default \code{TRUE}).}
+\item{Parametric}{\code{TRUE} = parametric, \code{FALSE} = non-parametric tests.}
 
-\item{IncludeOverallN}{Logical; include a column with the overall N in the table? (default \code{FALSE}).}
+\item{IncludeOverallN}{Logical; add overall \emph{N}? (default \code{FALSE}).}
 
-\item{IncludeMissing}{Logical; include a row summarizing missing data ("Unknown")? (default \code{FALSE}).}
+\item{IncludeMissing}{Logical; include “Unknown” row? (default \code{FALSE}).}
 
-\item{suppress_warnings}{Logical; suppress intermediate warnings from gtsummary (default \code{FALSE}).}
+\item{suppress_warnings}{Suppress gtsummary warnings? (default \code{FALSE}).}
 
-\item{Referent}{Optional character string specifying the reference level for pairwise contrasts.}
+\item{Referent}{Optional reference level for contrasts.}
 }
 \value{
-A \code{gtsummary::tbl_summary} object with p-values, a per-variable \strong{Test} label,
-effect sizes (incl. Cramér's V for categorical), and optional pairwise contrasts.
+A \strong{gtsummary::tbl_summary} object.
 }
 \description{
-Creates a comparison table using {gtsummary} summarizing continuous and categorical variables
-by a grouping factor, with optional covariate adjustment for continuous outcomes only (ANCOVA),
-effect-size calculations, pairwise contrasts with p-value adjustments (or logistic regression for binary outcomes),
-and optional suppression of the "Unknown" (missing) row. Variables with fewer than
-two unique non-NA values are dropped automatically before any tests.
+Creates a comparison table (via \strong{gtsummary}) that
+• summarises variables by a grouping factor,
+• optionally adjusts continuous outcomes for covariates (ANCOVA),
+• adds p-values, effect sizes, and pair-wise contrasts,
+• automatically drops constant variables, and
+• can suppress the “Unknown” row or add an overall \emph{N} column.
 }
