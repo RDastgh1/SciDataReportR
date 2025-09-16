@@ -7,25 +7,33 @@
 PlotContinuousDistributions(
   DataFrame,
   Variables = NULL,
+  Fill = NULL,
   Relabel = TRUE,
   ncol = 3,
-  Ordinal = T
+  Ordinal = TRUE
 )
 }
 \arguments{
 \item{DataFrame}{A data frame containing the variables to be plotted.}
 
-\item{Variables}{A character vector specifying the names of the variables to be plotted. If NULL, all numeric variables in DataFrame will be used.}
+\item{Variables}{Character vector of column names to plot.  If NULL, all
+numeric variables (or numeric + ordinal if Ordinal = TRUE) are used.}
 
-\item{Relabel}{Logical, whether to relabel the variables using their labels if available. Default is TRUE.}
+\item{Fill}{\emph{Optional.}  Single column name to map to the \code{fill}/\code{colour}
+aesthetic (e.g., a factor such as sex, treatment group, etc.).}
 
-\item{ncol}{Number of columns in the facet grid. Default is 3.}
+\item{Relabel}{Logical; if TRUE, facet labels use variable labels when
+available (sjlabelled).}
 
-\item{Ordinal}{Logical, indicating whether ordinal variables should be included.}
+\item{ncol}{Number of columns in the facet grid.}
+
+\item{Ordinal}{Logical; include labelled-ordinal variables as numeric?}
 }
 \value{
-A raincloud plot visualizing the distributions of continuous variables.
+\if{html}{\out{<div class="sourceCode">}}\preformatted{     A `ggplot` object.
+}\if{html}{\out{</div>}}
 }
 \description{
-This function creates raincloud plots to visualize the distributions of continuous variables in a data frame.
+Creates rain-cloud plots (half-violin + box/median + scatter) for one or
+more continuous variables, with optional group-wise colouring.
 }
