@@ -4,18 +4,29 @@
 \alias{plotPCA}
 \title{Plot 3D PCA Scores}
 \usage{
-plotPCA(PCAObj, Var = NULL, t = "NULL")
+plotPCA(PCAObj, Var = NULL, t = "NULL", HoverVar = NULL)
 }
 \arguments{
-\item{PCAObj}{A list containing PCA results, including a \code{Scores} matrix with PCA scores and a \code{CombinedData} dataframe with the original data.}
+\item{PCAObj}{A list containing:
+\itemize{
+\item \code{Scores} – a matrix/data-frame with the PCA scores.
+\item \code{CombinedData} – the original data used to calculate the PCA.
+}}
 
-\item{Var}{An optional string specifying the variable name in \code{CombinedData} to color the points by. Default is \code{NULL}.}
+\item{Var}{(string) Optional variable in \code{CombinedData} to colour by.
+\emph{Default:} \code{NULL} (no colouring).}
 
-\item{t}{An optional string specifying the type of variable for coloring: \code{"Factor"} for categorical variables or anything else for continuous variables. Default is \code{"NULL"}.}
+\item{t}{(string)  If colouring, set to \code{"Factor"} for categorical;
+anything else is treated as continuous. \emph{Default:} \code{"NULL"}.}
+
+\item{HoverVar}{(string) Optional variable in \code{CombinedData} whose value
+will be displayed on hover.
+\emph{Default:} \code{NULL}, which shows the row number.}
 }
 \value{
-A Plotly object representing the 3D PCA plot.
+A Plotly htmlwidget.
 }
 \description{
-This function creates a 3D scatter plot of PCA scores using Plotly. It allows for optional coloring by a variable.
+Creates an interactive 3-D scatter plot of PCA scores with Plotly.
+You can colour points by a variable \strong{and} customise the hover label.
 }
