@@ -4,17 +4,25 @@
 \alias{createBinaryMapping}
 \title{Create a Mapping Table for Binary Variables}
 \usage{
-createBinaryMapping(Data, CatVars)
+createBinaryMapping(Data, CatVars, prefer = NULL)
 }
 \arguments{
-\item{Data}{A dataframe containing the data to analyze.}
+\item{Data}{A dataframe.}
 
-\item{CatVars}{A character vector of column names representing categorical variables in the dataframe.}
+\item{CatVars}{Character vector of candidate binary variables.}
+
+\item{prefer}{Optional named character vector of explicit positive levels,
+e.g., c(STATUS = "PWH", Smoker = "Yes"). This overrides other rules.}
 }
 \value{
-A dataframe with columns: \code{VariableName}, \code{Label}, and \code{PositiveValue} for binary variables found in \code{CatVars}.
+A data.frame with columns: Variable, Label, PositiveLevel, NegativeLevel.
 }
 \description{
-This function identifies binary variables within a given dataframe and generates a mapping table.
-The mapping table includes the variable name, its associated label, and the positive value.
+Identifies binary variables and returns a deterministic mapping for 0/1 coding.
+\itemize{
+\item Factors with \emph{explicit order} (ordered = TRUE) do NOT use heuristics; the highest (last) level is Positive.
+\item Logicals map to Negative = "FALSE", Positive = "TRUE".
+\item Numeric 0/1 (or any 2-value numeric) maps Positive to the numeric maximum.
+\item Characters / unordered factors use minimal heuristics (no race/PWH/sex terms).
+}
 }

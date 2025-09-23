@@ -2,37 +2,32 @@
 % Please edit documentation in R/PlotPhiHeatmap.R
 \name{PlotPhiHeatmap}
 \alias{PlotPhiHeatmap}
-\title{Plot Phi Heatmap}
+\title{Plot Phi Correlations Between Binary Variables}
 \usage{
-PlotPhiHeatmap(
-  Data,
-  xVars = NULL,
-  yVars = NULL,
-  Relabel = TRUE,
-  Ordinal = TRUE
-)
+PlotPhiHeatmap(Data, CatVars, Relabel = TRUE, binary_map = NULL)
 }
 \arguments{
-\item{Data}{A dataframe containing the variables of interest.}
+\item{Data}{A dataframe.}
 
-\item{xVars}{A vector of variable names for the x-axis (predictor variables).}
+\item{CatVars}{Character vector of binary categorical variable names.}
 
-\item{yVars}{A vector of variable names for the y-axis (outcome variables).}
+\item{Relabel}{Logical; if TRUE, uses sjlabelled variable labels for axes.}
 
-\item{Relabel}{A logical indicating whether to relabel the variables with their labels (default is TRUE).}
-
-\item{Ordinal}{A logical indicating whether to consider ordinal variables when determining binary variables (default is TRUE).}
+\item{binary_map}{Optional mapping as returned by \code{createBinaryMapping()}.
+If NULL, a mapping is created internally for \code{CatVars}.}
 }
 \value{
-A list containing the following components:
-\item{Unadjusted}{A list of results containing the Phi coefficients, p-values, and number of pairs for each variable combination.}
-\item{FDRCorrected}{A list containing FDR-corrected p-values.}
-\item{method}{A string indicating that the method used is "Phi".}
-\item{Relabel}{The relabel parameter.}
-\item{Covariates}{Currently set to NULL, as covariates are not implemented in this function.}
+A list with:
+\itemize{
+\item \code{Unadjusted}: list(PvalTable, plot)
+\item \code{FDRCorrected}: list(PvalTable, plot)
+\item \code{method} = "Phi"
+\item \code{Relabel}
+\item \code{BinaryMapping} (used)
+}
 }
 \description{
-This function generates a heatmap of the Phi coefficient for the association between binary variables
-in the provided dataset. The Phi coefficient measures the association between two binary variables,
-and the function also performs chi-square tests for each pair of variables.
+Computes pairwise phi coefficients (Φ) between binary categorical variables
+with explicit 0/1 coding (1 == PositiveLevel from \code{createBinaryMapping()}),
+then renders heatmap-style plots with raw and FDR-adjusted significance.
 }

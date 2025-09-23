@@ -2,8 +2,7 @@
 % Please edit documentation in R/PlotDirectionalHeatmaps.R
 \name{PlotDirectionalHeatmaps}
 \alias{PlotDirectionalHeatmaps}
-\title{This function creates directional heatmaps for the associations between continuous and binary variables.
-It identifies continuous and binary variables in the dataset and computes correlations using appropriate methods.}
+\title{Create directional heatmaps across continuous & binary variables}
 \usage{
 PlotDirectionalHeatmaps(
   Data,
@@ -14,20 +13,26 @@ PlotDirectionalHeatmaps(
 )
 }
 \arguments{
-\item{Data}{A dataframe containing the data to analyze.}
+\item{Data}{A dataframe.}
 
-\item{xVars}{A vector of variable names to be used on the x-axis. If NULL, all continuous and binary variables are included.}
+\item{xVars}{Character vector of variables for x-axis (subset of Data cols).
+If NULL, uses all detected continuous + binary vars.}
 
-\item{yVars}{A vector of variable names to be used on the y-axis. If NULL, defaults to the same as xVars.}
+\item{yVars}{Character vector for y-axis (defaults to xVars if NULL).}
 
-\item{Relabel}{Logical. If TRUE, variables are relabeled for better readability in the plots.}
+\item{Relabel}{Logical; use sjlabelled variable labels if present.}
 
-\item{Ordinal}{Logical. If TRUE, treats binary variables as ordinal for certain calculations (future functionality).}
+\item{Ordinal}{Logical; reserved for future use.}
 }
 \value{
-A list containing two plots (Unadjusted and FDR Corrected), along with corresponding data.
+list(Unadjusted, FDRCorrected, Relabel, BinaryMapping)
 }
 \description{
-This function creates directional heatmaps for the associations between continuous and binary variables.
-It identifies continuous and binary variables in the dataset and computes correlations using appropriate methods.
+Combines:
+\itemize{
+\item Continuous~Continuous (Pearson/Spearman)
+\item Binary~Binary (Phi; 1 == PositiveLevel)
+\item Binary~Continuous (r_pb; 1 == PositiveLevel)
+into a single square heatmap with raw and FDR-star overlays.
+}
 }

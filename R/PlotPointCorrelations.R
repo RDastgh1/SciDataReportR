@@ -1,112 +1,213 @@
-#' Plot Point-Biserial Correlations Between Binary and Continuous Variables
+#' Plot Point-Biserial Correlations (Binary vs Continuous)
 #'
-#' This function calculates point-biserial correlations between binary categorical variables and continuous variables,
-#' creates a summary table, and generates heatmap-style plots to visualize the correlations.
+#' Computes point-biserial correlations between binary categorical variables
+#' and continuous variables using explicit 0/1 coding where
+#' \code{1 == PositiveLevel} from \code{createBinaryMapping()}.
+#' Produces tidy tables and a dot-plot visualization.
 #'
-#' @param Data A dataframe containing the data.
-#' @param CatVars A vector of column names representing binary categorical variables.
-#' @param ContVars A vector of column names representing continuous variables.
-#' @param Covariates A vector of column names representing covariates (optional).
-#' @param Relabel A logical value indicating whether to relabel variables using variable labels (default: TRUE).
-#' @param Ordinal A logical value indicating whether to treat ordinal variables as numeric (default: TRUE).
-#' @return A list containing two elements:
-#'   - `Unadjusted`: A list with the unadjusted p-value table and corresponding plot.
-#'   - `FDRCorrected`: A list with the FDR-adjusted p-value table and corresponding plot.
-#'   - `method`: The statistical method used ("R_pb").
-#'   - `Relabel`: Logical indicating whether relabeling was applied.
-#'   - `Covariates`: The covariates used.
+#' @param Data A dataframe.
+#' @param CatVars Character vector of binary categorical variables.
+#' @param ContVars Character vector of continuous variables.
+#' @param Covariates Optional covariates (reserved; not used in the current implementation).
+#' @param Relabel Logical; if TRUE, uses sjlabelled variable labels for axes.
+#' @param Ordinal Logical; reserved for future use.
+#' @param binary_map Optional mapping as returned by \code{createBinaryMapping()}.
+#'   If NULL, a mapping is created internally for \code{CatVars}.
+#' @param sort_by One of \code{"abs"}, \code{"value"}, or \code{"p"} to control y-axis ordering.
+#' @return A list with:
+#' \itemize{
+#'   \item \code{Unadjusted}: list(PvalTable, plot)
+#'   \item \code{FDRCorrected}: list(PvalTable, plot)
+#'   \item \code{method} = "R_pb"
+#'   \item \code{Relabel}
+#'   \item \code{Covariates}
+#'   \item \code{BinaryMapping} (used)
+#' }
 #' @export
-PlotPointCorrelationsHeatmap <- function (Data, CatVars, ContVars, Covariates = NULL, Relabel = TRUE, Ordinal = TRUE) {
-  # Create a subset of the data
+PlotPointCorrelations <- function(
+    Data, CatVars, ContVars, Covariates = NULL, Relabel = TRUE, Ordinal = TRUE,
+    binary_map = NULL, sort_by = c("abs","value","p")
+) {
 
+  sort_by <- match.arg(sort_by)
+
+  # ---- helpers -------------------------------------------------------------
+  .is_binary <- function(x) length(unique(stats::na.omit(x))) == 2
+
+  .to01 <- function(x, var, map) {
+    if (inherits(x, "haven_labelled")) x <- haven::zap_labels(x)
+    pos <- map$PositiveLevel[match(var, map$Variable)]
+    if (is.na(pos)) stop("No PositiveLevel found in mapping for variable: ", var)
+    as.integer(as.character(x) == pos)
+  }
+
+  .label_or_name <- function(vec, nm) {
+    lab <- sjlabelled::get_label(vec)
+    if (is.null(lab) || is.na(lab) || lab == "") nm else lab
+  }
+
+  # ---- data prep -----------------------------------------------------------
   DataSubset <- Data[c(CatVars, ContVars, if (!is.null(Covariates)) Covariates)]
   DataSubset <- ReplaceMissingLabels(DataSubset)
-  checkBinaryVars <- function(vars) {
-    sapply(Data[vars], function(col) length(unique(na.omit(col))) <=
-             2)
+
+  # sanity: binaries are truly binary
+  nb_chk <- vapply(DataSubset[CatVars], .is_binary, logical(1))
+  if (!all(nb_chk)) {
+    bad <- names(nb_chk)[!nb_chk]
+    stop("The following variables are not binary (exactly 2 unique non-NA values required): ",
+         paste(bad, collapse = ", "))
   }
-  non_binary_vars <- c(CatVars)[!checkBinaryVars(c(CatVars))]
-  if (length(non_binary_vars) > 0) {
-    stop("The following variables are not binary (they do not have exactly two unique values): ",
-         paste(non_binary_vars, collapse = ", "))
+
+  # mapping
+  if (is.null(binary_map)) {
+    binary_map <- createBinaryMapping(DataSubset, CatVars)
   }
-  mData <- DataSubset %>%
-    mutate(across(all_of(CatVars), ~ as.character(haven::zap_labels(.)))) %>% # Fully convert to character
-    pivot_longer(
-      cols = all_of(CatVars),
-      names_to = "CategoricalVariable",
-      values_to = "CategoricalValue"
+
+  # long format (pair every Cat with every Cont)
+  long_df <- DataSubset %>%
+    dplyr::mutate(dplyr::across(dplyr::all_of(CatVars),
+                                ~ as.character(haven::zap_labels(.)))) %>%
+    tidyr::pivot_longer(cols = dplyr::all_of(CatVars),
+                        names_to = "CategoricalVariable",
+                        values_to = "CategoricalValue") %>%
+    tidyr::pivot_longer(cols = dplyr::all_of(ContVars),
+                        names_to = "ContinuousVariable",
+                        values_to = "ContinuousValue") %>%
+    dplyr::mutate(
+      CategoricalValue   = as.factor(CategoricalValue)
+    ) %>%
+    stats::na.omit()
+
+  # drop degenerate rows (single level or zero variance)
+  keep_pairs <- long_df %>%
+    dplyr::group_by(ContinuousVariable, CategoricalVariable) %>%
+    dplyr::summarise(
+      has_two_levels = length(unique(CategoricalValue)) > 1,
+      var_ok         = stats::var(ContinuousValue) > 0,
+      .groups = "drop"
     )
-  mData <- pivot_longer(mData, cols = all_of(ContVars), names_to = "ContinuousVariable",
-                        values_to = "ContinuousValue")
-  mData$ContinuousVariable <- as.factor(mData$ContinuousVariable)
-  mData$CategoricalValue <- as.factor(mData$CategoricalValue)
-  mData <- na.omit(mData)
-  nlevels.test <- mData %>% group_by(ContinuousVariable, CategoricalVariable) %>%
-    mutate(n = length(unique(CategoricalValue)))
-  mData <- mData[nlevels.test$n > 1, ]
-  nvar.test <- mData %>% group_by(ContinuousVariable) %>% mutate(v = var(ContinuousValue))
-  mData <- mData[nvar.test$v > 0, ]
-  stat.test <- mData %>% group_by(ContinuousVariable, CategoricalVariable) %>%
-    summarise(nPairs = sum(!is.na(CategoricalValue) & !is.na(ContinuousValue)),
-              correlation = cor(ContinuousValue, as.numeric(factor(CategoricalValue)),
-                                use = "complete.obs"), p_value = cor.test(ContinuousValue,
-                                                                          as.numeric(factor(CategoricalValue)))$p.value,
-              .groups = "drop")
-  stat.test$p.adj <- p.adjust(stat.test$p_value, method = "fdr")
-  stat.test <- stat.test %>% rstatix::add_significance() %>%
-    rstatix::add_significance("p_value", output.col = "p<.05")
+  long_df <- long_df %>%
+    dplyr::inner_join(keep_pairs %>% dplyr::filter(has_two_levels, var_ok),
+                      by = c("ContinuousVariable","CategoricalVariable"))
+
+  # ---- stats: r_pb & p for each pair --------------------------------------
+  stat.test <- long_df %>%
+    dplyr::group_by(ContinuousVariable, CategoricalVariable) %>%
+    dplyr::group_modify(~{
+      df <- .x
+      cat_var <- as.character(.y$CategoricalVariable)
+      x01 <- .to01(df$CategoricalValue, cat_var, binary_map)
+      # r and p
+      r <- suppressWarnings(stats::cor(df$ContinuousValue, x01, use = "complete.obs"))
+      p <- suppressWarnings(stats::cor.test(df$ContinuousValue, x01)$p.value)
+      tibble::tibble(
+        nPairs = sum(stats::complete.cases(df$CategoricalValue, df$ContinuousValue)),
+        correlation = r,
+        p_value = p
+      )
+    }) %>%
+    dplyr::ungroup()
+
+  # FDR
+  stat.test$p.adj <- stats::p.adjust(stat.test$p_value, method = "fdr")
+
+  # stars
+  stat.test <- stat.test %>%
+    rstatix::add_significance("p_value", output.col = "p<.05") %>%
+    rstatix::add_significance("p.adj",   output.col = "p.adj.signif")
+
   stat.test$`p<.05`[stat.test$`p<.05` == "ns"] <- ""
   stat.test$p.adj.signif[stat.test$p.adj.signif == "ns"] <- ""
-  stat.test$`p<.05` <- factor(stat.test$`p<.05`, levels = c("ns",
-                                                            "*", "**", "***", "****"), labels = c("ns", "*", "**",
-                                                                                                  "***", "***"))
+  stat.test$`p<.05` <- factor(stat.test$`p<.05`,
+                              levels = c("ns","*","**","***","****"),
+                              labels = c("ns","*","**","***","***"))
   stat.test$p.adj.signif <- factor(stat.test$p.adj.signif,
-                                   levels = c("ns", "*", "**", "***", "****"), labels = c("ns",
-                                                                                          "*", "**", "***", "***"))
-  stat.test$test <- "point biserial correlation"
-  if (Relabel) {
+                                   levels = c("ns","*","**","***","****"),
+                                   labels = c("ns","*","**","***","***"))
 
-    xlabels <- sjlabelled::get_label(DataSubset[as.character(stat.test$CategoricalVariable)],
-                                     def.value = stat.test$CategoricalVariable) %>%
-      as.data.frame() %>% rownames_to_column()
-    colnames(xlabels) <- c("Variable", "label")
-    ylabels <- sjlabelled::get_label(DataSubset[as.character(stat.test$ContinuousVariable)],
-                                     def.value = stat.test$ContinuousVariable) %>%
-      as.data.frame() %>% rownames_to_column()
-    colnames(ylabels) <- c("Variable", "label")
-    stat.test$XLabel <- xlabels$label
-    stat.test$YLabel <- ylabels$label
-  }
-  else {
+  stat.test$test <- "point biserial correlation"
+
+  # labels
+  if (Relabel) {
+    stat.test$XLabel <- vapply(
+      stat.test$CategoricalVariable,
+      function(v) .label_or_name(DataSubset[[v]], v), character(1)
+    )
+    stat.test$YLabel <- vapply(
+      stat.test$ContinuousVariable,
+      function(v) .label_or_name(DataSubset[[v]], v), character(1)
+    )
+  } else {
     stat.test$XLabel <- stat.test$CategoricalVariable
     stat.test$YLabel <- stat.test$ContinuousVariable
   }
-  PlotText <- paste("</br>Cat Var Label:", stat.test$XLabel,
-                    "</br> Cat Var:", stat.test$CategoricalVariable, "</br> Cont Var Label:",
-                    stat.test$YLabel, "</br> Cont Var:", stat.test$ContinuousVariable,
-                    "</br> P-Value: ", stat.test$p_value, stat.test$`p<.05`,
-                    "</br> FDR-corrected P: ", stat.test$p.adj, stat.test$p.adj.signif,
-                    "</br> nPairs:", stat.test$nPairs)
-  p <- ggplot(stat.test, aes(y = YLabel, x = XLabel, fill = correlation,
-                             text = PlotText)) + geom_tile() + geom_text(aes(label = `p<.05`),
-                                                                         color = "black") + scale_fill_gradient2(limits = c(-1,
-                                                                                                                            1), low = scales::muted("#FFA500"), high = scales::muted("#008080")) +
-    theme(axis.title.x = element_blank(), axis.title.y = element_blank(),
-          axis.text.y = ggplot2::element_text(size = 7), legend.text = ggplot2::element_text(size = 15),
-          axis.text.x = element_text(angle = 90, vjust = 0.5,
-                                     hjust = 1)) + labs(fill = expression(r[pb]))
-  p_FDR <- ggplot(stat.test, aes(y = YLabel, x = XLabel, fill = correlation,
-                                 text = PlotText)) + geom_tile() + geom_text(aes(label = p.adj.signif),
-                                                                             color = "black") + scale_fill_gradient2(limits = c(-1,
-                                                                                                                                1), low = scales::muted("#FFA500"), high = scales::muted("#008080")) +
-    theme(axis.title.x = element_blank(), axis.title.y = element_blank(),
-          axis.text.y = ggplot2::element_text(size = 7), legend.text = ggplot2::element_text(size = 15),
-          axis.text.x = element_text(angle = 90, vjust = 0.5,
-                                     hjust = 1)) + labs(fill = expression(r[pb]))
-  M <- list(PvalTable = stat.test, plot = p)
+
+  # order Y per facet using requested sorting
+  stat.test <- dplyr::group_by(stat.test, CategoricalVariable, XLabel)
+  stat.test <- dplyr::mutate(
+    stat.test,
+    order_key = dplyr::case_when(
+      sort_by == "abs"   ~ -abs(correlation),
+      sort_by == "value" ~ -correlation,
+      sort_by == "p"     ~ stat.test$p_value,
+      TRUE               ~ -abs(correlation)
+    )
+  )
+  stat.test <- dplyr::ungroup(stat.test)
+
+  # per-facet y ordering
+  stat.test <- stat.test %>%
+    dplyr::group_by(CategoricalVariable, XLabel) %>%
+    dplyr::arrange(order_key, .by_group = TRUE) %>%
+    dplyr::mutate(YLabel = factor(YLabel, levels = unique(YLabel))) %>%
+    dplyr::ungroup()
+
+  # tooltip
+  PlotText <- paste0(
+    "</br>Binary (facet): ", stat.test$XLabel,
+    "</br>Binary var: ",     stat.test$CategoricalVariable,
+    "</br>Continuous: ",     stat.test$YLabel,
+    "</br>Cont var: ",       stat.test$ContinuousVariable,
+    "</br> r_pb: ",          signif(stat.test$correlation, 3),
+    "</br> p: ",             signif(stat.test$p_value, 3), " ", stat.test$`p<.05`,
+    "</br> FDR p: ",         signif(stat.test$p.adj, 3),   " ", stat.test$p.adj.signif,
+    "</br> nPairs: ",        stat.test$nPairs
+  )
+
+  # ---- plots: dot plot faceted by binary var -------------------------------
+  base_dot <- ggplot2::ggplot(
+    stat.test,
+    ggplot2::aes(x = correlation, y = YLabel, text = PlotText)
+  ) +
+    ggplot2::geom_vline(xintercept = 0, linetype = 2) +
+    ggplot2::geom_point() +
+    ggplot2::scale_x_continuous(limits = c(-1, 1)) +
+    ggplot2::theme(
+      axis.title.x = ggplot2::element_blank(),
+      axis.title.y = ggplot2::element_blank(),
+      axis.text.y  = ggplot2::element_text(size = 7),
+      legend.text  = ggplot2::element_text(size = 15)
+    ) +
+    ggplot2::labs(x = expression(r[pb]))
+
+  p <- base_dot +
+    ggplot2::geom_text(ggplot2::aes(label = `p<.05`), nudge_x = 0.02, color = "black") +
+    ggplot2::facet_wrap(~ XLabel, scales = "free_y")
+
+  p_FDR <- base_dot +
+    ggplot2::geom_text(ggplot2::aes(label = p.adj.signif), nudge_x = 0.02, color = "black") +
+    ggplot2::facet_wrap(~ XLabel, scales = "free_y")
+
+  # ---- return --------------------------------------------------------------
+  M     <- list(PvalTable = stat.test, plot = p)
   M_FDR <- list(PvalTable = stat.test, plot = p_FDR)
-  BinaryMapping <- createBinaryMapping(DataSubset, CatVars)
-  return(list(Unadjusted = M, FDRCorrected = M_FDR, method = "R_pb",
-              Relabel = Relabel, Covariates = Covariates, BinaryMapping = BinaryMapping))
+
+  list(
+    Unadjusted    = M,
+    FDRCorrected  = M_FDR,
+    method        = "R_pb",
+    Relabel       = Relabel,
+    Covariates    = Covariates,
+    BinaryMapping = binary_map
+  )
 }
