@@ -24,7 +24,7 @@
 #'   \item \code{BinaryMapping} (used)
 #' }
 #' @export
-PlotPointCorrelations <- function(
+PlotPointCorrelationsHeatmap <- function(
     Data, CatVars, ContVars, Covariates = NULL, Relabel = TRUE, Ordinal = TRUE,
     binary_map = NULL, sort_by = c("abs","value","p")
 ) {
