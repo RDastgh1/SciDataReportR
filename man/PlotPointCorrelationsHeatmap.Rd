@@ -2,7 +2,7 @@
 % Please edit documentation in R/PlotPointCorrelations.R
 \name{PlotPointCorrelationsHeatmap}
 \alias{PlotPointCorrelationsHeatmap}
-\title{Plot Point-Biserial Correlations (Binary vs Continuous)}
+\title{Plot Point-Biserial Correlations Between Binary and Continuous Variables}
 \usage{
 PlotPointCorrelationsHeatmap(
   Data,
@@ -11,8 +11,7 @@ PlotPointCorrelationsHeatmap(
   Covariates = NULL,
   Relabel = TRUE,
   Ordinal = TRUE,
-  binary_map = NULL,
-  sort_by = c("abs", "value", "p")
+  binary_map = NULL
 )
 }
 \arguments{
@@ -22,31 +21,19 @@ PlotPointCorrelationsHeatmap(
 
 \item{ContVars}{Character vector of continuous variables.}
 
-\item{Covariates}{Optional covariates (reserved; not used in the current implementation).}
+\item{Covariates}{Optional covariates (reserved).}
 
-\item{Relabel}{Logical; if TRUE, uses sjlabelled variable labels for axes.}
+\item{Relabel}{Logical; use sjlabelled variable labels for axes.}
 
 \item{Ordinal}{Logical; reserved for future use.}
 
 \item{binary_map}{Optional mapping as returned by \code{createBinaryMapping()}.
 If NULL, a mapping is created internally for \code{CatVars}.}
-
-\item{sort_by}{One of \code{"abs"}, \code{"value"}, or \code{"p"} to control y-axis ordering.}
 }
 \value{
-A list with:
-\itemize{
-\item \code{Unadjusted}: list(PvalTable, plot)
-\item \code{FDRCorrected}: list(PvalTable, plot)
-\item \code{method} = "R_pb"
-\item \code{Relabel}
-\item \code{Covariates}
-\item \code{BinaryMapping} (used)
-}
+A list with Unadjusted, FDRCorrected, method ("R_pb"), Relabel, Covariates, BinaryMapping.
 }
 \description{
-Computes point-biserial correlations between binary categorical variables
-and continuous variables using explicit 0/1 coding where
-\code{1 == PositiveLevel} from \code{createBinaryMapping()}.
-Produces tidy tables and a dot-plot visualization.
+Calculates point-biserial correlations (binary vs continuous) with explicit 0/1 coding
+where 1 == PositiveLevel from \code{createBinaryMapping()}, and renders heatmap-style tiles.
 }
