@@ -25,7 +25,7 @@ If NULL, uses all detected continuous + binary vars.}
 \item{Ordinal}{Logical; reserved for future use.}
 }
 \value{
-list(Unadjusted, FDRCorrected, Relabel, BinaryMapping)
+list(Unadjusted, FDRCorrected, Relabel, BinaryMapping, Excluded)
 }
 \description{
 Combines:
@@ -35,4 +35,8 @@ Combines:
 \item Binary~Continuous (r_pb; 1 == PositiveLevel)
 into a single square heatmap with raw and FDR-star overlays.
 }
+}
+\details{
+Constant variables (no variation in the current data) are
+automatically excluded before computing any tiles.
 }
