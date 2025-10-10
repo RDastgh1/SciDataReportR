@@ -33,8 +33,8 @@ PlotMiningMatrix <- function(Data,
   method <- ifelse(Parametric, "pearson", "spearman")
 
   # split numeric vs categorical
-  num_Outcomes <- getNumVars(Data %>% select(all_of(OutcomeVars)))
-  cat_Outcomes <- getCatVars(Data %>% select(all_of(OutcomeVars)))
+  num_Outcomes   <- getNumVars(Data %>% select(all_of(OutcomeVars)))
+  cat_Outcomes   <- getCatVars(Data %>% select(all_of(OutcomeVars)))
   num_Predictors <- getNumVars(Data %>% select(all_of(PredictorVars)))
   cat_Predictors <- getCatVars(Data %>% select(all_of(PredictorVars)))
 
@@ -46,12 +46,11 @@ PlotMiningMatrix <- function(Data,
     )$Unadjusted$plot$data %>%
       select(-P_adj) %>%
       mutate(Test = method, p = P) %>%
+      # already contains XVar/YVar from the heatmap output; just swap labels
       rename(XLabel = YLabel, YLabel = XLabel)
-  } else {
-    P_Correlations <- NULL
-  }
+  } else P_Correlations <- NULL
 
-  # ANOVA for categorical predictors x numeric outcomes
+  # ANOVA: categorical predictors x numeric outcomes
   if (length(cat_Predictors) > 0 && length(num_Outcomes) > 0) {
     P_Anova1 <- PlotAnovaRelationshipsMatrix(
       Data, cat_Predictors, num_Outcomes,
@@ -59,13 +58,17 @@ PlotMiningMatrix <- function(Data,
     )$Unadjusted$PvalTable %>%
       ungroup() %>% as.data.frame() %>%
       select(-p.adj, -p.adj.signif, -logp_FDR) %>%
-      mutate(nPairs = DFd) %>%
+      mutate(
+        nPairs = DFd,
+        # NEW: ensure XVar is the outcome (numeric), YVar is the predictor (categorical)
+        XVar = ContinuousVariable,
+        YVar = CategoricalVariable
+      ) %>%
+      # keep labels aligned with your outcome-on-x, predictor-on-y convention
       rename(XLabel = YLabel, YLabel = XLabel)
-  } else {
-    P_Anova1 <- NULL
-  }
+  } else P_Anova1 <- NULL
 
-  # ANOVA for categorical outcomes x numeric predictors
+  # ANOVA: categorical outcomes x numeric predictors
   if (length(cat_Outcomes) > 0 && length(num_Predictors) > 0) {
     P_Anova2 <- PlotAnovaRelationshipsMatrix(
       Data, cat_Outcomes, num_Predictors,
@@ -73,10 +76,14 @@ PlotMiningMatrix <- function(Data,
     )$Unadjusted$PvalTable %>%
       ungroup() %>% as.data.frame() %>%
       select(-p.adj, -p.adj.signif, -logp_FDR) %>%
-      mutate(nPairs = DFd)
-  } else {
-    P_Anova2 <- NULL
-  }
+      mutate(
+        nPairs = DFd,
+        # NEW: here outcomes are categorical; predictors are numeric
+        XVar = CategoricalVariable,
+        YVar = ContinuousVariable
+      )
+    # Note: No label swap here because PvalTable already has XLabel as outcome and YLabel as predictor.
+  } else P_Anova2 <- NULL
 
   # Chi-square for categorical x categorical
   if (length(cat_Outcomes) > 0 && length(cat_Predictors) > 0) {
@@ -85,49 +92,59 @@ PlotMiningMatrix <- function(Data,
       covars = Covariates
     )$p$data %>%
       mutate(p = pval, p.adj = pval.adj)
-  } else {
-    P_Chi <- NULL
-  }
+    # Some chi outputs may or may not include XVar/YVar; we’ll backfill later if missing.
+  } else P_Chi <- NULL
 
   # combine all non-null
-  non_null_dfs <- list(P_Correlations, P_Anova1, P_Anova2, P_Chi) %>%
-    keep(~ !is.null(.x))
+  non_null_dfs <- list(P_Correlations, P_Anova1, P_Anova2, P_Chi) %>% keep(~ !is.null(.x))
   P_Combined <- Reduce(full_join, non_null_dfs)
 
-  # drop unused columns
+  # --- NEW: build reverse label→name lookup to backfill XVar/YVar if absent ---
+  # name -> label (respecting Relabel)
+  out_lab <- sjlabelled::get_label(Data %>% select(all_of(OutcomeVars)), def.value = OutcomeVars)
+  pred_lab <- sjlabelled::get_label(Data %>% select(all_of(PredictorVars)), def.value = PredictorVars)
+  # invert to label -> name (handle duplicates by first match)
+  out_map  <- setNames(OutcomeVars, out_lab)
+  pred_map <- setNames(PredictorVars, pred_lab)
+  any_map  <- c(out_map, pred_map)  # safe union
+
+  # drop unused columns (do this AFTER we’ve created XVar/YVar)
   P_Combined <- P_Combined %>%
-    select(-any_of(c(
-      "stars","stars_FDR","CategoricalVariable","ContinuousVariable",
-      "p.signif","PlotText","ges","Effect"
-    )))
+    select(-any_of(c("stars","stars_FDR","CategoricalVariable","ContinuousVariable",
+                     "p.signif","PlotText","ges","Effect","DFd","pval","pval.adj")))
+
+  # backfill XVar/YVar where missing using labels
+  if (!"XVar" %in% names(P_Combined)) P_Combined$XVar <- NA_character_
+  if (!"YVar" %in% names(P_Combined)) P_Combined$YVar <- NA_character_
+
+  P_Combined <- P_Combined %>%
+    mutate(
+      XVar = ifelse(is.na(XVar) & !is.na(XLabel) & as.character(XLabel) %in% names(any_map),
+                    any_map[as.character(XLabel)], XVar),
+      YVar = ifelse(is.na(YVar) & !is.na(YLabel) & as.character(YLabel) %in% names(any_map),
+                    any_map[as.character(YLabel)], YVar)
+    )
 
   # FDR correction and significance annotation
   P_Combined <- P_Combined %>%
     mutate(p_adj = p.adjust(p, method = "fdr")) %>%
     rstatix::add_significance(p.col = "p",     output.col = "stars") %>%
     rstatix::add_significance(p.col = "p_adj", output.col = "stars_fdr") %>%
-    mutate( # max at 3
+    mutate(
       stars     = ifelse(stars     == "****", "***", as.character(stars)),
       stars_fdr = ifelse(stars_fdr == "****", "***", as.character(stars_fdr))
     )
-  # prepare factor levels for axes
+
+  # axis orders
   if (Relabel) {
-    xorder <- sjlabelled::get_label(
-      Data %>% select(all_of(OutcomeVars)),
-      def.value = OutcomeVars
-    )
-    yorder <- sjlabelled::get_label(
-      Data %>% select(all_of(PredictorVars)),
-      def.value = PredictorVars
-    )
+    xorder <- sjlabelled::get_label(Data %>% select(all_of(OutcomeVars)),    def.value = OutcomeVars)
+    yorder <- sjlabelled::get_label(Data %>% select(all_of(PredictorVars)),  def.value = PredictorVars)
   } else {
     xorder <- OutcomeVars
     yorder <- PredictorVars
   }
-  xorder <- unique(xorder)
-  yorder <- unique(yorder)
+  xorder <- unique(xorder); yorder <- unique(yorder)
 
-  # reorder and relabel
   P_Combined <- P_Combined %>%
     filter(!is.na(p)) %>%
     mutate(
@@ -135,10 +152,8 @@ PlotMiningMatrix <- function(Data,
       YLabel = factor(YLabel, levels = yorder)
     )
 
-  # define significance levels so 'ns' is first/lightest
   sig_levels <- c("ns","*","**","***","****")
 
-  # apply significance ordering and compute -log10(p)
   P_Combined <- P_Combined %>%
     mutate(
       stars     = factor(stars,     levels = sig_levels),
@@ -147,47 +162,25 @@ PlotMiningMatrix <- function(Data,
       logpfdr   = -log10(p_adj)
     )
 
-  # plotting
   p <- ggplot(P_Combined, aes(y = YLabel, x = XLabel)) +
     geom_point(aes(size = stars, colour = stars), shape = 18) +
-    scale_color_manual(
-      values = paletteer::paletteer_c(
-        "grDevices::Purple-Yellow", n = 5,
-        direction = -1
-      )
-    ) +
+    scale_color_manual(values = paletteer::paletteer_c("grDevices::Purple-Yellow", n = 5, direction = -1)) +
     guides(size = "none") +
     labs(subtitle = "No Multiple Comparison Correction") +
     xlab("") + ylab("") + theme_bw() +
-    theme(
-      axis.text.x = element_text(angle = 45, hjust = 1),
-      legend.title = element_blank()
-    )
+    theme(axis.text.x = element_text(angle = 45, hjust = 1),
+          legend.title = element_blank())
 
   p_FDR <- ggplot(P_Combined, aes(y = YLabel, x = XLabel)) +
     geom_point(aes(size = stars_fdr, colour = stars_fdr), shape = 18) +
-    scale_color_manual(
-      values = paletteer::paletteer_c(
-        "grDevices::Purple-Yellow", n = 5,
-        direction = -1
-      )
-    ) +
+    scale_color_manual(values = paletteer::paletteer_c("grDevices::Purple-Yellow", n = 5, direction = -1)) +
     guides(size = "none") +
     labs(subtitle = "FDR Correction") +
     xlab("") + ylab("") + theme_bw() +
-    theme(
-      axis.text.x = element_text(angle = 45, hjust = 1),
-      legend.title = element_blank()
-    )
+    theme(axis.text.x = element_text(angle = 45, hjust = 1),
+          legend.title = element_blank())
 
-  # return
   M     <- list(PvalTable = P_Combined, plot = p)
   M_FDR <- list(PvalTable = P_Combined, plot = p_FDR)
-  return(list(
-    Unadjusted   = M,
-    FDRCorrected = M_FDR,
-    method       = method,
-    Relabel      = Relabel,
-    Covariates   = Covariates
-  ))
+  list(Unadjusted = M, FDRCorrected = M_FDR, method = method, Relabel = Relabel, Covariates = Covariates)
 }
