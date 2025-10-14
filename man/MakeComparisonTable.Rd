@@ -2,12 +2,12 @@
 % Please edit documentation in R/MakeComparisonTable.R
 \name{MakeComparisonTable}
 \alias{MakeComparisonTable}
-\title{Make Comparison Table with Covariate Adjustment, Effect Sizes, and Pairwise Contrasts}
+\title{Make Comparison Table with Covariate Adjustment, Effect Sizes, Pairwise Contrasts, and Optional Overall Summary}
 \usage{
 MakeComparisonTable(
   DataFrame,
   Variables,
-  CompVariable,
+  CompVariable = NULL,
   Covariates = NULL,
   ValueDigits = 2,
   pDigits = 3,
@@ -19,7 +19,9 @@ MakeComparisonTable(
   IncludeOverallN = FALSE,
   IncludeMissing = FALSE,
   suppress_warnings = FALSE,
-  Referent = NULL
+  Referent = NULL,
+  IncludeOverallStats = FALSE,
+  ShowPositiveBinaryOnLabel = TRUE
 )
 }
 \arguments{
@@ -27,7 +29,7 @@ MakeComparisonTable(
 
 \item{Variables}{Character vector of columns to compare.}
 
-\item{CompVariable}{Grouping / comparison variable.}
+\item{CompVariable}{Grouping / comparison variable (character scalar). Optional if \code{IncludeOverallStats = TRUE}.}
 
 \item{Covariates}{Optional covariates (default \code{NULL}).}
 
@@ -52,6 +54,13 @@ MakeComparisonTable(
 \item{suppress_warnings}{Suppress gtsummary warnings? (default \code{FALSE}).}
 
 \item{Referent}{Optional reference level for contrasts.}
+
+\item{IncludeOverallStats}{Logical; if \code{TRUE} (default \code{FALSE}) or if \code{CompVariable}
+is not present in \code{DataFrame}, return overall-only stats.}
+
+\item{ShowPositiveBinaryOnLabel}{Logical; if \code{TRUE} (default) show only the
+“positive” level (TRUE/1/YES/Yes) of binary
+categorical/factor/logical variables on the label row.}
 }
 \value{
 A \strong{gtsummary::tbl_summary} object.
@@ -61,6 +70,7 @@ Creates a comparison table (via \strong{gtsummary}) that
 • summarises variables by a grouping factor,
 • optionally adjusts continuous outcomes for covariates (ANCOVA),
 • adds p-values, effect sizes, and pair-wise contrasts,
-• automatically drops constant variables, and
-• can suppress the “Unknown” row or add an overall \emph{N} column.
+• automatically drops constant variables,
+• can suppress the “Unknown” row or add an overall \emph{N} column, and
+• can return an overall-only summary when requested or when no valid group exists.
 }
