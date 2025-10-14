@@ -10,9 +10,10 @@ RevalueData(DatatoRevalue, VarTypes, missingVal = -999, splitchar = ";")
 \item{DatatoRevalue}{A data.frame or tibble to be revalued.}
 
 \item{VarTypes}{A data.frame with columns:
-Variable, Recode, Code, Type, Label, Missing. Only Variable is required.}
+Variable, Recode, Code, Type, Label, MissingCode. Only Variable is required.
+(Backward compatible: if MissingCode is absent/NA, will fall back to Missing.)}
 
-\item{missingVal}{Default value to treat as missing when VarTypes$Missing is absent or NA.}
+\item{missingVal}{Default value to treat as missing when VarTypes$MissingCode is absent or NA.}
 
 \item{splitchar}{Separator used in VarTypes$Code between pairs (default ";").}
 }
