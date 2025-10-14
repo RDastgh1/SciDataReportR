@@ -28,7 +28,7 @@
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Revalue Data</h1>
-      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/v9.11.0/R/RevalueData.R" class="external-link"><code>R/RevalueData.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/master/R/RevalueData.R" class="external-link"><code>R/RevalueData.R</code></a></small>
       <div class="d-none name"><code>RevalueData.Rd</code></div>
     </div>
 
@@ -51,11 +51,12 @@
 
 <dt id="arg-vartypes">VarTypes<a class="anchor" aria-label="anchor" href="#arg-vartypes"></a></dt>
 <dd><p>A data.frame with columns:
-Variable, Recode, Code, Type, Label, Missing. Only Variable is required.</p></dd>
+Variable, Recode, Code, Type, Label, MissingCode. Only Variable is required.
+(Backward compatible: if MissingCode is absent/NA, will fall back to Missing.)</p></dd>
 
 
 <dt id="arg-missingval">missingVal<a class="anchor" aria-label="anchor" href="#arg-missingval"></a></dt>
-<dd><p>Default value to treat as missing when VarTypes$Missing is absent or NA.</p></dd>
+<dd><p>Default value to treat as missing when VarTypes$MissingCode is absent or NA.</p></dd>
 
 
 <dt id="arg-splitchar">splitchar<a class="anchor" aria-label="anchor" href="#arg-splitchar"></a></dt>
