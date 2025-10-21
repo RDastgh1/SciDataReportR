@@ -97,14 +97,13 @@ MakeComparisonTable <- function(
     rlang::set_names(as.list(rep("continuous", length(numeric_vars))), numeric_vars)
   } else NULL
 
-  ## ── binary-positive display map for tbl_summary(value=) ────────────────
+  ## ── binary-positive display map for tbl_summary(value=) -----------------
   value_list <- NULL
   if (isTRUE(ShowPositiveBinaryOnLabel)) {
     pos_tokens <- c("TRUE", "1", "YES", "Yes")
     vmap <- list()
     for (v in Variables) {
       x <- df[[v]]
-      # Only non-numeric: logical, factor, or character-like
       if (is.numeric(x)) next
       ux <- unique(x[!is.na(x)])
       if (length(ux) != 2) next
@@ -200,11 +199,11 @@ MakeComparisonTable <- function(
                             test_label = NA_character_))
 
     if (is.numeric(df_var[[var]])) {                     # continuous
-      fmla_unadj <- reformulate(CompVariable, response = var)
+      fmla_unadj <- reformulate(CompVariable, response = as.name(var))
 
       if (Parametric) {
-        if (!is.null(Covariates)) {                      # ANCOVA
-          fmla_adj <- reformulate(c(CompVariable, Covariates), response = var)
+        if (!is.null(Covariates)) {                      # ANCOVA (Type II)
+          fmla_adj <- reformulate(c(CompVariable, Covariates), response = as.name(var))
           m1   <- stats::lm(fmla_adj, data = df_var)
           pu   <- summary(stats::aov(fmla_unadj, data = df_var))[[1]][CompVariable, "Pr(>F)"]
           pad  <- car::Anova(m1, type = 2)[CompVariable, "Pr(>F)"]
@@ -222,14 +221,12 @@ MakeComparisonTable <- function(
           pad <- NA_real_; tl <- "ANOVA"
         }
       } else {                                           # non-parametric
-        if (k == 2) {
-          pu <- stats::wilcox.test(fmla_unadj, data = df_var)$p.value
-          tl <- "Wilcoxon rank-sum"
+        pu <- if (k == 2) {
+          stats::wilcox.test(fmla_unadj, data = df_var)$p.value
         } else {
-          pu <- stats::kruskal.test(fmla_unadj, data = df_var)$p.value
-          tl <- "Kruskal–Wallis"
+          stats::kruskal.test(fmla_unadj, data = df_var)$p.value
         }
-        pad <- NA_real_
+        pad <- NA_real_; tl <- if (k == 2) "Wilcoxon rank-sum" else "Kruskal–Wallis"
       }
 
     } else {                                             # categorical
@@ -241,8 +238,8 @@ MakeComparisonTable <- function(
         pu <- pad <- NA_real_; tl <- "Insufficient categories"
 
       } else if (Parametric && !is.null(Covariates) &&
-                 nlevels(droplevels(df_var[[var]])) == 2) {
-        fmla_adj <- reformulate(c(CompVariable, Covariates), response = var)
+                 nlevels(droplevels(as.factor(df_var[[var]]))) == 2) {
+        fmla_adj <- reformulate(c(CompVariable, Covariates), response = as.name(var))
         gm   <- stats::glm(fmla_adj, df_var, family = stats::binomial())
         pad  <- stats::drop1(gm, test = "Chisq")[CompVariable, "Pr(>Chi)"]
         pu   <- suppressWarnings(stats::chisq.test(tbl0)$p.value)
@@ -295,34 +292,30 @@ MakeComparisonTable <- function(
 
       if (is.numeric(df_var[[var]])) {                   # continuous
         if (Parametric && k == 2 && is.null(Covariates)) {
-          es_val <- abs(
-            effectsize::cohens_d(
-              x = df_var[[var]],
-              y = df_var[[CompVariable]]
-            )$Cohens_d
-          )
+          es_val <- tryCatch({
+            abs(effectsize::cohens_d(
+              reformulate(CompVariable, response = as.name(var)),
+              data = df_var
+            )$Cohens_d)
+          }, error = function(e) NA_real_)
           method <- "|d|"
 
         } else if (Parametric && !is.null(Covariates)) {
-          fmla_es <- reformulate(c(CompVariable, Covariates), response = var)
-          aov_tab <- car::Anova(stats::lm(fmla_es, df_var), type = 2)
-          et      <- effectsize::eta_squared(aov_tab, partial = TRUE)
-          es_val  <- et$Eta2_partial[match(CompVariable, rownames(et))]
+          fmla_es <- reformulate(c(CompVariable, Covariates), response = as.name(var))
+          lm_es   <- stats::lm(fmla_es, df_var)
+          a2      <- car::Anova(lm_es, type = 2)
+          et      <- effectsize::eta_squared(a2, partial = TRUE)
+          idx <- if ("Parameter" %in% names(et)) et$Parameter == CompVariable else rownames(et) == CompVariable
+          es_val  <- suppressWarnings(et$Eta2_partial[idx][1])
           method  <- "partial η²"
 
         } else if (Parametric) {
-          fmla_es <- reformulate(CompVariable, response = var)
-          es_val  <- effectsize::eta_squared(
-            stats::aov(fmla_es, df_var),
-            partial = FALSE
-          )$Eta2[1]
+          fmla_es <- reformulate(CompVariable, response = as.name(var))
+          es_val  <- effectsize::eta_squared(stats::aov(fmla_es, df_var), partial = FALSE)$Eta2[1]
           method  <- "η²"
 
         } else {
-          H <- stats::kruskal.test(
-            reformulate(CompVariable, response = var),
-            data = df_var
-          )$statistic
+          H <- stats::kruskal.test(reformulate(CompVariable, response = as.name(var)), data = df_var)$statistic
           es_val <- as.numeric((H - k + 1) / (n - k))
           method <- "ε²"
         }
@@ -405,11 +398,15 @@ MakeComparisonTable <- function(
           if (length(combos) == 0) return(empty_pw)
           purrr::map_dfr(combos, function(cp) {
             idx <- df[[CompVariable]] %in% cp
-            res <- stats::pairwise.wilcox.test(
-              x = df[[var]][idx],
-              g = droplevels(df[[CompVariable]][idx]),
-              p.adjust.method = PairwiseMethod
-            )$p.value
+            res <- tryCatch(
+              stats::pairwise.wilcox.test(
+                x = df[[var]][idx],
+                g = droplevels(df[[CompVariable]][idx]),
+                p.adjust.method = PairwiseMethod
+              )$p.value,
+              error = function(e) NULL
+            )
+            if (is.null(res)) return(empty_pw)
             rr <- as.data.frame(as.table(res))
             if (!all(c("Var1","Var2","Freq") %in% names(rr))) return(empty_pw)
             rr %>%
