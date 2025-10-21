@@ -20,7 +20,7 @@ Variable, Recode, Code, Type, Label, MissingCode. Only Variable is required.
 \value{
 A list with:
 RevaluedData (data), warninglist (character), recodedvars (character),
-not_in_data (character: variables listed in VarTypes but not found in the data).
+not_in_data (character).
 }
 \description{
 Revalues variables in a dataset using a VarTypes codebook.
