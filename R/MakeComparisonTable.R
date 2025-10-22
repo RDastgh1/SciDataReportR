@@ -34,8 +34,8 @@
 #' @export
 MakeComparisonTable <- function(
     DataFrame,
-    Variables,
     CompVariable         = NULL,
+    Variables,
     Covariates           = NULL,
     ValueDigits          = 2,
     pDigits              = 3,

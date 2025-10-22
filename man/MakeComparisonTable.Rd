@@ -6,8 +6,8 @@
 \usage{
 MakeComparisonTable(
   DataFrame,
-  Variables,
   CompVariable = NULL,
+  Variables,
   Covariates = NULL,
   ValueDigits = 2,
   pDigits = 3,
@@ -27,9 +27,9 @@ MakeComparisonTable(
 \arguments{
 \item{DataFrame}{Data frame with the raw data.}
 
-\item{Variables}{Character vector of columns to compare.}
-
 \item{CompVariable}{Grouping / comparison variable (character scalar). Optional if \code{IncludeOverallStats = TRUE}.}
+
+\item{Variables}{Character vector of columns to compare.}
 
 \item{Covariates}{Optional covariates (default \code{NULL}).}
 
