@@ -40,7 +40,7 @@
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Make Comparison Table with Covariate Adjustment, Effect Sizes, Pairwise Contrasts, and Optional Overall Summary</h1>
-      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/v10.0.0/R/MakeComparisonTable.R" class="external-link"><code>R/MakeComparisonTable.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/master/R/MakeComparisonTable.R" class="external-link"><code>R/MakeComparisonTable.R</code></a></small>
       <div class="d-none name"><code>MakeComparisonTable.Rd</code></div>
     </div>
 
@@ -58,8 +58,8 @@
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">MakeComparisonTable</span><span class="op">(</span></span>
 <span>  <span class="va">DataFrame</span>,</span>
-<span>  <span class="va">Variables</span>,</span>
 <span>  CompVariable <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  <span class="va">Variables</span>,</span>
 <span>  Covariates <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  ValueDigits <span class="op">=</span> <span class="fl">2</span>,</span>
 <span>  pDigits <span class="op">=</span> <span class="fl">3</span>,</span>
@@ -85,12 +85,12 @@
 <dd><p>Data frame with the raw data.</p></dd>
 
 
-<dt id="arg-variables">Variables<a class="anchor" aria-label="anchor" href="#arg-variables"></a></dt>
-<dd><p>Character vector of columns to compare.</p></dd>
-
-
 <dt id="arg-compvariable">CompVariable<a class="anchor" aria-label="anchor" href="#arg-compvariable"></a></dt>
 <dd><p>Grouping / comparison variable (character scalar). Optional if <code>IncludeOverallStats = TRUE</code>.</p></dd>
+
+
+<dt id="arg-variables">Variables<a class="anchor" aria-label="anchor" href="#arg-variables"></a></dt>
+<dd><p>Character vector of columns to compare.</p></dd>
 
 
 <dt id="arg-covariates">Covariates<a class="anchor" aria-label="anchor" href="#arg-covariates"></a></dt>
