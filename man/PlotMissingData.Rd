@@ -4,7 +4,14 @@
 \alias{PlotMissingData}
 \title{Plot Missing Data}
 \usage{
-PlotMissingData(DataFrame, Variables = NULL, Relabel = TRUE)
+PlotMissingData(
+  DataFrame,
+  Variables = NULL,
+  Relabel = TRUE,
+  show_perc = TRUE,
+  show_perc_var = TRUE,
+  cluster = FALSE
+)
 }
 \arguments{
 \item{DataFrame}{The dataframe containing missing data.}
@@ -12,10 +19,16 @@ PlotMissingData(DataFrame, Variables = NULL, Relabel = TRUE)
 \item{Variables}{A character vector specifying the variables to be included in the plot. If NULL (default), all variables in the dataframe will be used.}
 
 \item{Relabel}{Logical indicating whether to relabel the columns based on their labels. Default is TRUE.}
+
+\item{show_perc}{Logical indicating whether to show percentage labels in legend. Default is TRUE.}
+
+\item{show_perc_var}{Logical indicating whether to show percentage of missing for each variable. Default is TRUE.}
+
+\item{cluster}{Logical indicating whether to cluster rows by missingness pattern. Default is FALSE.}
 }
 \value{
-A ggplot object visualizing missing data with flipped coordinates.
+A ggplot object visualizing missing data with variables as rows.
 }
 \description{
-A wrapper function to plot missing data using the naniar package and flip coordinates.
+A custom function to plot missing data with variables as rows and observations as columns.
 }
