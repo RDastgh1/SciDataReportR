@@ -3,7 +3,7 @@
 \name{Plot2GroupStats}
 \alias{Plot2GroupStats}
 \title{Plot & Summarize Group Stats via MakeComparisonTable
-(BH q from p; SHAPE by p; COLOR by Category (vector or data frame); palette via paletteer)}
+(BH q from p; SHAPE by p; COLOR by Category (vector or data frame); stable point size; palette via paletteer)}
 \usage{
 Plot2GroupStats(
   Data,
@@ -19,6 +19,7 @@ Plot2GroupStats(
   sort_by = c("q", "p", "effect", "signed_logp", "signed_effect", "none"),
   mct_args = list(),
   palette = "pals::alphabet",
+  point_size = 3.5,
   verbose = FALSE
 )
 }
@@ -49,6 +50,8 @@ Plot2GroupStats(
 
 \item{palette}{paletteer palette string for category colors (default "pals::alphabet")}
 
+\item{point_size}{numeric constant for point size (default 3.5)}
+
 \item{verbose}{logical; TRUE prints stage messages for debugging (default FALSE)}
 }
 \value{
@@ -56,5 +59,5 @@ list(plot=ggplot, table=gtsummary, pvaltable=data.frame, data_used=tibble)
 }
 \description{
 Plot & Summarize Group Stats via MakeComparisonTable
-(BH q from p; SHAPE by p; COLOR by Category (vector or data frame); palette via paletteer)
+(BH q from p; SHAPE by p; COLOR by Category (vector or data frame); stable point size; palette via paletteer)
 }

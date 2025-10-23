@@ -1,5 +1,5 @@
 #' Plot & Summarize Group Stats via MakeComparisonTable
-#' (BH q from p; SHAPE by p; COLOR by Category (vector or data frame); palette via paletteer)
+#' (BH q from p; SHAPE by p; COLOR by Category (vector or data frame); stable point size; palette via paletteer)
 #'
 #' @param Data data.frame
 #' @param Variables character vector of variables to analyze
@@ -15,6 +15,7 @@
 #' @param sort_by one of c("q","p","effect","signed_logp","signed_effect","none")
 #' @param mct_args list of extra args to SciDataReportR::MakeComparisonTable(); e.g., AddEffectSize=TRUE
 #' @param palette paletteer palette string for category colors (default "pals::alphabet")
+#' @param point_size numeric constant for point size (default 3.5)
 #' @param verbose logical; TRUE prints stage messages for debugging (default FALSE)
 #'
 #' @return list(plot=ggplot, table=gtsummary, pvaltable=data.frame, data_used=tibble)
@@ -29,6 +30,7 @@ Plot2GroupStats <- function(
     sort_by = c("q","p","effect","signed_logp","signed_effect","none"),
     mct_args = list(),
     palette = "pals::alphabet",
+    point_size = 3.5,
     verbose = FALSE
 ){
   x_axis  <- match.arg(x_axis)
@@ -87,7 +89,7 @@ Plot2GroupStats <- function(
   if (length(miss)) stop("Variables not in `Data`: ", paste(miss, collapse = ", "))
 
   # ---- working data ---------------------------------------------------------
- # say("stage: prepare data")
+  say("stage: prepare data")
   tData <- Data
   tData$GroupVar <- Data[[GroupVar]]
   tData <- tData |>
@@ -100,7 +102,7 @@ Plot2GroupStats <- function(
   tData <- tData |> dplyr::mutate(dplyr::across(where(is.character), factor))
 
   # ---- pruning --------------------------------------------------------------
-  #say("stage: prune variables")
+  say("stage: prune variables")
   miss_prop <- colMeans(is.na(tData))
   drop_missing <- setdiff(names(miss_prop[miss_prop > missing_threshold]), "GroupVar")
   if (length(drop_missing)) tData <- dplyr::select(tData, -dplyr::all_of(drop_missing))
@@ -118,7 +120,7 @@ Plot2GroupStats <- function(
   if (length(vars_in) == 0) stop("No analyzable variables remain after filtering/missingness checks.")
 
   # ---- MakeComparisonTable --------------------------------------------------
- # say("stage: MakeComparisonTable")
+  say("stage: MakeComparisonTable")
   mct_defaults <- list(
     DataFrame    = tData,
     Variables    = vars_in,
@@ -146,7 +148,7 @@ Plot2GroupStats <- function(
   if (!inherits(MCT, "gtsummary")) stop("MakeComparisonTable did not return a gtsummary table.")
 
   # ---- extract p, compute BH q ---------------------------------------------
- # say("stage: build p/q table")
+  say("stage: build p/q table")
   tb <- MCT$table_body
   if (!all(c("row_type","variable") %in% names(tb))) {
     stop("Unexpected structure from MakeComparisonTable$table_body (needs `row_type` and `variable`).")
@@ -167,7 +169,7 @@ Plot2GroupStats <- function(
   # ---- absolute effect magnitude & direction -------------------------------
   pvaltable$effect_abs <- safe_num(pvaltable$effect_size)
 
- # say("stage: direction from data")
+  say("stage: direction from data")
   dir_from_data <- function(vname) {
     if (!vname %in% names(tData)) return(NA_real_)
     v <- tData[[vname]]; g <- tData$GroupVar
@@ -186,7 +188,7 @@ Plot2GroupStats <- function(
   pvaltable$effect_sign <- vapply(pvaltable$variable, dir_from_data, 1.0)
 
   # ---- metrics & y-order ----------------------------------------------------
- # say("stage: metrics & ordering")
+  say("stage: metrics & ordering")
   pvaltable$logp        <- -log10(pvaltable$p.value)
   pvaltable$signed_logp <- pvaltable$logp * pvaltable$effect_sign
   pvaltable$signed_es   <- pvaltable$effect_abs * pvaltable$effect_sign
@@ -231,21 +233,20 @@ Plot2GroupStats <- function(
   # Labels by q
   label_df <- pvaltable[!is.na(pvaltable$q.value) & pvaltable$q.value < label_q, , drop = FALSE]
 
-  # ---- plot -----------------------------------------------------------------
- # say("stage: plot")
+  # ---- plot (stable point size) --------------------------------------------
+  say("stage: plot")
   use_categories <- any(!is.na(pvaltable$Category))
   aes_color <- if (use_categories) ggplot2::aes(color = Category) else ggplot2::aes(color = SigQ)
 
   p <- ggplot2::ggplot(
     pvaltable,
-    ggplot2::aes(x = xvar, y = variable, size = effect_abs, shape = SigP)
+    ggplot2::aes(x = xvar, y = variable, shape = SigP)
   ) +
     aes_color +
     { if (isTRUE(x_map$signed)) ggplot2::annotate("rect", xmin = 0, xmax = Inf, ymin = -Inf, ymax = Inf, alpha = 0.08) else NULL } +
     { if (isTRUE(x_map$signed)) ggplot2::geom_vline(xintercept = 0) else NULL } +
-    ggplot2::geom_point() +
+    ggplot2::geom_point(size = point_size) +  # <-- constant size
     ggplot2::scale_y_discrete(drop = FALSE) +
-    ggplot2::scale_size_continuous(name = "Effect size (abs)", range = c(2, 6), guide = "legend") +
     ggplot2::scale_shape_manual(
       name   = "Significance (p)",
       values = c("p<0.001" = 17, "p<0.01" = 15, "p<0.05" = 16, "ns" = 1)
@@ -256,24 +257,21 @@ Plot2GroupStats <- function(
     ggplot2::theme_bw() +
     ggplot2::theme(plot.title = ggplot2::element_text(hjust = 1))
 
-  # Dynamic category palette (via paletteer, default pals::alphabet), robust to many categories
+  # Dynamic category palette via paletteer (default pals::alphabet); robust fallback
   if (use_categories) {
     ucat <- unique(stats::na.omit(pvaltable$Category))
     n_cat <- length(ucat)
     cols <- NULL
 
     if (requireNamespace("paletteer", quietly = TRUE)) {
-      # try to get exactly n_cat colors from the requested palette (e.g., "pals::alphabet")
       cols <- tryCatch(
         as.character(paletteer::paletteer_d(palette, n = n_cat)),
         error = function(e) NULL
       )
     }
     if (is.null(cols) || length(cols) < n_cat) {
-      # robust fallback if paletteer isn't available or palette too short
       cols <- grDevices::hcl.colors(n_cat, palette = "Okabe-Ito")
     }
-    # Map colors to categories (names ensure stable assignment)
     names(cols) <- ucat
     p <- p + ggplot2::scale_color_manual(name = "Category", values = cols, drop = FALSE)
   }
