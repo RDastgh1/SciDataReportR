@@ -19,29 +19,32 @@ Plot2GroupStats(
 )
 }
 \arguments{
-\item{Data}{data.frame}
+\item{Data}{data.frame with your data}
 
-\item{Variables}{character vector of variables to analyze}
+\item{Variables}{character vector of variable names to analyze}
 
-\item{VariableCategories}{optional df with columns: Variable, Category}
+\item{VariableCategories}{optional data.frame with columns: Variable, Category}
 
-\item{impClust, normalClust}{group labels (impClust is the "rightward" direction)}
+\item{impClust}{character/number; the "important" group label (plotted to the right)}
 
-\item{GroupVar}{grouping column name in Data}
+\item{normalClust}{character/number; the comparison group label}
 
-\item{missing_threshold}{drop vars with > this fraction missing (default 0.80)}
+\item{GroupVar}{character; column name in \code{Data} with the grouping variable}
 
-\item{max_levels}{drop factors with > max_levels (default 10)}
+\item{missing_threshold}{numeric in \link{0,1}; drop vars with > this fraction missing (default 0.80)}
 
-\item{adjust_method}{p-adjust method for FDR (default "fdr")}
+\item{max_levels}{integer; drop factors with > this many levels (default 10)}
 
-\item{label_q}{q-value threshold for labeling (default 0.05)}
+\item{adjust_method}{character; p.adjust method for FDR (default "fdr")}
 
-\item{mct_args}{list of extra args forwarded to MakeComparisonTable()}
+\item{label_q}{numeric; q-value threshold for labeling points on the plot (default 0.05)}
+
+\item{mct_args}{list; extra args forwarded to SciDataReportR::MakeComparisonTable()}
 }
 \value{
-list(plot, table, pvaltable, data_used)
+list(plot=ggplot, table=gtsummary object, pvaltable=data.frame, data_used=tibble)
 }
 \description{
-Plot & Summarize Group Stats via MakeComparisonTable
+Creates a volcano-style comparison plot and returns the full comparison table.
+Uses SciDataReportR::MakeComparisonTable() for p-values (and effect sizes when available).
 }
