@@ -2,7 +2,8 @@
 % Please edit documentation in R/Plot2GroupStats.R
 \name{Plot2GroupStats}
 \alias{Plot2GroupStats}
-\title{Plot & Summarize Group Stats via MakeComparisonTable}
+\title{Plot & Summarize Group Stats via MakeComparisonTable
+(BH q from p; SHAPE by p; COLOR by Category (vector or data frame); palette via paletteer)}
 \usage{
 Plot2GroupStats(
   Data,
@@ -13,38 +14,47 @@ Plot2GroupStats(
   GroupVar,
   missing_threshold = 0.8,
   max_levels = 10,
-  adjust_method = "fdr",
   label_q = 0.05,
-  mct_args = list()
+  x_axis = c("signed_logp", "signed_effect", "effect", "logp"),
+  sort_by = c("q", "p", "effect", "signed_logp", "signed_effect", "none"),
+  mct_args = list(),
+  palette = "pals::alphabet",
+  verbose = FALSE
 )
 }
 \arguments{
-\item{Data}{data.frame with your data}
+\item{Data}{data.frame}
 
-\item{Variables}{character vector of variable names to analyze}
+\item{Variables}{character vector of variables to analyze}
 
-\item{VariableCategories}{optional data.frame with columns: Variable, Category}
+\item{VariableCategories}{optional:
+- data frame with columns Variable, Category; OR
+- vector of categories (named by variable OR unnamed aligned to \code{Variables})}
 
-\item{impClust}{character/number; the "important" group label (plotted to the right)}
+\item{impClust, normalClust}{labels for the two groups (impClust plotted to the RIGHT for signed axes)}
 
-\item{normalClust}{character/number; the comparison group label}
+\item{GroupVar}{column name in \code{Data} holding the group labels}
 
-\item{GroupVar}{character; column name in \code{Data} with the grouping variable}
+\item{missing_threshold}{drop vars with > this fraction missing (default 0.80)}
 
-\item{missing_threshold}{numeric in \link{0,1}; drop vars with > this fraction missing (default 0.80)}
+\item{max_levels}{drop factors with > this many levels (default 10)}
 
-\item{max_levels}{integer; drop factors with > this many levels (default 10)}
+\item{label_q}{label threshold using q (default 0.05)}
 
-\item{adjust_method}{character; p.adjust method for FDR (default "fdr")}
+\item{x_axis}{one of c("signed_logp","signed_effect","effect","logp")}
 
-\item{label_q}{numeric; q-value threshold for labeling points on the plot (default 0.05)}
+\item{sort_by}{one of c("q","p","effect","signed_logp","signed_effect","none")}
 
-\item{mct_args}{list; extra args forwarded to SciDataReportR::MakeComparisonTable()}
+\item{mct_args}{list of extra args to SciDataReportR::MakeComparisonTable(); e.g., AddEffectSize=TRUE}
+
+\item{palette}{paletteer palette string for category colors (default "pals::alphabet")}
+
+\item{verbose}{logical; TRUE prints stage messages for debugging (default FALSE)}
 }
 \value{
-list(plot=ggplot, table=gtsummary object, pvaltable=data.frame, data_used=tibble)
+list(plot=ggplot, table=gtsummary, pvaltable=data.frame, data_used=tibble)
 }
 \description{
-Creates a volcano-style comparison plot and returns the full comparison table.
-Uses SciDataReportR::MakeComparisonTable() for p-values (and effect sizes when available).
+Plot & Summarize Group Stats via MakeComparisonTable
+(BH q from p; SHAPE by p; COLOR by Category (vector or data frame); palette via paletteer)
 }
