@@ -1,3 +1,5 @@
+# SciDataReportR 10.6.0
+
 # SciDataReportR 10.5.0
 
 # SciDataReportR 10.4.0
