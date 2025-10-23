@@ -86,7 +86,7 @@ CreatePathwayPlot_KT <- function(results_table,
   # Default mapping if none provided
   if (is.null(metabolite_mapping)) {
     metabolite_mapping <- c(
-      "N'-Formylkynurenine" = "N-Formylkynurenine",
+      "N'-Formylkynurenine" = "N-Formylkynurenine"
     )
   }
 
