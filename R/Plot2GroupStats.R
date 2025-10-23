@@ -16,7 +16,6 @@
 #' @param mct_args list of extra args to SciDataReportR::MakeComparisonTable(); e.g., AddEffectSize=TRUE
 #' @param palette paletteer palette string for category colors (default "pals::alphabet")
 #' @param point_size numeric constant for point size (default 3.5)
-#' @param verbose logical; TRUE prints stage messages for debugging (default FALSE)
 #'
 #' @return list(plot=ggplot, table=gtsummary, pvaltable=data.frame, data_used=tibble)
 #' @export
@@ -30,12 +29,10 @@ Plot2GroupStats <- function(
     sort_by = c("q","p","effect","signed_logp","signed_effect","none"),
     mct_args = list(),
     palette = "pals::alphabet",
-    point_size = 3.5,
-    verbose = FALSE
+    point_size = 3.5
 ){
   x_axis  <- match.arg(x_axis)
   sort_by <- match.arg(sort_by)
-  say <- function(...) if (isTRUE(verbose)) message(...)
 
   # ---- helpers --------------------------------------------------------------
   safe_num <- function(x) { if (is.character(x)) suppressWarnings(as.numeric(x)) else x }
@@ -45,7 +42,7 @@ Plot2GroupStats <- function(
     suppressWarnings(as.numeric(y))
   }
   # Return a named character vector Category[variable]
-  resolve_categories <- function(VariableCategories, variables_arg, vars_present, verbose = FALSE){
+  resolve_categories <- function(VariableCategories, variables_arg, vars_present){
     if (is.null(VariableCategories))
       return(stats::setNames(rep(NA_character_, length(vars_present)), vars_present))
 
@@ -73,12 +70,10 @@ Plot2GroupStats <- function(
       } else if (length(v) == length(vars_present)) {
         return(stats::setNames(as.character(v), vars_present))
       } else {
-        if (verbose) message("VariableCategories length mismatch; categories set to NA.")
         return(stats::setNames(rep(NA_character_, length(vars_present)), vars_present))
       }
     }
 
-    if (verbose) message("Unrecognized VariableCategories format; categories set to NA.")
     stats::setNames(rep(NA_character_, length(vars_present)), vars_present)
   }
 
@@ -89,7 +84,6 @@ Plot2GroupStats <- function(
   if (length(miss)) stop("Variables not in `Data`: ", paste(miss, collapse = ", "))
 
   # ---- working data ---------------------------------------------------------
-  say("stage: prepare data")
   tData <- Data
   tData$GroupVar <- Data[[GroupVar]]
   tData <- tData |>
@@ -102,7 +96,6 @@ Plot2GroupStats <- function(
   tData <- tData |> dplyr::mutate(dplyr::across(where(is.character), factor))
 
   # ---- pruning --------------------------------------------------------------
-  say("stage: prune variables")
   miss_prop <- colMeans(is.na(tData))
   drop_missing <- setdiff(names(miss_prop[miss_prop > missing_threshold]), "GroupVar")
   if (length(drop_missing)) tData <- dplyr::select(tData, -dplyr::all_of(drop_missing))
@@ -120,7 +113,6 @@ Plot2GroupStats <- function(
   if (length(vars_in) == 0) stop("No analyzable variables remain after filtering/missingness checks.")
 
   # ---- MakeComparisonTable --------------------------------------------------
-  say("stage: MakeComparisonTable")
   mct_defaults <- list(
     DataFrame    = tData,
     Variables    = vars_in,
@@ -133,7 +125,13 @@ Plot2GroupStats <- function(
       !"AddEffectSize" %in% names(mct_args)) {
     mct_defaults$AddEffectSize <- TRUE
   }
+  # Silence gtsummary warnings in the wrapper unless the caller explicitly opts out
+  if ("suppress_warnings" %in% names(formals(SciDataReportR::MakeComparisonTable)) &&
+      !"suppress_warnings" %in% names(mct_args)) {
+    mct_defaults$suppress_warnings <- TRUE
+  }
   mct_call <- utils::modifyList(mct_defaults, mct_args, keep.null = TRUE)
+
   MCT <- tryCatch(
     do.call(SciDataReportR::MakeComparisonTable, mct_call),
     error = function(e) {
@@ -148,7 +146,6 @@ Plot2GroupStats <- function(
   if (!inherits(MCT, "gtsummary")) stop("MakeComparisonTable did not return a gtsummary table.")
 
   # ---- extract p, compute BH q ---------------------------------------------
-  say("stage: build p/q table")
   tb <- MCT$table_body
   if (!all(c("row_type","variable") %in% names(tb))) {
     stop("Unexpected structure from MakeComparisonTable$table_body (needs `row_type` and `variable`).")
@@ -169,7 +166,6 @@ Plot2GroupStats <- function(
   # ---- absolute effect magnitude & direction -------------------------------
   pvaltable$effect_abs <- safe_num(pvaltable$effect_size)
 
-  say("stage: direction from data")
   dir_from_data <- function(vname) {
     if (!vname %in% names(tData)) return(NA_real_)
     v <- tData[[vname]]; g <- tData$GroupVar
@@ -188,25 +184,21 @@ Plot2GroupStats <- function(
   pvaltable$effect_sign <- vapply(pvaltable$variable, dir_from_data, 1.0)
 
   # ---- metrics & y-order ----------------------------------------------------
-  say("stage: metrics & ordering")
   pvaltable$logp        <- -log10(pvaltable$p.value)
   pvaltable$signed_logp <- pvaltable$logp * pvaltable$effect_sign
   pvaltable$signed_es   <- pvaltable$effect_abs * pvaltable$effect_sign
 
-  # Shapes by p-value bins; colors by category (or q as fallback)
   brks_p <- c(-Inf, 0.001, 0.01, 0.05, Inf); labs_p <- c("p<0.001","p<0.01","p<0.05","ns")
   pvaltable$SigP <- cut(pvaltable$p.value, breaks = brks_p, labels = labs_p, right = TRUE)
 
   brks_q <- c(-Inf, 0.001, 0.01, 0.05, Inf); labs_q <- c("q<0.001","q<0.01","q<0.05","ns")
   pvaltable$SigQ <- cut(pvaltable$q.value, breaks = brks_q, labels = labs_q, right = TRUE)
 
-  # Categories (accept vector or data frame)
   vars_present <- as.character(pvaltable$variable)
   cat_vec <- resolve_categories(VariableCategories, variables_arg = Variables,
-                                vars_present = vars_present, verbose = verbose)
+                                vars_present = vars_present)
   pvaltable$Category <- unname(cat_vec[vars_present])
 
-  # Order y-axis
   order_key <- switch(
     sort_by,
     q             = pvaltable$q.value,
@@ -220,7 +212,6 @@ Plot2GroupStats <- function(
   pvaltable <- pvaltable[ord, , drop = FALSE]
   pvaltable$variable <- factor(pvaltable$variable, levels = rev(pvaltable$variable))
 
-  # Choose x & precompute
   x_map <- switch(
     x_axis,
     signed_logp   = list(var = "signed_logp",  lab = paste0("signed -log10(p)  (→ higher in ", impClust, ")"), signed = TRUE),
@@ -230,11 +221,9 @@ Plot2GroupStats <- function(
   )
   pvaltable$xvar <- pvaltable[[x_map$var]]
 
-  # Labels by q
   label_df <- pvaltable[!is.na(pvaltable$q.value) & pvaltable$q.value < label_q, , drop = FALSE]
 
-  # ---- plot (stable point size) --------------------------------------------
-  say("stage: plot")
+  # ---- plot (stable point size; silent) ------------------------------------
   use_categories <- any(!is.na(pvaltable$Category))
   aes_color <- if (use_categories) ggplot2::aes(color = Category) else ggplot2::aes(color = SigQ)
 
@@ -245,7 +234,7 @@ Plot2GroupStats <- function(
     aes_color +
     { if (isTRUE(x_map$signed)) ggplot2::annotate("rect", xmin = 0, xmax = Inf, ymin = -Inf, ymax = Inf, alpha = 0.08) else NULL } +
     { if (isTRUE(x_map$signed)) ggplot2::geom_vline(xintercept = 0) else NULL } +
-    ggplot2::geom_point(size = point_size) +  # <-- constant size
+    ggplot2::geom_point(size = point_size) +
     ggplot2::scale_y_discrete(drop = FALSE) +
     ggplot2::scale_shape_manual(
       name   = "Significance (p)",
