@@ -3,19 +3,23 @@
 #' Creates a pathway diagram for the kynurenine-tryptophan metabolic pathway with
 #' color-coded fold changes or correlations and significance indicators.
 #'
-#' @param results_table Data frame with columns: Metabolite, p_adj, and either "% Change" or "correlation"
+#' @param results_table Data frame with columns: Metabolite, p_value, p_adj, and either "% Change" or "correlation"
 #' @param title Character string for plot title
 #' @param value_type Character string: "auto", "fold_change", or "correlation"
 #' @param metabolite_mapping Named character vector mapping results table names to standard names.
 #'   For example: c("N'-Formylkynurenine" = "N-Formylkynurenine", "Quinolinic Acid(log10)" = "Quinolinic Acid")
+#' @param use_fdr Logical: if TRUE uses FDR-adjusted p-values (p_adj) for significance, if FALSE uses raw p-values. Default is FALSE.
 #'
 #' @return A ggplot2 object
 #' @export
 #'
 #' @examples
 #' \dontrun{
-#' # Basic usage
+#' # Basic usage with raw p-values
 #' plot <- CreatePathwayPlot_KT(results, "My Pathway")
+#'
+#' # Use FDR-adjusted p-values for significance
+#' plot <- CreatePathwayPlot_KT(results, "My Pathway", use_fdr = TRUE)
 #'
 #' # With custom metabolite name mapping
 #' name_map <- c(
@@ -28,7 +32,8 @@
 CreatePathwayPlot_KT <- function(results_table,
                                  title = "",
                                  value_type = "auto",
-                                 metabolite_mapping = NULL) {
+                                 metabolite_mapping = NULL,
+                                 use_fdr = FALSE) {
 
   # Load required libraries
   library(ggplot2)
@@ -105,14 +110,32 @@ CreatePathwayPlot_KT <- function(results_table,
   if (value_col %in% names(plot_data)) {
     plot_data[[value_col]][is.na(plot_data[[value_col]])] <- 0
   }
+  plot_data$p_value[is.na(plot_data$p_value)] <- 1  # Set NA p-values to 1
   plot_data$p_adj[is.na(plot_data$p_adj)] <- 1  # Set NA p-values to 1
+
+  # Choose which p-value to use based on use_fdr parameter
+  if (use_fdr) {
+    # Check if p_adj column exists
+    if (!"p_adj" %in% names(plot_data)) {
+      warning("p_adj column not found in results table. Using p_value instead.")
+      p_col <- "p_value"
+    } else {
+      p_col <- "p_adj"
+    }
+  } else {
+    # Check if p_value column exists
+    if (!"p_value" %in% names(plot_data)) {
+      stop("p_value column not found in results table.")
+    }
+    p_col <- "p_value"
+  }
 
   # Add plot aesthetics
   plot_data <- plot_data %>%
     dplyr::mutate(
       color_value = if (value_col %in% names(.)) .data[[value_col]] else 0,
       color_value = pmax(pmin(color_value, scale_limits[2]), scale_limits[1]),
-      border_width = ifelse(!is.na(p_adj) & p_adj < 0.05, 2, 0.8),
+      border_width = ifelse(!is.na(.data[[p_col]]) & .data[[p_col]] < 0.05, 2, 0.8),
       border_color = "black"
     )
 

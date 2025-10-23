@@ -8,11 +8,12 @@ CreatePathwayPlot_KT(
   results_table,
   title = "",
   value_type = "auto",
-  metabolite_mapping = NULL
+  metabolite_mapping = NULL,
+  use_fdr = FALSE
 )
 }
 \arguments{
-\item{results_table}{Data frame with columns: Metabolite, p_adj, and either "\% Change" or "correlation"}
+\item{results_table}{Data frame with columns: Metabolite, p_value, p_adj, and either "\% Change" or "correlation"}
 
 \item{title}{Character string for plot title}
 
@@ -20,6 +21,8 @@ CreatePathwayPlot_KT(
 
 \item{metabolite_mapping}{Named character vector mapping results table names to standard names.
 For example: c("N'-Formylkynurenine" = "N-Formylkynurenine", "Quinolinic Acid(log10)" = "Quinolinic Acid")}
+
+\item{use_fdr}{Logical: if TRUE uses FDR-adjusted p-values (p_adj) for significance, if FALSE uses raw p-values. Default is FALSE.}
 }
 \value{
 A ggplot2 object
@@ -30,8 +33,11 @@ color-coded fold changes or correlations and significance indicators.
 }
 \examples{
 \dontrun{
-# Basic usage
+# Basic usage with raw p-values
 plot <- CreatePathwayPlot_KT(results, "My Pathway")
+
+# Use FDR-adjusted p-values for significance
+plot <- CreatePathwayPlot_KT(results, "My Pathway", use_fdr = TRUE)
 
 # With custom metabolite name mapping
 name_map <- c(
