@@ -87,7 +87,6 @@ CreatePathwayPlot_KT <- function(results_table,
   if (is.null(metabolite_mapping)) {
     metabolite_mapping <- c(
       "N'-Formylkynurenine" = "N-Formylkynurenine",
-      "Quinolinic Acid(log10)" = "Quinolinic Acid"
     )
   }
 
