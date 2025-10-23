@@ -1,129 +1,203 @@
-#' Plot and Summarize Group Statistics
+#' Plot and Summarize Group Statistics (safer, faster)
 #'
-#' This function creates plots and summary tables to compare two groups within a dataset.
-#'
-#' @param Data A data frame containing the data to be analyzed.
-#' @param Variables A character vector of variable names to be included in the analysis.
-#' @param VariableCategories A data frame containing variable categories (optional).
-#' @param impClust A character string representing the important cluster.
-#' @param normalClust A character string representing the normal cluster.
-#' @param GroupVar The grouping variable used for the comparison.
-#' @return A list containing a plot, a summary table, and a p-value table.
+#' @param Data data.frame
+#' @param Variables character vector of column names to analyze
+#' @param VariableCategories optional data.frame with columns: Variable, Category
+#' @param impClust character, name of the "important" group (will be plotted as positive direction)
+#' @param normalClust character, name of the comparison group
+#' @param GroupVar character, column name of grouping variable in `Data`
+#' @param missing_threshold proportion in [0,1]; drop vars with > this proportion missing (default 0.80)
+#' @param max_levels drop factors with > max_levels (default 10)
+#' @param adjust_method p-adjust method for FDR control (default "fdr")
+#' @param label_q q-value threshold for labeling points (default 0.05)
+#' @return list(plot=gg, tbl_raw=gtsummary, tbl_dummy=gtsummary, pvaltable=data.frame, data_used=tibble)
 #' @export
-#' @import dplyr
-#' @import ggplot2
-#' @import gtsummary
-#' @suggests VIM, gtools, paletteer, ggrepel, fastDummies, stringr
-#'
-Plot2GroupStats <- function(Data, Variables, VariableCategories = NULL, impClust, normalClust, GroupVar) {
+#' @import dplyr ggplot2 gtsummary
+Plot2GroupStats <- function(
+    Data, Variables, VariableCategories = NULL,
+    impClust, normalClust, GroupVar,
+    missing_threshold = 0.80, max_levels = 10,
+    adjust_method = "fdr", label_q = 0.05
+){
+  # --- dependency guards for optional goodies
+  has_paletteer <- rlang::is_installed("paletteer")
+  has_ggrepel   <- rlang::is_installed("ggrepel")
+  has_fastdum   <- rlang::is_installed("fastDummies")
+  has_stringr   <- rlang::is_installed("stringr")
+  has_gtools    <- rlang::is_installed("gtools")
 
-  tData <- Data
-  tData$GroupVar <- Data[[GroupVar]]
-  # Filter and prepare data
-  tData <-tData %>%
-    select(GroupVar, all_of(Variables)) %>%
-    filter(GroupVar %in% c(normalClust, impClust))
+  # --- input checks
+  stopifnot(is.data.frame(Data), is.character(Variables), length(Variables) >= 1)
+  if (!GroupVar %in% names(Data)) stop("`GroupVar` not found in `Data`.")
+  missing_vars <- setdiff(Variables, names(Data))
+  if (length(missing_vars)) stop("Variables not found in `Data`: ", paste(missing_vars, collapse = ", "))
+
+  # --- prep
+  tData <- dplyr::mutate(Data, GroupVar = .data[[GroupVar]]) |>
+    dplyr::select(GroupVar, dplyr::all_of(Variables)) |>
+    dplyr::filter(.data$GroupVar %in% c(normalClust, impClust))
   tData$GroupVar <- factor(tData$GroupVar, levels = c(normalClust, impClust))
 
-  # Remove variables with over 80% missing data
-  aggr_plot_all <- VIM::aggr(tData, col = c('navyblue', 'red'), numbers = TRUE, sortVars = TRUE,
-                             cex.axis = .7, gap = 3, ylab = c("Histogram of missing data", "Pattern"),
-                             bars = TRUE, labels = TRUE, plot = FALSE)
-  thresh <- 0.75 * nrow(tData)
-  remove_ind <- aggr_plot_all$missings$Count > thresh
-  removed_75pmissing <- colnames(tData[, remove_ind])
-  tData <- select(tData, -all_of(removed_75pmissing))
+  # convert characters to factors (excluding GroupVar)
+  tData <- tData |>
+    dplyr::mutate(dplyr::across(where(is.character) & !dplyr::all_of("GroupVar"), ~factor(.x)))
 
-  # Remove factor variables with less than 2 levels
-  l <- tData %>%
-    summarise_if(is.factor, funs(nlevels(factor(.)))) %>% as.list()
-  tData <- tData %>% select(-all_of(names(l[l < 2])))
+  # --- drop vars with > missing_threshold missing
+  miss_prop <- colMeans(is.na(tData))
+  drop_missing <- names(miss_prop[miss_prop > missing_threshold])
+  drop_missing <- setdiff(drop_missing, "GroupVar")
+  if (length(drop_missing)) tData <- dplyr::select(tData, -dplyr::all_of(drop_missing))
 
-  # Remove numeric variables with zero standard deviation
-  l <- tData %>%
-    summarise_if(is.numeric, funs(sd(., na.rm = TRUE))) %>% as.list()
-  tData <- tData %>% select(-all_of(names(l[is.na(l) | l == 0])))
+  # --- drop factors with <2 levels and >max_levels
+  fac_levels <- vapply(tData, function(x) if (is.factor(x)) nlevels(x) else NA_integer_, 1L)
+  drop_low   <- names(fac_levels[!is.na(fac_levels) & fac_levels < 2])
+  drop_high  <- names(fac_levels[!is.na(fac_levels) & fac_levels > max_levels])
+  tData <- tData |>
+    dplyr::select(-dplyr::all_of(setdiff(c(drop_low, drop_high), "GroupVar")))
 
-  # Generate summary table
-  gtabp <- tData %>%
-    tbl_summary(
-      by =GroupVar,
-      type = list(where(is.numeric) ~ "continuous"),
-      statistic = list(all_continuous() ~ "{mean} ({sd})", all_categorical() ~ "{n} ({p}%)")
-    ) %>%
-    add_n() %>%
-    add_p(test = list(all_continuous() ~ "oneway.test", all_categorical() ~ "chisq.test")) %>%
-    bold_p() %>%
-    bold_labels()
+  # --- drop numeric zero-variance
+  num_sd <- vapply(tData, function(x) if (is.numeric(x)) stats::sd(x, na.rm=TRUE) else NA_real_, 1.0)
+  drop_nzv <- names(num_sd[is.na(num_sd) | num_sd == 0])
+  tData <- tData |>
+    dplyr::select(-dplyr::all_of(setdiff(drop_nzv, "GroupVar")))
 
-  # Remove factor variables with more than 10 levels
-  pred <- function(x) is.factor(x) & nlevels(factor(x)) > 10
-  varsToRemove <- colnames(tData[sapply(tData, pred)])
-  tData <- tData %>% select(-all_of(varsToRemove))
+  # keep a copy for the raw summary
+  tRaw <- tData
 
-  # Create dummy variables if necessary
-  if (sum(lapply(tData, class) == "factor") > 1) {
-    d <- fastDummies::dummy_cols(tData %>% select(-GroupVar), remove_selected_columns = TRUE, remove_first_dummy = TRUE)
-    d$GroupVar <- tData$GroupVar
-
-    l <- d %>%
-      summarise_if(is.factor, funs(nlevels(factor(.)))) %>% as.list()
-    d <- d %>% select(-all_of(names(l[l < 2])))
-
-    newVars <- colnames(d)[colnames(d) %notin% colnames(tData)]
-    d[newVars] <- lapply(d[newVars], as.factor)
-
-    if (!is.null(VariableCategories)) {
-      for (var in newVars) {
-        oldvar <- stringr::str_split(var, "_")[[1]][1]
-        newline <- VariableCategories %>% filter(Variable == oldvar)
-        newline$Variable <- var
-        VariableCategories <- rbind(VariableCategories, newline)
-      }
-    }
-  } else {
-    d <- tData
-  }
-
-  # Generate dummy summary table
-  gtabd <- d %>%
-    tbl_summary(
+  # --- gtsummary table on raw data
+  gtabp <- tRaw |>
+    gtsummary::tbl_summary(
       by = GroupVar,
-      type = list(where(is.numeric) ~ "continuous", where(is.factor) ~ "categorical"),
-      statistic = list(all_continuous() ~ "{mean} ({sd})", all_categorical() ~ "{n} ({p}%)")
-    ) %>%
-    add_n() %>%
-    add_p(test = list(all_continuous() ~ "oneway.test", all_categorical() ~ "chisq.test")) %>%
-    bold_p() %>% add_difference()
-  # Prepare p-value table
-  pvaltable <- gtabd$table_body %>% filter(row_type == "label")
-  pvaltable <- pvaltable[!is.na(pvaltable$p.value), ]
-  pvaltable$Sig <- gtools::stars.pval(pvaltable$p.value)
-  pvaltable$p.adj <- p.adjust(pvaltable$p.value, method = "fdr")
-  pvaltable$logp <- log10(pvaltable$p.value) * sign(pvaltable$estimate)
+      type = list(where(is.numeric) ~ "continuous"),
+      statistic = list(all_continuous() ~ "{mean} ({sd})",
+                       all_categorical() ~ "{n} ({p}%)")
+    ) |>
+    gtsummary::add_n() |>
+    gtsummary::add_p() |>
+    gtsummary::add_q(method = adjust_method) |>
+    gtsummary::bold_p() |>
+    gtsummary::bold_labels()
 
-  # Create plot
-  if (is.null(VariableCategories)) {
-    p <- pvaltable %>% ggplot(aes(y = variable, x = logp, color = Sig, shape = Sig))
-  } else {
-    pvaltable$Category <- VariableCategories$Category[match(pvaltable$variable, VariableCategories$Variable)]
-    p <- pvaltable %>% ggplot(aes(y = variable, x = logp, color = Category, shape = Sig)) +
-      xlab("-log10(pval)") +
-      geom_vline(xintercept = 0) +
-      theme(plot.title = element_text(hjust = 1))
+  # --- dummy encode (if needed)
+  d <- tData
+  if (has_fastdum) {
+    # dummy only factor columns except GroupVar
+    fac_cols <- names(d)[vapply(d, is.factor, TRUE)]
+    fac_cols <- setdiff(fac_cols, "GroupVar")
+    if (length(fac_cols)) {
+      d <- fastDummies::dummy_cols(
+        d, select_columns = fac_cols,
+        remove_selected_columns = TRUE, remove_first_dummy = TRUE
+      )
+      # make new dummies factors "0/1" for nice categorical summaries
+      newVars <- setdiff(names(d), names(tData))
+      d[newVars] <- lapply(d[newVars], function(x) factor(x, levels = c(0,1)))
+    }
   }
 
-  p <- p +
-    annotate("rect", xmin = 0, xmax = Inf, ymin = 0, ymax = Inf, alpha = 0.5) +
-    geom_point() +
-    geom_text_repel(data = subset(pvaltable, `p.adj` < 0.05), aes(label = variable)) +
-    scale_y_discrete(limits = rev(pvaltable$variable)) +
-    paletteer::scale_color_paletteer_d("fishualize::Scarus_quoyi") +
-    xlab("-log10(pval)") +
-    geom_vline(xintercept = 0) +
-    theme_bw() +
-    ggtitle(paste("---> Higher in", impClust)) +
-    theme(plot.title = element_text(hjust = 1))
+  # --- gtsummary on (possibly) dummified data
+  gtabd <- d |>
+    gtsummary::tbl_summary(
+      by = GroupVar,
+      type = list(where(is.numeric) ~ "continuous",
+                  where(is.factor)  ~ "categorical"),
+      statistic = list(all_continuous() ~ "{mean} ({sd})",
+                       all_categorical() ~ "{n} ({p}%)")
+    ) |>
+    gtsummary::add_n() |>
+    gtsummary::add_p() |>
+    gtsummary::add_q(method = adjust_method) |>
+    gtsummary::bold_p()
 
-  return(list(p = p, ptable = gtabp, pvaltable = pvaltable))
+  # --- extract a clean p-value table
+  tb <- gtabd$table_body
+  pvaltable <- tb |> dplyr::filter(.data$row_type == "label") |>
+    dplyr::select(variable, label, dplyr::any_of(c("p.value","q.value")))
+  pvaltable <- pvaltable[!is.na(pvaltable$p.value), , drop = FALSE]
+
+  # --- compute effect direction from data (numeric means or dummy 0/1 proportions)
+  eff_sign <- function(v, grp) {
+    x <- v
+    # try to coerce factors "0/1" to numeric
+    if (is.factor(x)) {
+      xnum <- suppressWarnings(as.numeric(as.character(x)))
+      if (!any(is.na(xnum))) x <- xnum
+    }
+    if (!is.numeric(x)) return(NA_real_)
+    m_imp  <- mean(x[grp == impClust], na.rm = TRUE)
+    m_norm <- mean(x[grp == normalClust], na.rm = TRUE)
+    sign(m_imp - m_norm)
+  }
+
+  # align variable names to column names in `d`
+  vars_present <- intersect(pvaltable$variable, names(d))
+  sgn <- vapply(vars_present, function(v) eff_sign(d[[v]], d$GroupVar), 1.0)
+  pvaltable$effect_sign <- sgn[match(pvaltable$variable, vars_present)]
+
+  # signed -log10(p)
+  tiny <- .Machine$double.xmin
+  pvaltable$signed_log10p <- -log10(pmax(pvaltable$p.value, tiny)) * pvaltable$effect_sign
+
+  # significance labels
+  if (has_gtools) {
+    pvaltable$Sig <- gtools::stars.pval(pvaltable$p.value)
+  } else {
+    brks <- c(-Inf, 0.001, 0.01, 0.05, Inf)
+    labs <- c("***","**","*","ns")
+    pvaltable$Sig <- cut(pvaltable$p.value, breaks = brks, labels = labs, right = TRUE)
+  }
+
+  # category mapping (optional)
+  if (!is.null(VariableCategories) && all(c("Variable","Category") %in% names(VariableCategories))) {
+    pvaltable$Category <- VariableCategories$Category[
+      match(pvaltable$variable, VariableCategories$Variable)
+    ]
+  } else {
+    pvaltable$Category <- NA_character_
+  }
+
+  # --- plot
+  base <- ggplot2::ggplot(
+    pvaltable,
+    ggplot2::aes(x = .data$signed_log10p,
+                 y = .data$variable,
+                 color = if (any(!is.na(pvaltable$Category))) .data$Category else .data$Sig,
+                 shape = .data$Sig)
+  ) +
+    ggplot2::annotate("rect", xmin = 0, xmax = Inf, ymin = -Inf, ymax = Inf, alpha = 0.08) +
+    ggplot2::geom_vline(xintercept = 0) +
+    ggplot2::geom_point() +
+    ggplot2::scale_y_discrete(limits = rev(pvaltable$variable)) +
+    ggplot2::xlab("signed -log10(p)   (→ higher in {impClust})") +
+    ggplot2::ylab(NULL) +
+    ggplot2::ggtitle(paste("---> Higher in", impClust)) +
+    ggplot2::theme_bw() +
+    ggplot2::theme(plot.title = ggplot2::element_text(hjust = 1))
+
+  if (has_paletteer) {
+    base <- base + paletteer::scale_color_paletteer_d("fishualize::Scarus_quoyi")
+  }
+
+  if (has_ggrepel) {
+    base <- base + ggrepel::geom_text_repel(
+      data = subset(pvaltable, !is.na(.data$q.value) & .data$q.value < label_q),
+      ggplot2::aes(label = .data$variable),
+      max.overlaps = 30, min.segment.length = 0
+    )
+  } else {
+    base <- base + ggplot2::geom_text(
+      data = subset(pvaltable, !is.na(.data$q.value) & .data$q.value < label_q),
+      ggplot2::aes(label = .data$variable),
+      hjust = -0.05, size = 3
+    )
+  }
+
+  # --- return
+  list(
+    p         = base,
+    tbl_raw   = gtabp,
+    tbl_dummy = gtabd,
+    pvaltable = pvaltable,
+    data_used = dplyr::as_tibble(d)
+  )
 }

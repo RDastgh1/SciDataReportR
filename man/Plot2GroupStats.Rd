@@ -2,7 +2,7 @@
 % Please edit documentation in R/Plot2GroupStats.R
 \name{Plot2GroupStats}
 \alias{Plot2GroupStats}
-\title{Plot and Summarize Group Statistics}
+\title{Plot and Summarize Group Statistics (safer, faster)}
 \usage{
 Plot2GroupStats(
   Data,
@@ -10,25 +10,37 @@ Plot2GroupStats(
   VariableCategories = NULL,
   impClust,
   normalClust,
-  GroupVar
+  GroupVar,
+  missing_threshold = 0.8,
+  max_levels = 10,
+  adjust_method = "fdr",
+  label_q = 0.05
 )
 }
 \arguments{
-\item{Data}{A data frame containing the data to be analyzed.}
+\item{Data}{data.frame}
 
-\item{Variables}{A character vector of variable names to be included in the analysis.}
+\item{Variables}{character vector of column names to analyze}
 
-\item{VariableCategories}{A data frame containing variable categories (optional).}
+\item{VariableCategories}{optional data.frame with columns: Variable, Category}
 
-\item{impClust}{A character string representing the important cluster.}
+\item{impClust}{character, name of the "important" group (will be plotted as positive direction)}
 
-\item{normalClust}{A character string representing the normal cluster.}
+\item{normalClust}{character, name of the comparison group}
 
-\item{GroupVar}{The grouping variable used for the comparison.}
+\item{GroupVar}{character, column name of grouping variable in \code{Data}}
+
+\item{missing_threshold}{proportion in \link{0,1}; drop vars with > this proportion missing (default 0.80)}
+
+\item{max_levels}{drop factors with > max_levels (default 10)}
+
+\item{adjust_method}{p-adjust method for FDR control (default "fdr")}
+
+\item{label_q}{q-value threshold for labeling points (default 0.05)}
 }
 \value{
-A list containing a plot, a summary table, and a p-value table.
+list(plot=gg, tbl_raw=gtsummary, tbl_dummy=gtsummary, pvaltable=data.frame, data_used=tibble)
 }
 \description{
-This function creates plots and summary tables to compare two groups within a dataset.
+Plot and Summarize Group Statistics (safer, faster)
 }
