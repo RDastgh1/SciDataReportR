@@ -2,19 +2,19 @@
 % Please edit documentation in R/add_r_and_stars.R
 \name{add_r_and_stars}
 \alias{add_r_and_stars}
-\title{Add r-values and (optionally) a fresh set of significance stars to a heatmap
+\title{Add r-values and exactly one set of significance stars to a correlations heatmap
 built by PlotCorrelationsHeatmap().}
 \usage{
 add_r_and_stars(
   res,
-  star_from = c("existing", "raw", "fdr", "P", "P_adj", "column"),
+  star_from = c("raw", "fdr", "P", "P_adj", "column"),
   star_col = NULL,
   r_var = "R",
   r_digits = 2,
   r_size = 3,
   r_color = "black",
   r_nudge_y = -0.28,
-  star_size = 6,
+  star_size = 3,
   star_color = "black",
   star_nudge_y = 0.28,
   p_breaks = c(-Inf, 0.001, 0.01, 0.05, Inf),
@@ -24,16 +24,15 @@ add_r_and_stars(
 \arguments{
 \item{res}{List returned by PlotCorrelationsHeatmap()}
 
-\item{star_from}{One of:
-"existing"  (keep the plot's current stars; only add r),
-"raw"       (use \code{stars} or compute from \code{P}),
-"fdr"       (use \code{stars_FDR} or compute from \code{P_adj}),
-"P","P_adj" (compute from those columns),
-"column"    (use \code{star_col}).}
+\item{star_from}{One of: "raw","fdr","P","P_adj","column"
+("raw" uses \code{stars} or computes from \code{P};
+"fdr" uses \code{stars_FDR} or computes from \code{P_adj};
+"P"/"P_adj" compute from those columns;
+"column" uses \code{star_col}.)}
 
-\item{star_col}{Column name when star_from = "column"}
+\item{star_col}{Column to use when star_from = "column"}
 
-\item{r_var}{Column for r-values in plot data (default "R")}
+\item{r_var}{Correlation column (default "R")}
 
 \item{r_digits}{Decimal places for r labels}
 
@@ -43,11 +42,11 @@ add_r_and_stars(
 
 \item{r_nudge_y}{Vertical nudge for r (negative = below center)}
 
-\item{star_size}{Text size for NEW star labels (ignored if star_from="existing")}
+\item{star_size}{Text size for star labels (default 3 to match originals)}
 
-\item{star_color}{Color for NEW star labels}
+\item{star_color}{Color for star labels}
 
-\item{star_nudge_y}{Vertical nudge for NEW star labels (ignored if "existing")}
+\item{star_nudge_y}{Vertical nudge for stars (positive = above center)}
 
 \item{p_breaks}{Cutpoints for p→stars}
 
@@ -57,6 +56,6 @@ add_r_and_stars(
 ggplot
 }
 \description{
-Add r-values and (optionally) a fresh set of significance stars to a heatmap
+Add r-values and exactly one set of significance stars to a correlations heatmap
 built by PlotCorrelationsHeatmap().
 }
