@@ -28,7 +28,7 @@ add_r_and_stars <- function(res,
                             r_nudge_y = -0.28,
                             star_size = 6,
                             star_color = "black",
-                            star_nudge_y = 0.28,
+                            star_nudge_y = 0.15,
                             remove_existing_stars = TRUE,
                             p_breaks = c(-Inf, 0.001, 0.01, 0.05, Inf),
                             p_labels = c("***","**","*","")) {
