@@ -53,7 +53,6 @@
 <span>  star_size <span class="op">=</span> <span class="fl">6</span>,</span>
 <span>  star_color <span class="op">=</span> <span class="st">"black"</span>,</span>
 <span>  star_nudge_y <span class="op">=</span> <span class="fl">0.28</span>,</span>
-<span>  remove_existing_stars <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  p_breaks <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">-</span><span class="cn">Inf</span>, <span class="fl">0.001</span>, <span class="fl">0.01</span>, <span class="fl">0.05</span>, <span class="cn">Inf</span><span class="op">)</span>,</span>
 <span>  p_labels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"***"</span>, <span class="st">"**"</span>, <span class="st">"*"</span>, <span class="st">""</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -68,16 +67,11 @@
 
 
 <dt id="arg-star-from">star_from<a class="anchor" aria-label="anchor" href="#arg-star-from"></a></dt>
-<dd><p>One of: "existing","raw","fdr","P","P_adj","column"
-("existing" repositions what the chosen plot already used;
-"raw" uses <code>stars</code> or computes from <code>P</code>;
-"fdr" uses <code>stars_FDR</code> or computes from <code>P_adj</code>;
-"P"/"P_adj" compute from those columns;
-"column" uses <code>star_col</code>.)</p></dd>
+<dd><p>One of: "existing","raw","fdr","P","P_adj","column"</p></dd>
 
 
 <dt id="arg-star-col">star_col<a class="anchor" aria-label="anchor" href="#arg-star-col"></a></dt>
-<dd><p>Column name to use when star_from = "column"</p></dd>
+<dd><p>Column used when star_from = "column"</p></dd>
 
 
 <dt id="arg-r-var">r_var<a class="anchor" aria-label="anchor" href="#arg-r-var"></a></dt>
@@ -110,10 +104,6 @@
 
 <dt id="arg-star-nudge-y">star_nudge_y<a class="anchor" aria-label="anchor" href="#arg-star-nudge-y"></a></dt>
 <dd><p>Vertical nudge for stars (positive = above center)</p></dd>
-
-
-<dt id="arg-remove-existing-stars">remove_existing_stars<a class="anchor" aria-label="anchor" href="#arg-remove-existing-stars"></a></dt>
-<dd><p>If TRUE, drop any pre-existing star/r text layers</p></dd>
 
 
 <dt id="arg-p-breaks">p_breaks<a class="anchor" aria-label="anchor" href="#arg-p-breaks"></a></dt>
