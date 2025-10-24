@@ -6,7 +6,7 @@
 #'   • optionally adjusts continuous outcomes for covariates (ANCOVA),
 #'   • adds p-values, effect sizes, and pair-wise contrasts,
 #'   • automatically drops constant variables,
-#'   • can suppress the “Unknown” row or add an overall *N* column, and
+#'   • can suppress the "Unknown" row or add an overall *N* column, and
 #'   • can return an overall-only summary when requested or when no valid group exists.
 #'
 #' @param DataFrame      Data frame with the raw data.
@@ -19,15 +19,16 @@
 #' @param EffectSizeDigits Digits in effect sizes (default `2`).
 #' @param AddPairwise    Logical; add pair-wise contrasts? (default `FALSE`).
 #' @param PairwiseMethod P-adjustment method (default `"bonferroni"`).
-#' @param Parametric     `TRUE` = parametric, `FALSE` = non-parametric tests.
+#' @param Parametric     `TRUE` = parametric tests, `FALSE` = non-parametric tests (default `TRUE`).
+#' @param ParametricDisplay `TRUE` = show mean/SD, `FALSE` = show median/IQR (default matches `Parametric`).
 #' @param IncludeOverallN Logical; add overall *N*? (default `FALSE`).
-#' @param IncludeMissing Logical; include “Unknown” row? (default `FALSE`).
+#' @param IncludeMissing Logical; include "Unknown" row? (default `FALSE`).
 #' @param suppress_warnings Suppress gtsummary warnings? (default `FALSE`).
 #' @param Referent       Optional reference level for contrasts.
 #' @param IncludeOverallStats Logical; if `TRUE` (default `FALSE`) or if `CompVariable`
 #'                            is not present in `DataFrame`, return overall-only stats.
 #' @param ShowPositiveBinaryOnLabel Logical; if `TRUE` (default) show only the
-#'                            “positive” level (TRUE/1/YES/Yes) of binary
+#'                            "positive" level (TRUE/1/YES/Yes) of binary
 #'                            categorical/factor/logical variables on the label row.
 #'
 #' @return A **gtsummary::tbl_summary** object.
@@ -44,6 +45,7 @@ MakeComparisonTable <- function(
     AddPairwise          = FALSE,
     PairwiseMethod       = "bonferroni",
     Parametric           = TRUE,
+    ParametricDisplay    = NULL,  # New parameter
     IncludeOverallN      = FALSE,
     IncludeMissing       = FALSE,
     suppress_warnings    = FALSE,
@@ -51,6 +53,11 @@ MakeComparisonTable <- function(
     IncludeOverallStats  = FALSE,
     ShowPositiveBinaryOnLabel = TRUE
 ) {
+  ## ── Set ParametricDisplay default if not specified ─────────────────────
+  if (is.null(ParametricDisplay)) {
+    ParametricDisplay <- Parametric
+  }
+
   ## ── required packages ───────────────────────────────────────────────────
   req_pkgs <- c(
     "gtsummary", "dplyr", "car", "emmeans", "broom", "effectsize",
@@ -124,7 +131,8 @@ MakeComparisonTable <- function(
   }
 
   ## ── statistic templates ─────────────────────────────────────────────────
-  stat_cont <- if (Parametric) "{mean} ({sd})" else "{median} [{p25}, {p75}]"
+  # Now based on ParametricDisplay instead of Parametric
+  stat_cont <- if (ParametricDisplay) "{mean} ({sd})" else "{median} [{p25}, {p75}]"
   stat_cat  <- "{n} ({p}%)"
 
   ## ── OVERALL-ONLY MODE ───────────────────────────────────────────────────
@@ -144,7 +152,10 @@ MakeComparisonTable <- function(
     if (IncludeOverallN) tbl <- tbl %>% gtsummary::add_n()
     if (suppress_warnings) tbl <- suppressWarnings(tbl)
 
-    cap <- sprintf("Overall Summary (%s)", if (Parametric) "parametric" else "non-parametric")
+    # Updated caption to reflect both display and test types
+    cap <- sprintf("Overall Summary (display: %s, tests: %s)",
+                   if (ParametricDisplay) "parametric" else "non-parametric",
+                   if (Parametric) "parametric" else "non-parametric")
     return(tbl %>% gtsummary::modify_caption(cap))
   }
 
@@ -188,6 +199,9 @@ MakeComparisonTable <- function(
   }
 
   ## ── p-values & test labels ──────────────────────────────────────────────
+  # Rest of the function remains the same, using Parametric for tests
+  # (not ParametricDisplay)
+
   pdat <- purrr::map_dfr(Variables, function(var) {
     df_var <- df[!is.na(df[[var]]), , drop = FALSE]
     df_var[[CompVariable]] <- droplevels(df_var[[CompVariable]])
@@ -484,8 +498,10 @@ MakeComparisonTable <- function(
   }
 
   ## ── caption & return ────────────────────────────────────────────────────
+  # Updated caption to reflect both display and test types
   cap <- sprintf(
-    "Comparison Table (%s analysis%s) — see **Test** column for per-variable method",
+    "Comparison Table (display: %s, tests: %s%s) — see **Test** column for per-variable method",
+    if (ParametricDisplay) "mean (SD)" else "median [IQR]",
     if (Parametric) "parametric" else "non-parametric",
     if (!is.null(Covariates) && Parametric)
       paste0("; adjusted for ",

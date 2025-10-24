@@ -16,6 +16,7 @@ MakeComparisonTable(
   AddPairwise = FALSE,
   PairwiseMethod = "bonferroni",
   Parametric = TRUE,
+  ParametricDisplay = NULL,
   IncludeOverallN = FALSE,
   IncludeMissing = FALSE,
   suppress_warnings = FALSE,
@@ -45,11 +46,13 @@ MakeComparisonTable(
 
 \item{PairwiseMethod}{P-adjustment method (default \code{"bonferroni"}).}
 
-\item{Parametric}{\code{TRUE} = parametric, \code{FALSE} = non-parametric tests.}
+\item{Parametric}{\code{TRUE} = parametric tests, \code{FALSE} = non-parametric tests (default \code{TRUE}).}
+
+\item{ParametricDisplay}{\code{TRUE} = show mean/SD, \code{FALSE} = show median/IQR (default matches \code{Parametric}).}
 
 \item{IncludeOverallN}{Logical; add overall \emph{N}? (default \code{FALSE}).}
 
-\item{IncludeMissing}{Logical; include “Unknown” row? (default \code{FALSE}).}
+\item{IncludeMissing}{Logical; include "Unknown" row? (default \code{FALSE}).}
 
 \item{suppress_warnings}{Suppress gtsummary warnings? (default \code{FALSE}).}
 
@@ -59,7 +62,7 @@ MakeComparisonTable(
 is not present in \code{DataFrame}, return overall-only stats.}
 
 \item{ShowPositiveBinaryOnLabel}{Logical; if \code{TRUE} (default) show only the
-“positive” level (TRUE/1/YES/Yes) of binary
+"positive" level (TRUE/1/YES/Yes) of binary
 categorical/factor/logical variables on the label row.}
 }
 \value{
@@ -71,6 +74,6 @@ Creates a comparison table (via \strong{gtsummary}) that
 • optionally adjusts continuous outcomes for covariates (ANCOVA),
 • adds p-values, effect sizes, and pair-wise contrasts,
 • automatically drops constant variables,
-• can suppress the “Unknown” row or add an overall \emph{N} column, and
+• can suppress the "Unknown" row or add an overall \emph{N} column, and
 • can return an overall-only summary when requested or when no valid group exists.
 }
