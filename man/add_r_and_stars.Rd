@@ -2,11 +2,12 @@
 % Please edit documentation in R/add_r_and_stars.R
 \name{add_r_and_stars}
 \alias{add_r_and_stars}
-\title{Add r-values and significance stars to a correlations heatmap (pass \code{res})}
+\title{Add r-values and exactly one set of significance stars to a correlations heatmap
+(pass the full \code{res} from PlotCorrelationsHeatmap()).}
 \usage{
 add_r_and_stars(
   res,
-  star_from = c("existing", "raw", "fdr", "P", "P_adj", "column"),
+  star_from = c("raw", "fdr", "P", "P_adj", "column"),
   star_col = NULL,
   r_var = "R",
   r_digits = 2,
@@ -22,26 +23,17 @@ add_r_and_stars(
 )
 }
 \arguments{
-\item{res}{The list returned by PlotCorrelationsHeatmap()}
+\item{res}{List returned by PlotCorrelationsHeatmap()}
 
-\item{star_from}{One of:
-\itemize{
-\item "existing" : use whatever the chosen plot already mapped as stars
-\item "raw"      : use \code{stars} if present, else compute from \code{P}
-\item "fdr"      : use \code{stars_FDR} if present, else compute from \code{P_adj}
-\item "P"        : compute stars from \code{P} cutpoints
-\item "P_adj"    : compute stars from \code{P_adj} cutpoints
-\item "column"   : use a custom column name given by \code{star_col}
-Notes:
-\itemize{
-\item "raw" and "P" prefer res$Unadjusted$plot; "fdr" and "P_adj" prefer res$FDRCorrected$plot.
-\item "existing" picks the plot that already mapped a stars column (FDR preferred).
-}
-}}
+\item{star_from}{One of: "raw","fdr","P","P_adj","column"
+("raw" uses \code{stars} or computes from \code{P};
+"fdr" uses \code{stars_FDR} or computes from \code{P_adj};
+"P"/"P_adj" compute from those columns;
+"column" uses \code{star_col}.)}
 
 \item{star_col}{Column name to use when star_from = "column"}
 
-\item{r_var}{Column name for correlation values (default "R")}
+\item{r_var}{Correlation column (default "R")}
 
 \item{r_digits}{Decimal places for r labels}
 
@@ -57,17 +49,16 @@ Notes:
 
 \item{star_nudge_y}{Vertical nudge for stars (positive = above center)}
 
-\item{remove_existing_stars}{If TRUE, remove any pre-existing star text layers}
+\item{remove_existing_stars}{If TRUE, drop any pre-existing star/r text layers}
 
-\item{p_breaks}{Cutpoints for p→stars (default c(-Inf, .001, .01, .05, Inf))}
+\item{p_breaks}{Cutpoints for p→stars}
 
-\item{p_labels}{Labels for those cutpoints (default c("\emph{\strong{","}","}",""))}
+\item{p_labels}{Labels for p→stars}
 }
 \value{
-A ggplot with r-values and stars added
+ggplot
 }
 \description{
-Works with the list returned by PlotCorrelationsHeatmap(). Chooses the
-appropriate ggplot inside \code{res} based on \code{star_from}, draws r-values slightly
-below center, and draws significance stars slightly above center.
+Add r-values and exactly one set of significance stars to a correlations heatmap
+(pass the full \code{res} from PlotCorrelationsHeatmap()).
 }
