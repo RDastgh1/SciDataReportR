@@ -25,8 +25,9 @@ add_r_and_stars(
 \arguments{
 \item{res}{List returned by PlotCorrelationsHeatmap()}
 
-\item{star_from}{One of: "raw","fdr","P","P_adj","column"
-("raw" uses \code{stars} or computes from \code{P};
+\item{star_from}{One of: "existing","raw","fdr","P","P_adj","column"
+("existing" repositions what the chosen plot already used;
+"raw" uses \code{stars} or computes from \code{P};
 "fdr" uses \code{stars_FDR} or computes from \code{P_adj};
 "P"/"P_adj" compute from those columns;
 "column" uses \code{star_col}.)}
