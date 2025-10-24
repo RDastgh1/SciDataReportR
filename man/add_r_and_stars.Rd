@@ -7,7 +7,7 @@
 \usage{
 add_r_and_stars(
   res,
-  star_from = c("raw", "fdr", "P", "P_adj", "column"),
+  star_from = c("existing", "raw", "fdr", "P", "P_adj", "column"),
   star_col = NULL,
   r_var = "R",
   r_digits = 2,
