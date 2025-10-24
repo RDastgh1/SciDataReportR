@@ -1,131 +1,155 @@
-#' Add r-values and exactly one set of significance stars to a correlations heatmap
-#' built by PlotCorrelationsHeatmap().
+#' Add r-values and significance stars to a correlations heatmap (pass `res`)
+#' Works with the list returned by PlotCorrelationsHeatmap().
 #'
-#' @param res  List returned by PlotCorrelationsHeatmap()
-#' @param star_from One of: "raw","fdr","P","P_adj","column"
-#'                  ("raw" uses `stars` or computes from `P`;
-#'                   "fdr" uses `stars_FDR` or computes from `P_adj`;
-#'                   "P"/"P_adj" compute from those columns;
-#'                   "column" uses `star_col`.)
-#' @param star_col Column to use when star_from = "column"
-#' @param r_var    Correlation column (default "R")
+#' @param res The list returned by PlotCorrelationsHeatmap()
+#' @param star_from One of:
+#'   "existing" (use whatever the chosen plot already mapped as stars),
+#'   "raw" (use `stars` or compute from `P`),
+#'   "fdr" (use `stars_FDR` or compute from `P_adj`),
+#'   "P","P_adj" (compute from those columns),
+#'   "column" (use `star_col`).
+#' @param star_col Column name to use when star_from = "column"
+#' @param r_var Column name for correlation values (default "R")
 #' @param r_digits Decimal places for r labels
-#' @param r_size   Text size for r labels
-#' @param r_color  Color for r labels
-#' @param r_nudge_y Vertical nudge for r (negative = below center)
-#' @param star_size Text size for star labels (default 3 to match originals)
-#' @param star_color Color for star labels
-#' @param star_nudge_y Vertical nudge for stars (positive = above center)
-#' @param p_breaks Cutpoints for p→stars
-#' @param p_labels Labels for p→stars
-#' @return ggplot
+#' @param r_size,star_size Text sizes for r and stars
+#' @param r_color,star_color Colors for r and stars
+#' @param r_nudge_y,star_nudge_y Vertical nudges (r down, stars up)
+#' @param remove_existing_stars If TRUE, remove any pre-existing star text layers
+#' @param p_breaks,p_labels Cutpoints/labels for computing stars from p
+#' @return A ggplot with r-values and stars added
 #' @export
 add_r_and_stars <- function(res,
-                            star_from = c("raw","fdr","P","P_adj","column"),
+                            star_from = c("existing","raw","fdr","P","P_adj","column"),
                             star_col = NULL,
                             r_var = "R",
                             r_digits = 2,
                             r_size = 3,
                             r_color = "black",
                             r_nudge_y = -0.28,
-                            star_size = 3,             # small, like original
+                            star_size = 6,
                             star_color = "black",
                             star_nudge_y = 0.28,
+                            remove_existing_stars = TRUE,
                             p_breaks = c(-Inf, 0.001, 0.01, 0.05, Inf),
                             p_labels = c("***","**","*","")) {
+
   star_from <- match.arg(star_from)
 
-  # ----- helpers -------------------------------------------------------------
-  .is_text <- function(ly) inherits(ly$geom, "GeomText") || inherits(ly$geom, "GeomLabel")
-  .label_name <- function(expr) {
-    if (is.null(expr)) return(NA_character_)
-    s <- paste(deparse(expr), collapse = "")
-    s <- tolower(s)
-    s <- sub("^after_stat\\((.*)\\)$", "\\1", s)  # after_stat(stars) -> stars
-    s <- sub("^\\.?data\\$", "", s)               # .data$stars -> stars
-    s <- gsub("`", "", s)                         # `stars` -> stars
-    gsub("[^a-z0-9_]", "", s)                     # strip punctuation/spaces
-  }
-  .stars_from_p <- function(pvec, n) {
-    if (!length(pvec)) return(rep("", n))
-    as.character(cut(pvec, breaks = p_breaks, labels = p_labels))
-  }
-  .has_plot <- function(x) is.list(x) && inherits(x$plot, "ggplot")
+  has_fdr <- is.list(res$FDRCorrected) && inherits(res$FDRCorrected$plot, "ggplot")
+  has_raw <- is.list(res$Unadjusted)   && inherits(res$Unadjusted$plot,   "ggplot")
 
-  # ----- choose base plot STRICTLY by requested source -----------------------
-  if (star_from %in% c("raw","P")) {
-    if (!.has_plot(res$Unadjusted)) stop("Unadjusted plot not found in `res`.")
-    p <- res$Unadjusted$plot
-  } else if (star_from %in% c("fdr","P_adj")) {
-    if (!.has_plot(res$FDRCorrected)) stop("FDRCorrected plot not found in `res`.")
-    p <- res$FDRCorrected$plot
-  } else { # column
-    if (is.null(star_col)) stop("star_from='column' requires `star_col`.")
-    if (.has_plot(res$Unadjusted) && star_col %in% names(res$Unadjusted$plot$data)) {
-      p <- res$Unadjusted$plot
-    } else if (.has_plot(res$FDRCorrected) && star_col %in% names(res$FDRCorrected$plot$data)) {
-      p <- res$FDRCorrected$plot
-    } else stop("`star_col` not found in either plot's data.")
+  # helpers ------------------------------------------------------------
+  safe_as_label <- function(x) if (is.null(x)) NA_character_ else paste(deparse(x), collapse = "")
+  is_text_layer <- function(layer) inherits(layer$geom, "GeomText") || inherits(layer$geom, "GeomLabel")
+
+  plot_has_star_mapping <- function(p) {
+    if (!inherits(p, "ggplot")) return(FALSE)
+    any(vapply(p$layers, function(ly) {
+      if (!is_text_layer(ly)) return(FALSE)
+      lab <- safe_as_label(ly$mapping$label)
+      !is.na(lab) && grepl("^stars", lab, ignore.case = TRUE)
+    }, logical(1)))
   }
 
+  pick_plot <- function() {
+    if (star_from %in% c("fdr","P_adj")) {
+      if (has_fdr) return(res$FDRCorrected$plot)
+      if (has_raw) return(res$Unadjusted$plot)
+    } else if (star_from %in% c("raw","P")) {
+      if (has_raw) return(res$Unadjusted$plot)
+      if (has_fdr) return(res$FDRCorrected$plot)
+    } else if (star_from == "existing") {
+      if (has_fdr && plot_has_star_mapping(res$FDRCorrected$plot)) return(res$FDRCorrected$plot)
+      if (has_raw && plot_has_star_mapping(res$Unadjusted$plot))   return(res$Unadjusted$plot)
+      if (has_fdr) return(res$FDRCorrected$plot)
+      if (has_raw) return(res$Unadjusted$plot)
+    } else if (star_from == "column") {
+      if (is.null(star_col)) stop("star_from='column' requires a `star_col`.")
+      if (has_fdr && star_col %in% names(res$FDRCorrected$plot$data)) return(res$FDRCorrected$plot)
+      if (has_raw && star_col %in% names(res$Unadjusted$plot$data))   return(res$Unadjusted$plot)
+      if (has_fdr) return(res$FDRCorrected$plot)
+      if (has_raw) return(res$Unadjusted$plot)
+    }
+    stop("Couldn't find a valid ggplot in `res`.")
+  }
+
+  p <- pick_plot()
   d <- p$data
   if (!is.data.frame(d) || !r_var %in% names(d)) {
     stop(sprintf("Column '%s' not found in the selected plot's data.", r_var))
   }
 
-  # ----- compute EXACTLY the stars you asked for (no cross-fallbacks) -------
-  label_star <- switch(
-    star_from,
-    raw = {
-      if ("stars" %in% names(d)) as.character(d$stars)
-      else if ("P" %in% names(d)) .stars_from_p(d$P, nrow(d))
-      else stop("For RAW stars, need 'stars' or 'P' in plot data.")
-    },
-    fdr = {
-      if ("stars_FDR" %in% names(d)) as.character(d$stars_FDR)
-      else if ("P_adj" %in% names(d)) .stars_from_p(d$P_adj, nrow(d))
-      else stop("For FDR stars, need 'stars_FDR' or 'P_adj' in plot data.")
-    },
-    P = {
-      if (!"P" %in% names(d)) stop("Column 'P' not in plot data.")
-      .stars_from_p(d$P, nrow(d))
-    },
-    P_adj = {
-      if (!"P_adj" %in% names(d)) stop("Column 'P_adj' not in plot data.")
-      .stars_from_p(d$P_adj, nrow(d))
-    },
-    column = {
-      if (!star_col %in% names(d)) stop("`star_col` not found in plot data.")
-      as.character(d[[star_col]])
+  # detect original stars mapping (if any) -----------------------------------
+  existing_star_col <- {
+    labs <- vapply(p$layers, function(ly)
+      if (is_text_layer(ly)) safe_as_label(ly$mapping$label) else NA_character_, character(1))
+    labs <- labs[!is.na(labs)]
+    labs <- labs[grepl("^stars", labs, ignore.case = TRUE)]
+    labs[labs %in% names(d)][1]
+  }
+
+  stars_from_p <- function(pvec) as.character(cut(pvec, breaks = p_breaks, labels = p_labels))
+
+  pick_stars <- function() {
+    cols <- names(d)
+    if (star_from == "existing") {
+      if (!is.na(existing_star_col)) return(as.character(d[[existing_star_col]]))
+      if ("stars_FDR" %in% cols) return(as.character(d$stars_FDR))
+      if ("P_adj"    %in% cols)  return(stars_from_p(d$P_adj))
+      if ("stars"    %in% cols)  return(as.character(d$stars))
+      if ("P"        %in% cols)  return(stars_from_p(d$P))
+      return(rep(NA_character_, nrow(d)))
     }
-  )
+    if (star_from == "raw") {
+      if ("stars" %in% cols) return(as.character(d$stars))
+      if ("P"     %in% cols) return(stars_from_p(d$P))
+      return(rep(NA_character_, nrow(d)))
+    }
+    if (star_from == "fdr") {
+      if ("stars_FDR" %in% cols) return(as.character(d$stars_FDR))
+      if ("P_adj"    %in% cols)  return(stars_from_p(d$P_adj))
+      return(rep(NA_character_, nrow(d)))
+    }
+    if (star_from == "P")     return(stars_from_p(d$P))
+    if (star_from == "P_adj") return(stars_from_p(d$P_adj))
+    if (star_from == "column") {
+      if (is.null(star_col) || !star_col %in% cols) {
+        stop("star_from='column' requires a valid `star_col` in the plot data.")
+      }
+      return(as.character(d[[star_col]]))
+    }
+    rep(NA_character_, nrow(d))
+  }
 
-  # ----- label data for drawing ---------------------------------------------
+  # labels -------------------------------------------------------------------
   d$label_r    <- sprintf(paste0("%.", r_digits, "f"), d[[r_var]])
-  d$label_star <- label_star
+  d$label_star <- pick_stars()
 
-  # ----- robust cleanup: drop prior star/r text layers on the tiles ---------
-  if (length(p$layers)) {
+  # remove any pre-existing star text layers (those that map to "stars*") ----
+  if (remove_existing_stars && length(p$layers)) {
     keep <- vapply(p$layers, function(ly) {
-      if (!.is_text(ly)) return(TRUE)
-      nm <- .label_name(ly$mapping$label)
-      # remove any text layer that was a stars layer or a prior helper layer
-      is.na(nm) || !(nm %in% c("stars","starsfdr","labelstar","labelr","labelcomb"))
+      if (!is_text_layer(ly)) return(TRUE)
+      lab <- safe_as_label(ly$mapping$label)
+      is.na(lab) || !grepl("^stars", lab, ignore.case = TRUE)
     }, logical(1))
     p$layers <- p$layers[keep]
   }
 
-  # ----- compose: r below, stars above --------------------------------------
+  # compose ------------------------------------------------------------------
   p +
     ggplot2::geom_text(
-      data = d, ggplot2::aes(label = label_r),
-      inherit.aes = TRUE, size = r_size, color = r_color,
+      data = d,
+      mapping = ggplot2::aes(label = label_r),
+      inherit.aes = TRUE,
+      size = r_size, color = r_color,
       position = ggplot2::position_nudge(y = r_nudge_y),
       check_overlap = TRUE, na.rm = TRUE
     ) +
     ggplot2::geom_text(
-      data = d, ggplot2::aes(label = label_star),
-      inherit.aes = TRUE, size = star_size, color = star_color,
+      data = d,
+      mapping = ggplot2::aes(label = label_star),
+      inherit.aes = TRUE,
+      size = star_size, color = star_color,
       position = ggplot2::position_nudge(y = star_nudge_y),
       check_overlap = TRUE, na.rm = TRUE
     )
