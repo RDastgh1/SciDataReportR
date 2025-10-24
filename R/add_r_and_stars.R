@@ -47,7 +47,8 @@ add_r_and_stars <- function(res,
     any(vapply(p$layers, function(ly) {
       if (!is_text_layer(ly)) return(FALSE)
       lab <- safe_as_label(ly$mapping$label)
-      !is.na(lab) && grepl("^stars", lab, ignore.case = TRUE)
+      # More inclusive check - look for "star" anywhere in the mapping
+      !is.na(lab) && grepl("star", lab, ignore.case = TRUE)
     }, logical(1)))
   }
 
@@ -84,7 +85,8 @@ add_r_and_stars <- function(res,
     labs <- vapply(p$layers, function(ly)
       if (is_text_layer(ly)) safe_as_label(ly$mapping$label) else NA_character_, character(1))
     labs <- labs[!is.na(labs)]
-    labs <- labs[grepl("^stars", labs, ignore.case = TRUE)]
+    # More inclusive pattern - look for anything with "star" in it
+    labs <- labs[grepl("star", labs, ignore.case = TRUE)]
     labs[labs %in% names(d)][1]
   }
 
@@ -125,12 +127,29 @@ add_r_and_stars <- function(res,
   d$label_r    <- sprintf(paste0("%.", r_digits, "f"), d[[r_var]])
   d$label_star <- pick_stars()
 
-  # remove any pre-existing star text layers (those that map to "stars*") ----
+  # remove any pre-existing star text layers - MORE AGGRESSIVE REMOVAL ----
   if (remove_existing_stars && length(p$layers)) {
     keep <- vapply(p$layers, function(ly) {
       if (!is_text_layer(ly)) return(TRUE)
+
+      # Get the label mapping
       lab <- safe_as_label(ly$mapping$label)
-      is.na(lab) || !grepl("^stars", lab, ignore.case = TRUE)
+      if (is.na(lab)) return(TRUE)
+
+      # Remove if it contains "star" anywhere OR if it's exactly "stars"
+      contains_star <- grepl("star", lab, ignore.case = TRUE)
+
+      # Also check if the layer has static text that might be stars
+      # This catches cases where stars are added as static text
+      static_label <- ly$aes_params$label
+      if (!is.null(static_label) && length(static_label) == 1) {
+        # Check if it's a star pattern
+        is_star_pattern <- grepl("^\\*+$", static_label)
+        if (is_star_pattern) return(FALSE)
+      }
+
+      # Remove if it maps to anything with "star" in the name
+      return(!contains_star)
     }, logical(1))
     p$layers <- p$layers[keep]
   }
