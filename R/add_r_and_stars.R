@@ -3,12 +3,7 @@
 #'
 #' @param res  List returned by PlotCorrelationsHeatmap()
 #' @param star_from One of: "existing","raw","fdr","P","P_adj","column"
-#'                  ("existing" repositions what the chosen plot already used;
-#'                   "raw" uses `stars` or computes from `P`;
-#'                   "fdr" uses `stars_FDR` or computes from `P_adj`;
-#'                   "P"/"P_adj" compute from those columns;
-#'                   "column" uses `star_col`.)
-#' @param star_col Column name to use when star_from = "column"
+#' @param star_col Column used when star_from = "column"
 #' @param r_var    Correlation column (default "R")
 #' @param r_digits Decimal places for r labels
 #' @param r_size   Text size for r labels
@@ -17,7 +12,6 @@
 #' @param star_size Text size for star labels
 #' @param star_color Color for star labels
 #' @param star_nudge_y Vertical nudge for stars (positive = above center)
-#' @param remove_existing_stars If TRUE, drop any pre-existing star/r text layers
 #' @param p_breaks Cutpoints for p→stars
 #' @param p_labels Labels for p→stars
 #' @return ggplot
@@ -33,32 +27,30 @@ add_r_and_stars <- function(res,
                             star_size = 6,
                             star_color = "black",
                             star_nudge_y = 0.28,
-                            remove_existing_stars = TRUE,
                             p_breaks = c(-Inf, 0.001, 0.01, 0.05, Inf),
                             p_labels = c("***","**","*","")) {
   star_from <- match.arg(star_from)
 
-  has_fdr <- is.list(res$FDRCorrected) && inherits(res$FDRCorrected$plot, "ggplot")
-  has_raw <- is.list(res$Unadjusted)   && inherits(res$Unadjusted$plot,   "ggplot")
-
-  # --- helpers ---------------------------------------------------------------
+  # --- helpers --------------------------------------------------------------
   .is_text <- function(ly) inherits(ly$geom, "GeomText") || inherits(ly$geom, "GeomLabel")
   .label_name <- function(expr) {
     if (is.null(expr)) return(NA_character_)
     s <- paste(deparse(expr), collapse = "")
     s <- tolower(s)
-    s <- sub("^after_stat\\((.*)\\)$", "\\1", s)   # after_stat(stars) -> stars
-    s <- sub("^\\.?data\\$", "", s)                # .data$stars -> stars
-    s <- gsub("`", "", s)                          # `stars` -> stars
-    gsub("[^a-z0-9_]", "", s)                      # drop other punctuation/spaces
+    s <- sub("^after_stat\\((.*)\\)$", "\\1", s)
+    s <- sub("^\\.?data\\$", "", s)
+    s <- gsub("`", "", s)
+    gsub("[^a-z0-9_]", "", s)
   }
-  .same_data <- function(ly, p) is.null(ly$data) || isTRUE(identical(ly$data, p$data))
   .stars_from_p <- function(pvec, n) {
     if (!length(pvec)) return(rep("", n))
     as.character(cut(pvec, breaks = p_breaks, labels = p_labels))
   }
 
-  # pick base plot (keeps semantics intuitive)
+  # --- choose base plot (intuitive defaults) --------------------------------
+  has_fdr <- is.list(res$FDRCorrected) && inherits(res$FDRCorrected$plot, "ggplot")
+  has_raw <- is.list(res$Unadjusted)   && inherits(res$Unadjusted$plot,   "ggplot")
+
   pick_plot <- function() {
     if (star_from %in% c("fdr","P_adj")) {
       if (has_fdr) return(res$FDRCorrected$plot)
@@ -67,16 +59,6 @@ add_r_and_stars <- function(res,
       if (has_raw) return(res$Unadjusted$plot)
       if (has_fdr) return(res$FDRCorrected$plot)
     } else if (star_from == "existing") {
-      if (has_fdr) {
-        p <- res$FDRCorrected$plot
-        used <- any(vapply(p$layers, function(ly) .is_text(ly) && .label_name(ly$mapping$label) %in% c("stars","starsfdr"), logical(1)))
-        if (used) return(p)
-      }
-      if (has_raw) {
-        p <- res$Unadjusted$plot
-        used <- any(vapply(p$layers, function(ly) .is_text(ly) && .label_name(ly$mapping$label) %in% c("stars","starsfdr"), logical(1)))
-        if (used) return(p)
-      }
       if (has_fdr) return(res$FDRCorrected$plot)
       if (has_raw) return(res$Unadjusted$plot)
     } else if (star_from == "column") {
@@ -95,7 +77,7 @@ add_r_and_stars <- function(res,
     stop(sprintf("Column '%s' not found in the selected plot's data.", r_var))
   }
 
-  # which stars column did the chosen plot originally map?
+  # --- detect mapped stars column (for star_from = "existing") --------------
   existing_star_col <- {
     nm <- vapply(p$layers, function(ly)
       if (.is_text(ly)) .label_name(ly$mapping$label) else NA_character_, character(1))
@@ -103,7 +85,7 @@ add_r_and_stars <- function(res,
     if ("starsfdr" %in% nm) "stars_FDR" else if ("stars" %in% nm) "stars" else NA_character_
   }
 
-  # pick stars exactly as requested
+  # --- build the star labels you asked for ----------------------------------
   label_star <- switch(
     star_from,
     existing = {
@@ -133,29 +115,23 @@ add_r_and_stars <- function(res,
       .stars_from_p(d$P_adj, nrow(d))
     },
     column = {
-      if (is.null(star_col) || !star_col %in% names(d)) stop("Provide a valid `star_col` in plot data.")
+      if (is.null(star_col) || !star_col %in% names(d)) stop("Provide a valid `star_col`.")
       as.character(d[[star_col]])
     }
   )
 
-  # label data
+  # --- format r labels ------------------------------------------------------
   d$label_r    <- sprintf(paste0("%.", r_digits, "f"), d[[r_var]])
   d$label_star <- label_star
 
-  # idempotent cleanup: drop prior star/r text layers that annotate the tiles
-  if (remove_existing_stars && length(p$layers)) {
-    drop_names <- c("stars","starsfdr","labelstar","labelr","labelcomb")
-    keep <- vapply(p$layers, function(ly) {
-      if (!.is_text(ly)) return(TRUE)
-      if (!.same_data(ly, p)) return(TRUE)  # keep unrelated annotations
-      nm <- .label_name(ly$mapping$label)
-      if (is.na(nm)) return(TRUE)
-      !(nm %in% drop_names)
-    }, logical(1))
+  # --- HARD RESET: drop *all* text layers before adding ours -----------------
+  # This avoids Quarto serialization edge-cases (.data$stars, `stars`, etc.)
+  if (length(p$layers)) {
+    keep <- vapply(p$layers, function(ly) !.is_text(ly), logical(1))
     p$layers <- p$layers[keep]
   }
 
-  # compose: r below center, chosen stars above center
+  # --- compose: r below, chosen stars above ---------------------------------
   p +
     ggplot2::geom_text(
       data = d, ggplot2::aes(label = label_r),

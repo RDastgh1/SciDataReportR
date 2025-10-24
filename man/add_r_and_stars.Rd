@@ -17,7 +17,6 @@ add_r_and_stars(
   star_size = 6,
   star_color = "black",
   star_nudge_y = 0.28,
-  remove_existing_stars = TRUE,
   p_breaks = c(-Inf, 0.001, 0.01, 0.05, Inf),
   p_labels = c("***", "**", "*", "")
 )
@@ -25,14 +24,9 @@ add_r_and_stars(
 \arguments{
 \item{res}{List returned by PlotCorrelationsHeatmap()}
 
-\item{star_from}{One of: "existing","raw","fdr","P","P_adj","column"
-("existing" repositions what the chosen plot already used;
-"raw" uses \code{stars} or computes from \code{P};
-"fdr" uses \code{stars_FDR} or computes from \code{P_adj};
-"P"/"P_adj" compute from those columns;
-"column" uses \code{star_col}.)}
+\item{star_from}{One of: "existing","raw","fdr","P","P_adj","column"}
 
-\item{star_col}{Column name to use when star_from = "column"}
+\item{star_col}{Column used when star_from = "column"}
 
 \item{r_var}{Correlation column (default "R")}
 
@@ -49,8 +43,6 @@ add_r_and_stars(
 \item{star_color}{Color for star labels}
 
 \item{star_nudge_y}{Vertical nudge for stars (positive = above center)}
-
-\item{remove_existing_stars}{If TRUE, drop any pre-existing star/r text layers}
 
 \item{p_breaks}{Cutpoints for p→stars}
 
