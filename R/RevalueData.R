@@ -26,7 +26,6 @@ RevalueData <- function(DatatoRevalue, VarTypes, missingVal = -999, splitchar = 
   )
   for (cc in norm_cols) {
     VarTypes[[cc]] <- as.character(VarTypes[[cc]])
-    # normalize smart quotes
     VarTypes[[cc]] <- gsub("\u2018|\u2019", "'", VarTypes[[cc]], perl = TRUE)
     VarTypes[[cc]] <- gsub("\u201C|\u201D", "\"", VarTypes[[cc]], perl = TRUE)
     VarTypes[[cc]] <- trimws(VarTypes[[cc]])
@@ -44,7 +43,7 @@ RevalueData <- function(DatatoRevalue, VarTypes, missingVal = -999, splitchar = 
     VarTypes$MissingCode[use_missing] <- VarTypes$Missing[use_missing]
   }
 
-  # Collapse duplicate Variable rows (first non-empty for singletons; union for lists)
+  # Collapse duplicate Variable rows
   if (any(duplicated(VarTypes$Variable))) {
     split_list <- split(VarTypes, VarTypes$Variable)
     VarTypes <- do.call(rbind, lapply(split_list, function(df) {
@@ -72,13 +71,16 @@ RevalueData <- function(DatatoRevalue, VarTypes, missingVal = -999, splitchar = 
   warninglist <- character(0)
   recodedvars <- character(0)
 
+  # treat these as numeric/double storage
+  num_types <- c("double","numeric","numerical","integer","continuous")
+
   ## --- Main loop -----------------------------------------------------------
   for (i in seq_along(vars)) {
     var <- vars[i]
     idx <- which(vt_in$Variable == var)[1]
     x   <- RevaluedData[[var]]
 
-    ## MissingCode -> NA (supports multiple tokens: ",", ";", "|")
+    ## MissingCode -> NA
     mchr <- vt_in$MissingCode[idx]
     if (is.na(mchr) || mchr == "") mchr <- as.character(missingVal)
     mchr <- gsub("\\s+", "", mchr)
@@ -119,16 +121,14 @@ RevalueData <- function(DatatoRevalue, VarTypes, missingVal = -999, splitchar = 
           ab <- strsplit(p, sep, fixed = TRUE)[[1]]
           ab <- trimws(ab)
           if (length(ab) >= 2 && nzchar(ab[1]) && nzchar(ab[2])) {
-            # Expect "code = label"
-            from <- c(from, ab[1])   # codes
-            to   <- c(to,   ab[2])   # labels
+            from <- c(from, ab[1])
+            to   <- c(to,   ab[2])
           }
         }
 
         if (!length(from)) {
           warninglist <- c(warninglist, paste0(var, ": Code parsing produced no valid key/value pairs."))
         } else {
-          # If codes are numeric, coerce storage to numeric; "." etc already NA above if char
           numeric_code <- all(grepl("^[-+]?[0-9]+(\\.[0-9]+)?$", from))
           if (numeric_code) {
             RevaluedData[[var]] <- suppressWarnings(as.numeric(RevaluedData[[var]]))
@@ -150,10 +150,10 @@ RevalueData <- function(DatatoRevalue, VarTypes, missingVal = -999, splitchar = 
             RevaluedData[[var]] <- sjlabelled::as_label(tmp)
             if (vartype %in% c("ordinal","ordered factor","ordered"))
               RevaluedData[[var]] <- as.ordered(RevaluedData[[var]])
-          } else if (vartype %in% c("double","numeric","numerical","integer")) {
-            RevaluedData[[var]] <- tmp  # keep numeric, labels attached
+          } else if (vartype %in% num_types) {
+            RevaluedData[[var]] <- tmp  # numeric with labels kept
           } else {
-            RevaluedData[[var]] <- tmp  # leave storage as-is with labels
+            RevaluedData[[var]] <- tmp
           }
 
           recodedvars <- c(recodedvars, var)
@@ -164,7 +164,7 @@ RevalueData <- function(DatatoRevalue, VarTypes, missingVal = -999, splitchar = 
       if (nzchar(vartype)) {
         if (vartype %in% c("categorical","factor")) {
           RevaluedData[[var]] <- sjlabelled::to_factor(RevaluedData[[var]])
-        } else if (vartype %in% c("double","numeric","numerical","integer")) {
+        } else if (vartype %in% num_types) {
           RevaluedData[[var]] <- suppressWarnings(as.numeric(RevaluedData[[var]]))
         } else if (vartype %in% c("ordinal","ordered factor","ordered")) {
           RevaluedData[[var]] <- as.ordered(RevaluedData[[var]])
