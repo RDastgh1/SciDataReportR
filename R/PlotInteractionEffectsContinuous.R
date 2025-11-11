@@ -18,7 +18,7 @@ PlotInteractionEffectsContinuous <- function(Data, interVar = NULL,
                                              Relabel = TRUE, Ordinal = FALSE) {
 
   # Check for required packages
-  required_packages <- c("dplyr", "tidyr", "ggplot2", "gtools", "sjlabelled", "tibble")
+  required_packages <- c("dplyr", "tidyr", "ggplot2", "tibble")
   missing_packages <- required_packages[!sapply(required_packages, requireNamespace, quietly = TRUE)]
   if (length(missing_packages) > 0) {
     stop(paste("Missing required packages:", paste(missing_packages, collapse = ", ")))
@@ -29,6 +29,17 @@ PlotInteractionEffectsContinuous <- function(Data, interVar = NULL,
   library(tidyr)
   library(ggplot2)
   library(tibble)
+
+  # Create a custom function to handle p-values with NAs
+  get_significance_stars <- function(p_values) {
+    stars <- character(length(p_values))
+    stars[is.na(p_values)] <- ""
+    stars[!is.na(p_values) & p_values <= 0.001] <- "***"
+    stars[!is.na(p_values) & p_values > 0.001 & p_values <= 0.01] <- "**"
+    stars[!is.na(p_values) & p_values > 0.01 & p_values <= 0.05] <- "*"
+    stars[!is.na(p_values) & p_values > 0.05] <- ""
+    return(stars)
+  }
 
   # Define helper functions if they don't exist
   if (!exists("ReplaceMissingLabels")) {
@@ -245,7 +256,9 @@ PlotInteractionEffectsContinuous <- function(Data, interVar = NULL,
   # Use the direction of the interaction coefficient for the sign
   m_G$sign <- factor(m_G$D, levels = c(-1, 0, 1), labels = c("-", "ns", "+"))
   m_G$sign[is.na(m_G$P) | m_G$P > 0.05] <- "ns"
-  m_G$sig <- gtools::stars.pval(m_G$P)
+
+  # Use custom function instead of gtools::stars.pval
+  m_G$sig <- get_significance_stars(m_G$P)
   m_G$sig[m_G$sig == "." | m_G$sig == "+" | m_G$sig == " "] <- ""
   m_G$sigsign <- paste(as.character(m_G$sign), as.character(m_G$sig))
 
@@ -267,7 +280,8 @@ PlotInteractionEffectsContinuous <- function(Data, interVar = NULL,
   m_G$sign_FDR <- factor(m_G$D, levels = c(-1, 0, 1), labels = c("-", "ns", "+"))
   m_G$sign_FDR[is.na(m_G$P_FDR) | m_G$P_FDR > 0.05] <- "ns"
 
-  m_G$sig_FDR <- gtools::stars.pval(m_G$P_FDR)
+  # Use custom function instead of gtools::stars.pval
+  m_G$sig_FDR <- get_significance_stars(m_G$P_FDR)
   m_G$sig_FDR[m_G$sig_FDR == "." | m_G$sig_FDR == "+" | m_G$sig_FDR == " "] <- ""
   m_G$sig_FDR <- paste(m_G$sign_FDR, m_G$sig_FDR)
   m_G$sig_FDR <- factor(m_G$sig_FDR,
@@ -275,7 +289,7 @@ PlotInteractionEffectsContinuous <- function(Data, interVar = NULL,
                                    "- *", "- **", "- ***"))
 
   ## add labels
-  if (Relabel) {
+  if (Relabel && requireNamespace("sjlabelled", quietly = TRUE)) {
     Data <- ReplaceMissingLabels(Data)
 
     # Get labels for X variables
@@ -313,7 +327,7 @@ PlotInteractionEffectsContinuous <- function(Data, interVar = NULL,
 
   # Create ggplot objects with better title
   p <- m_G %>%
-    ggplot(aes(x = XLabel, y = YLabel, fill = sigsign)) +
+    ggplot(aes(x = XLabel, y = YLabel, fill = sign)) +
     geom_tile(aes(text = PlotText), show.legend = TRUE) +
     scale_fill_manual(values = c("+ ***" = "darkgreen", "+ **" = "green",
                                  "+ *" = "lightgreen", "ns " = "white",
@@ -321,7 +335,7 @@ PlotInteractionEffectsContinuous <- function(Data, interVar = NULL,
                                  "- ***" = "darkred"),
                       drop = FALSE, na.value = "grey90",
                       name = "Interaction\nDirection") +
-    theme(axis.text.x = element_text( angle = 90, vjust = 0.5, hjust = 1),
+    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
           axis.title.x = element_blank(),
           axis.title.y = element_blank()) +
     labs(title = paste("Interaction Effects with", interVar),
