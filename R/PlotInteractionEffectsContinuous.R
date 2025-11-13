@@ -1,399 +1,247 @@
-#' PlotInteractionEffectsContinuous
+#' Plot Single Interaction Effect
 #'
-#' Plots the interaction effects between continuous variables in a dataset.
+#' Creates a scatter plot with regression lines showing the interaction between a predictor
+#' and outcome variable, moderated by either a continuous or categorical variable.
 #'
-#' @param Data The dataset to be analyzed
-#' @param interVar The variable of interest for the interaction effect
-#' @param xVars The variables to be plotted on the x-axis
-#' @param yVars The variables to be plotted on the y-axis
-#' @param covars Covariates to be included in the analysis
-#' @param Relabel A logical value indicating whether to relabel the variables with their corresponding labels
-#' @param Ordinal A logical value indicating whether the variables are ordinal
+#' @param Data A data frame containing the variables to be analyzed
+#' @param interVar Character string specifying the interaction variable (moderator)
+#' @param outcomeVar Character string specifying the outcome variable
+#' @param predictorVar Character string specifying the predictor variable
+#' @param covars Character vector of covariate names to include in the model
+#' @param n_lines For continuous moderators, number of lines to plot (default: 3 for low/med/high)
+#' @param alpha Transparency level for points (default: 0.6)
+#' @param point_size Size of points (default: 2)
 #'
-#' @return A list containing the results of the analysis, including the p-values, significance levels, and the ggplot object.
+#' @return A ggplot object showing the interaction effect
+#'
+#' @details
+#' For categorical moderators, separate regression lines are plotted for each category.
+#' For continuous moderators, regression lines are plotted at the mean and ± 1 SD.
+#'
+#' The subtitle shows the p-value for the interaction term.
+#' The caption lists any covariates included in the model.
+#'
+#' Variable labels are used if available in the data frame.
+#'
 #' @export
+#' @importFrom ggplot2 ggplot aes geom_point geom_smooth scale_color_manual scale_fill_manual
+#' @importFrom ggplot2 labs theme_minimal theme element_text
+#' @importFrom dplyr mutate case_when
+#' @importFrom stats lm coef sd quantile
+#' @importFrom paletteer paletteer_d paletteer_c
 
-PlotInteractionEffectsContinuous <- function(Data, interVar = NULL,
-                                             xVars = NULL, yVars = NULL, covars = NULL,
-                                             Relabel = TRUE, Ordinal = FALSE) {
-
-  # Check for required packages
-  required_packages <- c("dplyr", "tidyr", "ggplot2", "tibble")
-  missing_packages <- required_packages[!sapply(required_packages, requireNamespace, quietly = TRUE)]
-  if (length(missing_packages) > 0) {
-    stop(paste("Missing required packages:", paste(missing_packages, collapse = ", ")))
-  }
-
-  # Load required functions
-  library(dplyr)
-  library(tidyr)
-  library(ggplot2)
-  library(tibble)
-
-  # Create a custom function to handle p-values with NAs
-  get_significance_stars <- function(p_values) {
-    stars <- character(length(p_values))
-    stars[is.na(p_values)] <- ""
-    stars[!is.na(p_values) & p_values <= 0.001] <- "***"
-    stars[!is.na(p_values) & p_values > 0.001 & p_values <= 0.01] <- "**"
-    stars[!is.na(p_values) & p_values > 0.01 & p_values <= 0.05] <- "*"
-    stars[!is.na(p_values) & p_values > 0.05] <- ""
-    return(stars)
-  }
-
-  # Define helper functions if they don't exist
-  if (!exists("ReplaceMissingLabels")) {
-    ReplaceMissingLabels <- function(data) {
-      # Simple implementation - just return the data as is
-      # You should replace this with your actual implementation
-      return(data)
-    }
-  }
-
-  if (!exists("getNumVars")) {
-    getNumVars <- function(data, Ordinal = FALSE) {
-      # Get numeric variables from the dataset
-      if (Ordinal) {
-        # Include ordered factors as well
-        vars <- names(data)[sapply(data, function(x) is.numeric(x) || is.ordered(x))]
-      } else {
-        vars <- names(data)[sapply(data, is.numeric)]
-      }
-      return(vars)
-    }
-  }
-
-  if (!exists("ConvertOrdinalToNumeric")) {
-    ConvertOrdinalToNumeric <- function(data, variables) {
-      # Convert ordered factors to numeric
-      for (var in variables) {
-        if (is.ordered(data[[var]])) {
-          data[[var]] <- as.numeric(data[[var]])
-        }
-      }
-      return(data)
-    }
-  }
+PlotInteractionEffectsContinuous <- function(Data,
+                                  interVar = NULL,
+                                  outcomeVar = NULL,
+                                  predictorVar = NULL,
+                                  covars = NULL,
+                                  n_lines = 3,
+                                  alpha = 0.6,
+                                  point_size = 2) {
 
   # Input validation
   if (is.null(Data) || !is.data.frame(Data)) {
     stop("Data must be a non-null data frame")
   }
 
-  if (is.null(interVar)) {
-    stop("interVar must be specified")
+  if (is.null(interVar) || is.null(outcomeVar) || is.null(predictorVar)) {
+    stop("interVar, outcomeVar, and predictorVar must all be specified")
   }
 
-  if (!interVar %in% names(Data)) {
-    stop(paste("interVar", interVar, "not found in Data"))
+  if (!all(c(interVar, outcomeVar, predictorVar) %in% names(Data))) {
+    stop("All specified variables must exist in the data frame")
   }
 
-  # Check for missing values and replace with appropriate labels
-  removediag <- FALSE
-  if(is.null(yVars)){
-    yVars = xVars
-    removediag <- TRUE
+  if (!is.null(covars) && !all(covars %in% names(Data))) {
+    stop("All covariates must exist in the data frame")
   }
 
-  # Replace missing labels
-  Data <- ReplaceMissingLabels(Data)
+  # Load required packages
+  library(ggplot2)
+  library(dplyr)
 
-  # If xVars is null, get all numeric variables
-  if (is.null(xVars)) {
-    xVars <- getNumVars(Data, Ordinal = FALSE)
-    if (Ordinal) {
-      xVars <- getNumVars(Data, Ordinal = TRUE)
+  # Check if paletteer is available
+  use_paletteer <- requireNamespace("paletteer", quietly = TRUE)
+
+  # Function to get variable label if it exists
+  get_var_label <- function(data, var_name) {
+    if (requireNamespace("sjlabelled", quietly = TRUE)) {
+      label <- sjlabelled::get_label(data[[var_name]])
+      if (!is.null(label) && label != "") {
+        return(label)
+      }
+    }
+    return(var_name)
+  }
+
+  # Get labels for all variables
+  outcome_label <- get_var_label(Data, outcomeVar)
+  predictor_label <- get_var_label(Data, predictorVar)
+  inter_label <- get_var_label(Data, interVar)
+
+  # Check if interaction variable is continuous
+  interVar_is_continuous <- is.numeric(Data[[interVar]])
+
+  # Build formula for the model
+  if (is.null(covars)) {
+    formula_str <- paste0("`", outcomeVar, "` ~ `", predictorVar, "` * `", interVar, "`")
+  } else {
+    covar_terms <- paste(paste0("`", covars, "`"), collapse = " + ")
+    formula_str <- paste0("`", outcomeVar, "` ~ ", covar_terms, " + `",
+                          predictorVar, "` * `", interVar, "`")
+  }
+
+  # Fit the model
+  model <- lm(as.formula(formula_str), data = Data)
+  model_summary <- summary(model)
+
+  # Find the interaction term p-value
+  coef_names <- rownames(model_summary$coefficients)
+  interaction_term <- NULL
+
+  # Look for interaction term
+  for (coef_name in coef_names) {
+    if (grepl(predictorVar, coef_name, fixed = TRUE) &&
+        grepl(interVar, coef_name, fixed = TRUE) &&
+        grepl(":", coef_name, fixed = TRUE)) {
+      interaction_term <- coef_name
+      break
     }
   }
 
-  # Combine variables into a single vector
-  Variables <- c(interVar, xVars, yVars)
-
-  # If Ordinal is TRUE, convert ordinal variables to numeric and update Variables
-  if (Ordinal) {
-    Variables <- c(xVars, yVars)
-    Data <- ConvertOrdinalToNumeric(Data, Variables)
-    Data[Variables] <- lapply(Data[Variables], as.numeric)
+  if (is.null(interaction_term)) {
+    stop("Could not find interaction term in model")
   }
 
-  # Update xVars and yVars to exclude covariates
+  # Get interaction p-value
+  interaction_p <- model_summary$coefficients[interaction_term, "Pr(>|t|)"]
+
+  # Prepare data for plotting
+  plot_data <- Data[, c(outcomeVar, predictorVar, interVar)]
+  names(plot_data) <- c("outcome", "predictor", "moderator")
+
+  # Remove rows with missing values
+  plot_data <- plot_data[complete.cases(plot_data), ]
+
+  # Create the plot based on moderator type
+  if (interVar_is_continuous) {
+    # For continuous moderator, create categories for visualization
+    mod_mean <- mean(plot_data$moderator, na.rm = TRUE)
+    mod_sd <- sd(plot_data$moderator, na.rm = TRUE)
+
+    if (n_lines == 3) {
+      # Create three groups: Low (-1SD), Medium (mean), High (+1SD)
+      plot_data <- plot_data %>%
+        mutate(
+          mod_group = case_when(
+            moderator <= (mod_mean - mod_sd) ~ paste0(inter_label, " = ", round(mod_mean - mod_sd, 1), " (-1 SD)"),
+            moderator >= (mod_mean + mod_sd) ~ paste0(inter_label, " = ", round(mod_mean + mod_sd, 1), " (+1 SD)"),
+            TRUE ~ paste0(inter_label, " = ", round(mod_mean, 1), " (Mean)")
+          ),
+          mod_group = factor(mod_group, levels = c(
+            paste0(inter_label, " = ", round(mod_mean - mod_sd, 1), " (-1 SD)"),
+            paste0(inter_label, " = ", round(mod_mean, 1), " (Mean)"),
+            paste0(inter_label, " = ", round(mod_mean + mod_sd, 1), " (+1 SD)")
+          ))
+        )
+    } else {
+      # Create quantile-based groups
+      quantiles <- quantile(plot_data$moderator, probs = seq(0, 1, length.out = n_lines + 1))
+      plot_data <- plot_data %>%
+        mutate(
+          mod_group = cut(moderator, breaks = quantiles, include.lowest = TRUE,
+                          labels = paste0(inter_label, " Q", 1:n_lines))
+        )
+    }
+
+    # Create plot for continuous moderator with divergent color scheme
+    p <- ggplot(plot_data, aes(x = predictor, y = outcome, color = mod_group, fill = mod_group)) +
+      geom_point(alpha = alpha, size = point_size) +
+      geom_smooth(method = "lm", se = TRUE, alpha = 0.2)
+
+    # Apply divergent color scheme for continuous moderator
+    if (use_paletteer) {
+      if (n_lines == 3) {
+        # Use a divergent palette for 3 levels
+        colors <- c("#6874A9FF", "black", "#8A2870FF")
+      } else {
+        colors <- paletteer::paletteer_c("scico::roma", n = n_lines)
+      }
+      p <- p +
+        scale_color_manual(values = colors) +
+        scale_fill_manual(values = colors)
+    } else {
+      # Fallback colors if paletteer not available
+      p <- p +
+        scale_color_manual(values = c("#2166ac", "black", "#b2182b")[1:n_lines]) +
+        scale_fill_manual(values = c("#2166ac", "black", "#b2182b")[1:n_lines])
+    }
+
+  } else {
+    # For categorical moderator
+    plot_data$mod_group <- as.factor(plot_data$moderator)
+    n_groups <- length(unique(plot_data$mod_group))
+
+    # Create plot for categorical moderator
+    p <- ggplot(plot_data, aes(x = predictor, y = outcome, color = mod_group, fill = mod_group)) +
+      geom_point(alpha = alpha, size = point_size) +
+      geom_smooth(method = "lm", se = TRUE, alpha = 0.2)
+
+    # Apply categorical color scheme
+    if (use_paletteer) {
+      if (n_groups <= 4) {
+        colors <- paletteer::paletteer_d("colorBlindness::paletteMartin")[1:n_groups]
+      } else if (n_groups <= 8) {
+        colors <- paletteer::paletteer_d("rcartocolor::Vivid")[1:n_groups]
+      } else {
+        colors <- paletteer::paletteer_d("pals::polychrome")[1:n_groups]
+      }
+      p <- p +
+        scale_color_manual(values = colors, name = inter_label) +
+        scale_fill_manual(values = colors, name = inter_label)
+    } else {
+      # Fallback to Set1 if paletteer not available
+      p <- p +
+        scale_color_brewer(palette = "Set1", name = inter_label) +
+        scale_fill_brewer(palette = "Set1", name = inter_label)
+    }
+  }
+
+  # Add labels and theme
+  p <- p +
+    labs(
+      x = predictor_label,
+      y = outcome_label,
+      title = paste("Interaction with", inter_label),
+      subtitle = paste("Interaction p-value:",
+                       ifelse(interaction_p < 0.001, "< 0.001",
+                              round(interaction_p, 4))),
+      color = inter_label,
+      fill = inter_label
+    ) +
+    theme_minimal() +
+    theme(
+      plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
+      plot.subtitle = element_text(hjust = 0.5, size = 12),
+      plot.caption = element_text(hjust = 0.5, size = 10, face = "italic"),
+      legend.position = "right",
+      panel.grid.minor = element_blank()
+    )
+
+  # Add caption about covariates
   if (!is.null(covars)) {
-    xVars <- xVars[!xVars %in% covars]
-    yVars <- yVars[!yVars %in% covars]
-  }
-
-  # Initialize matrices to store results
-  r_P <- r_C <- r_S <- r_D <- matrix(NA, nrow = length(xVars), ncol = length(yVars))
-
-  # Loop through each combination of x and y variables
-  for (i in seq_len(length(xVars))) {
-    for (j in seq_len(length(yVars))) {
-      xVar <- xVars[i]
-      yVar <- yVars[j]
-
-      # Skip if xVar equals yVar and removediag is TRUE
-      if(removediag && xVar == yVar){
-        r_C[i, j] <- NA
-        r_P[i, j] <- NA
-        r_S[i, j] <- NA
-        r_D[i, j] <- NA
-        next
-      }
-
-      # Convert character variables to factor
-      if(is.character(Data[[xVar]])){
-        Data[[xVar]] <- as.factor(Data[[xVar]])
-      }
-
-      if(is.character(Data[[yVar]])){
-        Data[[yVar]] <- as.factor(Data[[yVar]])
-      }
-
-      # Try to fit linear model, catching errors
-      tryCatch({
-        # Build formula properly
-        if(is.null(covars)){
-          formula_str <- paste(yVar, "~", xVar, "*", interVar)
-        } else {
-          covar_terms <- paste(covars, collapse = " + ")
-          formula_str <- paste(yVar, "~", covar_terms, "+", xVar, "*", interVar)
-        }
-
-        formula <- as.formula(formula_str)
-        m <- lm(formula, data = Data)
-
-        # Summarize model and extract results
-        d <- summary(m)
-        dd <- as.data.frame(d$coefficients)
-
-        # Get the interaction term (last row)
-        interaction_term <- paste0(xVar, ":", interVar)
-        interaction_term_alt <- paste0(interVar, ":", xVar)
-
-        # Find the interaction row
-        interaction_row <- which(rownames(dd) == interaction_term | rownames(dd) == interaction_term_alt)
-
-        if (length(interaction_row) > 0) {
-          interC <- dd$Estimate[interaction_row]
-          interP <- dd$`Pr(>|t|)`[interaction_row]
-
-          # Calculate the direction of the interaction effect
-          # Positive interaction: the effect of X on Y increases as interVar increases
-          # Negative interaction: the effect of X on Y decreases as interVar increases
-          interD <- sign(interC)
-
-          # Alternative: Calculate how interaction modifies the main effect
-          main_effect_row <- grep(paste0("^", xVar, "$"), rownames(dd))
-          if (length(main_effect_row) > 0) {
-            main_effect <- dd$Estimate[main_effect_row]
-            # If interaction and main effect have opposite signs, interaction dampens the effect
-            # If they have same signs, interaction amplifies the effect
-            if (sign(main_effect) == sign(interC)) {
-              interS <- 1  # Amplifies
-            } else {
-              interS <- -1  # Dampens/reverses
-            }
-          } else {
-            interS <- NA
-          }
-        } else {
-          interC <- NA
-          interP <- NA
-          interS <- NA
-          interD <- NA
-        }
-
-        # Store results in matrices
-        r_P[i, j] <- interP
-        r_C[i, j] <- interC
-        r_S[i, j] <- interS
-        r_D[i, j] <- interD
-
-      }, error = function(err) {
-        # If an error occurred, set results to NA
-        r_P[i, j] <- NA
-        r_C[i, j] <- NA
-        r_S[i, j] <- NA
-        r_D[i, j] <- NA
-      })
-    }
-  }
-
-  rownames(r_C) <- xVars
-  colnames(r_C) <- yVars
-  rownames(r_P) <- xVars
-  colnames(r_P) <- yVars
-  rownames(r_S) <- xVars
-  colnames(r_S) <- yVars
-  rownames(r_D) <- xVars
-  colnames(r_D) <- yVars
-
-  # Convert matrices to data frames and add variable names
-  m_r_C <- r_C %>%
-    as.data.frame() %>%
-    rownames_to_column(var = "X") %>%
-    pivot_longer(cols = all_of(yVars), names_to = "Y", values_to = "C")
-
-  m_r_P <- r_P %>%
-    as.data.frame() %>%
-    rownames_to_column(var = "X") %>%
-    pivot_longer(cols = all_of(yVars), names_to = "Y", values_to = "P")
-
-  m_r_S <- r_S %>%
-    as.data.frame() %>%
-    rownames_to_column(var = "X") %>%
-    pivot_longer(cols = all_of(yVars), names_to = "Y", values_to = "S")
-
-  m_r_D <- r_D %>%
-    as.data.frame() %>%
-    rownames_to_column(var = "X") %>%
-    pivot_longer(cols = all_of(yVars), names_to = "Y", values_to = "D")
-
-  m_G <- left_join(m_r_C, m_r_P, by = c("X", "Y")) %>%
-    left_join(m_r_S, by = c("X", "Y")) %>%
-    left_join(m_r_D, by = c("X", "Y"))
-
-  # Use the direction of the interaction coefficient for the sign
-  m_G$sign <- factor(m_G$D, levels = c(-1, 0, 1), labels = c("-", "ns", "+"))
-  m_G$sign[is.na(m_G$P) | m_G$P > 0.05] <- "ns"
-
-  # Use custom function instead of gtools::stars.pval
-  m_G$sig <- get_significance_stars(m_G$P)
-  m_G$sig[m_G$sig == "." | m_G$sig == "+" | m_G$sig == " "] <- ""
-  m_G$sigsign <- paste(as.character(m_G$sign), as.character(m_G$sig))
-
-  m_G$sigsign <- factor(m_G$sigsign,
-                        levels = c("+ ***", "+ **", "+ *", "ns ",
-                                   "- *", "- **", "- ***"))
-
-  ## FDR correction for r_P
-  # Only adjust non-NA p-values
-  p_values_for_adjustment <- m_G$P[!is.na(m_G$P)]
-  if (length(p_values_for_adjustment) > 0) {
-    adjusted_p_values <- p.adjust(p_values_for_adjustment, method = "fdr")
-    m_G$P_FDR <- NA
-    m_G$P_FDR[!is.na(m_G$P)] <- adjusted_p_values
+    covar_labels <- sapply(covars, function(x) get_var_label(Data, x))
+    caption_text <- paste("Model adjusted for:", paste(covar_labels, collapse = ", "))
   } else {
-    m_G$P_FDR <- NA
+    caption_text <- "No covariates included in the model"
   }
 
-  m_G$sign_FDR <- factor(m_G$D, levels = c(-1, 0, 1), labels = c("-", "ns", "+"))
-  m_G$sign_FDR[is.na(m_G$P_FDR) | m_G$P_FDR > 0.05] <- "ns"
+  p <- p + labs(caption = caption_text)
 
-  # Use custom function instead of gtools::stars.pval
-  m_G$sig_FDR <- get_significance_stars(m_G$P_FDR)
-  m_G$sig_FDR[m_G$sig_FDR == "." | m_G$sig_FDR == "+" | m_G$sig_FDR == " "] <- ""
-  m_G$sig_FDR <- paste(m_G$sign_FDR, m_G$sig_FDR)
-  m_G$sig_FDR <- factor(m_G$sig_FDR,
-                        levels = c("+ ***", "+ **", "+ *", "ns ",
-                                   "- *", "- **", "- ***"))
+  # Add model statistics as attributes
+  attr(p, "model") <- model
+  attr(p, "interaction_p") <- interaction_p
+  attr(p, "formula") <- formula_str
 
-  ## add labels
-  if (Relabel && requireNamespace("sjlabelled", quietly = TRUE)) {
-    Data <- ReplaceMissingLabels(Data)
-
-    # Get labels for X variables
-    xlabels <- data.frame(
-      Variable = unique(m_G$X),
-      label = sjlabelled::get_label(Data[unique(m_G$X)], def.value = unique(m_G$X))
-    )
-
-    # Get labels for Y variables
-    ylabels <- data.frame(
-      Variable = unique(m_G$Y),
-      label = sjlabelled::get_label(Data[unique(m_G$Y)], def.value = unique(m_G$Y))
-    )
-
-    m_G <- m_G %>%
-      left_join(xlabels, by = c("X" = "Variable")) %>%
-      rename(XLabel = label) %>%
-      left_join(ylabels, by = c("Y" = "Variable")) %>%
-      rename(YLabel = label)
-  } else {
-    m_G$XLabel <- m_G$X
-    m_G$YLabel <- m_G$Y
-  }
-
-  m_G$XLabel <- factor(m_G$XLabel, ordered = FALSE,
-                       levels = rev(unique(m_G$XLabel)))
-  m_G$YLabel <- factor(m_G$YLabel, ordered = FALSE,
-                       levels = unique(m_G$YLabel))
-
-  # Create plot text with proper line breaks for ggplot
-  m_G$PlotText <- paste("Y Var:", m_G$Y, "\nX Var:", m_G$X,
-                        "\nInteraction Coef:", round(m_G$C, 4),
-                        "\nP-Value:", round(m_G$P, 4), m_G$sigsign,
-                        "\nFDR-corrected P:", round(m_G$P_FDR, 4), m_G$sig_FDR)
-
-  # Create ggplot objects with better title
-  p <- m_G %>%
-    ggplot(aes(x = XLabel, y = YLabel, fill = sign)) +
-    geom_tile(aes(text = PlotText), show.legend = TRUE) +
-    scale_fill_manual(values = c("+ ***" = "darkgreen", "+ **" = "green",
-                                 "+ *" = "lightgreen", "ns " = "white",
-                                 "- *" = "lightcoral", "- **" = "red",
-                                 "- ***" = "darkred"),
-                      drop = FALSE, na.value = "grey90",
-                      name = "Interaction\nDirection") +
-    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
-          axis.title.x = element_blank(),
-          axis.title.y = element_blank()) +
-    labs(title = paste("Interaction Effects with", interVar),
-         subtitle = "Positive: X effect increases with interVar\nNegative: X effect decreases with interVar\n(No Multiple Comparison Correction)")
-
-  p_FDR <- m_G %>%
-    ggplot(aes(x = XLabel, y = YLabel, fill = sig_FDR)) +
-    geom_tile(show.legend = TRUE) +
-    scale_fill_manual(values = c("+ ***" = "darkgreen", "+ **" = "green",
-                                 "+ *" = "lightgreen", "ns " = "white",
-                                 "- *" = "lightcoral", "- **" = "red",
-                                 "- ***" = "darkred"),
-                      drop = FALSE, na.value = "grey90",
-                      name = "Interaction\nDirection") +
-    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
-          axis.title.x = element_blank(),
-          axis.title.y = element_blank()) +
-    labs(title = paste("Interaction Effects with", interVar),
-         subtitle = "Positive: X effect increases with interVar\nNegative: X effect decreases with interVar\n(FDR Correction)")
-
-  # Create p-value tables
-  pvaltable <- m_G %>%
-    select(X, Y, P) %>%
-    pivot_wider(names_from = X, values_from = P)
-
-  pvaltable_FDR <- m_G %>%
-    select(X, Y, P_FDR) %>%
-    pivot_wider(names_from = X, values_from = P_FDR)
-
-  # Create output list
-  M <- list()
-  M$C <- r_C
-  M$S <- r_S
-  M$P <- r_P
-  M$D <- r_D
-  M$plot <- p
-  M$pvaltable <- pvaltable
-
-  M_FDR <- list()
-  M_FDR$C <- r_C
-  M_FDR$S <- r_S
-  M_FDR$P <- r_P  # Keep original P-values matrix
-  M_FDR$D <- r_D
-  M_FDR$P_adjusted <- m_G %>%
-    select(X, Y, P_FDR) %>%
-    pivot_wider(names_from = Y, values_from = P_FDR) %>%
-    column_to_rownames("X") %>%
-    as.matrix()
-  M_FDR$plot <- p_FDR
-  M_FDR$pvaltable <- pvaltable_FDR
-
-  # Return output list
-  return(list(
-    Unadjusted = M,
-    FDRCorrected = M_FDR,
-    Relabel = Relabel,
-    Covariates = covars,
-    interVar = interVar,
-    raw_data = m_G  # Include the processed data frame for debugging
-  ))
+  return(p)
 }

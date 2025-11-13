@@ -2,36 +2,49 @@
 % Please edit documentation in R/PlotInteractionEffectsContinuous.R
 \name{PlotInteractionEffectsContinuous}
 \alias{PlotInteractionEffectsContinuous}
-\title{PlotInteractionEffectsContinuous}
+\title{Plot Single Interaction Effect}
 \usage{
 PlotInteractionEffectsContinuous(
   Data,
   interVar = NULL,
-  xVars = NULL,
-  yVars = NULL,
+  outcomeVar = NULL,
+  predictorVar = NULL,
   covars = NULL,
-  Relabel = TRUE,
-  Ordinal = FALSE
+  n_lines = 3,
+  alpha = 0.6,
+  point_size = 2
 )
 }
 \arguments{
-\item{Data}{The dataset to be analyzed}
+\item{Data}{A data frame containing the variables to be analyzed}
 
-\item{interVar}{The variable of interest for the interaction effect}
+\item{interVar}{Character string specifying the interaction variable (moderator)}
 
-\item{xVars}{The variables to be plotted on the x-axis}
+\item{outcomeVar}{Character string specifying the outcome variable}
 
-\item{yVars}{The variables to be plotted on the y-axis}
+\item{predictorVar}{Character string specifying the predictor variable}
 
-\item{covars}{Covariates to be included in the analysis}
+\item{covars}{Character vector of covariate names to include in the model}
 
-\item{Relabel}{A logical value indicating whether to relabel the variables with their corresponding labels}
+\item{n_lines}{For continuous moderators, number of lines to plot (default: 3 for low/med/high)}
 
-\item{Ordinal}{A logical value indicating whether the variables are ordinal}
+\item{alpha}{Transparency level for points (default: 0.6)}
+
+\item{point_size}{Size of points (default: 2)}
 }
 \value{
-A list containing the results of the analysis, including the p-values, significance levels, and the ggplot object.
+A ggplot object showing the interaction effect
 }
 \description{
-Plots the interaction effects between continuous variables in a dataset.
+Creates a scatter plot with regression lines showing the interaction between a predictor
+and outcome variable, moderated by either a continuous or categorical variable.
+}
+\details{
+For categorical moderators, separate regression lines are plotted for each category.
+For continuous moderators, regression lines are plotted at the mean and ± 1 SD.
+
+The subtitle shows the p-value for the interaction term.
+The caption lists any covariates included in the model.
+
+Variable labels are used if available in the data frame.
 }
