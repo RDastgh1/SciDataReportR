@@ -223,10 +223,10 @@ PlotInteractionEffectsMatrix <- function(Data, interVar = NULL,
       tryCatch({
         # Build formula with outcomeVar as outcome and predictorVar as predictor
         if(is.null(covars)){
-          formula_str <- paste0("`", outcomeVar, "` ~ `", predictorVar, "` * `", interVar, "`")
+          formula_str <- paste0("`", outcomeVar, "` ~ `", predictorVar, "` * ", interVar)
         } else {
-          covar_terms <- paste(paste0("`", covars, "`"), collapse = " + ")
-          formula_str <- paste0("`", outcomeVar, "` ~ ", covar_terms, " + `", predictorVar, "` * `", interVar, "`")
+          covar_terms <- paste(covars, collapse = " + ")
+          formula_str <- paste0("`", outcomeVar, "` ~ ", covar_terms, " + `", predictorVar, "` * ", interVar)
         }
 
         formula <- as.formula(formula_str)
@@ -236,43 +236,36 @@ PlotInteractionEffectsMatrix <- function(Data, interVar = NULL,
         coef_names <- names(coef(m))
         model_summary <- summary(m)
 
-        # Find main effect term - look for predictorVar
-        main_effect_term <- paste0("`", predictorVar, "`")
-        if (!main_effect_term %in% coef_names) {
-          # Try without backticks
-          main_effect_term <- predictorVar
-        }
-
-        # Find interaction term - need to check multiple patterns
-        interaction_patterns <- c(
-          paste0("`", predictorVar, "`:`", interVar, "`"),
-          paste0("`", interVar, "`:`", predictorVar, "`"),
-          paste0(predictorVar, ":", interVar),
-          paste0(interVar, ":", predictorVar)
+        # Find main effect term
+        main_effect_term <- NULL
+        possible_main_terms <- c(
+          paste0("`", predictorVar, "`"),
+          predictorVar
         )
-
-        # For categorical interVar, also check for level-specific patterns
-        if (!interVar_is_continuous) {
-          levels_interVar <- levels(as.factor(Data[[interVar]]))
-          if (length(levels_interVar) > 1) {
-            for (level in levels_interVar[-1]) {  # Skip reference level
-              interaction_patterns <- c(interaction_patterns,
-                                        paste0("`", predictorVar, "`:", interVar, level),
-                                        paste0(interVar, level, ":`", predictorVar, "`"))
-            }
-          }
-        }
-
-        interaction_term <- NULL
-        for (pattern in interaction_patterns) {
-          matches <- grep(pattern, coef_names, value = TRUE, fixed = FALSE)
-          if (length(matches) > 0) {
-            interaction_term <- matches[1]
+        for (term in possible_main_terms) {
+          if (term %in% coef_names) {
+            main_effect_term <- term
             break
           }
         }
 
-        if (!is.null(interaction_term) && main_effect_term %in% coef_names) {
+        # Find interaction term - be more flexible with pattern matching
+        interaction_term <- NULL
+
+        # Look for any coefficient that contains both the predictor and interVar
+        for (coef_name in coef_names) {
+          # Check if this coefficient contains both variable names
+          contains_predictor <- grepl(predictorVar, coef_name, fixed = TRUE)
+          contains_intervar <- grepl(interVar, coef_name, fixed = TRUE)
+          contains_colon <- grepl(":", coef_name, fixed = TRUE)
+
+          if (contains_predictor && contains_intervar && contains_colon) {
+            interaction_term <- coef_name
+            break
+          }
+        }
+
+        if (!is.null(interaction_term) && !is.null(main_effect_term)) {
           # Get coefficients
           main_effect <- coef(m)[main_effect_term]
           interC <- coef(m)[interaction_term]
@@ -280,19 +273,12 @@ PlotInteractionEffectsMatrix <- function(Data, interVar = NULL,
 
           # Calculate slopes based on whether interVar is continuous or categorical
           if (interVar_is_continuous) {
-            # For continuous interVar, calculate slopes at mean ± 1SD
+            # For continuous interVar, calculate simple slopes at mean ± 1SD
             interVar_mean <- mean(Data[[interVar]], na.rm = TRUE)
             interVar_sd <- sd(Data[[interVar]], na.rm = TRUE)
 
-            # Get the main effect of interVar if it exists
-            interVar_main_term <- paste0("`", interVar, "`")
-            if (!interVar_main_term %in% coef_names) {
-              interVar_main_term <- interVar
-            }
-
-            # Slope at low value (mean - 1SD)
+            # Simple slopes at -1SD and +1SD
             slope1 <- main_effect + interC * (interVar_mean - interVar_sd)
-            # Slope at high value (mean + 1SD)
             slope2 <- main_effect + interC * (interVar_mean + interVar_sd)
           } else {
             # For categorical interVar, slopes for reference and comparison groups
@@ -366,8 +352,7 @@ PlotInteractionEffectsMatrix <- function(Data, interVar = NULL,
     rownames_to_column(var = "Outcome") %>%
     pivot_longer(cols = all_of(predictorVars), names_to = "Predictor", values_to = "P")
 
-  m_r_S <- r_S %>%
-    as.data.frame() %>%
+  m_r_S <- r_S %>% as.data.frame() %>%
     rownames_to_column(var = "Outcome") %>%
     pivot_longer(cols = all_of(predictorVars), names_to = "Predictor", values_to = "S")
 
@@ -496,11 +481,17 @@ PlotInteractionEffectsMatrix <- function(Data, interVar = NULL,
                                levels = unique(m_G$PredictorLabel))
 
   # Create plot text
-  slope_description <- ifelse(interVar_is_continuous,
-                              paste0("Slope at ", interVar, " -1SD: ", round(m_G$Slope1, 3),
-                                     "\nSlope at ", interVar, " +1SD: ", round(m_G$Slope2, 3)),
-                              paste0("Slope 1: ", round(m_G$Slope1, 3),
-                                     "\nSlope 2: ", round(m_G$Slope2, 3)))
+  if (interVar_is_continuous) {
+    interVar_mean <- mean(Data[[interVar]], na.rm = TRUE)
+    interVar_sd <- sd(Data[[interVar]], na.rm = TRUE)
+    slope_description <- paste0("Slope at ", interVar, " = ", round(interVar_mean - interVar_sd, 1),
+                                ": ", round(m_G$Slope1, 3),
+                                "\nSlope at ", interVar, " = ", round(interVar_mean + interVar_sd, 1),
+                                ": ", round(m_G$Slope2, 3))
+  } else {
+    slope_description <- paste0("Slope 1: ", round(m_G$Slope1, 3),
+                                "\nSlope 2: ", round(m_G$Slope2, 3))
+  }
 
   m_G$PlotText <- paste("Outcome:", m_G$Outcome, "\nPredictor:", m_G$Predictor,
                         "\n", slope_description,
