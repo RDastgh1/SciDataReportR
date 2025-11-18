@@ -4,58 +4,51 @@
 \alias{IQROutliers}
 \title{Detect outliers using the Tukey IQR rule and visualize results}
 \usage{
-IQROutliers(df, variable, id = "ID", group = "SourceFile")
+IQROutliers(df, Variable, id = "ID", group = "SourceFile")
 }
 \arguments{
 \item{df}{A data frame or tibble containing the variable to evaluate.}
 
-\item{variable}{A string specifying the name of the numeric variable to test.}
+\item{Variable}{A string specifying the name of the numeric variable to test.}
 
-\item{id}{A string specifying the unique identifier column in \code{df}.
-Defaults to \code{"ID"}.}
+\item{id}{A string specifying the identifier column to include in the returned
+outlier table. Defaults to \code{"ID"}.}
 
-\item{group}{A string specifying the grouping or batch column to appear
-on the x-axis of the diagnostic plot. Defaults to \code{"SourceFile"}.}
+\item{group}{A string specifying the grouping or batch column to use on the
+x-axis of the diagnostic plot. Defaults to \code{"SourceFile"}.}
 }
 \value{
-A list with four elements:
+A list with two elements:
 \itemize{
-\item \code{data}: the input dataframe with an added \code{outlier} column.
-\item \code{outliers}: a tibble containing only rows flagged as outliers.
-\item \code{thresholds}: a named list containing Q1, Q3, IQR, lower bound,
-and upper bound used for classification.
-\item \code{plot}: a ggplot2 object showing a boxplot and jittered points
+\item \code{outlierdf}: a tibble containing only rows flagged as outliers,
+including the ID, variable, group, and outlier flag.
+\item \code{p}: a ggplot2 object showing a boxplot and jittered points
 colored by outlier status.
 }
 }
 \description{
 This function identifies potential outliers in a numeric variable using the
-Tukey interquartile range (IQR) rule (Tukey, 1977). It returns the full dataset
-with an outlier flag, a tibble of outlier rows only, a list of thresholds used
-for classification, and a ggplot boxplot showing the distribution and detected
-outliers.
+Tukey interquartile range (IQR) rule (Tukey, 1977). It returns a tibble of the
+detected outlier rows and a ggplot visualization showing the variable across
+groups with outlier points highlighted.
 }
 \details{
 The outlier rule is defined as:
 \deqn{value < Q1 - 1.5 * IQR  \; \textrm{or} \;  value > Q3 + 1.5 * IQR}
 
-This approach is widely used in exploratory data analysis for identifying
-extreme observations that may reflect measurement error, batch effects, or
-genuine biological variability.
+Outliers are visually highlighted using jittered points colored red, while the
+boxplot remains uncolored to prevent creation of a separate outlier-only box.
 
-The function uses \code{rlang::ensym()} to safely evaluate variable names and
-generates a ggplot using \code{geom_boxplot()} and \code{geom_jitter()} to allow
-visual inspection of outlier distribution across groups.
-
-Missing values are ignored when computing quartiles. The function checks that
-the specified \code{variable}, \code{id}, and \code{group} columns exist in the
-input dataframe.
+The color aesthetic is mapped only within \code{geom_jitter()}, ensuring the
+boxplot is drawn once per group rather than once per outlier class. Missing
+values are ignored when computing quartiles. Columns specified by \code{id}
+and \code{group} must be present in the input data frame.
 }
 \examples{
 \dontrun{
-  results <- IQROutliers(df = mydata, variable = "RT", id = "SubjectID", group = "Session")
-  results$plot
-  results$outliers
+  IQROutliers2(df_Revalued_Data, "PS",
+               id = "record_id",
+               group = "Cohort")
 }
 
 }
