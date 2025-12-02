@@ -17,7 +17,7 @@ CalcZScore <- function(df,
                        names_prefix = "Z_",
                        RetainLabels = TRUE,
                        RenameLabels = TRUE) {
-  # 1. Determine variables -----------------------------------------------
+  # Determine variables -----------------------------------------------
   if (is.null(variables)) {
     if (!requireNamespace("SciDataReportR", quietly = TRUE)) {
       stop("SciDataReportR is required to auto-detect numeric variables via getNumVars().")
@@ -44,18 +44,19 @@ CalcZScore <- function(df,
     stop("No numeric variables available to z-score.")
   }
 
-  # 2. Compute parameters -------------------------------------------------
+  #Compute parameters -------------------------------------------------
   means <- vapply(df[variables], function(x) mean(x, na.rm = TRUE), numeric(1))
   sds   <- vapply(df[variables], function(x) stats::sd(x, na.rm = TRUE), numeric(1))
+  ns    <- vapply(df[variables], function(x) sum(!is.na(x)), integer(1))
 
   params <- data.frame(
     Variable = variables,
+    N        = ns,
     Mean     = means,
     SD       = sds,
     stringsAsFactors = FALSE
   )
-
-  # 3. Compute Z-scores ---------------------------------------------------
+  # Compute Z-scores ---------------------------------------------------
   # Handle SD == 0 or NA by returning all-NA for that variable
   z_list <- mapply(
     FUN = function(x, m, s) {
@@ -73,7 +74,7 @@ CalcZScore <- function(df,
   z_df <- as.data.frame(z_list, stringsAsFactors = FALSE)
   names(z_df) <- paste0(names_prefix, variables)
 
-  # 4. Handle labels ------------------------------------------------------
+#Handle labels ------------------------------------------------------
   if (RetainLabels && requireNamespace("Hmisc", quietly = TRUE)) {
     for (v in variables) {
       original_label <- Hmisc::label(df[[v]])
@@ -88,12 +89,12 @@ CalcZScore <- function(df,
     }
   }
 
-  # 5. Combine and return -------------------------------------------------
+#Combine and return -------------------------------------------------
   combined <- cbind(df, z_df)
 
   out <- list(
     ZScores    = z_df,
-    DataWithZ  = combined,
+    CombinedScores  = combined,
     Parameters = params
   )
   class(out) <- c("ZScoreObj", class(out))

@@ -8,7 +8,7 @@
 #'   ParameterInputType:
 #'   - "df_parameter": a data frame with cols Variable, Mean, SD
 #'   - "ZScoreObj": output object from CalcZScore()
-#'   - "ExternalDataframe": a raw reference data frame; parameters will be
+#'   - "ExternalDataFrame": a raw reference data frame; parameters will be
 #'       estimated via CalcZScore() on that frame.
 #' @param ParameterInputType One of "df_parameter", "ZScoreObj",
 #'   "ExternalDataframe".
@@ -27,7 +27,7 @@ ProjectZScore <- function(df,
                           parameters,
                           ParameterInputType = c("df_parameter",
                                                  "ZScoreObj",
-                                                 "ExternalDataframe"),
+                                                 "ExternalDataFrame"),
                           names_prefix = "Z_",
                           RetainLabels = TRUE,
                           RenameLabels = TRUE) {
@@ -145,7 +145,7 @@ ProjectZScore <- function(df,
 
   out <- list(
     ZScores    = z_df,
-    DataWithZ  = combined,
+    CombinedScores  = combined,
     Parameters = param_df_sub
   )
   class(out) <- c("ZScoreObj", class(out))

@@ -8,7 +8,7 @@ ProjectZScore(
   df,
   variables = NULL,
   parameters,
-  ParameterInputType = c("df_parameter", "ZScoreObj", "ExternalDataframe"),
+  ParameterInputType = c("df_parameter", "ZScoreObj", "ExternalDataFrame"),
   names_prefix = "Z_",
   RetainLabels = TRUE,
   RenameLabels = TRUE
@@ -25,7 +25,7 @@ ParameterInputType:
 \itemize{
 \item "df_parameter": a data frame with cols Variable, Mean, SD
 \item "ZScoreObj": output object from CalcZScore()
-\item "ExternalDataframe": a raw reference data frame; parameters will be
+\item "ExternalDataFrame": a raw reference data frame; parameters will be
 estimated via CalcZScore() on that frame.
 }}
 
