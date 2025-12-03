@@ -2,18 +2,20 @@
 % Please edit documentation in R/CalcZScore.R
 \name{CalcZScore}
 \alias{CalcZScore}
-\title{Calculate Z-scores and return data + parameters}
+\title{Calculate Z-scores (or standardized scores) and return data + parameters}
 \usage{
 CalcZScore(
   df,
   variables = NULL,
   names_prefix = "Z_",
   RetainLabels = TRUE,
-  RenameLabels = TRUE
+  RenameLabels = TRUE,
+  center = TRUE,
+  scale = TRUE
 )
 }
 \arguments{
-\item{df}{Data frame with variables to standardize}
+\item{df}{Data frame with variables to standardize.}
 
 \item{variables}{Character vector of variable names. If NULL, uses
 SciDataReportR::getNumVars(df).}
@@ -23,15 +25,21 @@ SciDataReportR::getNumVars(df).}
 \item{RetainLabels}{Logical; if TRUE and Hmisc is available, copy labels.}
 
 \item{RenameLabels}{Logical; if TRUE, apply the same prefix to labels.}
+
+\item{center}{Logical; if TRUE, subtract the mean.}
+
+\item{scale}{Logical; if TRUE, divide by the SD.}
 }
 \value{
 An object of class "ZScoreObj", a list with:
 \itemize{
-\item ZScores: data frame of z-scored variables only
-\item DataWithZ: original df + z-score variables
-\item Parameters: data frame with Variable, Mean, SD
+\item ZScores: data frame of standardized variables only
+\item DataWithZ: original df + standardized variables
+\item Parameters: data frame with Variable, N, Mean, SD
+\item Center: logical flag used
+\item Scale: logical flag used
 }
 }
 \description{
-Calculate Z-scores and return data + parameters
+Calculate Z-scores (or standardized scores) and return data + parameters
 }

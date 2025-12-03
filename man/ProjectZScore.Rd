@@ -2,51 +2,58 @@
 % Please edit documentation in R/ProjectZScore.R
 \name{ProjectZScore}
 \alias{ProjectZScore}
-\title{Project Z-scores using external parameters or reference data}
+\title{Project standardized scores onto new data using external parameters}
 \usage{
 ProjectZScore(
   df,
   variables = NULL,
   parameters,
-  ParameterInputType = c("df_parameter", "ZScoreObj", "ExternalDataFrame"),
+  ParameterInputType = c("df_parameter", "ZScoreObj", "ExternalDataframe"),
   names_prefix = "Z_",
   RetainLabels = TRUE,
-  RenameLabels = TRUE
+  RenameLabels = TRUE,
+  center = TRUE,
+  scale = TRUE
 )
 }
 \arguments{
-\item{df}{Data frame on which to project Z-scores.}
+\item{df}{Data frame on which to project scores.}
 
-\item{variables}{Character vector; if NULL, use all variables for which
-parameters exist (intersect with df).}
+\item{variables}{Character vector; if NULL, project onto all variables
+for which parameters exist and that are present in df.}
 
-\item{parameters}{Source of parameters, interpreted according to
-ParameterInputType:
+\item{parameters}{Source of parameters, interpreted by ParameterInputType:
 \itemize{
-\item "df_parameter": a data frame with cols Variable, Mean, SD
+\item "df_parameter": a data frame with cols Variable, N, Mean, SD
 \item "ZScoreObj": output object from CalcZScore()
-\item "ExternalDataFrame": a raw reference data frame; parameters will be
+\item "ExternalDataframe": a raw reference data frame; parameters are
 estimated via CalcZScore() on that frame.
 }}
 
 \item{ParameterInputType}{One of "df_parameter", "ZScoreObj",
 "ExternalDataframe".}
 
-\item{names_prefix}{Prefix for projected Z-score variable names.}
+\item{names_prefix}{Prefix for projected variable names.}
 
 \item{RetainLabels}{Logical; if TRUE and Hmisc available, copy labels
 from df to new variables.}
 
 \item{RenameLabels}{Logical; if TRUE, prefix labels the same way as names.}
+
+\item{center}{Logical; used when ParameterInputType is "df_parameter"
+or "ExternalDataframe". Ignored for "ZScoreObj" (it uses stored flags).}
+
+\item{scale}{Logical; same logic as \code{center}.}
 }
 \value{
 List with same structure as CalcZScore():
 \itemize{
-\item ZScores: projected z-score variables only
-\item DataWithZ: df with projected z-scores appended
+\item ZScores: projected standardized variables only
+\item DataWithZ: df with projected scores appended
 \item Parameters: parameter data frame actually used for projection
+\item Center, Scale: flags used
 }
 }
 \description{
-Project Z-scores using external parameters or reference data
+Project standardized scores onto new data using external parameters
 }

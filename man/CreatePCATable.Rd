@@ -2,7 +2,7 @@
 % Please edit documentation in R/CreatePCATable.R
 \name{CreatePCATable}
 \alias{CreatePCATable}
-\title{Create PCA Table and Visualization}
+\title{Create PCA table and visualization}
 \usage{
 CreatePCATable(
   Data,
@@ -11,7 +11,6 @@ CreatePCATable(
   minThresh = 0.85,
   scale = TRUE,
   center = TRUE,
-  Relabel = T,
   Ordinal = FALSE,
   numComponents = NULL
 )
@@ -21,22 +20,32 @@ CreatePCATable(
 
 \item{VarsToReduce}{A character vector specifying the variables to include in the PCA.}
 
-\item{VariableCategories, }{categorical, annotates the lollipop plot with color}
+\item{VariableCategories}{Optional categorical vector, used to color the lollipop plot.
+Must be the same length and order as VarsToReduce if provided.}
 
-\item{minThresh}{The minimum threshold for cumulative proportion of variance (default is 0.85).}
+\item{minThresh}{The minimum threshold for cumulative proportion of variance (default 0.85).}
 
-\item{scale}{Logical, indicating whether to scale the data (default is TRUE).}
+\item{scale}{Logical, indicating whether to scale the data (divide by SD). Default TRUE.}
 
-\item{center}{Logical, indicating whether to center the data (default is TRUE).}
+\item{center}{Logical, indicating whether to center the data (subtract mean). Default TRUE.}
 
-\item{Relabel}{Optional argument to relabel the components.}
+\item{Ordinal}{Logical, indicating whether ordinal variables should be handled.
+Currently not used inside this function.}
 
-\item{Ordinal}{Logical, indicating whether ordinal variables should be handled.}
-
-\item{numComponents}{Number of principal components to compute.}
+\item{numComponents}{Number of principal components to compute. If NULL, chosen by minThresh.}
 }
 \value{
-A list containing PCA results and visualizations.
+A list containing PCA results and visualizations:
+\item{p_scree}{Scree and variance plot (ggplot object).}
+\item{pcaresults}{psych::principal result (after psych::fa.sort).}
+\item{LoadingTable}{Data frame of loadings with variable names and labels.}
+\item{Scores}{Matrix or data frame of component scores.}
+\item{CombinedData}{Original Data with component scores appended.}
+\item{Lollipop}{Lollipop style loading plot (ggplot object).}
+\item{ScaleParams}{List with elements means, sds, center, scale.}
+\item{VarsUsed}{Character vector of variables actually used in PCA.}
+\item{Center}{Logical flag indicating if centering was used.}
+\item{Scale}{Logical flag indicating if scaling was used.}
 }
 \description{
 Perform principal component analysis (PCA) on specified variables and create visualizations.

@@ -1,69 +1,91 @@
-
-#' Project Z-scores using external parameters or reference data
+#' Project standardized scores onto new data using external parameters
 #'
-#' @param df Data frame on which to project Z-scores.
-#' @param variables Character vector; if NULL, use all variables for which
-#'   parameters exist (intersect with df).
-#' @param parameters Source of parameters, interpreted according to
-#'   ParameterInputType:
-#'   - "df_parameter": a data frame with cols Variable, Mean, SD
+#' @param df Data frame on which to project scores.
+#' @param variables Character vector; if NULL, project onto all variables
+#'   for which parameters exist and that are present in df.
+#' @param parameters Source of parameters, interpreted by ParameterInputType:
+#'   - "df_parameter": a data frame with cols Variable, N, Mean, SD
 #'   - "ZScoreObj": output object from CalcZScore()
-#'   - "ExternalDataFrame": a raw reference data frame; parameters will be
+#'   - "ExternalDataframe": a raw reference data frame; parameters are
 #'       estimated via CalcZScore() on that frame.
 #' @param ParameterInputType One of "df_parameter", "ZScoreObj",
 #'   "ExternalDataframe".
-#' @param names_prefix Prefix for projected Z-score variable names.
+#' @param names_prefix Prefix for projected variable names.
 #' @param RetainLabels Logical; if TRUE and Hmisc available, copy labels
 #'   from df to new variables.
 #' @param RenameLabels Logical; if TRUE, prefix labels the same way as names.
+#' @param center Logical; used when ParameterInputType is "df_parameter"
+#'   or "ExternalDataframe". Ignored for "ZScoreObj" (it uses stored flags).
+#' @param scale Logical; same logic as `center`.
 #'
 #' @return List with same structure as CalcZScore():
-#'   - ZScores: projected z-score variables only
-#'   - DataWithZ: df with projected z-scores appended
+#'   - ZScores: projected standardized variables only
+#'   - DataWithZ: df with projected scores appended
 #'   - Parameters: parameter data frame actually used for projection
+#'   - Center, Scale: flags used
 #'
 ProjectZScore <- function(df,
                           variables = NULL,
                           parameters,
                           ParameterInputType = c("df_parameter",
                                                  "ZScoreObj",
-                                                 "ExternalDataFrame"),
+                                                 "ExternalDataframe"),
                           names_prefix = "Z_",
                           RetainLabels = TRUE,
-                          RenameLabels = TRUE) {
+                          RenameLabels = TRUE,
+                          center = TRUE,
+                          scale  = TRUE) {
+
   ParameterInputType <- match.arg(ParameterInputType)
 
-  # 1. Resolve parameter data frame --------------------------------------
-  param_df <- switch(
-    ParameterInputType,
-    "df_parameter" = {
-      if (!is.data.frame(parameters)) {
-        stop("For ParameterInputType = 'df_parameter', `parameters` must be a data frame.")
-      }
-      parameters
-    },
-    "ZScoreObj" = {
-      if (!is.list(parameters) || is.null(parameters$Parameters)) {
-        stop("For ParameterInputType = 'ZScoreObj', `parameters` must be a CalcZScore() output.")
-      }
-      parameters$Parameters
-    },
-    "ExternalDataframe" = {
-      # Here `parameters` is actually an external reference data frame
-      ref_df <- parameters
-      cs <- CalcZScore(
-        df            = ref_df,
-        variables     = variables,
-        names_prefix  = names_prefix,
-        RetainLabels  = FALSE,   # labels of reference df not needed here
-        RenameLabels  = FALSE
-      )
-      cs$Parameters
-    }
-  )
+  # 1. Resolve parameter data frame and center/scale flags -----------------
 
-  # Basic sanity checks for param_df
-  required_cols <- c("Variable", "Mean", "SD")
+  if (ParameterInputType == "df_parameter") {
+
+    if (!is.data.frame(parameters)) {
+      stop("For ParameterInputType = 'df_parameter', `parameters` must be a data frame.")
+    }
+    param_df <- parameters
+    param_center <- center
+    param_scale  <- scale
+
+  } else if (ParameterInputType == "ZScoreObj") {
+
+    if (!is.list(parameters) || is.null(parameters$Parameters)) {
+      stop("For ParameterInputType = 'ZScoreObj', `parameters` must be a CalcZScore() output.")
+    }
+    param_df <- parameters$Parameters
+    param_center <- isTRUE(parameters$Center)
+    param_scale  <- isTRUE(parameters$Scale)
+
+    # if user passes conflicting center/scale, warn
+    if (center != param_center || scale != param_scale) {
+      warning("center/scale arguments differ from those used in the ZScoreObj; ",
+              "using the flags stored in the ZScoreObj (Center = ",
+              param_center, ", Scale = ", param_scale, ").")
+    }
+
+  } else if (ParameterInputType == "ExternalDataframe") {
+
+    ref_df <- parameters
+    cs <- CalcZScore(
+      df            = ref_df,
+      variables     = variables,
+      names_prefix  = names_prefix,
+      RetainLabels  = FALSE,
+      RenameLabels  = FALSE,
+      center        = center,
+      scale         = scale
+    )
+    param_df     <- cs$Parameters
+    param_center <- cs$Center
+    param_scale  <- cs$Scale
+
+  } else {
+    stop("Unknown ParameterInputType.")
+  }
+
+  required_cols <- c("Variable", "N", "Mean", "SD")
   missing_cols <- setdiff(required_cols, names(param_df))
   if (length(missing_cols) > 0) {
     stop("Parameter data frame must contain columns: ",
@@ -72,15 +94,14 @@ ProjectZScore <- function(df,
          paste(missing_cols, collapse = ", "))
   }
 
-  # 2. Determine variables to project ------------------------------------
+  # 2. Determine variables to project -------------------------------------
+
   if (is.null(variables)) {
-    # "do all the variables that it has data on"
     variables <- intersect(param_df$Variable, names(df))
     if (length(variables) == 0) {
       stop("No overlap between parameter variables and df columns.")
     }
   } else {
-    # Ensure requested vars exist in both df and parameter table
     missing_in_df <- setdiff(variables, names(df))
     if (length(missing_in_df) > 0) {
       stop("The following variables are not in df: ",
@@ -93,40 +114,52 @@ ProjectZScore <- function(df,
     }
   }
 
-  # Drop non-numeric variables from df if user passed them
   is_num <- vapply(df[variables], is.numeric, logical(1))
   if (!all(is_num)) {
-    warning("Dropping non-numeric variables from z-score projection: ",
+    warning("Dropping non-numeric variables from projection: ",
             paste(variables[!is_num], collapse = ", "))
     variables <- variables[is_num]
   }
   if (length(variables) == 0) {
-    stop("No numeric variables available to project z-scores.")
+    stop("No numeric variables available to project scores.")
   }
 
-  # Align parameters to variable order
+  # Align params to variable order
   param_df_sub <- param_df[match(variables, param_df$Variable), ]
   means <- param_df_sub$Mean
   sds   <- param_df_sub$SD
 
-  # 3. Compute projected Z-scores ----------------------------------------
-  z_list <- mapply(
-    FUN = function(x, m, s) {
+  # 3. Compute projected scores -------------------------------------------
+
+  transform_fun <- function(x, m, s, center_flag, scale_flag) {
+    out <- x
+    if (center_flag) {
+      out <- out - m
+    }
+    if (scale_flag) {
       if (is.na(s) || s == 0) {
-        return(rep(NA_real_, length(x)))
+        out[] <- NA_real_
+      } else {
+        out <- out / s
       }
-      (x - m) / s
-    },
+    }
+    out
+  }
+
+  z_list <- mapply(
+    FUN = transform_fun,
     df[variables],
     means,
     sds,
+    MoreArgs = list(center_flag = param_center, scale_flag = param_scale),
     SIMPLIFY = FALSE
   )
 
   z_df <- as.data.frame(z_list, stringsAsFactors = FALSE)
   names(z_df) <- paste0(names_prefix, variables)
 
-  # 4. Handle labels (from *df*, not from reference) ---------------------
+  # 4. Handle labels from df ----------------------------------------------
+
   if (RetainLabels && requireNamespace("Hmisc", quietly = TRUE)) {
     for (v in variables) {
       original_label <- Hmisc::label(df[[v]])
@@ -145,8 +178,10 @@ ProjectZScore <- function(df,
 
   out <- list(
     ZScores    = z_df,
-    CombinedScores  = combined,
-    Parameters = param_df_sub
+    DataWithZ  = combined,
+    Parameters = param_df_sub,
+    Center     = param_center,
+    Scale      = param_scale
   )
   class(out) <- c("ZScoreObj", class(out))
   out

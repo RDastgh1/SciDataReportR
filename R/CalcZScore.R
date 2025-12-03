@@ -1,23 +1,29 @@
-#' Calculate Z-scores and return data + parameters
+#' Calculate Z-scores (or standardized scores) and return data + parameters
 #'
-#' @param df Data frame with variables to standardize
+#' @param df Data frame with variables to standardize.
 #' @param variables Character vector of variable names. If NULL, uses
 #'   SciDataReportR::getNumVars(df).
 #' @param names_prefix Prefix to prepend to variable names (default "Z_").
 #' @param RetainLabels Logical; if TRUE and Hmisc is available, copy labels.
 #' @param RenameLabels Logical; if TRUE, apply the same prefix to labels.
+#' @param center Logical; if TRUE, subtract the mean.
+#' @param scale Logical; if TRUE, divide by the SD.
 #'
 #' @return An object of class "ZScoreObj", a list with:
-#'   - ZScores: data frame of z-scored variables only
-#'   - DataWithZ: original df + z-score variables
-#'   - Parameters: data frame with Variable, Mean, SD
+#'   - ZScores: data frame of standardized variables only
+#'   - DataWithZ: original df + standardized variables
+#'   - Parameters: data frame with Variable, N, Mean, SD
+#'   - Center: logical flag used
+#'   - Scale: logical flag used
 #'
 CalcZScore <- function(df,
                        variables = NULL,
                        names_prefix = "Z_",
                        RetainLabels = TRUE,
-                       RenameLabels = TRUE) {
-  # Determine variables -----------------------------------------------
+                       RenameLabels = TRUE,
+                       center = TRUE,
+                       scale = TRUE) {
+  # 1. Determine variables -------------------------------------------------
   if (is.null(variables)) {
     if (!requireNamespace("SciDataReportR", quietly = TRUE)) {
       stop("SciDataReportR is required to auto-detect numeric variables via getNumVars().")
@@ -25,26 +31,24 @@ CalcZScore <- function(df,
     variables <- SciDataReportR::getNumVars(df, Ordinal = FALSE)
   }
 
-  # Ensure variables exist in df
   missing_vars <- setdiff(variables, names(df))
   if (length(missing_vars) > 0) {
     stop("The following variables are not in df: ",
          paste(missing_vars, collapse = ", "))
   }
 
-  # Drop any non-numeric variables (in case user passed weird stuff)
   is_num <- vapply(df[variables], is.numeric, logical(1))
   if (!all(is_num)) {
-    warning("Dropping non-numeric variables from z-score calculation: ",
+    warning("Dropping non-numeric variables from standardization: ",
             paste(variables[!is_num], collapse = ", "))
     variables <- variables[is_num]
   }
 
   if (length(variables) == 0) {
-    stop("No numeric variables available to z-score.")
+    stop("No numeric variables available to standardize.")
   }
 
-  #Compute parameters -------------------------------------------------
+  # 2. Compute parameters --------------------------------------------------
   means <- vapply(df[variables], function(x) mean(x, na.rm = TRUE), numeric(1))
   sds   <- vapply(df[variables], function(x) stats::sd(x, na.rm = TRUE), numeric(1))
   ns    <- vapply(df[variables], function(x) sum(!is.na(x)), integer(1))
@@ -56,15 +60,31 @@ CalcZScore <- function(df,
     SD       = sds,
     stringsAsFactors = FALSE
   )
-  # Compute Z-scores ---------------------------------------------------
-  # Handle SD == 0 or NA by returning all-NA for that variable
-  z_list <- mapply(
-    FUN = function(x, m, s) {
-      if (is.na(s) || s == 0) {
-        return(rep(NA_real_, length(x)))
+
+  # 3. Compute standardized scores ----------------------------------------
+  transform_fun <- function(x, m, s) {
+    # protect against 0/NA SD
+    if (is.na(s) || s == 0) s <- NA_real_
+
+    # start from raw x
+    out <- x
+
+    if (center) {
+      out <- out - m
+    }
+    if (scale) {
+      # if s is NA after protection, result is NA
+      if (is.na(s)) {
+        out[] <- NA_real_
+      } else {
+        out <- out / s
       }
-      (x - m) / s
-    },
+    }
+    out
+  }
+
+  z_list <- mapply(
+    FUN = transform_fun,
     df[variables],
     means,
     sds,
@@ -74,7 +94,7 @@ CalcZScore <- function(df,
   z_df <- as.data.frame(z_list, stringsAsFactors = FALSE)
   names(z_df) <- paste0(names_prefix, variables)
 
-#Handle labels ------------------------------------------------------
+  # 4. Handle labels -------------------------------------------------------
   if (RetainLabels && requireNamespace("Hmisc", quietly = TRUE)) {
     for (v in variables) {
       original_label <- Hmisc::label(df[[v]])
@@ -89,13 +109,15 @@ CalcZScore <- function(df,
     }
   }
 
-#Combine and return -------------------------------------------------
+  # 5. Combine and return --------------------------------------------------
   combined <- cbind(df, z_df)
 
   out <- list(
     ZScores    = z_df,
-    CombinedScores  = combined,
-    Parameters = params
+    DataWithZ  = combined,
+    Parameters = params,
+    Center     = center,
+    Scale      = scale
   )
   class(out) <- c("ZScoreObj", class(out))
   out
