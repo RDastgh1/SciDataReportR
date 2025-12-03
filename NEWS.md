@@ -1,3 +1,5 @@
+# SciDataReportR 11.2.0
+
 # SciDataReportR 11.1.0
 
 # SciDataReportR 11.0.0
