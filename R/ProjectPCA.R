@@ -35,7 +35,7 @@ ProjectPCA <- function(Data,
 
   InputType <- match.arg(InputType)
 
-  # 1. Resolve loadings, variable names, and scale parameters
+  # 1. Resolve loadings/weights, variable names, and scale parameters ---------
   if (InputType == "PCAObj") {
 
     if (!is.list(PCAInput) || is.null(PCAInput$pcaresults)) {
@@ -50,6 +50,12 @@ ProjectPCA <- function(Data,
 
     loading_mat  <- as.matrix(unclass(fit$loadings))
     all_pca_vars <- rownames(loading_mat)
+
+    # Use weights for scoring (matches psych::principal)
+    if (is.null(fit$weights)) {
+      stop("PCA object does not contain weights; cannot project consistently with psych::principal().")
+    }
+    weight_mat <- as.matrix(fit$weights)
 
     if (is.null(PCAInput$ScaleParams)) {
       stop("PCAInput is missing ScaleParams. Re run CreatePCATable with the updated version.")
@@ -88,15 +94,16 @@ ProjectPCA <- function(Data,
     rownames(loading_mat) <- LT$Variable
     all_pca_vars <- LT$Variable
 
-    # With only loadings, we do not know the original means/sds,
-    # so we rely on the center/scale arguments here.
-    scale_means   <- NULL
-    scale_sds     <- NULL
-    train_center  <- center
-    train_scale   <- scale
+    # No weights / no stored scaling; rely on arguments
+    weight_mat   <- NULL
+    scale_means  <- NULL
+    scale_sds    <- NULL
+    train_center <- center
+    train_scale  <- scale
   }
 
-  # 2. Determine which variables to use
+  # 2. Determine which variables to use --------------------------------------
+
   if (is.null(VarsToReduce)) {
     VarsToReduce <- intersect(all_pca_vars, names(Data))
     if (length(VarsToReduce) == 0) {
@@ -135,16 +142,25 @@ ProjectPCA <- function(Data,
     stop("No numeric variables available for projection.")
   }
 
-  if (!all(VarsToReduce %in% rownames(loading_mat))) {
-    missing_in_loadings <- setdiff(VarsToReduce, rownames(loading_mat))
+  if (!all(VarsToReduce %in% all_pca_vars)) {
+    missing_in_loadings <- setdiff(VarsToReduce, all_pca_vars)
     stop(
-      "The following VarsToReduce do not have loadings: ",
+      "The following VarsToReduce do not have loadings/weights: ",
       paste(missing_in_loadings, collapse = ", ")
     )
   }
-  loading_mat_use <- loading_mat[VarsToReduce, , drop = FALSE]
 
-  # 3. Prepare X matrix and apply training scaling if available
+  # Align loadings/weights rows to VarsToReduce
+  if (InputType == "PCAObj") {
+    loading_mat_use <- loading_mat[VarsToReduce, , drop = FALSE]
+    weight_mat_use  <- weight_mat[VarsToReduce, , drop = FALSE]
+  } else {
+    loading_mat_use <- loading_mat[VarsToReduce, , drop = FALSE]
+    weight_mat_use  <- NULL
+  }
+
+  # 3. Prepare X matrix and apply training scaling if available --------------
+
   X <- as.matrix(DataSubset)
 
   if (InputType == "PCAObj") {
@@ -173,14 +189,21 @@ ProjectPCA <- function(Data,
     }
   }
 
-  # 4. Compute scores
-  Scores <- X %*% loading_mat_use
-  Scores <- as.data.frame(Scores)
+  # 4. Compute scores --------------------------------------------------------
 
-  if (is.null(colnames(Scores))) {
-    colnames(Scores) <- paste0("PC", seq_len(ncol(Scores)))
+  if (InputType == "PCAObj") {
+    # Use regression weights to match psych::principal scores
+    Scores <- X %*% weight_mat_use
+    colnames(Scores) <- colnames(weight_mat_use)
+  } else {
+    # Use loadings when only a loading table is available
+    Scores <- X %*% loading_mat_use
+    if (is.null(colnames(Scores))) {
+      colnames(Scores) <- paste0("PC", seq_len(ncol(Scores)))
+    }
   }
 
+  Scores <- as.data.frame(Scores)
   CombinedData <- cbind(Data, Scores)
 
   out <- list(
