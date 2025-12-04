@@ -24,7 +24,7 @@
 #'   - Parameters: parameter data frame actually used for projection
 #'   - Center, Scale: flags used
 #'
-ProjectZScore <- function(df,
+Project_ZScore <- function(df,
                           variables = NULL,
                           parameters,
                           ParameterInputType = c("df_parameter",
