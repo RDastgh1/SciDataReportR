@@ -57,8 +57,8 @@
 #' @param seed_som,seed_lpa Integer seeds for SOM and LPA steps
 #'   (defaults 934521 and 93421).
 #' @param Relabel Logical; if TRUE (default), aweSOM plots are relabeled
-#'   using variable labels from \code{df} (via Hmisc or sjlabelled when
-#'   available).
+#'   using variable labels from the *original* \code{df} (via Hmisc or
+#'   sjlabelled when available) by stripping the "Z_" prefix.
 #'
 #' @details
 #' The AHP-style index is computed by:
@@ -240,26 +240,36 @@ Pipeline_SOMClust <- function(
   if (Relabel) {
     relabel_fun <- function(w) {
       if (!is.null(w$x$label)) {
-        vars <- w$x$label
+        # aweSOM uses the column names of the SOM data, which here are Z_*
+        zvars     <- w$x$label
+        base_vars <- sub("^Z_", "", zvars)
+
         get_lab <- NULL
         if (requireNamespace("Hmisc", quietly = TRUE)) {
           get_lab <- function(v) Hmisc::label(df[[v]])
         } else if (requireNamespace("sjlabelled", quietly = TRUE)) {
           get_lab <- function(v) sjlabelled::get_label(df[[v]])
         }
+
         if (!is.null(get_lab)) {
-          new_labels <- vapply(vars, function(v) {
-            if (!v %in% names(df)) return(v)
-            lab <- get_lab(v)
-            if (is.null(lab) || !nzchar(lab)) v else as.character(lab)
+          new_labels <- vapply(base_vars, function(bv) {
+            if (!bv %in% names(df)) return(bv)
+            lab <- get_lab(bv)
+            if (is.null(lab) || !nzchar(lab)) bv else as.character(lab)
           }, character(1))
-          w$x$label <- unname(new_labels)
+        } else {
+          # fall back to original variable names (no Z_ prefix)
+          new_labels <- base_vars
         }
+
+        w$x$label <- unname(new_labels)
       }
       w
     }
+
     CircPlot  <- relabel_fun(CircPlot)
     LinePlot  <- relabel_fun(LinePlot)
+    # Cloud plot does not typically show variable labels, so we leave it
   }
 
   som_plots <- list(
@@ -637,4 +647,7 @@ Pipeline_SOMClust <- function(
 
   class(out) <- c("Pipeline_SOMClust", class(out))
   out
+
+
+
 }

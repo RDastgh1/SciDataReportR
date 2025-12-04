@@ -75,8 +75,8 @@ a square grid with side length \code{ceiling(n_complete^(1/3))} is used.}
 (defaults 934521 and 93421).}
 
 \item{Relabel}{Logical; if TRUE (default), aweSOM plots are relabeled
-using variable labels from \code{df} (via Hmisc or sjlabelled when
-available).}
+using variable labels from the \emph{original} \code{df} (via Hmisc or
+sjlabelled when available) by stripping the "Z_" prefix.}
 }
 \value{
 A list of class \code{"Pipeline_SOMClust"} with components:
