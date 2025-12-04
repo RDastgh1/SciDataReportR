@@ -23,7 +23,7 @@
 #'   - DataWithZ: df with projected scores appended
 #'   - Parameters: parameter data frame actually used for projection
 #'   - Center, Scale: flags used
-#'
+#' @export
 Project_ZScore <- function(df,
                           variables = NULL,
                           parameters,

@@ -15,7 +15,7 @@
 #'   - Parameters: data frame with Variable, N, Mean, SD
 #'   - Center: logical flag used
 #'   - Scale: logical flag used
-#'
+#' @export
 CalcZScore <- function(df,
                        variables = NULL,
                        names_prefix = "Z_",
