@@ -33,87 +33,59 @@ PlotAnovaRelationshipsMatrix <- function(
     eps = 1e-8
 ) {
 
-  # ---- packages assumed available in SciDataReportR namespace ----
-  # dplyr, tidyr, ggplot2, rstatix, sjlabelled, paletteer, scales, tibble
-
   method <- if (isTRUE(Parametric)) "Anova" else "Kruskal"
 
-  # ---- 0) Basic input hygiene ----
-  CatVars <- unique(as.character(CatVars))
-  ContVars <- unique(as.character(ContVars))
-  Covariates <- if (!is.null(Covariates) && length(Covariates) > 0) unique(as.character(Covariates)) else character(0)
+  CatVars <- unique(intersect(as.character(CatVars), names(Data)))
+  ContVars <- unique(intersect(as.character(ContVars), names(Data)))
+  Covariates <- if (!is.null(Covariates) && length(Covariates) > 0) unique(intersect(as.character(Covariates), names(Data))) else character(0)
 
-  # Keep only existing columns
-  CatVars <- intersect(CatVars, names(Data))
-  ContVars <- intersect(ContVars, names(Data))
-  Covariates <- intersect(Covariates, names(Data))
-
-  # Early exit
   empty_return <- function() {
     empty <- data.frame()
-    p0 <- ggplot2::ggplot() + ggplot2::theme_void()
-    return(list(
-      Unadjusted    = list(PvalTable = empty, plot = p0),
-      FDRCorrected  = list(PvalTable = empty, plot = p0),
-      method        = method,
-      Relabel       = Relabel,
-      Covariates    = Covariates
-    ))
+    p0 <- ggplot2::ggplot(data.frame(x = 1, y = 1), ggplot2::aes(x, y)) +
+      ggplot2::geom_blank() + ggplot2::theme_void()
+    list(
+      Unadjusted = list(PvalTable = empty, plot = p0),
+      FDRCorrected = list(PvalTable = empty, plot = p0),
+      method = method, Relabel = Relabel, Covariates = Covariates
+    )
   }
 
   if (length(CatVars) == 0 || length(ContVars) == 0) return(empty_return())
 
-  # ---- 1) Drop categorical vars with <2 observed levels ----
+  # drop categorical vars with < 2 observed levels
   CatVars <- CatVars[vapply(CatVars, function(v) {
     x <- Data[[v]]
     x <- x[!is.na(x)]
     length(unique(x)) >= 2
   }, logical(1))]
-
   if (length(CatVars) == 0) return(empty_return())
 
-  # ---- 2) Ensure continuous vars are numeric-ish and not near-constant ----
-  # We allow "numeric stored as factor/character" by coercing, but we drop truly non-numeric.
+  # continuous vars: must be numeric or coercible with enough non-NA + variance
   ContVars <- ContVars[vapply(ContVars, function(v) {
     x <- Data[[v]]
-
-    # Try to coerce if not numeric/integer
-    if (!(is.numeric(x) || is.integer(x))) {
-      x2 <- suppressWarnings(as.numeric(as.character(x)))
-      # if almost everything becomes NA, treat as non-numeric
-      if (sum(!is.na(x2)) < min_n) return(FALSE)
-      x <- x2
-    }
-
+    if (!(is.numeric(x) || is.integer(x))) x <- suppressWarnings(as.numeric(as.character(x)))
     x <- x[is.finite(x)]
     if (length(x) < min_n) return(FALSE)
-
     vv <- stats::var(x, na.rm = TRUE)
     is.finite(vv) && vv > eps
   }, logical(1))]
-
   if (length(ContVars) == 0) return(empty_return())
 
-  # ---- 3) Filter covariates: drop if missing/constant ----
+  # covars: keep only non-constant and usable
   if (length(Covariates) > 0) {
     Covariates <- Covariates[vapply(Covariates, function(v) {
-      x <- Data[[v]]
-      x <- x[!is.na(x)]
-      if (length(x) < min_n) return(FALSE)
-
-      if (is.factor(x) || is.character(x)) {
-        length(unique(x)) >= 2
-      } else {
-        x2 <- suppressWarnings(as.numeric(as.character(x)))
-        x2 <- x2[is.finite(x2)]
-        if (length(x2) < min_n) return(FALSE)
-        vv <- stats::var(x2, na.rm = TRUE)
-        is.finite(vv) && vv > eps
-      }
+      z <- Data[[v]]
+      z <- z[!is.na(z)]
+      if (length(z) < min_n) return(FALSE)
+      if (is.factor(z) || is.character(z)) return(length(unique(z)) >= 2)
+      z2 <- suppressWarnings(as.numeric(as.character(z)))
+      z2 <- z2[is.finite(z2)]
+      if (length(z2) < min_n) return(FALSE)
+      vv <- stats::var(z2, na.rm = TRUE)
+      is.finite(vv) && vv > eps
     }, logical(1))]
   }
 
-  # ---- 4) Build a stable long dataset that keeps covariates attached ----
   vars_keep <- unique(c(CatVars, ContVars, Covariates))
 
   df0 <- Data |>
@@ -121,23 +93,13 @@ PlotAnovaRelationshipsMatrix <- function(
     dplyr::mutate(.rowID = dplyr::row_number()) |>
     dplyr::mutate(dplyr::across(dplyr::all_of(CatVars), ~ as.factor(.x)))
 
-  # Coerce covariates to something lm can consume reliably:
-  # factors -> factor, characters -> factor, numeric -> numeric
-  if (length(Covariates) > 0) {
-    df0 <- df0 |>
-      dplyr::mutate(dplyr::across(dplyr::all_of(Covariates), function(z) {
-        if (is.character(z)) return(as.factor(z))
-        z
-      }))
-  }
-
+  # Keep covars attached by rowID (avoid pivot mixing types)
   cov_df <- if (length(Covariates) > 0) {
     df0 |> dplyr::select(.rowID, dplyr::all_of(Covariates))
   } else {
     df0 |> dplyr::select(.rowID)
   }
 
-  # IMPORTANT: pivot longer on CatVars and ContVars only; then re-join covars by rowID
   mData <- df0 |>
     tidyr::pivot_longer(
       cols = dplyr::all_of(CatVars),
@@ -164,7 +126,7 @@ PlotAnovaRelationshipsMatrix <- function(
 
   if (nrow(mData) == 0) return(empty_return())
 
-  # ---- 5) Pair-level guards to avoid df=0, RSS≈0, etc. ----
+  # pair-level guards
   mData <- mData |>
     dplyr::group_by(ContinuousVariable, CategoricalVariable) |>
     dplyr::filter(
@@ -177,30 +139,22 @@ PlotAnovaRelationshipsMatrix <- function(
 
   if (nrow(mData) == 0) return(empty_return())
 
-  # ---- 6) Model formula ----
   rhs <- "CategoricalValue"
   if (length(Covariates) > 0) rhs <- paste(rhs, paste(Covariates, collapse = " + "), sep = " + ")
   fml <- stats::as.formula(paste("ContinuousValue ~", rhs))
 
-  # ---- 7) Safe test per pair using group_modify (no doo/unnest class weirdness) ----
   safe_test_df <- function(df) {
-    # Fit lm first to detect perfect fits before Anova/Kruskal
     fit <- tryCatch(stats::lm(fml, data = df), error = function(e) NULL)
     if (is.null(fit)) return(NULL)
-
     rss <- sum(stats::resid(fit)^2)
     if (!is.finite(rss) || rss <= eps) return(NULL)
 
     out <- tryCatch({
-      if (isTRUE(Parametric)) {
-        rstatix::anova_test(df, fml)
-      } else {
-        rstatix::kruskal_test(df, fml)
-      }
+      if (isTRUE(Parametric)) rstatix::anova_test(df, fml) else rstatix::kruskal_test(df, fml)
     }, error = function(e) NULL)
 
     if (is.null(out)) return(NULL)
-    as.data.frame(out) # strip rstatix/anova_test classes
+    as.data.frame(out)  # strip classes
   }
 
   stat.test <- mData |>
@@ -214,41 +168,38 @@ PlotAnovaRelationshipsMatrix <- function(
 
   if (nrow(stat.test) == 0) return(empty_return())
 
-  # rstatix returns different p column names across tests; normalize to p / p.adj
-  # anova_test usually returns p, kruskal_test returns p
   if (!("p" %in% names(stat.test)) && ("p.value" %in% names(stat.test))) {
     stat.test <- dplyr::rename(stat.test, p = p.value)
   }
 
-  # ---- 8) Add significance + FDR (consistent columns) ----
   stat.test <- stat.test |>
     rstatix::add_significance(p.col = "p", output.col = "p.signif") |>
     rstatix::adjust_pvalue(p.col = "p", output.col = "p.adj", method = "fdr") |>
     rstatix::add_significance(p.col = "p.adj", output.col = "p.adj.signif")
 
-  # Keep compatible fields with your downstream PlotMiningMatrix expectations
   stat.test$logp <- -log10(stat.test$p)
   stat.test$logp_FDR <- -log10(stat.test$p.adj)
+  stat.test$`p<.05` <- factor(stat.test$p.signif, levels = c("ns","*","**","***","****"))
+  stat.test$p.adj.signif <- factor(stat.test$p.adj.signif, levels = c("ns","*","**","***","****"))
 
-  stat.test$`p<.05` <- factor(stat.test$p.signif, levels = c("ns", "*", "**", "***", "****"))
-  stat.test$p.adj.signif <- factor(stat.test$p.adj.signif, levels = c("ns", "*", "**", "***", "****"))
+  # Keep only main effect row if present
+  if ("Effect" %in% names(stat.test)) {
+    stat.test <- stat.test |>
+      dplyr::filter(Effect == "CategoricalValue")
+  }
 
-  # ---- 9) Labels ----
+  # labels
   if (isTRUE(Relabel)) {
     Data <- ReplaceMissingLabels(Data)
 
-    xlabels <- sjlabelled::get_label(
-      Data[as.character(stat.test$CategoricalVariable)],
-      def.value = stat.test$CategoricalVariable
-    ) |>
+    xlabels <- sjlabelled::get_label(Data[as.character(stat.test$CategoricalVariable)],
+                                     def.value = stat.test$CategoricalVariable) |>
       as.data.frame() |>
       tibble::rownames_to_column()
     colnames(xlabels) <- c("Variable", "label")
 
-    ylabels <- sjlabelled::get_label(
-      Data[as.character(stat.test$ContinuousVariable)],
-      def.value = stat.test$ContinuousVariable
-    ) |>
+    ylabels <- sjlabelled::get_label(Data[as.character(stat.test$ContinuousVariable)],
+                                     def.value = stat.test$ContinuousVariable) |>
       as.data.frame() |>
       tibble::rownames_to_column()
     colnames(ylabels) <- c("Variable", "label")
@@ -260,37 +211,32 @@ PlotAnovaRelationshipsMatrix <- function(
     stat.test$YLabel <- stat.test$ContinuousVariable
   }
 
-  # Order factors for plotting
+  # ordering
   if (isTRUE(Relabel)) {
-    stat.test$YLabel <- factor(stat.test$YLabel, levels = sjlabelled::get_label(Data[as.character(ContVars)], def.value = ContVars))
-    stat.test$XLabel <- factor(stat.test$XLabel, levels = sjlabelled::get_label(Data[as.character(CatVars)],  def.value = CatVars))
+    stat.test$XLabel <- factor(stat.test$XLabel,
+                               levels = sjlabelled::get_label(Data[as.character(CatVars)], def.value = CatVars))
+    stat.test$YLabel <- factor(stat.test$YLabel,
+                               levels = sjlabelled::get_label(Data[as.character(ContVars)], def.value = ContVars))
   } else {
-    stat.test$YLabel <- factor(stat.test$YLabel, levels = ContVars)
     stat.test$XLabel <- factor(stat.test$XLabel, levels = CatVars)
+    stat.test$YLabel <- factor(stat.test$YLabel, levels = ContVars)
   }
 
   stat.test$PlotText <- paste(
     "</br>Cat Var Label:", stat.test$XLabel,
-    "</br> Cat Var:", stat.test$CategoricalVariable,
-    "</br> Cont Var Label:", stat.test$YLabel,
-    "</br> Cont Var:", stat.test$ContinuousVariable,
-    "</br> P-Value: ", stat.test$p, stat.test$p.signif,
-    "</br> FDR-corrected P: ", stat.test$p.adj, stat.test$p.adj.signif,
-    if ("ges" %in% names(stat.test)) paste0("</br> GES Effect size: ", stat.test$ges) else "",
-    if ("DFd" %in% names(stat.test)) paste0("</br> npairs: ", stat.test$DFd) else ""
+    "</br>Cat Var:", stat.test$CategoricalVariable,
+    "</br>Cont Var Label:", stat.test$YLabel,
+    "</br>Cont Var:", stat.test$ContinuousVariable,
+    "</br>P-Value:", stat.test$p, stat.test$p.signif,
+    "</br>FDR P:", stat.test$p.adj, stat.test$p.adj.signif,
+    if ("ges" %in% names(stat.test)) paste0("</br>GES:", stat.test$ges) else ""
   )
-
-  # For ANOVA outputs, keep only the main effect row when present
-  if ("Effect" %in% names(stat.test)) {
-    stat.test <- stat.test |>
-      dplyr::filter(Effect == "CategoricalValue")
-  }
 
   stat.test <- stat.test |>
     dplyr::mutate(Test = method) |>
     as.data.frame()
 
-  # ---- 10) Plots (kept similar to original; uses ges if present) ----
+  # plots: use ges if available, else color by p
   colour_var <- if ("ges" %in% names(stat.test)) "ges" else "p"
 
   p <- ggplot2::ggplot(stat.test, ggplot2::aes(y = YLabel, x = XLabel, shape = `p<.05`, text = PlotText)) +
@@ -317,14 +263,9 @@ PlotAnovaRelationshipsMatrix <- function(
     ggplot2::labs(subtitle = "FDR Correction") +
     ggplot2::xlab("") + ggplot2::ylab("")
 
-  M <- list(PvalTable = stat.test, plot = p)
-  M_FDR <- list(PvalTable = stat.test, plot = p_FDR)
-
-  return(list(
-    Unadjusted   = M,
-    FDRCorrected = M_FDR,
-    method       = method,
-    Relabel      = Relabel,
-    Covariates   = Covariates
-  ))
+  list(
+    Unadjusted = list(PvalTable = stat.test, plot = p),
+    FDRCorrected = list(PvalTable = stat.test, plot = p_FDR),
+    method = method, Relabel = Relabel, Covariates = Covariates
+  )
 }

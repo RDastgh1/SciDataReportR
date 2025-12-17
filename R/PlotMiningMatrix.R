@@ -22,165 +22,202 @@
 #' @importFrom stats p.adjust
 #' @importFrom magrittr %>%
 #' @export
-PlotMiningMatrix <- function(Data,
-                             OutcomeVars,
-                             PredictorVars,
-                             Covariates = NULL,
-                             Relabel = TRUE,
-                             Parametric = TRUE) {
+PlotMiningMatrix <- function(
+    Data,
+    OutcomeVars,
+    PredictorVars,
+    Covariates = NULL,
+    Relabel = TRUE,
+    Parametric = TRUE
+) {
 
-  OutcomeVars <- rev(OutcomeVars)
   method <- ifelse(Parametric, "pearson", "spearman")
 
+  OutcomeVars <- unique(intersect(as.character(OutcomeVars), names(Data)))
+  PredictorVars <- unique(intersect(as.character(PredictorVars), names(Data)))
+  Covariates <- if (!is.null(Covariates) && length(Covariates) > 0) unique(intersect(as.character(Covariates), names(Data))) else NULL
+
+  empty_return <- function() {
+    empty <- data.frame()
+    p0 <- ggplot2::ggplot(data.frame(x = 1, y = 1), ggplot2::aes(x, y)) +
+      ggplot2::geom_blank() + ggplot2::theme_void()
+    list(
+      Unadjusted = list(PvalTable = empty, plot = p0),
+      FDRCorrected = list(PvalTable = empty, plot = p0),
+      method = method, Relabel = Relabel, Covariates = Covariates
+    )
+  }
+
+  if (length(OutcomeVars) == 0 || length(PredictorVars) == 0) return(empty_return())
+
   # split numeric vs categorical
-  num_Outcomes   <- getNumVars(Data %>% select(all_of(OutcomeVars)))
-  cat_Outcomes   <- getCatVars(Data %>% select(all_of(OutcomeVars)))
-  num_Predictors <- getNumVars(Data %>% select(all_of(PredictorVars)))
-  cat_Predictors <- getCatVars(Data %>% select(all_of(PredictorVars)))
+  num_Outcomes   <- getNumVars(Data %>% dplyr::select(dplyr::all_of(OutcomeVars)))
+  cat_Outcomes   <- getCatVars(Data %>% dplyr::select(dplyr::all_of(OutcomeVars)))
+  num_Predictors <- getNumVars(Data %>% dplyr::select(dplyr::all_of(PredictorVars)))
+  cat_Predictors <- getCatVars(Data %>% dplyr::select(dplyr::all_of(PredictorVars)))
 
-  # correlations
+  # helper inline: only touch plot$data if it's a real df with rows
+  ok_df <- function(x) is.data.frame(x) && nrow(x) > 0
+
+  P_Correlations <- NULL
   if (length(num_Outcomes) > 0 && length(num_Predictors) > 0) {
-    P_Correlations <- PlotCorrelationsHeatmap(
-      Data, num_Predictors, num_Outcomes,
-      covars = Covariates, Relabel = Relabel
-    )$Unadjusted$plot$data %>%
-      select(-P_adj) %>%
-      mutate(Test = method, p = P) %>%
-      # already contains XVar/YVar from the heatmap output; just swap labels
-      rename(XLabel = YLabel, YLabel = XLabel)
-  } else P_Correlations <- NULL
+    tmp <- PlotCorrelationsHeatmap(
+      Data,
+      xVars = num_Predictors,
+      yVars = num_Outcomes,
+      covars = Covariates,
+      method = method,
+      Relabel = Relabel
+    )
 
-  # ANOVA: categorical predictors x numeric outcomes
+    cor_df <- tmp$Unadjusted$plot$data
+    if (ok_df(cor_df)) {
+      P_Correlations <- cor_df %>%
+        dplyr::select(-dplyr::any_of("P_adj")) %>%
+        dplyr::mutate(Test = method, p = P) %>%
+        dplyr::rename(XLabel = YLabel, YLabel = XLabel)
+    }
+  }
+
+  P_Anova1 <- NULL
   if (length(cat_Predictors) > 0 && length(num_Outcomes) > 0) {
-    P_Anova1 <- PlotAnovaRelationshipsMatrix(
-      Data, cat_Predictors, num_Outcomes,
-      Covariates = Covariates, Parametric = Parametric
-    )$Unadjusted$PvalTable %>%
-      ungroup() %>% as.data.frame() %>%
-      select(-p.adj, -p.adj.signif, -logp_FDR) %>%
-      mutate(
-        nPairs = DFd,
-        # NEW: ensure XVar is the outcome (numeric), YVar is the predictor (categorical)
-        XVar = ContinuousVariable,
-        YVar = CategoricalVariable
-      ) %>%
-      # keep labels aligned with your outcome-on-x, predictor-on-y convention
-      rename(XLabel = YLabel, YLabel = XLabel)
-  } else P_Anova1 <- NULL
+    tmp <- PlotAnovaRelationshipsMatrix(
+      Data, CatVars = cat_Predictors, ContVars = num_Outcomes,
+      Covariates = Covariates, Relabel = Relabel, Parametric = Parametric
+    )
+    tab <- tmp$Unadjusted$PvalTable
+    if (ok_df(tab)) {
+      P_Anova1 <- tab %>%
+        dplyr::select(-dplyr::any_of(c("p.adj","p.adj.signif","logp_FDR"))) %>%
+        dplyr::mutate(
+          nPairs = dplyr::if_else("DFd" %in% names(.), DFd, NA_real_),
+          XVar = ContinuousVariable,
+          YVar = CategoricalVariable
+        ) %>%
+        dplyr::rename(XLabel = YLabel, YLabel = XLabel) %>%
+        dplyr::mutate(p = p)  # keep naming consistent
+    }
+  }
 
-  # ANOVA: categorical outcomes x numeric predictors
+  P_Anova2 <- NULL
   if (length(cat_Outcomes) > 0 && length(num_Predictors) > 0) {
-    P_Anova2 <- PlotAnovaRelationshipsMatrix(
-      Data, cat_Outcomes, num_Predictors,
-      Covariates = Covariates, Parametric = Parametric
-    )$Unadjusted$PvalTable %>%
-      ungroup() %>% as.data.frame() %>%
-      select(-p.adj, -p.adj.signif, -logp_FDR) %>%
-      mutate(
-        nPairs = DFd,
-        # NEW: here outcomes are categorical; predictors are numeric
-        XVar = CategoricalVariable,
-        YVar = ContinuousVariable
-      )
-    # Note: No label swap here because PvalTable already has XLabel as outcome and YLabel as predictor.
-  } else P_Anova2 <- NULL
+    tmp <- PlotAnovaRelationshipsMatrix(
+      Data, CatVars = cat_Outcomes, ContVars = num_Predictors,
+      Covariates = Covariates, Relabel = Relabel, Parametric = Parametric
+    )
+    tab <- tmp$Unadjusted$PvalTable
+    if (ok_df(tab)) {
+      P_Anova2 <- tab %>%
+        dplyr::select(-dplyr::any_of(c("p.adj","p.adj.signif","logp_FDR"))) %>%
+        dplyr::mutate(
+          nPairs = dplyr::if_else("DFd" %in% names(.), DFd, NA_real_),
+          XVar = CategoricalVariable,
+          YVar = ContinuousVariable
+        )
+    }
+  }
 
-  # Chi-square for categorical x categorical
+  P_Chi <- NULL
   if (length(cat_Outcomes) > 0 && length(cat_Predictors) > 0) {
-    P_Chi <- PlotChiSqCovar(
-      Data, cat_Predictors, cat_Outcomes,
-      covars = Covariates
-    )$p$data %>%
-      mutate(p = pval, p.adj = pval.adj)
-    # Some chi outputs may or may not include XVar/YVar; we’ll backfill later if missing.
-  } else P_Chi <- NULL
+    tmp <- PlotChiSqCovar(
+      Data, xVars = cat_Predictors, yVars = cat_Outcomes,
+      covars = Covariates, Relabel = Relabel
+    )
 
-  # combine all non-null
-  non_null_dfs <- list(P_Correlations, P_Anova1, P_Anova2, P_Chi) %>% keep(~ !is.null(.x))
-  P_Combined <- Reduce(full_join, non_null_dfs)
+    chi_df <- tmp$p$data
+    if (ok_df(chi_df)) {
+      # PlotChiSqCovar returns ggplot data with XLabel/YLabel already.
+      # We normalize column names to p/p_adj if present.
+      if ("pval" %in% names(chi_df)) {
+        P_Chi <- chi_df %>% dplyr::mutate(p = pval)
+        if ("pval.adj" %in% names(chi_df)) P_Chi <- P_Chi %>% dplyr::mutate(p_adj = pval.adj)
+      } else {
+        P_Chi <- chi_df
+      }
+      P_Chi <- P_Chi %>% dplyr::mutate(Test = "Chi Squared")
+    }
+  }
 
-  # --- NEW: build reverse label→name lookup to backfill XVar/YVar if absent ---
-  # name -> label (respecting Relabel)
-  out_lab <- sjlabelled::get_label(Data %>% select(all_of(OutcomeVars)), def.value = OutcomeVars)
-  pred_lab <- sjlabelled::get_label(Data %>% select(all_of(PredictorVars)), def.value = PredictorVars)
-  # invert to label -> name (handle duplicates by first match)
+  non_null <- list(P_Correlations, P_Anova1, P_Anova2, P_Chi) %>%
+    purrr::keep(~ ok_df(.x))
+
+  if (length(non_null) == 0) return(empty_return())
+
+  P_Combined <- Reduce(dplyr::full_join, non_null)
+
+  # Backfill XVar/YVar from labels if missing
+  out_lab <- sjlabelled::get_label(Data %>% dplyr::select(dplyr::all_of(OutcomeVars)), def.value = OutcomeVars)
+  pred_lab <- sjlabelled::get_label(Data %>% dplyr::select(dplyr::all_of(PredictorVars)), def.value = PredictorVars)
+
   out_map  <- setNames(OutcomeVars, out_lab)
   pred_map <- setNames(PredictorVars, pred_lab)
-  any_map  <- c(out_map, pred_map)  # safe union
+  any_map  <- c(out_map, pred_map)
 
-  # drop unused columns (do this AFTER we’ve created XVar/YVar)
-  P_Combined <- P_Combined %>%
-    select(-any_of(c("stars","stars_FDR","CategoricalVariable","ContinuousVariable",
-                     "p.signif","PlotText","ges","Effect","DFd","pval","pval.adj")))
-
-  # backfill XVar/YVar where missing using labels
   if (!"XVar" %in% names(P_Combined)) P_Combined$XVar <- NA_character_
   if (!"YVar" %in% names(P_Combined)) P_Combined$YVar <- NA_character_
 
   P_Combined <- P_Combined %>%
-    mutate(
+    dplyr::mutate(
       XVar = ifelse(is.na(XVar) & !is.na(XLabel) & as.character(XLabel) %in% names(any_map),
                     any_map[as.character(XLabel)], XVar),
       YVar = ifelse(is.na(YVar) & !is.na(YLabel) & as.character(YLabel) %in% names(any_map),
                     any_map[as.character(YLabel)], YVar)
     )
 
-  # FDR correction and significance annotation
+  # FDR correction + stars
   P_Combined <- P_Combined %>%
-    mutate(p_adj = p.adjust(p, method = "fdr")) %>%
-    rstatix::add_significance(p.col = "p",     output.col = "stars") %>%
+    dplyr::filter(!is.na(p)) %>%
+    dplyr::mutate(p_adj = stats::p.adjust(p, method = "fdr")) %>%
+    rstatix::add_significance(p.col = "p", output.col = "stars") %>%
     rstatix::add_significance(p.col = "p_adj", output.col = "stars_fdr") %>%
-    mutate(
+    dplyr::mutate(
       stars     = ifelse(stars     == "****", "***", as.character(stars)),
       stars_fdr = ifelse(stars_fdr == "****", "***", as.character(stars_fdr))
     )
 
-  # axis orders
+  # axis ordering
   if (Relabel) {
-    xorder <- sjlabelled::get_label(Data %>% select(all_of(OutcomeVars)),    def.value = OutcomeVars)
-    yorder <- sjlabelled::get_label(Data %>% select(all_of(PredictorVars)),  def.value = PredictorVars)
+    xorder <- sjlabelled::get_label(Data %>% dplyr::select(dplyr::all_of(OutcomeVars)), def.value = OutcomeVars)
+    yorder <- sjlabelled::get_label(Data %>% dplyr::select(dplyr::all_of(PredictorVars)), def.value = PredictorVars)
   } else {
     xorder <- OutcomeVars
     yorder <- PredictorVars
   }
   xorder <- unique(xorder); yorder <- unique(yorder)
 
-  P_Combined <- P_Combined %>%
-    filter(!is.na(p)) %>%
-    mutate(
-      XLabel = factor(XLabel, levels = xorder),
-      YLabel = factor(YLabel, levels = yorder)
-    )
-
   sig_levels <- c("ns","*","**","***","****")
 
   P_Combined <- P_Combined %>%
-    mutate(
-      stars     = factor(stars,     levels = sig_levels),
+    dplyr::mutate(
+      XLabel = factor(XLabel, levels = xorder),
+      YLabel = factor(YLabel, levels = yorder),
+      stars = factor(stars, levels = sig_levels),
       stars_fdr = factor(stars_fdr, levels = sig_levels),
-      logp      = -log10(p),
-      logpfdr   = -log10(p_adj)
+      logp = -log10(p),
+      logpfdr = -log10(p_adj)
     )
 
-  p <- ggplot(P_Combined, aes(y = YLabel, x = XLabel)) +
-    geom_point(aes(size = stars, colour = stars), shape = 18) +
-    scale_color_manual(values = paletteer::paletteer_c("grDevices::Purple-Yellow", n = 5, direction = -1)) +
-    guides(size = "none") +
-    labs(subtitle = "No Multiple Comparison Correction") +
-    xlab("") + ylab("") + theme_bw() +
-    theme(axis.text.x = element_text(angle = 45, hjust = 1),
-          legend.title = element_blank())
+  p <- ggplot2::ggplot(P_Combined, ggplot2::aes(y = YLabel, x = XLabel)) +
+    ggplot2::geom_point(ggplot2::aes(size = stars, colour = stars), shape = 18) +
+    ggplot2::scale_color_manual(values = paletteer::paletteer_c("grDevices::Purple-Yellow", n = 5, direction = -1)) +
+    ggplot2::guides(size = "none") +
+    ggplot2::labs(subtitle = "No Multiple Comparison Correction") +
+    ggplot2::xlab("") + ggplot2::ylab("") + ggplot2::theme_bw() +
+    ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, hjust = 1),
+                   legend.title = ggplot2::element_blank())
 
-  p_FDR <- ggplot(P_Combined, aes(y = YLabel, x = XLabel)) +
-    geom_point(aes(size = stars_fdr, colour = stars_fdr), shape = 18) +
-    scale_color_manual(values = paletteer::paletteer_c("grDevices::Purple-Yellow", n = 5, direction = -1)) +
-    guides(size = "none") +
-    labs(subtitle = "FDR Correction") +
-    xlab("") + ylab("") + theme_bw() +
-    theme(axis.text.x = element_text(angle = 45, hjust = 1),
-          legend.title = element_blank())
+  p_FDR <- ggplot2::ggplot(P_Combined, ggplot2::aes(y = YLabel, x = XLabel)) +
+    ggplot2::geom_point(ggplot2::aes(size = stars_fdr, colour = stars_fdr), shape = 18) +
+    ggplot2::scale_color_manual(values = paletteer::paletteer_c("grDevices::Purple-Yellow", n = 5, direction = -1)) +
+    ggplot2::guides(size = "none") +
+    ggplot2::labs(subtitle = "FDR Correction") +
+    ggplot2::xlab("") + ggplot2::ylab("") + ggplot2::theme_bw() +
+    ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, hjust = 1),
+                   legend.title = ggplot2::element_blank())
 
-  M     <- list(PvalTable = P_Combined, plot = p)
-  M_FDR <- list(PvalTable = P_Combined, plot = p_FDR)
-  list(Unadjusted = M, FDRCorrected = M_FDR, method = method, Relabel = Relabel, Covariates = Covariates)
+  list(
+    Unadjusted = list(PvalTable = P_Combined, plot = p),
+    FDRCorrected = list(PvalTable = P_Combined, plot = p_FDR),
+    method = method, Relabel = Relabel, Covariates = Covariates
+  )
 }

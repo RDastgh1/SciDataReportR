@@ -18,56 +18,103 @@ PlotCorrelationsHeatmap <- function(
     covars = NULL,
     method = "pearson",
     Relabel = TRUE,
-    Ordinal = FALSE
+    Ordinal = FALSE,
+    min_n = 3,
+    eps = 1e-12
 ) {
-
-  removediag <- FALSE
   Data <- ReplaceMissingLabels(Data)
 
-  # Determine variables
+  # ---- determine vars ----
   if (is.null(xVars)) {
     xVars <- getNumVars(Data, Ordinal = isTRUE(Ordinal))
   }
-
   if (is.null(yVars)) {
     yVars <- xVars
     removediag <- TRUE
+  } else {
+    removediag <- FALSE
   }
 
-  # If ordinal requested, convert ordinal vars to numeric (both x and y)
+  xVars <- intersect(as.character(xVars), names(Data))
+  yVars <- intersect(as.character(yVars), names(Data))
+
+  covars <- if (!is.null(covars) && length(covars) > 0) intersect(as.character(covars), names(Data)) else character(0)
+
+  # ---- early exit if nothing to correlate ----
+  if (length(xVars) == 0 || length(yVars) == 0) {
+    empty_plot_data <- data.frame(
+      XVar = character(0), YVar = character(0),
+      R = numeric(0), P = numeric(0), P_adj = numeric(0),
+      nPairs = integer(0),
+      stars = character(0), stars_FDR = character(0),
+      XLabel = character(0), YLabel = character(0),
+      PlotText = character(0),
+      stringsAsFactors = FALSE
+    )
+
+    P0 <- ggplot2::ggplot(empty_plot_data, ggplot2::aes(x = YLabel, y = XLabel)) +
+      ggplot2::geom_blank() +
+      ggplot2::theme_bw() +
+      ggplot2::labs(subtitle = "No numeric variables available for correlation") +
+      ggplot2::xlab("") + ggplot2::ylab("")
+
+    z <- matrix(numeric(0), nrow = 0, ncol = 0)
+    M0 <- list(r = z, p = z, npairs = z, plot = P0)
+
+    return(list(
+      Unadjusted = M0,
+      FDRCorrected = M0,
+      method = method,
+      Relabel = Relabel,
+      Covariates = covars
+    ))
+  }
+
+  # ---- ordinal handling ----
   if (isTRUE(Ordinal)) {
     Variables <- unique(c(xVars, yVars))
     Data <- ConvertOrdinalToNumeric(Data, Variables)
     Data[Variables] <- lapply(Data[Variables], as.numeric)
   }
 
-  # Prepare covariates data
-  if (!is.null(covars) && length(covars) > 0) {
-    # make character to factor, factor to numeric for covars (and only covars)
+  # ---- prepare covariates data ----
+  if (length(covars) > 0) {
     cdata <- Data[, covars, drop = FALSE]
+
+    # characters to factor; factors to numeric codes; then scale
     char_vars <- vapply(cdata, is.character, logical(1))
     if (any(char_vars)) cdata[char_vars] <- lapply(cdata[char_vars], as.factor)
 
     factor_vars <- vapply(cdata, is.factor, logical(1))
     if (any(factor_vars)) cdata[factor_vars] <- lapply(cdata[factor_vars], as.numeric)
 
-    # scale covars
-    cdata <- scale(cdata)
+    # numeric coercion safety
+    cdata <- as.data.frame(lapply(cdata, function(z) suppressWarnings(as.numeric(as.character(z)))))
+    cdata <- as.data.frame(scale(cdata))
   } else {
     cdata <- data.frame()
   }
 
-  # X and Y data
   xdata <- Data[, xVars, drop = FALSE]
   ydata <- Data[, yVars, drop = FALSE]
 
-  # Initialize matrices
+  # ---- coerce x/y to numeric safely (drop truly non-numeric later at pair level) ----
+  xdata <- as.data.frame(lapply(xdata, function(z) {
+    if (is.numeric(z) || is.integer(z)) return(as.numeric(z))
+    suppressWarnings(as.numeric(as.character(z)))
+  }))
+  ydata <- as.data.frame(lapply(ydata, function(z) {
+    if (is.numeric(z) || is.integer(z)) return(as.numeric(z))
+    suppressWarnings(as.numeric(as.character(z)))
+  }))
+
+  # ---- init matrices ----
   MC <- matrix(NA_real_, nrow = ncol(xdata), ncol = ncol(ydata),
                dimnames = list(colnames(xdata), colnames(ydata)))
   MP <- MC
   MN <- MC
 
-  # Compute correlations
+  # ---- compute correlations ----
   for (xi in seq_len(ncol(xdata))) {
     for (yi in seq_len(ncol(ydata))) {
 
@@ -79,34 +126,22 @@ PlotCorrelationsHeatmap <- function(
 
       MN[xi, yi] <- nrow(d)
 
-      # Default output
       est <- NA_real_
       pval <- NA_real_
 
-      # Only compute if enough rows
-      if (nrow(d) >= 3) {
+      # need enough rows + non-constant variance
+      if (nrow(d) >= min_n && stats::var(d[, 1]) > eps && stats::var(d[, 2]) > eps) {
         if (nrow(cdata) > 0) {
-          # Partial correlation
           tmp <- tryCatch(
-            ppcor::pcor.test(
-              d[, 1], d[, 2],
-              d[, seq(3, 2 + ncol(cdata)), drop = FALSE],
-              method = method
-            ),
+            ppcor::pcor.test(d[, 1], d[, 2], d[, seq(3, ncol(d)), drop = FALSE], method = method),
             error = function(e) NULL
           )
-
           if (!is.null(tmp)) {
             est <- unname(tmp$estimate)
             pval <- tmp$p.value
           }
         } else {
-          # Standard correlation
-          tmp <- tryCatch(
-            stats::cor.test(d[, 1], d[, 2], method = method),
-            error = function(e) NULL
-          )
-
+          tmp <- tryCatch(stats::cor.test(d[, 1], d[, 2], method = method), error = function(e) NULL)
           if (!is.null(tmp)) {
             est <- unname(tmp$estimate)
             pval <- tmp$p.value
@@ -119,42 +154,61 @@ PlotCorrelationsHeatmap <- function(
     }
   }
 
-  # Remove diagonal if symmetric heatmap
   if (removediag) {
     diag(MC) <- NaN
     diag(MP) <- NaN
     diag(MN) <- NaN
   }
 
-  # If npairs < 2, blank values
   MC[MN < 2] <- NaN
   MP[MN < 2] <- NaN
 
-  # FDR correction (vectorize then reshape to yVars length)
   padj <- stats::p.adjust(as.vector(MP), method = "fdr")
-  M_FDR_p <- matrix(padj, nrow = nrow(MP), ncol = ncol(MP),
-                    dimnames = dimnames(MP))
+  M_FDR_p <- matrix(padj, nrow = nrow(MP), ncol = ncol(MP), dimnames = dimnames(MP))
+  if (removediag) diag(M_FDR_p) <- NaN
 
-  if (removediag) {
-    diag(M_FDR_p) <- NaN
+  # ---- long plot data (guard: if matrices are 0-dim, return empty) ----
+  if (nrow(MC) == 0 || ncol(MC) == 0) {
+    empty_plot_data <- data.frame(
+      XVar = character(0), YVar = character(0),
+      R = numeric(0), P = numeric(0), P_adj = numeric(0),
+      nPairs = integer(0),
+      stars = character(0), stars_FDR = character(0),
+      XLabel = character(0), YLabel = character(0),
+      PlotText = character(0),
+      stringsAsFactors = FALSE
+    )
+
+    P0 <- ggplot2::ggplot(empty_plot_data, ggplot2::aes(x = YLabel, y = XLabel)) +
+      ggplot2::geom_blank() +
+      ggplot2::theme_bw() +
+      ggplot2::labs(subtitle = "No numeric variables available for correlation") +
+      ggplot2::xlab("") + ggplot2::ylab("")
+
+    z <- matrix(numeric(0), nrow = 0, ncol = 0)
+    M0 <- list(r = z, p = z, npairs = z, plot = P0)
+
+    return(list(
+      Unadjusted = M0,
+      FDRCorrected = M0,
+      method = method,
+      Relabel = Relabel,
+      Covariates = covars
+    ))
   }
 
-  # Build long plot data (include npairs)
   plot.data_R <- tidyr::pivot_longer(
     tibble::rownames_to_column(as.data.frame(MC), var = "XVar"),
     cols = colnames(MC), names_to = "YVar", values_to = "R"
   )
-
   plot.data_P <- tidyr::pivot_longer(
     tibble::rownames_to_column(as.data.frame(MP), var = "XVar"),
     cols = colnames(MP), names_to = "YVar", values_to = "P"
   )
-
   plot.data_P_adj <- tidyr::pivot_longer(
     tibble::rownames_to_column(as.data.frame(M_FDR_p), var = "XVar"),
     cols = colnames(M_FDR_p), names_to = "YVar", values_to = "P_adj"
   )
-
   plot.data_npairs <- tidyr::pivot_longer(
     tibble::rownames_to_column(as.data.frame(MN), var = "XVar"),
     cols = colnames(MN), names_to = "YVar", values_to = "nPairs"
@@ -166,39 +220,24 @@ PlotCorrelationsHeatmap <- function(
       dplyr::left_join(plot.data_npairs, by = c("XVar", "YVar"))
   )
 
-  # Significance stars
-  plot.data$stars <- cut(
-    plot.data$P,
-    breaks = c(-Inf, 0.001, 0.01, 0.05, Inf),
-    labels = c("***", "**", "*", "")
-  )
+  plot.data$stars <- cut(plot.data$P,
+                         breaks = c(-Inf, 0.001, 0.01, 0.05, Inf),
+                         labels = c("***", "**", "*", ""))
+  plot.data$stars_FDR <- cut(plot.data$P_adj,
+                             breaks = c(-Inf, 0.001, 0.01, 0.05, Inf),
+                             labels = c("***", "**", "*", ""))
 
-  plot.data$stars_FDR <- cut(
-    plot.data$P_adj,
-    breaks = c(-Inf, 0.001, 0.01, 0.05, Inf),
-    labels = c("***", "**", "*", "")
-  )
-
-  # Labels (relabel if desired)
+  # ---- labels ----
   if (isTRUE(Relabel)) {
     Data <- ReplaceMissingLabels(Data)
-
-    xlabels <- sjlabelled::get_label(
-      Data[as.character(plot.data$XVar)],
-      def.value = plot.data$XVar
-    ) |>
+    xlabels <- sjlabelled::get_label(Data[as.character(plot.data$XVar)], def.value = plot.data$XVar) |>
       as.data.frame() |>
       tibble::rownames_to_column()
-
     colnames(xlabels) <- c("Variable", "label")
 
-    ylabels <- sjlabelled::get_label(
-      Data[as.character(plot.data$YVar)],
-      def.value = plot.data$YVar
-    ) |>
+    ylabels <- sjlabelled::get_label(Data[as.character(plot.data$YVar)], def.value = plot.data$YVar) |>
       as.data.frame() |>
       tibble::rownames_to_column()
-
     colnames(ylabels) <- c("Variable", "label")
 
     plot.data$XLabel <- xlabels$label
@@ -211,15 +250,9 @@ PlotCorrelationsHeatmap <- function(
   plot.data$XLabel <- factor(plot.data$XLabel, ordered = FALSE, levels = rev(unique(plot.data$XLabel)))
   plot.data$YLabel <- factor(plot.data$YLabel, ordered = FALSE, levels = unique(plot.data$YLabel))
 
-  # Plotly-friendly hover formatting helpers
-  fmt_num <- function(x, digits = 3) {
-    ifelse(is.na(x) | is.nan(x), "NA", formatC(x, format = "f", digits = digits))
-  }
-  fmt_p <- function(x) {
-    ifelse(is.na(x) | is.nan(x), "NA", format.pval(x, digits = 3, eps = 1e-3))
-  }
+  fmt_num <- function(x, digits = 3) ifelse(is.na(x) | is.nan(x), "NA", formatC(x, format = "f", digits = digits))
+  fmt_p <- function(x) ifelse(is.na(x) | is.nan(x), "NA", format.pval(x, digits = 3, eps = 1e-3))
 
-  # Hover text includes r, p, FDR p, and nPairs
   plot.data$PlotText <- paste0(
     "<b>Y:</b> ", plot.data$YVar,
     "<br><b>X:</b> ", plot.data$XVar,
@@ -229,7 +262,6 @@ PlotCorrelationsHeatmap <- function(
     "<br><b>nPairs:</b> ", ifelse(is.na(plot.data$nPairs) | is.nan(plot.data$nPairs), "NA", plot.data$nPairs)
   )
 
-  # Plots
   P <- ggplot2::ggplot(plot.data, ggplot2::aes(y = XLabel, x = YLabel, fill = R, text = PlotText)) +
     ggplot2::geom_tile() +
     ggplot2::geom_text(ggplot2::aes(label = stars), color = "black") +
@@ -254,15 +286,8 @@ PlotCorrelationsHeatmap <- function(
       axis.text.x = ggplot2::element_text(angle = 90, vjust = 0.5, hjust = 1)
     )
 
-  # Return objects in the same structure you already use
   M <- list(r = MC, p = MP, npairs = MN, plot = P)
   M_FDR <- list(r = MC, p = M_FDR_p, npairs = MN, plot = P_FDR)
 
-  list(
-    Unadjusted = M,
-    FDRCorrected = M_FDR,
-    method = method,
-    Relabel = Relabel,
-    Covariates = covars
-  )
+  list(Unadjusted = M, FDRCorrected = M_FDR, method = method, Relabel = Relabel, Covariates = covars)
 }
