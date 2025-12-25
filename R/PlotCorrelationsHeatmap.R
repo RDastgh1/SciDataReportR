@@ -9,6 +9,8 @@
 #' @param method The correlation method. Defaults to "pearson".
 #' @param Relabel A logical indicating whether to relabel variables. Defaults to TRUE.
 #' @param Ordinal Logical, indicating whether ordinal variables should be included.
+#' @param min_n Minimum complete cases required for a pairwise correlation.
+#' @param eps Small tolerance to treat near-constant variables as constant.
 #' @return A list containing matrices, ggplot objects for visualizations, and details of the method used.
 #' @export
 PlotCorrelationsHeatmap <- function(
@@ -38,7 +40,11 @@ PlotCorrelationsHeatmap <- function(
   xVars <- intersect(as.character(xVars), names(Data))
   yVars <- intersect(as.character(yVars), names(Data))
 
-  covars <- if (!is.null(covars) && length(covars) > 0) intersect(as.character(covars), names(Data)) else character(0)
+  covars <- if (!is.null(covars) && length(covars) > 0) {
+    intersect(as.character(covars), names(Data))
+  } else {
+    character(0)
+  }
 
   # ---- early exit if nothing to correlate ----
   if (length(xVars) == 0 || length(yVars) == 0) {
@@ -90,6 +96,8 @@ PlotCorrelationsHeatmap <- function(
 
     # numeric coercion safety
     cdata <- as.data.frame(lapply(cdata, function(z) suppressWarnings(as.numeric(as.character(z)))))
+    # scrub non-finite BEFORE scale()
+    cdata <- as.data.frame(lapply(cdata, function(z) ifelse(is.finite(z), z, NA_real_)))
     cdata <- as.data.frame(scale(cdata))
   } else {
     cdata <- data.frame()
@@ -98,7 +106,7 @@ PlotCorrelationsHeatmap <- function(
   xdata <- Data[, xVars, drop = FALSE]
   ydata <- Data[, yVars, drop = FALSE]
 
-  # ---- coerce x/y to numeric safely (drop truly non-numeric later at pair level) ----
+  # ---- coerce x/y to numeric safely ----
   xdata <- as.data.frame(lapply(xdata, function(z) {
     if (is.numeric(z) || is.integer(z)) return(as.numeric(z))
     suppressWarnings(as.numeric(as.character(z)))
@@ -107,6 +115,13 @@ PlotCorrelationsHeatmap <- function(
     if (is.numeric(z) || is.integer(z)) return(as.numeric(z))
     suppressWarnings(as.numeric(as.character(z)))
   }))
+
+  # ---- scrub non-finite values globally (render-safe) ----
+  xdata <- as.data.frame(lapply(xdata, function(z) ifelse(is.finite(z), z, NA_real_)))
+  ydata <- as.data.frame(lapply(ydata, function(z) ifelse(is.finite(z), z, NA_real_)))
+  if (nrow(cdata) > 0) {
+    cdata <- as.data.frame(lapply(cdata, function(z) ifelse(is.finite(z), z, NA_real_)))
+  }
 
   # ---- init matrices ----
   MC <- matrix(NA_real_, nrow = ncol(xdata), ncol = ncol(ydata),
@@ -129,22 +144,35 @@ PlotCorrelationsHeatmap <- function(
       est <- NA_real_
       pval <- NA_real_
 
-      # need enough rows + non-constant variance
-      if (nrow(d) >= min_n && stats::var(d[, 1]) > eps && stats::var(d[, 2]) > eps) {
-        if (nrow(cdata) > 0) {
-          tmp <- tryCatch(
-            ppcor::pcor.test(d[, 1], d[, 2], d[, seq(3, ncol(d)), drop = FALSE], method = method),
-            error = function(e) NULL
-          )
-          if (!is.null(tmp)) {
-            est <- unname(tmp$estimate)
-            pval <- tmp$p.value
-          }
-        } else {
-          tmp <- tryCatch(stats::cor.test(d[, 1], d[, 2], method = method), error = function(e) NULL)
-          if (!is.null(tmp)) {
-            est <- unname(tmp$estimate)
-            pval <- tmp$p.value
+      if (nrow(d) >= min_n) {
+        vx <- stats::var(d[, 1])
+        vy <- stats::var(d[, 2])
+
+        ok_var <- is.finite(vx) && is.finite(vy) && (vx > eps) && (vy > eps)
+
+        if (ok_var) {
+          if (nrow(cdata) > 0) {
+            tmp <- tryCatch(
+              ppcor::pcor.test(
+                d[, 1], d[, 2],
+                d[, seq(3, ncol(d)), drop = FALSE],
+                method = method
+              ),
+              error = function(e) NULL
+            )
+            if (!is.null(tmp)) {
+              est <- unname(tmp$estimate)
+              pval <- tmp$p.value
+            }
+          } else {
+            tmp <- tryCatch(
+              stats::cor.test(d[, 1], d[, 2], method = method),
+              error = function(e) NULL
+            )
+            if (!is.null(tmp)) {
+              est <- unname(tmp$estimate)
+              pval <- tmp$p.value
+            }
           }
         }
       }
@@ -160,10 +188,17 @@ PlotCorrelationsHeatmap <- function(
     diag(MN) <- NaN
   }
 
+  # Keep NaN for unusable, but ensure we don't crash downstream
   MC[MN < 2] <- NaN
   MP[MN < 2] <- NaN
 
-  padj <- stats::p.adjust(as.vector(MP), method = "fdr")
+  # ---- FDR adjust robustly (ignore NA/NaN) ----
+  pvec <- as.vector(MP)
+  padj <- rep(NA_real_, length(pvec))
+  ok <- is.finite(pvec)
+  if (any(ok)) {
+    padj[ok] <- stats::p.adjust(pvec[ok], method = "fdr")
+  }
   M_FDR_p <- matrix(padj, nrow = nrow(MP), ncol = ncol(MP), dimnames = dimnames(MP))
   if (removediag) diag(M_FDR_p) <- NaN
 
@@ -227,21 +262,18 @@ PlotCorrelationsHeatmap <- function(
                              breaks = c(-Inf, 0.001, 0.01, 0.05, Inf),
                              labels = c("***", "**", "*", ""))
 
-  # ---- labels ----
+  # ---- labels (robust to duplicates) ----
   if (isTRUE(Relabel)) {
     Data <- ReplaceMissingLabels(Data)
-    xlabels <- sjlabelled::get_label(Data[as.character(plot.data$XVar)], def.value = plot.data$XVar) |>
-      as.data.frame() |>
-      tibble::rownames_to_column()
-    colnames(xlabels) <- c("Variable", "label")
 
-    ylabels <- sjlabelled::get_label(Data[as.character(plot.data$YVar)], def.value = plot.data$YVar) |>
-      as.data.frame() |>
-      tibble::rownames_to_column()
-    colnames(ylabels) <- c("Variable", "label")
+    x_unique <- unique(as.character(plot.data$XVar))
+    y_unique <- unique(as.character(plot.data$YVar))
 
-    plot.data$XLabel <- xlabels$label
-    plot.data$YLabel <- ylabels$label
+    xlabels <- sjlabelled::get_label(Data[x_unique], def.value = x_unique)
+    ylabels <- sjlabelled::get_label(Data[y_unique], def.value = y_unique)
+
+    plot.data$XLabel <- unname(xlabels[as.character(plot.data$XVar)])
+    plot.data$YLabel <- unname(ylabels[as.character(plot.data$YVar)])
   } else {
     plot.data$XLabel <- plot.data$XVar
     plot.data$YLabel <- plot.data$YVar
@@ -251,7 +283,7 @@ PlotCorrelationsHeatmap <- function(
   plot.data$YLabel <- factor(plot.data$YLabel, ordered = FALSE, levels = unique(plot.data$YLabel))
 
   fmt_num <- function(x, digits = 3) ifelse(is.na(x) | is.nan(x), "NA", formatC(x, format = "f", digits = digits))
-  fmt_p <- function(x) ifelse(is.na(x) | is.nan(x), "NA", format.pval(x, digits = 3, eps = 1e-3))
+  fmt_p   <- function(x) ifelse(is.na(x) | is.nan(x), "NA", format.pval(x, digits = 3, eps = 1e-3))
 
   plot.data$PlotText <- paste0(
     "<b>Y:</b> ", plot.data$YVar,
