@@ -44,8 +44,8 @@ PlotMiningMatrix <- function(
     p0 <- ggplot2::ggplot(data.frame(x = 1, y = 1), ggplot2::aes(x, y)) +
       ggplot2::geom_blank() + ggplot2::theme_void()
     list(
-      Unadjusted    = list(PvalTable = empty, plot = p0),
-      FDRCorrected  = list(PvalTable = empty, plot = p0),
+      Unadjusted   = list(PvalTable = empty, plot = p0),
+      FDRCorrected = list(PvalTable = empty, plot = p0),
       method = method, Relabel = Relabel, Covariates = Covariates
     )
   }
@@ -54,12 +54,33 @@ PlotMiningMatrix <- function(
 
   ok_df <- function(x) is.data.frame(x) && nrow(x) > 0
 
+  # helper: find a p-value column under many possible names
+  extract_p <- function(df) {
+    if (!is.data.frame(df) || nrow(df) == 0) return(df)
+    candidates <- c("p", "P", "p.value", "pval", "p_value", "pvalue")
+    hit <- candidates[candidates %in% names(df)]
+    if (length(hit) == 0) {
+      df$p <- NA_real_
+    } else {
+      # coalesce across candidates in priority order
+      df$p <- df[[hit[1]]]
+      if (length(hit) > 1) {
+        for (nm in hit[-1]) df$p <- dplyr::coalesce(df$p, df[[nm]])
+      }
+      df$p <- as.numeric(df$p)
+    }
+    df
+  }
+
+  # split numeric vs categorical
   num_Outcomes   <- getNumVars(Data %>% dplyr::select(dplyr::all_of(OutcomeVars)))
   cat_Outcomes   <- getCatVars(Data %>% dplyr::select(dplyr::all_of(OutcomeVars)))
   num_Predictors <- getNumVars(Data %>% dplyr::select(dplyr::all_of(PredictorVars)))
   cat_Predictors <- getCatVars(Data %>% dplyr::select(dplyr::all_of(PredictorVars)))
 
-  P_Correlations <- NULL
+  out_list <- list()
+
+  # 1) numeric vs numeric: correlations
   if (length(num_Outcomes) > 0 && length(num_Predictors) > 0) {
     tmp <- PlotCorrelationsHeatmap(
       Data,
@@ -72,14 +93,24 @@ PlotMiningMatrix <- function(
 
     cor_df <- tmp$Unadjusted$plot$data
     if (ok_df(cor_df)) {
-      P_Correlations <- cor_df %>%
-        dplyr::select(-dplyr::any_of("P_adj")) %>%
-        dplyr::mutate(Test = method, p = P) %>%
-        dplyr::rename(XLabel = YLabel, YLabel = XLabel)
+      cor_df <- cor_df %>%
+        dplyr::mutate(Test = method) %>%
+        extract_p()
+
+      # PlotCorrelationsHeatmap often stores p as "P" not "p"
+      # and uses XLabel/YLabel but with x/y flipped relative to other plots.
+      cor_df <- cor_df %>%
+        dplyr::rename(XLabel = YLabel, YLabel = XLabel) %>%
+        dplyr::mutate(
+          XVar = NA_character_,
+          YVar = NA_character_
+        )
+
+      out_list[["cor"]] <- cor_df %>% dplyr::select(dplyr::any_of(c("XLabel","YLabel","XVar","YVar","Test","p")))
     }
   }
 
-  P_Anova1 <- NULL
+  # 2) categorical predictors vs numeric outcomes: ANOVA / regression
   if (length(cat_Predictors) > 0 && length(num_Outcomes) > 0) {
     tmp <- PlotAnovaRelationshipsMatrix(
       Data,
@@ -91,19 +122,22 @@ PlotMiningMatrix <- function(
     )
     tab <- tmp$Unadjusted$PvalTable
     if (ok_df(tab)) {
-      P_Anova1 <- tab %>%
-        dplyr::select(-dplyr::any_of(c("p.adj","p.adj.signif","logp_FDR"))) %>%
+      tab <- tab %>%
+        extract_p() %>%
         dplyr::mutate(
+          Test  = "ANOVA",
+          # DFd can be vector or missing; keep but don’t crash
           nPairs = if ("DFd" %in% names(.)) as.numeric(.data$DFd) else rep(NA_real_, dplyr::n()),
-          XVar   = ContinuousVariable,
-          YVar   = CategoricalVariable,
-          p      = .data$p
+          XVar  = ContinuousVariable,
+          YVar  = CategoricalVariable
         ) %>%
         dplyr::rename(XLabel = YLabel, YLabel = XLabel)
+
+      out_list[["anova1"]] <- tab %>% dplyr::select(dplyr::any_of(c("XLabel","YLabel","XVar","YVar","Test","p")))
     }
   }
 
-  P_Anova2 <- NULL
+  # 3) numeric predictors vs categorical outcomes: ANOVA / regression other direction
   if (length(cat_Outcomes) > 0 && length(num_Predictors) > 0) {
     tmp <- PlotAnovaRelationshipsMatrix(
       Data,
@@ -115,18 +149,20 @@ PlotMiningMatrix <- function(
     )
     tab <- tmp$Unadjusted$PvalTable
     if (ok_df(tab)) {
-      P_Anova2 <- tab %>%
-        dplyr::select(-dplyr::any_of(c("p.adj","p.adj.signif","logp_FDR"))) %>%
+      tab <- tab %>%
+        extract_p() %>%
         dplyr::mutate(
+          Test  = "ANOVA",
           nPairs = if ("DFd" %in% names(.)) as.numeric(.data$DFd) else rep(NA_real_, dplyr::n()),
-          XVar   = CategoricalVariable,
-          YVar   = ContinuousVariable,
-          p      = .data$p
+          XVar  = CategoricalVariable,
+          YVar  = ContinuousVariable
         )
+
+      out_list[["anova2"]] <- tab %>% dplyr::select(dplyr::any_of(c("XLabel","YLabel","XVar","YVar","Test","p")))
     }
   }
 
-  P_Chi <- NULL
+  # 4) categorical vs categorical: chi-squared
   if (length(cat_Outcomes) > 0 && length(cat_Predictors) > 0) {
     tmp <- PlotChiSqCovar(
       Data,
@@ -137,23 +173,25 @@ PlotMiningMatrix <- function(
     )
     chi_df <- tmp$p$data
     if (ok_df(chi_df)) {
-      P_Chi <- chi_df %>%
+      chi_df <- chi_df %>%
+        dplyr::mutate(Test = "Chi Squared") %>%
+        extract_p() %>%
         dplyr::mutate(
-          p = dplyr::coalesce(.data$pval, .data$p, NA_real_),
-          Test = "Chi Squared"
+          XVar = NA_character_,
+          YVar = NA_character_
         )
-      if ("pval.adj" %in% names(chi_df)) P_Chi <- P_Chi %>% dplyr::mutate(p_adj = .data$pval.adj)
+      out_list[["chi"]] <- chi_df %>% dplyr::select(dplyr::any_of(c("XLabel","YLabel","XVar","YVar","Test","p")))
     }
   }
 
-  non_null <- list(P_Correlations, P_Anova1, P_Anova2, P_Chi) %>% purrr::keep(ok_df)
+  # combine: bind rows (not joins)
+  non_null <- out_list %>% purrr::keep(ok_df)
   if (length(non_null) == 0) return(empty_return())
 
-  # safer join keys to avoid accidental cartesian explosion
-  join_keys <- c("XLabel","YLabel","XVar","YVar")
-  join_two <- function(a, b) dplyr::full_join(a, b, by = intersect(join_keys, intersect(names(a), names(b))))
-  P_Combined <- Reduce(join_two, non_null)
+  P_Combined <- dplyr::bind_rows(non_null) %>%
+    dplyr::filter(!is.na(p))
 
+  # backfill XVar/YVar from labels if possible
   out_lab  <- sjlabelled::get_label(Data %>% dplyr::select(dplyr::all_of(OutcomeVars)),   def.value = OutcomeVars)
   pred_lab <- sjlabelled::get_label(Data %>% dplyr::select(dplyr::all_of(PredictorVars)), def.value = PredictorVars)
 
@@ -165,14 +203,16 @@ PlotMiningMatrix <- function(
   if (!"YVar" %in% names(P_Combined)) P_Combined$YVar <- NA_character_
 
   P_Combined <- P_Combined %>%
-    dplyr::filter(!is.na(p)) %>%
     dplyr::mutate(
       XVar = ifelse(is.na(XVar) & !is.na(XLabel) & as.character(XLabel) %in% names(any_map),
                     any_map[as.character(XLabel)], XVar),
       YVar = ifelse(is.na(YVar) & !is.na(YLabel) & as.character(YLabel) %in% names(any_map),
-                    any_map[as.character(YLabel)], YVar),
-      p_adj = stats::p.adjust(p, method = "fdr")
-    ) %>%
+                    any_map[as.character(YLabel)], YVar)
+    )
+
+  # FDR correction + stars
+  P_Combined <- P_Combined %>%
+    dplyr::mutate(p_adj = stats::p.adjust(p, method = "fdr")) %>%
     rstatix::add_significance(p.col = "p",     output.col = "stars") %>%
     rstatix::add_significance(p.col = "p_adj", output.col = "stars_fdr") %>%
     dplyr::mutate(
@@ -180,6 +220,7 @@ PlotMiningMatrix <- function(
       stars_fdr = ifelse(stars_fdr == "****", "***", as.character(stars_fdr))
     )
 
+  # axis ordering
   if (Relabel) {
     xorder <- sjlabelled::get_label(Data %>% dplyr::select(dplyr::all_of(OutcomeVars)),   def.value = OutcomeVars)
     yorder <- sjlabelled::get_label(Data %>% dplyr::select(dplyr::all_of(PredictorVars)), def.value = PredictorVars)
@@ -195,7 +236,9 @@ PlotMiningMatrix <- function(
       XLabel    = factor(XLabel, levels = unique(xorder)),
       YLabel    = factor(YLabel, levels = unique(yorder)),
       stars     = factor(stars,     levels = sig_levels),
-      stars_fdr = factor(stars_fdr, levels = sig_levels)
+      stars_fdr = factor(stars_fdr, levels = sig_levels),
+      logp      = -log10(p),
+      logpfdr   = -log10(p_adj)
     )
 
   p <- ggplot2::ggplot(P_Combined, ggplot2::aes(y = YLabel, x = XLabel)) +
