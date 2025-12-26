@@ -11,7 +11,9 @@ PlotAnovaRelationshipsMatrix(
   Covariates = NULL,
   Relabel = TRUE,
   Parametric = TRUE,
-  Ordinal = FALSE
+  Ordinal = FALSE,
+  min_n = 4,
+  eps = 1e-08
 )
 }
 \arguments{

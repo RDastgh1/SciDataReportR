@@ -11,7 +11,9 @@ PlotCorrelationsHeatmap(
   covars = NULL,
   method = "pearson",
   Relabel = TRUE,
-  Ordinal = FALSE
+  Ordinal = FALSE,
+  min_n = 3,
+  eps = 1e-12
 )
 }
 \arguments{
@@ -29,7 +31,9 @@ PlotCorrelationsHeatmap(
 
 \item{Ordinal}{Logical, indicating whether ordinal variables should be included.}
 
-\item{FS}{The font size for the plot. Defaults to 3.}
+\item{min_n}{Minimum complete cases required for a pairwise correlation.}
+
+\item{eps}{Small tolerance to treat near-constant variables as constant.}
 }
 \value{
 A list containing matrices, ggplot objects for visualizations, and details of the method used.

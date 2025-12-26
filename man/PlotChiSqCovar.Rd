@@ -2,7 +2,7 @@
 % Please edit documentation in R/PlotChiSqCovar.R
 \name{PlotChiSqCovar}
 \alias{PlotChiSqCovar}
-\title{Plot Chi-Square Test with Covariate}
+\title{Plot Chi-Square Tests for Categorical Associations (optionally stratified by covariates)}
 \usage{
 PlotChiSqCovar(
   Data,
@@ -10,25 +10,41 @@ PlotChiSqCovar(
   yVars,
   covars = NULL,
   Relabel = TRUE,
-  Ordinal = TRUE
+  Ordinal = TRUE,
+  min_n = 4
 )
 }
 \arguments{
-\item{Data}{The dataset containing the variables.}
+\item{Data}{A data.frame containing the dataset.}
 
-\item{xVars}{A character vector of the names of the x-axis categorical variables.}
+\item{xVars}{Character vector of x-axis categorical variables.}
 
-\item{yVars}{A character vector of the names of the y-axis categorical variables.}
+\item{yVars}{Character vector of y-axis categorical variables. If NULL, uses xVars.}
 
-\item{covars}{A character vector of the names of covariate variables. Defaults to NULL.}
+\item{covars}{Optional character vector of covariate variables used for stratification (not adjustment).}
 
-\item{Relabel}{Logical indicating whether to relabel the variables based on their labels in the dataset. Defaults to TRUE.}
+\item{Relabel}{Logical; whether to use variable labels (sjlabelled) in the plot.}
 
-\item{Ordinal}{Logical, indicating whether ordinal variables should be included.}
+\item{Ordinal}{Logical; included for backward compatibility (currently unused here).}
+
+\item{Stratify}{Logical; if TRUE and covars provided, run chi-square within covariate strata and
+combine p-values with Fisher's method. If FALSE, covars are ignored.}
+
+\item{MinExpected}{Minimum expected cell count threshold for chi-square validity warning.
+(used to annotate; test still runs).}
 }
 \value{
-A list containing ggplot objects for visualizations and tables of p-values.
+A list with:
+\item{p}{ggplot for unadjusted p-values}
+\item{pvaltable}{wide table of unadjusted p-values}
+\item{p_FDR}{ggplot for FDR-adjusted p-values}
+\item{pvaltable_FDR}{wide table of FDR-adjusted p-values}
+\item{details}{long table with diagnostics (n, warnings, strata info)}
 }
 \description{
-This function conducts chi-square tests with covariates and visualizes the results.
+Conducts Chi-square tests between sets of categorical variables and visualizes the results.
+NOTE: Chi-square tests do not natively "adjust" for covariates. If \code{covars} are provided,
+this function can (optionally) run tests \emph{within strata} (each combination of covariate levels),
+and combine p-values across strata (Fisher's method) for a single summary p-value per pair.
+If you need true covariate adjustment, use regression-based models (logistic/multinomial).
 }
