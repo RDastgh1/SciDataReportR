@@ -83,22 +83,36 @@ PlotCorrelationsHeatmap <- function(
     Data[Variables] <- lapply(Data[Variables], as.numeric)
   }
 
-  # ---- prepare covariates data ----
+  # ---- prepare covariates data (FIXED / robust) ----
   if (length(covars) > 0) {
-    cdata <- Data[, covars, drop = FALSE]
+    cdata_raw <- Data[, covars, drop = FALSE]
 
-    # characters to factor; factors to numeric codes; then scale
-    char_vars <- vapply(cdata, is.character, logical(1))
-    if (any(char_vars)) cdata[char_vars] <- lapply(cdata[char_vars], as.factor)
+    # Build numeric design matrix (dummy-code factors/characters).
+    # Remove intercept so columns are directly interpretable.
+    Z <- stats::model.matrix(~ . - 1, data = cdata_raw)
+    cdata <- as.data.frame(Z)
 
-    factor_vars <- vapply(cdata, is.factor, logical(1))
-    if (any(factor_vars)) cdata[factor_vars] <- lapply(cdata[factor_vars], as.numeric)
-
-    # numeric coercion safety
-    cdata <- as.data.frame(lapply(cdata, function(z) suppressWarnings(as.numeric(as.character(z)))))
-    # scrub non-finite BEFORE scale()
+    # numeric coercion + scrub non-finite
+    cdata <- as.data.frame(lapply(cdata, function(z) suppressWarnings(as.numeric(z))))
     cdata <- as.data.frame(lapply(cdata, function(z) ifelse(is.finite(z), z, NA_real_)))
-    cdata <- as.data.frame(scale(cdata))
+
+    # Drop columns all NA
+    keep <- vapply(cdata, function(z) any(!is.na(z)), logical(1))
+    cdata <- cdata[, keep, drop = FALSE]
+
+    # Drop near-constant columns (prevents scale() NaN + singular covariate matrix)
+    if (ncol(cdata) > 0) {
+      v <- vapply(cdata, function(z) stats::var(z, na.rm = TRUE), numeric(1))
+      keep2 <- is.finite(v) & (v > eps)
+      cdata <- cdata[, keep2, drop = FALSE]
+    }
+
+    # Optional safe scaling (not required for partial correlation, but fine)
+    if (ncol(cdata) > 0) {
+      sds <- vapply(cdata, stats::sd, numeric(1), na.rm = TRUE)
+      sds[!is.finite(sds) | sds <= eps] <- 1
+      cdata <- as.data.frame(scale(cdata, center = TRUE, scale = sds))
+    }
   } else {
     cdata <- data.frame()
   }
@@ -136,7 +150,8 @@ PlotCorrelationsHeatmap <- function(
       x <- xdata[[xi]]
       y <- ydata[[yi]]
 
-      d <- if (nrow(cdata) > 0) cbind(x, y, cdata) else cbind(x, y)
+      has_cov <- (ncol(cdata) > 0)
+      d <- if (has_cov) cbind(x, y, cdata) else cbind(x, y)
       d <- stats::na.omit(d)
 
       MN[xi, yi] <- nrow(d)
@@ -151,7 +166,7 @@ PlotCorrelationsHeatmap <- function(
         ok_var <- is.finite(vx) && is.finite(vy) && (vx > eps) && (vy > eps)
 
         if (ok_var) {
-          if (nrow(cdata) > 0) {
+          if (has_cov) {
             tmp <- tryCatch(
               ppcor::pcor.test(
                 d[, 1], d[, 2],
