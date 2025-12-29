@@ -1,224 +1,370 @@
-#' Create directional heatmaps across continuous & binary variables
+#' Plot Correlations Heatmap
 #'
-#' Combines:
-#'  - Continuous~Continuous (Pearson/Spearman)
-#'  - Binary~Binary (Phi; 1 == PositiveLevel)
-#'  - Binary~Continuous (r_pb; 1 == PositiveLevel)
-#' into a single square heatmap with raw and FDR-star overlays.
+#' This function calculates correlations between variables and plots them as a heatmap.
 #'
-#' Constant variables (no variation in the current data) are
-#' automatically excluded before computing any tiles.
-#'
-#' @param Data A dataframe.
-#' @param xVars Character vector of variables for x-axis (subset of Data cols).
-#'              If NULL, uses all detected continuous + binary vars.
-#' @param yVars Character vector for y-axis (defaults to xVars if NULL).
-#' @param Relabel Logical; use sjlabelled variable labels if present.
-#' @param Ordinal Logical; reserved for future use.
-#' @return list(Unadjusted, FDRCorrected, Relabel, BinaryMapping, Excluded)
+#' @param Data The dataset containing the variables.
+#' @param xVars A character vector of the names of the x-axis variables.
+#' @param yVars A character vector of the names of the y-axis variables. Defaults to NULL.
+#' @param covars A character vector of the names of covariate variables. Defaults to NULL.
+#' @param method The correlation method. Defaults to "pearson".
+#' @param Relabel A logical indicating whether to relabel variables. Defaults to TRUE.
+#' @param Ordinal Logical, indicating whether ordinal variables should be included.
+#' @param min_n Minimum complete cases required for a pairwise correlation.
+#' @param eps Small tolerance to treat near-constant variables as constant.
+#' @return A list containing matrices, ggplot objects for visualizations, and details of the method used.
 #' @export
-PlotDirectionalHeatmaps <- function (Data, xVars = NULL, yVars = NULL, Relabel = TRUE, Ordinal = TRUE) {
+PlotCorrelationsHeatmap <- function(
+    Data,
+    xVars = NULL,
+    yVars = NULL,
+    covars = NULL,
+    method = "pearson",
+    Relabel = TRUE,
+    Ordinal = FALSE,
+    min_n = 3,
+    eps = 1e-12
+) {
+  Data <- ReplaceMissingLabels(Data)
 
-  # ---- helpers -------------------------------------------------------------
-  uniq2 <- function(x) length(unique(stats::na.omit(x)))
-  has_two_levels <- function(v) uniq2(Data[[v]]) == 2
-  has_variance   <- function(v) {
-    x <- Data[[v]]
-    x <- suppressWarnings(as.numeric(x))
-    x <- x[is.finite(x)]
-    length(x) >= 2 && stats::var(x) > 0
-  }
-
-  # ---- 1) Determine candidate vars ----------------------------------------
+  # ---- determine vars ----
   if (is.null(xVars)) {
-    Cont_all <- getNumVars(Data)
-    Cat_all  <- getBinaryVars(Data)
-    xVars <- colnames(Data)[colnames(Data) %in% c(Cat_all, Cont_all)]
+    xVars <- getNumVars(Data, Ordinal = isTRUE(Ordinal))
   }
-  if (is.null(yVars)) yVars <- xVars
-
-  cand <- unique(c(xVars, yVars))
-
-  # initial typing from your helpers, but we'll enforce non-constant below
-  Cat0  <- intersect(getBinaryVars(dplyr::select(Data, dplyr::all_of(cand))), cand)
-  Cont0 <- intersect(getNumVars(   dplyr::select(Data, dplyr::all_of(cand))), cand)
-
-  # ---- 2) Drop constants BEFORE any subcalls ------------------------------
-  CatVars  <- Cat0[vapply(Cat0, has_two_levels, logical(1))]
-  ContVars <- Cont0[vapply(Cont0, has_variance,   logical(1))]
-
-  dropped <- setdiff(cand, c(CatVars, ContVars))
-  if (length(dropped)) {
-    reasons <- vapply(dropped, function(v) {
-      if (v %in% Cont0 && !has_variance(v))         return("no variance")
-      if (v %in% Cat0 && !has_two_levels(v))        return("not two levels")
-      if (!(v %in% c(Cat0, Cont0)))                 return("not binary/continuous")
-      "excluded"
-    }, character(1))
-    Excluded <- tibble::tibble(Variable = dropped, Reason = reasons)
+  if (is.null(yVars)) {
+    yVars <- xVars
+    removediag <- TRUE
   } else {
-    Excluded <- tibble::tibble(Variable = character(), Reason = character())
+    removediag <- FALSE
   }
 
-  # refresh axes after exclusions
-  xVars <- xVars[xVars %in% c(CatVars, ContVars)]
-  yVars <- yVars[yVars %in% c(CatVars, ContVars)]
+  xVars <- intersect(as.character(xVars), names(Data))
+  yVars <- intersect(as.character(yVars), names(Data))
 
-  # Build a single binary mapping (stable 1 == PositiveLevel)
-  BinaryMapping <- NULL
-  if (length(CatVars) > 0) {
-    BinaryMapping <- createBinaryMapping(Data, CatVars)
+  # ---- validate covariates and report missing ----
+  covars_in <- covars
+  covars <- if (!is.null(covars) && length(covars) > 0) {
+    intersect(as.character(covars), names(Data))
+  } else {
+    character(0)
   }
+  covars_missing <- setdiff(as.character(covars_in %||% character(0)), covars)
 
-  # ---- 3) Collect tiles from each sub-plotter -----------------------------
-  df_Combined <- tibble::tibble(XVar = character(), YVar = character(),
-                                correlation = numeric(), test = character())
+  # helper: base-R %||%
+  `%||%` <- function(a, b) if (!is.null(a)) a else b
 
-  # Continuous ~ Continuous
-  if (length(ContVars) > 0) {
-    O_ContCont <- PlotCorrelationsHeatmap(Data, ContVars, Relabel = Relabel)
-    df_ContCont <- O_ContCont$Unadjusted$plot$data %>%
-      dplyr::mutate(correlation = R, test = O_ContCont$method)
-    df_Combined <- suppressMessages(dplyr::full_join(df_Combined, df_ContCont))
-  }
-
-  # Binary ~ Binary (Phi)
-  if (length(CatVars) > 1) {  # need at least two
-    O_CatCat <- PlotPhiHeatmap(Data, CatVars, Relabel = Relabel, binary_map = BinaryMapping)
-    df_CatCat <- O_CatCat$Unadjusted$plot$data %>%
-      dplyr::mutate(correlation = Phi, test = "Phi")
-    df_Combined <- suppressMessages(dplyr::full_join(df_Combined, df_CatCat))
-  }
-
-  # Binary ~ Continuous (point-biserial)
-  if (length(CatVars) > 0 & length(ContVars) > 0) {
-    O_CatCont <- PlotPointCorrelationsHeatmap(
-      Data, CatVars, ContVars, Relabel = Relabel, Ordinal = Ordinal, binary_map = BinaryMapping
+  # ---- early exit if nothing to correlate ----
+  if (length(xVars) == 0 || length(yVars) == 0) {
+    empty_plot_data <- data.frame(
+      XVar = character(0), YVar = character(0),
+      R = numeric(0), P = numeric(0), P_adj = numeric(0),
+      nPairs = integer(0),
+      stars = character(0), stars_FDR = character(0),
+      XLabel = character(0), YLabel = character(0),
+      PlotText = character(0),
+      stringsAsFactors = FALSE
     )
 
-    df_CatCont <- O_CatCont$Unadjusted$plot$data %>%
-      dplyr::mutate(stars = `p<.05`, stars_FDR = p.adj.signif) %>%
-      dplyr::select(-`p<.05`, -p.adj.signif) %>%
-      dplyr::mutate(xVar = CategoricalVariable, yVar = ContinuousVariable)
+    P0 <- ggplot2::ggplot(empty_plot_data, ggplot2::aes(x = YLabel, y = XLabel)) +
+      ggplot2::geom_blank() +
+      ggplot2::theme_bw() +
+      ggplot2::labs(subtitle = "No numeric variables available for correlation") +
+      ggplot2::xlab("") + ggplot2::ylab("")
 
-    # make square by duplicating with swapped axes/labels
-    df_CatCont1 <- df_CatCont %>%
-      dplyr::select(-CategoricalVariable, -ContinuousVariable) %>%
-      dplyr::mutate(XVar = xVar, YVar = yVar) %>%
-      dplyr::select(-xVar, -yVar)
+    z <- matrix(numeric(0), nrow = 0, ncol = 0)
+    M0 <- list(r = z, p = z, npairs = z, plot = P0)
 
-    df_CatCont2 <- df_CatCont %>%
-      dplyr::mutate(XVar = yVar, YVar = xVar) %>%
-      dplyr::select(-xVar, -yVar) %>%
-      dplyr::mutate(XL = XLabel, YL = YLabel) %>%
-      dplyr::mutate(YLabel = XL, XLabel = YL) %>%
-      dplyr::select(-CategoricalVariable, -ContinuousVariable, -XL, -YL)
-
-    df_CatContSquare <- rbind(df_CatCont1, df_CatCont2)
-    df_CatContSquare$test <- "Point Correlation"
-    df_Combined <- suppressMessages(dplyr::full_join(df_Combined, df_CatContSquare))
+    return(list(
+      Unadjusted = M0,
+      FDRCorrected = M0,
+      method = method,
+      Relabel = Relabel,
+      Covariates = covars,
+      CovariatesMissing = covars_missing
+    ))
   }
 
-  # ---- 4) Filter to requested axes, lock label order ----------------------
-  df_Combined_plot <- df_Combined %>%
-    dplyr::filter(XVar %in% xVars, YVar %in% yVars)
-
-  # handle fully-empty safely
-  if (nrow(df_Combined_plot) == 0L) {
-    empty_plot <- ggplot2::ggplot() + ggplot2::theme_void() +
-      ggplot2::ggtitle("No valid variable pairs after excluding constants")
-    Unadjusted   <- list(Relabel = Relabel, data = df_Combined_plot, plot = empty_plot)
-    FDRCorrected <- list(Relabel = Relabel, data = df_Combined_plot, plot = empty_plot)
-    return(list(Unadjusted = Unadjusted, FDRCorrected = FDRCorrected,
-                Relabel = Relabel, BinaryMapping = BinaryMapping, Excluded = Excluded))
+  # ---- ordinal handling ----
+  if (isTRUE(Ordinal)) {
+    Variables <- unique(c(xVars, yVars))
+    Data <- ConvertOrdinalToNumeric(Data, Variables)
+    Data[Variables] <- lapply(Data[Variables], as.numeric)
   }
 
-  ordered_xlabels <- sapply(xVars, function(var) df_Combined_plot$XLabel[df_Combined_plot$XVar == var][1])
-  ordered_xlabels <- unique(ordered_xlabels[xVars])
-  ordered_ylabels <- sapply(yVars, function(var) df_Combined_plot$YLabel[df_Combined_plot$YVar == var][1])
-  ordered_ylabels <- unique(ordered_ylabels)
+  # ---- prepare covariates data (row-safe; NA-safe; dummy-coded) ----
+  if (length(covars) > 0) {
+    cdata_raw <- Data[, covars, drop = FALSE]
 
-  df_Combined_plot$XLabel <- factor(df_Combined_plot$XLabel, levels = ordered_xlabels)
-  df_Combined_plot$YLabel <- factor(df_Combined_plot$YLabel, levels = ordered_ylabels)
+    # model.frame with na.pass prevents row dropping when covars have missingness
+    mf <- stats::model.frame(~ . - 1, data = cdata_raw, na.action = stats::na.pass)
 
-  # ---- 5) Build layered heatmap ------------------------------------------
-  p <- ggplot2::ggplot()
+    # model.matrix will preserve row count when mf is built with na.pass
+    Z <- stats::model.matrix(~ . - 1, data = mf)
 
-  if (nrow(dplyr::filter(df_Combined_plot, test == "pearson"))) {
-    p <- p +
-      ggplot2::geom_tile(data = dplyr::filter(df_Combined_plot, test == "pearson"),
-                         ggplot2::aes(x = XLabel, y = YLabel, fill = correlation)) +
-      ggplot2::scale_fill_gradient2(limits = c(-1, 1), name = "r") +
-      ggnewscale::new_scale_fill()
+    cdata <- as.data.frame(Z)
+
+    # numeric coercion + scrub non-finite (keep NAs)
+    cdata <- as.data.frame(lapply(cdata, function(z) suppressWarnings(as.numeric(z))))
+    cdata <- as.data.frame(lapply(cdata, function(z) ifelse(is.finite(z), z, NA_real_)))
+
+    # Drop columns that are all NA
+    keep <- vapply(cdata, function(z) any(!is.na(z)), logical(1))
+    cdata <- cdata[, keep, drop = FALSE]
+
+    # Drop near-constant columns (prevents NaNs and singular covariate matrix issues)
+    if (ncol(cdata) > 0) {
+      v <- vapply(cdata, function(z) stats::var(z, na.rm = TRUE), numeric(1))
+      keep2 <- is.finite(v) & (v > eps)
+      cdata <- cdata[, keep2, drop = FALSE]
+    }
+
+    # Optional safe scaling (not required for partial correlation; keeps numeric stable)
+    if (ncol(cdata) > 0) {
+      sds <- vapply(cdata, stats::sd, numeric(1), na.rm = TRUE)
+      sds[!is.finite(sds) | sds <= eps] <- 1
+      cdata <- as.data.frame(scale(cdata, center = TRUE, scale = sds))
+    }
+  } else {
+    cdata <- data.frame()
   }
 
-  if (nrow(dplyr::filter(df_Combined_plot, test == "spearman"))) {
-    p <- p +
-      ggplot2::geom_tile(data = dplyr::filter(df_Combined_plot, test == "spearman"),
-                         ggplot2::aes(x = XLabel, y = YLabel, fill = correlation)) +
-      ggplot2::scale_fill_gradient2(limits = c(-1, 1), name = "\u03C1") +
-      ggnewscale::new_scale_fill()
+  # ---- ensure covariate row alignment ----
+  if (ncol(cdata) > 0 && nrow(cdata) != nrow(Data)) {
+    stop("Covariate matrix row count does not match Data row count. This should not happen with na.pass.")
   }
 
-  if (nrow(dplyr::filter(df_Combined_plot, test == "Phi"))) {
-    p <- p +
-      ggplot2::geom_tile(data = dplyr::filter(df_Combined_plot, test == "Phi"),
-                         ggplot2::aes(x = XLabel, y = YLabel, fill = correlation)) +
-      ggplot2::scale_fill_gradient2(limits = c(-1, 1),
-                                    name = "\u03A6",
-                                    low  = scales::muted("purple"),
-                                    high = scales::muted("green")) +
-      ggnewscale::new_scale_fill()
+  xdata <- Data[, xVars, drop = FALSE]
+  ydata <- Data[, yVars, drop = FALSE]
+
+  # ---- coerce x/y to numeric safely ----
+  xdata <- as.data.frame(lapply(xdata, function(z) {
+    if (is.numeric(z) || is.integer(z)) return(as.numeric(z))
+    suppressWarnings(as.numeric(as.character(z)))
+  }))
+  ydata <- as.data.frame(lapply(ydata, function(z) {
+    if (is.numeric(z) || is.integer(z)) return(as.numeric(z))
+    suppressWarnings(as.numeric(as.character(z)))
+  }))
+
+  # ---- scrub non-finite values globally (render-safe) ----
+  xdata <- as.data.frame(lapply(xdata, function(z) ifelse(is.finite(z), z, NA_real_)))
+  ydata <- as.data.frame(lapply(ydata, function(z) ifelse(is.finite(z), z, NA_real_)))
+  if (ncol(cdata) > 0) {
+    cdata <- as.data.frame(lapply(cdata, function(z) ifelse(is.finite(z), z, NA_real_)))
   }
 
-  if (nrow(dplyr::filter(df_Combined_plot, test == "Point Correlation"))) {
-    p <- p +
-      ggplot2::geom_tile(data = dplyr::filter(df_Combined_plot, test == "Point Correlation"),
-                         ggplot2::aes(x = XLabel, y = YLabel, fill = correlation)) +
-      ggplot2::scale_fill_gradient2(limits = c(-1, 1),
-                                    name = expression(r[pb]),
-                                    low  = scales::muted("#FFA500"),
-                                    high = scales::muted("#008080")) +
-      ggnewscale::new_scale_fill()
+  # ---- init matrices ----
+  MC <- matrix(NA_real_, nrow = ncol(xdata), ncol = ncol(ydata),
+               dimnames = list(colnames(xdata), colnames(ydata)))
+  MP <- MC
+  MN <- MC
+
+  # ---- compute correlations ----
+  for (xi in seq_len(ncol(xdata))) {
+    for (yi in seq_len(ncol(ydata))) {
+
+      x <- xdata[[xi]]
+      y <- ydata[[yi]]
+
+      has_cov <- (ncol(cdata) > 0)
+
+      d <- if (has_cov) cbind(x, y, cdata) else cbind(x, y)
+      d <- stats::na.omit(d)
+
+      MN[xi, yi] <- nrow(d)
+
+      est <- NA_real_
+      pval <- NA_real_
+
+      # Optional stricter guard: need enough rows given number of covariates
+      # (ppcor can be fragile when n is too small)
+      min_needed <- if (has_cov) max(min_n, ncol(cdata) + 3) else min_n
+
+      if (nrow(d) >= min_needed) {
+        vx <- stats::var(d[, 1])
+        vy <- stats::var(d[, 2])
+
+        ok_var <- is.finite(vx) && is.finite(vy) && (vx > eps) && (vy > eps)
+
+        if (ok_var) {
+          if (has_cov) {
+            tmp <- tryCatch(
+              ppcor::pcor.test(
+                d[, 1], d[, 2],
+                d[, seq(3, ncol(d)), drop = FALSE],
+                method = method
+              ),
+              error = function(e) NULL
+            )
+            if (!is.null(tmp)) {
+              est <- unname(tmp$estimate)
+              pval <- tmp$p.value
+            }
+          } else {
+            tmp <- tryCatch(
+              stats::cor.test(d[, 1], d[, 2], method = method),
+              error = function(e) NULL
+            )
+            if (!is.null(tmp)) {
+              est <- unname(tmp$estimate)
+              pval <- tmp$p.value
+            }
+          }
+        }
+      }
+
+      MC[xi, yi] <- est
+      MP[xi, yi] <- pval
+    }
   }
 
-  # reset limits to preserve ordering
-  p <- p +
-    ggplot2::scale_x_discrete(limits = levels(df_Combined_plot$XLabel)) +
-    ggplot2::scale_y_discrete(limits = levels(df_Combined_plot$YLabel))
+  if (removediag) {
+    diag(MC) <- NaN
+    diag(MP) <- NaN
+    diag(MN) <- NaN
+  }
 
-  # annotate with raw and FDR stars
-  p_raw <- p +
-    ggplot2::geom_text(data = df_Combined_plot,
-                       ggplot2::aes(x = XLabel, y = YLabel, label = stars),
-                       color = "black") +
+  # Keep NaN for unusable, but ensure we don't crash downstream
+  MC[MN < 2] <- NaN
+  MP[MN < 2] <- NaN
+
+  # ---- FDR adjust robustly (ignore NA/NaN) ----
+  pvec <- as.vector(MP)
+  padj <- rep(NA_real_, length(pvec))
+  okp <- is.finite(pvec)
+  if (any(okp)) {
+    padj[okp] <- stats::p.adjust(pvec[okp], method = "fdr")
+  }
+  M_FDR_p <- matrix(padj, nrow = nrow(MP), ncol = ncol(MP), dimnames = dimnames(MP))
+  if (removediag) diag(M_FDR_p) <- NaN
+
+  # ---- long plot data (guard: if matrices are 0-dim, return empty) ----
+  if (nrow(MC) == 0 || ncol(MC) == 0) {
+    empty_plot_data <- data.frame(
+      XVar = character(0), YVar = character(0),
+      R = numeric(0), P = numeric(0), P_adj = numeric(0),
+      nPairs = integer(0),
+      stars = character(0), stars_FDR = character(0),
+      XLabel = character(0), YLabel = character(0),
+      PlotText = character(0),
+      stringsAsFactors = FALSE
+    )
+
+    P0 <- ggplot2::ggplot(empty_plot_data, ggplot2::aes(x = YLabel, y = XLabel)) +
+      ggplot2::geom_blank() +
+      ggplot2::theme_bw() +
+      ggplot2::labs(subtitle = "No numeric variables available for correlation") +
+      ggplot2::xlab("") + ggplot2::ylab("")
+
+    z <- matrix(numeric(0), nrow = 0, ncol = 0)
+    M0 <- list(r = z, p = z, npairs = z, plot = P0)
+
+    return(list(
+      Unadjusted = M0,
+      FDRCorrected = M0,
+      method = method,
+      Relabel = Relabel,
+      Covariates = covars,
+      CovariatesMissing = covars_missing
+    ))
+  }
+
+  plot.data_R <- tidyr::pivot_longer(
+    tibble::rownames_to_column(as.data.frame(MC), var = "XVar"),
+    cols = colnames(MC), names_to = "YVar", values_to = "R"
+  )
+  plot.data_P <- tidyr::pivot_longer(
+    tibble::rownames_to_column(as.data.frame(MP), var = "XVar"),
+    cols = colnames(MP), names_to = "YVar", values_to = "P"
+  )
+  plot.data_P_adj <- tidyr::pivot_longer(
+    tibble::rownames_to_column(as.data.frame(M_FDR_p), var = "XVar"),
+    cols = colnames(M_FDR_p), names_to = "YVar", values_to = "P_adj"
+  )
+  plot.data_npairs <- tidyr::pivot_longer(
+    tibble::rownames_to_column(as.data.frame(MN), var = "XVar"),
+    cols = colnames(MN), names_to = "YVar", values_to = "nPairs"
+  )
+
+  plot.data <- suppressMessages(
+    dplyr::left_join(plot.data_R, plot.data_P, by = c("XVar", "YVar")) |>
+      dplyr::left_join(plot.data_P_adj, by = c("XVar", "YVar")) |>
+      dplyr::left_join(plot.data_npairs, by = c("XVar", "YVar"))
+  )
+
+  plot.data$stars <- cut(plot.data$P,
+                         breaks = c(-Inf, 0.001, 0.01, 0.05, Inf),
+                         labels = c("***", "**", "*", ""))
+  plot.data$stars_FDR <- cut(plot.data$P_adj,
+                             breaks = c(-Inf, 0.001, 0.01, 0.05, Inf),
+                             labels = c("***", "**", "*", ""))
+
+  # ---- labels (robust to duplicates) ----
+  if (isTRUE(Relabel)) {
+    Data <- ReplaceMissingLabels(Data)
+
+    x_unique <- unique(as.character(plot.data$XVar))
+    y_unique <- unique(as.character(plot.data$YVar))
+
+    xlabels <- sjlabelled::get_label(Data[x_unique], def.value = x_unique)
+    ylabels <- sjlabelled::get_label(Data[y_unique], def.value = y_unique)
+
+    plot.data$XLabel <- unname(xlabels[as.character(plot.data$XVar)])
+    plot.data$YLabel <- unname(ylabels[as.character(plot.data$YVar)])
+  } else {
+    plot.data$XLabel <- plot.data$XVar
+    plot.data$YLabel <- plot.data$YVar
+  }
+
+  plot.data$XLabel <- factor(plot.data$XLabel, ordered = FALSE, levels = rev(unique(plot.data$XLabel)))
+  plot.data$YLabel <- factor(plot.data$YLabel, ordered = FALSE, levels = unique(plot.data$YLabel))
+
+  fmt_num <- function(x, digits = 3) ifelse(is.na(x) | is.nan(x), "NA", formatC(x, format = "f", digits = digits))
+  fmt_p   <- function(x) ifelse(is.na(x) | is.nan(x), "NA", format.pval(x, digits = 3, eps = 1e-3))
+
+  plot.data$PlotText <- paste0(
+    "<b>Y:</b> ", plot.data$YVar,
+    "<br><b>X:</b> ", plot.data$XVar,
+    "<br><b>r:</b> ", fmt_num(plot.data$R, digits = 3),
+    "<br><b>p:</b> ", fmt_p(plot.data$P), " ", plot.data$stars,
+    "<br><b>FDR p:</b> ", fmt_p(plot.data$P_adj), " ", plot.data$stars_FDR,
+    "<br><b>nPairs:</b> ", ifelse(is.na(plot.data$nPairs) | is.nan(plot.data$nPairs), "NA", plot.data$nPairs),
+    if (length(covars) > 0) paste0("<br><b>Covars:</b> ", paste(covars, collapse = ", ")) else "",
+    if (length(covars_missing) > 0) paste0("<br><b>Missing covars:</b> ", paste(covars_missing, collapse = ", ")) else ""
+  )
+
+  P <- ggplot2::ggplot(plot.data, ggplot2::aes(y = XLabel, x = YLabel, fill = R, text = PlotText)) +
+    ggplot2::geom_tile() +
+    ggplot2::geom_text(ggplot2::aes(label = stars), color = "black") +
+    ggplot2::scale_fill_gradient2(limits = c(-1, 1)) +
     ggplot2::theme(
       axis.title.x = ggplot2::element_blank(),
       axis.title.y = ggplot2::element_blank(),
-      axis.text.y  = ggplot2::element_text(size = 7),
-      legend.text  = ggplot2::element_text(size = 15),
-      axis.text.x  = ggplot2::element_text(angle = 90, vjust = 0.5, hjust = 1)
+      axis.text.y = ggplot2::element_text(size = 7),
+      legend.text = ggplot2::element_text(size = 15),
+      axis.text.x = ggplot2::element_text(angle = 90, vjust = 0.5, hjust = 1)
     )
 
-  p_FDR <- p +
-    ggplot2::geom_text(data = df_Combined_plot,
-                       ggplot2::aes(x = XLabel, y = YLabel, label = stars_FDR),
-                       color = "black") +
+  P_FDR <- ggplot2::ggplot(plot.data, ggplot2::aes(y = XLabel, x = YLabel, fill = R, text = PlotText)) +
+    ggplot2::geom_tile() +
+    ggplot2::geom_text(ggplot2::aes(label = stars_FDR), color = "black") +
+    ggplot2::scale_fill_gradient2(limits = c(-1, 1)) +
     ggplot2::theme(
       axis.title.x = ggplot2::element_blank(),
       axis.title.y = ggplot2::element_blank(),
-      axis.text.y  = ggplot2::element_text(size = 7),
-      legend.text  = ggplot2::element_text(size = 15),
-      axis.text.x  = ggplot2::element_text(angle = 90, vjust = 0.5, hjust = 1)
+      axis.text.y = ggplot2::element_text(size = 7),
+      legend.text = ggplot2::element_text(size = 15),
+      axis.text.x = ggplot2::element_text(angle = 90, vjust = 0.5, hjust = 1)
     )
 
-  # ---- 6) Return ----------------------------------------------------------
-  Unadjusted   <- list(Relabel = Relabel, data = df_Combined_plot, plot = p_raw)
-  FDRCorrected <- list(Relabel = Relabel, data = df_Combined_plot, plot = p_FDR)
+  M <- list(r = MC, p = MP, npairs = MN, plot = P)
+  M_FDR <- list(r = MC, p = M_FDR_p, npairs = MN, plot = P_FDR)
 
-  list(Unadjusted   = Unadjusted,
-       FDRCorrected = FDRCorrected,
-       Relabel      = Relabel,
-       BinaryMapping= BinaryMapping,
-       Excluded     = Excluded)
+  list(
+    Unadjusted = M,
+    FDRCorrected = M_FDR,
+    method = method,
+    Relabel = Relabel,
+    Covariates = covars,
+    CovariatesMissing = covars_missing
+  )
 }
