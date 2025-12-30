@@ -1,3 +1,22 @@
+#' PlotMiningMatrix
+#'
+#' Generate a matrix of statistical relationships between outcome and predictor variables.
+#' Returns unadjusted and FDR-adjusted results plus corresponding dot-matrix plots.
+#'
+#' @param Data A data frame.
+#' @param OutcomeVars Outcome variables (typically numeric, e.g., biomarker-by-batch columns).
+#' @param PredictorVars Predictor variables (covariates to scan).
+#' @param Covariates Optional adjustment covariates.
+#' @param Relabel Whether to use variable labels instead of names.
+#' @param Parametric If TRUE uses Pearson; if FALSE uses Spearman and non-parametric ANOVA where relevant.
+#'
+#' @return List with Unadjusted (PvalTable, plot), FDRCorrected (PvalTable, plot),
+#'         method, Relabel, Covariates.
+#'
+#' @import dplyr ggplot2 rstatix sjlabelled paletteer
+#' @importFrom stats p.adjust
+#' @importFrom magrittr %>%
+#' @export
 PlotMiningMatrix <- function(
     Data,
     OutcomeVars,
