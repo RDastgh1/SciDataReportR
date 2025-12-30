@@ -1,22 +1,3 @@
-#' PlotMiningMatrix
-#'
-#' Generate a matrix of statistical relationships between outcome and predictor variables.
-#' Returns unadjusted and FDR-adjusted results plus corresponding dot-matrix plots.
-#'
-#' @param Data A data frame.
-#' @param OutcomeVars Outcome variables (typically numeric, e.g., biomarker-by-batch columns).
-#' @param PredictorVars Predictor variables (covariates to scan).
-#' @param Covariates Optional adjustment covariates.
-#' @param Relabel Whether to use variable labels instead of names.
-#' @param Parametric If TRUE uses Pearson; if FALSE uses Spearman and non-parametric ANOVA where relevant.
-#'
-#' @return List with Unadjusted (PvalTable, plot), FDRCorrected (PvalTable, plot),
-#'         method, Relabel, Covariates.
-#'
-#' @import dplyr ggplot2 rstatix sjlabelled paletteer
-#' @importFrom stats p.adjust
-#' @importFrom magrittr %>%
-#' @export
 PlotMiningMatrix <- function(
     Data,
     OutcomeVars,
@@ -30,22 +11,41 @@ PlotMiningMatrix <- function(
 
   OutcomeVars   <- unique(intersect(as.character(OutcomeVars), names(Data)))
   PredictorVars <- unique(intersect(as.character(PredictorVars), names(Data)))
-
   Covariates <- if (!is.null(Covariates) && length(Covariates) > 0) {
     unique(intersect(as.character(Covariates), names(Data)))
   } else NULL
 
-  # Map syntactic names back to originals (critical for spaces/symbols like "<=50 PLASMA")
+  # Map syntactic names back to originals (spaces/symbols like "<=50 PLASMA")
   out_synt  <- make.names(OutcomeVars)
   pred_synt <- make.names(PredictorVars)
-
-  map_out  <- setNames(OutcomeVars, out_synt)
-  map_pred <- setNames(PredictorVars, pred_synt)
+  map_out   <- setNames(OutcomeVars, out_synt)
+  map_pred  <- setNames(PredictorVars, pred_synt)
 
   map_back <- function(x, map) {
     x <- as.character(x)
-    x[!is.na(x) & x %in% names(map)] <- unname(map[x[!is.na(x) & x %in% names(map)]])
+    idx <- !is.na(x) & x %in% names(map)
+    x[idx] <- unname(map[x[idx]])
     x
+  }
+
+  # Safe column getter (never errors if missing)
+  col_or_na <- function(df, nm, type = c("numeric", "character")) {
+    type <- match.arg(type)
+    if (!nm %in% names(df)) {
+      if (type == "numeric") return(rep(NA_real_, nrow(df)))
+      return(rep(NA_character_, nrow(df)))
+    }
+    if (type == "numeric") return(suppressWarnings(as.numeric(df[[nm]])))
+    as.character(df[[nm]])
+  }
+
+  # Safe p coalescer (works even if only one of these exists)
+  coalesce_p <- function(df) {
+    out <- rep(NA_real_, nrow(df))
+    for (nm in c("p", "P", "pval", "p.value", "p_value")) {
+      if (nm %in% names(df)) out <- dplyr::coalesce(out, suppressWarnings(as.numeric(df[[nm]])))
+    }
+    out
   }
 
   empty_return <- function() {
@@ -53,15 +53,15 @@ PlotMiningMatrix <- function(
     p0 <- ggplot2::ggplot(data.frame(x = 1, y = 1), ggplot2::aes(x, y)) +
       ggplot2::geom_blank() + ggplot2::theme_void()
     list(
-      Unadjusted    = list(PvalTable = empty, plot = p0),
-      FDRCorrected  = list(PvalTable = empty, plot = p0),
+      Unadjusted   = list(PvalTable = empty, plot = p0),
+      FDRCorrected = list(PvalTable = empty, plot = p0),
       method = method, Relabel = Relabel, Covariates = Covariates
     )
   }
 
   if (length(OutcomeVars) == 0 || length(PredictorVars) == 0) return(empty_return())
 
-  # split numeric vs categorical using SciDataReportR helpers
+  # split numeric vs categorical
   num_Outcomes   <- SciDataReportR::getNumVars(Data %>% dplyr::select(dplyr::all_of(OutcomeVars)))
   cat_Outcomes   <- SciDataReportR::getCatVars(Data %>% dplyr::select(dplyr::all_of(OutcomeVars)))
   num_Predictors <- SciDataReportR::getNumVars(Data %>% dplyr::select(dplyr::all_of(PredictorVars)))
@@ -74,17 +74,15 @@ PlotMiningMatrix <- function(
     if (!ok_df(df)) return(df)
     if (!"p" %in% names(df)) {
       if ("P" %in% names(df)) df$p <- df$P
-      if ("pval" %in% names(df)) df$p <- df$pval
-      if ("p.value" %in% names(df)) df$p <- df$`p.value`
+      else if ("pval" %in% names(df)) df$p <- df$pval
+      else if ("p.value" %in% names(df)) df$p <- df[["p.value"]]
+      else if ("p_value" %in% names(df)) df$p <- df[["p_value"]]
     }
     df
   }
 
   # --------------------
-  # Correlations (numeric predictors vs numeric outcomes)
-  # We want: X axis = outcomes, Y axis = predictors.
-  # PlotCorrelationsHeatmap typically treats X as predictor and Y as outcome.
-  # So we explicitly re-assign rather than "swap rename" (which can be fragile).
+  # Correlations: numeric predictors vs numeric outcomes
   # --------------------
   P_Correlations <- NULL
   if (length(num_Outcomes) > 0 && length(num_Predictors) > 0) {
@@ -104,27 +102,31 @@ PlotMiningMatrix <- function(
 
       cor_df <- tmp$Unadjusted$plot$data
 
-      # Create standardized fields:
-      # - XVar / XLabel represent OUTCOME (batch biomarker column)
-      # - YVar / YLabel represent PREDICTOR (covariate)
-      # If PlotCorrelationsHeatmap stores predictor in X and outcome in Y, we flip them safely:
-      P_Correlations <- cor_df %>%
-        dplyr::mutate(
-          Test  = method,
-          p     = dplyr::coalesce(.data$P, .data$p, .data$pval, .data$`p.value`),
-          XVar  = dplyr::coalesce(as.character(.data$YVar),  as.character(.data$YVar),  NA_character_),
-          YVar  = dplyr::coalesce(as.character(.data$XVar),  as.character(.data$XVar),  NA_character_),
-          XLabel = dplyr::coalesce(as.character(.data$YLabel), as.character(.data$YVar)),
-          YLabel = dplyr::coalesce(as.character(.data$XLabel), as.character(.data$XVar))
-        ) %>%
-        dplyr::select(-dplyr::any_of("P_adj"))
+      # Build a clean correlations table WITHOUT touching missing columns
+      orig_XVar   <- col_or_na(cor_df, "XVar", "character")
+      orig_YVar   <- col_or_na(cor_df, "YVar", "character")
+      orig_XLabel <- dplyr::coalesce(col_or_na(cor_df, "XLabel", "character"), orig_XVar)
+      orig_YLabel <- dplyr::coalesce(col_or_na(cor_df, "YLabel", "character"), orig_YVar)
+
+      P_Correlations <- cor_df
+      P_Correlations$p    <- coalesce_p(cor_df)
+      P_Correlations$Test <- method
+
+      # Flip so that X = Outcome (batch biomarker column), Y = Predictor (covariate)
+      P_Correlations$XVar   <- orig_YVar
+      P_Correlations$YVar   <- orig_XVar
+      P_Correlations$XLabel <- orig_YLabel
+      P_Correlations$YLabel <- orig_XLabel
+
+      # Drop adjusted p column if present
+      P_Correlations <- P_Correlations %>% dplyr::select(-dplyr::any_of("P_adj"))
 
       P_Correlations <- normalize_p_cols(P_Correlations)
     }
   }
 
   # --------------------
-  # ANOVA / Kruskal (categorical predictor vs numeric outcome)
+  # ANOVA / Kruskal: categorical predictors vs numeric outcomes
   # --------------------
   P_Anova1 <- NULL
   if (length(cat_Predictors) > 0 && length(num_Outcomes) > 0) {
@@ -143,21 +145,18 @@ PlotMiningMatrix <- function(
         dplyr::select(-dplyr::any_of(c("p.adj","p.adj.signif","logp_FDR"))) %>%
         dplyr::mutate(
           nPairs = if ("DFd" %in% names(.)) .data$DFd else NA_real_,
-          # enforce axis meaning: X = outcome, Y = predictor
-          XVar = as.character(.data$ContinuousVariable),
-          YVar = as.character(.data$CategoricalVariable),
+          XVar   = as.character(.data$ContinuousVariable),     # outcome
+          YVar   = as.character(.data$CategoricalVariable),    # predictor
           XLabel = dplyr::coalesce(as.character(.data$YLabel), as.character(.data$ContinuousVariable)),
           YLabel = dplyr::coalesce(as.character(.data$XLabel), as.character(.data$CategoricalVariable)),
-          Test = "ANOVA"
+          Test   = "ANOVA"
         )
-
       P_Anova1 <- normalize_p_cols(P_Anova1)
     }
   }
 
   # --------------------
-  # ANOVA / Kruskal (categorical outcome vs numeric predictor) – less common in your use,
-  # but keep for completeness.
+  # ANOVA / Kruskal: categorical outcomes vs numeric predictors (kept for completeness)
   # --------------------
   P_Anova2 <- NULL
   if (length(cat_Outcomes) > 0 && length(num_Predictors) > 0) {
@@ -176,20 +175,18 @@ PlotMiningMatrix <- function(
         dplyr::select(-dplyr::any_of(c("p.adj","p.adj.signif","logp_FDR"))) %>%
         dplyr::mutate(
           nPairs = if ("DFd" %in% names(.)) .data$DFd else NA_real_,
-          # enforce axis meaning: X = outcome, Y = predictor
-          XVar = as.character(.data$CategoricalVariable),
-          YVar = as.character(.data$ContinuousVariable),
+          XVar   = as.character(.data$CategoricalVariable),   # outcome
+          YVar   = as.character(.data$ContinuousVariable),    # predictor
           XLabel = dplyr::coalesce(as.character(.data$XLabel), as.character(.data$CategoricalVariable)),
           YLabel = dplyr::coalesce(as.character(.data$YLabel), as.character(.data$ContinuousVariable)),
-          Test = "ANOVA"
+          Test   = "ANOVA"
         )
-
       P_Anova2 <- normalize_p_cols(P_Anova2)
     }
   }
 
   # --------------------
-  # Chi-square (categorical predictor vs categorical outcome)
+  # Chi-square: categorical predictors vs categorical outcomes
   # --------------------
   P_Chi <- NULL
   if (length(cat_Outcomes) > 0 && length(cat_Predictors) > 0) {
@@ -204,17 +201,14 @@ PlotMiningMatrix <- function(
     if (!is.null(tmp) && !is.null(tmp$p) && ok_df(tmp$p$data)) {
 
       chi_df <- tmp$p$data
+      if ("pval" %in% names(chi_df)) chi_df$p <- chi_df$pval
+      if ("pval.adj" %in% names(chi_df)) chi_df$p_adj <- chi_df$pval.adj
 
-      if ("pval" %in% names(chi_df)) chi_df <- chi_df %>% dplyr::mutate(p = .data$pval)
-      if ("pval.adj" %in% names(chi_df)) chi_df <- chi_df %>% dplyr::mutate(p_adj = .data$pval.adj)
-
-      P_Chi <- chi_df %>%
-        dplyr::mutate(
-          Test = "Chi Squared",
-          XLabel = dplyr::coalesce(as.character(.data$XLabel), as.character(.data$XVar)),
-          YLabel = dplyr::coalesce(as.character(.data$YLabel), as.character(.data$YVar))
-        )
-
+      P_Chi <- chi_df %>% dplyr::mutate(
+        Test = "Chi Squared",
+        XLabel = dplyr::coalesce(as.character(.data$XLabel), as.character(.data$XVar)),
+        YLabel = dplyr::coalesce(as.character(.data$YLabel), as.character(.data$YVar))
+      )
       P_Chi <- normalize_p_cols(P_Chi)
     }
   }
@@ -222,15 +216,10 @@ PlotMiningMatrix <- function(
   non_null <- list(P_Correlations, P_Anova1, P_Anova2, P_Chi) %>% purrr::keep(ok_df)
   if (length(non_null) == 0) return(empty_return())
 
-  P_Combined <- dplyr::bind_rows(non_null) %>%
-    normalize_p_cols()
+  P_Combined <- dplyr::bind_rows(non_null) %>% normalize_p_cols()
 
-  # Backfill labels from vars when missing
-  if (!"XVar" %in% names(P_Combined)) P_Combined$XVar <- NA_character_
-  if (!"YVar" %in% names(P_Combined)) P_Combined$YVar <- NA_character_
-  if (!"XLabel" %in% names(P_Combined)) P_Combined$XLabel <- NA_character_
-  if (!"YLabel" %in% names(P_Combined)) P_Combined$YLabel <- NA_character_
-
+  # Ensure fields exist
+  for (nm in c("XVar","YVar","XLabel","YLabel")) if (!nm %in% names(P_Combined)) P_Combined[[nm]] <- NA_character_
   P_Combined <- P_Combined %>%
     dplyr::mutate(
       XVar   = as.character(.data$XVar),
@@ -239,7 +228,7 @@ PlotMiningMatrix <- function(
       YLabel = dplyr::coalesce(as.character(.data$YLabel), .data$YVar)
     )
 
-  # If not relabeling, map syntactic names back to original names
+  # Map syntactic names back to originals when Relabel=FALSE
   if (!Relabel) {
     P_Combined <- P_Combined %>%
       dplyr::mutate(
@@ -250,7 +239,7 @@ PlotMiningMatrix <- function(
       )
   }
 
-  # Drop true NA and literal "NA" text (some upstream outputs do this)
+  # Drop NA / literal "NA"
   P_Combined <- P_Combined %>%
     dplyr::filter(
       !is.na(.data$XLabel), !is.na(.data$YLabel),
@@ -279,7 +268,6 @@ PlotMiningMatrix <- function(
     xorder <- OutcomeVars
     yorder <- PredictorVars
   }
-
   xorder <- unique(xorder)
   yorder <- unique(yorder)
 
@@ -290,29 +278,27 @@ PlotMiningMatrix <- function(
       XLabel = factor(.data$XLabel, levels = xorder),
       YLabel = factor(.data$YLabel, levels = yorder),
       stars = factor(.data$stars, levels = sig_levels),
-      stars_fdr = factor(.data$stars_fdr, levels = sig_levels),
-      logp = -log10(.data$p),
-      logpfdr = -log10(.data$p_adj)
+      stars_fdr = factor(.data$stars_fdr, levels = sig_levels)
     )
 
-  # Discrete size mapping without ggplot warning
-  size_map <- c("ns" = 2.5, "*" = 3.5, "**" = 4.5, "***" = 5.5, "****" = 6.5)
+  # Avoid ggplot warning by mapping size to numeric
+  size_num_map <- c("ns" = 1, "*" = 2, "**" = 3, "***" = 4, "****" = 5)
+  P_Combined$stars_num     <- unname(size_num_map[as.character(P_Combined$stars)])
+  P_Combined$stars_fdr_num <- unname(size_num_map[as.character(P_Combined$stars_fdr)])
 
   p <- ggplot2::ggplot(P_Combined, ggplot2::aes(y = YLabel, x = XLabel)) +
-    ggplot2::geom_point(ggplot2::aes(size = stars, colour = stars), shape = 18) +
-    ggplot2::scale_size_manual(values = size_map, drop = FALSE) +
+    ggplot2::geom_point(ggplot2::aes(size = stars_num, colour = stars), shape = 18) +
+    ggplot2::scale_size_continuous(range = c(2.5, 6.5), guide = "none") +
     ggplot2::scale_color_manual(values = paletteer::paletteer_c("grDevices::Purple-Yellow", n = 5, direction = -1), drop = FALSE) +
-    ggplot2::guides(size = "none") +
     ggplot2::labs(subtitle = "No Multiple Comparison Correction") +
     ggplot2::xlab("") + ggplot2::ylab("") + ggplot2::theme_bw() +
     ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, hjust = 1),
                    legend.title = ggplot2::element_blank())
 
   p_FDR <- ggplot2::ggplot(P_Combined, ggplot2::aes(y = YLabel, x = XLabel)) +
-    ggplot2::geom_point(ggplot2::aes(size = stars_fdr, colour = stars_fdr), shape = 18) +
-    ggplot2::scale_size_manual(values = size_map, drop = FALSE) +
+    ggplot2::geom_point(ggplot2::aes(size = stars_fdr_num, colour = stars_fdr), shape = 18) +
+    ggplot2::scale_size_continuous(range = c(2.5, 6.5), guide = "none") +
     ggplot2::scale_color_manual(values = paletteer::paletteer_c("grDevices::Purple-Yellow", n = 5, direction = -1), drop = FALSE) +
-    ggplot2::guides(size = "none") +
     ggplot2::labs(subtitle = "FDR Correction") +
     ggplot2::xlab("") + ggplot2::ylab("") + ggplot2::theme_bw() +
     ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, hjust = 1),
