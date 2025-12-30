@@ -27,7 +27,8 @@ Imports:
     tibble,
     kableExtra,
     gtsummary,
-    paletteer
+    paletteer,
+    purrr
 Suggests:
     BlandAltmanLeh,
     ggrepel,

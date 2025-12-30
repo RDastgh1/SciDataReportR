@@ -11,11 +11,16 @@
 #' @param Parametric If TRUE uses Pearson; if FALSE uses Spearman and non-parametric ANOVA where relevant.
 #'
 #' @return List with Unadjusted (PvalTable, plot), FDRCorrected (PvalTable, plot),
-#'         method, Relabel, Covariates.
+#'   method, Relabel, Covariates.
 #'
-#' @import dplyr ggplot2 rstatix sjlabelled paletteer
-#' @importFrom stats p.adjust
+#' @importFrom dplyr select mutate filter bind_rows coalesce any_of all_of
 #' @importFrom magrittr %>%
+#' @importFrom purrr keep
+#' @importFrom stats p.adjust
+#' @importFrom sjlabelled get_label
+#' @importFrom rstatix add_significance
+#' @importFrom ggplot2 ggplot aes geom_point scale_size_continuous scale_color_manual
+#' @importFrom ggplot2 labs xlab ylab theme_bw theme element_text element_blank geom_blank theme_void
 #' @export
 PlotMiningMatrix <- function(
     Data,
@@ -37,8 +42,8 @@ PlotMiningMatrix <- function(
   # Map syntactic names back to originals (spaces/symbols like "<=50 PLASMA")
   out_synt  <- make.names(OutcomeVars)
   pred_synt <- make.names(PredictorVars)
-  map_out   <- setNames(OutcomeVars, out_synt)
-  map_pred  <- setNames(PredictorVars, pred_synt)
+  map_out   <- stats::setNames(OutcomeVars, out_synt)
+  map_pred  <- stats::setNames(PredictorVars, pred_synt)
 
   map_back <- function(x, map) {
     x <- as.character(x)
@@ -62,9 +67,25 @@ PlotMiningMatrix <- function(
   coalesce_p <- function(df) {
     out <- rep(NA_real_, nrow(df))
     for (nm in c("p", "P", "pval", "p.value", "p_value")) {
-      if (nm %in% names(df)) out <- dplyr::coalesce(out, suppressWarnings(as.numeric(df[[nm]])))
+      if (nm %in% names(df)) {
+        out <- dplyr::coalesce(out, suppressWarnings(as.numeric(df[[nm]])))
+      }
     }
     out
+  }
+
+  ok_df <- function(x) is.data.frame(x) && nrow(x) > 0
+  safe_call <- function(expr) tryCatch(expr, error = function(e) NULL)
+
+  normalize_p_cols <- function(df) {
+    if (!ok_df(df)) return(df)
+    if (!"p" %in% names(df)) {
+      if ("P" %in% names(df)) df$p <- df$P
+      else if ("pval" %in% names(df)) df$p <- df$pval
+      else if ("p.value" %in% names(df)) df$p <- df[["p.value"]]
+      else if ("p_value" %in% names(df)) df$p <- df[["p_value"]]
+    }
+    df
   }
 
   empty_return <- function() {
@@ -85,20 +106,6 @@ PlotMiningMatrix <- function(
   cat_Outcomes   <- SciDataReportR::getCatVars(Data %>% dplyr::select(dplyr::all_of(OutcomeVars)))
   num_Predictors <- SciDataReportR::getNumVars(Data %>% dplyr::select(dplyr::all_of(PredictorVars)))
   cat_Predictors <- SciDataReportR::getCatVars(Data %>% dplyr::select(dplyr::all_of(PredictorVars)))
-
-  ok_df <- function(x) is.data.frame(x) && nrow(x) > 0
-  safe_call <- function(expr) tryCatch(expr, error = function(e) NULL)
-
-  normalize_p_cols <- function(df) {
-    if (!ok_df(df)) return(df)
-    if (!"p" %in% names(df)) {
-      if ("P" %in% names(df)) df$p <- df$P
-      else if ("pval" %in% names(df)) df$p <- df$pval
-      else if ("p.value" %in% names(df)) df$p <- df[["p.value"]]
-      else if ("p_value" %in% names(df)) df$p <- df[["p_value"]]
-    }
-    df
-  }
 
   # --------------------
   # Correlations: numeric predictors vs numeric outcomes
@@ -164,10 +171,10 @@ PlotMiningMatrix <- function(
         dplyr::select(-dplyr::any_of(c("p.adj","p.adj.signif","logp_FDR"))) %>%
         dplyr::mutate(
           nPairs = if ("DFd" %in% names(.)) .data$DFd else NA_real_,
-          XVar   = as.character(.data$ContinuousVariable),     # outcome
-          YVar   = as.character(.data$CategoricalVariable),    # predictor
-          XLabel = dplyr::coalesce(as.character(.data$YLabel), as.character(.data$ContinuousVariable)),
-          YLabel = dplyr::coalesce(as.character(.data$XLabel), as.character(.data$CategoricalVariable)),
+          XVar   = trimws(as.character(.data$ContinuousVariable)),   # outcome
+          YVar   = trimws(as.character(.data$CategoricalVariable)),  # predictor
+          XLabel = dplyr::coalesce(trimws(as.character(.data$YLabel)), trimws(as.character(.data$ContinuousVariable))),
+          YLabel = dplyr::coalesce(trimws(as.character(.data$XLabel)), trimws(as.character(.data$CategoricalVariable))),
           Test   = "ANOVA"
         )
       P_Anova1 <- normalize_p_cols(P_Anova1)
@@ -194,10 +201,10 @@ PlotMiningMatrix <- function(
         dplyr::select(-dplyr::any_of(c("p.adj","p.adj.signif","logp_FDR"))) %>%
         dplyr::mutate(
           nPairs = if ("DFd" %in% names(.)) .data$DFd else NA_real_,
-          XVar   = as.character(.data$CategoricalVariable),   # outcome
-          YVar   = as.character(.data$ContinuousVariable),    # predictor
-          XLabel = dplyr::coalesce(as.character(.data$XLabel), as.character(.data$CategoricalVariable)),
-          YLabel = dplyr::coalesce(as.character(.data$YLabel), as.character(.data$ContinuousVariable)),
+          XVar   = trimws(as.character(.data$CategoricalVariable)),  # outcome
+          YVar   = trimws(as.character(.data$ContinuousVariable)),   # predictor
+          XLabel = dplyr::coalesce(trimws(as.character(.data$XLabel)), trimws(as.character(.data$CategoricalVariable))),
+          YLabel = dplyr::coalesce(trimws(as.character(.data$YLabel)), trimws(as.character(.data$ContinuousVariable))),
           Test   = "ANOVA"
         )
       P_Anova2 <- normalize_p_cols(P_Anova2)
@@ -223,47 +230,61 @@ PlotMiningMatrix <- function(
       if ("pval" %in% names(chi_df)) chi_df$p <- chi_df$pval
       if ("pval.adj" %in% names(chi_df)) chi_df$p_adj <- chi_df$pval.adj
 
-      P_Chi <- chi_df %>% dplyr::mutate(
-        Test = "Chi Squared",
-        XLabel = dplyr::coalesce(as.character(.data$XLabel), as.character(.data$XVar)),
-        YLabel = dplyr::coalesce(as.character(.data$YLabel), as.character(.data$YVar))
-      )
+      P_Chi <- chi_df %>%
+        dplyr::mutate(
+          Test   = "Chi Squared",
+          XVar   = trimws(as.character(.data$XVar)),
+          YVar   = trimws(as.character(.data$YVar)),
+          XLabel = dplyr::coalesce(trimws(as.character(.data$XLabel)), trimws(as.character(.data$XVar))),
+          YLabel = dplyr::coalesce(trimws(as.character(.data$YLabel)), trimws(as.character(.data$YVar)))
+        )
       P_Chi <- normalize_p_cols(P_Chi)
     }
   }
 
-  non_null <- list(P_Correlations, P_Anova1, P_Anova2, P_Chi) %>% purrr::keep(ok_df)
+  non_null <- purrr::keep(list(P_Correlations, P_Anova1, P_Anova2, P_Chi), ok_df)
   if (length(non_null) == 0) return(empty_return())
 
   P_Combined <- dplyr::bind_rows(non_null) %>% normalize_p_cols()
 
   # Ensure fields exist
-  for (nm in c("XVar","YVar","XLabel","YLabel")) if (!nm %in% names(P_Combined)) P_Combined[[nm]] <- NA_character_
+  for (nm in c("XVar","YVar","XLabel","YLabel")) {
+    if (!nm %in% names(P_Combined)) P_Combined[[nm]] <- NA_character_
+  }
+
+  # Normalize and sanitize labels early
   P_Combined <- P_Combined %>%
     dplyr::mutate(
-      XVar   = as.character(.data$XVar),
-      YVar   = as.character(.data$YVar),
-      XLabel = dplyr::coalesce(as.character(.data$XLabel), .data$XVar),
-      YLabel = dplyr::coalesce(as.character(.data$YLabel), .data$YVar)
+      XVar   = trimws(as.character(.data$XVar)),
+      YVar   = trimws(as.character(.data$YVar)),
+      XLabel = trimws(as.character(.data$XLabel)),
+      YLabel = trimws(as.character(.data$YLabel))
     )
 
   # Map syntactic names back to originals when Relabel=FALSE
   if (!Relabel) {
     P_Combined <- P_Combined %>%
       dplyr::mutate(
-        XVar   = map_back(.data$XVar,   map_out),
-        XLabel = map_back(.data$XLabel, map_out),
-        YVar   = map_back(.data$YVar,   map_pred),
-        YLabel = map_back(.data$YLabel, map_pred)
+        XVar   = map_back(.data$XVar, map_out),
+        YVar   = map_back(.data$YVar, map_pred),
+        # enforce axis labels to be true variable names so factor(levels=...) never produces NA rows
+        XLabel = .data$XVar,
+        YLabel = .data$YVar
+      )
+  } else {
+    # Relabel=TRUE: keep labels if present, but fall back safely
+    P_Combined <- P_Combined %>%
+      dplyr::mutate(
+        XLabel = dplyr::coalesce(.data$XLabel, .data$XVar),
+        YLabel = dplyr::coalesce(.data$YLabel, .data$YVar)
       )
   }
 
-  # Drop NA / literal "NA"
+  # Drop NA / literal "NA" and missing p
   P_Combined <- P_Combined %>%
     dplyr::filter(
       !is.na(.data$XLabel), !is.na(.data$YLabel),
-      as.character(.data$XLabel) != "NA",
-      as.character(.data$YLabel) != "NA",
+      .data$XLabel != "NA", .data$YLabel != "NA",
       !is.na(.data$p)
     )
 
@@ -287,8 +308,14 @@ PlotMiningMatrix <- function(
     xorder <- OutcomeVars
     yorder <- PredictorVars
   }
-  xorder <- unique(xorder)
-  yorder <- unique(yorder)
+  xorder <- unique(as.character(xorder))
+  yorder <- unique(as.character(yorder))
+
+  # filter rows to those that actually map to the intended axes BEFORE factor()
+  P_Combined <- P_Combined %>%
+    dplyr::filter(.data$XLabel %in% xorder, .data$YLabel %in% yorder)
+
+  if (!ok_df(P_Combined)) return(empty_return())
 
   sig_levels <- c("ns","*","**","***","****")
 
@@ -308,20 +335,32 @@ PlotMiningMatrix <- function(
   p <- ggplot2::ggplot(P_Combined, ggplot2::aes(y = YLabel, x = XLabel)) +
     ggplot2::geom_point(ggplot2::aes(size = stars_num, colour = stars), shape = 18) +
     ggplot2::scale_size_continuous(range = c(2.5, 6.5), guide = "none") +
-    ggplot2::scale_color_manual(values = paletteer::paletteer_c("grDevices::Purple-Yellow", n = 5, direction = -1), drop = FALSE) +
+    ggplot2::scale_color_manual(
+      values = paletteer::paletteer_c("grDevices::Purple-Yellow", n = 5, direction = -1),
+      drop = FALSE
+    ) +
     ggplot2::labs(subtitle = "No Multiple Comparison Correction") +
-    ggplot2::xlab("") + ggplot2::ylab("") + ggplot2::theme_bw() +
-    ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, hjust = 1),
-                   legend.title = ggplot2::element_blank())
+    ggplot2::xlab("") + ggplot2::ylab("") +
+    ggplot2::theme_bw() +
+    ggplot2::theme(
+      axis.text.x = ggplot2::element_text(angle = 45, hjust = 1),
+      legend.title = ggplot2::element_blank()
+    )
 
   p_FDR <- ggplot2::ggplot(P_Combined, ggplot2::aes(y = YLabel, x = XLabel)) +
     ggplot2::geom_point(ggplot2::aes(size = stars_fdr_num, colour = stars_fdr), shape = 18) +
     ggplot2::scale_size_continuous(range = c(2.5, 6.5), guide = "none") +
-    ggplot2::scale_color_manual(values = paletteer::paletteer_c("grDevices::Purple-Yellow", n = 5, direction = -1), drop = FALSE) +
+    ggplot2::scale_color_manual(
+      values = paletteer::paletteer_c("grDevices::Purple-Yellow", n = 5, direction = -1),
+      drop = FALSE
+    ) +
     ggplot2::labs(subtitle = "FDR Correction") +
-    ggplot2::xlab("") + ggplot2::ylab("") + ggplot2::theme_bw() +
-    ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, hjust = 1),
-                   legend.title = ggplot2::element_blank())
+    ggplot2::xlab("") + ggplot2::ylab("") +
+    ggplot2::theme_bw() +
+    ggplot2::theme(
+      axis.text.x = ggplot2::element_text(angle = 45, hjust = 1),
+      legend.title = ggplot2::element_blank()
+    )
 
   list(
     Unadjusted   = list(PvalTable = P_Combined, plot = p),
