@@ -40,11 +40,17 @@ PlotCorrelationsHeatmap <- function(
   xVars <- intersect(as.character(xVars), names(Data))
   yVars <- intersect(as.character(yVars), names(Data))
 
+  # ---- validate covariates and report missing ----
+  covars_in <- covars
   covars <- if (!is.null(covars) && length(covars) > 0) {
     intersect(as.character(covars), names(Data))
   } else {
     character(0)
   }
+  covars_missing <- setdiff(as.character(covars_in %||% character(0)), covars)
+
+  # helper: base-R %||%
+  `%||%` <- function(a, b) if (!is.null(a)) a else b
 
   # ---- early exit if nothing to correlate ----
   if (length(xVars) == 0 || length(yVars) == 0) {
@@ -72,7 +78,8 @@ PlotCorrelationsHeatmap <- function(
       FDRCorrected = M0,
       method = method,
       Relabel = Relabel,
-      Covariates = covars
+      Covariates = covars,
+      CovariatesMissing = covars_missing
     ))
   }
 
@@ -83,31 +90,34 @@ PlotCorrelationsHeatmap <- function(
     Data[Variables] <- lapply(Data[Variables], as.numeric)
   }
 
-  # ---- prepare covariates data (FIXED / robust) ----
+  # ---- prepare covariates data (row-safe; NA-safe; dummy-coded) ----
   if (length(covars) > 0) {
     cdata_raw <- Data[, covars, drop = FALSE]
 
-    # Build numeric design matrix (dummy-code factors/characters).
-    # Remove intercept so columns are directly interpretable.
-    Z <- stats::model.matrix(~ . - 1, data = cdata_raw)
+    # model.frame with na.pass prevents row dropping when covars have missingness
+    mf <- stats::model.frame(~ . - 1, data = cdata_raw, na.action = stats::na.pass)
+
+    # model.matrix will preserve row count when mf is built with na.pass
+    Z <- stats::model.matrix(~ . - 1, data = mf)
+
     cdata <- as.data.frame(Z)
 
-    # numeric coercion + scrub non-finite
+    # numeric coercion + scrub non-finite (keep NAs)
     cdata <- as.data.frame(lapply(cdata, function(z) suppressWarnings(as.numeric(z))))
     cdata <- as.data.frame(lapply(cdata, function(z) ifelse(is.finite(z), z, NA_real_)))
 
-    # Drop columns all NA
+    # Drop columns that are all NA
     keep <- vapply(cdata, function(z) any(!is.na(z)), logical(1))
     cdata <- cdata[, keep, drop = FALSE]
 
-    # Drop near-constant columns (prevents scale() NaN + singular covariate matrix)
+    # Drop near-constant columns (prevents NaNs and singular covariate matrix issues)
     if (ncol(cdata) > 0) {
       v <- vapply(cdata, function(z) stats::var(z, na.rm = TRUE), numeric(1))
       keep2 <- is.finite(v) & (v > eps)
       cdata <- cdata[, keep2, drop = FALSE]
     }
 
-    # Optional safe scaling (not required for partial correlation, but fine)
+    # Optional safe scaling (not required for partial correlation; keeps numeric stable)
     if (ncol(cdata) > 0) {
       sds <- vapply(cdata, stats::sd, numeric(1), na.rm = TRUE)
       sds[!is.finite(sds) | sds <= eps] <- 1
@@ -115,6 +125,11 @@ PlotCorrelationsHeatmap <- function(
     }
   } else {
     cdata <- data.frame()
+  }
+
+  # ---- ensure covariate row alignment ----
+  if (ncol(cdata) > 0 && nrow(cdata) != nrow(Data)) {
+    stop("Covariate matrix row count does not match Data row count. This should not happen with na.pass.")
   }
 
   xdata <- Data[, xVars, drop = FALSE]
@@ -133,7 +148,7 @@ PlotCorrelationsHeatmap <- function(
   # ---- scrub non-finite values globally (render-safe) ----
   xdata <- as.data.frame(lapply(xdata, function(z) ifelse(is.finite(z), z, NA_real_)))
   ydata <- as.data.frame(lapply(ydata, function(z) ifelse(is.finite(z), z, NA_real_)))
-  if (nrow(cdata) > 0) {
+  if (ncol(cdata) > 0) {
     cdata <- as.data.frame(lapply(cdata, function(z) ifelse(is.finite(z), z, NA_real_)))
   }
 
@@ -151,6 +166,7 @@ PlotCorrelationsHeatmap <- function(
       y <- ydata[[yi]]
 
       has_cov <- (ncol(cdata) > 0)
+
       d <- if (has_cov) cbind(x, y, cdata) else cbind(x, y)
       d <- stats::na.omit(d)
 
@@ -159,7 +175,11 @@ PlotCorrelationsHeatmap <- function(
       est <- NA_real_
       pval <- NA_real_
 
-      if (nrow(d) >= min_n) {
+      # Optional stricter guard: need enough rows given number of covariates
+      # (ppcor can be fragile when n is too small)
+      min_needed <- if (has_cov) max(min_n, ncol(cdata) + 3) else min_n
+
+      if (nrow(d) >= min_needed) {
         vx <- stats::var(d[, 1])
         vy <- stats::var(d[, 2])
 
@@ -210,9 +230,9 @@ PlotCorrelationsHeatmap <- function(
   # ---- FDR adjust robustly (ignore NA/NaN) ----
   pvec <- as.vector(MP)
   padj <- rep(NA_real_, length(pvec))
-  ok <- is.finite(pvec)
-  if (any(ok)) {
-    padj[ok] <- stats::p.adjust(pvec[ok], method = "fdr")
+  okp <- is.finite(pvec)
+  if (any(okp)) {
+    padj[okp] <- stats::p.adjust(pvec[okp], method = "fdr")
   }
   M_FDR_p <- matrix(padj, nrow = nrow(MP), ncol = ncol(MP), dimnames = dimnames(MP))
   if (removediag) diag(M_FDR_p) <- NaN
@@ -243,7 +263,8 @@ PlotCorrelationsHeatmap <- function(
       FDRCorrected = M0,
       method = method,
       Relabel = Relabel,
-      Covariates = covars
+      Covariates = covars,
+      CovariatesMissing = covars_missing
     ))
   }
 
@@ -306,7 +327,9 @@ PlotCorrelationsHeatmap <- function(
     "<br><b>r:</b> ", fmt_num(plot.data$R, digits = 3),
     "<br><b>p:</b> ", fmt_p(plot.data$P), " ", plot.data$stars,
     "<br><b>FDR p:</b> ", fmt_p(plot.data$P_adj), " ", plot.data$stars_FDR,
-    "<br><b>nPairs:</b> ", ifelse(is.na(plot.data$nPairs) | is.nan(plot.data$nPairs), "NA", plot.data$nPairs)
+    "<br><b>nPairs:</b> ", ifelse(is.na(plot.data$nPairs) | is.nan(plot.data$nPairs), "NA", plot.data$nPairs),
+    if (length(covars) > 0) paste0("<br><b>Covars:</b> ", paste(covars, collapse = ", ")) else "",
+    if (length(covars_missing) > 0) paste0("<br><b>Missing covars:</b> ", paste(covars_missing, collapse = ", ")) else ""
   )
 
   P <- ggplot2::ggplot(plot.data, ggplot2::aes(y = XLabel, x = YLabel, fill = R, text = PlotText)) +
@@ -336,5 +359,12 @@ PlotCorrelationsHeatmap <- function(
   M <- list(r = MC, p = MP, npairs = MN, plot = P)
   M_FDR <- list(r = MC, p = M_FDR_p, npairs = MN, plot = P_FDR)
 
-  list(Unadjusted = M, FDRCorrected = M_FDR, method = method, Relabel = Relabel, Covariates = covars)
+  list(
+    Unadjusted = M,
+    FDRCorrected = M_FDR,
+    method = method,
+    Relabel = Relabel,
+    Covariates = covars,
+    CovariatesMissing = covars_missing
+  )
 }
