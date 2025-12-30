@@ -14,22 +14,23 @@ PlotMiningMatrix(
 )
 }
 \arguments{
-\item{Data}{A data frame containing the dataset to analyze.}
+\item{Data}{A data frame.}
 
-\item{OutcomeVars}{A vector of outcome variables to be analyzed.}
+\item{OutcomeVars}{Outcome variables (typically numeric, e.g., biomarker-by-batch columns).}
 
-\item{PredictorVars}{A vector of predictor variables to be analyzed.}
+\item{PredictorVars}{Predictor variables (covariates to scan).}
 
-\item{Covariates}{Optional vector of covariates to adjust the analysis (default NULL).}
+\item{Covariates}{Optional adjustment covariates.}
 
-\item{Relabel}{Logical; relabel variables in output (default TRUE).}
+\item{Relabel}{Whether to use variable labels instead of names.}
 
-\item{Parametric}{Logical; if TRUE uses Pearson / parametric ANOVA, else Spearman / nonparametric options where supported.}
+\item{Parametric}{If TRUE uses Pearson; if FALSE uses Spearman and non-parametric ANOVA where relevant.}
 }
 \value{
-A list with Unadjusted and FDRCorrected tables/plots plus metadata.
+List with Unadjusted (PvalTable, plot), FDRCorrected (PvalTable, plot),
+method, Relabel, Covariates.
 }
 \description{
-Generates a matrix of statistical relationships between specified outcome and predictor variables.
-Produces both unadjusted and FDR-corrected significance plots.
+Generate a matrix of statistical relationships between outcome and predictor variables.
+Returns unadjusted and FDR-adjusted results plus corresponding dot-matrix plots.
 }
