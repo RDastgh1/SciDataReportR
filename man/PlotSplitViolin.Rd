@@ -8,7 +8,7 @@ PlotSplitViolin(
   data,
   Var,
   Group,
-  covars = c("Age"),
+  covars = NULL,
   nonparametric = FALSE,
   annotation_text = NULL,
   show_ns = FALSE,
@@ -78,37 +78,4 @@ overlays per-group boxplots aligned with each half, and optionally annotates
 the plot with a p-value significance label (e.g., "\emph{", "\strong{", "}}", "ns").
 The y-axis title is taken from the variable's label attribute when available
 (via \pkg{labelled} or \pkg{Hmisc}); otherwise the column name is used.
-}
-\details{
-\strong{Geometry and alignment.} Each half of the violin is drawn with
-\code{gghalves::geom_half_violin()}, then two explicit boxplot layers (left and right)
-are drawn at fixed x-positions (\code{1 - box_offset} and \code{1 + box_offset}), so the boxes
-always align with their corresponding half and color (no dodging flips).
-
-\strong{Significance label.} When \code{annotation_text} is \code{NULL}, the p-value is computed
-as described and converted to \code{"*"}, \code{"**"}, \code{"***"}, or (optionally) \code{"ns"}.
-The label is drawn at x = 1 via \code{ggpubr::stat_pvalue_manual(remove.bracket = TRUE)}.
-Vertical placement is \code{anchor + star_pad * (range_y)}, where the anchor is
-chosen by \code{star_from}. The top limit is expanded by \code{headroom} so the label never clips.
-
-\strong{Axis label.} If \code{Var} has a \code{label} attribute (from \pkg{labelled} or \pkg{Hmisc}),
-that text is used for the y-axis title; otherwise the column name is used.
-}
-\examples{
-\dontrun{
-PlotSplitViolin(df_analysis, Var = Tryptophan, Group = STATUS)
-PlotSplitViolin(
-  df_analysis, Var = Tryptophan, Group = STATUS,
-  left_group = "Seropositive",
-  color_palette = c(Seropositive = "#E8A007", Seronegative = "#8C1A45")
-)
-PlotSplitViolin(df_analysis, Var = Tryptophan, Group = STATUS,
-                covars = "Age", nonparametric = FALSE)
-PlotSplitViolin(df_analysis, Var = Tryptophan, Group = STATUS,
-                covars = "Age", nonparametric = TRUE, show_ns = TRUE)
-}
-}
-\seealso{
-\code{\link[gghalves]{geom_half_violin}}, \code{\link[ggpubr]{stat_pvalue_manual}},
-\code{\link[emmeans]{emmeans}}
 }

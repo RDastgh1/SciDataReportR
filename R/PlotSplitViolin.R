@@ -36,46 +36,13 @@
 #' @param headroom Fraction of the y-range added to the top limit to avoid clipping (default `0.08`).
 #' @param star_size Text size for the significance label (default `6`).
 #'
-#' @details
-#' **Geometry and alignment.** Each half of the violin is drawn with
-#' \code{gghalves::geom_half_violin()}, then two explicit boxplot layers (left and right)
-#' are drawn at fixed x-positions (`1 - box_offset` and `1 + box_offset`), so the boxes
-#' always align with their corresponding half and color (no dodging flips).
-#'
-#' **Significance label.** When `annotation_text` is `NULL`, the p-value is computed
-#' as described and converted to `"*"`, `"**"`, `"***"`, or (optionally) `"ns"`.
-#' The label is drawn at x = 1 via \code{ggpubr::stat_pvalue_manual(remove.bracket = TRUE)}.
-#' Vertical placement is `anchor + star_pad * (range_y)`, where the anchor is
-#' chosen by `star_from`. The top limit is expanded by `headroom` so the label never clips.
-#'
-#' **Axis label.** If `Var` has a `label` attribute (from \pkg{labelled} or \pkg{Hmisc}),
-#' that text is used for the y-axis title; otherwise the column name is used.
-#'
 #' @return A \pkg{ggplot2} object.
-#'
-#' @seealso \code{\link[gghalves]{geom_half_violin}}, \code{\link[ggpubr]{stat_pvalue_manual}},
-#'   \code{\link[emmeans]{emmeans}}
-#'
-#' @importFrom stats as.formula lm t.test wilcox.test residuals
-#' @examples
-#' \dontrun{
-#' PlotSplitViolin(df_analysis, Var = Tryptophan, Group = STATUS)
-#' PlotSplitViolin(
-#'   df_analysis, Var = Tryptophan, Group = STATUS,
-#'   left_group = "Seropositive",
-#'   color_palette = c(Seropositive = "#E8A007", Seronegative = "#8C1A45")
-#' )
-#' PlotSplitViolin(df_analysis, Var = Tryptophan, Group = STATUS,
-#'                 covars = "Age", nonparametric = FALSE)
-#' PlotSplitViolin(df_analysis, Var = Tryptophan, Group = STATUS,
-#'                 covars = "Age", nonparametric = TRUE, show_ns = TRUE)
-#' }
 #' @export
 PlotSplitViolin <- function(
     data,
     Var,
     Group,
-    covars = c("Age"),
+    covars = NULL,
     nonparametric = FALSE,
     annotation_text = NULL,
     show_ns = FALSE,
@@ -94,8 +61,13 @@ PlotSplitViolin <- function(
   stopifnot(requireNamespace("gghalves", quietly = TRUE),
             requireNamespace("ggpubr",   quietly = TRUE),
             requireNamespace("emmeans",  quietly = TRUE))
+
   star_from <- match.arg(star_from)
 
+  # normalize covars: allow NULL from caller
+  if (is.null(covars)) covars <- character(0)
+
+  # tidy-eval: allow Var/Group passed as symbols or strings
   Var   <- rlang::ensym(Var)
   Group <- rlang::ensym(Group)
   var_nm <- rlang::as_string(Var)
@@ -107,16 +79,23 @@ PlotSplitViolin <- function(
 
   df <- data |>
     dplyr::select(!!Group, !!Var, dplyr::all_of(covars)) |>
-    tidyr::drop_na(!!Group, !!Var, dplyr::all_of(covars))
+    tidyr::drop_na(!!Group, !!Var, dplyr::all_of(covars)) |>
+    # KEY FIX: force grouping to be discrete for plotting and modeling
+    dplyr::mutate(.Group = as.factor(!!Group))
 
-  # determine left/right
-  if (is.factor(df[[grp_nm]])) {
-    g_order <- levels(df[[grp_nm]])[levels(df[[grp_nm]]) %in% unique(df[[grp_nm]])]
-  } else {
-    g_order <- unique(df[[grp_nm]])
-  }
+  # use .Group going forward
+  Group_plot   <- rlang::sym(".Group")
+  grp_nm_plot  <- ".Group"
+
+  # determine left/right using factor levels
+  g_order <- levels(df[[grp_nm_plot]])
+  g_order <- g_order[g_order %in% unique(df[[grp_nm_plot]])]
+
   if (length(g_order) == 0) stop("`Group` has no non-missing values.")
   if (length(g_order) > 2)  stop("`Group` must have <= 2 unique values for a split violin.")
+
+  if (!is.null(left_group)) left_group <- as.character(left_group)
+
   if (!is.null(left_group)) {
     if (!left_group %in% g_order) stop("`left_group` not found in `Group`.")
     g_left  <- left_group
@@ -127,8 +106,9 @@ PlotSplitViolin <- function(
     g_right <- if (length(g_order) == 2) g_order[2] else NULL
   }
 
-  # palette in left→right order
+  # palette in left→right order (names must match factor levels)
   present_groups <- as.character(stats::na.omit(c(g_left, g_right)))
+
   if (is.null(color_palette)) {
     base_cols <- c("#E8A007", "#8C1A45")
     color_palette <- stats::setNames(base_cols[seq_len(length(present_groups))], present_groups)
@@ -151,6 +131,7 @@ PlotSplitViolin <- function(
     if (is.null(lab) || !nzchar(lab)) lab <- var_nm
     as.character(lab)
   }
+
   y_lab  <- get_var_label(data[[var_nm]])
   y_vals <- df[[var_nm]]
   y_min  <- suppressWarnings(min(y_vals, na.rm = TRUE)); if (!is.finite(y_min))  y_min  <- 0
@@ -162,40 +143,51 @@ PlotSplitViolin <- function(
     if (is.na(p)) return(if (show_ns) "ns" else "")
     if (p < 1e-3) "***" else if (p < 1e-2) "**" else if (p < .05) "*" else if (show_ns) "ns" else ""
   }
+
   if (is.null(annotation_text) && !is.null(g_right)) {
-    rhs <- paste(c(grp_nm, covars), collapse = " + ")
+    rhs <- paste(c(grp_nm_plot, covars), collapse = " + ")
     fml <- stats::as.formula(paste0("`", var_nm, "` ~ ", rhs))
+
     if (nonparametric) {
       if (length(covars) == 0) {
         p_val <- tryCatch(
-          stats::wilcox.test(stats::as.formula(paste0("`", var_nm, "` ~ `", grp_nm, "`")),
-                             data = df, exact = FALSE)$p.value,
+          stats::wilcox.test(
+            stats::as.formula(paste0("`", var_nm, "` ~ `", grp_nm_plot, "`")),
+            data = df, exact = FALSE
+          )$p.value,
           error = function(e) NA_real_
         )
       } else {
         # residualize on covariates (exclude Group), then Wilcoxon on residuals by Group
         cov_fml <- stats::as.formula(paste0("`", var_nm, "` ~ ", paste(covars, collapse = " + ")))
         res <- tryCatch(stats::residuals(stats::lm(cov_fml, data = df)), error = function(e) NA_real_)
-        p_val <- tryCatch(stats::wilcox.test(res ~ df[[grp_nm]], exact = FALSE)$p.value,
+        p_val <- tryCatch(stats::wilcox.test(res ~ df[[grp_nm_plot]], exact = FALSE)$p.value,
                           error = function(e) NA_real_)
       }
     } else {
       p_val <- tryCatch({
         fit <- stats::lm(fml, data = df)
         as.data.frame(
-          emmeans::contrast(emmeans::emmeans(fit, grp_nm),
+          emmeans::contrast(emmeans::emmeans(fit, grp_nm_plot),
                             method = "revpairwise", adjust = "none")
         )$p.value[1]
       }, error = function(e) NA_real_)
+
       if (is.na(p_val)) {
         p_val <- tryCatch(
-          stats::t.test(stats::as.formula(paste0("`", var_nm, "` ~ `", grp_nm, "`")), data = df)$p.value,
+          stats::t.test(
+            stats::as.formula(paste0("`", var_nm, "` ~ `", grp_nm_plot, "`")),
+            data = df
+          )$p.value,
           error = function(e) NA_real_
         )
       }
     }
+
     annotation_text <- stars_from_p(p_val)
-  } else if (is.null(annotation_text)) annotation_text <- ""
+  } else if (is.null(annotation_text)) {
+    annotation_text <- ""
+  }
 
   # star position
   safe_whisker <- function(z) {
@@ -204,58 +196,70 @@ PlotSplitViolin <- function(
     out <- tryCatch(grDevices::boxplot.stats(z)$stats[5], error = function(e) NA_real_)
     if (!is.finite(out)) max(z, na.rm = TRUE) else out
   }
+
   anchor <- switch(
     star_from,
     quantile = as.numeric(stats::quantile(y_vals, probs = star_quantile, na.rm = TRUE, names = FALSE)),
     data_max = y_maxv,
     whisker  = if (!is.null(g_right)) {
-      max(safe_whisker(y_vals[df[[grp_nm]] == g_left]),
-          safe_whisker(y_vals[df[[grp_nm]] == g_right]),
-          na.rm = TRUE)
+      max(
+        safe_whisker(y_vals[df[[grp_nm_plot]] == g_left]),
+        safe_whisker(y_vals[df[[grp_nm_plot]] == g_right]),
+        na.rm = TRUE
+      )
     } else safe_whisker(y_vals)
   )
+
   if (!is.finite(anchor)) anchor <- y_maxv
   y_star   <- anchor + star_pad * dr
   ylim_top <- max(y_star + headroom * dr, y_maxv + headroom * dr)
   ylim_bot <- y_min - 0.05 * dr
 
-  # build plot (fixed x for boxes; fill = Group for both)
-  df_left  <- df[df[[grp_nm]] == g_left, , drop = FALSE]
+  # build plot (fixed x for boxes; fill = .Group for both)
+  df_left <- df[df[[grp_nm_plot]] == g_left, , drop = FALSE]
+
   p <- ggplot2::ggplot() +
     gghalves::geom_half_violin(
       data = df_left,
-      ggplot2::aes(x = 1, y = !!Var, fill = !!Group),
+      ggplot2::aes(x = 1, y = !!Var, fill = !!Group_plot),
       side = "l", color = NA, trim = FALSE, alpha = 0.8
     )
+
   if (!is.null(g_right)) {
-    df_right <- df[df[[grp_nm]] == g_right, , drop = FALSE]
+    df_right <- df[df[[grp_nm_plot]] == g_right, , drop = FALSE]
     p <- p +
       gghalves::geom_half_violin(
         data = df_right,
-        ggplot2::aes(x = 1, y = !!Var, fill = !!Group),
+        ggplot2::aes(x = 1, y = !!Var, fill = !!Group_plot),
         side = "r", color = NA, trim = FALSE, alpha = 0.8
       )
   }
+
   p <- p +
     ggplot2::geom_boxplot(
       data = dplyr::mutate(df_left, .x = 1 - if (is.null(g_right)) 0 else box_offset),
-      ggplot2::aes(x = .x, y = !!Var, fill = !!Group),
+      ggplot2::aes(x = .x, y = !!Var, fill = !!Group_plot),
       width = box_width, alpha = 0.60, outlier.shape = NA,
       color = "black", notch = FALSE, linewidth = 0.6, position = "identity"
     )
+
   if (!is.null(g_right)) {
+    df_right <- df[df[[grp_nm_plot]] == g_right, , drop = FALSE]
     p <- p +
       ggplot2::geom_boxplot(
-        data = dplyr::mutate(df[df[[grp_nm]] == g_right, , drop = FALSE], .x = 1 + box_offset),
-        ggplot2::aes(x = .x, y = !!Var, fill = !!Group),
+        data = dplyr::mutate(df_right, .x = 1 + box_offset),
+        ggplot2::aes(x = .x, y = !!Var, fill = !!Group_plot),
         width = box_width, alpha = 0.60, outlier.shape = NA,
         color = "black", notch = FALSE, linewidth = 0.6, position = "identity"
       )
   }
+
   p <- p +
-    ggplot2::scale_fill_manual(values = color_palette,
-                               breaks = present_groups,
-                               drop = FALSE) +
+    ggplot2::scale_fill_manual(
+      values = color_palette,
+      breaks = present_groups,
+      drop = FALSE
+    ) +
     ggplot2::labs(x = NULL, y = y_lab, title = NULL) +
     ggplot2::coord_cartesian(ylim = c(ylim_bot, ylim_top), clip = "off") +
     ggplot2::theme_minimal() +
@@ -269,8 +273,13 @@ PlotSplitViolin <- function(
     )
 
   if (!is.null(annotation_text) && nzchar(annotation_text)) {
-    ann_df <- data.frame(label = annotation_text, y.position = y_star,
-                         xmin = 1, xmax = 1, group1 = 1, group2 = 1)
+    ann_df <- data.frame(
+      label = annotation_text,
+      y.position = y_star,
+      xmin = 1, xmax = 1,
+      group1 = 1, group2 = 1
+    )
+
     p <- p + ggpubr::stat_pvalue_manual(
       data = ann_df, label = "label", xmin = "xmin", xmax = "xmax",
       y.position = "y.position", remove.bracket = TRUE, tip.length = 0,
