@@ -4,7 +4,7 @@
 \alias{IQROutliers}
 \title{Detect outliers using the Tukey IQR rule and visualize results}
 \usage{
-IQROutliers(df, Variable, id = "ID", group = "SourceFile")
+IQROutliers(df, Variable, id = NULL, group = NULL)
 }
 \arguments{
 \item{df}{A data frame or tibble containing the variable to evaluate.}
@@ -12,16 +12,18 @@ IQROutliers(df, Variable, id = "ID", group = "SourceFile")
 \item{Variable}{A string specifying the name of the numeric variable to test.}
 
 \item{id}{A string specifying the identifier column to include in the returned
-outlier table. Defaults to \code{"ID"}.}
+outlier table. If \code{NULL}, no ID column is included in the returned table.
+Defaults to \code{NULL}.}
 
 \item{group}{A string specifying the grouping or batch column to use on the
-x-axis of the diagnostic plot. Defaults to \code{"SourceFile"}.}
+x-axis of the diagnostic plot. If \code{NULL}, the function will produce a
+single combined boxplot across all rows. Defaults to \code{NULL}.}
 }
 \value{
 A list with two elements:
 \itemize{
 \item \code{outlierdf}: a tibble containing only rows flagged as outliers,
-including the ID, variable, group, and outlier flag.
+including the ID (when requested), variable, group (when requested), and outlier flag.
 \item \code{p}: a ggplot2 object showing a boxplot and jittered points
 colored by outlier status.
 }
@@ -41,14 +43,17 @@ boxplot remains uncolored to prevent creation of a separate outlier-only box.
 
 The color aesthetic is mapped only within \code{geom_jitter()}, ensuring the
 boxplot is drawn once per group rather than once per outlier class. Missing
-values are ignored when computing quartiles. Columns specified by \code{id}
-and \code{group} must be present in the input data frame.
+values are ignored when computing quartiles. If \code{id} or \code{group} are
+provided they must be present in the input data frame.
 }
 \examples{
 \dontrun{
-  IQROutliers2(df_Revalued_Data, "PS",
-               id = "record_id",
-               group = "Cohort")
+  IQROutliers(df_Revalued_Data, "PS",
+              id = "record_id",
+              group = "Cohort")
+
+  # Without id or group
+  IQROutliers(df_Revalued_Data, "PS", id = NULL, group = NULL)
 }
 
 }
