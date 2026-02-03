@@ -60,8 +60,7 @@ IQROutliers <- function(df, Variable, id = NULL, group = NULL) {
   Q3 <- quantile(df[[Variable]], 0.75, na.rm = TRUE)
   IQR <- Q3 - Q1
 
-  df <- dplyr::mutate(df,
-                      .iqr_outlier = ({{`~`}}) ) # placeholder to keep style consistent
+
 
   ## compute outlier flag robustly using vectorized logicals
   df$.iqr_outlier <- (df[[Variable]] < (Q1 - 1.5 * IQR)) |
