@@ -2,7 +2,7 @@
 % Please edit documentation in R/MakeComparisonTable.R
 \name{MakeComparisonTable}
 \alias{MakeComparisonTable}
-\title{Make Comparison Table with Covariate Adjustment, Effect Sizes, Pairwise Contrasts, and Optional Overall Summary}
+\title{Make comparison table with optional covariate adjustment, effect sizes, and pairwise tests}
 \usage{
 MakeComparisonTable(
   DataFrame,
@@ -22,58 +22,251 @@ MakeComparisonTable(
   suppress_warnings = FALSE,
   Referent = NULL,
   IncludeOverallStats = FALSE,
-  ShowPositiveBinaryOnLabel = TRUE
+  ShowPositiveBinaryOnLabel = TRUE,
+  BinaryPairwiseScale = c("logit"),
+  ContinuousAdjustedMethod = c("robust_ancova", "ancova"),
+  CategoricalMethod = c("chisq", "fisher"),
+  FisherB = 1e+05,
+  FisherSeed = NULL
 )
 }
 \arguments{
-\item{DataFrame}{Data frame with the raw data.}
+\item{DataFrame}{Data frame containing variables to summarize.}
 
-\item{CompVariable}{Grouping / comparison variable (character scalar). Optional if \code{IncludeOverallStats = TRUE}.}
+\item{CompVariable}{Grouping/comparison variable name (character scalar). If \code{NULL} and
+\code{IncludeOverallStats=FALSE}, overall-only mode is used.}
 
-\item{Variables}{Character vector of columns to compare.}
+\item{Variables}{Character vector of variable names to include in the table.}
 
-\item{Covariates}{Optional covariates (default \code{NULL}).}
+\item{Covariates}{Optional character vector of covariate names for adjusted analyses.}
 
-\item{ValueDigits}{Digits in summary stats (default \code{2}).}
+\item{ValueDigits}{Digits for continuous summary statistics in \code{tbl_summary()}.}
 
-\item{pDigits}{Digits in p-values (default \code{3}).}
+\item{pDigits}{Digits shown for formatted p-values (uses \code{format.pval()}).}
 
-\item{AddEffectSize}{Logical; add effect sizes? (default \code{FALSE}).}
+\item{AddEffectSize}{Logical; add effect size columns.}
 
-\item{EffectSizeDigits}{Digits in effect sizes (default \code{2}).}
+\item{EffectSizeDigits}{Digits shown for effect sizes.}
 
-\item{AddPairwise}{Logical; add pair-wise contrasts? (default \code{FALSE}).}
+\item{AddPairwise}{Logical; add pairwise p-value columns.}
 
-\item{PairwiseMethod}{P-adjustment method (default \code{"bonferroni"}).}
+\item{PairwiseMethod}{Multiplicity correction passed to \code{p.adjust()} and emmeans summaries.
+Use \code{"none"} for no adjustment.}
 
-\item{Parametric}{\code{TRUE} = parametric tests, \code{FALSE} = non-parametric tests (default \code{TRUE}).}
+\item{Parametric}{Logical controlling tests for \emph{continuous} outcomes when there are no covariates.
+Categorical tests are controlled by \code{CategoricalMethod} and covariate presence.}
 
-\item{ParametricDisplay}{\code{TRUE} = show mean/SD, \code{FALSE} = show median/IQR (default matches \code{Parametric}).}
+\item{ParametricDisplay}{Logical controlling whether continuous variables are displayed as mean (SD)
+or median \link{IQR}. Defaults to \code{Parametric}.}
 
-\item{IncludeOverallN}{Logical; add overall \emph{N}? (default \code{FALSE}).}
+\item{IncludeOverallN}{Logical; add an overall N column via \code{gtsummary::add_n()}.}
 
-\item{IncludeMissing}{Logical; include "Unknown" row? (default \code{FALSE}).}
+\item{IncludeMissing}{Logical; include missing row (Unknown) in gtsummary output.}
 
-\item{suppress_warnings}{Suppress gtsummary warnings? (default \code{FALSE}).}
+\item{suppress_warnings}{Logical; suppress gtsummary warnings.}
 
-\item{Referent}{Optional reference level for contrasts.}
+\item{Referent}{Optional reference level (character scalar) for contrasts.}
 
-\item{IncludeOverallStats}{Logical; if \code{TRUE} (default \code{FALSE}) or if \code{CompVariable}
-is not present in \code{DataFrame}, return overall-only stats.}
+\item{IncludeOverallStats}{Logical; force overall-only summary even if \code{CompVariable} is provided.}
 
-\item{ShowPositiveBinaryOnLabel}{Logical; if \code{TRUE} (default) show only the
-"positive" level (TRUE/1/YES/Yes) of binary
-categorical/factor/logical variables on the label row.}
+\item{ShowPositiveBinaryOnLabel}{Logical; for binary categorical variables, show only the “positive”
+level on the label row (TRUE/1/YES etc.).}
+
+\item{BinaryPairwiseScale}{Currently \code{"logit"} only. Pairwise for adjusted binary outcomes is on logit scale.}
+
+\item{ContinuousAdjustedMethod}{\code{"robust_ancova"} (default) or \code{"ancova"}. Controls inference for
+continuous outcomes with covariates.}
+
+\item{CategoricalMethod}{\code{"chisq"} (default) or \code{"fisher"} for unadjusted categorical tests.}
+
+\item{FisherB}{Number of Monte Carlo replicates for Fisher simulation when \code{CategoricalMethod="fisher"}
+and the table is larger than 2x2.}
+
+\item{FisherSeed}{Optional seed for Fisher simulation reproducibility.}
 }
 \value{
-A \strong{gtsummary::tbl_summary} object.
+A \code{gtsummary::tbl_summary} object with additional columns for p-values, test labels,
+optional effect sizes, and optional pairwise p-values.
 }
 \description{
-Creates a comparison table (via \strong{gtsummary}) that
-• summarises variables by a grouping factor,
-• optionally adjusts continuous outcomes for covariates (ANCOVA),
-• adds p-values, effect sizes, and pair-wise contrasts,
-• automatically drops constant variables,
-• can suppress the "Unknown" row or add an overall \emph{N} column, and
-• can return an overall-only summary when requested or when no valid group exists.
+This function is designed for “Table 1 style” descriptive comparisons, with flexible choices
+for statistical tests and a predictable output structure that stays stable across variable types.
+}
+\details{
+Create a label friendly comparison table (via \strong{gtsummary}) that summarizes one or more variables
+across levels of a grouping variable, optionally adjusts for covariates, adds global p-values,
+effect sizes, and pairwise p-values (with optional multiplicity adjustment).
+\subsection{How tests are chosen (the guide you wish every table function came with)}{
+\subsection{Continuous variables (numeric with more than 2 distinct values)}{
+
+\strong{No covariates}
+\itemize{
+\item \code{Parametric = TRUE}
+\itemize{
+\item 2 groups: Welch two sample t-test
+\item 3+ groups: one-way ANOVA
+}
+\item \code{Parametric = FALSE}
+\itemize{
+\item 2 groups: Wilcoxon rank-sum (Mann–Whitney)
+\item 3+ groups: Kruskal–Wallis
+}
+}
+
+\strong{With covariates}
+\itemize{
+\item Continuous outcomes are modeled with \code{lm(outcome ~ group + covariates)}.
+\item Global group test depends on \code{ContinuousAdjustedMethod}:
+\itemize{
+\item \code{"ancova"}: Type II ANCOVA via \code{car::Anova(fit, type = 2)}.
+\item \code{"robust_ancova"}: robust (heteroskedasticity consistent) Wald F test using HC3
+(\code{sandwich::vcovHC(type = "HC3")} + \code{car::linearHypothesis()}).
+}
+}
+
+\strong{Pairwise p-values}
+\itemize{
+\item No covariates, parametric: \code{pairwise.t.test(pool.sd = FALSE)} (Welch style).
+\item No covariates, nonparametric: per-pair \code{wilcox.test()}.
+\item With covariates: estimated marginal means and contrasts via \strong{emmeans} on the fitted \code{lm}.
+If \code{ContinuousAdjustedMethod="robust_ancova"}, the same HC3 covariance is passed to emmeans
+so pairwise tests align with robust inference.
+}
+
+\strong{Important note about “nonparametric + covariates”}
+\itemize{
+\item There is no single universally accepted “rank ANCOVA” that behaves like Kruskal–Wallis
+while adjusting for covariates and still meaningfully targets adjusted means.
+\item This function’s approach (robust ANCOVA) keeps the adjusted mean interpretation and uses
+robust standard errors for inference. It is not rank based.
+}
+}
+
+\subsection{Categorical variables (including dichotomous)}{
+
+\strong{Key principle:} The \code{Parametric} argument does \emph{not} change categorical tests.
+Categorical tests are controlled by \code{CategoricalMethod} and covariate presence.
+
+\strong{No covariates}
+\itemize{
+\item \code{CategoricalMethod = "chisq"}: Pearson chi-squared without Yates correction
+(\code{chisq.test(correct = FALSE)}) to match common Stata defaults.
+\item \code{CategoricalMethod = "fisher"}:
+\itemize{
+\item 2x2: Fisher’s exact
+\item larger RxC: Fisher with Monte Carlo simulation (\code{simulate.p.value=TRUE}) using \code{FisherB}.
+}
+}
+
+\strong{With covariates}
+\itemize{
+\item If the outcome has exactly 2 levels, the global adjusted test is:
+\itemize{
+\item Logistic regression likelihood ratio test for the grouping factor via \code{drop1(..., test="Chisq")}.
+}
+\item If the outcome has 3+ levels, covariate-adjusted global tests are \strong{not implemented}
+(multinomial models are possible but require additional design decisions). The function will
+fall back to the unadjusted categorical test for that variable.
+}
+
+\strong{Pairwise p-values}
+\itemize{
+\item No covariates: pairwise uses the \emph{same} method selected for that variable’s global test
+(chi-squared or Fisher), so the pairwise columns match the Test column.
+\item With covariates + binary outcome: pairwise is computed from the fitted logistic regression
+using Wald z-tests of linear predictor contrasts on the logit scale. This is the closest match
+to typical Stata pairwise coefficient contrast workflows.
+}
+}
+
+\subsection{Effect sizes}{
+\itemize{
+\item Continuous, 2 groups, unadjusted parametric: \|Cohen’s d\|.
+\item Continuous, 3+ groups, unadjusted parametric: eta squared (η²).
+\item Continuous, unadjusted nonparametric: epsilon squared (ε²) derived from Kruskal–Wallis.
+\item Continuous with covariates: partial eta squared (partial η²) for the grouping term (Type II).
+\item Categorical: Cramer’s V (unadjusted).
+}
+
+\strong{Note:} Adjusted odds ratios or standardized OR effect sizes for logistic regression are not
+returned by this function (by design). If you want adjusted ORs, compute them from the fitted
+model outside this table.
+}
+
+}
+
+\subsection{References (methods and software)}{
+\itemize{
+\item Pearson chi-squared test: Pearson K. (1900) \doi{10.1098/rspl.1900.0024}
+\item Fisher’s exact test: Fisher RA. (1922) \doi{10.2307/2340521}
+\item Welch t-test: Welch BL. (1947) \doi{10.2307/2332510}
+\item Kruskal–Wallis: Kruskal WH, Wallis WA. (1952) \doi{10.1080/01621459.1952.10483441}
+\item Robust (HC) covariance estimators: MacKinnon JG, White H. (1985) \doi{10.1016/0304-4076(85)90158-7}
+\item Type II/III ANOVA in practice: Fox J, Weisberg S. \emph{An R Companion to Applied Regression} (car package ecosystem).
+\item Estimated marginal means: Lenth RV. (2021) emmeans package vignette and documentation.
+\item Effect sizes in R: Ben-Shachar MS, Lüdecke D, Makowski D. (2020) \doi{10.21105/joss.02815} (effectsize package).
+}
+}
+}
+\examples{
+suppressPackageStartupMessages({
+  library(dplyr)
+})
+
+set.seed(1)
+n <- 400
+df_fake <- tibble::tibble(
+  CTQ_sexual_abuse_3CAT = factor(sample(c("None or minimal", "Low to moderate", "Moderate to extreme"),
+                                        n, replace = TRUE, prob = c(0.65, 0.18, 0.17))),
+  age = round(rnorm(n, 45, 12)),
+  sex = factor(sample(c("F", "M"), n, replace = TRUE)),
+  CTQ_physical_abuse_di = rbinom(n, 1, prob = dplyr::case_when(
+    CTQ_sexual_abuse_3CAT == "None or minimal" ~ 0.35,
+    CTQ_sexual_abuse_3CAT == "Low to moderate" ~ 0.55,
+    TRUE                                      ~ 0.60
+  )),
+  CTQ_physical_abuse = rnorm(n, mean = dplyr::case_when(
+    CTQ_sexual_abuse_3CAT == "None or minimal" ~ 5.8,
+    CTQ_sexual_abuse_3CAT == "Low to moderate" ~ 6.2,
+    TRUE                                      ~ 7.3
+  ), sd = 2.5)
+)
+
+# Unadjusted categorical (Pearson chi-squared) with pairwise
+t_cat_unadj <- MakeComparisonTable(
+  df_fake,
+  Variables = "CTQ_physical_abuse_di",
+  CompVariable = "CTQ_sexual_abuse_3CAT",
+  AddPairwise = TRUE,
+  PairwiseMethod = "none",
+  Parametric = FALSE,
+  CategoricalMethod = "chisq"
+)
+t_cat_unadj$table_body \%>\% dplyr::select(variable, p.value, starts_with("pw_"))
+
+# Adjusted binary outcome (logistic LR global + Wald z pairwise)
+t_cat_adj <- MakeComparisonTable(
+  df_fake,
+  Variables = "CTQ_physical_abuse_di",
+  CompVariable = "CTQ_sexual_abuse_3CAT",
+  Covariates = c("age", "sex"),
+  AddPairwise = TRUE,
+  PairwiseMethod = "none",
+  Parametric = TRUE
+)
+t_cat_adj$table_body \%>\% dplyr::select(variable, p.value, starts_with("pw_"))
+
+# Continuous adjusted robust ANCOVA + emmeans pairwise
+t_cont_adj <- MakeComparisonTable(
+  df_fake,
+  Variables = "CTQ_physical_abuse",
+  CompVariable = "CTQ_sexual_abuse_3CAT",
+  Covariates = c("age", "sex"),
+  AddPairwise = TRUE,
+  PairwiseMethod = "bonferroni",
+  Parametric = FALSE, # affects display + unadjusted tests only
+  ContinuousAdjustedMethod = "robust_ancova"
+)
+t_cont_adj$table_body \%>\% dplyr::select(variable, p.value, starts_with("pw_"))
+
 }
