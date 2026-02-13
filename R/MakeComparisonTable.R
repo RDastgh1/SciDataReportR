@@ -5,31 +5,129 @@
 #' optional pairwise comparisons. Designed for “publication table” workflows where you
 #' want the **Test** column to reflect the method that generated the p-values.
 #'
+#' @details
+#' ## What gets tested (global p-value)
+#' The global p-value shown for each variable depends on variable type and options:
+#'
+#' **Continuous outcomes**
+#' - `Parametric = TRUE`, no covariates:
+#'   - 2 groups: Welch two-sample t test (`stats::t.test`, unequal variances by default).
+#'   - 3+ groups: one-way ANOVA (`stats::aov`).
+#' - Covariates present:
+#'   - `Parametric = TRUE`: ANCOVA via linear model (`stats::lm`) with Type II test for the grouping term
+#'     (`car::Anova(type = 2)`).
+#'   - `Parametric = FALSE`: “Robust ANCOVA” via `stats::lm` with **HC3** robust covariance
+#'     (`sandwich::vcovHC(type = "HC3")`) and a Wald F test using `car::linearHypothesis`.
+#'
+#' **Categorical outcomes** (dichotomous or multi-category)
+#' - Global test is **Pearson chi-squared** (`stats::chisq.test(correct = FALSE)`) by default.
+#' - If `CatMethod = "auto"`, Fisher’s exact test is used when expected counts are small.
+#' - If covariates are present and the outcome is **binary**, an adjusted global test is
+#'   provided via logistic regression likelihood-ratio test (`stats::drop1(test="Chisq")`).
+#'
+#' ## What gets tested (pairwise p-values)
+#' Pairwise p-values are intended to match the method implied by the **Test** column:
+#'
+#' **Continuous outcomes**
+#' - No covariates, `Parametric = TRUE`: `stats::pairwise.t.test(pool.sd = FALSE)`.
+#' - No covariates, `Parametric = FALSE`: `stats::pairwise.wilcox.test`.
+#' - With covariates: pairwise comparisons of adjusted means using `emmeans::emmeans` +
+#'   `emmeans::contrast` (pairwise or treatment-vs-control if `Referent` is set).
+#'
+#' **Categorical outcomes**
+#' - No covariates: pairwise Pearson chi-squared (or Fisher if `CatMethod` requires it)
+#'   on 2x2 or Rx2 subtables.
+#' - With covariates and binary outcome: pairwise Wald z tests of linear predictor
+#'   contrasts from logistic regression (Stata-like “coefficient contrast” behavior).
+#'   These contrasts are computed by aligning the design matrix and coefficient vector
+#'   by coefficient names to remain robust under rank deficiency and sparse data.
+#'
+#' ## Effect sizes
+#' - Continuous, 2 groups, unadjusted: |Cohen’s d| (`effectsize::cohens_d`).
+#' - Continuous, 3+ groups, unadjusted parametric: eta-squared (`effectsize::eta_squared`).
+#' - Continuous, adjusted: partial eta-squared from Type II ANOVA table.
+#' - Continuous, nonparametric: epsilon-squared approximation from Kruskal-Wallis.
+#' - Categorical: Cramer’s V.
+#'
+#' ## Why the backticks matter
+#' This function supports **non-syntactic column names** (e.g., `"sCD163(ng/mL)"`,
+#' `"PSQI TOTAL"`). Any internally constructed formulas **always backtick** variable
+#' names so model calls do not silently fail.
+#'
+#' ## Practical guidance (when to use what)
+#' - Use `Parametric = TRUE` when residuals are plausibly symmetric and group sample sizes
+#'   are not extremely small, and you want familiar mean-based summaries.
+#' - Use `Parametric = FALSE` (with covariates) to request robust (HC3) inference when
+#'   heteroskedasticity is a concern.
+#' - Use `CatMethod = "auto"` for sparse contingency tables to avoid unreliable chi-squared
+#'   approximations.
+#' - For adjusted binary outcomes with separation or near-separation, logistic regression
+#'   may warn about non-convergence; p-values may be unstable. Consider penalized logistic
+#'   regression in those settings (not implemented here).
+#'
+#' ## Method references
+#' - Pearson chi-squared and Fisher’s exact tests: Agresti A. *Categorical Data Analysis*.
+#' - ANCOVA / linear models: standard LM/ANOVA framework (see `stats::lm`, `stats::aov`).
+#' - Type II tests: Fox J, Weisberg S. *car* package documentation for `Anova`.
+#' - Estimated marginal means and contrasts: Lenth RV. *emmeans* package documentation.
+#' - Robust (HC3) covariance: Long & Ervin (2000) and the `sandwich` package documentation.
+#'
 #' @param DataFrame A data frame.
 #' @param CompVariable Grouping variable name (character scalar). If `NULL` or not present and
 #'   `IncludeOverallStats = TRUE`, an overall-only table is returned.
 #' @param Variables Character vector of variables to include. You may also pass additional
 #'   variable names as unnamed arguments via `...` (convenience).
-#' @param ... Optional additional variable names (character scalars).
+#' @param ... Optional additional variable names (character scalars). Useful when you accidentally
+#'   typed `Variables="A", "B"` instead of `Variables=c("A","B")`.
 #' @param Covariates Optional covariate names (character vector) used for adjusted models.
 #' @param ValueDigits Digits for summary statistics (default 2).
-#' @param pDigits Digits to display in formatted p-values.
+#' @param pDigits Digits to display in formatted p-values. Can be >3; formatting uses `format.pval`.
 #' @param AddEffectSize Add effect sizes column (default FALSE).
 #' @param EffectSizeDigits Digits for effect sizes (default 2).
 #' @param AddPairwise Add pairwise p-value columns (default FALSE).
 #' @param PairwiseMethod P-adjustment method (default "bonferroni"). Use "none" for no adjustment.
+#'   Must be one of `"none"` or `stats::p.adjust.methods`.
 #' @param Parametric If TRUE, use parametric tests for continuous outcomes where relevant.
+#'   If FALSE and covariates are present, robust ANCOVA is used for continuous outcomes.
 #' @param ParametricDisplay If TRUE show mean (SD); if FALSE show median [IQR]. Defaults to `Parametric`.
 #' @param IncludeOverallN If TRUE add overall N column.
 #' @param IncludeMissing If TRUE include missing/unknown category rows in summaries.
 #' @param suppress_warnings If TRUE suppress gtsummary warnings.
-#' @param Referent Optional reference level for pairwise contrasts (character scalar).
+#' @param Referent Optional reference level for pairwise contrasts (character scalar). If set,
+#'   pairwise comparisons are against this referent.
 #' @param IncludeOverallStats If TRUE return overall-only summary (ignores grouping).
 #' @param ShowPositiveBinaryOnLabel If TRUE, display only the “positive” level for binary categorical variables.
-#' @param BinaryPairwiseScale For adjusted binary outcomes: "logit" (default) or "prob".
-#' @param CatMethod Categorical test method: "chisq", "fisher", or "auto".
+#' @param BinaryPairwiseScale For adjusted binary outcomes: "logit" (default) returns Stata-like
+#'   coefficient-contrast p-values. ("prob" is available but not default.)
+#' @param CatMethod Categorical test method: "chisq" (Pearson, correct=FALSE), "fisher",
+#'   or "auto" (use Fisher when expected counts are small).
 #'
-#' @return A `gtsummary::tbl_summary` object.
+#' @return A `gtsummary::tbl_summary` object (with added columns in `table_body`).
+#'
+#' @examples
+#' \dontrun{
+#' set.seed(1)
+#' df <- data.frame(
+#'   Cluster = factor(sample(1:4, 200, TRUE)),
+#'   `sCD163(ng/mL)` = rlnorm(200, 6, 0.5),
+#'   `PSQI TOTAL` = rnorm(200, 8, 3),
+#'   sex = factor(sample(c("F","M"), 200, TRUE)),
+#'   age = rnorm(200, 50, 10)
+#' )
+#'
+#' # Unadjusted table with pairwise comparisons and effect sizes
+#' MakeComparisonTable(df, "Cluster",
+#'                     Variables = c("sCD163(ng/mL)", "PSQI TOTAL", "sex"),
+#'                     AddEffectSize = TRUE, AddPairwise = TRUE,
+#'                     PairwiseMethod = "none", Parametric = TRUE)
+#'
+#' # Covariate-adjusted table
+#' MakeComparisonTable(df, "Cluster",
+#'                     Variables = c("sCD163(ng/mL)", "PSQI TOTAL", "sex"),
+#'                     Covariates = c("age", "sex"),
+#'                     AddEffectSize = TRUE, AddPairwise = TRUE,
+#'                     PairwiseMethod = "bonferroni", Parametric = TRUE)
+#' }
 #' @export
 MakeComparisonTable <- function(
     DataFrame,
@@ -860,7 +958,6 @@ MakeComparisonTable <- function(
                    dplyr::select("variable", "contrast_label", "p_val"))
         }
 
-        # nonparametric continuous
         out <- purrr::map_dfr(combos, function(cp) {
           sub <- df_vg[df_vg[[CompVariable]] %in% cp, , drop = FALSE]
           sub[[CompVariable]] <- droplevels(.as_factor(sub[[CompVariable]]))
