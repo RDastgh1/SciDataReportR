@@ -25,27 +25,26 @@ MakeComparisonTable(
   IncludeOverallStats = FALSE,
   ShowPositiveBinaryOnLabel = TRUE,
   BinaryPairwiseScale = c("logit", "prob"),
-  CatMethod = "auto"
+  CatMethod = c("auto", "chisq", "fisher"),
+  MultiCatAdjusted = c("multinomial_LR", "none")
 )
 }
 \arguments{
 \item{DataFrame}{A data frame.}
 
 \item{CompVariable}{Grouping variable name (character scalar). If \code{NULL} or not present and
-\code{IncludeOverallStats = TRUE}, an overall-only table is returned.}
+\code{IncludeOverallStats=TRUE}, an overall-only table is returned.}
 
-\item{Variables}{Character vector of variables to include. You may also pass additional
-variable names as unnamed arguments via \code{...} (convenience).}
+\item{Variables}{Character vector of variables to include. Variables listed as covariates
+are automatically dropped from this list so they do not appear as outcomes.}
 
 \item{...}{Optional additional variable names (character scalars).}
 
-\item{Covariates}{Optional covariate names (character vector) used for adjusted models.
-Any variables listed here are automatically removed from \code{Variables} so they do not appear
-as rows in the output table.}
+\item{Covariates}{Optional covariate names (character vector) used for adjusted models.}
 
 \item{ValueDigits}{Digits for summary statistics (default 2).}
 
-\item{pDigits}{Digits to display p-values (default 3). Formatting uses \code{format.pval}.}
+\item{pDigits}{Digits to display in formatted p-values.}
 
 \item{AddEffectSize}{Add effect sizes column (default FALSE).}
 
@@ -53,11 +52,10 @@ as rows in the output table.}
 
 \item{AddPairwise}{Add pairwise p-value columns (default FALSE).}
 
-\item{PairwiseMethod}{P-adjustment method (default "bonferroni"). Use "none" for no adjustment.
-Must be one of \code{"none"} or \code{stats::p.adjust.methods}.}
+\item{PairwiseMethod}{P-adjustment method (default "bonferroni"). Use "none" for no adjustment.}
 
 \item{Parametric}{If TRUE, use parametric tests for continuous outcomes where relevant.
-If FALSE and covariates are present, robust ANCOVA is used for continuous outcomes.}
+If FALSE and covariates are present, robust (HC3) inference is used for continuous outcomes.}
 
 \item{ParametricDisplay}{If TRUE show mean (SD); if FALSE show median \link{IQR}. Defaults to \code{Parametric}.}
 
@@ -65,7 +63,7 @@ If FALSE and covariates are present, robust ANCOVA is used for continuous outcom
 
 \item{IncludeMissing}{If TRUE include missing/unknown category rows in summaries.}
 
-\item{suppress_warnings}{If TRUE suppress gtsummary warnings.}
+\item{suppress_warnings}{If TRUE suppress warnings from gtsummary object creation.}
 
 \item{Referent}{Optional reference level for pairwise contrasts (character scalar). If set,
 pairwise comparisons are against this referent.}
@@ -74,10 +72,12 @@ pairwise comparisons are against this referent.}
 
 \item{ShowPositiveBinaryOnLabel}{If TRUE, display only the “positive” level for binary categorical variables.}
 
-\item{BinaryPairwiseScale}{For adjusted binary outcomes: "logit" (default) contrasts on the logit scale,
-or "prob" for probability-scale delta-method contrasts.}
+\item{BinaryPairwiseScale}{For adjusted binary outcomes: "logit" (default) or "prob".}
 
 \item{CatMethod}{Categorical test method: "auto" (default), "chisq", or "fisher".}
+
+\item{MultiCatAdjusted}{For multi-category categorical outcomes with covariates:
+"multinomial_LR" (default) or "none".}
 }
 \value{
 A \code{gtsummary::tbl_summary} object.
@@ -85,73 +85,91 @@ A \code{gtsummary::tbl_summary} object.
 \description{
 Create a label-friendly comparison table (via \strong{gtsummary}) that summarizes variables
 across groups, adds global tests, optional covariate adjustment, effect sizes, and
-optional pairwise comparisons. Designed for “publication table” workflows where you
-want the \strong{Test} column to reflect the method that generated the p-values.
+optional pairwise comparisons. Designed for publication workflows where the \strong{Test}
+column reflects the method used to compute p-values.
 }
 \details{
+\subsection{Overview}{
+
+This function produces a \code{gtsummary::tbl_summary()} table stratified by \code{CompVariable}
+(unless \code{IncludeOverallStats=TRUE}), then adds:
+\itemize{
+\item \strong{Global p-values} (unadjusted and optionally adjusted for covariates)
+\item Optional \strong{effect sizes}
+\item Optional \strong{pairwise p-values} between group levels
+}
+
+The function is robust to \strong{non-syntactic names} (spaces, slashes, parentheses)
+by consistently backticking variables in formulas.
+}
+
 \subsection{What gets tested (global p-value)}{
 
 The global p-value shown for each variable depends on variable type and options:
-
-\strong{Continuous outcomes}
+\subsection{Continuous outcomes}{
 \itemize{
 \item \code{Parametric = TRUE}, no covariates:
 \itemize{
-\item 2 groups: Welch two-sample t test (\code{stats::t.test}, unequal variances by default).
+\item 2 groups: Welch two-sample t test (\code{stats::t.test}, unequal variances).
 \item 3+ groups: one-way ANOVA (\code{stats::aov}).
 }
 \item Covariates present:
 \itemize{
-\item \code{Parametric = TRUE}: ANCOVA via linear model (\code{stats::lm}) with Type II test for the grouping term
+\item \code{Parametric = TRUE}: ANCOVA via \code{stats::lm} with Type II test for the grouping term
 (\code{car::Anova(type = 2)}).
-\item \code{Parametric = FALSE}: Robust ANCOVA via \code{stats::lm} with \strong{HC3} robust covariance
-(\code{sandwich::vcovHC(type = "HC3")}) and a Wald F test using \code{car::linearHypothesis}.
+\item \code{Parametric = FALSE}: robust ANCOVA via \code{stats::lm} with HC3 robust covariance
+(\code{sandwich::vcovHC(type="HC3")}) and a Wald F test (\code{car::linearHypothesis}).
+}
 }
 }
 
-\strong{Categorical outcomes} (dichotomous or multi-category)
+\subsection{Categorical outcomes (binary or multi-category)}{
 \itemize{
-\item Global test is Pearson chi-squared (\code{stats::chisq.test(correct = FALSE)}) by default.
-\item If \code{CatMethod = "auto"}, Fisher’s exact test is used when expected counts are small.
-\item If covariates are present and the outcome is \strong{binary}, an adjusted global test is
-provided via logistic regression likelihood-ratio test (\code{stats::drop1(test="Chisq")}).
+\item No covariates:
+\itemize{
+\item Pearson chi-squared (\code{stats::chisq.test(correct=FALSE)}) or Fisher’s exact test depending on \code{CatMethod}.
 }
+\item Covariates present:
+\itemize{
+\item \strong{Binary outcomes}: adjusted test via logistic regression LR test
+(\code{stats::glm(..., binomial)} + \code{stats::drop1(test="Chisq")} for the grouping term).
+\item \strong{Multi-category outcomes} (e.g., Race): adjusted test via multinomial logistic regression LR test
+(\code{nnet::multinom} + \code{stats::anova(..., test="Chisq")}) when \code{MultiCatAdjusted="multinomial_LR"}.
+}
+}
+}
+
 }
 
 \subsection{What gets tested (pairwise p-values)}{
-
-Pairwise p-values are intended to match the method implied by the \strong{Test} column:
-
-\strong{Continuous outcomes}
+\subsection{Continuous outcomes}{
 \itemize{
-\item No covariates, \code{Parametric = TRUE}: \code{stats::pairwise.t.test(pool.sd = FALSE)}.
-\item No covariates, \code{Parametric = FALSE}: \code{stats::pairwise.wilcox.test}.
-\item With covariates: pairwise comparisons of adjusted means using \code{emmeans::emmeans} +
-\code{emmeans::pairs} (or treatment-vs-control if \code{Referent} is set).
+\item No covariates, \code{Parametric=TRUE}: \code{stats::pairwise.t.test(pool.sd=FALSE)}.
+\item No covariates, \code{Parametric=FALSE}: \code{stats::pairwise.wilcox.test}.
+\item With covariates:
+\itemize{
+\item Pairwise comparisons of adjusted means using \code{emmeans::emmeans} + \code{emmeans::contrast}.
+\item If \code{Parametric=FALSE}, inference uses \strong{HC3 robust covariance} supplied to \code{emmeans}
+(\code{emmeans(..., vcov. = sandwich::vcovHC(fit, type="HC3"))}).
+}
+}
 }
 
-\strong{Important note about adjusted continuous pairwise}
-This function uses complete-case rows for each outcome (outcome + group + covariates).
-After complete-case filtering, some covariates can become constant (for example, all remaining
-participants share the same Sex), or some group levels can disappear. That can make the model
-rank-deficient and prevent \code{emmeans} from estimating certain contrasts.
-
-To avoid blank pairwise columns due to purely technical issues, this function:
+\subsection{Categorical outcomes}{
 \itemize{
-\item Removes the outcome variable from covariates per-row (prevents \code{y} on both sides),
-\item Drops covariates that are constant after complete-case filtering,
-\item Falls back to unadjusted pairwise if no usable covariates remain for that outcome.
+\item No covariates: pairwise chi-sq or Fisher on 2-group subtables.
+\item With covariates:
+\itemize{
+\item \strong{Binary}: logistic coefficient-contrast style pairwise (Wald z tests on logit scale by default).
+\item \strong{Multi-category}: pairwise LR tests using multinomial logit:
+\itemize{
+\item Subset to two clusters
+\item Compare \code{outcome ~ Cluster + covariates} vs \code{outcome ~ covariates}
+}
+}
+}
 }
 
-If pairwise values are still \code{NA}, that typically reflects truly non-estimable contrasts
-(data limitation), not a join or formatting failure.
-
-\strong{Categorical outcomes}
-\itemize{
-\item No covariates: pairwise chi-squared or Fisher (per \code{CatMethod}) on 2x2 or Rx2 subtables.
-\item With covariates and binary outcome: pairwise Wald z tests of linear predictor contrasts
-from logistic regression (coefficient-contrast behavior).
-}
 }
 
 \subsection{Effect sizes}{
@@ -164,28 +182,21 @@ from logistic regression (coefficient-contrast behavior).
 }
 }
 
-\subsection{Why the backticks matter}{
-
-This function supports non-syntactic column names (e.g., \code{"sCD163(ng/mL)"}, \code{"PSQI TOTAL"}).
-Any internally constructed formulas always backtick variable names so model calls do not fail.
+\subsection{Warnings you may see (and what they mean)}{
+\itemize{
+\item "Chi-squared approximation may be incorrect": sparse expected counts; prefer \code{CatMethod="auto"} (Fisher fallback).
+\item \code{glm.fit} warnings about separation/non-convergence: rare binary outcomes in some groups. The function
+returns p-values when possible; otherwise \code{NA}.
+\item Multinomial warnings: sparse category-by-cluster cells may cause instability; \code{NA} is returned if the model fails.
+}
 }
 
 \subsection{Method references}{
 \itemize{
-\item Pearson chi-squared and Fisher’s exact tests: Agresti A. \emph{Categorical Data Analysis}.
-\item ANCOVA / linear models: see \code{stats::lm}, \code{stats::aov}.
-\item Type II tests: Fox J, Weisberg S. \emph{car} package documentation for \code{Anova}.
-\item Estimated marginal means and contrasts: Lenth RV. \emph{emmeans} package documentation.
-\item Robust (HC3) covariance: Long & Ervin (2000) and the \code{sandwich} package documentation.
+\item Agresti A. \emph{Categorical Data Analysis} (chi-sq, Fisher, logistic, multinomial models).
+\item Fox J, Weisberg S. \emph{car} package documentation for Type II tests and Wald tests.
+\item Lenth RV. \emph{emmeans} package documentation for adjusted means and contrasts.
+\item Long & Ervin (2000) and \code{sandwich} package docs for HC3 robust covariance.
 }
-}
-}
-\examples{
-\dontrun{
-MakeComparisonTable(
-  df_Clusters, "Cluster", vars_Predictors,
-  Covariates = c("Age","Sex","wrat3"),
-  AddEffectSize = TRUE, AddPairwise = TRUE, PairwiseMethod = "none"
-)
 }
 }
