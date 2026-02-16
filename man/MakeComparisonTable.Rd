@@ -2,7 +2,7 @@
 % Please edit documentation in R/MakeComparisonTable.R
 \name{MakeComparisonTable}
 \alias{MakeComparisonTable}
-\title{Make a publication-ready comparison table (gtsummary backbone)}
+\title{Make a publication-ready comparison table using gtsummary}
 \usage{
 MakeComparisonTable(
   DataFrame,
@@ -31,168 +31,168 @@ MakeComparisonTable(
 )
 }
 \arguments{
-\item{DataFrame}{A data.frame or tibble.}
+\item{DataFrame}{A data frame or tibble.}
 
-\item{CompVariable}{A single character name of the grouping variable.}
+\item{CompVariable}{A single character string naming the grouping variable.}
 
-\item{Variables}{Character vector of variables to summarize. Default NULL compares all other columns.}
+\item{Variables}{Character vector of variables to compare. Default NULL compares all other variables.}
 
-\item{...}{Optional unnamed character variable names to append to Variables.}
+\item{...}{Optional unnamed character variable names to append to \code{Variables}.}
 
-\item{Covariates}{Character vector of covariates used only for adjusted tests. Default NULL.}
+\item{Covariates}{Character vector of covariates used only for adjusted tests and adjusted pairwise. Default NULL.}
 
 \item{ValueDigits}{Digits for continuous summaries. Default 2.}
 
 \item{pDigits}{Digits for p-value formatting. Default 3.}
 
-\item{AddEffectSize}{Logical. Add an effect size column. Default FALSE.}
+\item{AddEffectSize}{Logical; add effect size column. Default FALSE.}
 
 \item{EffectSizeDigits}{Digits for effect size formatting. Default 2.}
 
-\item{AddPairwise}{Logical. Add pairwise columns. Default FALSE.}
+\item{AddPairwise}{Logical; add pairwise columns. Default FALSE.}
 
-\item{PairwiseMethod}{P-adjust method for pairwise tests. Default "bonferroni".
-Must be one of \code{stats::p.adjust.methods} or "none". Empty inputs fall back to default.}
+\item{PairwiseMethod}{Multiplicity correction for pairwise p-values. Default "bonferroni".
+Must be one of \code{stats::p.adjust.methods} or "none". Empty inputs are normalized to the default.}
 
-\item{Parametric}{Logical. Parametric tests when TRUE; robust or nonparametric when FALSE. Default TRUE.}
+\item{Parametric}{Logical; if TRUE use parametric tests for continuous, else robust or nonparametric. Default TRUE.}
 
-\item{ParametricDisplay}{Logical or NULL. If NULL, matches Parametric. Default NULL.}
+\item{ParametricDisplay}{Logical or NULL; if NULL uses \code{Parametric}. Default NULL.}
 
-\item{IncludeOverallN}{Logical. Add overall N via \code{gtsummary::add_n()}. Default FALSE.}
+\item{IncludeOverallN}{Logical; add N column via \code{gtsummary::add_n()}. Default FALSE.}
 
-\item{IncludeMissing}{Logical. Include missing rows in summaries. Default FALSE.}
+\item{IncludeMissing}{Logical; include missing rows in summary. Default FALSE.}
 
-\item{suppress_warnings}{Logical. Suppress warnings from \code{tbl_summary()}. Default FALSE.}
+\item{suppress_warnings}{Logical; suppress warnings from \code{tbl_summary()}. Default FALSE.}
 
-\item{Referent}{Optional single referent level for pairwise. Default NULL.}
+\item{Referent}{Optional character level of \code{CompVariable} for referent-based pairwise. Default NULL (all pairwise).}
 
-\item{IncludeOverallStats}{Logical. If TRUE, returns overall-only summary (ignores grouping). Default FALSE.}
+\item{IncludeOverallStats}{Logical; if TRUE ignores grouping and returns overall summary. Default FALSE.}
 
-\item{ShowPositiveBinaryOnLabel}{Logical. Attempt to set a “positive” level for dichotomous display. Default TRUE.}
+\item{ShowPositiveBinaryOnLabel}{Logical; attempt to set display "positive" level for dichotomous variables. Default TRUE.}
 
-\item{BinaryPairwiseScale}{Character. Reserved. Default "logit". Choices: "logit", "prob".}
+\item{BinaryPairwiseScale}{Reserved; currently not used for tests, but kept for API stability. Default "logit".}
 
-\item{CatMethod}{Character. Default "auto". Choices: "auto", "chisq", "fisher".}
+\item{CatMethod}{Character; "auto", "chisq", or "fisher". Default "auto".}
 
-\item{MultiCatAdjusted}{Character. Default "multinomial_LR". Choices: "multinomial_LR".}
+\item{MultiCatAdjusted}{Character; default "multinomial_LR". Kept explicit to avoid silent breaks.}
 
-\item{IncludeNotes}{Logical. Include Notes column and force it last. Default TRUE.}
+\item{IncludeNotes}{Logical; include Notes column (and force it last). Default TRUE.}
 }
 \value{
-A \code{gtsummary} \code{tbl_summary} object with added columns in \code{table_body}.
+A \code{gtsummary} object (\code{tbl_summary}) with added columns in \verb{$table_body}.
 }
 \description{
-Builds a \code{gtsummary::tbl_summary()} table comparing groups defined by \code{CompVariable},
-and appends deterministic, label-friendly columns for global tests, optional adjusted tests,
-optional effect sizes, optional pairwise contrasts, and an optional Notes column.
+Creates a \code{gtsummary::tbl_summary()} table comparing groups defined by \code{CompVariable},
+then appends deterministic, label-friendly columns for global p-values, optional covariate-adjusted p-values,
+optional effect sizes, optional pairwise contrasts, and an optional Notes column documenting complete-case
+level drops.
 }
 \details{
 The function is designed to be usable with just:
-\preformatted{MakeComparisonTable(df, "Cluster")}
+\preformatted{
+MakeComparisonTable(df, "GroupVar")
 }
-\section{Defaults (what happens if you do not set an argument)}{
+}
+\section{Defaults and intended usage}{
 
 \itemize{
-\item \code{Variables = NULL} (default): compare all columns except \code{CompVariable} and \code{Covariates}.
+\item \code{Variables = NULL} (default): compare \strong{all columns} in \code{DataFrame} except \code{CompVariable} and any \code{Covariates}.
 \item \code{Covariates = NULL} (default): no covariate adjustment.
-\item \code{Parametric = TRUE} (default): parametric continuous tests (Welch t-test, ANOVA, ANCOVA).
-\item \code{ParametricDisplay = NULL} (default): if NULL, matches \code{Parametric} for display
-(mean (SD) if TRUE; median \link{IQR} if FALSE).
-\item \code{CatMethod = "auto"} (default): chi-squared when assumptions are adequate, otherwise Fisher.
-\item \code{MultiCatAdjusted = "multinomial_LR"} (default): multinomial LR for adjusted multi-category outcomes.
-\item \code{AddPairwise = FALSE} (default): no pairwise columns unless enabled.
-\item \code{PairwiseMethod = "bonferroni"} (default): multiplicity correction for pairwise p-values.
-If \code{PairwiseMethod} is \code{NULL}, \code{""}, \code{NA}, or \code{character(0)}, it falls back to \code{"bonferroni"}.
-\item \code{Referent = NULL} (default): all pairwise; if set, do treatment-vs-control vs referent.
-\item \code{AddEffectSize = FALSE} (default): effect sizes off unless enabled.
-\item \code{IncludeNotes = TRUE} (default): include Notes (set to FALSE to remove). Notes is forced last if included.
+\item \code{Parametric = TRUE} (default): parametric global tests for continuous outcomes.
+\item \code{ParametricDisplay = NULL} (default): uses mean (SD) if \code{Parametric=TRUE}, and median \link{IQR} if \code{Parametric=FALSE}.
+\item \code{CatMethod = "auto"} (default): chi-squared when valid; Fisher (exact for 2x2, simulated otherwise) when chi-squared assumptions fail.
+\item \code{MultiCatAdjusted = "multinomial_LR"} (default): multinomial likelihood ratio test for adjusted multi-category outcomes.
+\item \code{AddPairwise = FALSE} (default): do not include pairwise columns unless requested.
+\item \code{PairwiseMethod = "bonferroni"} (default): p-value correction for pairwise contrasts.
+If \code{PairwiseMethod} is passed as \code{NULL}, \code{""}, \code{NA}, or \code{character(0)} (common from grid code),
+it is normalized back to \code{"bonferroni"}.
+\item \code{IncludeNotes = TRUE} (default): include Notes describing dropped group levels due to complete-case filtering.
+Notes is always forced to the last column when included.
 }
 }
 
-\section{Continuous outcomes}{
- global tests:
-\strong{No covariates}
-\itemize{
-\item \code{Parametric = TRUE}: 2 groups Welch t-test; 3+ groups ANOVA.
-\item \code{Parametric = FALSE}: 2 groups Wilcoxon rank-sum; 3+ groups Kruskal-Wallis.
-}
+\section{Statistical tests}{
+ continuous outcomes
 
-\strong{With covariates}
+\strong{Unadjusted (no covariates)}
 \itemize{
-\item \code{Parametric = TRUE}: ANCOVA via \code{lm()} and Type II F test for group term via \code{car::Anova(type = 2)}.
-\item \code{Parametric = FALSE}: robust ANCOVA via \code{lm()} with HC3 covariance (\code{sandwich::vcovHC(type="HC3")})
-and a Type II Wald F test via \code{car::Anova(vcov.=V, test.statistic="F")}.
-}
-
-Complete-case filtering is per-variable:
+\item \code{Parametric = TRUE}
 \itemize{
-\item Unadjusted tests filter on \code{outcome + CompVariable}
-\item Adjusted tests filter on \code{outcome + CompVariable + Covariates}
-This may drop entire group levels.
+\item 2 groups: Welch t-test (\code{stats::t.test}, unequal variances)
+\item 3+ groups: ANOVA (\code{stats::aov})
 }
-
- pairwise tests:
-\strong{No covariates}
+\item \code{Parametric = FALSE}
 \itemize{
-\item Parametric: \code{stats::pairwise.t.test(pool.sd = FALSE)}.
-\item Nonparametric: \code{stats::pairwise.wilcox.test}.
+\item 2 groups: Wilcoxon rank-sum (\code{stats::wilcox.test})
+\item 3+ groups: Kruskal-Wallis (\code{stats::kruskal.test})
 }
-
-\strong{With covariates}
-\itemize{
-\item Uses \code{emmeans} on the adjusted \code{lm()} model.
-\item Robust mode passes HC3 covariance into \code{emmeans::emmeans(..., vcov. = V)} so adjusted pairwise works.
-\item \code{Referent} set: treatment-vs-control vs referent; otherwise all pairwise.
-}
-}
-
-\section{Categorical outcomes}{
- global tests:
-\strong{Unadjusted}
-\itemize{
-\item \code{CatMethod="chisq"}: Pearson chi-squared.
-\item \code{CatMethod="fisher"}: Fisher exact for 2x2; simulated Fisher for larger tables.
-\item \code{CatMethod="auto"}: chi-squared unless expected counts are small or zero, then Fisher.
 }
 
 \strong{Adjusted (with covariates)}
 \itemize{
-\item Binary outcome: logistic regression likelihood ratio test (LR) for group term.
-\item 3+ outcome: multinomial LR (\code{nnet::multinom}) comparing reduced vs full model.
+\item \code{Parametric = TRUE}: ANCOVA via \code{lm()}, Type II F test for group term via \code{car::Anova(type=2)}.
+\item \code{Parametric = FALSE}: robust ANCOVA via \code{lm()} with HC3 covariance from \code{sandwich::vcovHC(type="HC3")},
+Wald Type II F test via \code{car::Anova(vcov.=V, test.statistic="F")}.
 }
 
- adjusted pairwise:
+Complete-case filtering is performed per variable:
+\itemize{
+\item Unadjusted tests: complete cases on \verb{\{outcome, CompVariable\}}
+\item Adjusted tests: complete cases on \verb{\{outcome, CompVariable, Covariates\}}
+This may drop group levels; those dropped levels are reported in Notes (if enabled),
+and pairwise contrasts involving dropped levels are returned as \code{NA}.
+}
+
+ continuous pairwise
+
+\strong{Unadjusted}
+\itemize{
+\item \code{Parametric = TRUE}: \code{stats::pairwise.t.test(pool.sd = FALSE)}
+\item \code{Parametric = FALSE}: \code{stats::pairwise.wilcox.test}
+\item multiplicity correction via \code{PairwiseMethod} (or none if \code{"none"})
+}
+
+\strong{Adjusted}
+\itemize{
+\item Fits \code{lm(outcome ~ group + covariates)} on complete cases.
+\item Pairwise via \code{emmeans}:
+\itemize{
+\item robust mode passes HC3 covariance into \code{emmeans::emmeans(..., vcov. = V)} so adjusted pairwise works.
+\item if \code{Referent} is provided: treatment-vs-control contrasts vs referent via \code{emmeans::contrast(..., "trt.vs.ctrl")}
+otherwise all pairwise via \code{"pairwise"}.
+}
+}
+
+ categorical outcomes
+
+\strong{Unadjusted global tests}
+\itemize{
+\item \code{CatMethod="chisq"}: Pearson chi-squared (\code{stats::chisq.test})
+\item \code{CatMethod="fisher"}: Fisher exact for 2x2; Fisher simulated for larger tables
+\item \code{CatMethod="auto"}: chi-squared unless expected counts are small or zero, then Fisher
+}
+
+\strong{Adjusted global tests (with covariates)}
+\itemize{
+\item Binary outcome: logistic regression likelihood ratio test (LR) comparing reduced vs full model
+\item Multi-category (3+ levels): multinomial LR using \code{nnet::multinom} comparing reduced vs full model
+(controlled by \code{MultiCatAdjusted}, default \code{"multinomial_LR"})
+}
+
+\strong{Adjusted pairwise for categorical (with covariates)}
 For each pairwise subset, outcome levels may collapse. The engine detects per pair:
 \itemize{
-\item If outcome becomes binary: logistic LR.
-\item If outcome remains 3+ levels: multinomial LR.
+\item If outcome becomes binary: logistic LR
+\item If outcome remains 3+ levels: multinomial LR
 }
-}
-
-\section{Notes column}{
-
-With covariates, complete-case filtering can drop group levels for specific variables.
-Pairwise contrasts involving dropped levels are returned as \code{NA}. If \code{IncludeNotes=TRUE},
-Notes will describe which group levels were dropped. Notes is always the last column if included.
-}
-
-\section{P-values}{
-
-Numeric p-values are clamped to at least \code{.Machine$double.xmin} to avoid underflow returning 0.
-}
-
-\section{Caption}{
-
-Caption is deterministic and includes: display choice, parametric vs robust mode, covariates (if any),
-categorical method, multi-category adjusted method, pairwise inclusion, and p-adjust method.
 }
 
 \references{
 \itemize{
 \item gtsummary: https://www.danieldsjoberg.com/gtsummary/
 \item emmeans: https://cran.r-project.org/package=emmeans
-\item car::Anova (Type II): https://cran.r-project.org/package=car
-\item sandwich::vcovHC (HC3): https://cran.r-project.org/package=sandwich
+\item car::Anova Type II: https://cran.r-project.org/package=car
+\item sandwich HC3: https://cran.r-project.org/package=sandwich
 \item effectsize: https://cran.r-project.org/package=effectsize
 \item nnet::multinom: https://cran.r-project.org/package=nnet
 }
