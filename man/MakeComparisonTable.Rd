@@ -103,9 +103,9 @@ formatting, labeling, and table structure.
 a group level, causing missing adjusted pairwise contrasts).
 }
 
-The function aims to \strong{use gtsummary capabilities wherever possible} (summary, formatting,
-styling, captioning), and only computes additional statistics not provided directly by
-gtsummary (adjusted/global tests, adjusted pairwise, effect sizes).
+The function aims to use gtsummary capabilities wherever possible (summary, formatting,
+styling, captioning) and computes additional statistics not provided directly by gtsummary
+(adjusted global tests, adjusted pairwise, effect sizes).
 }
 
 \subsection{Variable typing rules}{
@@ -206,7 +206,7 @@ HC3 robust covariance matrix supplied to emmeans (so adjusted pairwise still wor
 \itemize{
 \item Binary outcome: for each pair, fit logistic models with and without group and use LR p-value.
 \item Multi-category outcome: for each pair, fit multinomial models with and without group and use LR p-value.
-\item Important edge case: in a given pairwise subset, a multi-category outcome may collapse to 2 levels;
+\item Edge case: in a given pairwise subset, a multi-category outcome may collapse to 2 levels;
 in that case, the function automatically switches to logistic LR for that pair.
 }
 }
@@ -228,22 +228,13 @@ Effect sizes are provided when \code{AddEffectSize = TRUE}.
 
 \subsection{Captions}{
 
-The caption is constructed to describe:
+The caption describes:
 \itemize{
 \item display statistic for continuous variables (mean SD vs median IQR),
 \item whether covariates were used (and how continuous outcomes were tested),
 \item categorical test selection (\code{CatMethod}),
 \item adjusted multi-category method (\code{MultiCatAdjusted}),
 \item pairwise inclusion and multiplicity control (\code{PairwiseMethod}).
-}
-}
-
-\subsection{References and background}{
-\itemize{
-\item Agresti A. \emph{Categorical Data Analysis} (chi-squared, Fisher logic).
-\item Fox J, Weisberg S. \emph{car} package docs for Type II tests and linearHypothesis.
-\item Lenth RV. \emph{emmeans} package docs for estimated marginal means.
-\item Long & Ervin (2000) and \emph{sandwich} docs for HC3 robust covariance guidance.
 }
 }
 }
