@@ -2,7 +2,7 @@
 % Please edit documentation in R/PlotCorrelationsHeatmap.R
 \name{PlotCorrelationsHeatmap}
 \alias{PlotCorrelationsHeatmap}
-\title{Plot Correlations Heatmap}
+\title{Plot correlations heatmap}
 \usage{
 PlotCorrelationsHeatmap(
   Data,
@@ -17,27 +17,37 @@ PlotCorrelationsHeatmap(
 )
 }
 \arguments{
-\item{Data}{The dataset containing the variables.}
+\item{Data}{A data frame containing variables to correlate.}
 
-\item{xVars}{A character vector of the names of the x-axis variables.}
+\item{xVars}{Character vector of x-axis variable names. If NULL, numeric variables are auto-selected.}
 
-\item{yVars}{A character vector of the names of the y-axis variables. Defaults to NULL.}
+\item{yVars}{Character vector of y-axis variable names. If NULL, uses xVars and removes diagonal.}
 
-\item{covars}{A character vector of the names of covariate variables. Defaults to NULL.}
+\item{covars}{Character vector of covariate names. If provided, computes partial correlations via ppcor.}
 
-\item{method}{The correlation method. Defaults to "pearson".}
+\item{method}{Correlation method: "pearson", "spearman", or "kendall".}
 
-\item{Relabel}{A logical indicating whether to relabel variables. Defaults to TRUE.}
+\item{Relabel}{Logical. If TRUE, uses sjlabelled variable labels when present.}
 
-\item{Ordinal}{Logical, indicating whether ordinal variables should be included.}
+\item{Ordinal}{Logical. If TRUE, ordinal variables are converted to numeric using ConvertOrdinalToNumeric().}
 
-\item{min_n}{Minimum complete cases required for a pairwise correlation.}
+\item{min_n}{Minimum complete cases required for a correlation (or partial correlation).}
 
 \item{eps}{Small tolerance to treat near-constant variables as constant.}
 }
 \value{
-A list containing matrices, ggplot objects for visualizations, and details of the method used.
+A list with:
+\itemize{
+\item Unadjusted: list(r, p, npairs, plot)
+\item FDRCorrected: list(r, p, npairs, plot)
+\item method, Relabel, Covariates, CovariatesMissing
+}
 }
 \description{
-This function calculates correlations between variables and plots them as a heatmap.
+Calculate correlations (or partial correlations if covariates are supplied) between variables
+and plot them as a heatmap with significance stars.
+}
+\details{
+This version is robust to non-syntactic column names (spaces, hyphens, Greek letters like β),
+by preserving names during data.frame coercions and using tidyselect::all_of() in pivot_longer().
 }
