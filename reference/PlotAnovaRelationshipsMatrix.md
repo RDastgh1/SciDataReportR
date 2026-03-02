@@ -1,0 +1,60 @@
+# Plot ANOVA Relationships Matrix
+
+This function plots the relationship between continuous and categorical
+variables using ANOVA or Kruskal-Wallis tests. It generates a "heatmap"
+with points colored and shaped based on statistical significance and
+effect size.
+
+## Usage
+
+``` r
+PlotAnovaRelationshipsMatrix(
+  Data,
+  CatVars,
+  ContVars,
+  Covariates = NULL,
+  Relabel = TRUE,
+  Parametric = TRUE,
+  Ordinal = FALSE,
+  min_n = 4,
+  eps = 1e-08
+)
+```
+
+## Arguments
+
+- Data:
+
+  The data frame containing the variables of interest.
+
+- CatVars:
+
+  Character vector of categorical variable names.
+
+- ContVars:
+
+  Character vector of continuous variable names.
+
+- Covariates:
+
+  Optional character vector of covariate names for ANCOVA analysis.
+
+- Relabel:
+
+  Logical indicating whether to relabel variables with their labels
+  (default is TRUE).
+
+- Parametric:
+
+  Logical indicating whether to use parametric (ANOVA) or non-parametric
+  (Kruskal-Wallis) tests (default is TRUE).
+
+- Ordinal:
+
+  Logical, indicating whether ordinal variables should be considered.
+
+## Value
+
+A list containing three ggplot objects: p (scatter plot without multiple
+comparison correction), p_FDR (scatter plot with FDR correction), and
+pvaltable (data frame of p-values and significance).

@@ -6,6 +6,7 @@
 <url><loc>https://rdastgh1.github.io/SciDataReportR/index.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/news/index.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/AddToCodebook.html</loc></url>
+<url><loc>https://rdastgh1.github.io/SciDataReportR/reference/CalcZScore.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/CombineCodebooks.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/ConvertOrdinalToNumeric.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/CreateMCATable.html</loc></url>
@@ -17,11 +18,15 @@
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/CreateVariableTypesTemplate.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/CreateZScorePlot.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/FormattedDataDictionary.html</loc></url>
+<url><loc>https://rdastgh1.github.io/SciDataReportR/reference/IQROutliers.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/InsertValues.html</loc></url>
+<url><loc>https://rdastgh1.github.io/SciDataReportR/reference/KeepEnv.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/MakeComparisonTable.html</loc></url>
+<url><loc>https://rdastgh1.github.io/SciDataReportR/reference/MakeFacetCatComparisonTable.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/MakeTable1.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/Make_DataDictionary.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/Merge_ByClosestTime.html</loc></url>
+<url><loc>https://rdastgh1.github.io/SciDataReportR/reference/Pipeline_SOMClust.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/Plot2GroupStats.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/PlotAnovaRelationshipsMatrix.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/PlotAssociations.html</loc></url>
@@ -33,6 +38,7 @@
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/PlotCorrelationsHeatmap.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/PlotDirectionalHeatmaps.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/PlotInteractionEffectsContinuous.html</loc></url>
+<url><loc>https://rdastgh1.github.io/SciDataReportR/reference/PlotInteractionEffectsMatrix.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/PlotMiningMatrix.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/PlotMissingData.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/PlotNumInteractionEffectsMatrix.html</loc></url>
@@ -42,6 +48,9 @@
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/PlotPointCorrelationsHeatmap.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/PlotSplitViolin.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/PlotTimeDistribution.html</loc></url>
+<url><loc>https://rdastgh1.github.io/SciDataReportR/reference/ProjectPCA.html</loc></url>
+<url><loc>https://rdastgh1.github.io/SciDataReportR/reference/Project_SOMClust.html</loc></url>
+<url><loc>https://rdastgh1.github.io/SciDataReportR/reference/Project_ZScore.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/ReValueFactors.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/ReplaceMissingCode.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/ReplaceMissingLabels.html</loc></url>
