@@ -3,10 +3,15 @@
 #' @description
 #' Given a fitted \code{Pipeline_SOMClust} object, project a new data frame onto:
 #' \itemize{
-#'   \item The same Z-score scaling (via SciDataReportR::Project_ZScore()).
+#'   \item The same Z-score scaling (via SciDataReportR::Project_ZScore()) when
+#'         the training object used computed or projected Z-scores.
 #'   \item The same SOM (kohonen), using \code{kohonen::map()}.
 #'   \item The same node-level latent profiles and posterior probabilities.
 #' }
+#'
+#' If the training object used \code{ZScoreType = "PreZScored"}, this function
+#' expects the new data already contains the same Z-score columns (by name)
+#' stored in \code{object$ZScoreVars}. No re-zscoring is performed.
 #'
 #' For each projected case, the function:
 #' \itemize{
@@ -20,15 +25,14 @@
 #'     }
 #' }
 #'
-#' Cluster-level summaries compare the fraction of high-distance projected
-#' cases in each cluster to the fraction seen in training. A warning is issued
-#' only if \emph{any} projected cluster has a higher proportion of
-#' high-distance cases than any cluster in training.
+#' Stable row id:
+#' - \code{.scidr_rowid} is added to \code{new_df} (if not already present) and
+#'   carried into \code{df_with_clusters} and \code{ProbFit$individual}.
+#' - \code{ProbFit$individual$RowID} is set equal to \code{.scidr_rowid}.
 #'
 #' Missing data:
 #' \itemize{
-#'   \item Z-scores are computed for all rows, but only rows with complete
-#'         Z-scores are mapped to the SOM.
+#'   \item Only rows with complete Z-scores are mapped to the SOM.
 #'   \item Rows with missing Z-scores receive NA for SOM_Node, SOM_Distance,
 #'         and the cluster label.
 #' }
@@ -42,8 +46,8 @@
 #' @return A list of class \code{"Project_SOMClust"} with components:
 #'   \itemize{
 #'     \item \code{vars_used}, \code{ClusterName}, \code{complete_rows}
-#'     \item \code{df_with_clusters}: \code{new_df} with only the cluster
-#'           column appended.
+#'     \item \code{df_with_clusters}: \code{new_df} with \code{.scidr_rowid} and
+#'           only the cluster column appended.
 #'     \item \code{SOMProj}: list with training and projected distance
 #'           summaries, cluster-level flag summaries, comparison, and plots.
 #'     \item \code{ProbFit}: list with \code{node} (training node-level
@@ -64,9 +68,6 @@ Project_SOMClust <- function(
     stop("object must be a Pipeline_SOMClust result.")
   }
 
-  if (!requireNamespace("SciDataReportR", quietly = TRUE)) {
-    stop("SciDataReportR must be installed.")
-  }
   if (!requireNamespace("kohonen", quietly = TRUE)) {
     stop("Package 'kohonen' is required.")
   }
@@ -80,28 +81,88 @@ Project_SOMClust <- function(
     ClusterName <- object$ClusterName
   }
 
+  # Stable row id ----------------------------------------------------------
+
+  if (!".scidr_rowid" %in% names(new_df)) {
+    new_df_scidr <- new_df %>%
+      dplyr::mutate(.scidr_rowid = dplyr::row_number())
+  } else {
+    new_df_scidr <- new_df
+    if (any(is.na(new_df_scidr$.scidr_rowid))) {
+      stop("new_df has .scidr_rowid but it contains missing values.")
+    }
+  }
+
+  # Determine Z-score columns used in training -----------------------------
+
+  ZScoreType_train <- object$ZScoreType
+  ZScoreVars_used  <- object$ZScoreVars
+
+  if (is.null(ZScoreVars_used)) {
+    ZScoreVars_used <- paste0("Z_", vars_used)
+  }
+
   # Z-score projection onto new_df -----------------------------------------
 
-  Z_obj <- object$ZScoreObject
-  if (is.null(Z_obj) || !"ZScoreObj" %in% class(Z_obj)) {
-    stop("object$ZScoreObject must be a valid ZScoreObj from Pipeline_SOMClust.")
+  if (!is.null(ZScoreType_train) && ZScoreType_train == "PreZScored") {
+
+    missing_z <- setdiff(ZScoreVars_used, names(new_df_scidr))
+    if (length(missing_z) > 0) {
+      stop("new_df is missing required pre-zscored columns: ",
+           paste(missing_z, collapse = ", "))
+    }
+
+    z_df_new <- new_df_scidr[, ZScoreVars_used, drop = FALSE]
+
+    is_num_z <- vapply(z_df_new, is.numeric, logical(1))
+    if (!all(is_num_z)) {
+      stop("All PreZScored columns must be numeric. Non-numeric: ",
+           paste(names(z_df_new)[!is_num_z], collapse = ", "))
+    }
+
+    complete_rows <- stats::complete.cases(z_df_new)
+    if (!any(complete_rows)) {
+      stop("No complete rows in new_df pre-zscored columns; cannot map to SOM.")
+    }
+
+    zmat_new <- as.matrix(z_df_new[complete_rows, , drop = FALSE])
+
+  } else {
+
+    if (!requireNamespace("SciDataReportR", quietly = TRUE)) {
+      stop("SciDataReportR must be installed.")
+    }
+
+    Z_obj <- object$ZScoreObject
+    if (is.null(Z_obj) || !"ZScoreObj" %in% class(Z_obj)) {
+      stop("object$ZScoreObject must be a valid ZScoreObj from Pipeline_SOMClust.")
+    }
+
+    z_proj <- SciDataReportR::Project_ZScore(
+      df                 = new_df_scidr,
+      variables          = vars_used,
+      parameters         = Z_obj,
+      ParameterInputType = "ZScoreObj",
+      names_prefix       = "Z_"
+    )
+
+    z_df_new <- z_proj$ZScores
+
+    missing_z <- setdiff(ZScoreVars_used, names(z_df_new))
+    if (length(missing_z) > 0) {
+      stop("Projected Z-scores are missing required columns: ",
+           paste(missing_z, collapse = ", "))
+    }
+
+    z_df_new <- z_df_new[, ZScoreVars_used, drop = FALSE]
+
+    complete_rows <- stats::complete.cases(z_df_new)
+    if (!any(complete_rows)) {
+      stop("No complete rows in new_df after Z-score projection; cannot map to SOM.")
+    }
+
+    zmat_new <- as.matrix(z_df_new[complete_rows, , drop = FALSE])
   }
-
-  z_proj <- SciDataReportR::Project_ZScore(
-    df                 = new_df,
-    variables          = vars_used,
-    parameters         = Z_obj,
-    ParameterInputType = "ZScoreObj",
-    names_prefix       = "Z_"
-  )
-
-  z_df_new <- z_proj$ZScores
-  complete_rows <- stats::complete.cases(z_df_new)
-  if (!any(complete_rows)) {
-    stop("No complete rows in new_df after Z-score projection; cannot map to SOM.")
-  }
-
-  zmat_new <- as.matrix(z_df_new[complete_rows, , drop = FALSE])
 
   # Retrieve SOM / distance baselines from training ------------------------
 
@@ -119,10 +180,10 @@ Project_SOMClust <- function(
 
   mapping <- kohonen::map(som_model, newdata = zmat_new)
 
-  SOM_Node_new <- rep(NA_integer_, nrow(new_df))
+  SOM_Node_new <- rep(NA_integer_, nrow(new_df_scidr))
   SOM_Node_new[complete_rows] <- mapping$unit.classif
 
-  SOM_Dist_new <- rep(NA_real_, nrow(new_df))
+  SOM_Dist_new <- rep(NA_real_, nrow(new_df_scidr))
   SOM_Dist_new[complete_rows] <- mapping$distances
 
   # Node-level info from training -----------------------------------------
@@ -135,7 +196,8 @@ Project_SOMClust <- function(
   # Individual table with distance flags -----------------------------------
 
   individual_tbl <- dplyr::tibble(
-    RowID        = seq_len(nrow(new_df)),
+    .scidr_rowid = new_df_scidr$.scidr_rowid,
+    RowID        = new_df_scidr$.scidr_rowid,
     SOM_Node     = SOM_Node_new,
     SOM_Distance = SOM_Dist_new
   ) %>%
@@ -165,7 +227,7 @@ Project_SOMClust <- function(
 
   # df_with_clusters for projected data ------------------------------------
 
-  df_with_clusters <- new_df
+  df_with_clusters <- new_df_scidr
 
   if (ClusterName %in% names(df_with_clusters)) {
     message("Column '", ClusterName, "' already exists in new_df and will be overwritten.")
@@ -199,7 +261,7 @@ Project_SOMClust <- function(
     dplyr::left_join(
       flag_by_cluster_tr %>%
         dplyr::rename(
-          n_train                = n,
+          n_train                 = n,
           train_prop_overall_high = prop_overall_high
         ),
       by = "Cluster"

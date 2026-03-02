@@ -13,7 +13,8 @@ Pipeline_SOMClust(
   final_k = NULL,
   final_model = NULL,
   ClusterName = "Cluster",
-  ZScoreType = c("Center and Scale", "Center Only", "Scale Only", "ZScoreObj"),
+  ZScoreType = c("Center and Scale", "Center Only", "Scale Only", "ZScoreObj",
+    "PreZScored"),
   ZScoreObject = NULL,
   som_xdim = NULL,
   som_ydim = NULL,
@@ -21,7 +22,10 @@ Pipeline_SOMClust(
   som_neigh = "gaussian",
   seed_som = 934521L,
   seed_lpa = 93421L,
-  Relabel = TRUE
+  Relabel = TRUE,
+  ZScorePrefix = "Z_",
+  ZScoreVars = NULL,
+  id_col = NULL
 )
 }
 \arguments{
@@ -30,7 +34,9 @@ clustering.}
 
 \item{variables}{Optional character vector of variable names. If NULL,
 numeric variables are auto-detected using
-\code{SciDataReportR::getNumVars(df, Ordinal = FALSE)}.}
+\code{SciDataReportR::getNumVars(df, Ordinal = FALSE)}. In
+\code{ZScoreType = "PreZScored"}, this can also be NULL if you supply
+\code{ZScoreVars} or if Z-score columns can be auto-detected by prefix.}
 
 \item{method}{One of \code{"exploratory"} (default) or \code{"finalize"}.
 In \code{"exploratory"}, a grid of models is fit and AHP chooses the
@@ -58,6 +64,7 @@ overwritten (with a message).}
 \item \code{"Center Only"}
 \item \code{"Scale Only"}
 \item \code{"ZScoreObj"} (use an existing ZScore object)
+\item \code{"PreZScored"} (use existing Z-score columns in df as-is)
 }}
 
 \item{ZScoreObject}{Optional ZScoreObj (from \code{CalcZScore()} or
@@ -76,16 +83,27 @@ a square grid with side length \code{ceiling(n_complete^(1/3))} is used.}
 
 \item{Relabel}{Logical; if TRUE (default), aweSOM plots are relabeled
 using variable labels from the \emph{original} \code{df} (via Hmisc or
-sjlabelled when available) by stripping the "Z_" prefix.}
+sjlabelled when available) by stripping the Z-score prefix.}
+
+\item{ZScorePrefix}{Character prefix used for Z-score columns when
+\code{ZScoreType = "PreZScored"}. Default \code{"Z_"}.}
+
+\item{ZScoreVars}{Optional character vector of Z-score column names to use
+when \code{ZScoreType = "PreZScored"}. If NULL, the function attempts to
+infer them from \code{variables} or by detecting columns starting with
+\code{ZScorePrefix}.}
+
+\item{id_col}{Optional character scalar. If provided and present in \code{df},
+this column is carried into \code{ProbFit$individual} for convenience.}
 }
 \value{
 A list of class \code{"Pipeline_SOMClust"} with components:
 \itemize{
 \item \code{method}, \code{vars_used}, \code{ZScoreType},
-\code{ZScoreObject}, \code{ClusterName}
+\code{ZScoreObject}, \code{ZScoreVars}, \code{ClusterName}
 \item \code{complete_rows}: logical vector (rows used for SOM/LPA)
-\item \code{df_with_clusters}: original \code{df} with only the
-cluster column appended
+\item \code{df_with_clusters}: original \code{df} with \code{.scidr_rowid}
+and only the cluster column appended
 \item \code{fit_plot}: ggplot of AIC/BIC/Entropy vs k and model
 \item \code{ModelInfo_SOM}: list with \code{som_model},
 \code{som_codes}, \code{som_grid}, \code{SOMFit} (distance
@@ -95,7 +113,7 @@ diagnostics, baselines, and per-cluster flags), \code{plots}
 \code{fit_table}, and \code{AHP} information
 \item \code{ProbFit}: list with \code{node} (node-level posterior
 probabilities), \code{individual} (per-person mapping and
-probabilities), and probability plots
+probabilities, including \code{.scidr_rowid}), and probability plots
 }
 }
 \description{
@@ -120,7 +138,26 @@ Missing data:
 \itemize{
 \item SOM and clustering are fit only on rows with complete Z-scores.
 \item The returned \code{df_with_clusters} has the full original data with
-a single cluster column appended; rows not used in SOM/LPA get NA.
+\code{.scidr_rowid} and a single cluster column appended; rows not used
+in SOM/LPA get NA.
+}
+
+Stable row id:
+\itemize{
+\item \code{.scidr_rowid} is added to the input data and carried into
+\code{df_with_clusters} and \code{ProbFit$individual}.
+\item \code{ProbFit$individual$RowID} is set equal to \code{.scidr_rowid} so
+merges do not rely on row order.
+}
+
+Z-score behavior:
+\itemize{
+\item \code{ZScoreType = "Center and Scale"/"Center Only"/"Scale Only"} computes
+Z-scores from \code{df} via \code{CalcZScore()}.
+\item \code{ZScoreType = "ZScoreObj"} projects Z-scores using an external
+\code{ZScoreObj} via \code{Project_ZScore()}.
+\item \code{ZScoreType = "PreZScored"} uses existing Z-score columns in \code{df}
+as-is and does not re-zscore.
 }
 }
 \details{

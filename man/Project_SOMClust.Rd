@@ -19,8 +19,8 @@ it is overwritten (with a message).}
 A list of class \code{"Project_SOMClust"} with components:
 \itemize{
 \item \code{vars_used}, \code{ClusterName}, \code{complete_rows}
-\item \code{df_with_clusters}: \code{new_df} with only the cluster
-column appended.
+\item \code{df_with_clusters}: \code{new_df} with \code{.scidr_rowid} and
+only the cluster column appended.
 \item \code{SOMProj}: list with training and projected distance
 summaries, cluster-level flag summaries, comparison, and plots.
 \item \code{ProbFit}: list with \code{node} (training node-level
@@ -33,10 +33,15 @@ original model objects for convenience.
 \description{
 Given a fitted \code{Pipeline_SOMClust} object, project a new data frame onto:
 \itemize{
-\item The same Z-score scaling (via SciDataReportR::Project_ZScore()).
+\item The same Z-score scaling (via SciDataReportR::Project_ZScore()) when
+the training object used computed or projected Z-scores.
 \item The same SOM (kohonen), using \code{kohonen::map()}.
 \item The same node-level latent profiles and posterior probabilities.
 }
+
+If the training object used \code{ZScoreType = "PreZScored"}, this function
+expects the new data already contains the same Z-score columns (by name)
+stored in \code{object$ZScoreVars}. No re-zscoring is performed.
 
 For each projected case, the function:
 \itemize{
@@ -50,15 +55,16 @@ training p95 for that cluster.
 }
 }
 
-Cluster-level summaries compare the fraction of high-distance projected
-cases in each cluster to the fraction seen in training. A warning is issued
-only if \emph{any} projected cluster has a higher proportion of
-high-distance cases than any cluster in training.
+Stable row id:
+\itemize{
+\item \code{.scidr_rowid} is added to \code{new_df} (if not already present) and
+carried into \code{df_with_clusters} and \code{ProbFit$individual}.
+\item \code{ProbFit$individual$RowID} is set equal to \code{.scidr_rowid}.
+}
 
 Missing data:
 \itemize{
-\item Z-scores are computed for all rows, but only rows with complete
-Z-scores are mapped to the SOM.
+\item Only rows with complete Z-scores are mapped to the SOM.
 \item Rows with missing Z-scores receive NA for SOM_Node, SOM_Distance,
 and the cluster label.
 }

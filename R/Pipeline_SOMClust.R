@@ -19,13 +19,30 @@
 #' Missing data:
 #' - SOM and clustering are fit only on rows with complete Z-scores.
 #' - The returned \code{df_with_clusters} has the full original data with
-#'   a single cluster column appended; rows not used in SOM/LPA get NA.
+#'   \code{.scidr_rowid} and a single cluster column appended; rows not used
+#'   in SOM/LPA get NA.
+#'
+#' Stable row id:
+#' - \code{.scidr_rowid} is added to the input data and carried into
+#'   \code{df_with_clusters} and \code{ProbFit$individual}.
+#' - \code{ProbFit$individual$RowID} is set equal to \code{.scidr_rowid} so
+#'   merges do not rely on row order.
+#'
+#' Z-score behavior:
+#' - \code{ZScoreType = "Center and Scale"/"Center Only"/"Scale Only"} computes
+#'   Z-scores from \code{df} via \code{CalcZScore()}.
+#' - \code{ZScoreType = "ZScoreObj"} projects Z-scores using an external
+#'   \code{ZScoreObj} via \code{Project_ZScore()}.
+#' - \code{ZScoreType = "PreZScored"} uses existing Z-score columns in \code{df}
+#'   as-is and does not re-zscore.
 #'
 #' @param df Data frame containing the variables to be used in SOM and
 #'   clustering.
 #' @param variables Optional character vector of variable names. If NULL,
 #'   numeric variables are auto-detected using
-#'   \code{SciDataReportR::getNumVars(df, Ordinal = FALSE)}.
+#'   \code{SciDataReportR::getNumVars(df, Ordinal = FALSE)}. In
+#'   \code{ZScoreType = "PreZScored"}, this can also be NULL if you supply
+#'   \code{ZScoreVars} or if Z-score columns can be auto-detected by prefix.
 #' @param method One of \code{"exploratory"} (default) or \code{"finalize"}.
 #'   In \code{"exploratory"}, a grid of models is fit and AHP chooses the
 #'   recommended solution. In \code{"finalize"}, the user must specify
@@ -46,6 +63,7 @@
 #'     \item \code{"Center Only"}
 #'     \item \code{"Scale Only"}
 #'     \item \code{"ZScoreObj"} (use an existing ZScore object)
+#'     \item \code{"PreZScored"} (use existing Z-score columns in df as-is)
 #'   }
 #' @param ZScoreObject Optional ZScoreObj (from \code{CalcZScore()} or
 #'   \code{Project_ZScore()}) to use when \code{ZScoreType = "ZScoreObj"}.
@@ -58,7 +76,15 @@
 #'   (defaults 934521 and 93421).
 #' @param Relabel Logical; if TRUE (default), aweSOM plots are relabeled
 #'   using variable labels from the *original* \code{df} (via Hmisc or
-#'   sjlabelled when available) by stripping the "Z_" prefix.
+#'   sjlabelled when available) by stripping the Z-score prefix.
+#' @param ZScorePrefix Character prefix used for Z-score columns when
+#'   \code{ZScoreType = "PreZScored"}. Default \code{"Z_"}.
+#' @param ZScoreVars Optional character vector of Z-score column names to use
+#'   when \code{ZScoreType = "PreZScored"}. If NULL, the function attempts to
+#'   infer them from \code{variables} or by detecting columns starting with
+#'   \code{ZScorePrefix}.
+#' @param id_col Optional character scalar. If provided and present in \code{df},
+#'   this column is carried into \code{ProbFit$individual} for convenience.
 #'
 #' @details
 #' The AHP-style index is computed by:
@@ -73,10 +99,10 @@
 #' @return A list of class \code{"Pipeline_SOMClust"} with components:
 #'   \itemize{
 #'     \item \code{method}, \code{vars_used}, \code{ZScoreType},
-#'           \code{ZScoreObject}, \code{ClusterName}
+#'           \code{ZScoreObject}, \code{ZScoreVars}, \code{ClusterName}
 #'     \item \code{complete_rows}: logical vector (rows used for SOM/LPA)
-#'     \item \code{df_with_clusters}: original \code{df} with only the
-#'           cluster column appended
+#'     \item \code{df_with_clusters}: original \code{df} with \code{.scidr_rowid}
+#'           and only the cluster column appended
 #'     \item \code{fit_plot}: ggplot of AIC/BIC/Entropy vs k and model
 #'     \item \code{ModelInfo_SOM}: list with \code{som_model},
 #'           \code{som_codes}, \code{som_grid}, \code{SOMFit} (distance
@@ -86,7 +112,7 @@
 #'           \code{fit_table}, and \code{AHP} information
 #'     \item \code{ProbFit}: list with \code{node} (node-level posterior
 #'           probabilities), \code{individual} (per-person mapping and
-#'           probabilities), and probability plots
+#'           probabilities, including \code{.scidr_rowid}), and probability plots
 #'   }
 #'
 #' @references
@@ -102,7 +128,7 @@ Pipeline_SOMClust <- function(
     final_k      = NULL,
     final_model  = NULL,
     ClusterName  = "Cluster",
-    ZScoreType   = c("Center and Scale", "Center Only", "Scale Only", "ZScoreObj"),
+    ZScoreType   = c("Center and Scale", "Center Only", "Scale Only", "ZScoreObj", "PreZScored"),
     ZScoreObject = NULL,
     som_xdim     = NULL,
     som_ydim     = NULL,
@@ -110,7 +136,10 @@ Pipeline_SOMClust <- function(
     som_neigh    = "gaussian",
     seed_som     = 934521L,
     seed_lpa     = 93421L,
-    Relabel      = TRUE
+    Relabel      = TRUE,
+    ZScorePrefix = "Z_",
+    ZScoreVars   = NULL,
+    id_col       = NULL
 ) {
 
   method     <- match.arg(method)
@@ -134,62 +163,154 @@ Pipeline_SOMClust <- function(
     stop("Packages 'dplyr', 'tidyr', and 'ggplot2' are required.")
   }
 
+  # Stable row id ----------------------------------------------------------
+
+  df_scidr <- df %>%
+    dplyr::mutate(.scidr_rowid = dplyr::row_number())
+
+  if (!is.null(id_col)) {
+    if (!id_col %in% names(df_scidr)) {
+      stop("id_col '", id_col, "' was provided but is not in df.")
+    }
+  }
+
   # Variables --------------------------------------------------------------
 
-  if (is.null(variables)) {
-    variables <- SciDataReportR::getNumVars(df, Ordinal = FALSE)
-  }
+  ZScoreVars_used <- NULL
+  vars_used       <- NULL
 
-  missing_vars <- setdiff(variables, names(df))
-  if (length(missing_vars) > 0) {
-    stop("The following variables are not in df: ",
-         paste(missing_vars, collapse = ", "))
-  }
+  if (ZScoreType == "PreZScored") {
 
-  is_num <- vapply(df[variables], is.numeric, logical(1))
-  if (!all(is_num)) {
-    warning("Dropping non-numeric variables: ",
-            paste(variables[!is_num], collapse = ", "))
-    variables <- variables[is_num]
-  }
-  if (length(variables) == 0) {
-    stop("No numeric variables available for SOM / clustering.")
+    if (!is.null(ZScoreVars)) {
+      ZScoreVars_used <- ZScoreVars
+      vars_used <- sub(paste0("^", ZScorePrefix), "", ZScoreVars_used)
+
+    } else if (!is.null(variables)) {
+
+      if (all(variables %in% names(df_scidr)) &&
+          all(grepl(paste0("^", ZScorePrefix), variables))) {
+        ZScoreVars_used <- variables
+        vars_used <- sub(paste0("^", ZScorePrefix), "", ZScoreVars_used)
+      } else {
+        ZScoreVars_used <- paste0(ZScorePrefix, variables)
+        vars_used <- variables
+      }
+
+    } else {
+
+      ZScoreVars_used <- grep(paste0("^", ZScorePrefix), names(df_scidr), value = TRUE)
+      if (length(ZScoreVars_used) == 0) {
+        stop("ZScoreType = 'PreZScored' requires ZScoreVars, variables, or columns starting with '",
+             ZScorePrefix, "'.")
+      }
+      vars_used <- sub(paste0("^", ZScorePrefix), "", ZScoreVars_used)
+    }
+
+    missing_z <- setdiff(ZScoreVars_used, names(df_scidr))
+    if (length(missing_z) > 0) {
+      stop("The following pre-zscored variables are not in df: ",
+           paste(missing_z, collapse = ", "))
+    }
+
+    z_tmp <- df_scidr[, ZScoreVars_used, drop = FALSE]
+    is_num_z <- vapply(z_tmp, is.numeric, logical(1))
+    if (!all(is_num_z)) {
+      warning("Dropping non-numeric pre-zscored variables: ",
+              paste(names(z_tmp)[!is_num_z], collapse = ", "))
+      ZScoreVars_used <- ZScoreVars_used[is_num_z]
+      z_tmp <- z_tmp[, is_num_z, drop = FALSE]
+      vars_used <- sub(paste0("^", ZScorePrefix), "", ZScoreVars_used)
+    }
+
+    if (length(ZScoreVars_used) == 0) {
+      stop("No numeric pre-zscored variables available for SOM / clustering.")
+    }
+
+  } else {
+
+    if (is.null(variables)) {
+      variables <- SciDataReportR::getNumVars(df, Ordinal = FALSE)
+    }
+
+    missing_vars <- setdiff(variables, names(df))
+    if (length(missing_vars) > 0) {
+      stop("The following variables are not in df: ",
+           paste(missing_vars, collapse = ", "))
+    }
+
+    is_num <- vapply(df[variables], is.numeric, logical(1))
+    if (!all(is_num)) {
+      warning("Dropping non-numeric variables: ",
+              paste(variables[!is_num], collapse = ", "))
+      variables <- variables[is_num]
+    }
+    if (length(variables) == 0) {
+      stop("No numeric variables available for SOM / clustering.")
+    }
+
+    vars_used <- variables
   }
 
   # Z-scores ---------------------------------------------------------------
 
-  if (ZScoreType == "ZScoreObj") {
+  if (ZScoreType == "PreZScored") {
+
+    z_df <- df_scidr[, ZScoreVars_used, drop = FALSE]
+    complete_rows <- stats::complete.cases(z_df)
+    if (!any(complete_rows)) {
+      stop("No complete rows in pre-zscored columns; cannot fit SOM.")
+    }
+
+    zmat <- as.matrix(z_df[complete_rows, , drop = FALSE])
+    ZScoreObject_used <- NULL
+
+  } else if (ZScoreType == "ZScoreObj") {
+
     if (is.null(ZScoreObject) || !"ZScoreObj" %in% class(ZScoreObject)) {
       stop("ZScoreType = 'ZScoreObj' requires a valid ZScoreObj.")
     }
+
     z_res <- SciDataReportR::Project_ZScore(
-      df                 = df,
-      variables          = variables,
+      df                 = df_scidr,
+      variables          = vars_used,
       parameters         = ZScoreObject,
       ParameterInputType = "ZScoreObj",
       names_prefix       = "Z_"
     )
     ZScoreObject_used <- z_res
+
+    z_df <- ZScoreObject_used$ZScores
+    complete_rows <- stats::complete.cases(z_df)
+    if (!any(complete_rows)) {
+      stop("No complete rows after Z-score step; cannot fit SOM.")
+    }
+
+    z_df <- z_df[, names(z_df), drop = FALSE]
+    zmat <- as.matrix(z_df[complete_rows, , drop = FALSE])
+    ZScoreVars_used <- names(z_df)
+
   } else {
+
     center_flag <- ZScoreType %in% c("Center and Scale", "Center Only")
     scale_flag  <- ZScoreType %in% c("Center and Scale", "Scale Only")
 
     ZScoreObject_used <- SciDataReportR::CalcZScore(
-      df           = df,
-      variables    = variables,
+      df           = df_scidr,
+      variables    = vars_used,
       names_prefix = "Z_",
       center       = center_flag,
       scale        = scale_flag
     )
-  }
 
-  z_df <- ZScoreObject_used$ZScores
-  complete_rows <- stats::complete.cases(z_df)
-  if (!any(complete_rows)) {
-    stop("No complete rows after Z-score step; cannot fit SOM.")
-  }
+    z_df <- ZScoreObject_used$ZScores
+    complete_rows <- stats::complete.cases(z_df)
+    if (!any(complete_rows)) {
+      stop("No complete rows after Z-score step; cannot fit SOM.")
+    }
 
-  zmat <- as.matrix(z_df[complete_rows, , drop = FALSE])
+    zmat <- as.matrix(z_df[complete_rows, , drop = FALSE])
+    ZScoreVars_used <- names(z_df)
+  }
 
   # SOM fitting ------------------------------------------------------------
 
@@ -223,10 +344,10 @@ Pipeline_SOMClust <- function(
 
   # SOM distances (distance to BMU) ----------------------------------------
 
-  SOM_Node_full <- rep(NA_integer_, nrow(df))
+  SOM_Node_full <- rep(NA_integer_, nrow(df_scidr))
   SOM_Node_full[complete_rows] <- som_model$unit.classif
 
-  SOM_Dist_full <- rep(NA_real_, nrow(df))
+  SOM_Dist_full <- rep(NA_real_, nrow(df_scidr))
   SOM_Dist_full[complete_rows] <- som_model$distances
 
   train_quant_err <- mean(som_model$distances, na.rm = TRUE)
@@ -240,9 +361,9 @@ Pipeline_SOMClust <- function(
   if (Relabel) {
     relabel_fun <- function(w) {
       if (!is.null(w$x$label)) {
-        # aweSOM uses the column names of the SOM data, which here are Z_*
         zvars     <- w$x$label
-        base_vars <- sub("^Z_", "", zvars)
+        base_vars <- sub(paste0("^", ZScorePrefix), "", zvars)
+        base_vars <- sub("^Z_", "", base_vars)
 
         get_lab <- NULL
         if (requireNamespace("Hmisc", quietly = TRUE)) {
@@ -258,7 +379,6 @@ Pipeline_SOMClust <- function(
             if (is.null(lab) || !nzchar(lab)) bv else as.character(lab)
           }, character(1))
         } else {
-          # fall back to original variable names (no Z_ prefix)
           new_labels <- base_vars
         }
 
@@ -269,7 +389,6 @@ Pipeline_SOMClust <- function(
 
     CircPlot  <- relabel_fun(CircPlot)
     LinePlot  <- relabel_fun(LinePlot)
-    # Cloud plot does not typically show variable labels, so we leave it
   }
 
   som_plots <- list(
@@ -445,19 +564,24 @@ Pipeline_SOMClust <- function(
   som_cluster       <- node_df$Cluster
   patient_clust     <- som_cluster[SOM_Node_complete]
 
-  Cluster_full <- rep(NA_integer_, nrow(df))
+  Cluster_full <- rep(NA_integer_, nrow(df_scidr))
   Cluster_full[complete_rows] <- patient_clust
 
   individual_tbl <- dplyr::tibble(
-    RowID        = seq_len(nrow(df)),
+    .scidr_rowid = df_scidr$.scidr_rowid,
+    RowID        = df_scidr$.scidr_rowid,
     SOM_Node     = SOM_Node_full,
     SOM_Distance = SOM_Dist_full
   ) %>%
     dplyr::left_join(node_df, by = c("SOM_Node" = "NodeID"))
 
+  if (!is.null(id_col) && id_col %in% names(df_scidr)) {
+    individual_tbl[[id_col]] <- df_scidr[[id_col]]
+  }
+
   # df_with_clusters: only cluster label -----------------------------------
 
-  df_with_clusters <- df
+  df_with_clusters <- df_scidr
 
   if (ClusterName %in% names(df_with_clusters)) {
     message("Column '", ClusterName, "' already exists and will be overwritten.")
@@ -633,9 +757,10 @@ Pipeline_SOMClust <- function(
 
   out <- list(
     method           = method,
-    vars_used        = variables,
+    vars_used        = vars_used,
     ZScoreType       = ZScoreType,
     ZScoreObject     = ZScoreObject_used,
+    ZScoreVars       = ZScoreVars_used,
     ClusterName      = ClusterName,
     complete_rows    = complete_rows,
     df_with_clusters = df_with_clusters,
@@ -647,7 +772,4 @@ Pipeline_SOMClust <- function(
 
   class(out) <- c("Pipeline_SOMClust", class(out))
   out
-
-
-
 }
