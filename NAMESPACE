@@ -2,10 +2,12 @@
 
 export("%!in%")
 export(AddToCodebook)
+export(ApplyNormativeTScores)
 export(CalcZScore)
 export(CombineCodebooks)
 export(ConvertOrdinalToNumeric)
 export(CreateMCATable)
+export(CreateNormativeTScores)
 export(CreatePCATable)
 export(CreatePathwayPlot_KT)
 export(CreateProjectFolders)
