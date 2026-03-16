@@ -2,7 +2,7 @@ pandoc: 3.1.11
 pkgdown: 2.2.0
 pkgdown_sha: ~
 articles: {}
-last_built: 2026-03-16T16:10Z
+last_built: 2026-03-16T16:13Z
 urls:
   reference: https://rdastgh1.github.io/SciDataReportR/reference
   article: https://rdastgh1.github.io/SciDataReportR/articles
