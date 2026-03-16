@@ -5,6 +5,9 @@
 - [`AddToCodebook()`](https://rdastgh1.github.io/SciDataReportR/reference/AddToCodebook.md)
   : Add a new variable to a codebook
 
+- [`ApplyNormativeTScores()`](https://rdastgh1.github.io/SciDataReportR/reference/ApplyNormativeTScores.md)
+  : Apply a normative T-score model to new data
+
 - [`CalcZScore()`](https://rdastgh1.github.io/SciDataReportR/reference/CalcZScore.md)
   : Calculate Z-scores (or standardized scores) and return data +
   parameters
@@ -17,6 +20,9 @@
 
 - [`CreateMCATable()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateMCATable.md)
   : CreateMCATable
+
+- [`CreateNormativeTScores()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateNormativeTScores.md)
+  : Create normative T-scores from a regression model
 
 - [`CreatePCATable()`](https://rdastgh1.github.io/SciDataReportR/reference/CreatePCATable.md)
   : Create PCA table and visualization
