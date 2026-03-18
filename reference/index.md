@@ -139,6 +139,9 @@
   : Plot Point-Biserial Correlations Between Binary and Continuous
   Variables
 
+- [`PlotSpiderChart()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotSpiderChart.md)
+  : Plot a spider chart across continuous and binary variables
+
 - [`PlotSplitViolin()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotSplitViolin.md)
   : Split violin with aligned half-boxplots and a centered significance
   label

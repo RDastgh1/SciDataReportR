@@ -8,7 +8,7 @@
 ## Citation
 
 Source:
-[`DESCRIPTION`](https://github.com/RDastgh1/SciDataReportR/blob/v15.0.0/DESCRIPTION)
+[`DESCRIPTION`](https://github.com/RDastgh1/SciDataReportR/blob/master/DESCRIPTION)
 
 Dastgheyb R (2026). *SciDataReportR: Package for Generating Scientific
 Data Reports*. R package version 15.0.0,
