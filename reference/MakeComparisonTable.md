@@ -118,7 +118,9 @@ MakeComparisonTable(
 
 - IncludeOverallStats:
 
-  If TRUE return overall-only summary (ignores grouping).
+  If TRUE and `CompVariable` is provided, add an overall summary column
+  as the first statistic column. If no valid grouping variable is
+  provided, an overall-only table is returned.
 
 - ShowPositiveBinaryOnLabel:
 
@@ -154,6 +156,8 @@ structure.
 that:
 
 - creates group-wise descriptive summaries,
+
+- optionally adds an overall summary column,
 
 - computes global p-values (unadjusted or covariate-adjusted),
 
@@ -329,28 +333,3 @@ The caption describes:
 - adjusted multi-category method (`MultiCatAdjusted`),
 
 - pairwise inclusion and multiplicity control (`PairwiseMethod`).
-
-## Examples
-
-``` r
-if (FALSE) { # \dontrun{
-df <- data.frame(
-  Cluster = factor(sample(0:3, 120, TRUE)),
-  Age = rnorm(120, 50, 10),
-  Sex = factor(sample(c("F","M"), 120, TRUE)),
-  wrat3 = rnorm(120, 95, 12),
-  Education_years = rnorm(120, 14, 2),
-  Race = factor(sample(c("A","B","D"), 120, TRUE)),
-  Hypertension = factor(sample(c("No","Yes"), 120, TRUE))
-)
-
-MakeComparisonTable(
-  df, "Cluster",
-  Variables = c("Education_years", "Race", "Hypertension"),
-  Covariates = c("Age","Sex","wrat3"),
-  AddPairwise = TRUE,
-  PairwiseMethod = "none",
-  Parametric = FALSE
-)
-} # }
-```

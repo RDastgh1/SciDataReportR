@@ -11,7 +11,7 @@ and optional pairwise comparisons."><meta property="og:image" content="https://r
 
     <a class="navbar-brand me-2" href="../index.html">SciDataReportR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">15.0.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">15.2.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -32,7 +32,7 @@ and optional pairwise comparisons."><meta property="og:image" content="https://r
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Make comparison table with covariate adjustment, effect sizes, and pairwise contrasts</h1>
-      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/master/R/MakeComparisonTable.R" class="external-link"><code>R/MakeComparisonTable.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/v15.2.0/R/MakeComparisonTable.R" class="external-link"><code>R/MakeComparisonTable.R</code></a></small>
       <div class="d-none name"><code>MakeComparisonTable.Rd</code></div>
     </div>
 
@@ -149,7 +149,9 @@ pairwise comparisons are against this referent.</p></dd>
 
 
 <dt id="arg-includeoverallstats">IncludeOverallStats<a class="anchor" aria-label="anchor" href="#arg-includeoverallstats"></a></dt>
-<dd><p>If TRUE return overall-only summary (ignores grouping).</p></dd>
+<dd><p>If TRUE and <code>CompVariable</code> is provided, add an overall summary
+column as the first statistic column. If no valid grouping variable is provided, an
+overall-only table is returned.</p></dd>
 
 
 <dt id="arg-showpositivebinaryonlabel">ShowPositiveBinaryOnLabel<a class="anchor" aria-label="anchor" href="#arg-showpositivebinaryonlabel"></a></dt>
@@ -178,6 +180,7 @@ formatting, labeling, and table structure.</p><div class="section">
 
 
 <p><code>MakeComparisonTable()</code> is a wrapper around <code><a href="https://www.danieldsjoberg.com/gtsummary/reference/tbl_summary.html" class="external-link">gtsummary::tbl_summary()</a></code> that:</p><ul><li><p>creates group-wise descriptive summaries,</p></li>
+<li><p>optionally adds an overall summary column,</p></li>
 <li><p>computes global p-values (unadjusted or covariate-adjusted),</p></li>
 <li><p>optionally computes effect sizes,</p></li>
 <li><p>optionally computes pairwise p-values (with multiplicity control and optional referent),</p></li>
@@ -308,30 +311,6 @@ in that case, the function automatically switches to logistic LR for that pair.<
 
     </div>
 
-    <div class="section level2">
-    <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
-<span class="r-in"><span><span class="va">df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span></span>
-<span class="r-in"><span>  Cluster <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sample.html" class="external-link">sample</a></span><span class="op">(</span><span class="fl">0</span><span class="op">:</span><span class="fl">3</span>, <span class="fl">120</span>, <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>  Age <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fl">120</span>, <span class="fl">50</span>, <span class="fl">10</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>  Sex <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sample.html" class="external-link">sample</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"F"</span>,<span class="st">"M"</span><span class="op">)</span>, <span class="fl">120</span>, <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>  wrat3 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fl">120</span>, <span class="fl">95</span>, <span class="fl">12</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>  Education_years <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fl">120</span>, <span class="fl">14</span>, <span class="fl">2</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>  Race <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sample.html" class="external-link">sample</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"A"</span>,<span class="st">"B"</span>,<span class="st">"D"</span><span class="op">)</span>, <span class="fl">120</span>, <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>  Hypertension <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sample.html" class="external-link">sample</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"No"</span>,<span class="st">"Yes"</span><span class="op">)</span>, <span class="fl">120</span>, <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="op">)</span></span></span>
-<span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="fu">MakeComparisonTable</span><span class="op">(</span></span></span>
-<span class="r-in"><span>  <span class="va">df</span>, <span class="st">"Cluster"</span>,</span></span>
-<span class="r-in"><span>  Variables <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Education_years"</span>, <span class="st">"Race"</span>, <span class="st">"Hypertension"</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>  Covariates <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Age"</span>,<span class="st">"Sex"</span>,<span class="st">"wrat3"</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>  AddPairwise <span class="op">=</span> <span class="cn">TRUE</span>,</span></span>
-<span class="r-in"><span>  PairwiseMethod <span class="op">=</span> <span class="st">"none"</span>,</span></span>
-<span class="r-in"><span>  Parametric <span class="op">=</span> <span class="cn">FALSE</span></span></span>
-<span class="r-in"><span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
-</code></pre></div>
-    </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>
 
