@@ -70,7 +70,9 @@ robust ANCOVA is used for continuous outcomes and robust covariance is used for 
 \item{Referent}{Optional reference level for pairwise contrasts (character scalar). If set,
 pairwise comparisons are against this referent.}
 
-\item{IncludeOverallStats}{If TRUE return overall-only summary (ignores grouping).}
+\item{IncludeOverallStats}{If TRUE and \code{CompVariable} is provided, add an overall summary
+column as the first statistic column. If no valid grouping variable is provided, an
+overall-only table is returned.}
 
 \item{ShowPositiveBinaryOnLabel}{If TRUE, display only the “positive” level for binary categorical variables.}
 
@@ -96,6 +98,7 @@ formatting, labeling, and table structure.
 \code{MakeComparisonTable()} is a wrapper around \code{\link[gtsummary:tbl_summary]{gtsummary::tbl_summary()}} that:
 \itemize{
 \item creates group-wise descriptive summaries,
+\item optionally adds an overall summary column,
 \item computes global p-values (unadjusted or covariate-adjusted),
 \item optionally computes effect sizes,
 \item optionally computes pairwise p-values (with multiplicity control and optional referent),
@@ -236,27 +239,5 @@ The caption describes:
 \item adjusted multi-category method (\code{MultiCatAdjusted}),
 \item pairwise inclusion and multiplicity control (\code{PairwiseMethod}).
 }
-}
-}
-\examples{
-\dontrun{
-df <- data.frame(
-  Cluster = factor(sample(0:3, 120, TRUE)),
-  Age = rnorm(120, 50, 10),
-  Sex = factor(sample(c("F","M"), 120, TRUE)),
-  wrat3 = rnorm(120, 95, 12),
-  Education_years = rnorm(120, 14, 2),
-  Race = factor(sample(c("A","B","D"), 120, TRUE)),
-  Hypertension = factor(sample(c("No","Yes"), 120, TRUE))
-)
-
-MakeComparisonTable(
-  df, "Cluster",
-  Variables = c("Education_years", "Race", "Hypertension"),
-  Covariates = c("Age","Sex","wrat3"),
-  AddPairwise = TRUE,
-  PairwiseMethod = "none",
-  Parametric = FALSE
-)
 }
 }
