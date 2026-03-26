@@ -11,7 +11,7 @@
 #' @param time_var Unquoted column name representing visit order, visit number, or time index.
 #' @param status_var Unquoted column name representing the binary condition status.
 #' @param date_var Optional unquoted visit date column. This is required when
-#'   `x_axis_type = "date"`.
+#'   `x_axis_type = "date"` or `x_axis_type = "time_from_baseline"`.
 #' @param participant_subset Optional vector of participant IDs to include.
 #' @param max_participants Optional maximum number of participants to retain after
 #'   ordering is applied.
@@ -20,7 +20,11 @@
 #'   `"ever_positive_then_burden"`, `"input_order"`, `"n_visits"`,
 #'   `"n_positive"`, and `"pct_positive"`.
 #' @param x_axis_type Character string indicating whether longitudinal ordering
-#'   should follow aligned visit number (`"visit"`) or actual date (`"date"`).
+#'   should follow aligned visit number (`"visit"`), actual date (`"date"`), or
+#'   elapsed time from baseline (`"time_from_baseline"`).
+#' @param time_from_baseline_unit Character string specifying the unit for
+#'   `x_axis_type = "time_from_baseline"`. Options are `"days"`, `"months"`,
+#'   and `"years"`.
 #'
 #' @details
 #' Transition rules are:
@@ -45,6 +49,7 @@
 #' toy_df <- tibble::tibble(
 #'   ParticipantID = rep(paste0("P", 1:4), each = 4),
 #'   VisitOrder = rep(1:4, times = 4),
+#'   VisitDate = rep(seq.Date(as.Date("2024-01-01"), by = "month", length.out = 4), times = 4),
 #'   MetSBinary = c(
 #'     0, 0, 1, 1,
 #'     1, 1, 0, 0,
@@ -57,7 +62,10 @@
 #'   data = toy_df,
 #'   id_var = ParticipantID,
 #'   time_var = VisitOrder,
-#'   status_var = MetSBinary
+#'   status_var = MetSBinary,
+#'   date_var = VisitDate,
+#'   x_axis_type = "time_from_baseline",
+#'   time_from_baseline_unit = "months"
 #' )
 #' @export
 SummarizeTransitions <- function(data,
@@ -77,10 +85,12 @@ SummarizeTransitions <- function(data,
                                    "n_positive",
                                    "pct_positive"
                                  ),
-                                 x_axis_type = c("visit", "date")) {
+                                 x_axis_type = c("visit", "date", "time_from_baseline"),
+                                 time_from_baseline_unit = c("days", "months", "years")) {
 
   order_participants_by <- match.arg(order_participants_by)
   x_axis_type <- match.arg(x_axis_type)
+  time_from_baseline_unit <- match.arg(time_from_baseline_unit)
 
   prepared <- .PrepareTransitionData(
     data = data,
@@ -91,7 +101,8 @@ SummarizeTransitions <- function(data,
     participant_subset = participant_subset,
     max_participants = max_participants,
     order_participants_by = order_participants_by,
-    x_axis_type = x_axis_type
+    x_axis_type = x_axis_type,
+    time_from_baseline_unit = time_from_baseline_unit
   )
 
   participant_summary <- prepared$participant_summary

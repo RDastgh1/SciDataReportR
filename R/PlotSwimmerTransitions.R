@@ -62,10 +62,12 @@
                                      "n_positive",
                                      "pct_positive"
                                    ),
-                                   x_axis_type = c("visit", "date")) {
+                                   x_axis_type = c("visit", "date", "time_from_baseline"),
+                                   time_from_baseline_unit = c("days", "months", "years")) {
 
   order_participants_by <- match.arg(order_participants_by)
   x_axis_type <- match.arg(x_axis_type)
+  time_from_baseline_unit <- match.arg(time_from_baseline_unit)
 
   id_quo <- rlang::enquo(id_var)
   time_quo <- rlang::enquo(time_var)
@@ -80,8 +82,8 @@
     stop("`data` must be a data frame.")
   }
 
-  if (x_axis_type == "date" && !has_date_var) {
-    stop("`date_var` must be provided when `x_axis_type = \"date\"`.")
+  if (x_axis_type %in% c("date", "time_from_baseline") && !has_date_var) {
+    stop("`date_var` must be provided when `x_axis_type` is `\"date\"` or `\"time_from_baseline\"`.")
   }
 
   # Prepare data
@@ -96,7 +98,7 @@
 
   if (has_date_var) {
     data_prepped <- data_prepped %>%
-      dplyr::mutate(.plot_date = !!date_quo)
+      dplyr::mutate(.plot_date = as.Date(!!date_quo))
   } else {
     data_prepped <- data_prepped %>%
       dplyr::mutate(.plot_date = as.Date(NA))
@@ -110,8 +112,8 @@
     stop("`time_var` contains missing values. Visit order/time must be non-missing.")
   }
 
-  if (x_axis_type == "date" && any(is.na(data_prepped$.plot_date))) {
-    stop("`date_var` contains missing values when `x_axis_type = \"date\"`.")
+  if (x_axis_type %in% c("date", "time_from_baseline") && any(is.na(data_prepped$.plot_date))) {
+    stop("`date_var` contains missing values when `x_axis_type` is `\"date\"` or `\"time_from_baseline\"`.")
   }
 
   if (!is.null(participant_subset)) {
@@ -142,6 +144,10 @@
   plot_data <- data_prepped %>%
     dplyr::group_by(.plot_id) %>%
     dplyr::mutate(
+      .baseline_date = if (all(is.na(.plot_date))) as.Date(NA) else min(.plot_date, na.rm = TRUE),
+      .time_from_baseline_days = as.numeric(.plot_date - .baseline_date),
+      .time_from_baseline_months = .time_from_baseline_days / 30.4375,
+      .time_from_baseline_years = .time_from_baseline_days / 365.25,
       .visit_index = dplyr::row_number(),
       .lag_status = dplyr::lag(.plot_status),
       .transition = dplyr::case_when(
@@ -201,6 +207,10 @@
       first_resolved_date = {
         vals <- .plot_date[.transition == "Resolved"]
         vals <- vals[!is.na(vals)]
+        if (length(vals) > 0) min(vals) else as.Date(NA)
+      },
+      baseline_date = {
+        vals <- .baseline_date[!is.na(.baseline_date)]
         if (length(vals) > 0) min(vals) else as.Date(NA)
       },
       input_order = min(.input_row_order, na.rm = TRUE),
@@ -317,7 +327,8 @@
           first_positive_time,
           first_positive_date,
           first_transition_time,
-          first_transition_date
+          first_transition_date,
+          baseline_date
         ),
       by = ".plot_id"
     ) %>%
@@ -332,6 +343,10 @@
         "ID: ", .plot_id,
         "\nVisit: ", .plot_time,
         ifelse(!is.na(.plot_date), paste0("\nDate: ", .plot_date), ""),
+        ifelse(!is.na(.baseline_date), paste0("\nBaseline date: ", .baseline_date), ""),
+        ifelse(!is.na(.time_from_baseline_days), paste0("\nDays from baseline: ", round(.time_from_baseline_days, 1)), ""),
+        ifelse(!is.na(.time_from_baseline_months), paste0("\nMonths from baseline: ", round(.time_from_baseline_months, 2)), ""),
+        ifelse(!is.na(.time_from_baseline_years), paste0("\nYears from baseline: ", round(.time_from_baseline_years, 2)), ""),
         "\nStatus: ", as.character(.status_label),
         ifelse(!is.na(.transition), paste0("\nTransition: ", .transition), ""),
         "\nN observed visits: ", n_visits,
@@ -344,7 +359,8 @@
   list(
     plot_data = plot_data,
     participant_summary = participant_summary,
-    x_axis_type = x_axis_type
+    x_axis_type = x_axis_type,
+    time_from_baseline_unit = time_from_baseline_unit
   )
 }
 
@@ -363,7 +379,7 @@
 #'   Accepted encodings include numeric 0/1, logical TRUE/FALSE, factor values
 #'   such as `"Yes"` and `"No"`, and character values such as `"1"` and `"0"`.
 #' @param date_var Optional unquoted visit date column. This is required when
-#'   `x_axis_type = "date"`.
+#'   `x_axis_type = "date"` or `x_axis_type = "time_from_baseline"`.
 #' @param participant_subset Optional vector of participant IDs to include.
 #' @param max_participants Optional maximum number of participants to display
 #'   after ordering is applied.
@@ -372,7 +388,11 @@
 #'   `"ever_positive"`, `"ever_positive_then_burden"`, `"input_order"`,
 #'   `"n_visits"`, `"n_positive"`, and `"pct_positive"`.
 #' @param x_axis_type Character string indicating whether the x-axis should use
-#'   aligned visit number (`"visit"`) or actual calendar date (`"date"`).
+#'   aligned visit number (`"visit"`), actual calendar date (`"date"`), or
+#'   elapsed time from each participant's baseline date (`"time_from_baseline"`).
+#' @param time_from_baseline_unit Character string specifying the unit for
+#'   `x_axis_type = "time_from_baseline"`. Options are `"days"`, `"months"`,
+#'   and `"years"`.
 #' @param show_transition_points Logical. If `TRUE`, transition visits are highlighted.
 #' @param show_lines Logical. If `TRUE`, a swimmer line is drawn across visits
 #'   within each participant.
@@ -413,6 +433,8 @@
 #' When `x_axis_type = "visit"`, participants are aligned by visit order.
 #' When `x_axis_type = "date"`, visits are shown at actual calendar dates and do
 #' not need to align across participants.
+#' When `x_axis_type = "time_from_baseline"`, each participant starts at time 0
+#' based on their earliest observed date.
 #'
 #' When `make_interactive = TRUE`, the function returns a `plotly` object and
 #' uses the internally prepared tooltip text for hover labels.
@@ -452,7 +474,8 @@
 #'   time_var = VisitOrder,
 #'   status_var = MetSBinary,
 #'   date_var = VisitDate,
-#'   x_axis_type = "date"
+#'   x_axis_type = "time_from_baseline",
+#'   time_from_baseline_unit = "months"
 #' )
 #' @export
 PlotSwimmerTransitions <- function(data,
@@ -472,7 +495,8 @@ PlotSwimmerTransitions <- function(data,
                                      "n_positive",
                                      "pct_positive"
                                    ),
-                                   x_axis_type = c("visit", "date"),
+                                   x_axis_type = c("visit", "date", "time_from_baseline"),
+                                   time_from_baseline_unit = c("days", "months", "years"),
                                    show_transition_points = TRUE,
                                    show_lines = TRUE,
                                    show_y_axis_labels = FALSE,
@@ -484,6 +508,7 @@ PlotSwimmerTransitions <- function(data,
 
   order_participants_by <- match.arg(order_participants_by)
   x_axis_type <- match.arg(x_axis_type)
+  time_from_baseline_unit <- match.arg(time_from_baseline_unit)
 
   prepared <- .PrepareTransitionData(
     data = data,
@@ -494,7 +519,8 @@ PlotSwimmerTransitions <- function(data,
     participant_subset = participant_subset,
     max_participants = max_participants,
     order_participants_by = order_participants_by,
-    x_axis_type = x_axis_type
+    x_axis_type = x_axis_type,
+    time_from_baseline_unit = time_from_baseline_unit
   )
 
   plot_data <- prepared$plot_data
@@ -523,28 +549,41 @@ PlotSwimmerTransitions <- function(data,
   if (is.null(x_label)) {
     x_label <- if (x_axis_type == "visit") {
       rlang::as_name(rlang::ensym(time_var))
-    } else {
+    } else if (x_axis_type == "date") {
       rlang::as_name(rlang::ensym(date_var))
+    } else {
+      paste(tools::toTitleCase(time_from_baseline_unit), "from baseline")
     }
   }
 
   if (x_axis_type == "visit") {
-    p <- ggplot2::ggplot(
-      plot_data,
-      ggplot2::aes(
-        x = .plot_time,
-        y = .plot_id_factor
-      )
+    base_mapping <- ggplot2::aes(
+      x = .plot_time,
+      y = .plot_id_factor
+    )
+  } else if (x_axis_type == "date") {
+    base_mapping <- ggplot2::aes(
+      x = .plot_date,
+      y = .plot_id_factor
+    )
+  } else if (time_from_baseline_unit == "days") {
+    base_mapping <- ggplot2::aes(
+      x = .time_from_baseline_days,
+      y = .plot_id_factor
+    )
+  } else if (time_from_baseline_unit == "months") {
+    base_mapping <- ggplot2::aes(
+      x = .time_from_baseline_months,
+      y = .plot_id_factor
     )
   } else {
-    p <- ggplot2::ggplot(
-      plot_data,
-      ggplot2::aes(
-        x = .plot_date,
-        y = .plot_id_factor
-      )
+    base_mapping <- ggplot2::aes(
+      x = .time_from_baseline_years,
+      y = .plot_id_factor
     )
   }
+
+  p <- ggplot2::ggplot(plot_data, base_mapping)
 
   if (show_lines) {
     if (make_interactive) {
