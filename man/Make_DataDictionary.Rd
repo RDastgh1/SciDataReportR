@@ -7,14 +7,23 @@
 Make_DataDictionary(DataFrame, numdecimals = 2)
 }
 \arguments{
-\item{DataFrame}{The data frame for which the data dictionary is to be created.}
+\item{DataFrame}{A data frame.}
 
-\item{numdecimals}{Number of decimals to display for numeric variables (default: 2).}
+\item{numdecimals}{Number of decimals to display for numeric variables.}
 }
 \value{
-A data frame representing the data dictionary.
+A tibble with one row per variable and stable summary columns.
 }
 \description{
-This function generates a data dictionary for a given data frame, including variable names, labels,
-types, missing value statistics, summary statistics, and other relevant information.
+This function generates a data dictionary for a given data frame, including
+variable names, labels, types, missing value statistics, summary statistics,
+and other relevant information. Use this when you want a stable, label-aware
+summary table across mixed variable types.
+}
+\examples{
+df <- tibble::tibble(
+  age = c(20, 25, 30),
+  group = factor(c("A", "B", "A"))
+)
+Make_DataDictionary(df)
 }
