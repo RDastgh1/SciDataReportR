@@ -2,27 +2,38 @@
 % Please edit documentation in R/PlotCategoricalDistributions.R
 \name{PlotCategoricalDistributions}
 \alias{PlotCategoricalDistributions}
-\title{Plot Categorical Distributions}
+\title{Plot categorical distributions}
 \usage{
 PlotCategoricalDistributions(
   DataFrame,
   Variables = NULL,
   Relabel = TRUE,
-  Ordinal = TRUE
+  Ordinal = TRUE,
+  LabelType = "percent",
+  MissingLabel = "Missing"
 )
 }
 \arguments{
 \item{DataFrame}{The dataframe containing the variables to be plotted.}
 
-\item{Variables}{Optional. A character vector specifying the names of the categorical variables to be plotted. If NULL, categorical variables are automatically detected.}
+\item{Variables}{Optional. A character vector specifying the names of the
+categorical variables to be plotted. If NULL, categorical variables are
+automatically detected.}
 
-\item{Relabel}{Logical. If TRUE, missing labels in the dataframe are replaced with column names as labels for plotting.}
+\item{Relabel}{Logical. If TRUE, missing labels in the dataframe are replaced
+with column names as labels for plotting.}
 
 \item{Ordinal}{Logical, indicating whether ordinal variables should be included.}
+
+\item{LabelType}{Character. Either "percent" or "count", indicating what
+should be shown on the x-axis and inside the bars.}
+
+\item{MissingLabel}{Character label to use for missing values.}
 }
 \value{
-A plot visualizing the distributions of categorical variables.
+A ggplot object visualizing the distributions of categorical variables.
 }
 \description{
-This function creates plots to visualize the distributions of categorical variables in a dataframe.
+This function creates plots to visualize the distributions of categorical
+variables in a dataframe.
 }
