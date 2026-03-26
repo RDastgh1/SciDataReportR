@@ -121,20 +121,20 @@ SummarizeTransitions(
   status_var = MetSBinary
 )
 #> $participant_summary
-#> # A tibble: 4 × 22
+#> # A tibble: 4 × 23
 #>   .plot_id n_rows n_visits n_positive pct_positive ever_positive
 #>   <chr>     <int>    <int>      <int>        <dbl> <lgl>        
 #> 1 P2            4        4          2          0.5 TRUE         
 #> 2 P4            4        4          4          1   TRUE         
 #> 3 P1            4        4          2          0.5 TRUE         
 #> 4 P3            4        4          0          0   FALSE        
-#> # ℹ 16 more variables: developed_condition <lgl>, resolved_condition <lgl>,
+#> # ℹ 17 more variables: developed_condition <lgl>, resolved_condition <lgl>,
 #> #   first_positive_time <dbl>, first_positive_date <date>,
 #> #   first_transition_time <dbl>, first_transition_date <date>,
 #> #   first_developed_time <dbl>, first_resolved_time <dbl>,
-#> #   first_developed_date <date>, first_resolved_date <date>, input_order <int>,
-#> #   sustained_after_development <lgl>, sustained_after_resolution <lgl>,
-#> #   .order_group <dbl>, .order_value <dbl>, .plot_id_factor <fct>
+#> #   first_developed_date <date>, first_resolved_date <date>,
+#> #   baseline_date <date>, input_order <int>, sustained_after_development <lgl>,
+#> #   sustained_after_resolution <lgl>, .order_group <dbl>, .order_value <dbl>, …
 #> 
 #> $condition_summary
 #> # A tibble: 1 × 6

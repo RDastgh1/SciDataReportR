@@ -34,7 +34,7 @@ so that plotting and summary outputs remain aligned."><meta property="og:image" 
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Summarize participant transitions for a binary longitudinal condition</h1>
-      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/v15.5.0/R/SummarizeTransitions.R" class="external-link"><code>R/SummarizeTransitions.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/master/R/SummarizeTransitions.R" class="external-link"><code>R/SummarizeTransitions.R</code></a></small>
       <div class="d-none name"><code>SummarizeTransitions.Rd</code></div>
     </div>
 
@@ -145,20 +145,20 @@ should follow aligned visit number (<code>"visit"</code>) or actual date (<code>
 <span class="r-in"><span>  status_var <span class="op">=</span> <span class="va">MetSBinary</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $participant_summary</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 4 × 22</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 4 × 23</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   .plot_id n_rows n_visits n_positive pct_positive ever_positive</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;lgl&gt;</span>        </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> P2            4        4          2          0.5 TRUE         </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span> P4            4        4          4          1   TRUE         </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">3</span> P1            4        4          2          0.5 TRUE         </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">4</span> P3            4        4          0          0   FALSE        </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># ℹ 16 more variables: developed_condition &lt;lgl&gt;, resolved_condition &lt;lgl&gt;,</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># ℹ 17 more variables: developed_condition &lt;lgl&gt;, resolved_condition &lt;lgl&gt;,</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;">#   first_positive_time &lt;dbl&gt;, first_positive_date &lt;date&gt;,</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;">#   first_transition_time &lt;dbl&gt;, first_transition_date &lt;date&gt;,</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;">#   first_developed_time &lt;dbl&gt;, first_resolved_time &lt;dbl&gt;,</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;">#   first_developed_date &lt;date&gt;, first_resolved_date &lt;date&gt;, input_order &lt;int&gt;,</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;">#   sustained_after_development &lt;lgl&gt;, sustained_after_resolution &lt;lgl&gt;,</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;">#   .order_group &lt;dbl&gt;, .order_value &lt;dbl&gt;, .plot_id_factor &lt;fct&gt;</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;">#   first_developed_date &lt;date&gt;, first_resolved_date &lt;date&gt;,</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;">#   baseline_date &lt;date&gt;, input_order &lt;int&gt;, sustained_after_development &lt;lgl&gt;,</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;">#   sustained_after_resolution &lt;lgl&gt;, .order_group &lt;dbl&gt;, .order_value &lt;dbl&gt;, …</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $condition_summary</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 1 × 6</span></span>
