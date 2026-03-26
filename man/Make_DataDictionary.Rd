@@ -12,18 +12,18 @@ Make_DataDictionary(DataFrame, numdecimals = 2)
 \item{numdecimals}{Number of decimals to display for numeric variables.}
 }
 \value{
-A tibble with one row per variable and stable summary columns.
+A data frame with one row per variable and stable summary columns.
 }
 \description{
-This function generates a data dictionary for a given data frame, including
-variable names, labels, types, missing value statistics, summary statistics,
-and other relevant information. Use this when you want a stable, label-aware
-summary table across mixed variable types.
+This function generates a stable data dictionary for a data frame using
+\code{codebook::skim_codebook()}. It is designed to work even when skim output
+omits type-specific summary columns, such as numeric summaries for data
+frames without numeric variables.
 }
 \examples{
 df <- tibble::tibble(
-  age = c(20, 25, 30),
-  group = factor(c("A", "B", "A"))
+  group = factor(c("A", "B", "A")),
+  status = c("yes", "no", "yes")
 )
 Make_DataDictionary(df)
 }

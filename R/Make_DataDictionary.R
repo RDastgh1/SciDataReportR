@@ -1,23 +1,24 @@
 #' Create a data dictionary for a data frame
 #'
-#' This function generates a data dictionary for a given data frame, including
-#' variable names, labels, types, missing value statistics, summary statistics,
-#' and other relevant information. Use this when you want a stable, label-aware
-#' summary table across mixed variable types.
+#' This function generates a stable data dictionary for a data frame using
+#' `codebook::skim_codebook()`. It is designed to work even when skim output
+#' omits type-specific summary columns, such as numeric summaries for data
+#' frames without numeric variables.
 #'
 #' @param DataFrame A data frame.
 #' @param numdecimals Number of decimals to display for numeric variables.
-#' @return A tibble with one row per variable and stable summary columns.
+#'
+#' @return A data frame with one row per variable and stable summary columns.
 #' @examples
 #' df <- tibble::tibble(
-#'   age = c(20, 25, 30),
-#'   group = factor(c("A", "B", "A"))
+#'   group = factor(c("A", "B", "A")),
+#'   status = c("yes", "no", "yes")
 #' )
 #' Make_DataDictionary(df)
 #' @export
 Make_DataDictionary <- function(DataFrame, numdecimals = 2) {
 
-  #Validate inputs
+  # Validate inputs
 
   if (!is.data.frame(DataFrame)) {
     stop("`DataFrame` must be a data frame.")
@@ -27,7 +28,7 @@ Make_DataDictionary <- function(DataFrame, numdecimals = 2) {
     stop("`numdecimals` must be a single numeric value.")
   }
 
- # Prepare data
+  # Prepare data
 
   expected_skim_cols <- c(
     "skim_variable",
@@ -62,7 +63,7 @@ Make_DataDictionary <- function(DataFrame, numdecimals = 2) {
       n_unique = dplyr::coalesce(factor.n_unique, character.n_unique)
     )
 
-  cb <- tibble::tibble(
+  CB <- tibble::tibble(
     Variable = colnames(DataFrame),
     Label = df_var
   ) %>%
@@ -91,22 +92,17 @@ Make_DataDictionary <- function(DataFrame, numdecimals = 2) {
   numeric_vars <- names(DataFrame)[vapply(DataFrame, is.numeric, logical(1))]
 
   if (length(numeric_vars) > 0) {
-    cb <- cb %>%
-      dplyr::mutate(
-        n_unique = dplyr::if_else(
-          Variable %in% numeric_vars,
-          vapply(DataFrame[Variable], function(x) dplyr::n_distinct(x, na.rm = FALSE), numeric(1)),
-          n_unique
-        )
-      )
+    for (var in numeric_vars) {
+      CB$n_unique[CB$Variable == var] <- dplyr::n_distinct(DataFrame[[var]], na.rm = FALSE)
+    }
   }
 
-  #Apply labels
+  # Build outputs
 
-  is_num_col <- vapply(cb, is.numeric, logical(1))
-  cb[is_num_col] <- lapply(cb[is_num_col], round, digits = numdecimals)
+  is_num <- vapply(CB, is.numeric, logical(1))
+  CB[is_num] <- lapply(CB[is_num], round, digits = numdecimals)
 
-  cb <- cb %>%
+  CB <- CB %>%
     dplyr::rename(
       Type = skim_type,
       `Ordered Factor` = factor.ordered,
@@ -118,32 +114,10 @@ Make_DataDictionary <- function(DataFrame, numdecimals = 2) {
       Max = numeric.max,
       Histogram = numeric.hist
     ) %>%
-    dplyr::mutate(
-      dplyr::across(dplyr::everything(), ~ as.character(.x)),
-      dplyr::across(dplyr::everything(), ~ tidyr::replace_na(.x, " "))
-    )
+    dplyr::mutate(dplyr::across(dplyr::everything(), as.character)) %>%
+    dplyr::mutate(dplyr::across(dplyr::everything(), ~ tidyr::replace_na(.x, " ")))
 
- # Build outputs
+  # Return result
 
-  cb <- cb %>%
-    dplyr::select(
-      Variable,
-      Label,
-      Type,
-      `Ordered Factor`,
-      n_missing,
-      complete_rate,
-      n_unique,
-      `Top Counts`,
-      Mean,
-      Median,
-      SD,
-      Min,
-      Max,
-      Histogram
-    )
-
- # Return result
-
-  cb
+  CB
 }
