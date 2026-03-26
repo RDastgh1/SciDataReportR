@@ -1,5 +1,7 @@
 # Changelog
 
+## SciDataReportR 15.3.0
+
 ## SciDataReportR 15.2.0
 
 ## SciDataReportR 15.1.0
