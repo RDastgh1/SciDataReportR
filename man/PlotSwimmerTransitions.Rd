@@ -14,7 +14,8 @@ PlotSwimmerTransitions(
   max_participants = NULL,
   order_participants_by = c("first_positive", "first_transition", "ever_positive",
     "ever_positive_then_burden", "input_order", "n_visits", "n_positive", "pct_positive"),
-  x_axis_type = c("visit", "date"),
+  x_axis_type = c("visit", "date", "time_from_baseline"),
+  time_from_baseline_unit = c("days", "months", "years"),
   show_transition_points = TRUE,
   show_lines = TRUE,
   show_y_axis_labels = FALSE,
@@ -37,7 +38,7 @@ Accepted encodings include numeric 0/1, logical TRUE/FALSE, factor values
 such as \code{"Yes"} and \code{"No"}, and character values such as \code{"1"} and \code{"0"}.}
 
 \item{date_var}{Optional unquoted visit date column. This is required when
-\code{x_axis_type = "date"}.}
+\code{x_axis_type = "date"} or \code{x_axis_type = "time_from_baseline"}.}
 
 \item{participant_subset}{Optional vector of participant IDs to include.}
 
@@ -50,7 +51,12 @@ the plot. Options are \code{"first_positive"}, \code{"first_transition"},
 \code{"n_visits"}, \code{"n_positive"}, and \code{"pct_positive"}.}
 
 \item{x_axis_type}{Character string indicating whether the x-axis should use
-aligned visit number (\code{"visit"}) or actual calendar date (\code{"date"}).}
+aligned visit number (\code{"visit"}), actual calendar date (\code{"date"}), or
+elapsed time from each participant's baseline date (\code{"time_from_baseline"}).}
+
+\item{time_from_baseline_unit}{Character string specifying the unit for
+\code{x_axis_type = "time_from_baseline"}. Options are \code{"days"}, \code{"months"},
+and \code{"years"}.}
 
 \item{show_transition_points}{Logical. If \code{TRUE}, transition visits are highlighted.}
 
@@ -122,6 +128,8 @@ first \code{1 -> 0} transition remain negative.
 When \code{x_axis_type = "visit"}, participants are aligned by visit order.
 When \code{x_axis_type = "date"}, visits are shown at actual calendar dates and do
 not need to align across participants.
+When \code{x_axis_type = "time_from_baseline"}, each participant starts at time 0
+based on their earliest observed date.
 
 When \code{make_interactive = TRUE}, the function returns a \code{plotly} object and
 uses the internally prepared tooltip text for hover labels.
@@ -152,6 +160,7 @@ PlotSwimmerTransitions(
   time_var = VisitOrder,
   status_var = MetSBinary,
   date_var = VisitDate,
-  x_axis_type = "date"
+  x_axis_type = "time_from_baseline",
+  time_from_baseline_unit = "months"
 )
 }

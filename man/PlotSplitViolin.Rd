@@ -2,7 +2,7 @@
 % Please edit documentation in R/PlotSplitViolin.R
 \name{PlotSplitViolin}
 \alias{PlotSplitViolin}
-\title{Split violin with aligned half-boxplots and a centered significance label}
+\title{Split violin with aligned half-boxplots, significance label, sample sizes, and label-aware title}
 \usage{
 PlotSplitViolin(
   data,
@@ -12,6 +12,11 @@ PlotSplitViolin(
   nonparametric = FALSE,
   annotation_text = NULL,
   show_ns = FALSE,
+  plot_title = NULL,
+  use_var_label_as_title = FALSE,
+  show_n = TRUE,
+  n_position = c("legend", "top"),
+  n_size = 3.5,
   left_group = NULL,
   color_palette = NULL,
   box_offset = 0.11,
@@ -24,58 +29,55 @@ PlotSplitViolin(
 )
 }
 \arguments{
-\item{data}{A data frame containing \code{Var}, \code{Group}, and any covariates.}
+\item{data}{A data frame containing \code{Var}, \code{Group}, and optional covariates.}
 
-\item{Var}{Column of the numeric outcome to plot. Tidy-eval friendly (unquoted or string).}
+\item{Var}{Numeric outcome variable (tidy-eval).}
 
-\item{Group}{Column of the grouping variable. Must have 1 or 2 unique values.
-No factor relabeling is performed inside; set levels externally if needed.}
+\item{Group}{Grouping variable (<= 2 unique values).}
 
-\item{covars}{Character vector of covariate column names (default \code{"Age"}).
-Use \code{character(0)} for no covariates.}
+\item{covars}{Character vector of covariates (default \code{NULL}).}
 
-\item{nonparametric}{Logical. If \code{FALSE} (default), compute the p-value using
-a linear model and an \pkg{emmeans} contrast on \code{Group}. If \code{TRUE}:
-with no covariates, use Wilcoxon rank-sum on \code{Var ~ Group}; with covariates,
-first residualize \code{Var} on the covariates (no \code{Group}), then apply Wilcoxon
-rank-sum to the residuals by \code{Group}. With only one group, no test is performed.}
+\item{nonparametric}{Logical. If \code{FALSE}, uses linear model + emmeans contrast.
+If \code{TRUE}, uses Wilcoxon (with residualization if covariates are present).}
 
-\item{annotation_text}{Optional label to draw (e.g., \code{"*"}, \code{"**"}, \code{"***"},
-\code{"ns"}, \code{"★"}). If \code{NULL}, the label is derived from the computed p-value.}
+\item{annotation_text}{Optional manual annotation (e.g., "*", "ns").}
 
-\item{show_ns}{Logical; if \code{TRUE}, show \code{"ns"} for non-significant results
-when \code{annotation_text} is \code{NULL}.}
+\item{show_ns}{Logical; if \code{TRUE}, display "ns" for non-significant results.}
 
-\item{left_group}{Optional. The \code{Group} value to place on the \strong{left} half.
-If omitted, the first factor level (or first observed value) is used.}
+\item{plot_title}{Optional custom plot title.}
 
-\item{color_palette}{Optional color specification. Supply a named vector keyed
-by \code{Group} values; if unnamed, values are interpreted as \verb{(left, right)}.}
+\item{use_var_label_as_title}{Logical; if \code{TRUE}, uses variable label as title.}
 
-\item{box_offset}{Horizontal offset for the left/right boxplots from the center
-(single x = 1). Small values (e.g., \code{0.10-0.14}) sit the boxes inside each half.}
+\item{show_n}{Logical; if \code{TRUE}, display sample size per group.}
 
-\item{box_width}{Boxplot width (default \code{0.15}). For clean separation,
-keep \code{box_width <= 2 * box_offset}.}
+\item{n_position}{Where to display n: "legend" or "top".}
 
-\item{star_from}{Where to anchor the vertical position of the significance label:
-one of \code{"quantile"} (default), \code{"data_max"}, or \code{"whisker"}.}
+\item{n_size}{Text size for n labels when shown on top.}
 
-\item{star_quantile}{Quantile used when \code{star_from = "quantile"} (default \code{0.995}).}
+\item{left_group}{Optional group to force on left side.}
 
-\item{star_pad}{Fraction of the y-range added above the anchor for the label (default \code{0.03}).}
+\item{color_palette}{Optional named vector of colors.}
 
-\item{headroom}{Fraction of the y-range added to the top limit to avoid clipping (default \code{0.08}).}
+\item{box_offset}{Horizontal offset for boxplots.}
 
-\item{star_size}{Text size for the significance label (default \code{6}).}
+\item{box_width}{Width of boxplots.}
+
+\item{star_from}{Position method ("quantile","data_max","whisker").}
+
+\item{star_quantile}{Quantile used for placement.}
+
+\item{star_pad}{Padding above anchor.}
+
+\item{headroom}{Extra space above data.}
+
+\item{star_size}{Text size for annotation.}
 }
 \value{
-A \pkg{ggplot2} object.
+A ggplot2 object.
 }
 \description{
 Draws a split (left/right) violin for up to two groups at a single x-position,
 overlays per-group boxplots aligned with each half, and optionally annotates
-the plot with a p-value significance label (e.g., "\emph{", "\strong{", "}}", "ns").
-The y-axis title is taken from the variable's label attribute when available
-(via \pkg{labelled} or \pkg{Hmisc}); otherwise the column name is used.
+the plot with a p-value significance label. Supports displaying sample sizes (n)
+and automatically using variable labels for axis and title when available.
 }

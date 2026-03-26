@@ -14,7 +14,8 @@ SummarizeTransitions(
   max_participants = NULL,
   order_participants_by = c("first_positive", "first_transition", "ever_positive",
     "ever_positive_then_burden", "input_order", "n_visits", "n_positive", "pct_positive"),
-  x_axis_type = c("visit", "date")
+  x_axis_type = c("visit", "date", "time_from_baseline"),
+  time_from_baseline_unit = c("days", "months", "years")
 )
 }
 \arguments{
@@ -27,7 +28,7 @@ SummarizeTransitions(
 \item{status_var}{Unquoted column name representing the binary condition status.}
 
 \item{date_var}{Optional unquoted visit date column. This is required when
-\code{x_axis_type = "date"}.}
+\code{x_axis_type = "date"} or \code{x_axis_type = "time_from_baseline"}.}
 
 \item{participant_subset}{Optional vector of participant IDs to include.}
 
@@ -40,7 +41,12 @@ Options are \code{"first_positive"}, \code{"first_transition"}, \code{"ever_posi
 \code{"n_positive"}, and \code{"pct_positive"}.}
 
 \item{x_axis_type}{Character string indicating whether longitudinal ordering
-should follow aligned visit number (\code{"visit"}) or actual date (\code{"date"}).}
+should follow aligned visit number (\code{"visit"}), actual date (\code{"date"}), or
+elapsed time from baseline (\code{"time_from_baseline"}).}
+
+\item{time_from_baseline_unit}{Character string specifying the unit for
+\code{x_axis_type = "time_from_baseline"}. Options are \code{"days"}, \code{"months"},
+and \code{"years"}.}
 }
 \value{
 A list with:
@@ -78,6 +84,7 @@ The returned condition-level summary includes:
 toy_df <- tibble::tibble(
   ParticipantID = rep(paste0("P", 1:4), each = 4),
   VisitOrder = rep(1:4, times = 4),
+  VisitDate = rep(seq.Date(as.Date("2024-01-01"), by = "month", length.out = 4), times = 4),
   MetSBinary = c(
     0, 0, 1, 1,
     1, 1, 0, 0,
@@ -90,6 +97,9 @@ SummarizeTransitions(
   data = toy_df,
   id_var = ParticipantID,
   time_var = VisitOrder,
-  status_var = MetSBinary
+  status_var = MetSBinary,
+  date_var = VisitDate,
+  x_axis_type = "time_from_baseline",
+  time_from_baseline_unit = "months"
 )
 }
