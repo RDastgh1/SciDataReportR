@@ -1,4 +1,4 @@
-# Plot Categorical Distributions
+# Plot categorical distributions
 
 This function creates plots to visualize the distributions of
 categorical variables in a dataframe.
@@ -10,7 +10,9 @@ PlotCategoricalDistributions(
   DataFrame,
   Variables = NULL,
   Relabel = TRUE,
-  Ordinal = TRUE
+  Ordinal = TRUE,
+  LabelType = "percent",
+  MissingLabel = "Missing"
 )
 ```
 
@@ -35,6 +37,15 @@ PlotCategoricalDistributions(
 
   Logical, indicating whether ordinal variables should be included.
 
+- LabelType:
+
+  Character. Either "percent" or "count", indicating what should be
+  shown on the x-axis and inside the bars.
+
+- MissingLabel:
+
+  Character label to use for missing values.
+
 ## Value
 
-A plot visualizing the distributions of categorical variables.
+A ggplot object visualizing the distributions of categorical variables.

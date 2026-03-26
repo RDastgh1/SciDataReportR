@@ -96,7 +96,7 @@
   : Plot Categorical Interaction Effects Matrix
 
 - [`PlotCategoricalDistributions()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotCategoricalDistributions.md)
-  : Plot Categorical Distributions
+  : Plot categorical distributions
 
 - [`PlotChiSqCovar()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotChiSqCovar.md)
   : Plot Chi-Square Tests for Categorical Associations (optionally
@@ -146,6 +146,10 @@
   : Split violin with aligned half-boxplots and a centered significance
   label
 
+- [`PlotSwimmerTransitions()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotSwimmerTransitions.md)
+  : Plot swimmer-style transitions for a binary condition over repeated
+  visits
+
 - [`PlotTimeDistribution()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotTimeDistribution.md)
   : Plot Time Distribution
 
@@ -175,6 +179,10 @@
 
 - [`SampleVariableTypes`](https://rdastgh1.github.io/SciDataReportR/reference/SampleVariableTypes.md)
   : Example Dataset: SampleVariableTypes
+
+- [`SummarizeTransitions()`](https://rdastgh1.github.io/SciDataReportR/reference/SummarizeTransitions.md)
+  : Summarize participant transitions for a binary longitudinal
+  condition
 
 - [`UnivariateRegressionTable()`](https://rdastgh1.github.io/SciDataReportR/reference/UnivariateRegressionTable.md)
   : Univariate Regression Table
