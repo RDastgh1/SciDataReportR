@@ -36,7 +36,7 @@ longitudinal debugging, or figure creation."><meta property="og:image" content="
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Plot swimmer-style transitions for a binary condition over repeated visits</h1>
-      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/v15.7.0/R/PlotSwimmerTransitions.R" class="external-link"><code>R/PlotSwimmerTransitions.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/master/R/PlotSwimmerTransitions.R" class="external-link"><code>R/PlotSwimmerTransitions.R</code></a></small>
       <div class="d-none name"><code>PlotSwimmerTransitions.Rd</code></div>
     </div>
 
@@ -60,7 +60,8 @@ longitudinal debugging, or figure creation.</p>
 <span>  max_participants <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  order_participants_by <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"first_positive"</span>, <span class="st">"first_transition"</span>, <span class="st">"ever_positive"</span>,</span>
 <span>    <span class="st">"ever_positive_then_burden"</span>, <span class="st">"input_order"</span>, <span class="st">"n_visits"</span>, <span class="st">"n_positive"</span>, <span class="st">"pct_positive"</span><span class="op">)</span>,</span>
-<span>  x_axis_type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"visit"</span>, <span class="st">"date"</span><span class="op">)</span>,</span>
+<span>  x_axis_type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"visit"</span>, <span class="st">"date"</span>, <span class="st">"time_from_baseline"</span><span class="op">)</span>,</span>
+<span>  time_from_baseline_unit <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"days"</span>, <span class="st">"months"</span>, <span class="st">"years"</span><span class="op">)</span>,</span>
 <span>  show_transition_points <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  show_lines <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  show_y_axis_labels <span class="op">=</span> <span class="cn">FALSE</span>,</span>
@@ -96,7 +97,7 @@ such as <code>"Yes"</code> and <code>"No"</code>, and character values such as <
 
 <dt id="arg-date-var">date_var<a class="anchor" aria-label="anchor" href="#arg-date-var"></a></dt>
 <dd><p>Optional unquoted visit date column. This is required when
-<code>x_axis_type = "date"</code>.</p></dd>
+<code>x_axis_type = "date"</code> or <code>x_axis_type = "time_from_baseline"</code>.</p></dd>
 
 
 <dt id="arg-participant-subset">participant_subset<a class="anchor" aria-label="anchor" href="#arg-participant-subset"></a></dt>
@@ -117,7 +118,14 @@ the plot. Options are <code>"first_positive"</code>, <code>"first_transition"</c
 
 <dt id="arg-x-axis-type">x_axis_type<a class="anchor" aria-label="anchor" href="#arg-x-axis-type"></a></dt>
 <dd><p>Character string indicating whether the x-axis should use
-aligned visit number (<code>"visit"</code>) or actual calendar date (<code>"date"</code>).</p></dd>
+aligned visit number (<code>"visit"</code>), actual calendar date (<code>"date"</code>), or
+elapsed time from each participant's baseline date (<code>"time_from_baseline"</code>).</p></dd>
+
+
+<dt id="arg-time-from-baseline-unit">time_from_baseline_unit<a class="anchor" aria-label="anchor" href="#arg-time-from-baseline-unit"></a></dt>
+<dd><p>Character string specifying the unit for
+<code>x_axis_type = "time_from_baseline"</code>. Options are <code>"days"</code>, <code>"months"</code>,
+and <code>"years"</code>.</p></dd>
 
 
 <dt id="arg-show-transition-points">show_transition_points<a class="anchor" aria-label="anchor" href="#arg-show-transition-points"></a></dt>
@@ -183,7 +191,9 @@ first <code>0 -&gt; 1</code> transition remain positive.</p>
 first <code>1 -&gt; 0</code> transition remain negative.</p>
 <p>When <code>x_axis_type = "visit"</code>, participants are aligned by visit order.
 When <code>x_axis_type = "date"</code>, visits are shown at actual calendar dates and do
-not need to align across participants.</p>
+not need to align across participants.
+When <code>x_axis_type = "time_from_baseline"</code>, each participant starts at time 0
+based on their earliest observed date.</p>
 <p>When <code>make_interactive = TRUE</code>, the function returns a <code>plotly</code> object and
 uses the internally prepared tooltip text for hover labels.</p>
     </div>
@@ -216,7 +226,8 @@ uses the internally prepared tooltip text for hover labels.</p>
 <span class="r-in"><span>  time_var <span class="op">=</span> <span class="va">VisitOrder</span>,</span></span>
 <span class="r-in"><span>  status_var <span class="op">=</span> <span class="va">MetSBinary</span>,</span></span>
 <span class="r-in"><span>  date_var <span class="op">=</span> <span class="va">VisitDate</span>,</span></span>
-<span class="r-in"><span>  x_axis_type <span class="op">=</span> <span class="st">"date"</span></span></span>
+<span class="r-in"><span>  x_axis_type <span class="op">=</span> <span class="st">"time_from_baseline"</span>,</span></span>
+<span class="r-in"><span>  time_from_baseline_unit <span class="op">=</span> <span class="st">"months"</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-plt img"><img src="PlotSwimmerTransitions-2.png" alt="" width="700" height="433"></span>
 </code></pre></div>

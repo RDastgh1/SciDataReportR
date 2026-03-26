@@ -19,7 +19,8 @@ SummarizeTransitions(
   max_participants = NULL,
   order_participants_by = c("first_positive", "first_transition", "ever_positive",
     "ever_positive_then_burden", "input_order", "n_visits", "n_positive", "pct_positive"),
-  x_axis_type = c("visit", "date")
+  x_axis_type = c("visit", "date", "time_from_baseline"),
+  time_from_baseline_unit = c("days", "months", "years")
 )
 ```
 
@@ -45,7 +46,7 @@ SummarizeTransitions(
 - date_var:
 
   Optional unquoted visit date column. This is required when
-  `x_axis_type = "date"`.
+  `x_axis_type = "date"` or `x_axis_type = "time_from_baseline"`.
 
 - participant_subset:
 
@@ -66,7 +67,14 @@ SummarizeTransitions(
 - x_axis_type:
 
   Character string indicating whether longitudinal ordering should
-  follow aligned visit number (`"visit"`) or actual date (`"date"`).
+  follow aligned visit number (`"visit"`), actual date (`"date"`), or
+  elapsed time from baseline (`"time_from_baseline"`).
+
+- time_from_baseline_unit:
+
+  Character string specifying the unit for
+  `x_axis_type = "time_from_baseline"`. Options are `"days"`,
+  `"months"`, and `"years"`.
 
 ## Value
 
@@ -106,6 +114,7 @@ The returned condition-level summary includes:
 toy_df <- tibble::tibble(
   ParticipantID = rep(paste0("P", 1:4), each = 4),
   VisitOrder = rep(1:4, times = 4),
+  VisitDate = rep(seq.Date(as.Date("2024-01-01"), by = "month", length.out = 4), times = 4),
   MetSBinary = c(
     0, 0, 1, 1,
     1, 1, 0, 0,
@@ -118,7 +127,10 @@ SummarizeTransitions(
   data = toy_df,
   id_var = ParticipantID,
   time_var = VisitOrder,
-  status_var = MetSBinary
+  status_var = MetSBinary,
+  date_var = VisitDate,
+  x_axis_type = "time_from_baseline",
+  time_from_baseline_unit = "months"
 )
 #> $participant_summary
 #> # A tibble: 4 × 23

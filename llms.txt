@@ -166,8 +166,8 @@ within these quarto slides:
   : Plot a spider chart across continuous and binary variables
 
 - [`PlotSplitViolin()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotSplitViolin.md)
-  : Split violin with aligned half-boxplots and a centered significance
-  label
+  : Split violin with aligned half-boxplots, significance label, sample
+  sizes, and label-aware title
 
 - [`PlotSwimmerTransitions()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotSwimmerTransitions.md)
   : Plot swimmer-style transitions for a binary condition over repeated

@@ -19,7 +19,8 @@ PlotSwimmerTransitions(
   max_participants = NULL,
   order_participants_by = c("first_positive", "first_transition", "ever_positive",
     "ever_positive_then_burden", "input_order", "n_visits", "n_positive", "pct_positive"),
-  x_axis_type = c("visit", "date"),
+  x_axis_type = c("visit", "date", "time_from_baseline"),
+  time_from_baseline_unit = c("days", "months", "years"),
   show_transition_points = TRUE,
   show_lines = TRUE,
   show_y_axis_labels = FALSE,
@@ -56,7 +57,7 @@ PlotSwimmerTransitions(
 - date_var:
 
   Optional unquoted visit date column. This is required when
-  `x_axis_type = "date"`.
+  `x_axis_type = "date"` or `x_axis_type = "time_from_baseline"`.
 
 - participant_subset:
 
@@ -77,7 +78,14 @@ PlotSwimmerTransitions(
 - x_axis_type:
 
   Character string indicating whether the x-axis should use aligned
-  visit number (`"visit"`) or actual calendar date (`"date"`).
+  visit number (`"visit"`), actual calendar date (`"date"`), or elapsed
+  time from each participant's baseline date (`"time_from_baseline"`).
+
+- time_from_baseline_unit:
+
+  Character string specifying the unit for
+  `x_axis_type = "time_from_baseline"`. Options are `"days"`,
+  `"months"`, and `"years"`.
 
 - show_transition_points:
 
@@ -165,7 +173,9 @@ the first `1 -> 0` transition remain negative.
 
 When `x_axis_type = "visit"`, participants are aligned by visit order.
 When `x_axis_type = "date"`, visits are shown at actual calendar dates
-and do not need to align across participants.
+and do not need to align across participants. When
+`x_axis_type = "time_from_baseline"`, each participant starts at time 0
+based on their earliest observed date.
 
 When `make_interactive = TRUE`, the function returns a `plotly` object
 and uses the internally prepared tooltip text for hover labels.
@@ -199,6 +209,7 @@ PlotSwimmerTransitions(
   time_var = VisitOrder,
   status_var = MetSBinary,
   date_var = VisitDate,
-  x_axis_type = "date"
+  x_axis_type = "time_from_baseline",
+  time_from_baseline_unit = "months"
 )
 ```
