@@ -249,7 +249,11 @@ PlotAnovaRelationshipsMatrix <- function(
     ggplot2::scale_shape_manual(values = c(7, 16, 17, 15, 18), drop = FALSE) +
     ggplot2::guides(size = "none") +
     ggplot2::labs(subtitle = "No Multiple Comparison Correction") +
-    ggplot2::xlab("") + ggplot2::ylab("")
+    ggplot2::xlab("") + ggplot2::ylab("") + ggplot2::scale_colour_gradient(
+      low = "#c6dbef",   # light blue
+      high = "#08306b",  # dark blue
+      name = "Effect Size"
+    )
 
   p_FDR <- ggplot2::ggplot(stat.test, ggplot2::aes(y = YLabel, x = XLabel, shape = p.adj.signif, text = PlotText)) +
     ggplot2::geom_point(ggplot2::aes(size = p.adj.signif, colour = .data[[colour_var]])) +
@@ -261,7 +265,11 @@ PlotAnovaRelationshipsMatrix <- function(
     ggplot2::scale_shape_manual(values = c(7, 16, 17, 15, 18), drop = FALSE) +
     ggplot2::guides(size = "none") +
     ggplot2::labs(subtitle = "FDR Correction") +
-    ggplot2::xlab("") + ggplot2::ylab("")
+    ggplot2::xlab("") + ggplot2::ylab("") + ggplot2::scale_colour_gradient(
+      low = "#c6dbef",   # light blue
+      high = "#08306b",  # dark blue
+      name = "Effect Size"
+    )
 
   list(
     Unadjusted = list(PvalTable = stat.test, plot = p),
