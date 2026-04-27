@@ -34,10 +34,28 @@ PlotMiningMatrix <- function(
     empty <- data.frame()
     p0 <- ggplot2::ggplot() + ggplot2::theme_void()
     return(list(
-      Unadjusted = list(PvalTable = empty, plot = p0),
-      FDRCorrected = list(PvalTable = empty, plot = p0),
-      method = method, Relabel = Relabel, Covariates = Covariates
+      Unadjusted = list(PvalTable = empty, plot = p0)
     ))
+  }
+
+  coalesce_p <- function(df) {
+    out <- rep(NA_real_, nrow(df))
+    for (nm in c("p", "P", "pval", "p.value", "p_value")) {
+      if (nm %in% names(df)) {
+        out <- dplyr::coalesce(out, suppressWarnings(as.numeric(df[[nm]])))
+      }
+    }
+    out
+  }
+
+  coalesce_effect <- function(df) {
+    out <- rep(NA_real_, nrow(df))
+    for (nm in c("r", "R", "estimate", "cor", "correlation", "ges", "cramers_v")) {
+      if (nm %in% names(df)) {
+        out <- dplyr::coalesce(out, suppressWarnings(as.numeric(df[[nm]])))
+      }
+    }
+    out
   }
 
   labels <- sjlabelled::get_label(Data, def.value = names(Data))
@@ -46,136 +64,127 @@ PlotMiningMatrix <- function(
   num_vars <- SciDataReportR::getNumVars(Data)
   cat_vars <- SciDataReportR::getCatVars(Data)
 
-  get_type <- function(v) {
-    if (v %in% num_vars) return("num")
-    if (v %in% cat_vars) return("cat")
-    return("other")
+  num_Outcomes   <- intersect(OutcomeVars, num_vars)
+  cat_Outcomes   <- intersect(OutcomeVars, cat_vars)
+  num_Predictors <- intersect(PredictorVars, num_vars)
+  cat_Predictors <- intersect(PredictorVars, cat_vars)
+
+  if (!is.null(Covariates)) {
+    num_Outcomes   <- setdiff(num_Outcomes, Covariates)
+    num_Predictors <- setdiff(num_Predictors, Covariates)
+    cat_Outcomes   <- setdiff(cat_Outcomes, Covariates)
+    cat_Predictors <- setdiff(cat_Predictors, Covariates)
   }
 
-  pairs <- expand.grid(
-    XVar = OutcomeVars,
-    YVar = PredictorVars,
-    stringsAsFactors = FALSE
-  )
+  results_list <- list()
 
-  pairs <- pairs[pairs$XVar != pairs$YVar, ]
+  # Correlations
+  if (length(num_Outcomes) > 0 && length(num_Predictors) > 0) {
 
-  results <- purrr::map_dfr(seq_len(nrow(pairs)), function(i) {
+    cor_res <- tryCatch(
+      SciDataReportR::PlotCorrelationsHeatmap(
+        Data,
+        xVars = num_Predictors,
+        yVars = num_Outcomes,
+        covars = Covariates,
+        method = method,
+        Relabel = FALSE
+      ),
+      error = function(e) NULL
+    )
 
-    x <- pairs$XVar[i]
-    y <- pairs$YVar[i]
+    if (!is.null(cor_res) && !is.null(cor_res$Unadjusted$plot$data)) {
 
-    type_x <- get_type(x)
-    type_y <- get_type(y)
+      df_cor <- cor_res$Unadjusted$plot$data %>%
+        dplyr::mutate(
+          p = coalesce_p(.),
+          EffectSize = coalesce_effect(.),
+          Test = "Correlation"
+        ) %>%
+        dplyr::select(XVar, YVar, p, EffectSize, Test)
 
-    df <- Data %>%
-      dplyr::select(dplyr::all_of(c(x, y))) %>%
-      tidyr::drop_na()
-
-    if (nrow(df) < 3) return(NULL)
-
-    out <- NULL
-
-    # numeric vs numeric
-    if (type_x == "num" && type_y == "num") {
-
-      if (stats::sd(df[[x]]) == 0 || stats::sd(df[[y]]) == 0) return(NULL)
-
-      test <- suppressWarnings(stats::cor.test(df[[x]], df[[y]], method = method))
-
-      out <- data.frame(
-        XVar = x,
-        YVar = y,
-        p = test$p.value,
-        EffectSize = unname(test$estimate),
-        Test = method
-      )
+      results_list[[length(results_list) + 1]] <- df_cor
     }
+  }
 
-    # numeric vs categorical
-    if ((type_x == "num" && type_y == "cat") || (type_x == "cat" && type_y == "num")) {
+  # ANOVA
+  if (length(cat_Predictors) > 0 && length(num_Outcomes) > 0) {
 
-      num_var <- ifelse(type_x == "num", x, y)
-      cat_var <- ifelse(type_x == "cat", x, y)
+    anova_res <- tryCatch(
+      SciDataReportR::PlotAnovaRelationshipsMatrix(
+        Data,
+        CatVars = cat_Predictors,
+        ContVars = num_Outcomes,
+        Covariates = Covariates,
+        Relabel = FALSE,
+        Parametric = Parametric
+      ),
+      error = function(e) NULL
+    )
 
-      y_vec <- df[[num_var]]
-      g_vec <- droplevels(as.factor(df[[cat_var]]))
+    if (!is.null(anova_res) && !is.null(anova_res$Unadjusted$PvalTable)) {
 
-      if (length(levels(g_vec)) < 2) return(NULL)
-      if (stats::sd(y_vec) == 0) return(NULL)
-
-      if (Parametric) {
-
-        fit <- stats::lm(y_vec ~ g_vec)
-        sm <- stats::anova(fit)
-
-        pval <- sm[["Pr(>F)"]][1]
-        ss <- sm[["Sum Sq"]]
-        eta2 <- ss[1] / sum(ss)
-
-        out <- data.frame(
-          XVar = x,
-          YVar = y,
-          p = pval,
-          EffectSize = eta2,
+      df_anova <- anova_res$Unadjusted$PvalTable %>%
+        dplyr::mutate(
+          XVar = ContinuousVariable,
+          YVar = CategoricalVariable,
+          p = coalesce_p(.),
+          EffectSize = coalesce_effect(.),
           Test = "ANOVA"
-        )
+        ) %>%
+        dplyr::select(XVar, YVar, p, EffectSize, Test)
 
-      } else {
-
-        test <- stats::kruskal.test(y_vec, g_vec)
-
-        out <- data.frame(
-          XVar = x,
-          YVar = y,
-          p = test$p.value,
-          EffectSize = NA_real_,
-          Test = "Kruskal"
-        )
-      }
+      results_list[[length(results_list) + 1]] <- df_anova
     }
+  }
 
-    # categorical vs categorical
-    if (type_x == "cat" && type_y == "cat") {
+  # ChiSq
+  if (length(cat_Predictors) > 0 && length(cat_Outcomes) > 0) {
 
-      x_fac <- droplevels(as.factor(df[[x]]))
-      y_fac <- droplevels(as.factor(df[[y]]))
+    chi_res <- tryCatch(
+      SciDataReportR::PlotChiSqCovar(
+        Data,
+        xVars = cat_Predictors,
+        yVars = cat_Outcomes,
+        covars = Covariates,
+        Relabel = FALSE
+      ),
+      error = function(e) NULL
+    )
 
-      if (length(levels(x_fac)) < 2 || length(levels(y_fac)) < 2) return(NULL)
+    if (!is.null(chi_res) && !is.null(chi_res$p$data)) {
 
-      tbl <- table(x_fac, y_fac)
-
-      if (all(dim(tbl) > 1)) {
-
-        test <- suppressWarnings(stats::chisq.test(tbl))
-
-        n <- sum(tbl)
-        cramer_v <- sqrt(test$statistic / (n * (min(dim(tbl)) - 1)))
-
-        out <- data.frame(
-          XVar = x,
-          YVar = y,
-          p = test$p.value,
-          EffectSize = cramer_v,
+      df_chi <- chi_res$p$data %>%
+        dplyr::mutate(
+          p = coalesce_p(.),
+          EffectSize = coalesce_effect(.),
           Test = "ChiSq"
-        )
-      }
+        ) %>%
+        dplyr::select(XVar, YVar, p, EffectSize, Test)
+
+      results_list[[length(results_list) + 1]] <- df_chi
     }
+  }
 
-    out
-  })
-
-  if (nrow(results) == 0) {
-    empty <- data.frame()
-    p0 <- ggplot2::ggplot() + ggplot2::theme_void()
+  if (length(results_list) == 0) {
     return(list(
-      Unadjusted = list(PvalTable = empty, plot = p0),
-      FDRCorrected = list(PvalTable = empty, plot = p0),
-      method = method, Relabel = Relabel, Covariates = Covariates
+      Unadjusted = list(PvalTable = data.frame(), plot = ggplot2::ggplot() + ggplot2::theme_void())
     ))
   }
 
-  # labels
+  results <- dplyr::bind_rows(results_list) %>%
+    dplyr::filter(
+      XVar != YVar,
+      !is.na(p),
+      !is.na(EffectSize),
+      is.finite(EffectSize)
+    )
+
+  results$p_adj <- stats::p.adjust(results$p, method = "fdr")
+
+  results <- results %>%
+    rstatix::add_significance(p.col = "p", output.col = "stars")
+
   if (Relabel) {
     results$XLabel <- labels[results$XVar]
     results$YLabel <- labels[results$YVar]
@@ -184,67 +193,34 @@ PlotMiningMatrix <- function(
     results$YLabel <- results$YVar
   }
 
-  # enforce ordering
   x_order <- if (Relabel) labels[OutcomeVars] else OutcomeVars
   y_order <- if (Relabel) labels[PredictorVars] else PredictorVars
 
   results$XLabel <- factor(results$XLabel, levels = x_order)
   results$YLabel <- factor(results$YLabel, levels = rev(y_order))
 
-  # adjust p-values
-  results$p_adj <- stats::p.adjust(results$p, method = "fdr")
-
-  results <- results %>%
-    rstatix::add_significance(p.col = "p", output.col = "stars") %>%
-    rstatix::add_significance(p.col = "p_adj", output.col = "stars_fdr")
-
-  # effect size for plotting
   results$EffectSizeAbs <- abs(results$EffectSize)
 
-  # size mapping
-  size_map <- c("ns" = 2, "*" = 3, "**" = 4, "***" = 5)
-  results$size_val <- unname(size_map[as.character(results$stars)])
-  results$size_val_fdr <- unname(size_map[as.character(results$stars_fdr)])
-
-  # shape mapping
+  size_map  <- c("ns" = 2, "*" = 3, "**" = 4, "***" = 5)
   shape_map <- c("ns" = 16, "*" = 17, "**" = 15, "***" = 18)
 
-  col_scale <- ggplot2::scale_colour_gradientn(
-    colours = as.character(paletteer::paletteer_c("grDevices::Purple-Yellow", n = 100, direction = -1)),
-    limits = c(0, 1),
-    name = "Effect Size"
+  results$size_val <- size_map[as.character(results$stars)]
+
+  # Better labels
+  shape_labels <- c(
+    "ns" = "ns (p ≥ 0.05)",
+    "*"  = "* (p < 0.05)",
+    "**" = "** (p < 0.01)",
+    "***"= "*** (p < 0.001)"
   )
 
   p <- ggplot2::ggplot(results, ggplot2::aes(x = XLabel, y = YLabel)) +
     ggplot2::geom_point(
-      ggplot2::aes(
-        colour = EffectSizeAbs,
-        size = size_val,
-        shape = stars
-      )
+      ggplot2::aes(colour = EffectSizeAbs, size = size_val, shape = stars)
     ) +
-    col_scale +
-    ggplot2::scale_size_continuous(range = c(2, 6), guide = "none") +
-    ggplot2::scale_shape_manual(values = shape_map, drop = FALSE, name = "Significance") +
-    ggplot2::labs(subtitle = "No Multiple Comparison Correction") +
-    ggplot2::theme_bw() +
-    ggplot2::theme(
-      axis.text.x = ggplot2::element_text(angle = 45, hjust = 1),
-      axis.title = ggplot2::element_blank()
-    )
-
-  p_fdr <- ggplot2::ggplot(results, ggplot2::aes(x = XLabel, y = YLabel)) +
-    ggplot2::geom_point(
-      ggplot2::aes(
-        colour = EffectSizeAbs,
-        size = size_val_fdr,
-        shape = stars_fdr
-      )
-    ) +
-    col_scale +
-    ggplot2::scale_size_continuous(range = c(2, 6), guide = "none") +
-    ggplot2::scale_shape_manual(values = shape_map, drop = FALSE, name = "Significance") +
-    ggplot2::labs(subtitle = "FDR Correction") +
+    viridis::scale_color_viridis(option = "plasma", limits = c(0,1), name = "Effect Size", direction = -1) +
+    ggplot2::scale_shape_manual(values = shape_map, labels = shape_labels, name = "Significance") +
+    ggplot2::scale_size_continuous(range = c(2, 5), guide = "none") +
     ggplot2::theme_bw() +
     ggplot2::theme(
       axis.text.x = ggplot2::element_text(angle = 45, hjust = 1),
@@ -252,10 +228,6 @@ PlotMiningMatrix <- function(
     )
 
   list(
-    Unadjusted = list(PvalTable = results, plot = p),
-    FDRCorrected = list(PvalTable = results, plot = p_fdr),
-    method = method,
-    Relabel = Relabel,
-    Covariates = Covariates
+    Unadjusted = list(PvalTable = results, plot = p)
   )
 }
