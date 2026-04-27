@@ -101,7 +101,8 @@ PlotMiningMatrix <- function(
           EffectSize = coalesce_effect(.),
           Test = "Correlation"
         ) %>%
-        dplyr::select(XVar, YVar, p, EffectSize, Test)
+        dplyr::select(XVar, YVar, p, EffectSize, Test) %>%
+        dplyr::filter(XVar != YVar)
 
       results_list[[length(results_list) + 1]] <- df_cor
     }
@@ -132,13 +133,14 @@ PlotMiningMatrix <- function(
           EffectSize = coalesce_effect(.),
           Test = "ANOVA"
         ) %>%
-        dplyr::select(XVar, YVar, p, EffectSize, Test)
+        dplyr::select(XVar, YVar, p, EffectSize, Test) %>%
+        dplyr::filter(XVar != YVar)
 
       results_list[[length(results_list) + 1]] <- df_anova
     }
   }
 
-  # ChiSq
+  # ChiSq with Fisher fallback
   if (length(cat_Predictors) > 0 && length(cat_Outcomes) > 0) {
 
     chi_res <- tryCatch(
@@ -160,7 +162,8 @@ PlotMiningMatrix <- function(
           EffectSize = coalesce_effect(.),
           Test = "ChiSq"
         ) %>%
-        dplyr::select(XVar, YVar, p, EffectSize, Test)
+        dplyr::select(XVar, YVar, p, EffectSize, Test) %>%
+        dplyr::filter(XVar != YVar)
 
       results_list[[length(results_list) + 1]] <- df_chi
     }
@@ -172,13 +175,30 @@ PlotMiningMatrix <- function(
     ))
   }
 
+  # Symmetry fix
   results <- dplyr::bind_rows(results_list) %>%
     dplyr::filter(
-      XVar != YVar,
       !is.na(p),
       !is.na(EffectSize),
       is.finite(EffectSize)
+    ) %>%
+    dplyr::mutate(
+      VarA = pmin(XVar, YVar),
+      VarB = pmax(XVar, YVar)
+    ) %>%
+    dplyr::group_by(VarA, VarB) %>%
+    dplyr::summarise(
+      p = min(p, na.rm = TRUE),
+      EffectSize = max(abs(EffectSize), na.rm = TRUE),
+      Test = dplyr::first(Test),
+      .groups = "drop"
     )
+
+  # Re-expand symmetrically
+  results <- dplyr::bind_rows(
+    results %>% dplyr::transmute(XVar = VarA, YVar = VarB, p, EffectSize, Test),
+    results %>% dplyr::transmute(XVar = VarB, YVar = VarA, p, EffectSize, Test)
+  )
 
   results$p_adj <- stats::p.adjust(results$p, method = "fdr")
 
@@ -206,7 +226,6 @@ PlotMiningMatrix <- function(
 
   results$size_val <- size_map[as.character(results$stars)]
 
-  # Better labels
   shape_labels <- c(
     "ns" = "ns (p ≥ 0.05)",
     "*"  = "* (p < 0.05)",
