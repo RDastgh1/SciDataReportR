@@ -58,8 +58,20 @@ PlotMiningMatrix <- function(
     out
   }
 
-  labels <- sjlabelled::get_label(Data, def.value = names(Data))
+  # FORCE LABEL COMPLETENESS
+  labels <- sjlabelled::get_label(Data)
   names(labels) <- names(Data)
+
+  missing_idx <- is.na(labels) | labels == ""
+  labels[missing_idx] <- names(labels)[missing_idx]
+
+  # SAFE LOOKUP FUNCTION (never returns NA)
+  safe_lookup <- function(vars, labels) {
+    out <- labels[vars]
+    missing_idx <- is.na(out) | out == ""
+    out[missing_idx] <- vars[missing_idx]
+    return(out)
+  }
 
   num_vars <- SciDataReportR::getNumVars(Data)
   cat_vars <- SciDataReportR::getCatVars(Data)
@@ -140,7 +152,7 @@ PlotMiningMatrix <- function(
     }
   }
 
-  # ChiSq with Fisher fallback
+  # ChiSq
   if (length(cat_Predictors) > 0 && length(cat_Outcomes) > 0) {
 
     chi_res <- tryCatch(
@@ -175,7 +187,7 @@ PlotMiningMatrix <- function(
     ))
   }
 
-  # Symmetry fix
+  # 🔥 SYMMETRY FIX
   results <- dplyr::bind_rows(results_list) %>%
     dplyr::filter(
       !is.na(p),
@@ -194,7 +206,6 @@ PlotMiningMatrix <- function(
       .groups = "drop"
     )
 
-  # Re-expand symmetrically
   results <- dplyr::bind_rows(
     results %>% dplyr::transmute(XVar = VarA, YVar = VarB, p, EffectSize, Test),
     results %>% dplyr::transmute(XVar = VarB, YVar = VarA, p, EffectSize, Test)
@@ -205,19 +216,25 @@ PlotMiningMatrix <- function(
   results <- results %>%
     rstatix::add_significance(p.col = "p", output.col = "stars")
 
+  # 🔥 SAFE LABEL APPLICATION
   if (Relabel) {
-    results$XLabel <- labels[results$XVar]
-    results$YLabel <- labels[results$YVar]
+    results$XLabel <- safe_lookup(results$XVar, labels)
+    results$YLabel <- safe_lookup(results$YVar, labels)
   } else {
     results$XLabel <- results$XVar
     results$YLabel <- results$YVar
   }
 
-  x_order <- if (Relabel) labels[OutcomeVars] else OutcomeVars
-  y_order <- if (Relabel) labels[PredictorVars] else PredictorVars
+  # 🔥 SAFE ORDERING (no NA levels ever)
+  x_order <- if (Relabel) safe_lookup(OutcomeVars, labels) else OutcomeVars
+  y_order <- if (Relabel) safe_lookup(PredictorVars, labels) else PredictorVars
 
-  results$XLabel <- factor(results$XLabel, levels = x_order)
-  results$YLabel <- factor(results$YLabel, levels = rev(y_order))
+  results$XLabel <- factor(results$XLabel, levels = unique(x_order))
+  results$YLabel <- factor(results$YLabel, levels = rev(unique(y_order)))
+
+  # FINAL CLEANUP
+  results <- results %>%
+    dplyr::filter(!is.na(XLabel), !is.na(YLabel))
 
   results$EffectSizeAbs <- abs(results$EffectSize)
 
