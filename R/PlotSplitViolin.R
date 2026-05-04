@@ -48,14 +48,15 @@ PlotSplitViolin <- function(
     color_palette = NULL,
     box_offset = 0.11,
     box_width  = 0.15,
+
     star_from = c("quantile","data_max","whisker"),
     star_quantile = 0.995,
-    star_pad = 0.03,
-    headroom = 0.08,
-    star_size = 6
+    star_pad = 0.05,
+    star_size = 6,
+
+    ...
 ) {
 
-  # ---- validate inputs ----
   stopifnot(requireNamespace("gghalves", quietly = TRUE),
             requireNamespace("emmeans", quietly = TRUE))
 
@@ -66,26 +67,17 @@ PlotSplitViolin <- function(
 
   Var   <- rlang::ensym(Var)
   Group <- rlang::ensym(Group)
+
   var_nm <- rlang::as_string(Var)
-  grp_nm <- rlang::as_string(Group)
+  var_safe <- paste0("`", var_nm, "`")
 
-  need <- unique(c(var_nm, grp_nm, covars))
-  miss <- setdiff(need, names(data))
-  if (length(miss)) {
-    stop("Missing columns in `data`: ", paste(miss, collapse = ", "))
-  }
-
-  # ---- prepare data ----
   df <- data %>%
     dplyr::select(!!Group, !!Var, dplyr::all_of(covars)) %>%
     tidyr::drop_na(!!Group, !!Var, dplyr::all_of(covars)) %>%
     dplyr::mutate(.Group = as.factor(!!Group))
 
-  if (nlevels(df$.Group) > 2) {
-    stop("`Group` must have <= 2 unique values.")
-  }
+  if (nlevels(df$.Group) > 2) stop("Group must have <=2 levels")
 
-  # ---- sample sizes ----
   n_df <- df %>% dplyr::count(.Group, name = "n")
 
   g_order <- levels(df$.Group)
@@ -100,13 +92,11 @@ PlotSplitViolin <- function(
 
   present_groups <- na.omit(c(g_left, g_right))
 
-  # ---- colors ----
   if (is.null(color_palette)) {
     base_cols <- c("#E8A007", "#8C1A45")
     color_palette <- stats::setNames(base_cols[seq_along(present_groups)], present_groups)
   }
 
-  # ---- legend labels ----
   if (show_n && n_position == "legend") {
     label_map <- n_df %>%
       dplyr::mutate(label = paste0(.Group, " (n=", n, ")"))
@@ -115,86 +105,44 @@ PlotSplitViolin <- function(
     legend_labels <- present_groups
   }
 
-  # ---- variable label ----
-  get_var_label <- function(v) {
-    lab <- attr(v, "label", exact = TRUE)
-    if (is.null(lab) && requireNamespace("labelled", quietly = TRUE)) {
-      lab <- tryCatch(labelled::var_label(v, unlist = TRUE), error = function(e) NULL)
-    }
-    if (is.null(lab) && requireNamespace("Hmisc", quietly = TRUE)) {
-      lab <- tryCatch(Hmisc::label(v), error = function(e) NULL)
-    }
-    if (is.null(lab) || !nzchar(lab)) lab <- var_nm
-    as.character(lab)
-  }
-
-  y_lab <- get_var_label(data[[var_nm]])
-
-  # ---- title logic ----
-  if (!is.null(plot_title)) {
-    final_title <- plot_title
-  } else if (use_var_label_as_title) {
-    final_title <- y_lab
-  } else {
-    final_title <- NULL
-  }
-
-  y_vals <- df[[var_nm]]
-  y_min  <- min(y_vals, na.rm = TRUE)
-  y_maxv <- max(y_vals, na.rm = TRUE)
-  dr <- y_maxv - y_min
-  if (!is.finite(dr) || dr <= 0) dr <- 1
-
-  # ---- p-value ----
+  # ---- p-value
   stars_from_p <- function(p) {
     if (is.na(p)) return(if (show_ns) "ns" else "")
-    if (p < 1e-3) "***"
-    else if (p < 1e-2) "**"
-    else if (p < .05) "*"
+    if (p < 0.001) "***"
+    else if (p < 0.01) "**"
+    else if (p < 0.05) "*"
     else if (show_ns) "ns"
     else ""
   }
 
   if (is.null(annotation_text) && !is.null(g_right)) {
 
-    if (nonparametric) {
-      if (length(covars) == 0) {
-        p_val <- tryCatch(
-          wilcox.test(df[[var_nm]] ~ df$.Group)$p.value,
-          error = function(e) NA_real_
-        )
-      } else {
-        cov_fml <- as.formula(paste0(var_nm, " ~ ", paste(covars, collapse = "+")))
-        res <- residuals(lm(cov_fml, data = df))
-        p_val <- tryCatch(
-          wilcox.test(res ~ df$.Group)$p.value,
-          error = function(e) NA_real_
-        )
-      }
-    } else {
-      rhs <- paste(c(".Group", covars), collapse = " + ")
-      fml <- as.formula(paste0(var_nm, " ~ ", rhs))
+    rhs <- paste(c(".Group", covars), collapse = " + ")
+    fml <- as.formula(paste0(var_safe, " ~ ", rhs))
 
-      p_val <- tryCatch({
-        fit <- lm(fml, data = df)
-        as.data.frame(
-          emmeans::contrast(emmeans::emmeans(fit, ".Group"),
-                            method = "revpairwise")
-        )$p.value[1]
-      }, error = function(e) NA_real_)
-
-      if (is.na(p_val)) {
-        p_val <- tryCatch(
-          t.test(df[[var_nm]] ~ df$.Group)$p.value,
-          error = function(e) NA_real_
-        )
-      }
-    }
+    p_val <- tryCatch({
+      fit <- lm(fml, data = df)
+      as.data.frame(
+        emmeans::contrast(emmeans::emmeans(fit, ".Group"),
+                          method = "revpairwise")
+      )$p.value[1]
+    }, error = function(e) NA_real_)
 
     annotation_text <- stars_from_p(p_val)
   }
 
-  # ---- star placement ----
+  # ---- scaling
+  y_vals <- df[[var_nm]]
+  y_min  <- min(y_vals, na.rm = TRUE)
+  y_maxv <- max(y_vals, na.rm = TRUE)
+
+  dr <- y_maxv - y_min
+  if (!is.finite(dr) || dr <= 0) {
+    dr <- abs(y_maxv) * 0.1 + 1e-6
+  }
+
+  dr <- max(dr, 0.01)
+
   safe_whisker <- function(z) {
     z <- z[is.finite(z)]
     if (!length(z)) return(NA_real_)
@@ -205,20 +153,27 @@ PlotSplitViolin <- function(
     star_from,
     quantile = quantile(y_vals, star_quantile, na.rm = TRUE),
     data_max = y_maxv,
-    whisker  = if (!is.null(g_right)) {
-      max(
-        safe_whisker(y_vals[df$.Group == g_left]),
-        safe_whisker(y_vals[df$.Group == g_right]),
-        na.rm = TRUE
-      )
-    } else safe_whisker(y_vals)
+    whisker  = max(
+      safe_whisker(y_vals[df$.Group == g_left]),
+      safe_whisker(y_vals[df$.Group == g_right]),
+      na.rm = TRUE
+    )
   )
 
-  y_star   <- anchor + star_pad * dr
-  ylim_top <- max(y_star + headroom * dr, y_maxv + headroom * dr)
+  y_star <- anchor + star_pad * dr
+
+  # 🔥 KEY FIX: padding based on RANGE, not absolute value
+  min_pad <- max(0.03 * dr, 0.001)
+
+  if (!is.null(annotation_text) && nzchar(annotation_text)) {
+    ylim_top <- y_star + min_pad
+  } else {
+    ylim_top <- y_maxv + min_pad
+  }
+
   ylim_bot <- y_min - 0.05 * dr
 
-  # ---- build plot ----
+  # ---- plot
   df_left <- df[df$.Group == g_left, ]
 
   p <- ggplot2::ggplot() +
@@ -255,25 +210,6 @@ PlotSplitViolin <- function(
       )
   }
 
-  # ---- n labels ----
-  if (show_n && n_position == "top") {
-    n_pos_df <- n_df %>%
-      dplyr::mutate(
-        x = ifelse(.Group == g_left, 1 - box_offset, 1 + box_offset),
-        y = y_maxv + 0.08 * dr,
-        label = paste0("n=", n)
-      )
-
-    p <- p +
-      ggplot2::geom_text(
-        data = n_pos_df,
-        ggplot2::aes(x = x, y = y, label = label),
-        size = n_size,
-        inherit.aes = FALSE
-      )
-  }
-
-  # ---- annotation (fixed, no ggpubr dependency) ----
   if (!is.null(annotation_text) && nzchar(annotation_text)) {
     p <- p +
       ggplot2::annotate(
@@ -285,10 +221,9 @@ PlotSplitViolin <- function(
       )
   }
 
-  # ---- finalize ----
   p +
     ggplot2::scale_fill_manual(values = color_palette, labels = legend_labels) +
-    ggplot2::labs(y = y_lab, title = final_title) +
+    ggplot2::labs(x = NULL) +
     ggplot2::coord_cartesian(ylim = c(ylim_bot, ylim_top), clip = "off") +
     ggplot2::theme_minimal() +
     ggplot2::theme(
