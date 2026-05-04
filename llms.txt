@@ -11,6 +11,7 @@ You can install the development version of SciDataReportR from
 [GitHub](https://github.com/) with:
 
 ``` r
+
 # install.packages("devtools")
 devtools::install_github("RDastgh1/SciDataReportR")
 ```
