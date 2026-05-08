@@ -1,29 +1,3 @@
-#' Calculate M-scores using median and MAD
-#'
-#' Calculate robust standardized scores using the median as the center and
-#' median absolute deviation as the scale. M-scores are useful for skewed,
-#' heavy-tailed, or outlier-prone variables where standard z-scores may be
-#' overly influenced by the mean and standard deviation.
-#'
-#' An M-score is calculated as:
-#'
-#' `(x - median(x)) / MAD(x)`
-#'
-#' By default, `stats::mad()` uses a scaling constant of `1.4826`, which makes
-#' MAD approximately comparable to the standard deviation when data are normally
-#' distributed.
-#'
-#' @param df Data frame with variables to robust-standardize.
-#' @param variables Character vector of variable names. If `NULL`, uses
-#'   `SciDataReportR::getNumVars(df, Ordinal = FALSE)`.
-#' @param names_prefix Prefix to prepend to variable names. Default is `"M_"`.
-#' @param RetainLabels Logical; if `TRUE` and `Hmisc` is available, copy labels.
-#' @param RenameLabels Logical; if `TRUE`, apply the same prefix to labels.
-#' @param center Logical; if `TRUE`, subtract the median.
-#' @param scale Logical; if `TRUE`, divide by the MAD.
-#' @param constant Numeric scaling constant passed to `stats::mad()`. Default is
-#'   `1.4826`.
-#'
 #' @return An object of class `"MScoreObj"`, a list with:
 #'   - `MScores`: data frame of M-score variables only
 #'   - `DataWithM`: original `df` plus M-score variables
@@ -31,6 +5,7 @@
 #'   - `Center`: logical flag used
 #'   - `Scale`: logical flag used
 #'   - `Constant`: MAD scaling constant used
+#'
 #' @export
 CalcMScore <- function(df,
                        variables = NULL,
