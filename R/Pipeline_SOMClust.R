@@ -21,6 +21,9 @@
 #' - The returned \code{df_with_clusters} has the full original data with
 #'   \code{.scidr_rowid} and a single cluster column appended; rows not used
 #'   in SOM/LPA get NA.
+#' - The returned \code{ProbFit$individual} is also full length, preserving
+#'   one row per input row with NA posterior probabilities for rows excluded
+#'   from SOM/LPA.
 #'
 #' Stable row id:
 #' - \code{.scidr_rowid} is added to the input data and carried into
@@ -85,6 +88,15 @@
 #'   \code{ZScorePrefix}.
 #' @param id_col Optional character scalar. If provided and present in \code{df},
 #'   this column is carried into \code{ProbFit$individual} for convenience.
+#' @param lpa_progress Logical; if TRUE, print short progress messages while
+#'   fitting model/profile combinations.
+#' @param lpa_em_itmax Integer; maximum number of EM iterations passed to
+#'   \code{mclust::emControl()}. Use NULL to leave mclust defaults unchanged.
+#' @param lpa_em_tol Numeric; EM convergence tolerance passed to
+#'   \code{mclust::emControl()}. Use NULL to leave mclust defaults unchanged.
+#' @param lpa_drop_zero_sd Logical; if TRUE, remove SOM code dimensions with
+#'   near-zero standard deviation before LPA.
+#' @param lpa_zero_sd_tol Numeric tolerance used when \code{lpa_drop_zero_sd = TRUE}.
 #'
 #' @details
 #' The AHP-style index is computed by:
@@ -95,6 +107,11 @@
 #'   \item Taking the mean of the three scaled indices. The model with the
 #'         highest AHP index is recommended.
 #' }
+#'
+#' LPA model/profile combinations are fit one at a time so that failed or
+#' warning-producing solutions are captured in diagnostics instead of blocking
+#' the entire pipeline. Successful fits are retained and failed fits are listed
+#' in \code{ModelInfo_MClust$diagnostics}.
 #'
 #' @return A list of class \code{"Pipeline_SOMClust"} with components:
 #'   \itemize{
@@ -109,37 +126,47 @@
 #'           diagnostics, baselines, and per-cluster flags), \code{plots}
 #'           (aweSOM plots)
 #'     \item \code{ModelInfo_MClust}: list with \code{lpa_models},
-#'           \code{fit_table}, and \code{AHP} information
+#'           \code{fit_table}, \code{AHP} information, and \code{diagnostics}
+#'           for LPA warnings, failures, runtimes, and preprocessing
 #'     \item \code{ProbFit}: list with \code{node} (node-level posterior
-#'           probabilities), \code{individual} (per-person mapping and
-#'           probabilities, including \code{.scidr_rowid}), and probability plots
+#'           probabilities), \code{individual} (full-length per-person mapping
+#'           and probabilities, including \code{.scidr_rowid}), and probability plots
 #'   }
 #'
 #' @references
-#' Saaty TL. \emph{The Analytic Hierarchy Process}. McGraw–Hill, 1980.
+#' Saaty TL. \emph{The Analytic Hierarchy Process}. McGraw-Hill, 1980.
 #'
 #' @export
 Pipeline_SOMClust <- function(
     df,
-    variables    = NULL,
-    method       = c("exploratory", "finalize"),
-    k_range      = 2:15,
-    models       = c(1, 2, 3),
-    final_k      = NULL,
-    final_model  = NULL,
-    ClusterName  = "Cluster",
-    ZScoreType   = c("Center and Scale", "Center Only", "Scale Only", "ZScoreObj", "PreZScored"),
-    ZScoreObject = NULL,
-    som_xdim     = NULL,
-    som_ydim     = NULL,
-    som_topo     = "hexagonal",
-    som_neigh    = "gaussian",
-    seed_som     = 934521L,
-    seed_lpa     = 93421L,
-    Relabel      = TRUE,
-    ZScorePrefix = "Z_",
-    ZScoreVars   = NULL,
-    id_col       = NULL
+    variables       = NULL,
+    method          = c("exploratory", "finalize"),
+    k_range         = 2:15,
+    models          = c(1, 2, 3),
+    final_k         = NULL,
+    final_model     = NULL,
+    ClusterName     = "Cluster",
+    ZScoreType      = c("Center and Scale", "Center Only", "Scale Only", "ZScoreObj", "PreZScored"),
+    ZScoreObject    = NULL,
+    som_xdim        = NULL,
+    som_ydim        = NULL,
+    som_topo        = "hexagonal",
+    som_neigh       = "gaussian",
+    seed_som        = 934521L,
+    seed_lpa        = 93421L,
+    Relabel         = TRUE,
+    ZScorePrefix    = "Z_",
+    ZScoreVars      = NULL,
+    id_col          = NULL,
+    lpa_progress     = FALSE,
+    lpa_em_itmax     = 100L,
+    lpa_em_tol       = 1e-5,
+    lpa_timeout_seconds = 120,
+    lpa_drop_zero_sd = TRUE,
+    lpa_zero_sd_tol  = 1e-8,
+    skip_model_after_n_failures = 2L,
+    slow_fit_seconds = 120,
+    min_nodes_per_cluster = 5
 ) {
 
   method     <- match.arg(method)
@@ -157,10 +184,58 @@ Pipeline_SOMClust <- function(
   if (!requireNamespace("tidyLPA", quietly = TRUE)) {
     stop("Package 'tidyLPA' is required.")
   }
+  if ((!is.null(lpa_em_itmax) || !is.null(lpa_em_tol)) &&
+      !requireNamespace("mclust", quietly = TRUE)) {
+    stop("Package 'mclust' is required when lpa_em_itmax or lpa_em_tol is supplied.")
+  }
+  if (!is.null(lpa_timeout_seconds) &&
+      !requireNamespace("R.utils", quietly = TRUE)) {
+    stop("Package 'R.utils' is required when lpa_timeout_seconds is supplied. Install it or set lpa_timeout_seconds = NULL.")
+  }
   if (!requireNamespace("dplyr", quietly = TRUE) ||
       !requireNamespace("tidyr", quietly = TRUE) ||
       !requireNamespace("ggplot2", quietly = TRUE)) {
     stop("Packages 'dplyr', 'tidyr', and 'ggplot2' are required.")
+  }
+
+  if (!is.logical(lpa_progress) || length(lpa_progress) != 1) {
+    stop("lpa_progress must be TRUE or FALSE.")
+  }
+  if (!is.logical(lpa_drop_zero_sd) || length(lpa_drop_zero_sd) != 1) {
+    stop("lpa_drop_zero_sd must be TRUE or FALSE.")
+  }
+  if (!is.numeric(lpa_zero_sd_tol) || length(lpa_zero_sd_tol) != 1 || lpa_zero_sd_tol < 0) {
+    stop("lpa_zero_sd_tol must be a single non-negative numeric value.")
+  }
+  if (!is.null(lpa_em_itmax) &&
+      (!is.numeric(lpa_em_itmax) || length(lpa_em_itmax) != 1 || lpa_em_itmax < 1)) {
+    stop("lpa_em_itmax must be NULL or a single positive integer.")
+  }
+  if (!is.null(lpa_em_tol) &&
+      (!is.numeric(lpa_em_tol) || length(lpa_em_tol) != 1 || lpa_em_tol <= 0)) {
+    stop("lpa_em_tol must be NULL or a single positive numeric value.")
+  }
+  if (!is.null(lpa_timeout_seconds) &&
+      (!is.numeric(lpa_timeout_seconds) ||
+       length(lpa_timeout_seconds) != 1 ||
+       lpa_timeout_seconds <= 0)) {
+    stop("lpa_timeout_seconds must be NULL or a single positive numeric value.")
+  }
+  if (!is.null(skip_model_after_n_failures) &&
+      (!is.numeric(skip_model_after_n_failures) ||
+       length(skip_model_after_n_failures) != 1 ||
+       skip_model_after_n_failures < 1)) {
+    stop("skip_model_after_n_failures must be NULL or a single positive integer.")
+  }
+  if (!is.null(slow_fit_seconds) &&
+      (!is.numeric(slow_fit_seconds) || length(slow_fit_seconds) != 1 || slow_fit_seconds <= 0)) {
+    stop("slow_fit_seconds must be NULL or a single positive numeric value.")
+  }
+  if (!is.null(min_nodes_per_cluster) &&
+      (!is.numeric(min_nodes_per_cluster) ||
+       length(min_nodes_per_cluster) != 1 ||
+       min_nodes_per_cluster <= 0)) {
+    stop("min_nodes_per_cluster must be NULL or a single positive numeric value.")
   }
 
   # Stable row id ----------------------------------------------------------
@@ -315,6 +390,9 @@ Pipeline_SOMClust <- function(
   # SOM fitting ------------------------------------------------------------
 
   n_complete <- nrow(zmat)
+  som_grid_initial_xdim <- som_xdim
+  som_grid_initial_ydim <- som_ydim
+
   if (is.null(som_xdim) || is.null(som_ydim)) {
     side <- ceiling(n_complete^(1 / 3))
     som_xdim <- side
@@ -351,6 +429,28 @@ Pipeline_SOMClust <- function(
   SOM_Dist_full[complete_rows] <- som_model$distances
 
   train_quant_err <- mean(som_model$distances, na.rm = TRUE)
+
+  som_node_occupancy <- dplyr::tibble(
+    NodeID = seq_len(nrow(som_codes))
+  ) %>%
+    dplyr::left_join(
+      as.data.frame(table(som_model$unit.classif)) %>%
+        dplyr::transmute(
+          NodeID = as.integer(as.character(Var1)),
+          n = as.integer(Freq)
+        ),
+      by = "NodeID"
+    ) %>%
+    dplyr::mutate(n = dplyr::if_else(is.na(n), 0L, n))
+
+  som_occupancy_summary <- dplyr::tibble(
+    n_nodes = nrow(som_node_occupancy),
+    n_empty_nodes = sum(som_node_occupancy$n == 0),
+    n_singleton_nodes = sum(som_node_occupancy$n == 1),
+    min_occupancy = min(som_node_occupancy$n),
+    median_occupancy = stats::median(som_node_occupancy$n),
+    max_occupancy = max(som_node_occupancy$n)
+  )
 
   # AweSOM plots -----------------------------------------------------------
 
@@ -400,75 +500,331 @@ Pipeline_SOMClust <- function(
   # LPA / mclust on SOM codes ----------------------------------------------
 
   X <- som_codes
+
+  if (is.null(colnames(X))) {
+    colnames(X) <- paste0("V", seq_len(ncol(X)))
+  }
+
+  dropped_lpa_vars <- character(0)
+  if (lpa_drop_zero_sd) {
+    lpa_sd <- apply(X, 2, stats::sd, na.rm = TRUE)
+    keep_lpa_vars <- is.finite(lpa_sd) & lpa_sd > lpa_zero_sd_tol
+    dropped_lpa_vars <- colnames(X)[!keep_lpa_vars]
+
+    if (length(dropped_lpa_vars) > 0) {
+      warning(
+        "Dropping near-zero SD SOM code dimensions before LPA: ",
+        paste(dropped_lpa_vars, collapse = ", ")
+      )
+      X <- X[, keep_lpa_vars, drop = FALSE]
+    }
+
+    if (ncol(X) == 0) {
+      stop("No SOM code dimensions with non-zero variance are available for LPA.")
+    }
+  }
+
+  X <- as.data.frame(X)
   set.seed(seed_lpa)
 
-  if (method == "exploratory") {
-    lpa_models <- suppressWarnings(
-      suppressMessages(
+  lpa_control <- NULL
+  if (!is.null(lpa_em_itmax) || !is.null(lpa_em_tol)) {
+    lpa_control <- mclust::emControl(
+      itmax = if (is.null(lpa_em_itmax)) NULL else as.integer(lpa_em_itmax),
+      tol   = if (is.null(lpa_em_tol)) NULL else lpa_em_tol
+    )
+  }
+
+  # This helper is intentionally kept inside the function because it isolates
+  # warning capture, runtime tracking, and failed-fit handling for one fragile step.
+  safe_lpa_fit <- function(X, k, model, lpa_control = NULL, lpa_timeout_seconds = NULL) {
+
+    warnings_vec <- character(0)
+    error_msg    <- NA_character_
+    start_time   <- Sys.time()
+
+    fit_expr <- function() {
+      if (is.null(lpa_control)) {
         tidyLPA::estimate_profiles(
           X,
-          n_profiles = k_range,
-          models     = models
+          n_profiles = k,
+          models     = model
         )
+      } else {
+        tidyLPA::estimate_profiles(
+          X,
+          n_profiles = k,
+          models     = model,
+          control    = lpa_control
+        )
+      }
+    }
+
+    fit <- withCallingHandlers(
+      tryCatch(
+        {
+          if (is.null(lpa_timeout_seconds)) {
+            fit_expr()
+          } else {
+            R.utils::withTimeout(
+              fit_expr(),
+              timeout = lpa_timeout_seconds,
+              onTimeout = "error"
+            )
+          }
+        },
+        TimeoutException = function(e) {
+          error_msg <<- paste0("Timed out after ", lpa_timeout_seconds, " seconds.")
+          NULL
+        },
+        error = function(e) {
+          error_msg <<- conditionMessage(e)
+          NULL
+        }
+      ),
+      warning = function(w) {
+        warnings_vec <<- c(warnings_vec, conditionMessage(w))
+        invokeRestart("muffleWarning")
+      }
+    )
+
+    runtime_seconds <- as.numeric(difftime(Sys.time(), start_time, units = "secs"))
+    slow_fit <- !is.null(slow_fit_seconds) && runtime_seconds > slow_fit_seconds
+
+    fit_info <- NULL
+    fit_error_msg <- NA_character_
+    if (!is.null(fit)) {
+      fit_info <- tryCatch(
+        tidyLPA::get_fit(fit),
+        error = function(e) {
+          fit_error_msg <<- conditionMessage(e)
+          NULL
+        }
       )
+    }
+
+    if (is.null(fit_info)) {
+      if (is.na(error_msg) && !is.na(fit_error_msg)) {
+        error_msg <- fit_error_msg
+      }
+      status <- "failed"
+    } else {
+      status <- "success"
+    }
+
+    diagnostics <- dplyr::tibble(
+      Model           = as.integer(model),
+      Classes         = as.integer(k),
+      status          = status,
+      runtime_seconds = runtime_seconds,
+      slow_fit        = slow_fit,
+      n_warnings      = length(warnings_vec),
+      warnings        = paste(unique(warnings_vec), collapse = " | "),
+      error           = error_msg
     )
 
-    comp <- tidyLPA::compare_solutions(
-      lpa_models,
-      statistics = c("AIC", "BIC", "Entropy")
+    if (!is.null(fit_info)) {
+      fit_info <- as.data.frame(fit_info)
+      fit_info$Model <- as.integer(model)
+      fit_info$Classes <- as.integer(k)
+    }
+
+    list(
+      fit         = fit,
+      fit_info    = fit_info,
+      diagnostics = diagnostics
+    )
+  }
+
+  # This helper prevents one available model from getting all of the AHP weight
+  # simply because there is no variation in a fit index.
+  scale_for_ahp <- function(x, higher_is_better = TRUE) {
+    if (!higher_is_better) {
+      x <- -x
+    }
+    if (all(is.na(x)) || stats::sd(x, na.rm = TRUE) == 0) {
+      return(rep(0, length(x)))
+    }
+    as.numeric(scale(x))
+  }
+
+  if (method == "exploratory") {
+
+    lpa_models <- list()
+    fit_rows   <- list()
+    diag_rows  <- list()
+
+    model_grid <- expand.grid(
+      Model   = models,
+      Classes = k_range,
+      KEEP.OUT.ATTRS = FALSE
     )
 
-    fit_table <- comp$fit
+    total_fits <- nrow(model_grid)
+    model_problem_counts <- stats::setNames(rep(0L, length(unique(models))), unique(models))
+
+    for (i in seq_len(total_fits)) {
+
+      this_model <- model_grid$Model[i]
+      this_k     <- model_grid$Classes[i]
+      fit_name   <- paste0("model_", this_model, "_class_", this_k)
+
+      if (!is.null(min_nodes_per_cluster) && nrow(X) / this_k < min_nodes_per_cluster) {
+        warning(
+          "Model ", this_model, ", k = ", this_k,
+          " has fewer than ", min_nodes_per_cluster,
+          " SOM nodes per requested profile on average. Interpret cautiously."
+        )
+      }
+
+      if (!is.null(skip_model_after_n_failures) &&
+          model_problem_counts[as.character(this_model)] >= skip_model_after_n_failures) {
+
+        if (lpa_progress) {
+          message(
+            "Skipping LPA fit ", i, "/", total_fits,
+            ": model ", this_model,
+            ", k = ", this_k,
+            " after repeated failed or slow fits."
+          )
+        }
+
+        diag_rows[[fit_name]] <- dplyr::tibble(
+          Model           = as.integer(this_model),
+          Classes         = as.integer(this_k),
+          status          = "skipped_model_family",
+          runtime_seconds = NA_real_,
+          slow_fit        = NA,
+          n_warnings      = 0L,
+          warnings        = NA_character_,
+          error           = paste0(
+            "Skipped after ", skip_model_after_n_failures,
+            " failed or slow fits for model ", this_model, "."
+          )
+        )
+        next
+      }
+
+      if (lpa_progress) {
+        message(
+          "LPA fit ", i, "/", total_fits,
+          ": model ", this_model,
+          ", k = ", this_k
+        )
+      }
+
+      fit_res <- safe_lpa_fit(
+        X           = X,
+        k           = this_k,
+        model       = this_model,
+        lpa_control = lpa_control,
+        lpa_timeout_seconds = lpa_timeout_seconds
+      )
+
+      diag_rows[[fit_name]] <- fit_res$diagnostics
+
+      if (fit_res$diagnostics$status != "success" || isTRUE(fit_res$diagnostics$slow_fit)) {
+        model_problem_counts[as.character(this_model)] <- model_problem_counts[as.character(this_model)] + 1L
+      }
+
+      if (!is.null(fit_res$fit) && !is.null(fit_res$fit_info)) {
+        lpa_models[[fit_name]] <- fit_res$fit
+        fit_rows[[fit_name]]   <- fit_res$fit_info
+      }
+    }
+
+    lpa_diagnostics <- dplyr::bind_rows(diag_rows)
+    failed_fits <- lpa_diagnostics %>%
+      dplyr::filter(status != "success")
+
+    warning_fits <- lpa_diagnostics %>%
+      dplyr::filter(status == "success", n_warnings > 0)
+
+    if (length(fit_rows) == 0) {
+      stop(
+        "No LPA models were successfully estimated. Inspect ModelInfo_MClust$diagnostics if available; ",
+        "try fewer variables, smaller k_range, excluding unstable models, or increasing lpa_em_itmax."
+      )
+    }
+
+    fit_table <- dplyr::bind_rows(fit_rows) %>%
+      dplyr::mutate(
+        Model = as.integer(Model),
+        Classes = as.integer(Classes)
+      )
+
+    if (!"AIC" %in% names(fit_table)) fit_table$AIC <- NA_real_
+    if (!"BIC" %in% names(fit_table)) fit_table$BIC <- NA_real_
+    if (!"Entropy" %in% names(fit_table)) fit_table$Entropy <- NA_real_
 
     fit_table <- fit_table %>%
       dplyr::mutate(
-        AIC_scaled     = as.numeric(scale(-AIC)),
-        BIC_scaled     = as.numeric(scale(-BIC)),
-        Entropy_scaled = as.numeric(scale(Entropy)),
-        ahp_index      = (AIC_scaled + BIC_scaled + Entropy_scaled) / 3
+        AIC_scaled     = scale_for_ahp(AIC, higher_is_better = FALSE),
+        BIC_scaled     = scale_for_ahp(BIC, higher_is_better = FALSE),
+        Entropy_scaled = scale_for_ahp(Entropy, higher_is_better = TRUE),
+        ahp_index      = rowMeans(
+          cbind(AIC_scaled, BIC_scaled, Entropy_scaled),
+          na.rm = TRUE
+        )
       )
+
+    if (all(is.na(fit_table$ahp_index))) {
+      stop("LPA models were estimated, but AHP could not be computed because fit indices are missing.")
+    }
 
     best_idx     <- which.max(fit_table$ahp_index)
     ahp_best_row <- fit_table[best_idx, ]
-    best_model   <- as.integer(as.character(ahp_best_row$Model))
+    best_model   <- as.integer(ahp_best_row$Model)
     best_k       <- as.integer(ahp_best_row$Classes)
+    best_name    <- paste0("model_", best_model, "_class_", best_k)
+    best_fit_name <- best_name
+    best_lpa     <- lpa_models[[best_name]]
 
     recommendation_txt <- paste0(
       "AHP (AIC, BIC, Entropy) recommends Model ",
       best_model, " with k = ", best_k, " profiles."
     )
 
-    best_lpa <- suppressWarnings(
-      suppressMessages(
-        tidyLPA::estimate_profiles(
-          X,
-          n_profiles = best_k,
-          models     = best_model
-        )
-      )
-    )
-
-    mdata_wide <- as.data.frame(comp$fits)
+    mdata_wide <- fit_table
 
   } else {
+
     if (is.null(final_k) || is.null(final_model)) {
       stop("For method = 'finalize', final_k and final_model must be supplied.")
     }
 
-    lpa_models <- suppressWarnings(
-      suppressMessages(
-        tidyLPA::estimate_profiles(
-          X,
-          n_profiles = final_k,
-          models     = final_model
-        )
+    if (lpa_progress) {
+      message(
+        "LPA finalize fit: model ", final_model,
+        ", k = ", final_k
       )
+    }
+
+    fit_res <- safe_lpa_fit(
+      X           = X,
+      k           = final_k,
+      model       = final_model,
+      lpa_control = lpa_control
     )
 
-    best_lpa <- lpa_models
+    lpa_diagnostics <- fit_res$diagnostics
+    failed_fits <- lpa_diagnostics %>%
+      dplyr::filter(status != "success")
+    warning_fits <- lpa_diagnostics %>%
+      dplyr::filter(status == "success", n_warnings > 0)
 
-    fit <- tidyLPA::get_fit(best_lpa)
-    fit_table <- fit %>%
+    if (is.null(fit_res$fit) || is.null(fit_res$fit_info)) {
+      stop(
+        "The requested final LPA model could not be estimated: model ",
+        final_model, ", k = ", final_k, "."
+      )
+    }
+
+    lpa_models <- fit_res$fit
+    best_lpa   <- lpa_models
+    best_fit_name <- paste0("model_", final_model, "_class_", final_k)
+
+    fit_table <- as.data.frame(fit_res$fit_info) %>%
       dplyr::mutate(
         Classes        = final_k,
         Model          = final_model,
@@ -486,32 +842,40 @@ Pipeline_SOMClust <- function(
       " with k = ", final_k, " profiles."
     )
 
-    mdata_wide <- data.frame(
-      Classes = final_k,
-      Model   = final_model,
-      AIC     = fit$AIC,
-      BIC     = fit$BIC,
-      Entropy = fit$Entropy
-    )
+    mdata_wide <- fit_table
   }
 
   # Fit plot ---------------------------------------------------------------
 
-  mdata <- mdata_wide %>%
-    tidyr::pivot_longer(
-      cols      = c("AIC", "BIC", "Entropy"),
-      names_to  = "name",
-      values_to = "value"
+  mdata_cols <- intersect(c("AIC", "BIC", "Entropy"), names(mdata_wide))
+
+  if (length(mdata_cols) == 0) {
+    mdata <- dplyr::tibble(
+      Classes = integer(0),
+      Model   = integer(0),
+      name    = character(0),
+      value   = numeric(0)
     )
+  } else {
+    mdata <- mdata_wide %>%
+      tidyr::pivot_longer(
+        cols      = dplyr::all_of(mdata_cols),
+        names_to  = "name",
+        values_to = "value"
+      )
+  }
+
+  model_levels <- sort(unique(c(1, 2, 3, models, final_model)))
+  model_levels <- model_levels[!is.na(model_levels)]
+  model_labels <- as.character(model_levels)
+  model_labels[model_levels == 1] <- "1:Equal variance, cov = 0"
+  model_labels[model_levels == 2] <- "2:Varying variance, cov = 0"
+  model_labels[model_levels == 3] <- "3:Equal variance, equal cov"
 
   mdata$Model <- factor(
     mdata$Model,
-    levels = c(1, 2, 3),
-    labels = c(
-      "1:Equal variance, cov = 0",
-      "2:Varying variance, cov = 0",
-      "3:Equal variance, equal cov"
-    )
+    levels = model_levels,
+    labels = model_labels
   )
 
   pal_cols <- c(
@@ -519,6 +883,7 @@ Pipeline_SOMClust <- function(
     "2:Varying variance, cov = 0"    = "#A5C660",
     "3:Equal variance, equal cov"    = "#F16A33"
   )
+  pal_cols <- pal_cols[names(pal_cols) %in% levels(mdata$Model)]
 
   fit_plot <- ggplot2::ggplot(
     mdata,
@@ -527,13 +892,16 @@ Pipeline_SOMClust <- function(
     ggplot2::geom_point() +
     ggplot2::geom_line() +
     ggplot2::facet_wrap(~name, scales = "free_y", ncol = 1) +
-    ggplot2::scale_color_manual(values = pal_cols) +
     ggplot2::theme_bw() +
     ggplot2::theme(legend.position = "top") +
     ggplot2::labs(
       x = "Number of clusters",
       y = "Fit index value"
     )
+
+  if (length(pal_cols) > 0) {
+    fit_plot <- fit_plot + ggplot2::scale_color_manual(values = pal_cols)
+  }
 
   # Node-level cluster and posteriors --------------------------------------
 
@@ -549,14 +917,29 @@ Pipeline_SOMClust <- function(
   }
   prob_cols_new <- grep("^prob_", names(node_df), value = TRUE)
 
+  if (length(prob_cols_new) > 0) {
+    node_df <- node_df %>%
+      dplyr::rowwise() %>%
+      dplyr::mutate(
+        max_prob      = max(dplyr::c_across(dplyr::all_of(prob_cols_new)), na.rm = TRUE),
+        prob_assigned = dplyr::c_across(dplyr::all_of(prob_cols_new))[Cluster],
+        uncertainty   = 1 - max_prob
+      ) %>%
+      dplyr::ungroup()
+  } else {
+    node_df <- node_df %>%
+      dplyr::mutate(
+        max_prob      = NA_real_,
+        prob_assigned = NA_real_,
+        uncertainty   = NA_real_
+      )
+  }
+
   node_df <- node_df %>%
-    dplyr::rowwise() %>%
     dplyr::mutate(
-      max_prob      = max(dplyr::c_across(dplyr::all_of(prob_cols_new))),
-      prob_assigned = dplyr::c_across(dplyr::all_of(prob_cols_new))[Cluster],
-      uncertainty   = 1 - max_prob
-    ) %>%
-    dplyr::ungroup()
+      NodeID = as.integer(NodeID),
+      Cluster = as.integer(Cluster)
+    )
 
   # Map nodes to individuals -----------------------------------------------
 
@@ -573,10 +956,20 @@ Pipeline_SOMClust <- function(
     SOM_Node     = SOM_Node_full,
     SOM_Distance = SOM_Dist_full
   ) %>%
-    dplyr::left_join(node_df, by = c("SOM_Node" = "NodeID"))
+    dplyr::left_join(node_df, by = c("SOM_Node" = "NodeID")) %>%
+    dplyr::mutate(
+      Cluster = Cluster_full
+    )
 
   if (!is.null(id_col) && id_col %in% names(df_scidr)) {
     individual_tbl[[id_col]] <- df_scidr[[id_col]]
+  }
+
+  if (nrow(individual_tbl) != nrow(df_scidr)) {
+    stop("Internal row alignment error: ProbFit$individual does not match the number of rows in df.")
+  }
+  if (!identical(individual_tbl$.scidr_rowid, df_scidr$.scidr_rowid)) {
+    stop("Internal row alignment error: .scidr_rowid shifted during posterior probability mapping.")
   }
 
   # df_with_clusters: only cluster label -----------------------------------
@@ -661,6 +1054,8 @@ Pipeline_SOMClust <- function(
     dist_by_cluster   = dist_by_cluster,
     flag_by_cluster   = flag_by_cluster,
     overall_p95       = overall_p95,
+    node_occupancy    = som_node_occupancy,
+    occupancy_summary = som_occupancy_summary,
     table             = som_fit_tbl,
     plots             = list(
       distance_hist           = p_dist_hist,
@@ -672,6 +1067,13 @@ Pipeline_SOMClust <- function(
     som_model = som_model,
     som_codes = som_codes,
     som_grid  = som_grid,
+    som_grid_info = list(
+      som_xdim_initial = som_grid_initial_xdim,
+      som_ydim_initial = som_grid_initial_ydim,
+      som_xdim_used    = som_xdim,
+      som_ydim_used    = som_ydim,
+      n_nodes_used     = som_xdim * som_ydim
+    ),
     SOMFit    = SOMFit,
     plots     = som_plots
   )
@@ -745,13 +1147,39 @@ Pipeline_SOMClust <- function(
     )
   )
 
+  lpa_preprocess <- list(
+    n_rows_original          = nrow(df_scidr),
+    n_complete_rows          = sum(complete_rows),
+    n_excluded_rows          = sum(!complete_rows),
+    prop_excluded_rows       = mean(!complete_rows),
+    n_som_nodes              = nrow(som_codes),
+    n_lpa_variables_original = ncol(som_codes),
+    n_lpa_variables_used     = ncol(X),
+    dropped_zero_sd_vars     = dropped_lpa_vars,
+    lpa_drop_zero_sd         = lpa_drop_zero_sd,
+    lpa_zero_sd_tol          = lpa_zero_sd_tol,
+    lpa_em_itmax             = lpa_em_itmax,
+    lpa_em_tol               = lpa_em_tol,
+    lpa_timeout_seconds      = lpa_timeout_seconds,
+    skip_model_after_n_failures = skip_model_after_n_failures,
+    slow_fit_seconds         = slow_fit_seconds,
+    min_nodes_per_cluster    = min_nodes_per_cluster
+  )
+
   ModelInfo_MClust <- list(
-    lpa_models = lpa_models,
-    fit_table  = fit_table,
-    AHP        = list(
+    lpa_models    = lpa_models,
+    fit_table     = fit_table,
+    best_fit_name = best_fit_name,
+    AHP         = list(
       ahp_index      = if ("ahp_index" %in% names(fit_table)) fit_table$ahp_index else NA_real_,
       ahp_best_row   = ahp_best_row,
       recommendation = recommendation_txt
+    ),
+    diagnostics = list(
+      lpa_fit_diagnostics = lpa_diagnostics,
+      failed_fits         = failed_fits,
+      warning_fits        = warning_fits,
+      lpa_preprocess      = lpa_preprocess
     )
   )
 
