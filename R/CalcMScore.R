@@ -31,17 +31,6 @@
 #'   - `Center`: logical flag used
 #'   - `Scale`: logical flag used
 #'   - `Constant`: MAD scaling constant used
-#'
-#' @examples
-#' df <- data.frame(
-#'   x = c(1, 2, 3, 4, 100),
-#'   y = c(10, 12, 13, 15, 16)
-#' )
-#'
-#' out <- CalcMScore(df, variables = c("x", "y"))
-#' out$MScores
-#' out$Parameters
-#'
 #' @export
 CalcMScore <- function(df,
                        variables = NULL,

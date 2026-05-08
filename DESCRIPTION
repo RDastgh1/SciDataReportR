@@ -28,7 +28,8 @@ Imports:
     kableExtra,
     gtsummary,
     paletteer,
-    purrr
+    purrr,
+    lubridate
 Suggests:
     BlandAltmanLeh,
     ggrepel,

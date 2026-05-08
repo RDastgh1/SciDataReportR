@@ -9,8 +9,7 @@ Merge_ByClosestTime(
   DataFrame2,
   TimeVar1,
   TimeVar2,
-  IDVar1 = NULL,
-  IDVar2 = NULL,
+  MergeBy = NULL,
   is_date = FALSE
 )
 }
@@ -23,19 +22,18 @@ Merge_ByClosestTime(
 
 \item{TimeVar2}{The name of the time variable in DataFrame2 (as a string).}
 
-\item{IDVar1}{Optional. The name of the ID variable in DataFrame1 (as a string). If not provided, no ID-based join is performed.}
+\item{MergeBy}{Optional. Character vector of variable(s) to merge by.
+Must exist in BOTH data frames and be in the same order.}
 
-\item{IDVar2}{Optional. The name of the ID variable in DataFrame2 (as a string). If not provided, no ID-based join is performed.}
-
-\item{is_date}{Logical. Indicates whether the time variables are dates (TRUE) or POSIXct timestamps (FALSE). Defaults to FALSE.}
+\item{is_date}{Logical. Indicates whether the time variables are dates (TRUE) or POSIXct (FALSE).}
 }
 \value{
-A list containing two elements:
-\item{merged_dataframe}{A data frame with the closest time matches from both data frames and the time differences.}
-\item{time_differences}{A numeric vector of time differences for each closest match.}
+A list with:
+\item{merged_dataframe}{Data frame with closest time matches}
+\item{time_differences}{Vector of time differences}
 }
 \description{
 This function merges two data frames based on the closest time in the specified time columns.
-It can also merge data frames using optional ID columns. The resulting merged data frame
-contains the closest time matches and the time differences.
+It optionally merges using one or more matching variables (e.g., IDs).
+The resulting merged data frame contains the closest time matches and time differences.
 }

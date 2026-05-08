@@ -9,6 +9,7 @@ PlotContinuousDistributions(
   Variables = NULL,
   Fill = NULL,
   Relabel = TRUE,
+  FacetLabelStyle = c("both", "label_only", "variable_only", "auto"),
   ncol = 3,
   Ordinal = TRUE
 )
@@ -16,22 +17,20 @@ PlotContinuousDistributions(
 \arguments{
 \item{DataFrame}{A data frame containing the variables to be plotted.}
 
-\item{Variables}{Character vector of column names to plot.  If NULL, all
-numeric variables (or numeric + ordinal if Ordinal = TRUE) are used.}
+\item{Variables}{Character vector of column names to plot.}
 
-\item{Fill}{\emph{Optional.}  Single column name to map to the \code{fill}/\code{colour}
-aesthetic (e.g., a factor such as sex, treatment group, etc.).}
+\item{Fill}{Optional column name for grouping.}
 
-\item{Relabel}{Logical; if TRUE, facet labels use variable labels when
-available (sjlabelled).}
+\item{Relabel}{Logical; use variable labels when available.}
+
+\item{FacetLabelStyle}{One of "both", "label_only", "variable_only", "auto".}
 
 \item{ncol}{Number of columns in the facet grid.}
 
-\item{Ordinal}{Logical; include labelled-ordinal variables as numeric?}
+\item{Ordinal}{Logical; include labelled-ordinal variables as numeric.}
 }
 \value{
-\if{html}{\out{<div class="sourceCode">}}\preformatted{     A `ggplot` object.
-}\if{html}{\out{</div>}}
+A ggplot object.
 }
 \description{
 Creates rain-cloud plots (half-violin + box/median + scatter) for one or

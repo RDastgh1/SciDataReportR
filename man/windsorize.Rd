@@ -2,20 +2,35 @@
 % Please edit documentation in R/windsorize.R
 \name{windsorize}
 \alias{windsorize}
-\title{Windsorize}
+\title{Winsorize a numeric vector using SD or IQR thresholds}
 \usage{
-windsorize(Data, sdlim = 2.5)
+windsorize(Data, method = "sd", sdlim = 2.5, iqrlim = 1.5)
 }
 \arguments{
-\item{Data}{A numeric vector to be windsorized.}
+\item{Data}{A numeric vector to be winsorized.}
 
-\item{sdlim}{The number of standard deviations to use for the windsorization threshold. Values below
-(mean - sdlim * sd) or above (mean + sdlim * sd) will be replaced with the threshold values.}
+\item{method}{Character string specifying the method: "sd" (default) or "iqr".}
+
+\item{sdlim}{Numeric. Number of standard deviations for the "sd" method.}
+
+\item{iqrlim}{Numeric. Multiplier for the IQR when method = "iqr" (default 1.5).}
 }
 \value{
-The windsorized numeric vector.
+A numeric vector with values winsorized to the specified thresholds.
 }
 \description{
-This function performs windsorization on a numeric vector, replacing values below or above a certain threshold
-with the corresponding threshold value.
+This function performs winsorization on a numeric vector by capping extreme
+values at calculated lower and upper thresholds. Thresholds can be based on
+either standard deviation (assuming approximate normality) or interquartile
+range (robust to skewed distributions).
+}
+\examples{
+x <- c(rnorm(100), 10, 15, -12)
+
+# SD-based winsorization
+windsorize(x, method = "sd", sdlim = 2.5)
+
+# IQR-based winsorization
+windsorize(x, method = "iqr", iqrlim = 1.5)
+
 }

@@ -17,37 +17,28 @@ PlotCorrelationsHeatmap(
 )
 }
 \arguments{
-\item{Data}{A data frame containing variables to correlate.}
+\item{Data}{A data frame.}
 
-\item{xVars}{Character vector of x-axis variable names. If NULL, numeric variables are auto-selected.}
+\item{xVars}{Character vector of x variables.}
 
-\item{yVars}{Character vector of y-axis variable names. If NULL, uses xVars and removes diagonal.}
+\item{yVars}{Character vector of y variables.}
 
-\item{covars}{Character vector of covariate names. If provided, computes partial correlations via ppcor.}
+\item{covars}{Optional covariates.}
 
-\item{method}{Correlation method: "pearson", "spearman", or "kendall".}
+\item{method}{Correlation method.}
 
-\item{Relabel}{Logical. If TRUE, uses sjlabelled variable labels when present.}
+\item{Relabel}{Use labels if available.}
 
-\item{Ordinal}{Logical. If TRUE, ordinal variables are converted to numeric using ConvertOrdinalToNumeric().}
+\item{Ordinal}{Convert ordinal variables.}
 
-\item{min_n}{Minimum complete cases required for a correlation (or partial correlation).}
+\item{min_n}{Minimum N required.}
 
-\item{eps}{Small tolerance to treat near-constant variables as constant.}
+\item{eps}{Variance tolerance.}
 }
 \value{
-A list with:
-\itemize{
-\item Unadjusted: list(r, p, npairs, plot)
-\item FDRCorrected: list(r, p, npairs, plot)
-\item method, Relabel, Covariates, CovariatesMissing
-}
+A list with correlation matrices and plots.
 }
 \description{
-Calculate correlations (or partial correlations if covariates are supplied) between variables
-and plot them as a heatmap with significance stars.
-}
-\details{
-This version is robust to non-syntactic column names (spaces, hyphens, Greek letters like β),
-by preserving names during data.frame coercions and using tidyselect::all_of() in pivot_longer().
+Calculates correlations (or partial correlations) and plots a heatmap.
+Fully label-aware, robust to non-syntactic names, and safe for real-world data.
 }

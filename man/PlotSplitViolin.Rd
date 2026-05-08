@@ -23,9 +23,9 @@ PlotSplitViolin(
   box_width = 0.15,
   star_from = c("quantile", "data_max", "whisker"),
   star_quantile = 0.995,
-  star_pad = 0.03,
-  headroom = 0.08,
-  star_size = 6
+  star_pad = 0.05,
+  star_size = 6,
+  ...
 )
 }
 \arguments{
@@ -68,9 +68,9 @@ If \code{TRUE}, uses Wilcoxon (with residualization if covariates are present).}
 
 \item{star_pad}{Padding above anchor.}
 
-\item{headroom}{Extra space above data.}
-
 \item{star_size}{Text size for annotation.}
+
+\item{headroom}{Extra space above data.}
 }
 \value{
 A ggplot2 object.

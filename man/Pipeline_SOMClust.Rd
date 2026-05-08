@@ -25,7 +25,16 @@ Pipeline_SOMClust(
   Relabel = TRUE,
   ZScorePrefix = "Z_",
   ZScoreVars = NULL,
-  id_col = NULL
+  id_col = NULL,
+  lpa_progress = FALSE,
+  lpa_em_itmax = 100L,
+  lpa_em_tol = 1e-05,
+  lpa_timeout_seconds = 120,
+  lpa_drop_zero_sd = TRUE,
+  lpa_zero_sd_tol = 1e-08,
+  skip_model_after_n_failures = 2L,
+  slow_fit_seconds = 120,
+  min_nodes_per_cluster = 5
 )
 }
 \arguments{
@@ -95,6 +104,20 @@ infer them from \code{variables} or by detecting columns starting with
 
 \item{id_col}{Optional character scalar. If provided and present in \code{df},
 this column is carried into \code{ProbFit$individual} for convenience.}
+
+\item{lpa_progress}{Logical; if TRUE, print short progress messages while
+fitting model/profile combinations.}
+
+\item{lpa_em_itmax}{Integer; maximum number of EM iterations passed to
+\code{mclust::emControl()}. Use NULL to leave mclust defaults unchanged.}
+
+\item{lpa_em_tol}{Numeric; EM convergence tolerance passed to
+\code{mclust::emControl()}. Use NULL to leave mclust defaults unchanged.}
+
+\item{lpa_drop_zero_sd}{Logical; if TRUE, remove SOM code dimensions with
+near-zero standard deviation before LPA.}
+
+\item{lpa_zero_sd_tol}{Numeric tolerance used when \code{lpa_drop_zero_sd = TRUE}.}
 }
 \value{
 A list of class \code{"Pipeline_SOMClust"} with components:
@@ -110,10 +133,11 @@ and only the cluster column appended
 diagnostics, baselines, and per-cluster flags), \code{plots}
 (aweSOM plots)
 \item \code{ModelInfo_MClust}: list with \code{lpa_models},
-\code{fit_table}, and \code{AHP} information
+\code{fit_table}, \code{AHP} information, and \code{diagnostics}
+for LPA warnings, failures, runtimes, and preprocessing
 \item \code{ProbFit}: list with \code{node} (node-level posterior
-probabilities), \code{individual} (per-person mapping and
-probabilities, including \code{.scidr_rowid}), and probability plots
+probabilities), \code{individual} (full-length per-person mapping
+and probabilities, including \code{.scidr_rowid}), and probability plots
 }
 }
 \description{
@@ -140,6 +164,9 @@ Missing data:
 \item The returned \code{df_with_clusters} has the full original data with
 \code{.scidr_rowid} and a single cluster column appended; rows not used
 in SOM/LPA get NA.
+\item The returned \code{ProbFit$individual} is also full length, preserving
+one row per input row with NA posterior probabilities for rows excluded
+from SOM/LPA.
 }
 
 Stable row id:
@@ -169,7 +196,12 @@ fit; higher scaled scores are preferred).
 \item Taking the mean of the three scaled indices. The model with the
 highest AHP index is recommended.
 }
+
+LPA model/profile combinations are fit one at a time so that failed or
+warning-producing solutions are captured in diagnostics instead of blocking
+the entire pipeline. Successful fits are retained and failed fits are listed
+in \code{ModelInfo_MClust$diagnostics}.
 }
 \references{
-Saaty TL. \emph{The Analytic Hierarchy Process}. McGraw–Hill, 1980.
+Saaty TL. \emph{The Analytic Hierarchy Process}. McGraw-Hill, 1980.
 }
