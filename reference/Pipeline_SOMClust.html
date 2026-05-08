@@ -20,6 +20,9 @@ SOM and clustering are fit only on rows with complete Z-scores.
 The returned df_with_clusters has the full original data with
 .scidr_rowid and a single cluster column appended; rows not used
 in SOM/LPA get NA.
+The returned ProbFit$individual is also full length, preserving
+one row per input row with NA posterior probabilities for rows excluded
+from SOM/LPA.
 
 
 Stable row id:
@@ -58,6 +61,9 @@ SOM and clustering are fit only on rows with complete Z-scores.
 The returned df_with_clusters has the full original data with
 .scidr_rowid and a single cluster column appended; rows not used
 in SOM/LPA get NA.
+The returned ProbFit$individual is also full length, preserving
+one row per input row with NA posterior probabilities for rows excluded
+from SOM/LPA.
 
 
 Stable row id:
@@ -104,7 +110,7 @@ as-is and does not re-zscore.
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>SOM + latent profile clustering pipeline (with AHP and distance baselines)</h1>
-      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/v16.9.0/R/Pipeline_SOMClust.R" class="external-link"><code>R/Pipeline_SOMClust.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/master/R/Pipeline_SOMClust.R" class="external-link"><code>R/Pipeline_SOMClust.R</code></a></small>
       <div class="d-none name"><code>Pipeline_SOMClust.Rd</code></div>
     </div>
 
@@ -126,6 +132,9 @@ of profiles.</p></li>
 <li><p>The returned <code>df_with_clusters</code> has the full original data with
 <code>.scidr_rowid</code> and a single cluster column appended; rows not used
 in SOM/LPA get NA.</p></li>
+<li><p>The returned <code>ProbFit$individual</code> is also full length, preserving
+one row per input row with NA posterior probabilities for rows excluded
+from SOM/LPA.</p></li>
 </ul><p>Stable row id:</p><ul><li><p><code>.scidr_rowid</code> is added to the input data and carried into
 <code>df_with_clusters</code> and <code>ProbFit$individual</code>.</p></li>
 <li><p><code>ProbFit$individual$RowID</code> is set equal to <code>.scidr_rowid</code> so
@@ -161,7 +170,16 @@ as-is and does not re-zscore.</p></li>
 <span>  Relabel <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  ZScorePrefix <span class="op">=</span> <span class="st">"Z_"</span>,</span>
 <span>  ZScoreVars <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  id_col <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  id_col <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  lpa_progress <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  lpa_em_itmax <span class="op">=</span> <span class="fl">100L</span>,</span>
+<span>  lpa_em_tol <span class="op">=</span> <span class="fl">1e-05</span>,</span>
+<span>  lpa_timeout_seconds <span class="op">=</span> <span class="fl">120</span>,</span>
+<span>  lpa_drop_zero_sd <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  lpa_zero_sd_tol <span class="op">=</span> <span class="fl">1e-08</span>,</span>
+<span>  skip_model_after_n_failures <span class="op">=</span> <span class="fl">2L</span>,</span>
+<span>  slow_fit_seconds <span class="op">=</span> <span class="fl">120</span>,</span>
+<span>  min_nodes_per_cluster <span class="op">=</span> <span class="fl">5</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -269,6 +287,30 @@ infer them from <code>variables</code> or by detecting columns starting with
 <dd><p>Optional character scalar. If provided and present in <code>df</code>,
 this column is carried into <code>ProbFit$individual</code> for convenience.</p></dd>
 
+
+<dt id="arg-lpa-progress">lpa_progress<a class="anchor" aria-label="anchor" href="#arg-lpa-progress"></a></dt>
+<dd><p>Logical; if TRUE, print short progress messages while
+fitting model/profile combinations.</p></dd>
+
+
+<dt id="arg-lpa-em-itmax">lpa_em_itmax<a class="anchor" aria-label="anchor" href="#arg-lpa-em-itmax"></a></dt>
+<dd><p>Integer; maximum number of EM iterations passed to
+<code>mclust::emControl()</code>. Use NULL to leave mclust defaults unchanged.</p></dd>
+
+
+<dt id="arg-lpa-em-tol">lpa_em_tol<a class="anchor" aria-label="anchor" href="#arg-lpa-em-tol"></a></dt>
+<dd><p>Numeric; EM convergence tolerance passed to
+<code>mclust::emControl()</code>. Use NULL to leave mclust defaults unchanged.</p></dd>
+
+
+<dt id="arg-lpa-drop-zero-sd">lpa_drop_zero_sd<a class="anchor" aria-label="anchor" href="#arg-lpa-drop-zero-sd"></a></dt>
+<dd><p>Logical; if TRUE, remove SOM code dimensions with
+near-zero standard deviation before LPA.</p></dd>
+
+
+<dt id="arg-lpa-zero-sd-tol">lpa_zero_sd_tol<a class="anchor" aria-label="anchor" href="#arg-lpa-zero-sd-tol"></a></dt>
+<dd><p>Numeric tolerance used when <code>lpa_drop_zero_sd = TRUE</code>.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
@@ -283,10 +325,11 @@ and only the cluster column appended</p></li>
 diagnostics, baselines, and per-cluster flags), <code>plots</code>
 (aweSOM plots)</p></li>
 <li><p><code>ModelInfo_MClust</code>: list with <code>lpa_models</code>,
-<code>fit_table</code>, and <code>AHP</code> information</p></li>
+<code>fit_table</code>, <code>AHP</code> information, and <code>diagnostics</code>
+for LPA warnings, failures, runtimes, and preprocessing</p></li>
 <li><p><code>ProbFit</code>: list with <code>node</code> (node-level posterior
-probabilities), <code>individual</code> (per-person mapping and
-probabilities, including <code>.scidr_rowid</code>), and probability plots</p></li>
+probabilities), <code>individual</code> (full-length per-person mapping
+and probabilities, including <code>.scidr_rowid</code>), and probability plots</p></li>
 </ul></div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
@@ -295,10 +338,14 @@ probabilities, including <code>.scidr_rowid</code>), and probability plots</p></
 fit; higher scaled scores are preferred).</p></li>
 <li><p>Taking the mean of the three scaled indices. The model with the
 highest AHP index is recommended.</p></li>
-</ol></div>
+</ol><p>LPA model/profile combinations are fit one at a time so that failed or
+warning-producing solutions are captured in diagnostics instead of blocking
+the entire pipeline. Successful fits are retained and failed fits are listed
+in <code>ModelInfo_MClust$diagnostics</code>.</p>
+    </div>
     <div class="section level2">
     <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>
-    <p>Saaty TL. <em>The Analytic Hierarchy Process</em>. McGraw–Hill, 1980.</p>
+    <p>Saaty TL. <em>The Analytic Hierarchy Process</em>. McGraw-Hill, 1980.</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

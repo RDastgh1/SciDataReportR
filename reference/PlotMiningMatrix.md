@@ -1,8 +1,6 @@
 # PlotMiningMatrix
 
-Generate a matrix of statistical relationships between outcome and
-predictor variables. Returns unadjusted and FDR-adjusted results plus
-corresponding dot-matrix plots.
+Generate a matrix of statistical relationships between variables.
 
 ## Usage
 
@@ -10,7 +8,7 @@ corresponding dot-matrix plots.
 PlotMiningMatrix(
   Data,
   OutcomeVars,
-  PredictorVars,
+  PredictorVars = NULL,
   Covariates = NULL,
   Relabel = TRUE,
   Parametric = TRUE
@@ -25,27 +23,24 @@ PlotMiningMatrix(
 
 - OutcomeVars:
 
-  Outcome variables (typically numeric, e.g., biomarker-by-batch
-  columns).
+  Outcome variables.
 
 - PredictorVars:
 
-  Predictor variables (covariates to scan).
+  Predictor variables. If NULL, uses OutcomeVars.
 
 - Covariates:
 
-  Optional adjustment covariates.
+  Optional covariates (reserved for future use).
 
 - Relabel:
 
-  Whether to use variable labels instead of names.
+  Use labels instead of names.
 
 - Parametric:
 
-  If TRUE uses Pearson; if FALSE uses Spearman and non-parametric ANOVA
-  where relevant.
+  Use parametric tests.
 
 ## Value
 
-List with Unadjusted (PvalTable, plot), FDRCorrected (PvalTable, plot),
-method, Relabel, Covariates.
+List with tables and plots.

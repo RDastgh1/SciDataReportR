@@ -8,6 +8,9 @@
 - [`ApplyNormativeTScores()`](https://rdastgh1.github.io/SciDataReportR/reference/ApplyNormativeTScores.md)
   : Apply a normative T-score model to new data
 
+- [`CalcMScore()`](https://rdastgh1.github.io/SciDataReportR/reference/CalcMScore.md)
+  : Calculate M-scores using median and MAD
+
 - [`CalcZScore()`](https://rdastgh1.github.io/SciDataReportR/reference/CalcZScore.md)
   : Calculate Z-scores (or standardized scores) and return data +
   parameters
@@ -246,4 +249,4 @@
   : Use the EDATemplate Quarto Template
 
 - [`windsorize()`](https://rdastgh1.github.io/SciDataReportR/reference/windsorize.md)
-  : Windsorize
+  : Winsorize a numeric vector using SD or IQR thresholds

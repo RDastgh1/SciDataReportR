@@ -31,6 +31,10 @@ Missing data:
   `.scidr_rowid` and a single cluster column appended; rows not used in
   SOM/LPA get NA.
 
+- The returned `ProbFit$individual` is also full length, preserving one
+  row per input row with NA posterior probabilities for rows excluded
+  from SOM/LPA.
+
 Stable row id:
 
 - `.scidr_rowid` is added to the input data and carried into
@@ -76,7 +80,16 @@ Pipeline_SOMClust(
   Relabel = TRUE,
   ZScorePrefix = "Z_",
   ZScoreVars = NULL,
-  id_col = NULL
+  id_col = NULL,
+  lpa_progress = FALSE,
+  lpa_em_itmax = 100L,
+  lpa_em_tol = 1e-05,
+  lpa_timeout_seconds = 120,
+  lpa_drop_zero_sd = TRUE,
+  lpa_zero_sd_tol = 1e-08,
+  skip_model_after_n_failures = 2L,
+  slow_fit_seconds = 120,
+  min_nodes_per_cluster = 5
 )
 ```
 
@@ -187,6 +200,30 @@ Pipeline_SOMClust(
   Optional character scalar. If provided and present in `df`, this
   column is carried into `ProbFit$individual` for convenience.
 
+- lpa_progress:
+
+  Logical; if TRUE, print short progress messages while fitting
+  model/profile combinations.
+
+- lpa_em_itmax:
+
+  Integer; maximum number of EM iterations passed to
+  `mclust::emControl()`. Use NULL to leave mclust defaults unchanged.
+
+- lpa_em_tol:
+
+  Numeric; EM convergence tolerance passed to `mclust::emControl()`. Use
+  NULL to leave mclust defaults unchanged.
+
+- lpa_drop_zero_sd:
+
+  Logical; if TRUE, remove SOM code dimensions with near-zero standard
+  deviation before LPA.
+
+- lpa_zero_sd_tol:
+
+  Numeric tolerance used when `lpa_drop_zero_sd = TRUE`.
+
 ## Value
 
 A list of class `"Pipeline_SOMClust"` with components:
@@ -205,12 +242,13 @@ A list of class `"Pipeline_SOMClust"` with components:
   `SOMFit` (distance diagnostics, baselines, and per-cluster flags),
   `plots` (aweSOM plots)
 
-- `ModelInfo_MClust`: list with `lpa_models`, `fit_table`, and `AHP`
-  information
+- `ModelInfo_MClust`: list with `lpa_models`, `fit_table`, `AHP`
+  information, and `diagnostics` for LPA warnings, failures, runtimes,
+  and preprocessing
 
 - `ProbFit`: list with `node` (node-level posterior probabilities),
-  `individual` (per-person mapping and probabilities, including
-  `.scidr_rowid`), and probability plots
+  `individual` (full-length per-person mapping and probabilities,
+  including `.scidr_rowid`), and probability plots
 
 ## Details
 
@@ -223,6 +261,11 @@ The AHP-style index is computed by:
 2.  Taking the mean of the three scaled indices. The model with the
     highest AHP index is recommended.
 
+LPA model/profile combinations are fit one at a time so that failed or
+warning-producing solutions are captured in diagnostics instead of
+blocking the entire pipeline. Successful fits are retained and failed
+fits are listed in `ModelInfo_MClust$diagnostics`.
+
 ## References
 
-Saaty TL. *The Analytic Hierarchy Process*. McGraw–Hill, 1980.
+Saaty TL. *The Analytic Hierarchy Process*. McGraw-Hill, 1980.

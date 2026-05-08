@@ -28,9 +28,9 @@ PlotSplitViolin(
   box_width = 0.15,
   star_from = c("quantile", "data_max", "whisker"),
   star_quantile = 0.995,
-  star_pad = 0.03,
-  headroom = 0.08,
-  star_size = 6
+  star_pad = 0.05,
+  star_size = 6,
+  ...
 )
 ```
 
@@ -113,13 +113,13 @@ PlotSplitViolin(
 
   Padding above anchor.
 
-- headroom:
-
-  Extra space above data.
-
 - star_size:
 
   Text size for annotation.
+
+- headroom:
+
+  Extra space above data.
 
 ## Value
 

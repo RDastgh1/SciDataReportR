@@ -1,9 +1,9 @@
 # Merge Two Data Frames by Closest Time
 
 This function merges two data frames based on the closest time in the
-specified time columns. It can also merge data frames using optional ID
-columns. The resulting merged data frame contains the closest time
-matches and the time differences.
+specified time columns. It optionally merges using one or more matching
+variables (e.g., IDs). The resulting merged data frame contains the
+closest time matches and time differences.
 
 ## Usage
 
@@ -13,8 +13,7 @@ Merge_ByClosestTime(
   DataFrame2,
   TimeVar1,
   TimeVar2,
-  IDVar1 = NULL,
-  IDVar2 = NULL,
+  MergeBy = NULL,
   is_date = FALSE
 )
 ```
@@ -37,30 +36,24 @@ Merge_ByClosestTime(
 
   The name of the time variable in DataFrame2 (as a string).
 
-- IDVar1:
+- MergeBy:
 
-  Optional. The name of the ID variable in DataFrame1 (as a string). If
-  not provided, no ID-based join is performed.
-
-- IDVar2:
-
-  Optional. The name of the ID variable in DataFrame2 (as a string). If
-  not provided, no ID-based join is performed.
+  Optional. Character vector of variable(s) to merge by. Must exist in
+  BOTH data frames and be in the same order.
 
 - is_date:
 
   Logical. Indicates whether the time variables are dates (TRUE) or
-  POSIXct timestamps (FALSE). Defaults to FALSE.
+  POSIXct (FALSE).
 
 ## Value
 
-A list containing two elements:
+A list with:
 
 - merged_dataframe:
 
-  A data frame with the closest time matches from both data frames and
-  the time differences.
+  Data frame with closest time matches
 
 - time_differences:
 
-  A numeric vector of time differences for each closest match.
+  Vector of time differences

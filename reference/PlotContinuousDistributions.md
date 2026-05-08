@@ -11,6 +11,7 @@ PlotContinuousDistributions(
   Variables = NULL,
   Fill = NULL,
   Relabel = TRUE,
+  FacetLabelStyle = c("both", "label_only", "variable_only", "auto"),
   ncol = 3,
   Ordinal = TRUE
 )
@@ -24,18 +25,19 @@ PlotContinuousDistributions(
 
 - Variables:
 
-  Character vector of column names to plot. If NULL, all numeric
-  variables (or numeric + ordinal if Ordinal = TRUE) are used.
+  Character vector of column names to plot.
 
 - Fill:
 
-  *Optional.* Single column name to map to the `fill`/`colour` aesthetic
-  (e.g., a factor such as sex, treatment group, etc.).
+  Optional column name for grouping.
 
 - Relabel:
 
-  Logical; if TRUE, facet labels use variable labels when available
-  (sjlabelled).
+  Logical; use variable labels when available.
+
+- FacetLabelStyle:
+
+  One of "both", "label_only", "variable_only", "auto".
 
 - ncol:
 
@@ -43,8 +45,8 @@ PlotContinuousDistributions(
 
 - Ordinal:
 
-  Logical; include labelled-ordinal variables as numeric?
+  Logical; include labelled-ordinal variables as numeric.
 
 ## Value
 
-         A `ggplot` object.
+A ggplot object.

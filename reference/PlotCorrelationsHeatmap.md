@@ -1,8 +1,8 @@
 # Plot correlations heatmap
 
-Calculate correlations (or partial correlations if covariates are
-supplied) between variables and plot them as a heatmap with significance
-stars.
+Calculates correlations (or partial correlations) and plots a heatmap.
+Fully label-aware, robust to non-syntactic names, and safe for
+real-world data.
 
 ## Usage
 
@@ -24,57 +24,40 @@ PlotCorrelationsHeatmap(
 
 - Data:
 
-  A data frame containing variables to correlate.
+  A data frame.
 
 - xVars:
 
-  Character vector of x-axis variable names. If NULL, numeric variables
-  are auto-selected.
+  Character vector of x variables.
 
 - yVars:
 
-  Character vector of y-axis variable names. If NULL, uses xVars and
-  removes diagonal.
+  Character vector of y variables.
 
 - covars:
 
-  Character vector of covariate names. If provided, computes partial
-  correlations via ppcor.
+  Optional covariates.
 
 - method:
 
-  Correlation method: "pearson", "spearman", or "kendall".
+  Correlation method.
 
 - Relabel:
 
-  Logical. If TRUE, uses sjlabelled variable labels when present.
+  Use labels if available.
 
 - Ordinal:
 
-  Logical. If TRUE, ordinal variables are converted to numeric using
-  ConvertOrdinalToNumeric().
+  Convert ordinal variables.
 
 - min_n:
 
-  Minimum complete cases required for a correlation (or partial
-  correlation).
+  Minimum N required.
 
 - eps:
 
-  Small tolerance to treat near-constant variables as constant.
+  Variance tolerance.
 
 ## Value
 
-A list with:
-
-- Unadjusted: list(r, p, npairs, plot)
-
-- FDRCorrected: list(r, p, npairs, plot)
-
-- method, Relabel, Covariates, CovariatesMissing
-
-## Details
-
-This version is robust to non-syntactic column names (spaces, hyphens,
-Greek letters like β), by preserving names during data.frame coercions
-and using tidyselect::all_of() in pivot_longer().
+A list with correlation matrices and plots.

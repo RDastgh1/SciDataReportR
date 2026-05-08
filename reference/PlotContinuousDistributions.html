@@ -30,7 +30,7 @@ more continuous variables, with optional group-wise colouring."><meta property="
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Plot Continuous Distributions</h1>
-      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/v16.9.0/R/PlotContinuousDistributions.R" class="external-link"><code>R/PlotContinuousDistributions.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/master/R/PlotContinuousDistributions.R" class="external-link"><code>R/PlotContinuousDistributions.R</code></a></small>
       <div class="d-none name"><code>PlotContinuousDistributions.Rd</code></div>
     </div>
 
@@ -46,6 +46,7 @@ more continuous variables, with optional group-wise colouring.</p>
 <span>  Variables <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  Fill <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  Relabel <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  FacetLabelStyle <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"both"</span>, <span class="st">"label_only"</span>, <span class="st">"variable_only"</span>, <span class="st">"auto"</span><span class="op">)</span>,</span>
 <span>  ncol <span class="op">=</span> <span class="fl">3</span>,</span>
 <span>  Ordinal <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -60,18 +61,19 @@ more continuous variables, with optional group-wise colouring.</p>
 
 
 <dt id="arg-variables">Variables<a class="anchor" aria-label="anchor" href="#arg-variables"></a></dt>
-<dd><p>Character vector of column names to plot.  If NULL, all
-numeric variables (or numeric + ordinal if Ordinal = TRUE) are used.</p></dd>
+<dd><p>Character vector of column names to plot.</p></dd>
 
 
 <dt id="arg-fill">Fill<a class="anchor" aria-label="anchor" href="#arg-fill"></a></dt>
-<dd><p><em>Optional.</em>  Single column name to map to the <code>fill</code>/<code>colour</code>
-aesthetic (e.g., a factor such as sex, treatment group, etc.).</p></dd>
+<dd><p>Optional column name for grouping.</p></dd>
 
 
 <dt id="arg-relabel">Relabel<a class="anchor" aria-label="anchor" href="#arg-relabel"></a></dt>
-<dd><p>Logical; if TRUE, facet labels use variable labels when
-available (sjlabelled).</p></dd>
+<dd><p>Logical; use variable labels when available.</p></dd>
+
+
+<dt id="arg-facetlabelstyle">FacetLabelStyle<a class="anchor" aria-label="anchor" href="#arg-facetlabelstyle"></a></dt>
+<dd><p>One of "both", "label_only", "variable_only", "auto".</p></dd>
 
 
 <dt id="arg-ncol">ncol<a class="anchor" aria-label="anchor" href="#arg-ncol"></a></dt>
@@ -79,12 +81,12 @@ available (sjlabelled).</p></dd>
 
 
 <dt id="arg-ordinal">Ordinal<a class="anchor" aria-label="anchor" href="#arg-ordinal"></a></dt>
-<dd><p>Logical; include labelled-ordinal variables as numeric?</p></dd>
+<dd><p>Logical; include labelled-ordinal variables as numeric.</p></dd>
 
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p></p><div class="sourceCode"><pre><code><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a>     A <span class="st">`</span><span class="at">ggplot</span><span class="st">`</span> object.</span></code></pre><p></p></div>
+    <p>A ggplot object.</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
