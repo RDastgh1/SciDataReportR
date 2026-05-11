@@ -45,6 +45,9 @@
 - [`CreateZScorePlot()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateZScorePlot.md)
   : Create a Z-Score Plot with Statistical Significance
 
+- [`ExtractPCAComponentSummary()`](https://rdastgh1.github.io/SciDataReportR/reference/ExtractPCAComponentSummary.md)
+  : Extract PCA component summaries
+
 - [`FormattedDataDictionary()`](https://rdastgh1.github.io/SciDataReportR/reference/FormattedDataDictionary.md)
   : Create a formatted data dictionary table
 
