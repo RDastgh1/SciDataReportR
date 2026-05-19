@@ -54,7 +54,7 @@ Any covariates appearing in \code{Variables} are removed from the displayed tabl
 \item{AddPairwise}{Add pairwise p-value columns (default FALSE).}
 
 \item{PairwiseMethod}{P-adjustment method (default "bonferroni"). Use "none" for no adjustment.
-Must be one of "none" or \link[stats:p.adjust]{stats::p.adjust.methods}.}
+Must be one of "none" or \link[stats:p.adjust.methods]{stats::p.adjust.methods}.}
 
 \item{Parametric}{If TRUE, use parametric tests where relevant. If FALSE and covariates are present,
 robust ANCOVA is used for continuous outcomes and robust covariance is used for continuous pairwise.}
@@ -181,7 +181,7 @@ Pairwise columns are added when \code{AddPairwise = TRUE}.
 
 \subsection{Multiplicity control}{
 \itemize{
-\item \code{PairwiseMethod} defaults to \code{"bonferroni"} and may be any value in \link[stats:p.adjust]{stats::p.adjust.methods}.
+\item \code{PairwiseMethod} defaults to \code{"bonferroni"} and may be any value in \link[stats:p.adjust.methods]{stats::p.adjust.methods}.
 \item Use \code{"none"} for no adjustment.
 }
 }

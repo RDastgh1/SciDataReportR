@@ -28,8 +28,10 @@ Plot2GroupStats(
 \item{Variables}{character vector of variables to analyze}
 
 \item{VariableCategories}{optional:
-- data frame with columns Variable, Category; OR
-- vector of categories (named by variable OR unnamed aligned to \code{Variables})}
+\itemize{
+\item data frame with columns Variable, Category; OR
+\item vector of categories (named by variable OR unnamed aligned to \code{Variables})
+}}
 
 \item{impClust, normalClust}{labels for the two groups (impClust plotted to the RIGHT for signed axes)}
 

@@ -22,5 +22,10 @@ Useful links:
 \author{
 \strong{Maintainer}: Raha Dastgheyb \email{raha@jhmi.edu} (\href{https://orcid.org/0000-0002-4992-711X}{ORCID})
 
+Authors:
+\itemize{
+  \item Raha Dastgheyb \email{raha@jhmi.edu} (\href{https://orcid.org/0000-0002-4992-711X}{ORCID})
+}
+
 }
 \keyword{internal}
