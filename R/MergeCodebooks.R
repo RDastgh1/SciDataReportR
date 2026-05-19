@@ -1007,3 +1007,370 @@ CodebookMergeApp <- function(
 
   shiny::shinyApp(ui, server)
 }
+
+
+# =============================================================================
+# MergeCodebooks
+# =============================================================================
+
+#' Merge multiple codebooks using harmonization rules
+#'
+#' Deterministically merge multiple codebooks using optional harmonization
+#' rules generated from `CodebookMergeApp()`.
+#'
+#' If the supplied rules match the current codebooks and conflict structure,
+#' warnings are suppressed because the harmonization has already been reviewed.
+#'
+#' Warnings are only emitted when:
+#' - new conflicts appear
+#' - codebooks differ from those used to generate rules
+#' - conflict structure changes
+#'
+#' @param codebooks Named list of codebook data frames.
+#' @param Rules Optional harmonization rules generated from
+#'   `CodebookMergeApp()`.
+#' @param VariableCol Name of variable identifier column.
+#' @param warn Logical; emit warnings.
+#' @param strict Logical; stop on unresolved conflicts.
+#'
+#' @return A list containing:
+#' \describe{
+#'   \item{Codebook}{Merged harmonized codebook}
+#'   \item{ConflictReport}{Detected conflicts}
+#'   \item{AppliedRules}{Applied rules}
+#' }
+#'
+#' @examples
+#' \dontrun{
+#'
+#' MergedCB <- MergeCodebooks(
+#'
+#'   codebooks = list(
+#'     Study1 = cb1,
+#'     Study2 = cb2
+#'   ),
+#'
+#'   Rules = MergeRules
+#' )
+#'
+#' }
+#'
+#' @export
+
+MergeCodebooks <- function(
+    codebooks,
+    Rules = NULL,
+    VariableCol = "Variable",
+    warn = TRUE,
+    strict = FALSE
+) {
+
+  # Validate inputs --------------------------------------------------------
+
+  if (!is.list(codebooks)) {
+    stop("codebooks must be a named list.")
+  }
+
+  if (is.null(names(codebooks))) {
+    stop("codebooks must be a named list.")
+  }
+
+  if (any(names(codebooks) == "")) {
+    stop("All codebooks must have names.")
+  }
+
+  # Preserve original order -----------------------------------------------
+
+  original_order <- purrr::imap_dfr(
+
+    codebooks,
+
+    function(cb, source_name) {
+
+      tibble::tibble(
+        SourceCodebook = source_name,
+        !!VariableCol := cb[[VariableCol]],
+        OriginalOrder = seq_len(nrow(cb))
+      )
+    }
+  )
+
+  # Standardize structure --------------------------------------------------
+
+  all_columns <- unique(
+    unlist(
+      purrr::map(
+        codebooks,
+        colnames
+      )
+    )
+  )
+
+  codebooks_std <- purrr::imap(
+
+    codebooks,
+
+    function(cb, source_name) {
+
+      missing_cols <- setdiff(
+        all_columns,
+        colnames(cb)
+      )
+
+      if (length(missing_cols) > 0) {
+        cb[missing_cols] <- NA
+      }
+
+      cb <- cb[, all_columns]
+
+      cb$SourceCodebook <- source_name
+
+      cb
+    }
+  )
+
+  merged_long <- dplyr::bind_rows(
+    codebooks_std
+  )
+
+  metadata_cols <- setdiff(
+    colnames(merged_long),
+    c(
+      VariableCol,
+      "SourceCodebook"
+    )
+  )
+
+  # Long comparison --------------------------------------------------------
+
+  long_compare <- merged_long %>%
+
+    dplyr::mutate(
+      dplyr::across(
+        everything(),
+        as.character
+      )
+    ) %>%
+
+    tidyr::pivot_longer(
+      cols = dplyr::all_of(metadata_cols),
+      names_to = "Column",
+      values_to = "Value"
+    ) %>%
+
+    dplyr::filter(
+      !is.na(Value),
+      Value != ""
+    )
+
+  # Conflict report --------------------------------------------------------
+
+  conflict_report <- long_compare %>%
+
+    dplyr::group_by(
+      .data[[VariableCol]],
+      Column
+    ) %>%
+
+    dplyr::summarise(
+      Values = paste(
+        unique(Value),
+        collapse = " | "
+      ),
+      n_unique = dplyr::n_distinct(Value),
+      .groups = "drop"
+    ) %>%
+
+    dplyr::filter(
+      n_unique > 1
+    )
+
+  # Prepare rules ----------------------------------------------------------
+
+  if (
+    !is.null(Rules) &&
+    "VariableRules" %in% names(Rules)
+  ) {
+
+    rule_table <- Rules$VariableRules
+
+  } else {
+
+    rule_table <- tibble::tibble(
+      Variable = character(),
+      Column = character(),
+      PreferredValue = character()
+    )
+  }
+
+  # Rename variable column if needed --------------------------------------
+
+  rule_table_renamed <- rule_table %>%
+
+    dplyr::rename(
+      !!VariableCol := Variable
+    )
+
+  # Merge metadata ---------------------------------------------------------
+
+  merged_codebook <- long_compare %>%
+
+    dplyr::left_join(
+      original_order,
+      by = c(
+        VariableCol,
+        "SourceCodebook"
+      )
+    ) %>%
+
+    dplyr::group_by(
+      .data[[VariableCol]],
+      Column
+    ) %>%
+
+    dplyr::summarise(
+
+      Value = {
+
+        current_variable <- dplyr::first(
+          .data[[VariableCol]]
+        )
+
+        current_column <- dplyr::first(
+          Column
+        )
+
+        matching_rule <- rule_table_renamed %>%
+
+          dplyr::filter(
+            .data[[VariableCol]] ==
+              current_variable,
+            Column == current_column
+          )
+
+        if (nrow(matching_rule) > 0) {
+
+          matching_rule$PreferredValue[1]
+
+        } else {
+
+          Value[which.min(OriginalOrder)]
+        }
+      },
+
+      MinOrder = min(OriginalOrder),
+
+      .groups = "drop"
+    ) %>%
+
+    dplyr::arrange(MinOrder) %>%
+
+    tidyr::pivot_wider(
+      names_from = Column,
+      values_from = Value
+    ) %>%
+
+    dplyr::select(
+      -MinOrder
+    )
+
+  # Unresolved conflicts ---------------------------------------------------
+
+  unresolved_conflicts <- conflict_report %>%
+
+    dplyr::anti_join(
+      rule_table_renamed,
+      by = c(
+        VariableCol,
+        "Column"
+      )
+    )
+
+  # Determine whether warnings are needed ---------------------------------
+
+  warnings_needed <- TRUE
+
+  if (!is.null(Rules)) {
+
+    if (
+      "ConflictSnapshot" %in% names(Rules) &&
+      "CodebookNames" %in% names(Rules)
+    ) {
+
+      same_codebooks <- identical(
+        sort(Rules$CodebookNames),
+        sort(names(codebooks))
+      )
+
+      current_snapshot <- conflict_report %>%
+
+        dplyr::select(
+          dplyr::all_of(VariableCol),
+          Column
+        ) %>%
+
+        dplyr::arrange(
+          .data[[VariableCol]],
+          Column
+        )
+
+      saved_snapshot <- Rules$ConflictSnapshot %>%
+
+        dplyr::arrange(
+          .data[[VariableCol]],
+          Column
+        )
+
+      same_conflicts <- identical(
+        current_snapshot,
+        saved_snapshot
+      )
+
+      if (
+        same_codebooks &&
+        same_conflicts
+      ) {
+
+        warnings_needed <- FALSE
+      }
+    }
+  }
+
+  # Warnings ---------------------------------------------------------------
+
+  if (
+    warn &&
+    warnings_needed &&
+    nrow(unresolved_conflicts) > 0
+  ) {
+
+    warning(
+      paste0(
+        nrow(unresolved_conflicts),
+        " unresolved conflicts detected."
+      )
+    )
+  }
+
+  if (
+    strict &&
+    warnings_needed &&
+    nrow(unresolved_conflicts) > 0
+  ) {
+
+    stop(
+      "Unresolved conflicts detected in strict mode."
+    )
+  }
+
+  # Return result ----------------------------------------------------------
+
+  list(
+
+    Codebook = merged_codebook,
+
+    ConflictReport = conflict_report,
+
+    AppliedRules = rule_table
+  )
+}
