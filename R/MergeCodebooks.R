@@ -1123,8 +1123,16 @@ MergeCodebooks <- function(
 
       cb <- cb[, all_columns]
 
-      cb$SourceCodebook <- source_name
+      cb <- cb %>%
 
+        dplyr::mutate(
+          dplyr::across(
+            everything(),
+            as.character
+          )
+        )
+
+      cb$SourceCodebook <- source_name
       cb
     }
   )
