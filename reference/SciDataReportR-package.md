@@ -19,3 +19,8 @@ Useful links:
 
 **Maintainer**: Raha Dastgheyb <raha@jhmi.edu>
 ([ORCID](https://orcid.org/0000-0002-4992-711X))
+
+Authors:
+
+- Raha Dastgheyb <raha@jhmi.edu>
+  ([ORCID](https://orcid.org/0000-0002-4992-711X))

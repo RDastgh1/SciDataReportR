@@ -12,6 +12,9 @@
   : Calculate Z-scores (or standardized scores) and return data +
   parameters
 
+- [`CodebookMergeApp()`](https://rdastgh1.github.io/SciDataReportR/reference/CodebookMergeApp.md)
+  : Interactive codebook harmonization dashboard
+
 - [`CombineCodebooks()`](https://rdastgh1.github.io/SciDataReportR/reference/CombineCodebooks.md)
   : Combine Two Codebooks with Conflict Detection
 
@@ -73,6 +76,9 @@
 
 - [`Make_DataDictionary()`](https://rdastgh1.github.io/SciDataReportR/reference/Make_DataDictionary.md)
   : Create a data dictionary for a data frame
+
+- [`MergeCodebooks()`](https://rdastgh1.github.io/SciDataReportR/reference/MergeCodebooks.md)
+  : Merge multiple codebooks using harmonization rules
 
 - [`Merge_ByClosestTime()`](https://rdastgh1.github.io/SciDataReportR/reference/Merge_ByClosestTime.md)
   : Merge Two Data Frames by Closest Time

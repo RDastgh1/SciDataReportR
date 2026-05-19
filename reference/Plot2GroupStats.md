@@ -37,8 +37,12 @@ Plot2GroupStats(
 
 - VariableCategories:
 
-  optional: - data frame with columns Variable, Category; OR - vector of
-  categories (named by variable OR unnamed aligned to `Variables`)
+  optional:
+
+  - data frame with columns Variable, Category; OR
+
+  - vector of categories (named by variable OR unnamed aligned to
+    `Variables`)
 
 - impClust, normalClust:
 
