@@ -129,7 +129,17 @@ PlotCorrelationsHeatmap <- function(
         x <- df_tmp[[xVars[xi]]]
         y <- df_tmp[[yVars[yi]]]
 
-        if (stats::var(x) > eps && stats::var(y) > eps) {
+        vx <- suppressWarnings(stats::var(x, na.rm = TRUE))
+        vy <- suppressWarnings(stats::var(y, na.rm = TRUE))
+
+        if (
+          is.finite(vx) &&
+          is.finite(vy) &&
+          !is.na(vx) &&
+          !is.na(vy) &&
+          vx > eps &&
+          vy > eps
+        ) {
 
           if (length(covars) > 0) {
 
