@@ -84,24 +84,15 @@ PlotCorrelationsHeatmap <- function(
   # ---------------------------
   # Prepare data (safe numeric coercion)
   # ---------------------------
-  prep_numeric <- function(df, vars) {
-    out <- df[, vars, drop = FALSE]
-    names_out <- names(out)
 
-    out <- as.data.frame(lapply(out, function(z) {
-      if (is.numeric(z)) return(z)
-      suppressWarnings(as.numeric(as.character(z)))
-    }), check.names = FALSE)
 
-    names(out) <- names_out
-    out <- as.data.frame(lapply(out, function(z) ifelse(is.finite(z), z, NA_real_)),
-                         check.names = FALSE)
-    out
-  }
+DataClean <- PrepNumericData(
 
-  xdata <- prep_numeric(Data, xVars)
-  ydata <- prep_numeric(Data, yVars)
+  Data,
 
+  unique(c(xVars, yVars, covars))
+
+)
   # ---------------------------
   # Initialize outputs
   # ---------------------------
@@ -117,8 +108,9 @@ PlotCorrelationsHeatmap <- function(
     for (yi in seq_along(yVars)) {
 
       vars_needed <- unique(c(xVars[xi], yVars[yi], covars))
-      df_tmp <- stats::na.omit(Data[, vars_needed, drop = FALSE])
-
+      df_tmp <- stats::na.omit(
+        DataClean[, vars_needed, drop = FALSE]
+      )
       MN[xi, yi] <- nrow(df_tmp)
 
       est <- NA_real_
