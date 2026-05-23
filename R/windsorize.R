@@ -23,9 +23,9 @@
 #'
 #' @export
 windsorize <- function(Data,
-                       method = "sd",
                        sdlim = 2.5,
-                       iqrlim = 1.5) {
+                       iqrlim = 1.5,
+                       method = "sd") {
 
   # Validate inputs
   if (!is.numeric(Data)) {
