@@ -36,6 +36,9 @@
 - [`CreateProjectFolders()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateProjectFolders.md)
   : Create Project Folder Structure
 
+- [`CreateRCIObject()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateRCIObject.md)
+  : Create a Reliable Change Index (RCI) object
+
 - [`CreateStatisticsTable()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateStatisticsTable.md)
   : Create Statistics Table
 
@@ -162,8 +165,14 @@
 - [`PlotTimeDistribution()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotTimeDistribution.md)
   : Plot Time Distribution
 
+- [`PrepNumericData()`](https://rdastgh1.github.io/SciDataReportR/reference/PrepNumericData.md)
+  : Prepare numeric data safely for analysis
+
 - [`ProjectPCA()`](https://rdastgh1.github.io/SciDataReportR/reference/ProjectPCA.md)
   : Project PCA scores onto new data
+
+- [`ProjectRCI()`](https://rdastgh1.github.io/SciDataReportR/reference/ProjectRCI.md)
+  : Project a trained RCI object onto new data
 
 - [`Project_SOMClust()`](https://rdastgh1.github.io/SciDataReportR/reference/Project_SOMClust.md)
   : Project new data onto an existing SOM + cluster solution

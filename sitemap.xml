@@ -16,6 +16,7 @@
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/CreatePCATable.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/CreatePathwayPlot_KT.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/CreateProjectFolders.html</loc></url>
+<url><loc>https://rdastgh1.github.io/SciDataReportR/reference/CreateRCIObject.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/CreateStatisticsTable.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/CreateSummaryTable.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/CreateVariableTypesTemplate.html</loc></url>
@@ -55,7 +56,9 @@
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/PlotSplitViolin.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/PlotSwimmerTransitions.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/PlotTimeDistribution.html</loc></url>
+<url><loc>https://rdastgh1.github.io/SciDataReportR/reference/PrepNumericData.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/ProjectPCA.html</loc></url>
+<url><loc>https://rdastgh1.github.io/SciDataReportR/reference/ProjectRCI.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/Project_SOMClust.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/Project_ZScore.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/ReValueFactors.html</loc></url>
