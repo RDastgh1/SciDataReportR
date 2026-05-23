@@ -25,6 +25,28 @@
 #' @param Confidence Confidence interval threshold.
 #' @param Relabel Logical; use variable labels when available.
 #'
+#'
+#'#'
+
+#' ## Interpretation guide
+
+#'
+
+#' egression-based RCI values are interpreted similarly to z-scores.
+
+#'
+#' | RCI cutoff | Approximate confidence interval |
+#' |:-----------|:--------------------------------|
+#' | ±0.50 | ~38% |
+#' | ±1.00 | ~68% |
+#' | ±1.645 | ~90% |
+#' | ±1.96 | ~95% |
+#' | ±2.58 | ~99% |
+#'
+
+#' Traditional Jacobson-Truax RCI thresholds typically use ±1.96,corresponding to approximately 95% confidence.
+
+#'
 #' @return A SciDataReportR_RCI object.
 #'
 #' @export
@@ -524,6 +546,66 @@ CreateRCIObject <- function(
 
   }
 
+  # Add labels back
+
+    # ============================================================================
+  # Apply labels to generated columns
+  # ============================================================================
+
+  for (i in seq_len(nrow(VariableTable))) {
+
+    var <- VariableTable$Variable[i]
+
+    label <- VariableTable$Label[i]
+
+    rci_cols <- names(CombinedData)[
+      grepl(
+        paste0("^", var, "_RCI"),
+        names(CombinedData)
+      )
+    ]
+
+    class_cols <- names(CombinedData)[
+      grepl(
+        paste0("^", var, "_ChangeClassification"),
+        names(CombinedData)
+      )
+    ]
+
+    # --------------------------------------------------------------------------
+    # RCI labels
+    # --------------------------------------------------------------------------
+
+    for (col in rci_cols) {
+
+      attr(
+        CombinedData[[col]],
+        "label"
+      ) <- paste0(
+        label,
+        " RCI"
+      )
+
+    }
+
+    # --------------------------------------------------------------------------
+    # Classification labels
+    # --------------------------------------------------------------------------
+
+    for (col in class_cols) {
+
+      attr(
+        CombinedData[[col]],
+        "label"
+      ) <- paste0(
+        label,
+        " Change Classification"
+      )
+
+    }
+
+  }
+
     # ============================================================================
   # Plots
   # ============================================================================
@@ -760,6 +842,75 @@ CreateRCIObject <- function(
       ggplot2::theme_minimal()
 
   }
+
+    # ============================================================================
+  # Generated variable metadata
+  # ============================================================================
+
+  GeneratedVariables <- tibble::tibble()
+
+  for (i in seq_len(nrow(VariableTable))) {
+
+    var <- VariableTable$Variable[i]
+
+    label <- VariableTable$Label[i]
+
+    rci_cols <- names(CombinedData)[
+      grepl(
+        paste0("^", var, "_RCI"),
+        names(CombinedData)
+      )
+    ]
+
+    class_cols <- names(CombinedData)[
+      grepl(
+        paste0("^", var, "_ChangeClassification"),
+        names(CombinedData)
+      )
+    ]
+
+    # --------------------------------------------------------------------------
+    # RCI variables
+    # --------------------------------------------------------------------------
+
+    if (length(rci_cols) > 0) {
+
+      GeneratedVariables <- dplyr::bind_rows(
+        GeneratedVariables,
+        tibble::tibble(
+          Variable = rci_cols,
+          Label = paste0(
+            label,
+            " RCI"
+          ),
+          Type = "RCI"
+        )
+      )
+
+    }
+
+    # --------------------------------------------------------------------------
+    # Classification variables
+    # --------------------------------------------------------------------------
+
+    if (length(class_cols) > 0) {
+
+      GeneratedVariables <- dplyr::bind_rows(
+        GeneratedVariables,
+        tibble::tibble(
+          Variable = class_cols,
+          Label = paste0(
+            label,
+            " Change Classification"
+          ),
+          Type = "Classification"
+        )
+      )
+
+    }
+
+  }
+
   # ============================================================================
   # Return
   # ============================================================================
@@ -787,6 +938,8 @@ CreateRCIObject <- function(
     ),
 
     Variables = VariableTable,
+
+GeneratedVariables = GeneratedVariables,
 
     Models = Models,
 

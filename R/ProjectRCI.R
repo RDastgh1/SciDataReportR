@@ -474,6 +474,66 @@ followup_df <- purrr::map_dfr(
 
   }
 
+  # Add labels
+
+    # ============================================================================
+  # Apply labels to generated columns
+  # ============================================================================
+
+  for (i in seq_len(nrow(VariableTable))) {
+
+    var <- VariableTable$Variable[i]
+
+    label <- VariableTable$Label[i]
+
+    rci_cols <- names(CombinedData)[
+      grepl(
+        paste0("^", var, "_RCI"),
+        names(CombinedData)
+      )
+    ]
+
+    class_cols <- names(CombinedData)[
+      grepl(
+        paste0("^", var, "_ChangeClassification"),
+        names(CombinedData)
+      )
+    ]
+
+    # --------------------------------------------------------------------------
+    # RCI labels
+    # --------------------------------------------------------------------------
+
+    for (col in rci_cols) {
+
+      attr(
+        CombinedData[[col]],
+        "label"
+      ) <- paste0(
+        label,
+        " RCI"
+      )
+
+    }
+
+    # --------------------------------------------------------------------------
+    # Classification labels
+    # --------------------------------------------------------------------------
+
+    for (col in class_cols) {
+
+      attr(
+        CombinedData[[col]],
+        "label"
+      ) <- paste0(
+        label,
+        " Change Classification"
+      )
+
+    }
+
+  }
+
     # ============================================================================
   # Plots
   # ============================================================================
@@ -716,6 +776,74 @@ followup_df <- purrr::map_dfr(
 
   }
 
+    # ============================================================================
+  # Generated variable metadata
+  # ============================================================================
+
+  GeneratedVariables <- tibble::tibble()
+
+  for (i in seq_len(nrow(VariableTable))) {
+
+    var <- VariableTable$Variable[i]
+
+    label <- VariableTable$Label[i]
+
+    rci_cols <- names(CombinedData)[
+      grepl(
+        paste0("^", var, "_RCI"),
+        names(CombinedData)
+      )
+    ]
+
+    class_cols <- names(CombinedData)[
+      grepl(
+        paste0("^", var, "_ChangeClassification"),
+        names(CombinedData)
+      )
+    ]
+
+    # --------------------------------------------------------------------------
+    # RCI variables
+    # --------------------------------------------------------------------------
+
+    if (length(rci_cols) > 0) {
+
+      GeneratedVariables <- dplyr::bind_rows(
+        GeneratedVariables,
+        tibble::tibble(
+          Variable = rci_cols,
+          Label = paste0(
+            label,
+            " RCI"
+          ),
+          Type = "RCI"
+        )
+      )
+
+    }
+
+    # --------------------------------------------------------------------------
+    # Classification variables
+    # --------------------------------------------------------------------------
+
+    if (length(class_cols) > 0) {
+
+      GeneratedVariables <- dplyr::bind_rows(
+        GeneratedVariables,
+        tibble::tibble(
+          Variable = class_cols,
+          Label = paste0(
+            label,
+            " Change Classification"
+          ),
+          Type = "Classification"
+        )
+      )
+
+    }
+
+  }
+
 
   # ============================================================================
   # Return
@@ -729,7 +857,9 @@ followup_df <- purrr::map_dfr(
       SourceObjectTimestamp = Metadata$Timestamp
     ),
 
-    Variables = Object$Variables,
+    Variables = VariableTable,
+
+GeneratedVariables = GeneratedVariables,
 
     Models = Object$Models,
 
