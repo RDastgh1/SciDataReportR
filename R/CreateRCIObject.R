@@ -587,24 +587,24 @@ CreateRCIObject <- function(
 
     }
 
-    segment_data <- spaghetti_data %>%
-      dplyr::arrange(
-        .data[[ID]],
-        Visit
-      ) %>%
-      dplyr::group_by(
-        .data[[ID]]
-      ) %>%
-      dplyr::mutate(
-        xend = dplyr::lead(Visit),
-        yend = dplyr::lead(Value),
-        SegmentClass = Classification
-      ) %>%
-      dplyr::ungroup() %>%
-      dplyr::filter(
-        !is.na(xend),
-        !is.na(yend)
-      )
+   segment_data <- spaghetti_data %>%
+  dplyr::arrange(
+    .data[[ID]],
+    Visit
+  ) %>%
+  dplyr::group_by(
+    .data[[ID]]
+  ) %>%
+  dplyr::mutate(
+    xend = dplyr::lead(Visit),
+    yend = dplyr::lead(Value),
+    SegmentClass = dplyr::lead(Classification)
+  ) %>%
+  dplyr::ungroup() %>%
+  dplyr::filter(
+    !is.na(xend),
+    !is.na(yend)
+  )
 
     temp_proj$PlotOrder <- rank(
       temp_proj$RCI,
