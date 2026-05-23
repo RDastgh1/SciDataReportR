@@ -524,6 +524,242 @@ CreateRCIObject <- function(
 
   }
 
+    # ============================================================================
+  # Plots
+  # ============================================================================
+
+  SpaghettiPlots <- list()
+  WaterfallPlots <- list()
+  QuadrantPlots <- list()
+
+  for (var in Variables) {
+
+    plot_label <- VariableTable$Label[
+      VariableTable$Variable == var
+    ]
+
+    temp_long <- LongData %>%
+      dplyr::filter(
+        Variable == var
+      )
+
+    temp_proj <- RCIValues %>%
+      dplyr::filter(
+        Variable == var
+      )
+
+    spaghetti_data <- temp_long %>%
+      dplyr::left_join(
+        temp_proj %>%
+          dplyr::select(
+            tidyselect::all_of(ID),
+            Variable,
+            Visit,
+            Classification
+          ),
+        by = c(
+          ID,
+          "Variable",
+          "Visit"
+        )
+      )
+
+    spaghetti_data$Classification[
+      is.na(spaghetti_data$Classification)
+    ] <- "Stable"
+
+    spaghetti_data$Classification <- factor(
+      spaghetti_data$Classification,
+      levels = c(
+        "Reliable Decline",
+        "Stable",
+        "Reliable Improvement"
+      )
+    )
+
+    if (!is.null(VisitOrder)) {
+
+      spaghetti_data$Visit <- factor(
+        spaghetti_data$Visit,
+        levels = VisitOrder,
+        ordered = TRUE
+      )
+
+    }
+
+    segment_data <- spaghetti_data %>%
+      dplyr::arrange(
+        .data[[ID]],
+        Visit
+      ) %>%
+      dplyr::group_by(
+        .data[[ID]]
+      ) %>%
+      dplyr::mutate(
+        xend = dplyr::lead(Visit),
+        yend = dplyr::lead(Value),
+        SegmentClass = Classification
+      ) %>%
+      dplyr::ungroup() %>%
+      dplyr::filter(
+        !is.na(xend),
+        !is.na(yend)
+      )
+
+    temp_proj$PlotOrder <- rank(
+      temp_proj$RCI,
+      ties.method = "first"
+    )
+
+    # --------------------------------------------------------------------------
+    # Spaghetti plot
+    # --------------------------------------------------------------------------
+
+    SpaghettiPlots[[var]] <- ggplot2::ggplot() +
+
+      ggplot2::geom_segment(
+        data = segment_data,
+        ggplot2::aes(
+          x = Visit,
+          y = Value,
+          xend = xend,
+          yend = yend,
+          color = SegmentClass,
+          group = .data[[ID]]
+        ),
+        linewidth = 1,
+        alpha = 0.8
+      ) +
+
+      ggplot2::geom_point(
+        data = spaghetti_data,
+        ggplot2::aes(
+          x = Visit,
+          y = Value
+        ),
+        color = "grey20",
+        size = 2
+      ) +
+
+      ggplot2::scale_color_manual(
+        values = ClassificationColors,
+        drop = FALSE
+      ) +
+
+      ggplot2::labs(
+        title = plot_label,
+        subtitle = paste0(
+          "Reference visit: ",
+          BaselineVisit
+        ),
+        x = NULL,
+        y = "Value",
+        color = "Classification"
+      ) +
+
+      ggplot2::theme_minimal()
+
+    # --------------------------------------------------------------------------
+    # Waterfall plot
+    # --------------------------------------------------------------------------
+
+    WaterfallPlots[[var]] <- ggplot2::ggplot(
+      temp_proj,
+      ggplot2::aes(
+        x = reorder(
+          PlotOrder,
+          RCI
+        ),
+        y = RCI,
+        fill = Classification
+      )
+    ) +
+
+      ggplot2::geom_col(
+        width = 0.9
+      ) +
+
+      ggplot2::geom_hline(
+        yintercept = c(
+          -z_threshold,
+          z_threshold
+        ),
+        linetype = "dashed",
+        color = "grey40"
+      ) +
+
+      ggplot2::scale_fill_manual(
+        values = ClassificationColors,
+        drop = FALSE
+      ) +
+
+      ggplot2::labs(
+        title = plot_label,
+        subtitle = paste0(
+          "Reference visit: ",
+          BaselineVisit
+        ),
+        x = NULL,
+        y = "RCI",
+        fill = "Classification"
+      ) +
+
+      ggplot2::theme_minimal() +
+
+      ggplot2::theme(
+        axis.text.x = ggplot2::element_blank(),
+        axis.ticks.x = ggplot2::element_blank()
+      )
+
+    # --------------------------------------------------------------------------
+    # Quadrant plot
+    # --------------------------------------------------------------------------
+
+    QuadrantPlots[[var]] <- ggplot2::ggplot(
+      temp_proj,
+      ggplot2::aes(
+        x = Baseline,
+        y = RCI,
+        color = Classification
+      )
+    ) +
+
+      ggplot2::geom_hline(
+        yintercept = c(
+          -z_threshold,
+          z_threshold
+        ),
+        linetype = "dashed",
+        color = "grey40"
+      ) +
+
+      ggplot2::geom_vline(
+        xintercept = 0,
+        linetype = "dotted",
+        color = "grey50"
+      ) +
+
+      ggplot2::geom_point(
+        size = 2.5,
+        alpha = 0.85
+      ) +
+
+      ggplot2::scale_color_manual(
+        values = ClassificationColors,
+        drop = FALSE
+      ) +
+
+      ggplot2::labs(
+        title = plot_label,
+        subtitle = paste0(
+          "Reference visit: ",
+          BaselineVisit
+        )
+      ) +
+
+      ggplot2::theme_minimal()
+
+  }
   # ============================================================================
   # Return
   # ============================================================================
@@ -556,7 +792,12 @@ CreateRCIObject <- function(
 
     RCIValues = RCIValues,
 
-    CombinedData = CombinedData
+    CombinedData = CombinedData,
+    Plots = list(
+  Spaghetti = SpaghettiPlots,
+  Waterfall = WaterfallPlots,
+  Quadrant = QuadrantPlots
+)
 
   )
 
