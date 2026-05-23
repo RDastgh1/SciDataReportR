@@ -8,7 +8,7 @@ or interquartile range (robust to skewed distributions).
 ## Usage
 
 ``` r
-windsorize(Data, method = "sd", sdlim = 2.5, iqrlim = 1.5)
+windsorize(Data, sdlim = 2.5, iqrlim = 1.5, method = "sd")
 ```
 
 ## Arguments
@@ -17,10 +17,6 @@ windsorize(Data, method = "sd", sdlim = 2.5, iqrlim = 1.5)
 
   A numeric vector to be winsorized.
 
-- method:
-
-  Character string specifying the method: "sd" (default) or "iqr".
-
 - sdlim:
 
   Numeric. Number of standard deviations for the "sd" method.
@@ -28,6 +24,10 @@ windsorize(Data, method = "sd", sdlim = 2.5, iqrlim = 1.5)
 - iqrlim:
 
   Numeric. Multiplier for the IQR when method = "iqr" (default 1.5).
+
+- method:
+
+  Character string specifying the method: "sd" (default) or "iqr".
 
 ## Value
 

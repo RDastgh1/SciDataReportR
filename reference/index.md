@@ -8,6 +8,9 @@
 - [`ApplyNormativeTScores()`](https://rdastgh1.github.io/SciDataReportR/reference/ApplyNormativeTScores.md)
   : Apply a normative T-score model to new data
 
+- [`AssemblePlots()`](https://rdastgh1.github.io/SciDataReportR/reference/AssemblePlots.md)
+  : Assemble ggplot objects into a unified multi-panel figure
+
 - [`CalcZScore()`](https://rdastgh1.github.io/SciDataReportR/reference/CalcZScore.md)
   : Calculate Z-scores (or standardized scores) and return data +
   parameters

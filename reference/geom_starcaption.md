@@ -11,5 +11,6 @@ geom_starcaption()
 
 ## Value
 
-A `labs()` object that can be added to a ggplot, specifically designed
-for the SciDataReportR heatmaps
+A [`labs()`](https://ggplot2.tidyverse.org/reference/labs.html) object
+that can be added to a ggplot, specifically designed for the
+SciDataReportR heatmaps

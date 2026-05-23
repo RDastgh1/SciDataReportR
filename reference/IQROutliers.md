@@ -53,10 +53,12 @@ Outliers are visually highlighted using jittered points colored red,
 while the boxplot remains uncolored to prevent creation of a separate
 outlier-only box.
 
-The color aesthetic is mapped only within `geom_jitter()`, ensuring the
-boxplot is drawn once per group rather than once per outlier class.
-Missing values are ignored when computing quartiles. If `id` or `group`
-are provided they must be present in the input data frame.
+The color aesthetic is mapped only within
+[`geom_jitter()`](https://ggplot2.tidyverse.org/reference/geom_jitter.html),
+ensuring the boxplot is drawn once per group rather than once per
+outlier class. Missing values are ignored when computing quartiles. If
+`id` or `group` are provided they must be present in the input data
+frame.
 
 ## References
 
