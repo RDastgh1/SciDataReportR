@@ -3,6 +3,7 @@
 export("%!in%")
 export(AddToCodebook)
 export(ApplyNormativeTScores)
+export(AssemblePlots)
 export(CalcMScore)
 export(CalcZScore)
 export(CodebookMergeApp)
