@@ -1,0 +1,512 @@
+setwd("~/Dropbox/General Work/Students/Aparna B/Code")
+load("~/Dropbox/General Work/Students/Aparna B/Code/COVID_PS_Associations_2025-03-06 08-PM.RData")
+#Create Regression Table with standardized beta values
+RegressionObj<- UnivariateRegressionTable(df_PS_Data, "PS", vars_All %>% removeString(c("PS", "nuc_rbc")), Standardize = TRUE)
+RegressionObj$FormattedTable
+plotForestFromTable(RegressionObj)
+RegressionObj<- UnivariateRegressionTable(df_PS_Data_clean, "PS", vars_All %>% removeString(c("PS", "nuc_rbc")), Standardize = TRUE)
+RegressionObj$FormattedTable
+plotForestFromTable(RegressionObj)
+# Chunk 1: setup
+#| include: false
+library(SciDataReportR)
+library(tidyverse)
+library(writexl)
+library(readxl)
+library(here)
+library(gtsummary)
+detach("package:SciDataReportR", unload = TRUE)
+library(SciDataReportR)
+# Chunk 1: setup
+#| include: false
+library(SciDataReportR)
+library(tidyverse)
+library(writexl)
+library(readxl)
+library(here)
+library(gtsummary)
+# Chunk 1: setup
+#| include: false
+library(SciDataReportR)
+library(tidyverse)
+library(writexl)
+library(readxl)
+library(here)
+library(gtsummary)
+library(dplyr)
+library(visdat)
+library(gt)
+library(htmltools)
+library(gridExtra)
+library(grid)
+library(DT)
+library(ggplot2)
+library(stringr)
+library(lubridate)
+# Generate today's date in YYYY-MM-DD format
+today_date <- format(Sys.Date(), "%Y-%m-%d")
+# Create the filename
+output_filename <- paste0("COVID_PS_Associations_", today_date, ".html")
+# Set the knitr output options to use the dynamic filename
+knitr::opts_chunk$set(output.filename = output_filename)
+load("~/Dropbox/General Work/Students/Aparna B/Code/COVID_PS_Associations_2025-03-06 08-PM.RData")
+RegressionObj<- UnivariateRegressionTable(df_PS_Data_clean, "PS", vars_All %>% removeString(c("PS", "nuc_rbc")), Standardize = TRUE)
+RegressionObj$FormattedTable
+plotForestFromTable(RegressionObj)
+plotForestFromTable
+UnivariateRegressionTables<- RegressionObj
+list_Tables <- UnivariateRegressionTables$FormattedTable$tbls
+title_Tables <- UnivariateRegressionTables$LargeTable$table_styling$header %>%
+filter(label == "tbl_id1") %>% pull(spanning_header)
+UnivariateRegressionTables$FormattedTable
+UnivariateRegressionTables$LargeTable
+UnivariateRegressionTables$LargeTable$table_styling
+UnivariateRegressionTables$LargeTable$table_styling$header
+View(UnivariateRegressionTables)
+UnivariateRegressionTables$LargeTable$table_styling$header
+UnivariateRegressionTables$LargeTable$table_styling$spanning_header
+UnivariateRegressionTables$LargeTable$table_styling$spanning_header %>%
+filter(label == "tbl_id1")
+UnivariateRegressionTables$LargeTable$table_styling$spanning_header %>%
+filter(column == "tbl_id1") %>% pull(spanning_header)
+UnivariateRegressionTables$LargeTable$table_styling$spanning_header %>%
+filter(column == "tbl_id1")
+UnivariateRegressionTables$LargeTable$table_styling$spanning_header
+title_Tables <- UnivariateRegressionTables$LargeTable$table_styling$spanning_header %>%
+pull(spanning_header) %>% unique()
+title_tables
+title_Tables
+list_Tables <- UnivariateRegressionTables$FormattedTable$tbls
+title_Tables <- UnivariateRegressionTables$LargeTable$table_styling$spanning_header %>%
+pull(spanning_header) %>% unique()
+for (i in seq_along(list_Tables)) {
+d <- list_Tables[[i]]$table_body
+d$Header <- title_Tables[i]
+if (i == 1) {
+df_Combined <- d
+}
+else {
+df_Combined <- rbind(df_Combined, d)
+}
+}
+df_Combined$sig <- df_Combined$p.value < 0.05
+df_Combined <- df_Combined %>% filter(!is.na(estimate)) %>%
+mutate(var_label = if_else(var_type == "categorical",
+paste0(var_label, " : ", label), var_label))
+df_Combined$var_label <- factor(df_Combined$var_label, levels = rev(unique(df_Combined$var_label)))
+p <- df_Combined %>% ggplot(aes(x = estimate, y = var_label,
+color = sig)) + geom_point(size = pSize) + geom_errorbarh(aes(xmin = conf.low,
+xmax = conf.high), height = 0.2) + facet_wrap(~Header,
+nrow = 1) + geom_vline(xintercept = 0, linetype = "dashed") +
+labs(x = "Estimate", y = "Variable") + theme_minimal() +
+theme(axis.text.y = element_text(size = 10), axis.title.y = element_blank()) +
+scale_color_manual(values = c("darkgrey", "black")) +
+theme(legend.position = "none")
+pSize = 2
+list_Tables <- UnivariateRegressionTables$FormattedTable$tbls
+title_Tables <- UnivariateRegressionTables$LargeTable$table_styling$spanning_header %>%
+pull(spanning_header) %>% unique()
+for (i in seq_along(list_Tables)) {
+d <- list_Tables[[i]]$table_body
+d$Header <- title_Tables[i]
+if (i == 1) {
+df_Combined <- d
+}
+else {
+df_Combined <- rbind(df_Combined, d)
+}
+}
+df_Combined$sig <- df_Combined$p.value < 0.05
+df_Combined <- df_Combined %>% filter(!is.na(estimate)) %>%
+mutate(var_label = if_else(var_type == "categorical",
+paste0(var_label, " : ", label), var_label))
+df_Combined$var_label <- factor(df_Combined$var_label, levels = rev(unique(df_Combined$var_label)))
+p <- df_Combined %>% ggplot(aes(x = estimate, y = var_label,
+color = sig)) + geom_point(size = pSize) + geom_errorbarh(aes(xmin = conf.low,
+xmax = conf.high), height = 0.2) + facet_wrap(~Header,
+nrow = 1) + geom_vline(xintercept = 0, linetype = "dashed") +
+labs(x = "Estimate", y = "Variable") + theme_minimal() +
+theme(axis.text.y = element_text(size = 10), axis.title.y = element_blank()) +
+scale_color_manual(values = c("darkgrey", "black")) +
+theme(legend.position = "none")
+p
+setwd("~/Dropbox/Coding/Package Development/SciDataReportR")
+check()
+use_version("minor")
+use_github_release()
+devtools::install_github("RDastgh1/SciDataReportR")
+install.packages("prodigenr")
+library(prodigenr)
+use_r("CreateProjectFolders")
+use_r("UpdateCodebook")
+check()
+check()
+use_version("minor")
+use_github_release()
+devtools::install_github("RDastgh1/SciDataReportR")
+??kml3d
+install.packages("kml3d")
+?kml3d
+>>kml3d
+??kml3d
+check()
+use_version("minor")
+use_github_release()
+devtools::install_github("RDastgh1/SciDataReportR")
+usethis::use_rmarkdown_template("EDATemplate", template_dir = "quarto")
+check()
+use_version("minor")
+devtools::install_github("RDastgh1/SciDataReportR")
+SciDataReportR::EDATemplate
+SciDataReportR::skeleton
+use_github_release()
+devtools::install_github("RDastgh1/SciDataReportR")
+use_github_release()
+devtools::install_github("RDastgh1/SciDataReportR")
+library(SciDataReportR)
+detach("package:SciDataReportR", unload = TRUE)
+library(SciDataReportR)
+SciDataReportR::skeleton
+SciDataReportR::EDATemplate
+EDATemplate
+skeleton
+check()
+check()
+use_r("use_EDATemplate")
+check()
+use_version("minor")
+use_version("minor")
+use_github_release()
+devtools::install_github("RDastgh1/SciDataReportR")
+check()
+check()
+use_version("minor")
+use_github_release()
+devtools::install_github("RDastgh1/SciDataReportR")
+system.file("rmarkdown/templates/quarto/skeleton/EDATemplate.qmd", package = "SciDataReportR")
+check()
+use_version("major")
+use_github_release()
+devtools::install_github("RDastgh1/SciDataReportR")
+check()
+use_version("minor")
+use_github_release()
+devtools::install_github("RDastgh1/SciDataReportR")
+use_r("use_GetStartedScript")
+check()
+use_version("minor")
+use_github_release()
+devtools::install_github("RDastgh1/SciDataReportR")
+check()
+use_version("minor")
+use_github_release()
+devtools::install_github("RDastgh1/SciDataReportR")
+check()
+use_version("minor")
+use_github_release()
+devtools::install_github("RDastgh1/SciDataReportR")
+check()
+use_version("minor")
+use_r("use_GetStartedScript")
+use_github_release()
+devtools::install_github("RDastgh1/SciDataReportR")
+check()
+use_version("minor")
+use_github_release()
+devtools::install_github("RDastgh1/SciDataReportR")
+check()
+use_version("minor")
+use_github_release()
+devtools::install_github("RDastgh1/SciDataReportR")
+check()
+use_version("minor")
+use_github_release()
+devtools::install_github("RDastgh1/SciDataReportR")
+check()
+use_version("minor")
+use_github_release()
+devtools::install_github("RDastgh1/SciDataReportR")
+search_error_message <- function(pkg_path = ".", message = "Error occurred:  not enough finite observations") {
+# Get a list of all R script files in the package
+r_files <- list.files(file.path(pkg_path, "R"), pattern = "\\.R$", recursive = TRUE, full.names = TRUE)
+# Search for the message in each file
+matches <- lapply(r_files, function(file) {
+lines <- readLines(file, warn = FALSE)
+matching_lines <- grep(message, lines, value = TRUE)
+if (length(matching_lines) > 0) {
+return(data.frame(File = file, LineNumber = grep(message, lines), Code = matching_lines, stringsAsFactors = FALSE))
+} else {
+return(NULL)
+}
+})
+# Combine results into a single dataframe
+results <- do.call(rbind, matches)
+if (!is.null(results)) {
+print(results)
+} else {
+message("No occurrences of the error message were found in your package source code.")
+}
+}
+search_error_message()
+r_files <- list.files(file.path("R"), pattern = "\\.R$", recursive = TRUE, full.names = TRUE)
+matches <- lapply(r_files, function(file) {
++         lines <- readLines(file, warn = FALSE)
++         matching_lines <- grep(message, lines, value = TRUE)
++
+}
+matches <- lapply(r_files, function(file) {
++         lines <- readLines(file, warn = FALSE)
++         matching_lines <- grep(message, lines, value = TRUE)
++         )
+matches <- lapply(r_files, function(file) {
+lines <- readLines(file, warn = FALSE)
+matching_lines <- grep(message, lines, value = TRUE)
+if (length(matching_lines) > 0) {
+return(data.frame(File = file, LineNumber = grep(message, lines), Code = matching_lines, stringsAsFactors = FALSE))
+} else {
+return(NULL)
+}
+)
+matches <- lapply(r_files, function(file) {
+lines <- readLines(file, warn = FALSE)
+matching_lines <- grep(message, lines, value = TRUE)
+if (length(matching_lines) > 0) {
+return(data.frame(File = file, LineNumber = grep(message, lines), Code = matching_lines, stringsAsFactors = FALSE))
+} else {
+return(NULL)
+}
+})
+message = "Error occurred:  not enough finite observations"
+matches <- lapply(r_files, function(file) {
+lines <- readLines(file, warn = FALSE)
+matching_lines <- grep(message, lines, value = TRUE)
+if (length(matching_lines) > 0) {
+return(data.frame(File = file, LineNumber = grep(message, lines), Code = matching_lines, stringsAsFactors = FALSE))
+} else {
+return(NULL)
+}
+})
+matches
+View(matches)
+results <- do.call(rbind, matches)
+CreateSummaryTable
+library(SciDataReportR)
+check()
+use_version("minor")
+use_github_release()
+devtools::install_github("RDastgh1/SciDataReportR")
+library(SciDataReportR)
+use_r("PlotPartialRegressionScatter")
+check()
+use_version("minor")
+use_github_release()
+devtools::install_github("RDastgh1/SciDataReportR")
+check()
+remotes::install_version("roxygen2", "7.3.1")
+check()
+use_version("minor")
+use_github_release()
+devtools::install_github("RDastgh1/SciDataReportR")
+base_cols <- intersect(base_cols, names(combined_df))
+use_r("CombineCodebooks")
+covarlabels <- c("a", "b", "c")
+paste("Adjusted for", covarlabels)
+paste("Adjusted for", paste(covarlabels, collapse = ", "))
+check()
+check()
+use_version("minor")
+use_github_release()
+devtools::install_github("RDastgh1/SciDataReportR")
+check()
+use_version("minor")
+use_github_release()
+devtools::install_github("RDastgh1/SciDataReportR")
+check()
+check()
+use_version("major")
+use_github_release()
+usethis::gh_token_help()
+use_github_release()
+df <- data.frame(
+group = sample(c("A", "B", "C"), 100, replace = TRUE),
+var1 = rnorm(100),
+var2 = sample(c("Yes", "No"), 100, replace = TRUE),
+covariate = rnorm(100)
+)
+MakeComparisonTable(
+DataFrame = df,
+Variables = c("var1", "var2"),
+CompVariable = "group",
+Covariates = "covariate",
+AddEffectSize = TRUE,
+AddPairwise = TRUE
+)
+# Fix covariate p-values
+#' @title Make a Group Comparison Table with Covariate Adjustment and Pairwise Contrasts
+#'
+#' @description
+#' Creates a summary comparison table using {gtsummary}, with automatic selection of
+#' unadjusted and covariate-adjusted p-values, optional effect sizes, and pairwise contrasts.
+#'
+#' @param DataFrame A data.frame of raw data.
+#' @param Variables Character vector of variable names to include.
+#' @param CompVariable Character string: grouping variable name.
+#' @param Covariates Character vector of covariates for adjustment. Default NULL.
+#' @param ValueDigits Digits for summary stats. Default 2.
+#' @param pDigits Digits for p-values. Default 3.
+#' @param AddEffectSize Logical: include effect-size column. Default FALSE.
+#' @param EffectSizeDigits Digits for effect sizes. Default 2.
+#' @param AddPairwise Logical: include pairwise contrasts. Default FALSE.
+#' @param PairwiseMethod Method for pairwise p-value adjustment. Default "bonferroni".
+#' @param suppress_warnings Logical: suppress warnings. Default FALSE.
+#'
+#' @return A gtsummary table object with adjusted p-values, effect sizes, and contrasts.
+#' @export
+MakeComparisonTable <- function(
+DataFrame,
+Variables,
+CompVariable,
+Covariates = NULL,
+ValueDigits = 2,
+pDigits = 3,
+AddEffectSize = FALSE,
+EffectSizeDigits = 2,
+AddPairwise = FALSE,
+PairwiseMethod = "bonferroni",
+suppress_warnings = FALSE
+) {
+# Load required packages
+pkgs <- c("gtsummary","dplyr","car","emmeans","broom","effectsize","purrr","tidyr")
+missing <- pkgs[!vapply(pkgs, requireNamespace, logical(1), quietly=TRUE)]
+if(length(missing)) stop("Install: ", paste(missing, collapse=","))
+# Prepare data
+df <- DataFrame %>%
+dplyr::select(any_of(c(CompVariable, Variables, Covariates))) %>%
+dplyr::select_if(~ !(is.factor(.) && nlevels(.)>15))
+df[[CompVariable]] <- factor(df[[CompVariable]])
+# Build base summary (only main Variables, not covariates)
+df_table <- df %>% dplyr::select(any_of(c(CompVariable, Variables)))
+tbl <- gtsummary::tbl_summary(
+df_table,
+by = CompVariable,
+statistic = list(
+all_continuous() ~ "{mean} ({sd})",
+all_categorical() ~ "{n} ({p})"
+),
+digits = list(all_continuous() ~ ValueDigits)
+) %>%
+gtsummary::add_n()
+if(suppress_warnings) tbl <- suppressWarnings(tbl)
+# Compute p-values manually
+pvals <- purrr::map_dfr(Variables, function(var) {
+# unadjusted
+if(is.numeric(df[[var]])) {
+m0 <- stats::aov(as.formula(paste(var,"~",CompVariable)), df)
+pu <- summary(m0)[[1]][CompVariable,"Pr(>F)"]
+} else {
+tbl0 <- table(df[[var]], df[[CompVariable]])
+pu <- if(any(suppressWarnings(stats::chisq.test(tbl0)$expected)<5)) stats::fisher.test(tbl0)$p.value
+else stats::chisq.test(tbl0)$p.value
+}
+# adjusted
+if(!is.null(Covariates)) {
+f_adj <- paste(var,"~",CompVariable,"+",paste(Covariates,collapse="+"))
+if(is.numeric(df[[var]])) {
+m1 <- stats::lm(as.formula(f_adj), df)
+pad <- car::Anova(m1,type=2)[CompVariable,"Pr(>F)"]
+} else {
+tbl0 <- table(df[[var]], df[[CompVariable]])
+pad <- stats::chisq.test(tbl0)$p.value
+}
+} else pad <- NA_real_
+tibble::tibble(variable=var, p_unadj=pu, p_adj=pad)
+})
+# Join p-values
+tbl <- tbl %>%
+gtsummary::modify_table_body(~ .x %>%
+left_join(pvals,by="variable") %>%
+mutate(
+p.value = coalesce(p_adj,p_unadj),
+p.value_fmt = gtsummary::style_pvalue(p.value,digits=pDigits)
+)
+) %>%
+gtsummary::modify_table_styling(
+columns="p.value_fmt",
+rows=.data$p.value<=0.05,
+text_format="bold"
+) %>%
+gtsummary::modify_header(p.value_fmt~"**p-value**") %>%
+gtsummary::modify_footnote(
+p.value_fmt~if(!is.null(Covariates)) paste0("Adjusted for: ",paste(Covariates,collapse=","))
+else "Unadjusted"
+)
+# Effect sizes
+if(AddEffectSize) {
+es_df <- purrr::map_dfr(Variables, function(var) {
+if(is.numeric(df[[var]])) {
+m0 <- stats::aov(as.formula(paste(var,"~",CompVariable)),df)
+eta_tbl <- effectsize::eta_squared(m0, partial = !is.null(Covariates))
+es <- as.numeric(eta_tbl$Eta2_partial[1])
+} else {
+tbl0 <- table(df[[var]],df[[CompVariable]])
+chi2 <- suppressWarnings(stats::chisq.test(tbl0))$statistic
+n <- sum(tbl0); k <- min(nrow(tbl0)-1,ncol(tbl0)-1)
+es <- sqrt(as.numeric(chi2)/(n*k))
+}
+tibble::tibble(variable=var, effect_size=round(es,EffectSizeDigits))
+})
+tbl <- tbl %>%
+gtsummary::modify_table_body(~ .x %>% left_join(es_df,by="variable")) %>%
+gtsummary::modify_fmt_fun(
+effect_size ~ function(x) formatC(x, digits = EffectSizeDigits, format = "f")
+) %>%
+gtsummary::modify_header(effect_size~"**Effect Size**") %>%
+gtsummary::modify_footnote(
+effect_size~ if(!is.null(Covariates)) "Partial η² (adjusted) or Cramer's V" else "η² or Cramer's V"
+)
+}
+# Pairwise contrasts
+if(AddPairwise && length(unique(df[[CompVariable]]))>2) {
+pw <- purrr::map_dfr(Variables, function(var) {
+if(!is.numeric(df[[var]])) return(NULL)
+fit <- stats::aov(as.formula(paste(var,"~",CompVariable)),df)
+em  <- emmeans::emmeans(fit,CompVariable)
+ct  <- emmeans::contrast(em,method="pairwise",adjust=PairwiseMethod)
+res <- broom::tidy(ct)
+pcol<-intersect(c("p.value","p.value_adj","adj.p.value"),names(res))[1]
+tibble::tibble(variable=var, contrast=res$contrast, p_val=res[[pcol]])
+})
+pw_wide <- tidyr::pivot_wider(pw,id_cols="variable",names_from="contrast",values_from="p_val")
+tbl <- tbl %>%
+gtsummary::modify_table_body(~ .x %>% left_join(pw_wide,by="variable"))
+# format each pairwise column
+pw_cols <- setdiff(names(pw_wide),"variable")
+for(col in pw_cols) {
+tbl <- tbl %>%
+gtsummary::modify_fmt_fun(!!rlang::sym(col) ~ function(x) gtsummary::style_pvalue(x, digits = pDigits)) %>%
+gtsummary::modify_table_styling(columns = col, rows = .data[[col]] <= 0.05, text_format = "bold") %>%
+gtsummary::modify_header(!!rlang::sym(col) := paste0("**", col, " (", PairwiseMethod, ")**")) %>%
+gtsummary::modify_footnote(!!rlang::sym(col) ~ paste0("Pairwise p-value adjusted by ", PairwiseMethod))
+}
+}
+# Final caption and return and return
+tbl %>% gtsummary::modify_caption("Comparison Table")
+}
+MakeComparisonTable(
+DataFrame = df,
+Variables = c("var1", "var2"),
+CompVariable = "group",
+Covariates = "covariate",
+AddEffectSize = TRUE,
+AddPairwise = TRUE
+)
+library(tidyverse)
+MakeComparisonTable(
+DataFrame = df,
+Variables = c("var1", "var2"),
+CompVariable = "group",
+Covariates = "covariate",
+AddEffectSize = TRUE,
+AddPairwise = TRUE
+)
+install.packages("updateR")
