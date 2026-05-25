@@ -1,19 +1,28 @@
+
 #' Plot correlations heatmap
 #'
-#' Calculates correlations (or partial correlations) and plots a heatmap.
-#' Fully label-aware, robust to non-syntactic names, and safe for real-world data.
+#' Computes correlations or partial correlations and plots a heatmap.
+#' Handles:
+#' - continuous + categorical covariates
+#' - labelled data
+#' - non-syntactic names
+#' - sparse real-world datasets
+#' - ordinal variables
+#' - partial correlations via residualization
 #'
-#' @param Data A data frame.
-#' @param xVars Character vector of x variables.
-#' @param yVars Character vector of y variables.
-#' @param covars Optional covariates.
-#' @param method Correlation method.
-#' @param Relabel Use labels if available.
-#' @param Ordinal Convert ordinal variables.
-#' @param min_n Minimum N required.
-#' @param eps Variance tolerance.
-#' @return A list with correlation matrices and plots.
+#' @param Data data.frame
+#' @param xVars character vector
+#' @param yVars character vector
+#' @param covars optional covariates
+#' @param method pearson/spearman/kendall
+#' @param Relabel use labels
+#' @param Ordinal include ordinal vars
+#' @param min_n minimum complete rows
+#' @param eps variance tolerance
+#'
+#' @return list
 #' @export
+
 PlotCorrelationsHeatmap <- function(
     Data,
     xVars = NULL,
@@ -26,54 +35,109 @@ PlotCorrelationsHeatmap <- function(
     eps = 1e-12
 ) {
 
-  # ---------------------------
-  # Validate inputs
-  # ---------------------------
-  if (!is.data.frame(Data)) stop("Data must be a data.frame.")
+  `%||%` <- function(x, y) {
+    if (is.null(x)) y else x
+  }
+
+  # =========================================================
+  # Validation
+  # =========================================================
+
+  if (!is.data.frame(Data)) {
+    stop("Data must be a data.frame.")
+  }
 
   method <- tolower(method)
+
   if (!method %in% c("pearson", "spearman", "kendall")) {
-    stop("Invalid method.")
+    stop("method must be pearson, spearman, or kendall")
   }
 
   Data <- ReplaceMissingLabels(Data)
 
-  # ---------------------------
+  # =========================================================
   # Determine variables
-  # ---------------------------
+  # =========================================================
+
   if (is.null(xVars)) {
-    xVars <- getNumVars(Data, Ordinal = isTRUE(Ordinal))
+
+    xVars <- getNumVars(
+      Data,
+      Ordinal = isTRUE(Ordinal)
+    )
   }
 
   if (is.null(yVars)) {
+
     yVars <- xVars
     removediag <- TRUE
+
   } else {
+
     removediag <- FALSE
   }
 
-  xVars <- intersect(as.character(xVars), names(Data))
-  yVars <- intersect(as.character(yVars), names(Data))
+  xVars <- intersect(
+    as.character(xVars),
+    names(Data)
+  )
+
+  yVars <- intersect(
+    as.character(yVars),
+    names(Data)
+  )
 
   covars_in <- covars
-  covars <- intersect(as.character(covars %||% character(0)), names(Data))
-  covars_missing <- setdiff(covars_in, covars)
 
-  # ---------------------------
+  covars <- intersect(
+    as.character(covars %||% character(0)),
+    names(Data)
+  )
+
+  covars_missing <- setdiff(
+    covars_in %||% character(0),
+    covars
+  )
+
+  all_vars <- unique(
+    c(xVars, yVars, covars)
+  )
+
+  # =========================================================
   # Early exit
-  # ---------------------------
-  if (length(xVars) == 0 || length(yVars) == 0) {
+  # =========================================================
+
+  if (
+    length(xVars) == 0 ||
+    length(yVars) == 0
+  ) {
 
     empty_plot <- ggplot2::ggplot() +
       ggplot2::geom_blank() +
       ggplot2::theme_bw() +
-      ggplot2::labs(subtitle = "No valid variables for correlation")
+      ggplot2::labs(
+        subtitle = "No valid variables"
+      )
 
-    z <- matrix(numeric(0), 0, 0)
+    z <- matrix(
+      numeric(0),
+      0,
+      0
+    )
 
     return(list(
-      Unadjusted = list(r = z, p = z, npairs = z, plot = empty_plot),
-      FDRCorrected = list(r = z, p = z, npairs = z, plot = empty_plot),
+      Unadjusted = list(
+        r = z,
+        p = z,
+        npairs = z,
+        plot = empty_plot
+      ),
+      FDRCorrected = list(
+        r = z,
+        p = z,
+        npairs = z,
+        plot = empty_plot
+      ),
       method = method,
       Relabel = Relabel,
       Covariates = covars,
@@ -81,113 +145,340 @@ PlotCorrelationsHeatmap <- function(
     ))
   }
 
-  # ---------------------------
-  # Prepare data (safe numeric coercion)
-  # ---------------------------
+  # =========================================================
+  # Prepare numeric vars ONLY
+  # =========================================================
 
+  corr_vars <- unique(
+    c(xVars, yVars)
+  )
 
-DataClean <- PrepNumericData(
+  DataCorr <- PrepNumericData(
+    Data,
+    corr_vars
+  )
 
-  Data,
+  DataCorr <- as.data.frame(
+    DataCorr,
+    check.names = FALSE
+  )
 
-  unique(c(xVars, yVars, covars))
+  # =========================================================
+  # Preserve covariates separately
+  # =========================================================
 
-)
-  # ---------------------------
-  # Initialize outputs
-  # ---------------------------
-  MC <- matrix(NA_real_, length(xVars), length(yVars),
-               dimnames = list(xVars, yVars))
+  CovarData <- Data[, covars, drop = FALSE]
+
+  # safer categorical handling
+  for (nm in names(CovarData)) {
+
+    x <- CovarData[[nm]]
+
+    if (
+      is.character(x) ||
+      is.logical(x)
+    ) {
+      CovarData[[nm]] <- factor(x)
+    }
+
+    # preserve labelled categorical variables
+    if (
+      inherits(x, "haven_labelled") &&
+      !is.numeric(x)
+    ) {
+      CovarData[[nm]] <- factor(as.character(x))
+    }
+  }
+
+  # =========================================================
+  # Initialize matrices
+  # =========================================================
+
+  MC <- matrix(
+    NA_real_,
+    nrow = length(xVars),
+    ncol = length(yVars),
+    dimnames = list(xVars, yVars)
+  )
+
   MP <- MC
   MN <- MC
 
-  # ---------------------------
-  # Core computation
-  # ---------------------------
+  # =========================================================
+  # Main loop
+  # =========================================================
+
   for (xi in seq_along(xVars)) {
+
     for (yi in seq_along(yVars)) {
 
-      vars_needed <- unique(c(xVars[xi], yVars[yi], covars))
-      df_tmp <- stats::na.omit(
-        DataClean[, vars_needed, drop = FALSE]
+      xname <- xVars[xi]
+      yname <- yVars[yi]
+
+      vars_needed <- unique(
+        c(xname, yname, covars)
       )
-      MN[xi, yi] <- nrow(df_tmp)
+
+      # -----------------------------------
+      # Build temporary dataset
+      # -----------------------------------
+
+      df_tmp <- data.frame(
+        x = DataCorr[[xname]],
+        y = DataCorr[[yname]],
+        CovarData[, covars, drop = FALSE],
+        check.names = FALSE
+      )
+
+      df_tmp <- stats::na.omit(df_tmp)
+
+      n_complete <- nrow(df_tmp)
+
+      MN[xi, yi] <- n_complete
 
       est <- NA_real_
       pval <- NA_real_
 
-      if (nrow(df_tmp) >= min_n) {
+      if (n_complete < min_n) {
 
-        x <- df_tmp[[xVars[xi]]]
-        y <- df_tmp[[yVars[yi]]]
+        MC[xi, yi] <- NA_real_
+        MP[xi, yi] <- NA_real_
 
-        vx <- suppressWarnings(stats::var(x, na.rm = TRUE))
-        vy <- suppressWarnings(stats::var(y, na.rm = TRUE))
+        next
+      }
 
-        if (
-          is.finite(vx) &&
-          is.finite(vy) &&
-          !is.na(vx) &&
-          !is.na(vy) &&
-          vx > eps &&
-          vy > eps
-        ) {
+      # -----------------------------------
+      # Variance checks
+      # -----------------------------------
 
-          if (length(covars) > 0) {
+      vx <- suppressWarnings(
+        stats::var(df_tmp$x)
+      )
 
-            mf <- stats::model.frame(~ . - 1,
-                                     data = df_tmp[, covars, drop = FALSE],
-                                     na.action = stats::na.pass)
+      vy <- suppressWarnings(
+        stats::var(df_tmp$y)
+      )
 
-            Z <- stats::model.matrix(~ . - 1, data = mf)
-            cdata <- as.data.frame(Z, check.names = FALSE)
+      if (
+        !is.finite(vx) ||
+        !is.finite(vy) ||
+        is.na(vx) ||
+        is.na(vy) ||
+        vx <= eps ||
+        vy <= eps
+      ) {
 
-            keep <- vapply(cdata, function(z) {
-              v <- stats::var(z)
-              is.finite(v) && v > eps
-            }, logical(1))
+        MC[xi, yi] <- NA_real_
+        MP[xi, yi] <- NA_real_
 
-            cdata <- cdata[, keep, drop = FALSE]
+        next
+      }
 
-            if (ncol(cdata) > 0 && nrow(df_tmp) >= (ncol(cdata) + 3)) {
+      # =====================================================
+      # PARTIAL CORRELATION
+      # =====================================================
 
-              df_model <- cbind(x = x, y = y, cdata)
-              cov_terms <- paste0("`", colnames(cdata), "`", collapse = " + ")
+      if (length(covars) > 0) {
 
-              r1 <- tryCatch(
-                residuals(lm(as.formula(paste("x ~", cov_terms)), data = df_model)),
+        # -----------------------------------
+        # Build model matrix safely
+        # -----------------------------------
+
+        cov_df <- df_tmp[, covars, drop = FALSE]
+
+        mm <- tryCatch(
+
+          stats::model.matrix(
+            ~ .,
+            data = cov_df
+          ),
+
+          error = function(e) NULL
+        )
+
+        # fallback if model matrix fails
+        if (is.null(mm)) {
+
+          tmp <- tryCatch(
+
+            suppressWarnings(
+              stats::cor.test(
+                df_tmp$x,
+                df_tmp$y,
+                method = method
+              )
+            ),
+
+            error = function(e) NULL
+          )
+
+          if (!is.null(tmp)) {
+
+            est <- unname(tmp$estimate)
+            pval <- tmp$p.value
+          }
+
+        } else {
+
+          # remove intercept
+          mm <- mm[, -1, drop = FALSE]
+
+          # remove zero variance columns
+          keep <- apply(
+            mm,
+            2,
+            function(z) {
+
+              v <- suppressWarnings(
+                stats::var(z)
+              )
+
+              is.finite(v) &&
+                !is.na(v) &&
+                v > eps
+            }
+          )
+
+          if (length(keep) > 0) {
+
+            mm <- mm[, keep, drop = FALSE]
+          }
+
+          # -----------------------------------
+          # If ALL covariates collapsed
+          # -----------------------------------
+
+          if (ncol(mm) == 0) {
+
+            tmp <- tryCatch(
+
+              suppressWarnings(
+                stats::cor.test(
+                  df_tmp$x,
+                  df_tmp$y,
+                  method = method
+                )
+              ),
+
+              error = function(e) NULL
+            )
+
+            if (!is.null(tmp)) {
+
+              est <- unname(tmp$estimate)
+              pval <- tmp$p.value
+            }
+
+          } else {
+
+            # -----------------------------------
+            # Prevent overparameterization
+            # -----------------------------------
+
+            if (
+              n_complete <= (ncol(mm) + 2)
+            ) {
+
+              # fallback to standard correlation
+              tmp <- tryCatch(
+
+                suppressWarnings(
+                  stats::cor.test(
+                    df_tmp$x,
+                    df_tmp$y,
+                    method = method
+                  )
+                ),
+
                 error = function(e) NULL
               )
 
-              r2 <- tryCatch(
-                residuals(lm(as.formula(paste("y ~", cov_terms)), data = df_model)),
+              if (!is.null(tmp)) {
+
+                est <- unname(tmp$estimate)
+                pval <- tmp$p.value
+              }
+
+            } else {
+
+              # -----------------------------------
+              # Residualization
+              # -----------------------------------
+
+              fitx <- tryCatch(
+
+                stats::lm.fit(
+                  x = cbind(1, mm),
+                  y = df_tmp$x
+                ),
+
                 error = function(e) NULL
               )
 
-              if (!is.null(r1) && !is.null(r2)) {
-                tmp <- tryCatch(cor.test(r1, r2, method = method), error = function(e) NULL)
+              fity <- tryCatch(
+
+                stats::lm.fit(
+                  x = cbind(1, mm),
+                  y = df_tmp$y
+                ),
+
+                error = function(e) NULL
+              )
+
+              if (
+                !is.null(fitx) &&
+                !is.null(fity)
+              ) {
+
+                rx <- fitx$residuals
+                ry <- fity$residuals
+
+                tmp <- tryCatch(
+
+                  suppressWarnings(
+                    stats::cor.test(
+                      rx,
+                      ry,
+                      method = method
+                    )
+                  ),
+
+                  error = function(e) NULL
+                )
+
                 if (!is.null(tmp)) {
+
                   est <- unname(tmp$estimate)
                   pval <- tmp$p.value
                 }
               }
             }
-
-            if (is.na(est)) {
-              tmp <- tryCatch(cor.test(x, y, method = method), error = function(e) NULL)
-              if (!is.null(tmp)) {
-                est <- unname(tmp$estimate)
-                pval <- tmp$p.value
-              }
-            }
-
-          } else {
-            tmp <- tryCatch(cor.test(x, y, method = method), error = function(e) NULL)
-            if (!is.null(tmp)) {
-              est <- unname(tmp$estimate)
-              pval <- tmp$p.value
-            }
           }
+        }
+
+      } else {
+
+        # =====================================================
+        # STANDARD CORRELATION
+        # =====================================================
+
+        tmp <- tryCatch(
+
+          suppressWarnings(
+            stats::cor.test(
+              df_tmp$x,
+              df_tmp$y,
+              method = method
+            )
+          ),
+
+          error = function(e) NULL
+        )
+
+        if (!is.null(tmp)) {
+
+          est <- unname(tmp$estimate)
+          pval <- tmp$p.value
         }
       }
 
@@ -196,94 +487,224 @@ DataClean <- PrepNumericData(
     }
   }
 
+  # =========================================================
+  # Symmetric cleanup
+  # =========================================================
+
   if (removediag) {
+
     diag(MC) <- NaN
     diag(MP) <- NaN
   }
 
-  MC[MN < 2] <- NaN
-  MP[MN < 2] <- NaN
+  MC[MN < min_n] <- NaN
+  MP[MN < min_n] <- NaN
 
-  # ---------------------------
+  # =========================================================
   # FDR correction
-  # ---------------------------
+  # =========================================================
+
   pvec <- as.vector(MP)
-  padj <- rep(NA_real_, length(pvec))
+
+  padj <- rep(
+    NA_real_,
+    length(pvec)
+  )
+
   ok <- is.finite(pvec)
-  padj[ok] <- stats::p.adjust(pvec[ok], method = "fdr")
 
-  M_FDR <- matrix(padj, nrow = nrow(MP), ncol = ncol(MP),
-                  dimnames = dimnames(MP))
+  if (any(ok)) {
 
-  # ---------------------------
-  # Build plot data
-  # ---------------------------
-  plot.data <- expand.grid(XVar = xVars, YVar = yVars, stringsAsFactors = FALSE)
+    padj[ok] <- stats::p.adjust(
+      pvec[ok],
+      method = "fdr"
+    )
+  }
+
+  M_FDR <- matrix(
+    padj,
+    nrow = nrow(MP),
+    ncol = ncol(MP),
+    dimnames = dimnames(MP)
+  )
+
+  # =========================================================
+  # Plot dataframe
+  # =========================================================
+
+  plot.data <- expand.grid(
+    XVar = xVars,
+    YVar = yVars,
+    stringsAsFactors = FALSE
+  )
 
   plot.data$R <- as.vector(MC)
   plot.data$P <- as.vector(MP)
   plot.data$P_adj <- as.vector(M_FDR)
   plot.data$nPairs <- as.vector(MN)
 
-  plot.data$stars <- cut(plot.data$P,
-                         breaks = c(-Inf, 0.001, 0.01, 0.05, Inf),
-                         labels = c("***","**","*",""))
+  plot.data$stars <- as.character(
 
-  plot.data$stars_FDR <- cut(plot.data$P_adj,
-                             breaks = c(-Inf, 0.001, 0.01, 0.05, Inf),
-                             labels = c("***","**","*",""))
+    cut(
+      plot.data$P,
+      breaks = c(-Inf, 0.001, 0.01, 0.05, Inf),
+      labels = c("***", "**", "*", "")
+    )
+  )
 
-  # ---------------------------
+  plot.data$stars_FDR <- as.character(
+
+    cut(
+      plot.data$P_adj,
+      breaks = c(-Inf, 0.001, 0.01, 0.05, Inf),
+      labels = c("***", "**", "*", "")
+    )
+  )
+
+  plot.data$stars[
+    is.na(plot.data$stars)
+  ] <- ""
+
+  plot.data$stars_FDR[
+    is.na(plot.data$stars_FDR)
+  ] <- ""
+
+  # =========================================================
   # Labels
-  # ---------------------------
+  # =========================================================
+
   if (Relabel) {
-    xlabels <- sjlabelled::get_label(Data[, xVars, drop = FALSE], def.value = xVars)
-    ylabels <- sjlabelled::get_label(Data[, yVars, drop = FALSE], def.value = yVars)
 
-    plot.data$XLabel <- xlabels[plot.data$XVar]
-    plot.data$YLabel <- ylabels[plot.data$YVar]
+    xlabels <- stats::setNames(
 
-    plot.data$XLabel[is.na(plot.data$XLabel)] <- plot.data$XVar[is.na(plot.data$XLabel)]
-    plot.data$YLabel[is.na(plot.data$YLabel)] <- plot.data$YVar[is.na(plot.data$YLabel)]
+      sjlabelled::get_label(
+        Data[, xVars, drop = FALSE],
+        def.value = xVars
+      ),
+
+      xVars
+    )
+
+    ylabels <- stats::setNames(
+
+      sjlabelled::get_label(
+        Data[, yVars, drop = FALSE],
+        def.value = yVars
+      ),
+
+      yVars
+    )
+
+    plot.data$XLabel <- xlabels[
+      plot.data$XVar
+    ]
+
+    plot.data$YLabel <- ylabels[
+      plot.data$YVar
+    ]
 
   } else {
+
     plot.data$XLabel <- plot.data$XVar
     plot.data$YLabel <- plot.data$YVar
   }
 
-  plot.data$XLabel <- factor(plot.data$XLabel, levels = rev(unique(plot.data$XLabel)))
-  plot.data$YLabel <- factor(plot.data$YLabel, levels = unique(plot.data$YLabel))
+  plot.data$XLabel <- factor(
+    plot.data$XLabel,
+    levels = rev(unique(plot.data$XLabel))
+  )
 
-  # ---------------------------
-  # Plot
-  # ---------------------------
-  P <- ggplot2::ggplot(plot.data,
-                       ggplot2::aes(x = YLabel, y = XLabel, fill = R)) +
-    ggplot2::geom_tile() +
-    ggplot2::geom_text(ggplot2::aes(label = stars)) +
-    ggplot2::scale_fill_gradient2(limits = c(-1, 1), na.value = "grey90") +
-    ggplot2::theme_bw() +
-    ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90, hjust = 1),
-                   axis.title = ggplot2::element_blank())
+  plot.data$YLabel <- factor(
+    plot.data$YLabel,
+    levels = unique(plot.data$YLabel)
+  )
 
-  P_FDR <- ggplot2::ggplot(plot.data,
-                           ggplot2::aes(x = YLabel, y = XLabel, fill = R)) +
-    ggplot2::geom_tile() +
-    ggplot2::geom_text(ggplot2::aes(label = stars_FDR)) +
-    ggplot2::scale_fill_gradient2(limits = c(-1, 1), na.value = "grey90") +
-    ggplot2::theme_bw() +
-    ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90, hjust = 1),
-                   axis.title = ggplot2::element_blank())
+  # =========================================================
+  # Plot helper
+  # =========================================================
 
-  # ---------------------------
+  BuildPlot <- function(
+    plot.data,
+    starvar
+  ) {
+
+    ggplot2::ggplot(
+      plot.data,
+      ggplot2::aes(
+        x = YLabel,
+        y = XLabel,
+        fill = R
+      )
+    ) +
+
+      ggplot2::geom_tile(
+        color = "white",
+        linewidth = 0.2
+      ) +
+
+      ggplot2::geom_text(
+        ggplot2::aes(
+          label = .data[[starvar]]
+        ),
+        size = 4
+      ) +
+
+      ggplot2::scale_fill_gradient2(
+        low = "#2166AC",
+        mid = "white",
+        high = "#B2182B",
+        midpoint = 0,
+        limits = c(-1, 1),
+        na.value = "grey90",
+        name = "r"
+      ) +
+
+      ggplot2::theme_bw() +
+
+      ggplot2::theme(
+        axis.text.x = ggplot2::element_text(
+          angle = 90,
+          hjust = 1
+        ),
+        axis.title = ggplot2::element_blank(),
+        panel.grid = ggplot2::element_blank()
+      )
+  }
+
+  P <- BuildPlot(
+    plot.data,
+    "stars"
+  )
+
+  P_FDR <- BuildPlot(
+    plot.data,
+    "stars_FDR"
+  )
+
+  # =========================================================
   # Return
-  # ---------------------------
+  # =========================================================
+
   list(
-    Unadjusted = list(r = MC, p = MP, npairs = MN, plot = P),
-    FDRCorrected = list(r = MC, p = M_FDR, npairs = MN, plot = P_FDR),
+
+    Unadjusted = list(
+      r = MC,
+      p = MP,
+      npairs = MN,
+      plot = P
+    ),
+
+    FDRCorrected = list(
+      r = MC,
+      p = M_FDR,
+      npairs = MN,
+      plot = P_FDR
+    ),
+
     method = method,
     Relabel = Relabel,
     Covariates = covars,
     CovariatesMissing = covars_missing
   )
 }
+
