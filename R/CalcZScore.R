@@ -16,7 +16,7 @@
 #'   - Center: logical flag used
 #'   - Scale: logical flag used
 #' @export
-CalcZScore <- function(df,
+CreateZScoreObject <- function(df,
                        variables = NULL,
                        names_prefix = "Z_",
                        RetainLabels = TRUE,
@@ -121,4 +121,17 @@ CalcZScore <- function(df,
   )
   class(out) <- c("ZScoreObj", class(out))
   out
+}
+
+#' Calculate Z-scores (or standardized scores) and return data + parameters
+#'
+#' Compatibility alias for [CreateZScoreObject()]. Prefer
+#' `CreateZScoreObject()` in new code because this function returns a reusable
+#' `ZScoreObj`.
+#'
+#' @param ... Arguments passed to [CreateZScoreObject()].
+#' @return The same `ZScoreObj` returned by [CreateZScoreObject()].
+#' @export
+CalcZScore <- function(...) {
+  CreateZScoreObject(...)
 }

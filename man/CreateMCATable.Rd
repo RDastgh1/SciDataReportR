@@ -2,51 +2,18 @@
 % Please edit documentation in R/CreateMCATable.R
 \name{CreateMCATable}
 \alias{CreateMCATable}
-\title{CreateMCATable}
+\title{Create MCA table and visualization}
 \usage{
-CreateMCATable(
-  Data,
-  VarsToReduce,
-  VariableCategories = NULL,
-  minThresh = 75,
-  scale = TRUE,
-  center = TRUE,
-  Relabel = TRUE,
-  Ordinal = FALSE,
-  numComponents = NULL,
-  ImputeMissing = FALSE
-)
+CreateMCATable(...)
 }
 \arguments{
-\item{Data}{A dataframe containing the data to be analyzed.}
-
-\item{VarsToReduce}{A vector of column names in \code{Data} to be included in the MCA.}
-
-\item{VariableCategories}{An optional vector to assign specific categories to the variables in \code{VarsToReduce}. These will be used to color the loadings plot.}
-
-\item{minThresh}{A numeric value representing the minimum cumulative variance threshold to determine the number of components. Default is 75\%.}
-
-\item{scale}{Logical, indicating whether to scale the variables. Default is TRUE.}
-
-\item{center}{Logical, indicating whether to center the variables. Default is TRUE.}
-
-\item{Relabel}{Logical, if TRUE, the function will replace missing labels in the data using an external helper function \code{ReplaceMissingLabels}. Default is TRUE.}
-
-\item{Ordinal}{Logical, if TRUE, the function will treat variables as ordinal for MCA. Default is FALSE.}
-
-\item{numComponents}{An optional integer specifying the number of components to retain. If NULL, the number of components will be determined based on \code{minThresh}.}
-
-\item{ImputeMissing}{Logical, if TRUE, missing values will be imputed using \code{missRanger}. Default is FALSE.}
+\item{...}{Arguments passed to \code{\link[=CreateMCAObject]{CreateMCAObject()}}.}
 }
 \value{
-A list with the following elements:
-\item{p_scree}{A \code{ggplot} object representing the scree plot, showing the cumulative and percentage of variance explained by each component.}
-\item{pcaresults}{The MCA results object, which includes component scores and contributions.}
-\item{LoadingTable}{A data frame with the variable loadings for each component.}
-\item{Scores}{A data frame with the MCA scores for each individual in the data.}
-\item{CombinedData}{The original data combined with the MCA scores.}
-\item{Lollipop}{A \code{ggplot} object showing a lollipop plot of variable loadings across components.}
+The same object returned by \code{\link[=CreateMCAObject]{CreateMCAObject()}}.
 }
 \description{
-This function performs Multiple Correspondence Analysis (MCA) on a set of categorical variables, imputes missing data if needed, and generates a set of visualizations and tables to interpret the results.
+Compatibility alias for \code{\link[=CreateMCAObject]{CreateMCAObject()}}. Prefer \code{CreateMCAObject()} in
+new code because this workflow returns a reusable MCA object, not only a
+static table.
 }

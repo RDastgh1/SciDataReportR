@@ -10,7 +10,7 @@ ApplyNormativeTScores(df, normative_obj, score_prefix = "Norm")
 \item{df}{A data frame containing the test variable, count variable, and
 all predictors required by the normative model.}
 
-\item{normative_obj}{A list returned by \code{CreateNormativeTScores()}.}
+\item{normative_obj}{A list returned by \code{CreateNormativeTScoreModel()}.}
 
 \item{score_prefix}{A character string prefix used when naming output
 columns. Defaults to \code{"Norm"}.}
@@ -32,7 +32,7 @@ preprocessing settings used during model development.
 }
 \details{
 This function is designed to work with the output of
-\code{CreateNormativeTScores()}. It uses the saved model and preprocessing
+\code{CreateNormativeTScoreModel()}. It uses the saved model and preprocessing
 settings to score new observations consistently.
 }
 \examples{
@@ -54,7 +54,7 @@ df <- tibble::tibble(
   TrailsA = c(35, 38, 40, 43, 36, 39, 41, 44, 47, 49) * 1000
 )
 
-norm_obj <- CreateNormativeTScores(
+norm_obj <- CreateNormativeTScoreModel(
   df = df,
   test_var = "TrailsA",
   count_var = "Visit",

@@ -1,14 +1,14 @@
 #' Project PCA scores onto new data
 #'
-#' Use an existing PCA solution (either a PCA object from CreatePCATable or
+#' Use an existing PCA solution (either a PCA object from CreatePCAObject or
 #' a loading table) to compute principal component scores on a new dataset.
 #'
 #' @param Data Data frame on which to project PCA scores.
 #' @param VarsToReduce Optional character vector of variable names to use.
 #'   If NULL, uses all variables that appear in both Data and the PCA solution.
 #' @param PCAInput Either:
-#'   - the full object returned by CreatePCATable (when InputType = "PCAObj"), or
-#'   - a loading table like CreatePCATable()$LoadingTable (when InputType = "LoadingTable").
+#'   - the full object returned by CreatePCAObject (when InputType = "PCAObj"), or
+#'   - a loading table like CreatePCAObject()$LoadingTable (when InputType = "LoadingTable").
 #' @param InputType One of "PCAObj" or "LoadingTable".
 #' @param center Logical; only used when InputType is "LoadingTable".
 #'   For "PCAObj", the centering choice is taken from PCAInput$ScaleParams$center
@@ -39,7 +39,7 @@ ProjectPCA <- function(Data,
   if (InputType == "PCAObj") {
 
     if (!is.list(PCAInput) || is.null(PCAInput$pcaresults)) {
-      stop("For InputType = 'PCAObj', PCAInput must be the output of CreatePCATable().")
+      stop("For InputType = 'PCAObj', PCAInput must be the output of CreatePCAObject().")
     }
 
     fit <- PCAInput$pcaresults
@@ -58,7 +58,7 @@ ProjectPCA <- function(Data,
     weight_mat <- as.matrix(fit$weights)
 
     if (is.null(PCAInput$ScaleParams)) {
-      stop("PCAInput is missing ScaleParams. Re run CreatePCATable with the updated version.")
+      stop("PCAInput is missing ScaleParams. Re run CreatePCAObject with the updated version.")
     }
 
     scale_means   <- PCAInput$ScaleParams$means

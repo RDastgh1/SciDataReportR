@@ -9,8 +9,8 @@ plotPCA(PCAObj, Var = NULL, t = "NULL", HoverVar = NULL)
 \arguments{
 \item{PCAObj}{A list containing:
 \itemize{
-\item \code{Scores} – a matrix/data-frame with the PCA scores.
-\item \code{CombinedData} – the original data used to calculate the PCA.
+\item \code{Scores} - a matrix/data-frame with the PCA scores.
+\item \code{CombinedData} - the original data used to calculate the PCA.
 }}
 
 \item{Var}{(string) Optional variable in \code{CombinedData} to colour by.

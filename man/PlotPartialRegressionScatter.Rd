@@ -29,7 +29,7 @@ A list containing:
 \item{method}{The correlation method (as provided).}
 \item{Relabel}{Logical; whether relabeling was applied.}
 \item{Covariates}{The vector of covariates.}
-\item{r2}{The R² of the partial regression model.}
+\item{r2}{The R-squared of the partial regression model.}
 \item{p_value}{The p-value for the independent variable coefficient.}
 \item{n}{The sample size (number of complete cases).}
 \item{equation}{The regression equation string.}
@@ -37,6 +37,6 @@ A list containing:
 \description{
 Generate a partial regression plot for a specified independent and dependent variable
 while adjusting for covariates. In addition to the figure, key parameters such as
-the correlation method, whether relabeling was used, the covariates, R², p-value, and sample size
+the correlation method, whether relabeling was used, the covariates, R-squared, p-value, and sample size
 are returned.
 }

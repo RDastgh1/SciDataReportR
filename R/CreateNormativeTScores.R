@@ -73,7 +73,7 @@
 #'   TrailsA = c(35, 38, 40, 43, 36, 39, 41, 44, 47, 49) * 1000
 #' )
 #'
-#' out <- CreateNormativeTScores(
+#' out <- CreateNormativeTScoreModel(
 #'   df = df,
 #'   test_var = "TrailsA",
 #'   count_var = "Visit",
@@ -90,7 +90,7 @@
 #' out$data
 #' out$model
 #' @export
-CreateNormativeTScores <- function(df,
+CreateNormativeTScoreModel <- function(df,
                                    test_var,
                                    count_var,
                                    covariates,
@@ -481,4 +481,18 @@ CreateNormativeTScores <- function(df,
       model_formula = model_formula
     )
   )
+}
+
+#' Create normative T-scores from a regression model
+#'
+#' Compatibility alias for [CreateNormativeTScoreModel()]. Prefer
+#' `CreateNormativeTScoreModel()` in new code because this function fits a
+#' reusable normative T-score model.
+#'
+#' @param ... Arguments passed to [CreateNormativeTScoreModel()].
+#' @return The same normative model object returned by
+#'   [CreateNormativeTScoreModel()].
+#' @export
+CreateNormativeTScores <- function(...) {
+  CreateNormativeTScoreModel(...)
 }

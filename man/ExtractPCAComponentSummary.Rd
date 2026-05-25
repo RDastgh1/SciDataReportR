@@ -13,7 +13,7 @@ ExtractPCAComponentSummary(
 )
 }
 \arguments{
-\item{PCAObject}{Output object from CreatePCATable().}
+\item{PCAObject}{Output object from CreatePCAObject().}
 
 \item{loading_threshold}{Minimum absolute loading required for inclusion.
 Default is 0.4.}
@@ -58,7 +58,7 @@ for improved readability in HTML tables.
 }
 \examples{
 \dontrun{
-pca_obj <- CreatePCATable(
+pca_obj <- CreatePCAObject(
   Data = mtcars,
   VarsToReduce = colnames(mtcars)
 )

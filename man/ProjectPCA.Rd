@@ -21,8 +21,8 @@ If NULL, uses all variables that appear in both Data and the PCA solution.}
 
 \item{PCAInput}{Either:
 \itemize{
-\item the full object returned by CreatePCATable (when InputType = "PCAObj"), or
-\item a loading table like CreatePCATable()$LoadingTable (when InputType = "LoadingTable").
+\item the full object returned by CreatePCAObject (when InputType = "PCAObj"), or
+\item a loading table like CreatePCAObject()$LoadingTable (when InputType = "LoadingTable").
 }}
 
 \item{InputType}{One of "PCAObj" or "LoadingTable".}
@@ -46,6 +46,6 @@ A list with:
 \item{Scale}{Logical flag indicating whether scaling was applied for projection.}
 }
 \description{
-Use an existing PCA solution (either a PCA object from CreatePCATable or
+Use an existing PCA solution (either a PCA object from CreatePCAObject or
 a loading table) to compute principal component scores on a new dataset.
 }

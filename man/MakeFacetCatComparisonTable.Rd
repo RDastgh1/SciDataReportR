@@ -70,7 +70,7 @@ The function automatically selects those that are categorical (\code{factor} or 
 \item{...}{Additional arguments passed to the comparison function.}
 }
 \value{
-A \code{gtsummary} table created by merging each facet’s \code{MakeComparisonTable()} output
+A \code{gtsummary} table created by merging each facet's \code{MakeComparisonTable()} output
 side-by-side using \code{gtsummary::tbl_merge()}. Each facet variable is labeled with its own
 tab spanner header for clarity.
 }

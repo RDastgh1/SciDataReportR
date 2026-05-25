@@ -92,7 +92,7 @@ CodebookMergeApp <- function(
   ) %>%
 
     dplyr::mutate(
-      Present = "✓"
+      Present = "yes"
     ) %>%
 
     tidyr::pivot_wider(
@@ -209,7 +209,7 @@ CodebookMergeApp <- function(
     ) %>%
 
     dplyr::mutate(
-      Present = "✓"
+      Present = "yes"
     ) %>%
 
     tidyr::pivot_wider(

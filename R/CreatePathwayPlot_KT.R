@@ -1,7 +1,10 @@
-#' Create Kynurenine-Tryptophan Pathway Plot
+#' Plot the kynurenine-tryptophan pathway
 #'
 #' Creates a pathway diagram for the kynurenine-tryptophan metabolic pathway with
 #' color-coded fold changes or correlations and significance indicators.
+#'
+#' This KT pathway visualization remains available in SciDataReportR for now,
+#' but is expected to move to a future metabolomics-focused package.
 #'
 #' @param results_table Data frame with columns: Metabolite, p_value, p_adj, and either "% Change" or "correlation"
 #' @param title Character string for plot title
@@ -11,15 +14,17 @@
 #' @param use_fdr Logical: if TRUE uses FDR-adjusted p-values (p_adj) for significance, if FALSE uses raw p-values. Default is FALSE.
 #'
 #' @return A ggplot2 object
+#' @importFrom ggplot2 ggplot aes annotate arrow geom_tile geom_text scale_fill_gradient2 labs theme_void theme element_text element_rect margin xlim ylim coord_fixed
+#' @importFrom grid unit
 #' @export
 #'
 #' @examples
 #' \dontrun{
 #' # Basic usage with raw p-values
-#' plot <- CreatePathwayPlot_KT(results, "My Pathway")
+#' plot <- PlotPathway_KT(results, "My Pathway")
 #'
 #' # Use FDR-adjusted p-values for significance
-#' plot <- CreatePathwayPlot_KT(results, "My Pathway", use_fdr = TRUE)
+#' plot <- PlotPathway_KT(results, "My Pathway", use_fdr = TRUE)
 #'
 #' # With custom metabolite name mapping
 #' name_map <- c(
@@ -27,19 +32,13 @@
 #'   "Quinolinic Acid(log10)" = "Quinolinic Acid",
 #'   "3-OH-kynurenine" = "3-Hydroxykynurenine"
 #' )
-#' plot <- CreatePathwayPlot_KT(results, "My Pathway", metabolite_mapping = name_map)
+#' plot <- PlotPathway_KT(results, "My Pathway", metabolite_mapping = name_map)
 #' }
-CreatePathwayPlot_KT <- function(results_table,
+PlotPathway_KT <- function(results_table,
                                  title = "",
                                  value_type = "auto",
                                  metabolite_mapping = NULL,
                                  use_fdr = FALSE) {
-
-  # Load required libraries
-  library(ggplot2)
-  library(dplyr)
-  library(tidyr)
-  library(grid)
 
   # Auto-detect value type
   if (value_type == "auto") {
@@ -215,4 +214,18 @@ CreatePathwayPlot_KT <- function(results_table,
     coord_fixed(ratio = 1.2)
 
   return(p)
+}
+
+#' Create Kynurenine-Tryptophan Pathway Plot
+#'
+#' Compatibility alias for [PlotPathway_KT()]. Prefer `PlotPathway_KT()` in new
+#' code. This KT pathway visualization is expected to move to a future
+#' metabolomics-focused package; this compatibility alias will remain during the
+#' transition.
+#'
+#' @param ... Arguments passed to [PlotPathway_KT()].
+#' @return A ggplot2 object returned by [PlotPathway_KT()].
+#' @export
+CreatePathwayPlot_KT <- function(...) {
+  PlotPathway_KT(...)
 }

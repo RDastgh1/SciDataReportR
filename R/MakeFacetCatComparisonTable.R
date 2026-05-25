@@ -32,7 +32,7 @@
 #' @param CompFun Comparison function to apply; defaults to `MakeComparisonTable`.
 #' @param ... Additional arguments passed to the comparison function.
 #'
-#' @return A `gtsummary` table created by merging each facet’s `MakeComparisonTable()` output
+#' @return A `gtsummary` table created by merging each facet's `MakeComparisonTable()` output
 #'   side-by-side using `gtsummary::tbl_merge()`. Each facet variable is labeled with its own
 #'   tab spanner header for clarity.
 #' @importFrom gtsummary tbl_merge

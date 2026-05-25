@@ -38,7 +38,7 @@ Plot2GroupStats <- function(
   safe_num <- function(x) { if (is.character(x)) suppressWarnings(as.numeric(x)) else x }
   parse_pvals <- function(x) {
     if (is.numeric(x)) return(x)
-    y <- gsub(",", "", x); y <- gsub("^\\s*[<≤]\\s*", "", y)
+    y <- gsub(",", "", x); y <- gsub("^\\s*(<|<=)\\s*", "", y)
     suppressWarnings(as.numeric(y))
   }
   # Return a named character vector Category[variable]
@@ -214,8 +214,8 @@ Plot2GroupStats <- function(
 
   x_map <- switch(
     x_axis,
-    signed_logp   = list(var = "signed_logp",  lab = paste0("signed -log10(p)  (→ higher in ", impClust, ")"), signed = TRUE),
-    signed_effect = list(var = "signed_es",    lab = paste0("signed effect size  (→ higher in ", impClust, ")"), signed = TRUE),
+    signed_logp   = list(var = "signed_logp",  lab = paste0("signed -log10(p)  (higher in ", impClust, ")"), signed = TRUE),
+    signed_effect = list(var = "signed_es",    lab = paste0("signed effect size  (higher in ", impClust, ")"), signed = TRUE),
     effect        = list(var = "effect_abs",   lab = "absolute effect size",                                      signed = FALSE),
     logp          = list(var = "logp",         lab = "-log10(p)",                                                 signed = FALSE)
   )

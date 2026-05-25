@@ -16,7 +16,7 @@
 #'
 #' @details
 #' For categorical moderators, separate regression lines are plotted for each category.
-#' For continuous moderators, regression lines are plotted at the mean and ± 1 SD.
+#' For continuous moderators, regression lines are plotted at the mean and +/- 1 SD.
 #'
 #' The subtitle shows the p-value for the interaction term.
 #' The caption lists any covariates included in the model.
@@ -24,8 +24,8 @@
 #' Variable labels are used if available in the data frame.
 #'
 #' @export
-#' @importFrom ggplot2 ggplot aes geom_point geom_smooth scale_color_manual scale_fill_manual
-#' @importFrom ggplot2 labs theme_minimal theme element_text
+#' @importFrom ggplot2 ggplot aes geom_point geom_smooth scale_color_manual scale_fill_manual scale_color_brewer scale_fill_brewer
+#' @importFrom ggplot2 labs theme_minimal theme element_text element_blank
 #' @importFrom dplyr mutate case_when
 #' @importFrom stats lm coef sd quantile
 #' @importFrom paletteer paletteer_d paletteer_c
@@ -55,10 +55,6 @@ PlotInteractionEffectsContinuous <- function(Data,
   if (!is.null(covars) && !all(covars %in% names(Data))) {
     stop("All covariates must exist in the data frame")
   }
-
-  # Load required packages
-  library(ggplot2)
-  library(dplyr)
 
   # Check if paletteer is available
   use_paletteer <- requireNamespace("paletteer", quietly = TRUE)

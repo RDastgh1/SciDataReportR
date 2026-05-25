@@ -27,13 +27,9 @@ calculate_pathway_results <- function(df,
                                       comparison_type = "auto",
                                       use_point_correlation = FALSE) {
 
-  # Ensure we're using dplyr functions
-  library(dplyr)
-  library(tidyr)
-
   # Auto-detect comparison type if needed
   if (comparison_type == "auto") {
-    unique_vals <- df[[comparison_var]] %>% na.omit() %>% unique()
+    unique_vals <- df[[comparison_var]] %>% stats::na.omit() %>% unique()
     if (length(unique_vals) == 2) {
       comparison_type <- "binary"
     } else {
@@ -43,7 +39,7 @@ calculate_pathway_results <- function(df,
 
   # Filter out rows with NA in comparison variable
   df_filtered <- df %>%
-    dplyr::filter(!is.na(!!sym(comparison_var)))
+    dplyr::filter(!is.na(!!rlang::sym(comparison_var)))
 
   # If covariates provided, remove rows with NA in covariates
   if (!is.null(covariates)) {
@@ -54,10 +50,10 @@ calculate_pathway_results <- function(df,
       stop(paste("Variables not found in dataframe:", paste(missing_vars, collapse = ", ")))
     }
     df_filtered <- df_filtered %>%
-      tidyr::drop_na(all_of(all_vars))
+      tidyr::drop_na(tidyselect::all_of(all_vars))
   } else {
     df_filtered <- df_filtered %>%
-      tidyr::drop_na(all_of(metabolites))
+      tidyr::drop_na(tidyselect::all_of(metabolites))
   }
 
   # Binary comparison with fold change
@@ -71,13 +67,13 @@ calculate_pathway_results <- function(df,
 
     # Calculate group means - using summarize_at for compatibility
     group_means <- df_filtered %>%
-      dplyr::group_by(!!sym(comparison_var)) %>%
-      dplyr::summarize_at(vars(all_of(metabolites)), ~mean(.x, na.rm = TRUE)) %>%
-      tidyr::pivot_longer(-all_of(comparison_var), names_to = "Metabolite", values_to = "Mean")
+      dplyr::group_by(!!rlang::sym(comparison_var)) %>%
+      dplyr::summarize_at(dplyr::vars(tidyselect::all_of(metabolites)), ~mean(.x, na.rm = TRUE)) %>%
+      tidyr::pivot_longer(-tidyselect::all_of(comparison_var), names_to = "Metabolite", values_to = "Mean")
 
     # Reshape for fold change
     mean_wide <- group_means %>%
-      tidyr::pivot_wider(names_from = all_of(comparison_var), values_from = Mean)
+      tidyr::pivot_wider(names_from = tidyselect::all_of(comparison_var), values_from = Mean)
 
     # Get column names dynamically
     col_names <- names(mean_wide)
@@ -107,10 +103,10 @@ calculate_pathway_results <- function(df,
 
       tryCatch({
         formula <- as.formula(formula_str)
-        model <- lm(formula, data = df_filtered)
+        model <- stats::lm(formula, data = df_filtered)
 
         # Get coefficient name
-        coef_names <- names(coef(model))
+        coef_names <- names(stats::coef(model))
         comp_coef <- coef_names[grep(comparison_var, coef_names)][1]
 
         if (!is.na(comp_coef) && comp_coef %in% rownames(summary(model)$coefficients)) {
@@ -140,7 +136,7 @@ calculate_pathway_results <- function(df,
 
     # Convert binary to numeric (0, 1)
     df_filtered <- df_filtered %>%
-      dplyr::mutate(comparison_numeric = as.numeric(factor(!!sym(comparison_var))) - 1)
+      dplyr::mutate(comparison_numeric = as.numeric(factor(!!rlang::sym(comparison_var))) - 1)
 
     results_list <- lapply(metabolites, function(metab) {
 
@@ -150,16 +146,16 @@ calculate_pathway_results <- function(df,
           metab_formula <- as.formula(paste0("`", metab, "` ~", paste(covariates, collapse = " + ")))
           comp_formula <- as.formula(paste("comparison_numeric ~", paste(covariates, collapse = " + ")))
 
-          metab_resid <- residuals(lm(metab_formula, data = df_filtered))
-          comp_resid <- residuals(lm(comp_formula, data = df_filtered))
+          metab_resid <- stats::residuals(stats::lm(metab_formula, data = df_filtered))
+          comp_resid <- stats::residuals(stats::lm(comp_formula, data = df_filtered))
 
-          cor_result <- cor.test(metab_resid, comp_resid, method = "pearson")
+          cor_result <- stats::cor.test(metab_resid, comp_resid, method = "pearson")
           correlation <- cor_result$estimate
           p_value <- cor_result$p.value
 
         } else {
           # Simple point-biserial correlation
-          cor_result <- cor.test(df_filtered[[metab]], df_filtered$comparison_numeric, method = "pearson")
+          cor_result <- stats::cor.test(df_filtered[[metab]], df_filtered$comparison_numeric, method = "pearson")
           correlation <- cor_result$estimate
           p_value <- cor_result$p.value
         }
@@ -197,16 +193,16 @@ calculate_pathway_results <- function(df,
           metab_formula <- as.formula(paste0("`", metab, "` ~", paste(covariates, collapse = " + ")))
           comp_formula <- as.formula(paste0("`", comparison_var, "` ~", paste(covariates, collapse = " + ")))
 
-          metab_resid <- residuals(lm(metab_formula, data = df_filtered))
-          comp_resid <- residuals(lm(comp_formula, data = df_filtered))
+          metab_resid <- stats::residuals(stats::lm(metab_formula, data = df_filtered))
+          comp_resid <- stats::residuals(stats::lm(comp_formula, data = df_filtered))
 
-          cor_result <- cor.test(metab_resid, comp_resid, method = "pearson")
+          cor_result <- stats::cor.test(metab_resid, comp_resid, method = "pearson")
           correlation <- cor_result$estimate
           p_value <- cor_result$p.value
 
         } else {
           # Simple correlation
-          cor_result <- cor.test(df_filtered[[metab]], df_filtered[[comparison_var]], method = "pearson")
+          cor_result <- stats::cor.test(df_filtered[[metab]], df_filtered[[comparison_var]], method = "pearson")
           correlation <- cor_result$estimate
           p_value <- cor_result$p.value
         }

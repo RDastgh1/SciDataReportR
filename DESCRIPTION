@@ -1,10 +1,10 @@
 Package: SciDataReportR
-Title: Package for Generating Scientific Data Reports
+Title: Workflow Infrastructure for Reproducible Scientific Data Reporting
 Version: 16.25.0
 Authors@R: 
     person("Raha", "Dastgheyb", , "raha@jhmi.edu", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0002-4992-711X"))
-Description: SciDataReportR is a package designed to facilitate the generation of scientific data reports. It provides functions for creating descriptive summary tables, formatting data for analysis, and enhancing data visualization.
+Description: Workflow infrastructure for turning labelled, researcher-native life science data frames into reproducible exploratory analyses, metadata-aware reports, statistical comparisons, dimensionality reduction workflows, clustering/projection pipelines, scientific visualizations, and report-ready outputs.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
@@ -28,30 +28,64 @@ Imports:
     gtsummary,
     paletteer,
     purrr,
-    lubridate
-Suggests:
-    BlandAltmanLeh,
-    ggrepel,
-    gtools,
-    missRanger,
-    ggrain,
-    gtsummary,
-    xtable,
-    codebook,
-    psych,
-    VIM,
-    fastDummies,
-    stringr,
-    naniar,
-    plotrix,
-    ggdist,
     lubridate,
     rlang,
+    scales,
+    stringr,
+    tidyselect
+Suggests:
+    aweSOM,
+    BlandAltmanLeh,
+    broom,
+    bslib,
+    car,
+    cowplot,
+    DescTools,
+    DT,
+    effectsize,
+    emmeans,
     FactoMineR,
+    gghalves,
+    ggnewscale,
+    ggdist,
+    ggrepel,
+    gtools,
+    ggrain,
+    haven,
+    Hmisc,
+    irlba,
+    kohonen,
+    mclust,
+    missRanger,
+    nnet,
+    pals,
+    plyr,
+    plotrix,
+    codebook,
+    psych,
+    quarto,
+    R.utils,
     RColorBrewer,
+    readr,
+    rstudioapi,
+    sandwich,
+    shiny,
+    shinyjs,
+    shinyWidgets,
+    testthat (>= 3.0.0),
+    tidyLPA,
+    naniar,
+    VIM,
+    viridis,
+    xtable,
     arsenal,
-    data.table
+    data.table,
+    fastDummies,
+    knitr,
+    rmarkdown
 Depends: 
     R (>= 2.10)
 LazyData: true
+VignetteBuilder: quarto
 Config/roxygen2/version: 8.0.0
+Config/testthat/edition: 3

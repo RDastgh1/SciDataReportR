@@ -5,9 +5,9 @@
 #'   for which parameters exist and that are present in df.
 #' @param parameters Source of parameters, interpreted by ParameterInputType:
 #'   - "df_parameter": a data frame with cols Variable, N, Mean, SD
-#'   - "ZScoreObj": output object from CalcZScore()
+#'   - "ZScoreObj": output object from CreateZScoreObject()
 #'   - "ExternalDataframe": a raw reference data frame; parameters are
-#'       estimated via CalcZScore() on that frame.
+#'       estimated via CreateZScoreObject() on that frame.
 #' @param ParameterInputType One of "df_parameter", "ZScoreObj",
 #'   "ExternalDataframe".
 #' @param names_prefix Prefix for projected variable names.
@@ -18,13 +18,13 @@
 #'   or "ExternalDataframe". Ignored for "ZScoreObj" (it uses stored flags).
 #' @param scale Logical; same logic as `center`.
 #'
-#' @return List with same structure as CalcZScore():
+#' @return List with same structure as CreateZScoreObject():
 #'   - ZScores: projected standardized variables only
 #'   - DataWithZ: df with projected scores appended
 #'   - Parameters: parameter data frame actually used for projection
 #'   - Center, Scale: flags used
 #' @export
-Project_ZScore <- function(df,
+ProjectZScore <- function(df,
                           variables = NULL,
                           parameters,
                           ParameterInputType = c("df_parameter",
@@ -52,7 +52,7 @@ Project_ZScore <- function(df,
   } else if (ParameterInputType == "ZScoreObj") {
 
     if (!is.list(parameters) || is.null(parameters$Parameters)) {
-      stop("For ParameterInputType = 'ZScoreObj', `parameters` must be a CalcZScore() output.")
+      stop("For ParameterInputType = 'ZScoreObj', `parameters` must be a CreateZScoreObject() output.")
     }
     param_df <- parameters$Parameters
     param_center <- isTRUE(parameters$Center)
@@ -68,7 +68,7 @@ Project_ZScore <- function(df,
   } else if (ParameterInputType == "ExternalDataframe") {
 
     ref_df <- parameters
-    cs <- CalcZScore(
+    cs <- CreateZScoreObject(
       df            = ref_df,
       variables     = variables,
       names_prefix  = names_prefix,
@@ -185,4 +185,16 @@ Project_ZScore <- function(df,
   )
   class(out) <- c("ZScoreObj", class(out))
   out
+}
+
+#' Project standardized scores onto new data using external parameters
+#'
+#' Compatibility alias for [ProjectZScore()]. Prefer `ProjectZScore()` in new
+#' code.
+#'
+#' @param ... Arguments passed to [ProjectZScore()].
+#' @return The same projected `ZScoreObj` returned by [ProjectZScore()].
+#' @export
+Project_ZScore <- function(...) {
+  ProjectZScore(...)
 }

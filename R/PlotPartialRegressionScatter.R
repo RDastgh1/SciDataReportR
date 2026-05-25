@@ -2,7 +2,7 @@
 #'
 #' Generate a partial regression plot for a specified independent and dependent variable
 #' while adjusting for covariates. In addition to the figure, key parameters such as
-#' the correlation method, whether relabeling was used, the covariates, R², p-value, and sample size
+#' the correlation method, whether relabeling was used, the covariates, R-squared, p-value, and sample size
 #' are returned.
 #'
 #' @param DataFrame The dataset to use.
@@ -16,7 +16,7 @@
 #' \item{method}{The correlation method (as provided).}
 #' \item{Relabel}{Logical; whether relabeling was applied.}
 #' \item{Covariates}{The vector of covariates.}
-#' \item{r2}{The R² of the partial regression model.}
+#' \item{r2}{The R-squared of the partial regression model.}
 #' \item{p_value}{The p-value for the independent variable coefficient.}
 #' \item{n}{The sample size (number of complete cases).}
 #' \item{equation}{The regression equation string.}
@@ -60,7 +60,7 @@ PlotPartialRegressionScatter <- function(DataFrame, IndepVar, DepVar, Covariates
   # Build the regression equation string for the subtitle.
   eqString <- paste0("Residual ", DepVar, " = ", round(coef_model[1], 2),
                      " + ", round(coef_model[2], 2), " * ", tolower(paste0(IndepVar, "_resid")),
-                     " | R² = ", round(r2, 2),
+                     " | R-squared = ", round(r2, 2),
                      ", n = ", n,
                      ", p = ", formatC(p_val, format = "f", digits = 3))
 

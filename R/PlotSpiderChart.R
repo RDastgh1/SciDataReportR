@@ -2,7 +2,7 @@
 #'
 #' This function summarizes a set of variables and displays them on a spider
 #' chart. Continuous variables are plotted as mean z-scores by default using
-#' `CalcZScore()`, while binary variables are plotted as percentages. It can
+#' `CreateZScoreObject()`, while binary variables are plotted as percentages. It can
 #' overlay groups on one spider chart or facet by group, optionally fill the
 #' polygons, relabel spokes using variable labels, wrap long labels, reorder
 #' variables to visually emphasize between-group differences, and optionally
@@ -316,7 +316,7 @@ PlotSpiderChart <- function(Data,
 
   if (length(ContinuousVars) > 0 && ContinuousScaling == "zscore") {
     ZResult <- tryCatch(
-      CalcZScore(
+      CreateZScoreObject(
         df = PlotData,
         variables = ContinuousVars,
         names_prefix = "Z_",
@@ -330,8 +330,8 @@ PlotSpiderChart <- function(Data,
 
     if (is.null(ZResult)) {
       stop(
-        "CalcZScore() call failed inside PlotSpiderChart(). ",
-        "Please check the current CalcZScore() argument names in SciDataReportR."
+        "CreateZScoreObject() call failed inside PlotSpiderChart(). ",
+        "Please check the current CreateZScoreObject() argument names in SciDataReportR."
       )
     }
 
@@ -345,12 +345,12 @@ PlotSpiderChart <- function(Data,
       PlotData <- ZResult$Data
     } else {
       stop(
-        "CalcZScore() returned an object format that PlotSpiderChart() does not recognize."
+        "CreateZScoreObject() returned an object format that PlotSpiderChart() does not recognize."
       )
     }
 
     # Reminder for future package work:
-    # CalcZScore() currently uses mean centering and SD scaling.
+    # CreateZScoreObject() currently uses mean centering and SD scaling.
     # If you later add robust scaling there, update this function so the
     # 'median' option can optionally use median centering and robust scaling.
   }

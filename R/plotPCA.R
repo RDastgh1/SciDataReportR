@@ -4,8 +4,8 @@
 #' You can colour points by a variable **and** customise the hover label.
 #'
 #' @param PCAObj A list containing:
-#'   * `Scores` – a matrix/data-frame with the PCA scores.
-#'   * `CombinedData` – the original data used to calculate the PCA.
+#'   * `Scores` - a matrix/data-frame with the PCA scores.
+#'   * `CombinedData` - the original data used to calculate the PCA.
 #' @param Var   (string) Optional variable in `CombinedData` to colour by.
 #'              *Default:* `NULL` (no colouring).
 #' @param t     (string)  If colouring, set to `"Factor"` for categorical;
@@ -19,7 +19,7 @@
 #'
 plotPCA <- function(PCAObj, Var = NULL, t = "NULL", HoverVar = NULL) {
 
-  ## ── 1. Build the hover text ────────────────────────────────────────────────
+  ## 1. Build the hover text
   hover_text <- if (is.null(HoverVar)) {
     # default: row numbers
     paste0("Row: ", seq_len(nrow(PCAObj$CombinedData)))
@@ -28,7 +28,7 @@ plotPCA <- function(PCAObj, Var = NULL, t = "NULL", HoverVar = NULL) {
     paste0(HoverVar, ": ", PCAObj$CombinedData[[HoverVar]])
   }
 
-  ## ── 2. Helper to create the plotly object ─────────────────────────────────
+  ## 2. Helper to create the plotly object
   make_plot <- function(colour_vec = NULL, colour_title = NULL) {
     plotly::plot_ly(
       x    = PCAObj$Scores[, 1],
@@ -53,7 +53,7 @@ plotPCA <- function(PCAObj, Var = NULL, t = "NULL", HoverVar = NULL) {
       )
   }
 
-  ## ── 3. Decide colouring logic & build plot ────────────────────────────────
+  ## 3. Decide colouring logic and build plot
   if (is.null(Var)) {
     p <- make_plot()
   } else if (t == "Factor") {

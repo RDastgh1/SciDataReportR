@@ -2,51 +2,17 @@
 % Please edit documentation in R/CreateZScorePlot.R
 \name{CreateZScorePlot}
 \alias{CreateZScorePlot}
-\title{Create a Z-Score Plot with Statistical Significance}
+\title{Create a Z-score plot with statistical significance}
 \usage{
-CreateZScorePlot(
-  Data,
-  TargetVar,
-  Variables,
-  VariableCategories = NULL,
-  Relabel = TRUE,
-  sort = TRUE,
-  RemoveXAxisLabels = TRUE,
-  Ordinal = TRUE,
-  Parametric = TRUE,
-  SigP_YCoord = 1.5,
-  SigFDR_YCoord = 1.6
-)
+CreateZScorePlot(...)
 }
 \arguments{
-\item{Data}{A dataframe containing the data to be analyzed.}
-
-\item{TargetVar}{A string specifying the column name of the grouping variable.}
-
-\item{Variables}{A vector of strings specifying the column names of the variables to be analyzed.}
-
-\item{VariableCategories}{An optional vector categorizing the variables.}
-
-\item{Relabel}{Logical; if TRUE, variables will be relabeled using their labels from the dataframe.}
-
-\item{sort}{Logical; if TRUE, variables will be sorted by category and p-value.}
-
-\item{RemoveXAxisLabels}{Logical; if TRUE, X-axis labels will be removed.}
-
-\item{Ordinal}{Logical; if TRUE, ordinal variables will be converted to numeric.}
-
-\item{Parametric}{Logical; if TRUE, parametric tests (t-test/ANOVA) will be used; otherwise, non-parametric tests (Wilcoxon/Kruskal-Wallis) will be used.}
-
-\item{SigP_YCoord}{Numeric; the y-coordinate for marking significant p-values.}
-
-\item{SigFDR_YCoord}{Numeric; the y-coordinate for marking significant FDR-adjusted p-values.}
+\item{...}{Arguments passed to \code{\link[=PlotZScore]{PlotZScore()}}.}
 }
 \value{
-A ggplot object representing the Z-score plot.
+A ggplot object returned by \code{\link[=PlotZScore]{PlotZScore()}}.
 }
 \description{
-This function generates a Z-score plot to compare multiple variables across
-different groups. It offers options for parametric or non-parametric tests,
-ordinal variable conversion, and custom labeling. Significant p-values and
-FDR-adjusted p-values are highlighted on the plot.
+Compatibility alias for \code{\link[=PlotZScore]{PlotZScore()}}. Prefer \code{PlotZScore()} in new code
+because this function creates a scientific visualization.
 }

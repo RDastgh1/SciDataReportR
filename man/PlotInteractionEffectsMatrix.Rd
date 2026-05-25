@@ -75,9 +75,9 @@ Color coding:
 
 Darker colors indicate higher significance:
 \itemize{
-\item ***: p ≤ 0.001 (darkest)
-\item **: p ≤ 0.01 (medium)
-\item *: p ≤ 0.05 (light)
+\item ***: p <= 0.001 (darkest)
+\item **: p <= 0.01 (medium)
+\item *: p <= 0.05 (light)
 }
 }
 \examples{

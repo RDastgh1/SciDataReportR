@@ -4,7 +4,14 @@
 \alias{CreateSummaryTable}
 \title{Create Summary Table}
 \usage{
-CreateSummaryTable(data, Ordinal = FALSE, ScrollBoxHeight = 400)
+CreateSummaryTable(
+  Data,
+  Variables = NULL,
+  numdecimals = 2,
+  Relabel = TRUE,
+  Ordinal = FALSE,
+  ScrollBoxHeight = "700px"
+)
 }
 \arguments{
 \item{Data}{The dataset containing the variables of interest.}

@@ -12,10 +12,7 @@
 #' @param covars Optional character vector of covariate variables used for stratification (not adjustment).
 #' @param Relabel Logical; whether to use variable labels (sjlabelled) in the plot.
 #' @param Ordinal Logical; included for backward compatibility (currently unused here).
-#' @param Stratify Logical; if TRUE and covars provided, run chi-square within covariate strata and
-#'   combine p-values with Fisher's method. If FALSE, covars are ignored.
-#' @param MinExpected Minimum expected cell count threshold for chi-square validity warning.
-#'   (used to annotate; test still runs).
+#' @param min_n Minimum number of complete observations required for a tested association.
 #'
 #' @return A list with:
 #' \item{p}{ggplot for unadjusted p-values}

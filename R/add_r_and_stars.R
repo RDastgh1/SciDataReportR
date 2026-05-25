@@ -1,7 +1,13 @@
-#' Add r-values and significance stars to a correlations heatmap (pass `res`)
-#' Works with the list returned by PlotCorrelationsHeatmap().
+#' Add r-values and significance stars to a correlations heatmap
 #'
-#' @param res The list returned by PlotCorrelationsHeatmap()
+#' Adds correlation coefficients and significance stars to a heatmap object
+#' returned by [PlotCorrelationsHeatmap()]. This is a downstream annotation
+#' helper for SciDataReportR correlation workflows, not a general-purpose
+#' plotting function.
+#'
+#' @param res The list returned by [PlotCorrelationsHeatmap()]. The object
+#'   should contain `Unadjusted$plot` and/or `FDRCorrected$plot` ggplot objects
+#'   with plot data columns such as `R`, `P`, `P_adj`, `stars`, or `stars_FDR`.
 #' @param star_from One of:
 #'   "existing" (use whatever the chosen plot already mapped as stars),
 #'   "raw" (use `stars` or compute from `P`),
@@ -16,7 +22,17 @@
 #' @param r_nudge_y,star_nudge_y Vertical nudges (r down, stars up)
 #' @param remove_existing_stars If TRUE, remove any pre-existing star text layers
 #' @param p_breaks,p_labels Cutpoints/labels for computing stars from p
-#' @return A ggplot with r-values and stars added
+#' @return A ggplot with r-values and stars added.
+#'
+#' @section Input requirements:
+#' `res` is expected to be the output of [PlotCorrelationsHeatmap()]. Use
+#' `star_from = "raw"` for unadjusted p-value stars, `star_from = "fdr"` for
+#' FDR-adjusted stars, or `star_from = "existing"` to use the star mapping
+#' already present in the selected heatmap.
+#'
+#' @section Common downstream use:
+#' Add [geom_starcaption()] to the returned plot to explain the star annotation
+#' thresholds in report-ready figures.
 #' @export
 add_r_and_stars <- function(res,
                             star_from = c("existing","raw","fdr","P","P_adj","column"),

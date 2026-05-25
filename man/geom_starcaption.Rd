@@ -7,8 +7,19 @@
 geom_starcaption()
 }
 \value{
-A \code{labs()} object that can be added to a ggplot, specifically designed for the SciDataReportR heatmaps
+A \code{labs()} object that can be added to a ggplot, especially
+SciDataReportR heatmaps that use star annotations.
 }
 \description{
-This function adds a caption to a ggplot explaining the meaning of star annotations (*, **, ***).
+This function adds a caption to a ggplot explaining the meaning of star
+annotations (*, **, ***). It is most commonly added to correlation heatmaps
+produced by \code{\link[=PlotCorrelationsHeatmap]{PlotCorrelationsHeatmap()}} or to downstream plots derived from
+that function with \code{\link[=add_r_and_stars]{add_r_and_stars()}}.
 }
+\section{Input requirements}{
+
+\code{geom_starcaption()} does not take an input object directly. Add it to a
+ggplot with \code{+}, typically a plot returned inside the list created by
+\code{\link[=PlotCorrelationsHeatmap]{PlotCorrelationsHeatmap()}} or a plot returned by \code{\link[=add_r_and_stars]{add_r_and_stars()}}.
+}
+

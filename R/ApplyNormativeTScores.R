@@ -5,12 +5,12 @@
 #' preprocessing settings used during model development.
 #'
 #' This function is designed to work with the output of
-#' `CreateNormativeTScores()`. It uses the saved model and preprocessing
+#' `CreateNormativeTScoreModel()`. It uses the saved model and preprocessing
 #' settings to score new observations consistently.
 #'
 #' @param df A data frame containing the test variable, count variable, and
 #'   all predictors required by the normative model.
-#' @param normative_obj A list returned by `CreateNormativeTScores()`.
+#' @param normative_obj A list returned by `CreateNormativeTScoreModel()`.
 #' @param score_prefix A character string prefix used when naming output
 #'   columns. Defaults to `"Norm"`.
 #'
@@ -42,7 +42,7 @@
 #'   TrailsA = c(35, 38, 40, 43, 36, 39, 41, 44, 47, 49) * 1000
 #' )
 #'
-#' norm_obj <- CreateNormativeTScores(
+#' norm_obj <- CreateNormativeTScoreModel(
 #'   df = df,
 #'   test_var = "TrailsA",
 #'   count_var = "Visit",
@@ -73,7 +73,7 @@ ApplyNormativeTScores <- function(df,
   }
 
   if (!is.list(normative_obj)) {
-    stop("`normative_obj` must be a list returned by `CreateNormativeTScores()`.")
+    stop("`normative_obj` must be a list returned by `CreateNormativeTScoreModel()`.")
   }
 
   if (is.null(normative_obj$model) || !inherits(normative_obj$model, "lm")) {

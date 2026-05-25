@@ -1,5 +1,31 @@
 # SciDataReportR 16.25.0
 
+## Documentation and infrastructure positioning
+
+- Repositioned the package as scientific workflow infrastructure for
+  reproducible life science data reporting.
+- Expanded the README with workflow families, a visualization gallery,
+  implemented methods, function dependency chains, and future heatmap/volcano
+  plot roadmap items.
+- Reorganized pkgdown navigation and reference topics around workflows,
+  visualization functions, projection chains, and reusable infrastructure.
+- Clarified the downstream relationship between `PlotCorrelationsHeatmap()`,
+  `add_r_and_stars()`, and `geom_starcaption()`.
+- Added a Quarto getting-started article based on the R/Medicine workflow narrative.
+
+## Workflow-oriented public names
+
+- Added canonical workflow-oriented names for reusable objects, models,
+  projections, plots, and metadata workflows.
+- Added `CreatePCAObject()`, `CreateMCAObject()`, `PlotZScore()`,
+  `PlotPathway_KT()`, `MakeDataDictionary()`, `ProjectZScore()`,
+  `ProjectSOMCluster()`, `CreateZScoreObject()`, `CreateMScoreObject()`,
+  `CreateNormativeTScoreModel()`, and `CreateSOMClusterModel()`.
+- Preserved backward compatibility: the older public names remain exported as
+  wrappers and do not emit lifecycle warnings.
+- Documented `PlotPathway_KT()` as a SciDataReportR visualization that is
+  expected to move to a future metabolomics-focused package.
+
 # SciDataReportR 16.24.0
 
 # SciDataReportR 16.23.0

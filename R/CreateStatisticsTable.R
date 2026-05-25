@@ -8,7 +8,6 @@
 #' @return A formatted HTML table displaying statistics.
 #' @importFrom dplyr mutate rename
 #' @importFrom kableExtra cell_spec kable kable_styling scroll_box
-#' @suggests kableExtra, arsenal, data.table
 #' @export
 
 CreateStatisticsTable <- function(Data,  TargetVar){

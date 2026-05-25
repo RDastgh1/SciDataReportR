@@ -4,42 +4,16 @@
 \alias{CalcZScore}
 \title{Calculate Z-scores (or standardized scores) and return data + parameters}
 \usage{
-CalcZScore(
-  df,
-  variables = NULL,
-  names_prefix = "Z_",
-  RetainLabels = TRUE,
-  RenameLabels = TRUE,
-  center = TRUE,
-  scale = TRUE
-)
+CalcZScore(...)
 }
 \arguments{
-\item{df}{Data frame with variables to standardize.}
-
-\item{variables}{Character vector of variable names. If NULL, uses
-SciDataReportR::getNumVars(df).}
-
-\item{names_prefix}{Prefix to prepend to variable names (default "Z_").}
-
-\item{RetainLabels}{Logical; if TRUE and Hmisc is available, copy labels.}
-
-\item{RenameLabels}{Logical; if TRUE, apply the same prefix to labels.}
-
-\item{center}{Logical; if TRUE, subtract the mean.}
-
-\item{scale}{Logical; if TRUE, divide by the SD.}
+\item{...}{Arguments passed to \code{\link[=CreateZScoreObject]{CreateZScoreObject()}}.}
 }
 \value{
-An object of class "ZScoreObj", a list with:
-\itemize{
-\item ZScores: data frame of standardized variables only
-\item DataWithZ: original df + standardized variables
-\item Parameters: data frame with Variable, N, Mean, SD
-\item Center: logical flag used
-\item Scale: logical flag used
-}
+The same \code{ZScoreObj} returned by \code{\link[=CreateZScoreObject]{CreateZScoreObject()}}.
 }
 \description{
-Calculate Z-scores (or standardized scores) and return data + parameters
+Compatibility alias for \code{\link[=CreateZScoreObject]{CreateZScoreObject()}}. Prefer
+\code{CreateZScoreObject()} in new code because this function returns a reusable
+\code{ZScoreObj}.
 }

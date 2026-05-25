@@ -30,6 +30,10 @@ PlotAnovaRelationshipsMatrix(
 \item{Parametric}{Logical indicating whether to use parametric (ANOVA) or non-parametric (Kruskal-Wallis) tests (default is TRUE).}
 
 \item{Ordinal}{Logical, indicating whether ordinal variables should be considered.}
+
+\item{min_n}{Minimum number of complete observations required for a tested relationship.}
+
+\item{eps}{Small positive value used to avoid zero-size plotting artifacts.}
 }
 \value{
 A list containing three ggplot objects: p (scatter plot without multiple comparison correction), p_FDR (scatter plot with FDR correction), and pvaltable (data frame of p-values and significance).

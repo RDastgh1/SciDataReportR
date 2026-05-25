@@ -1,3 +1,19 @@
+#' Calculate robust M-scores for numeric variables
+#'
+#' Calculate median/MAD-based M-scores for selected numeric variables and return
+#' both the transformed data and the parameters needed to review or reuse the
+#' transformation.
+#'
+#' @param df A data frame.
+#' @param variables Character vector of numeric variables to transform. If
+#'   `NULL`, numeric variables are detected with [getNumVars()].
+#' @param names_prefix Prefix for generated M-score columns.
+#' @param RetainLabels Logical; keep variable labels when possible.
+#' @param RenameLabels Logical; rename generated labels when labels are retained.
+#' @param center Logical; subtract the median before scaling.
+#' @param scale Logical; divide by the median absolute deviation.
+#' @param constant Scaling constant passed to [stats::mad()].
+#'
 #' @return An object of class `"MScoreObj"`, a list with:
 #'   - `MScores`: data frame of M-score variables only
 #'   - `DataWithM`: original `df` plus M-score variables
@@ -7,7 +23,7 @@
 #'   - `Constant`: MAD scaling constant used
 #'
 #' @export
-CalcMScore <- function(df,
+CreateMScoreObject <- function(df,
                        variables = NULL,
                        names_prefix = "M_",
                        RetainLabels = TRUE,
@@ -188,4 +204,17 @@ CalcMScore <- function(df,
   class(out) <- c("MScoreObj", class(out))
 
   out
+}
+
+#' Calculate robust M-scores for numeric variables
+#'
+#' Compatibility alias for [CreateMScoreObject()]. Prefer
+#' `CreateMScoreObject()` in new code because this function returns reusable
+#' M-score parameters.
+#'
+#' @param ... Arguments passed to [CreateMScoreObject()].
+#' @return The same `MScoreObj` returned by [CreateMScoreObject()].
+#' @export
+CalcMScore <- function(...) {
+  CreateMScoreObject(...)
 }

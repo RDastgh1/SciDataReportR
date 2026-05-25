@@ -18,7 +18,6 @@
 #'
 #' @importFrom dplyr select summarise_if
 #' @importFrom ggplot2 ggplot geom_point scale_y_discrete xlab
-#' @suggests sjlabelled, arsenal, ggrepel, gtools
 #' @export
 PlotPValueComparisons <- function(Data, GroupVariable, Variables = NULL, VariableCategories = NULL, Relabel = TRUE) {
   # Validate and prepare Variables

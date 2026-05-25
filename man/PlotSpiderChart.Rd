@@ -141,7 +141,7 @@ htmlwidget.
 \description{
 This function summarizes a set of variables and displays them on a spider
 chart. Continuous variables are plotted as mean z-scores by default using
-\code{CalcZScore()}, while binary variables are plotted as percentages. It can
+\code{CreateZScoreObject()}, while binary variables are plotted as percentages. It can
 overlay groups on one spider chart or facet by group, optionally fill the
 polygons, relabel spokes using variable labels, wrap long labels, reorder
 variables to visually emphasize between-group differences, and optionally

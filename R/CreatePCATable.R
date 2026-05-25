@@ -1,4 +1,4 @@
-#' Create PCA table and visualization
+#' Create a reusable PCA object and visualizations
 #'
 #' Perform principal component analysis (PCA) on specified variables and create
 #' visualizations. The default `"classic"` mode preserves the original
@@ -82,13 +82,14 @@
 #'   \item{Scale}{Logical flag indicating if scaling was used.}
 #'
 #' @examples
-#' PCA <- CreatePCATable(
+#' \dontrun{
+#' PCA <- CreatePCAObject(
 #'   Data = mtcars,
 #'   VarsToReduce = names(mtcars),
 #'   numComponents = 3
 #' )
 #'
-#' PCA_Omics <- CreatePCATable(
+#' PCA_Omics <- CreatePCAObject(
 #'   Data = mtcars,
 #'   VarsToReduce = names(mtcars),
 #'   Mode = "omics",
@@ -97,9 +98,10 @@
 #'   maxScreeComponents = 5,
 #'   imputeMethod = "median"
 #' )
+#' }
 #'
 #' @export
-CreatePCATable <- function(Data,
+CreatePCAObject <- function(Data,
                            VarsToReduce,
                            VariableCategories = NULL,
                            minThresh = 0.85,
@@ -679,4 +681,17 @@ CreatePCATable <- function(Data,
     Center       = center,
     Scale        = scale
   ))
+}
+
+#' Create PCA table and visualization
+#'
+#' Compatibility alias for [CreatePCAObject()]. Prefer `CreatePCAObject()` in
+#' new code because this workflow returns a reusable PCA object, not only a
+#' static table.
+#'
+#' @param ... Arguments passed to [CreatePCAObject()].
+#' @return The same object returned by [CreatePCAObject()].
+#' @export
+CreatePCATable <- function(...) {
+  CreatePCAObject(...)
 }

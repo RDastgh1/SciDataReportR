@@ -11,15 +11,15 @@
 #' @param Relabel Logical indicating whether to relabel variables with their labels (default is TRUE).
 #' @param Ordinal Logical, indicating whether ordinal variables should be considered.
 #' @param Parametric Logical indicating whether to use parametric (ANOVA) or non-parametric (Kruskal-Wallis) tests (default is TRUE).
+#' @param min_n Minimum number of complete observations required for a tested relationship.
+#' @param eps Small positive value used to avoid zero-size plotting artifacts.
 #' @return A list containing three ggplot objects: p (scatter plot without multiple comparison correction), p_FDR (scatter plot with FDR correction), and pvaltable (data frame of p-values and significance).
 #' @import dplyr
 #' @importFrom ggplot2 aes geom_point labs scale_shape_manual scale_color_gradientn guides theme
 #' @importFrom sjlabelled get_label
 #' @importFrom tidyr pivot_longer
 #' @importFrom rstatix anova_test kruskal_test get_summary_stats add_significance adjust_pvalue
-#' @importFrom stats var
-#' @importFrom utils na.omit
-#' @importFrom rstatix add_significance adjust_pvalue anova_test kruskal_test get_summary_stats
+#' @importFrom stats na.omit var
 #' @export
 PlotAnovaRelationshipsMatrix <- function(
     Data,

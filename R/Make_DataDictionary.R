@@ -14,9 +14,11 @@
 #'   group = factor(c("A", "B", "A")),
 #'   status = c("yes", "no", "yes")
 #' )
-#' Make_DataDictionary(df)
+#' if (requireNamespace("codebook", quietly = TRUE)) {
+#'   MakeDataDictionary(df)
+#' }
 #' @export
-Make_DataDictionary <- function(DataFrame, numdecimals = 2) {
+MakeDataDictionary <- function(DataFrame, numdecimals = 2) {
 
   # Validate inputs
 
@@ -120,4 +122,16 @@ Make_DataDictionary <- function(DataFrame, numdecimals = 2) {
   # Return result
 
   CB
+}
+
+#' Create a data dictionary for a data frame
+#'
+#' Compatibility alias for [MakeDataDictionary()]. Prefer `MakeDataDictionary()`
+#' in new code.
+#'
+#' @param ... Arguments passed to [MakeDataDictionary()].
+#' @return A data frame with one row per variable and stable summary columns.
+#' @export
+Make_DataDictionary <- function(...) {
+  MakeDataDictionary(...)
 }

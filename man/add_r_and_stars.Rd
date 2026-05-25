@@ -2,8 +2,7 @@
 % Please edit documentation in R/add_r_and_stars.R
 \name{add_r_and_stars}
 \alias{add_r_and_stars}
-\title{Add r-values and significance stars to a correlations heatmap (pass \code{res})
-Works with the list returned by PlotCorrelationsHeatmap().}
+\title{Add r-values and significance stars to a correlations heatmap}
 \usage{
 add_r_and_stars(
   res,
@@ -23,7 +22,9 @@ add_r_and_stars(
 )
 }
 \arguments{
-\item{res}{The list returned by PlotCorrelationsHeatmap()}
+\item{res}{The list returned by \code{\link[=PlotCorrelationsHeatmap]{PlotCorrelationsHeatmap()}}. The object
+should contain \code{Unadjusted$plot} and/or \code{FDRCorrected$plot} ggplot objects
+with plot data columns such as \code{R}, \code{P}, \code{P_adj}, \code{stars}, or \code{stars_FDR}.}
 
 \item{star_from}{One of:
 "existing" (use whatever the chosen plot already mapped as stars),
@@ -49,9 +50,25 @@ add_r_and_stars(
 \item{p_breaks, p_labels}{Cutpoints/labels for computing stars from p}
 }
 \value{
-A ggplot with r-values and stars added
+A ggplot with r-values and stars added.
 }
 \description{
-Add r-values and significance stars to a correlations heatmap (pass \code{res})
-Works with the list returned by PlotCorrelationsHeatmap().
+Adds correlation coefficients and significance stars to a heatmap object
+returned by \code{\link[=PlotCorrelationsHeatmap]{PlotCorrelationsHeatmap()}}. This is a downstream annotation
+helper for SciDataReportR correlation workflows, not a general-purpose
+plotting function.
 }
+\section{Input requirements}{
+
+\code{res} is expected to be the output of \code{\link[=PlotCorrelationsHeatmap]{PlotCorrelationsHeatmap()}}. Use
+\code{star_from = "raw"} for unadjusted p-value stars, \code{star_from = "fdr"} for
+FDR-adjusted stars, or \code{star_from = "existing"} to use the star mapping
+already present in the selected heatmap.
+}
+
+\section{Common downstream use}{
+
+Add \code{\link[=geom_starcaption]{geom_starcaption()}} to the returned plot to explain the star annotation
+thresholds in report-ready figures.
+}
+

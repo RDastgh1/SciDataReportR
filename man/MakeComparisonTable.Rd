@@ -74,7 +74,7 @@ pairwise comparisons are against this referent.}
 column as the first statistic column. If no valid grouping variable is provided, an
 overall-only table is returned.}
 
-\item{ShowPositiveBinaryOnLabel}{If TRUE, display only the “positive” level for binary categorical variables.}
+\item{ShowPositiveBinaryOnLabel}{If TRUE, display only the "positive" level for binary categorical variables.}
 
 \item{CatMethod}{Categorical test method: "chisq", "fisher", or "auto" (default).}
 
@@ -139,11 +139,11 @@ Global p-values are computed per variable, using complete-case data for the requ
 }
 \item With covariates:
 \itemize{
-\item \code{Parametric = TRUE}: ANCOVA via linear model (\code{\link[stats:lm]{stats::lm()}}) with Type II test for the
-grouping term (\link[car:Anova(type = 2)]{car::Anova(type = 2)}).
-\item \code{Parametric = FALSE}: robust ANCOVA via \code{\link[stats:lm]{stats::lm()}} plus HC3 robust covariance
-(\link[sandwich:vcovHC(type = "HC3")]{sandwich::vcovHC(type = "HC3")}) and a Wald F-test for the grouping term
-(\code{\link[car:linearHypothesis]{car::linearHypothesis()}}).
+\item \code{Parametric = TRUE}: ANCOVA via a linear model with a Type II test for the
+grouping term using \code{car::Anova()}.
+\item \code{Parametric = FALSE}: robust ANCOVA via a linear model plus HC3 robust covariance
+from \code{sandwich::vcovHC()} and a Wald F-test for the grouping term using
+\code{car::linearHypothesis()}.
 }
 }
 }
@@ -160,7 +160,7 @@ uses simulated p-value (B = 1e4).
 \subsection{Categorical outcomes (adjusted; covariates present)}{
 \itemize{
 \item Binary outcome: logistic regression likelihood ratio test (LR) using
-\link[stats:glm(family = binomial)]{stats::glm(family = binomial)} and \link[stats:drop1(test = "Chisq")]{stats::drop1(test = "Chisq")}.
+\code{stats::glm()} with a binomial family and \code{stats::drop1()} with a chi-squared test.
 \item Multi-category outcome (3+ levels): multinomial LR (default) via \code{\link[nnet:multinom]{nnet::multinom()}} and
 an LR comparison of models with and without the grouping term.
 Controlled by \code{MultiCatAdjusted}, which defaults to \code{"multinomial_LR"}.
@@ -190,7 +190,8 @@ Pairwise columns are added when \code{AddPairwise = TRUE}.
 \itemize{
 \item No covariates:
 \itemize{
-\item Parametric: \link[stats:pairwise.t.test(pool.sd = FALSE)]{stats::pairwise.t.test(pool.sd = FALSE)}
+\item Parametric: Welch pairwise t-tests using \code{stats::pairwise.t.test()} with
+\code{pool.sd = FALSE}.
 \item Nonparametric: \code{\link[stats:pairwise.wilcox.test]{stats::pairwise.wilcox.test()}}
 }
 \item With covariates:
@@ -222,8 +223,8 @@ in that case, the function automatically switches to logistic LR for that pair.
 Effect sizes are provided when \code{AddEffectSize = TRUE}.
 \itemize{
 \item Continuous, 2 groups, unadjusted: absolute Cohen's d (|d|) via \code{\link[effectsize:cohens_d]{effectsize::cohens_d()}}.
-\item Continuous, 3+ groups, unadjusted parametric: eta-squared (η²) via \code{\link[effectsize:eta_squared]{effectsize::eta_squared()}}.
-\item Continuous, adjusted: partial eta-squared (partial η²) from Type II ANOVA table.
+\item Continuous, 3+ groups, unadjusted parametric: eta-squared via \code{\link[effectsize:eta_squared]{effectsize::eta_squared()}}.
+\item Continuous, adjusted: partial eta-squared from Type II ANOVA table.
 \item Continuous, nonparametric: epsilon-squared approximation from Kruskal-Wallis.
 \item Categorical: Cramer's V (uses DescTools if available; otherwise a chi-squared-based approximation).
 }

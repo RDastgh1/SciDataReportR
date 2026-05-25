@@ -187,7 +187,7 @@ PlotMiningMatrix <- function(
     ))
   }
 
-  # 🔥 SYMMETRY FIX
+  # Symmetry fix
   results <- dplyr::bind_rows(results_list) %>%
     dplyr::filter(
       !is.na(p),
@@ -216,7 +216,7 @@ PlotMiningMatrix <- function(
   results <- results %>%
     rstatix::add_significance(p.col = "p", output.col = "stars")
 
-  # 🔥 SAFE LABEL APPLICATION
+  # Safe label application
   if (Relabel) {
     results$XLabel <- safe_lookup(results$XVar, labels)
     results$YLabel <- safe_lookup(results$YVar, labels)
@@ -225,7 +225,7 @@ PlotMiningMatrix <- function(
     results$YLabel <- results$YVar
   }
 
-  # 🔥 SAFE ORDERING (no NA levels ever)
+  # Safe ordering with no NA levels
   x_order <- if (Relabel) safe_lookup(OutcomeVars, labels) else OutcomeVars
   y_order <- if (Relabel) safe_lookup(PredictorVars, labels) else PredictorVars
 
@@ -244,7 +244,7 @@ PlotMiningMatrix <- function(
   results$size_val <- size_map[as.character(results$stars)]
 
   shape_labels <- c(
-    "ns" = "ns (p ≥ 0.05)",
+    "ns" = "ns (p >= 0.05)",
     "*"  = "* (p < 0.05)",
     "**" = "** (p < 0.01)",
     "***"= "*** (p < 0.001)"

@@ -1,6 +1,6 @@
 #' Plot Phi Correlations Between Binary Variables
 #'
-#' Computes pairwise phi coefficients (Φ) between binary categorical variables
+#' Computes pairwise phi coefficients between binary categorical variables
 #' with explicit 0/1 coding (1 == PositiveLevel from `createBinaryMapping()`),
 #' then renders heatmap-style plots with raw and FDR-adjusted significance.
 #'
@@ -90,9 +90,9 @@ PlotPhiHeatmap <- function(Data, CatVars, Relabel = TRUE, binary_map = NULL) {
       Phi <- NA_real_
       p   <- NA_real_
     } else {
-      # Pearson correlation of 0/1 vectors equals Φ
+      # Pearson correlation of 0/1 vectors equals Phi
       Phi <- suppressWarnings(stats::cor(x, y))
-      # Use χ²-based p-value; fallback if necessary
+      # Use chi-squared-based p-value; fallback if necessary
       p <- .pval_binbin(x, y)
       if (is.na(p)) {
         p <- suppressWarnings(stats::cor.test(x, y)$p.value)
@@ -153,7 +153,7 @@ PlotPhiHeatmap <- function(Data, CatVars, Relabel = TRUE, binary_map = NULL) {
     "</br>X Var: ",   stat.test$XVar,
     "</br>Y Label: ", stat.test$YLabel,
     "</br>Y Var: ",   stat.test$YVar,
-    "</br> Φ: ",      signif(stat.test$Phi, 3),
+    "</br> Phi: ",      signif(stat.test$Phi, 3),
     "</br> P-Value: ", signif(stat.test$p_value, 3), " ", stat.test$`p<.05`,
     "</br> FDR P: ",   signif(stat.test$p.adj, 3),   " ", stat.test$p.adj.signif,
     "</br> nPairs: ",  stat.test$nPairs

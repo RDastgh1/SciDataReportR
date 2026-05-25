@@ -1,5 +1,8 @@
 ^SciDataReportR\.Rproj$
 ^\.Rproj\.user$
+^\.DS_Store$
+^\.Rhistory
+conflicted copy
 ^LICENSE\.md$
 ^README\.Rmd$
 ^_pkgdown\.yml$
@@ -8,3 +11,4 @@
 ^\.github$
 ^\.positai$
 ^\.claude$
+^vignettes/\.quarto$

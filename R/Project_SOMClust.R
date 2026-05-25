@@ -1,9 +1,9 @@
 #' Project new data onto an existing SOM + cluster solution
 #'
 #' @description
-#' Given a fitted \code{Pipeline_SOMClust} object, project a new data frame onto:
+#' Given a fitted \code{CreateSOMClusterModel()} object, project a new data frame onto:
 #' \itemize{
-#'   \item The same Z-score scaling (via SciDataReportR::Project_ZScore()) when
+#'   \item The same Z-score scaling (via SciDataReportR::ProjectZScore()) when
 #'         the training object used computed or projected Z-scores.
 #'   \item The same SOM (kohonen), using \code{kohonen::map()}.
 #'   \item The same node-level latent profiles and posterior probabilities.
@@ -19,8 +19,8 @@
 #'   \item Maps node-level cluster/posterior probabilities to the individual.
 #'   \item Computes an overall SOM-distance z-score and flags:
 #'     \itemize{
-#'       \item \code{Flag_SOMDist_overallHigh} – distance > overall training p95.
-#'       \item \code{Flag_SOMDist_clusterHigh} – distance > cluster-specific
+#'       \item \code{Flag_SOMDist_overallHigh} - distance > overall training p95.
+#'       \item \code{Flag_SOMDist_clusterHigh} - distance > cluster-specific
 #'             training p95 for that cluster.
 #'     }
 #' }
@@ -37,7 +37,7 @@
 #'         and the cluster label.
 #' }
 #'
-#' @param object A \code{Pipeline_SOMClust} object from a previous run.
+#' @param object A SOM cluster model object from [CreateSOMClusterModel()].
 #' @param new_df Data frame of new cases to project.
 #' @param ClusterName Optional name for the cluster column; defaults to
 #'   \code{object$ClusterName}. If that column already exists in \code{new_df}
@@ -58,7 +58,7 @@
 #'   }
 #'
 #' @export
-Project_SOMClust <- function(
+ProjectSOMCluster <- function(
     object,
     new_df,
     ClusterName = NULL
@@ -135,10 +135,10 @@ Project_SOMClust <- function(
 
     Z_obj <- object$ZScoreObject
     if (is.null(Z_obj) || !"ZScoreObj" %in% class(Z_obj)) {
-      stop("object$ZScoreObject must be a valid ZScoreObj from Pipeline_SOMClust.")
+      stop("object$ZScoreObject must be a valid ZScoreObj from CreateSOMClusterModel.")
     }
 
-    z_proj <- SciDataReportR::Project_ZScore(
+    z_proj <- SciDataReportR::ProjectZScore(
       df                 = new_df_scidr,
       variables          = vars_used,
       parameters         = Z_obj,
@@ -190,7 +190,7 @@ Project_SOMClust <- function(
 
   node_df <- object$ProbFit$node
   if (is.null(node_df)) {
-    stop("object$ProbFit$node is missing; run Pipeline_SOMClust first.")
+    stop("object$ProbFit$node is missing; run CreateSOMClusterModel first.")
   }
 
   # Individual table with distance flags -----------------------------------
@@ -376,4 +376,16 @@ Project_SOMClust <- function(
 
   class(out) <- c("Project_SOMClust", class(out))
   out
+}
+
+#' Project new data onto an existing SOM + cluster solution
+#'
+#' Compatibility alias for [ProjectSOMCluster()]. Prefer `ProjectSOMCluster()`
+#' in new code.
+#'
+#' @param ... Arguments passed to [ProjectSOMCluster()].
+#' @return The same projection object returned by [ProjectSOMCluster()].
+#' @export
+Project_SOMClust <- function(...) {
+  ProjectSOMCluster(...)
 }

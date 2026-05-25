@@ -1,4 +1,4 @@
-#' Create a Z-Score Plot with Statistical Significance
+#' Plot Z-score group differences with statistical significance
 #'
 #' This function generates a Z-score plot to compare multiple variables across
 #' different groups. It offers options for parametric or non-parametric tests,
@@ -22,7 +22,7 @@
 #' @importFrom dplyr filter mutate group_by summarise
 #' @importFrom tidyr pivot_longer
 #' @export
-CreateZScorePlot <- function (Data, TargetVar, Variables, VariableCategories = NULL,
+PlotZScore <- function (Data, TargetVar, Variables, VariableCategories = NULL,
                               Relabel = TRUE, sort = TRUE, RemoveXAxisLabels = TRUE, Ordinal = TRUE,
                               Parametric = TRUE, SigP_YCoord = 1.5, SigFDR_YCoord = 1.6){
   if (Ordinal) {
@@ -134,7 +134,7 @@ CreateZScorePlot <- function (Data, TargetVar, Variables, VariableCategories = N
                         stderror, color = Category), alpha = 0.5) + theme_minimal() +
     geom_point(data = pvaldata, aes(y = pvalline), color = "blue") +
     geom_point(data = pvaldata, aes(y = FDRline), color = "green") +
-    guides(shape = FALSE, linetype = FALSE) + scale_y_continuous(limits = c(-2,
+    guides(shape = "none", linetype = "none") + scale_y_continuous(limits = c(-2,
                                                                             2)) + ylab("Z-Score") + scale_color_manual(values = classcolors)
   if (RemoveXAxisLabels) {
     pZ <- pZ + theme(axis.text.x = element_blank())
@@ -144,4 +144,16 @@ CreateZScorePlot <- function (Data, TargetVar, Variables, VariableCategories = N
                                                 vjust = 1, hjust = 1))
   }
   return(pZ)
+}
+
+#' Create a Z-score plot with statistical significance
+#'
+#' Compatibility alias for [PlotZScore()]. Prefer `PlotZScore()` in new code
+#' because this function creates a scientific visualization.
+#'
+#' @param ... Arguments passed to [PlotZScore()].
+#' @return A ggplot object returned by [PlotZScore()].
+#' @export
+CreateZScorePlot <- function(...) {
+  PlotZScore(...)
 }

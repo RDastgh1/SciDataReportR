@@ -18,7 +18,7 @@ FormattedDataDictionary <- function(DataFrame, numdecimals = 2) {
   }
 
   # Generate the initial data dictionary
-  CB <- Make_DataDictionary(DataFrame, numdecimals)
+  CB <- MakeDataDictionary(DataFrame, numdecimals)
 
   # Create the gt object
   g <- gt::gt(CB) %>%

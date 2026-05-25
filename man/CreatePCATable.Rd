@@ -4,146 +4,16 @@
 \alias{CreatePCATable}
 \title{Create PCA table and visualization}
 \usage{
-CreatePCATable(
-  Data,
-  VarsToReduce,
-  VariableCategories = NULL,
-  minThresh = 0.85,
-  scale = TRUE,
-  center = TRUE,
-  Ordinal = FALSE,
-  numComponents = NULL,
-  Mode = c("classic", "omics"),
-  backend = c("psych", "prcomp", "irlba"),
-  rotate = c("varimax", "none"),
-  maxComponents = 20,
-  maxScreeComponents = 20,
-  VarianceFilter = NULL,
-  VarianceFilterMethod = c("top_n", "variance_quantile"),
-  MissingnessWarningThreshold = 0.2,
-  ParticipantMissingnessWarningThreshold = 0.2,
-  imputeMethod = c("missRanger", "median"),
-  SuppressWarnings = FALSE
-)
+CreatePCATable(...)
 }
 \arguments{
-\item{Data}{The dataset containing the variables for PCA.}
-
-\item{VarsToReduce}{A character vector specifying the variables to include in
-the PCA.}
-
-\item{VariableCategories}{Optional categorical vector, used to color the
-lollipop plot. Must be the same length and order as \code{VarsToReduce} if
-provided.}
-
-\item{minThresh}{The minimum threshold for cumulative proportion of variance.
-Default is \code{0.85}. In \code{"omics"} mode, this threshold is evaluated only
-across the capped scree components.}
-
-\item{scale}{Logical, indicating whether to scale the data by standard
-deviation. Default is \code{TRUE}.}
-
-\item{center}{Logical, indicating whether to center the data by subtracting
-the mean. Default is \code{TRUE}.}
-
-\item{Ordinal}{Logical, indicating whether ordinal variables should be
-handled. Currently not used inside this function.}
-
-\item{numComponents}{Number of principal components to compute. If \code{NULL},
-chosen by \code{minThresh} in \code{"classic"} mode and by capped scree results in
-\code{"omics"} mode.}
-
-\item{Mode}{Character. Either \code{"classic"} or \code{"omics"}. \code{"classic"} preserves
-the original \code{psych::principal()} behavior. \code{"omics"} uses capped PCA logic
-for high-dimensional data.}
-
-\item{backend}{Character. PCA backend to use. Options are \code{"psych"},
-\code{"prcomp"}, and \code{"irlba"}. Default is \code{"psych"} to preserve backward
-compatibility. In \code{"omics"} mode, \code{"irlba"} is recommended for speed.}
-
-\item{rotate}{Character. Rotation method. Options are \code{"varimax"} and
-\code{"none"}. Default is \code{"varimax"} to preserve interpretability and existing
-loading-table behavior.}
-
-\item{maxComponents}{Maximum number of final components to retain in
-\code{"omics"} mode when \code{numComponents} is \code{NULL}. Default is \code{20}.}
-
-\item{maxScreeComponents}{Maximum number of components used to estimate and
-plot the scree curve in \code{"omics"} mode. Default is \code{20}.}
-
-\item{VarianceFilter}{Optional numeric value for variance filtering before
-PCA in \code{"omics"} mode. If \code{VarianceFilterMethod = "top_n"}, this keeps the
-top \code{VarianceFilter} most variable variables. If
-\code{VarianceFilterMethod = "variance_quantile"}, this keeps variables with
-variance at or above the specified quantile.}
-
-\item{VarianceFilterMethod}{Character. Either \code{"top_n"} or
-\code{"variance_quantile"}.}
-
-\item{MissingnessWarningThreshold}{Numeric threshold for warning about high
-variable-level missingness. Default is \code{0.20}.}
-
-\item{ParticipantMissingnessWarningThreshold}{Numeric threshold for warning
-about high participant-level missingness. Default is \code{0.20}.}
-
-\item{imputeMethod}{Character. Missing-data imputation method. Options are
-\code{"missRanger"} and \code{"median"}. Default is \code{"missRanger"} to preserve the
-original behavior.}
-
-\item{SuppressWarnings}{Logical. If \code{TRUE}, suppresses PCA-specific warning
-messages from this function. Default is \code{FALSE}.}
+\item{...}{Arguments passed to \code{\link[=CreatePCAObject]{CreatePCAObject()}}.}
 }
 \value{
-A list containing PCA results and visualizations:
-\item{p_scree}{Scree and variance plot as a ggplot object.}
-\item{pcaresults}{PCA result object. In \code{"classic"} mode this is the
-\code{psych::principal()} result after \code{psych::fa.sort()}. In \code{"omics"} mode
-this is a harmonized list with rotated and sorted loadings, scores, and
-variance information.}
-\item{LoadingTable}{Data frame of rotated loadings with variable names and
-labels.}
-\item{Scores}{Matrix or data frame of component scores.}
-\item{CombinedData}{Original data with component scores appended.}
-\item{Lollipop}{Lollipop-style loading plot as a ggplot object.}
-\item{ScaleParams}{List with means, standard deviations, center, and scale.}
-\item{VarsUsed}{Character vector of variables actually used in PCA.}
-\item{VarianceTable}{Table of variance explained by component.}
-\item{Mode}{PCA mode used.}
-\item{Backend}{PCA backend used.}
-\item{Center}{Logical flag indicating if centering was used.}
-\item{Scale}{Logical flag indicating if scaling was used.}
+The same object returned by \code{\link[=CreatePCAObject]{CreatePCAObject()}}.
 }
 \description{
-Perform principal component analysis (PCA) on specified variables and create
-visualizations. The default \code{"classic"} mode preserves the original
-\code{psych::principal()} workflow for compatibility with existing
-SciDataReportR analyses. The optional \code{"omics"} mode is designed for
-high-dimensional data such as proteomics, metabolomics, and other settings
-where the number of variables is much larger than the number of participants.
-}
-\details{
-In \code{"omics"} mode, the function avoids computing one component per input
-variable. Instead, it computes a capped number of components using a faster
-PCA backend, applies optional variance filtering, and then applies rotation
-and sorting so loadings remain interpretable. This is useful when PCA is being
-used for exploratory structure, visualization, latent biological signal, or
-clustering rather than exhaustive factor decomposition.
-}
-\examples{
-PCA <- CreatePCATable(
-  Data = mtcars,
-  VarsToReduce = names(mtcars),
-  numComponents = 3
-)
-
-PCA_Omics <- CreatePCATable(
-  Data = mtcars,
-  VarsToReduce = names(mtcars),
-  Mode = "omics",
-  backend = "prcomp",
-  maxComponents = 5,
-  maxScreeComponents = 5,
-  imputeMethod = "median"
-)
-
+Compatibility alias for \code{\link[=CreatePCAObject]{CreatePCAObject()}}. Prefer \code{CreatePCAObject()} in
+new code because this workflow returns a reusable PCA object, not only a
+static table.
 }

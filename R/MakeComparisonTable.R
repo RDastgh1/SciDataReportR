@@ -40,11 +40,11 @@
 #'     - 2 groups: Wilcoxon rank-sum ([stats::wilcox.test()])
 #'     - 3+ groups: Kruskal-Wallis ([stats::kruskal.test()])
 #' - With covariates:
-#'   - `Parametric = TRUE`: ANCOVA via linear model ([stats::lm()]) with Type II test for the
-#'     grouping term ([car::Anova(type = 2)]).
-#'   - `Parametric = FALSE`: robust ANCOVA via [stats::lm()] plus HC3 robust covariance
-#'     ([sandwich::vcovHC(type = "HC3")]) and a Wald F-test for the grouping term
-#'     ([car::linearHypothesis()]).
+#'   - `Parametric = TRUE`: ANCOVA via a linear model with a Type II test for the
+#'     grouping term using `car::Anova()`.
+#'   - `Parametric = FALSE`: robust ANCOVA via a linear model plus HC3 robust covariance
+#'     from `sandwich::vcovHC()` and a Wald F-test for the grouping term using
+#'     `car::linearHypothesis()`.
 #'
 #' ### Categorical outcomes (unadjusted)
 #' - `CatMethod = "chisq"`: Pearson chi-squared with `correct = FALSE` ([stats::chisq.test()]).
@@ -54,7 +54,7 @@
 #'
 #' ### Categorical outcomes (adjusted; covariates present)
 #' - Binary outcome: logistic regression likelihood ratio test (LR) using
-#'   [stats::glm(family = binomial)] and [stats::drop1(test = "Chisq")].
+#'   `stats::glm()` with a binomial family and `stats::drop1()` with a chi-squared test.
 #' - Multi-category outcome (3+ levels): multinomial LR (default) via [nnet::multinom()] and
 #'   an LR comparison of models with and without the grouping term.
 #'   Controlled by `MultiCatAdjusted`, which defaults to `"multinomial_LR"`.
@@ -72,7 +72,8 @@
 #'
 #' ### Continuous outcomes
 #' - No covariates:
-#'   - Parametric: [stats::pairwise.t.test(pool.sd = FALSE)]
+#'   - Parametric: Welch pairwise t-tests using `stats::pairwise.t.test()` with
+#'     `pool.sd = FALSE`.
 #'   - Nonparametric: [stats::pairwise.wilcox.test()]
 #' - With covariates:
 #'   - Uses adjusted means via [emmeans::emmeans()] on the ANCOVA model.
@@ -91,8 +92,8 @@
 #' Effect sizes are provided when `AddEffectSize = TRUE`.
 #'
 #' - Continuous, 2 groups, unadjusted: absolute Cohen's d (|d|) via [effectsize::cohens_d()].
-#' - Continuous, 3+ groups, unadjusted parametric: eta-squared (η²) via [effectsize::eta_squared()].
-#' - Continuous, adjusted: partial eta-squared (partial η²) from Type II ANOVA table.
+#' - Continuous, 3+ groups, unadjusted parametric: eta-squared via [effectsize::eta_squared()].
+#' - Continuous, adjusted: partial eta-squared from Type II ANOVA table.
 #' - Continuous, nonparametric: epsilon-squared approximation from Kruskal-Wallis.
 #' - Categorical: Cramer's V (uses DescTools if available; otherwise a chi-squared-based approximation).
 #'
@@ -131,7 +132,7 @@
 #' @param IncludeOverallStats If TRUE and `CompVariable` is provided, add an overall summary
 #'   column as the first statistic column. If no valid grouping variable is provided, an
 #'   overall-only table is returned.
-#' @param ShowPositiveBinaryOnLabel If TRUE, display only the “positive” level for binary categorical variables.
+#' @param ShowPositiveBinaryOnLabel If TRUE, display only the "positive" level for binary categorical variables.
 #' @param CatMethod Categorical test method: "chisq", "fisher", or "auto" (default).
 #' @param MultiCatAdjusted Adjusted multi-category method when covariates are present:
 #'   currently supports "multinomial_LR" (default) or "none".
@@ -876,7 +877,7 @@ MakeComparisonTable <- function(
             return(tibble::tibble(
               variable = var,
               effect_size = NA_real_,
-              es_method = "partial η²"
+              es_method = "partial eta-squared"
             ))
           }
 
@@ -897,7 +898,7 @@ MakeComparisonTable <- function(
           return(tibble::tibble(
             variable = var,
             effect_size = val,
-            es_method = "partial η²"
+            es_method = "partial eta-squared"
           ))
         }
 
@@ -928,7 +929,7 @@ MakeComparisonTable <- function(
           return(tibble::tibble(
             variable = var,
             effect_size = val,
-            es_method = "η²"
+            es_method = "eta-squared"
           ))
         }
 
@@ -942,7 +943,7 @@ MakeComparisonTable <- function(
         return(tibble::tibble(
           variable = var,
           effect_size = eps2,
-          es_method = "ε²"
+          es_method = "epsilon-squared"
         ))
       }
 

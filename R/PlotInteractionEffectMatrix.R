@@ -52,9 +52,9 @@
 #'
 #' Darker colors indicate higher significance:
 #' \itemize{
-#'   \item ***: p ≤ 0.001 (darkest)
-#'   \item **: p ≤ 0.01 (medium)
-#'   \item *: p ≤ 0.05 (light)
+#'   \item ***: p <= 0.001 (darkest)
+#'   \item **: p <= 0.01 (medium)
+#'   \item *: p <= 0.05 (light)
 #' }
 #'
 #' @examples
@@ -98,12 +98,6 @@ PlotInteractionEffectsMatrix <- function(Data, interVar = NULL,
   if (length(missing_packages) > 0) {
     stop(paste("Missing required packages:", paste(missing_packages, collapse = ", ")))
   }
-
-  # Load required functions
-  library(dplyr)
-  library(tidyr)
-  library(ggplot2)
-  library(tibble)
 
   # Create a custom function to handle p-values with NAs
   get_significance_stars <- function(p_values) {
@@ -273,7 +267,7 @@ PlotInteractionEffectsMatrix <- function(Data, interVar = NULL,
 
           # Calculate slopes based on whether interVar is continuous or categorical
           if (interVar_is_continuous) {
-            # For continuous interVar, calculate simple slopes at mean ± 1SD
+            # For continuous interVar, calculate simple slopes at mean +/- 1SD
             interVar_mean <- mean(Data[[interVar]], na.rm = TRUE)
             interVar_sd <- sd(Data[[interVar]], na.rm = TRUE)
 

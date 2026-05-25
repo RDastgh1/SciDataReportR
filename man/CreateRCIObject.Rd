@@ -45,7 +45,24 @@ CreateRCIObject(
 
 \item{Confidence}{Confidence interval threshold.}
 
-\item{Relabel}{Logical; use variable labels when available.}
+\item{Relabel}{Logical; use variable labels when available.
+
+#'
+\subsection{Interpretation guide}{
+
+egression-based RCI values are interpreted similarly to z-scores.\tabular{ll}{
+   RCI cutoff \tab Approximate confidence interval \cr
+   +/-0.50 \tab ~38\% \cr
+   +/-1.00 \tab ~68\% \cr
+   +/-1.645 \tab ~90\% \cr
+   +/-1.96 \tab ~95\% \cr
+   +/-2.58 \tab ~99\% \cr
+}
+
+
+Traditional Jacobson-Truax RCI thresholds typically use +/-1.96,
+corresponding to approximately 95\% confidence.
+}}
 }
 \value{
 A SciDataReportR_RCI object.

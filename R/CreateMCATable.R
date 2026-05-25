@@ -1,6 +1,11 @@
-#' CreateMCATable
+#' Create a reusable MCA object and visualizations
 #'
 #' This function performs Multiple Correspondence Analysis (MCA) on a set of categorical variables, imputes missing data if needed, and generates a set of visualizations and tables to interpret the results.
+#'
+#' @details
+#' Optional dependencies used by this workflow include `missRanger` for
+#' imputation and `FactoMineR` for MCA calculation. These packages are listed
+#' in `DESCRIPTION` and should be installed for MCA workflows.
 #'
 #' @param Data A dataframe containing the data to be analyzed.
 #' @param VarsToReduce A vector of column names in `Data` to be included in the MCA.
@@ -16,11 +21,6 @@
 #' @importFrom tidyr pivot_longer
 #' @importFrom dplyr select group_by arrange mutate
 #' @importFrom tibble rownames_to_column
-#' @suggests ggplot2
-#' @suggests paletteer
-#' @suggests missRanger
-#' @suggests psych
-#' @suggests FactoMineR
 #' @return A list with the following elements:
 #' \item{p_scree}{A `ggplot` object representing the scree plot, showing the cumulative and percentage of variance explained by each component.}
 #' \item{pcaresults}{The MCA results object, which includes component scores and contributions.}
@@ -31,7 +31,7 @@
 #'
 #' @export
 #'
-CreateMCATable <- function(Data, VarsToReduce, VariableCategories = NULL,
+CreateMCAObject <- function(Data, VarsToReduce, VariableCategories = NULL,
                            minThresh = 75, scale = TRUE, center = TRUE,
                            Relabel = TRUE, Ordinal = FALSE,
                            numComponents = NULL, ImputeMissing = FALSE) {
@@ -89,7 +89,7 @@ CreateMCATable <- function(Data, VarsToReduce, VariableCategories = NULL,
     ggplot2::scale_x_discrete(guide = ggplot2::guide_axis(angle = 90))
 
   # Perform MCA with selected number of components
-  mca_result <- MCA(DataSubset %>% select(all_of(VarsToReduce)),
+  mca_result <- FactoMineR::MCA(DataSubset %>% select(all_of(VarsToReduce)),
                     ncp = nc, graph = FALSE)
 
   # Extract contributions and individual participant values from the MCA result
@@ -136,4 +136,17 @@ CreateMCATable <- function(Data, VarsToReduce, VariableCategories = NULL,
               Scores = MCAind,
               CombinedData = CombinedData,
               Lollipop = p))
+}
+
+#' Create MCA table and visualization
+#'
+#' Compatibility alias for [CreateMCAObject()]. Prefer `CreateMCAObject()` in
+#' new code because this workflow returns a reusable MCA object, not only a
+#' static table.
+#'
+#' @param ... Arguments passed to [CreateMCAObject()].
+#' @return The same object returned by [CreateMCAObject()].
+#' @export
+CreateMCATable <- function(...) {
+  CreateMCAObject(...)
 }

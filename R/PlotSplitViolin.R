@@ -25,8 +25,8 @@
 #' @param star_from Position method ("quantile","data_max","whisker").
 #' @param star_quantile Quantile used for placement.
 #' @param star_pad Padding above anchor.
-#' @param headroom Extra space above data.
 #' @param star_size Text size for annotation.
+#' @param ... Additional arguments reserved for future extensions.
 #'
 #' @return A ggplot2 object.
 #'
@@ -162,7 +162,7 @@ PlotSplitViolin <- function(
 
   y_star <- anchor + star_pad * dr
 
-  # 🔥 KEY FIX: padding based on RANGE, not absolute value
+  # Key fix: padding based on range, not absolute value
   min_pad <- max(0.03 * dr, 0.001)
 
   if (!is.null(annotation_text) && nzchar(annotation_text)) {

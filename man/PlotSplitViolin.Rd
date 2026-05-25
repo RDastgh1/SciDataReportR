@@ -70,7 +70,7 @@ If \code{TRUE}, uses Wilcoxon (with residualization if covariates are present).}
 
 \item{star_size}{Text size for annotation.}
 
-\item{headroom}{Extra space above data.}
+\item{...}{Additional arguments reserved for future extensions.}
 }
 \value{
 A ggplot2 object.

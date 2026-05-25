@@ -4,26 +4,15 @@
 \alias{Make_DataDictionary}
 \title{Create a data dictionary for a data frame}
 \usage{
-Make_DataDictionary(DataFrame, numdecimals = 2)
+Make_DataDictionary(...)
 }
 \arguments{
-\item{DataFrame}{A data frame.}
-
-\item{numdecimals}{Number of decimals to display for numeric variables.}
+\item{...}{Arguments passed to \code{\link[=MakeDataDictionary]{MakeDataDictionary()}}.}
 }
 \value{
 A data frame with one row per variable and stable summary columns.
 }
 \description{
-This function generates a stable data dictionary for a data frame using
-\code{codebook::skim_codebook()}. It is designed to work even when skim output
-omits type-specific summary columns, such as numeric summaries for data
-frames without numeric variables.
-}
-\examples{
-df <- tibble::tibble(
-  group = factor(c("A", "B", "A")),
-  status = c("yes", "no", "yes")
-)
-Make_DataDictionary(df)
+Compatibility alias for \code{\link[=MakeDataDictionary]{MakeDataDictionary()}}. Prefer \code{MakeDataDictionary()}
+in new code.
 }

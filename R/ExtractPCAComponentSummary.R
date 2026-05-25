@@ -7,7 +7,7 @@
 #' Negative contributors can optionally be formatted in red HTML text
 #' for improved readability in HTML tables.
 #'
-#' @param PCAObject Output object from CreatePCATable().
+#' @param PCAObject Output object from CreatePCAObject().
 #' @param loading_threshold Minimum absolute loading required for inclusion.
 #'   Default is 0.4.
 #' @param top_n Optional maximum number of contributors per component.
@@ -38,7 +38,7 @@
 #'
 #' @examples
 #' \dontrun{
-#' pca_obj <- CreatePCATable(
+#' pca_obj <- CreatePCAObject(
 #'   Data = mtcars,
 #'   VarsToReduce = colnames(mtcars)
 #' )
@@ -62,7 +62,7 @@ ExtractPCAComponentSummary <- function(
   # Validate inputs
 
   if (!is.list(PCAObject)) {
-    stop("PCAObject must be a list returned from CreatePCATable().")
+    stop("PCAObject must be a list returned from CreatePCAObject().")
   }
 
   if (!"LoadingTable" %in% names(PCAObject)) {

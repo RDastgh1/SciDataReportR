@@ -2,7 +2,7 @@
 #'
 #' @description
 #' End-to-end pipeline to:
-#' - Standardize variables using SciDataReportR::CalcZScore() or a supplied
+#' - Standardize variables using SciDataReportR::CreateZScoreObject() or a supplied
 #'   Z-score object.
 #' - Fit a Self-Organizing Map (SOM; kohonen) on complete cases.
 #' - Generate aweSOM visualizations (Circular, Line, Cloud) with optional
@@ -33,9 +33,9 @@
 #'
 #' Z-score behavior:
 #' - \code{ZScoreType = "Center and Scale"/"Center Only"/"Scale Only"} computes
-#'   Z-scores from \code{df} via \code{CalcZScore()}.
+#'   Z-scores from \code{df} via \code{CreateZScoreObject()}.
 #' - \code{ZScoreType = "ZScoreObj"} projects Z-scores using an external
-#'   \code{ZScoreObj} via \code{Project_ZScore()}.
+#'   \code{ZScoreObj} via \code{ProjectZScore()}.
 #' - \code{ZScoreType = "PreZScored"} uses existing Z-score columns in \code{df}
 #'   as-is and does not re-zscore.
 #'
@@ -68,8 +68,8 @@
 #'     \item \code{"ZScoreObj"} (use an existing ZScore object)
 #'     \item \code{"PreZScored"} (use existing Z-score columns in df as-is)
 #'   }
-#' @param ZScoreObject Optional ZScoreObj (from \code{CalcZScore()} or
-#'   \code{Project_ZScore()}) to use when \code{ZScoreType = "ZScoreObj"}.
+#' @param ZScoreObject Optional ZScoreObj (from \code{CreateZScoreObject()} or
+#'   \code{ProjectZScore()}) to use when \code{ZScoreType = "ZScoreObj"}.
 #' @param som_xdim,som_ydim Optional integers for SOM grid dimensions. If NULL,
 #'   a square grid with side length \code{ceiling(n_complete^(1/3))} is used.
 #' @param som_topo SOM topology for \code{kohonen::somgrid()}, default
@@ -97,6 +97,14 @@
 #' @param lpa_drop_zero_sd Logical; if TRUE, remove SOM code dimensions with
 #'   near-zero standard deviation before LPA.
 #' @param lpa_zero_sd_tol Numeric tolerance used when \code{lpa_drop_zero_sd = TRUE}.
+#' @param lpa_timeout_seconds Optional timeout in seconds for individual LPA
+#'   fits. Use NULL to disable timeouts.
+#' @param skip_model_after_n_failures Optional integer; skip a model family
+#'   after this many failures.
+#' @param slow_fit_seconds Optional runtime threshold used to flag slow LPA
+#'   fits in diagnostics.
+#' @param min_nodes_per_cluster Optional minimum average SOM nodes per cluster
+#'   considered before attempting a candidate profile count.
 #'
 #' @details
 #' The AHP-style index is computed by:
@@ -137,7 +145,7 @@
 #' Saaty TL. \emph{The Analytic Hierarchy Process}. McGraw-Hill, 1980.
 #'
 #' @export
-Pipeline_SOMClust <- function(
+CreateSOMClusterModel <- function(
     df,
     variables       = NULL,
     method          = c("exploratory", "finalize"),
@@ -345,7 +353,7 @@ Pipeline_SOMClust <- function(
       stop("ZScoreType = 'ZScoreObj' requires a valid ZScoreObj.")
     }
 
-    z_res <- SciDataReportR::Project_ZScore(
+    z_res <- SciDataReportR::ProjectZScore(
       df                 = df_scidr,
       variables          = vars_used,
       parameters         = ZScoreObject,
@@ -369,7 +377,7 @@ Pipeline_SOMClust <- function(
     center_flag <- ZScoreType %in% c("Center and Scale", "Center Only")
     scale_flag  <- ZScoreType %in% c("Center and Scale", "Scale Only")
 
-    ZScoreObject_used <- SciDataReportR::CalcZScore(
+    ZScoreObject_used <- SciDataReportR::CreateZScoreObject(
       df           = df_scidr,
       variables    = vars_used,
       names_prefix = "Z_",
@@ -1200,4 +1208,18 @@ Pipeline_SOMClust <- function(
 
   class(out) <- c("Pipeline_SOMClust", class(out))
   out
+}
+
+#' SOM + latent profile clustering pipeline (with AHP and distance baselines)
+#'
+#' Compatibility alias for [CreateSOMClusterModel()]. Prefer
+#' `CreateSOMClusterModel()` in new code because this function fits a reusable
+#' SOM clustering model.
+#'
+#' @param ... Arguments passed to [CreateSOMClusterModel()].
+#' @return The same `Pipeline_SOMClust` object returned by
+#'   [CreateSOMClusterModel()].
+#' @export
+Pipeline_SOMClust <- function(...) {
+  CreateSOMClusterModel(...)
 }

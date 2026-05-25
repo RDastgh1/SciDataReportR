@@ -74,7 +74,7 @@ Merge_ByClosestTime <- function(DataFrame1,
 
   } else {
 
-    # No merge key → full cross join (dangerous but intentional)
+    # No merge key: full cross join (dangerous but intentional)
     merged_df <- tidyr::crossing(DataFrame1, DataFrame2)
   }
 

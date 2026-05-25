@@ -4,11 +4,11 @@
 \name{SciDataReportR-package}
 \alias{SciDataReportR}
 \alias{SciDataReportR-package}
-\title{SciDataReportR: Package for Generating Scientific Data Reports}
+\title{SciDataReportR: Workflow Infrastructure for Reproducible Scientific Data Reporting}
 \description{
 \if{html}{\figure{logo.png}{options: style='float: right' alt='logo' width='120'}}
 
-SciDataReportR is a package designed to facilitate the generation of scientific data reports. It provides functions for creating descriptive summary tables, formatting data for analysis, and enhancing data visualization.
+Workflow infrastructure for turning labelled, researcher-native life science data frames into reproducible exploratory analyses, metadata-aware reports, statistical comparisons, dimensionality reduction workflows, clustering/projection pipelines, scientific visualizations, and report-ready outputs.
 }
 \seealso{
 Useful links:
