@@ -269,6 +269,8 @@ Contributions, bug reports, and workflow ideas are welcome through
   : Detect outliers using the Tukey IQR rule and visualize results
 - [`InsertValues()`](https://rdastgh1.github.io/SciDataReportR/reference/InsertValues.md)
   : Insert Values into a String Array
+- [`InspectCategoricalSummary()`](https://rdastgh1.github.io/SciDataReportR/reference/InspectCategoricalSummary.md)
+  : Inspect categorical variables
 - [`KeepEnv()`](https://rdastgh1.github.io/SciDataReportR/reference/KeepEnv.md)
   : Keep selected objects in an environment and remove everything else
 - [`MakeComparisonTable()`](https://rdastgh1.github.io/SciDataReportR/reference/MakeComparisonTable.md)
