@@ -3,8 +3,8 @@
 Generate a partial regression plot for a specified independent and
 dependent variable while adjusting for covariates. In addition to the
 figure, key parameters such as the correlation method, whether
-relabeling was used, the covariates, R², p-value, and sample size are
-returned.
+relabeling was used, the covariates, R-squared, p-value, and sample size
+are returned.
 
 ## Usage
 
@@ -64,7 +64,7 @@ A list containing:
 
 - r2:
 
-  The R² of the partial regression model.
+  The R-squared of the partial regression model.
 
 - p_value:
 

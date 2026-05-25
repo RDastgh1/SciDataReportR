@@ -117,9 +117,9 @@ PlotSplitViolin(
 
   Text size for annotation.
 
-- headroom:
+- ...:
 
-  Extra space above data.
+  Additional arguments reserved for future extensions.
 
 ## Value
 

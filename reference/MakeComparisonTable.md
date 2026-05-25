@@ -124,7 +124,7 @@ MakeComparisonTable(
 
 - ShowPositiveBinaryOnLabel:
 
-  If TRUE, display only the “positive” level for binary categorical
+  If TRUE, display only the "positive" level for binary categorical
   variables.
 
 - CatMethod:
@@ -213,15 +213,15 @@ the required fields.
 
 - With covariates:
 
-  - `Parametric = TRUE`: ANCOVA via linear model
-    ([`stats::lm()`](https://rdrr.io/r/stats/lm.html)) with Type II test
-    for the grouping term (car::Anova(type = 2)).
+  - `Parametric = TRUE`: ANCOVA via a linear model with a Type II test
+    for the grouping term using
+    [`car::Anova()`](https://rdrr.io/pkg/car/man/Anova.html).
 
-  - `Parametric = FALSE`: robust ANCOVA via
-    [`stats::lm()`](https://rdrr.io/r/stats/lm.html) plus HC3 robust
-    covariance (sandwich::vcovHC(type = "HC3")) and a Wald F-test for
-    the grouping term
-    ([`car::linearHypothesis()`](https://rdrr.io/pkg/car/man/linearHypothesis.html)).
+  - `Parametric = FALSE`: robust ANCOVA via a linear model plus HC3
+    robust covariance from
+    [`sandwich::vcovHC()`](https://sandwich.R-Forge.R-project.org/reference/vcovHC.html)
+    and a Wald F-test for the grouping term using
+    [`car::linearHypothesis()`](https://rdrr.io/pkg/car/man/linearHypothesis.html).
 
 #### Categorical outcomes (unadjusted)
 
@@ -238,7 +238,9 @@ the required fields.
 #### Categorical outcomes (adjusted; covariates present)
 
 - Binary outcome: logistic regression likelihood ratio test (LR) using
-  stats::glm(family = binomial) and stats::drop1(test = "Chisq").
+  [`stats::glm()`](https://rdrr.io/r/stats/glm.html) with a binomial
+  family and [`stats::drop1()`](https://rdrr.io/r/stats/add1.html) with
+  a chi-squared test.
 
 - Multi-category outcome (3+ levels): multinomial LR (default) via
   [`nnet::multinom()`](https://rdrr.io/pkg/nnet/man/multinom.html) and
@@ -268,7 +270,9 @@ Pairwise columns are added when `AddPairwise = TRUE`.
 
 - No covariates:
 
-  - Parametric: stats::pairwise.t.test(pool.sd = FALSE)
+  - Parametric: Welch pairwise t-tests using
+    [`stats::pairwise.t.test()`](https://rdrr.io/r/stats/pairwise.t.test.html)
+    with `pool.sd = FALSE`.
 
   - Nonparametric:
     [`stats::pairwise.wilcox.test()`](https://rdrr.io/r/stats/pairwise.wilcox.test.html)
@@ -307,11 +311,10 @@ Effect sizes are provided when `AddEffectSize = TRUE`.
 - Continuous, 2 groups, unadjusted: absolute Cohen's d (\|d\|) via
   [`effectsize::cohens_d()`](https://easystats.github.io/effectsize/reference/cohens_d.html).
 
-- Continuous, 3+ groups, unadjusted parametric: eta-squared (η²) via
+- Continuous, 3+ groups, unadjusted parametric: eta-squared via
   [`effectsize::eta_squared()`](https://easystats.github.io/effectsize/reference/eta_squared.html).
 
-- Continuous, adjusted: partial eta-squared (partial η²) from Type II
-  ANOVA table.
+- Continuous, adjusted: partial eta-squared from Type II ANOVA table.
 
 - Continuous, nonparametric: epsilon-squared approximation from
   Kruskal-Wallis.

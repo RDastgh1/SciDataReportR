@@ -131,7 +131,7 @@ MakeFacetCatComparisonTable(
 
 ## Value
 
-A `gtsummary` table created by merging each facet’s
+A `gtsummary` table created by merging each facet's
 [`MakeComparisonTable()`](https://rdastgh1.github.io/SciDataReportR/reference/MakeComparisonTable.md)
 output side-by-side using
 [`gtsummary::tbl_merge()`](https://www.danieldsjoberg.com/gtsummary/reference/tbl_merge.html).

@@ -20,7 +20,7 @@ ApplyNormativeTScores(df, normative_obj, score_prefix = "Norm")
 - normative_obj:
 
   A list returned by
-  [`CreateNormativeTScores()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateNormativeTScores.md).
+  [`CreateNormativeTScoreModel()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateNormativeTScoreModel.md).
 
 - score_prefix:
 
@@ -54,7 +54,7 @@ A tibble containing the original data plus scored columns:
 ## Details
 
 This function is designed to work with the output of
-[`CreateNormativeTScores()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateNormativeTScores.md).
+[`CreateNormativeTScoreModel()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateNormativeTScoreModel.md).
 It uses the saved model and preprocessing settings to score new
 observations consistently.
 
@@ -79,7 +79,7 @@ df <- tibble::tibble(
   TrailsA = c(35, 38, 40, 43, 36, 39, 41, 44, 47, 49) * 1000
 )
 
-norm_obj <- CreateNormativeTScores(
+norm_obj <- CreateNormativeTScoreModel(
   df = df,
   test_var = "TrailsA",
   count_var = "Visit",

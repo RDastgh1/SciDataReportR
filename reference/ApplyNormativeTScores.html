@@ -11,7 +11,7 @@ preprocessing settings used during model development."><meta property="og:image"
 
     <a class="navbar-brand me-2" href="../index.html">SciDataReportR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">16.25.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">17.0.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -20,6 +20,10 @@ preprocessing settings used during model development."><meta property="og:image"
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto"><li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
+<li class="nav-item dropdown">
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/getting-started.html">Getting started with SciDataReportR</a></li>
+  </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
@@ -32,7 +36,7 @@ preprocessing settings used during model development."><meta property="og:image"
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Apply a normative T-score model to new data</h1>
-      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/v16.25.0/R/ApplyNormativeTScores.R" class="external-link"><code>R/ApplyNormativeTScores.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/master/R/ApplyNormativeTScores.R" class="external-link"><code>R/ApplyNormativeTScores.R</code></a></small>
       <div class="d-none name"><code>ApplyNormativeTScores.Rd</code></div>
     </div>
 
@@ -57,7 +61,7 @@ all predictors required by the normative model.</p></dd>
 
 
 <dt id="arg-normative-obj">normative_obj<a class="anchor" aria-label="anchor" href="#arg-normative-obj"></a></dt>
-<dd><p>A list returned by <code><a href="CreateNormativeTScores.html">CreateNormativeTScores()</a></code>.</p></dd>
+<dd><p>A list returned by <code><a href="CreateNormativeTScoreModel.html">CreateNormativeTScoreModel()</a></code>.</p></dd>
 
 
 <dt id="arg-score-prefix">score_prefix<a class="anchor" aria-label="anchor" href="#arg-score-prefix"></a></dt>
@@ -87,7 +91,7 @@ columns. Defaults to <code>"Norm"</code>.</p></dd>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>This function is designed to work with the output of
-<code><a href="CreateNormativeTScores.html">CreateNormativeTScores()</a></code>. It uses the saved model and preprocessing
+<code><a href="CreateNormativeTScoreModel.html">CreateNormativeTScoreModel()</a></code>. It uses the saved model and preprocessing
 settings to score new observations consistently.</p>
     </div>
 
@@ -111,7 +115,7 @@ settings to score new observations consistently.</p>
 <span class="r-in"><span>  TrailsA <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">35</span>, <span class="fl">38</span>, <span class="fl">40</span>, <span class="fl">43</span>, <span class="fl">36</span>, <span class="fl">39</span>, <span class="fl">41</span>, <span class="fl">44</span>, <span class="fl">47</span>, <span class="fl">49</span><span class="op">)</span> <span class="op">*</span> <span class="fl">1000</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="va">norm_obj</span> <span class="op">&lt;-</span> <span class="fu"><a href="CreateNormativeTScores.html">CreateNormativeTScores</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span><span class="va">norm_obj</span> <span class="op">&lt;-</span> <span class="fu"><a href="CreateNormativeTScoreModel.html">CreateNormativeTScoreModel</a></span><span class="op">(</span></span></span>
 <span class="r-in"><span>  df <span class="op">=</span> <span class="va">df</span>,</span></span>
 <span class="r-in"><span>  test_var <span class="op">=</span> <span class="st">"TrailsA"</span>,</span></span>
 <span class="r-in"><span>  count_var <span class="op">=</span> <span class="st">"Visit"</span>,</span></span>

@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">SciDataReportR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">16.25.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">17.0.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -16,6 +16,10 @@
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto"><li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
+<li class="nav-item dropdown">
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/getting-started.html">Getting started with SciDataReportR</a></li>
+  </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
@@ -63,6 +67,13 @@
 
         <dt>
 
+          <code><a href="CalcMScore.html">CalcMScore()</a></code>
+
+        </dt>
+        <dd>Calculate robust M-scores for numeric variables</dd>
+
+        <dt>
+
           <code><a href="CalcZScore.html">CalcZScore()</a></code>
 
         </dt>
@@ -91,10 +102,31 @@
 
         <dt>
 
+          <code><a href="CreateMCAObject.html">CreateMCAObject()</a></code>
+
+        </dt>
+        <dd>Create a reusable MCA object and visualizations</dd>
+
+        <dt>
+
           <code><a href="CreateMCATable.html">CreateMCATable()</a></code>
 
         </dt>
-        <dd>CreateMCATable</dd>
+        <dd>Create MCA table and visualization</dd>
+
+        <dt>
+
+          <code><a href="CreateMScoreObject.html">CreateMScoreObject()</a></code>
+
+        </dt>
+        <dd>Calculate robust M-scores for numeric variables</dd>
+
+        <dt>
+
+          <code><a href="CreateNormativeTScoreModel.html">CreateNormativeTScoreModel()</a></code>
+
+        </dt>
+        <dd>Create normative T-scores from a regression model</dd>
 
         <dt>
 
@@ -102,6 +134,13 @@
 
         </dt>
         <dd>Create normative T-scores from a regression model</dd>
+
+        <dt>
+
+          <code><a href="CreatePCAObject.html">CreatePCAObject()</a></code>
+
+        </dt>
+        <dd>Create a reusable PCA object and visualizations</dd>
 
         <dt>
 
@@ -133,6 +172,13 @@
 
         <dt>
 
+          <code><a href="CreateSOMClusterModel.html">CreateSOMClusterModel()</a></code>
+
+        </dt>
+        <dd>SOM + latent profile clustering pipeline (with AHP and distance baselines)</dd>
+
+        <dt>
+
           <code><a href="CreateStatisticsTable.html">CreateStatisticsTable()</a></code>
 
         </dt>
@@ -154,10 +200,17 @@
 
         <dt>
 
+          <code><a href="CreateZScoreObject.html">CreateZScoreObject()</a></code>
+
+        </dt>
+        <dd>Calculate Z-scores (or standardized scores) and return data + parameters</dd>
+
+        <dt>
+
           <code><a href="CreateZScorePlot.html">CreateZScorePlot()</a></code>
 
         </dt>
-        <dd>Create a Z-Score Plot with Statistical Significance</dd>
+        <dd>Create a Z-score plot with statistical significance</dd>
 
         <dt>
 
@@ -200,6 +253,13 @@
 
         </dt>
         <dd>Make comparison table with covariate adjustment, effect sizes, and pairwise contrasts</dd>
+
+        <dt>
+
+          <code><a href="MakeDataDictionary.html">MakeDataDictionary()</a></code>
+
+        </dt>
+        <dd>Create a data dictionary for a data frame</dd>
 
         <dt>
 
@@ -364,6 +424,13 @@
 
         <dt>
 
+          <code><a href="PlotPathway_KT.html">PlotPathway_KT()</a></code>
+
+        </dt>
+        <dd>Plot the kynurenine-tryptophan pathway</dd>
+
+        <dt>
+
           <code><a href="PlotPhiHeatmap.html">PlotPhiHeatmap()</a></code>
 
         </dt>
@@ -406,6 +473,13 @@
 
         <dt>
 
+          <code><a href="PlotZScore.html">PlotZScore()</a></code>
+
+        </dt>
+        <dd>Plot Z-score group differences with statistical significance</dd>
+
+        <dt>
+
           <code><a href="PrepNumericData.html">PrepNumericData()</a></code>
 
         </dt>
@@ -424,6 +498,20 @@
 
         </dt>
         <dd>Project a trained RCI object onto new data</dd>
+
+        <dt>
+
+          <code><a href="ProjectSOMCluster.html">ProjectSOMCluster()</a></code>
+
+        </dt>
+        <dd>Project new data onto an existing SOM + cluster solution</dd>
+
+        <dt>
+
+          <code><a href="ProjectZScore.html">ProjectZScore()</a></code>
+
+        </dt>
+        <dd>Project standardized scores onto new data using external parameters</dd>
 
         <dt>
 
@@ -514,7 +602,7 @@
           <code><a href="add_r_and_stars.html">add_r_and_stars()</a></code>
 
         </dt>
-        <dd>Add r-values and significance stars to a correlations heatmap (pass <code>res</code>) Works with the list returned by PlotCorrelationsHeatmap().</dd>
+        <dd>Add r-values and significance stars to a correlations heatmap</dd>
 
         <dt>
 

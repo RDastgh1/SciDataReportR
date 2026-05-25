@@ -15,9 +15,9 @@ plotPCA(PCAObj, Var = NULL, t = "NULL", HoverVar = NULL)
 
   A list containing:
 
-  - `Scores` – a matrix/data-frame with the PCA scores.
+  - `Scores` - a matrix/data-frame with the PCA scores.
 
-  - `CombinedData` – the original data used to calculate the PCA.
+  - `CombinedData` - the original data used to calculate the PCA.
 
 - Var:
 

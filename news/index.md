@@ -1,6 +1,57 @@
 # Changelog
 
+## SciDataReportR 17.0.0
+
+### Dependency stability
+
+- Internalized the minimal half-violin geom used by
+  [`PlotSplitViolin()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotSplitViolin.md)
+  so the split-violin workflow no longer depends on the archived
+  `gghalves` package.
+
 ## SciDataReportR 16.25.0
+
+### Documentation and infrastructure positioning
+
+- Repositioned the package as scientific workflow infrastructure for
+  reproducible life science data reporting.
+- Expanded the README with workflow families, a visualization gallery,
+  implemented methods, function dependency chains, and future
+  heatmap/volcano plot roadmap items.
+- Reorganized pkgdown navigation and reference topics around workflows,
+  visualization functions, projection chains, and reusable
+  infrastructure.
+- Clarified the downstream relationship between
+  [`PlotCorrelationsHeatmap()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotCorrelationsHeatmap.md),
+  [`add_r_and_stars()`](https://rdastgh1.github.io/SciDataReportR/reference/add_r_and_stars.md),
+  and
+  [`geom_starcaption()`](https://rdastgh1.github.io/SciDataReportR/reference/geom_starcaption.md).
+- Added a Quarto getting-started article based on the R/Medicine
+  workflow narrative.
+
+### Workflow-oriented public names
+
+- Added canonical workflow-oriented names for reusable objects, models,
+  projections, plots, and metadata workflows.
+- Added
+  [`CreatePCAObject()`](https://rdastgh1.github.io/SciDataReportR/reference/CreatePCAObject.md),
+  [`CreateMCAObject()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateMCAObject.md),
+  [`PlotZScore()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotZScore.md),
+  [`PlotPathway_KT()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotPathway_KT.md),
+  [`MakeDataDictionary()`](https://rdastgh1.github.io/SciDataReportR/reference/MakeDataDictionary.md),
+  [`ProjectZScore()`](https://rdastgh1.github.io/SciDataReportR/reference/ProjectZScore.md),
+  [`ProjectSOMCluster()`](https://rdastgh1.github.io/SciDataReportR/reference/ProjectSOMCluster.md),
+  [`CreateZScoreObject()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateZScoreObject.md),
+  [`CreateMScoreObject()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateMScoreObject.md),
+  [`CreateNormativeTScoreModel()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateNormativeTScoreModel.md),
+  and
+  [`CreateSOMClusterModel()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateSOMClusterModel.md).
+- Preserved backward compatibility: the older public names remain
+  exported as wrappers and do not emit lifecycle warnings.
+- Documented
+  [`PlotPathway_KT()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotPathway_KT.md)
+  as a SciDataReportR visualization that is expected to move to a future
+  metabolomics-focused package.
 
 ## SciDataReportR 16.24.0
 

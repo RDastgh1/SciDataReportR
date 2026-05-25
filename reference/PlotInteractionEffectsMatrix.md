@@ -124,11 +124,11 @@ Color coding:
 
 Darker colors indicate higher significance:
 
-- \*\*\*: p ≤ 0.001 (darkest)
+- \*\*\*: p \<= 0.001 (darkest)
 
-- \*\*: p ≤ 0.01 (medium)
+- \*\*: p \<= 0.01 (medium)
 
-- \*: p ≤ 0.05 (light)
+- \*: p \<= 0.05 (light)
 
 ## Examples
 

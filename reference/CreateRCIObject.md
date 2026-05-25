@@ -77,6 +77,24 @@ CreateRCIObject(
 
   Logical; use variable labels when available.
 
+  \#'
+
+  ### Interpretation guide
+
+  egression-based RCI values are interpreted similarly to z-scores.
+
+  |            |                                 |
+  |------------|---------------------------------|
+  | RCI cutoff | Approximate confidence interval |
+  | +/-0.50    | ~38%                            |
+  | +/-1.00    | ~68%                            |
+  | +/-1.645   | ~90%                            |
+  | +/-1.96    | ~95%                            |
+  | +/-2.58    | ~99%                            |
+
+  Traditional Jacobson-Truax RCI thresholds typically use +/-1.96,
+  corresponding to approximately 95% confidence.
+
 ## Value
 
 A SciDataReportR_RCI object.

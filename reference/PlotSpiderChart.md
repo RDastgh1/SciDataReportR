@@ -3,7 +3,7 @@
 This function summarizes a set of variables and displays them on a
 spider chart. Continuous variables are plotted as mean z-scores by
 default using
-[`CalcZScore()`](https://rdastgh1.github.io/SciDataReportR/reference/CalcZScore.md),
+[`CreateZScoreObject()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateZScoreObject.md),
 while binary variables are plotted as percentages. It can overlay groups
 on one spider chart or facet by group, optionally fill the polygons,
 relabel spokes using variable labels, wrap long labels, reorder

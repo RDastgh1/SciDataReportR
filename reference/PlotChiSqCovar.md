@@ -49,16 +49,10 @@ PlotChiSqCovar(
 
   Logical; included for backward compatibility (currently unused here).
 
-- Stratify:
+- min_n:
 
-  Logical; if TRUE and covars provided, run chi-square within covariate
-  strata and combine p-values with Fisher's method. If FALSE, covars are
-  ignored.
-
-- MinExpected:
-
-  Minimum expected cell count threshold for chi-square validity warning.
-  (used to annotate; test still runs).
+  Minimum number of complete observations required for a tested
+  association.
 
 ## Value
 

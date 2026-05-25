@@ -6,7 +6,14 @@ dataset.
 ## Usage
 
 ``` r
-CreateSummaryTable(data, Ordinal = FALSE, ScrollBoxHeight = 400)
+CreateSummaryTable(
+  Data,
+  Variables = NULL,
+  numdecimals = 2,
+  Relabel = TRUE,
+  Ordinal = FALSE,
+  ScrollBoxHeight = "700px"
+)
 ```
 
 ## Arguments

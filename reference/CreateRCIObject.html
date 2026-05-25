@@ -9,7 +9,7 @@ user-defined reference visit and calculate projected RCI values."><meta property
 
     <a class="navbar-brand me-2" href="../index.html">SciDataReportR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">16.25.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">17.0.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -18,6 +18,10 @@ user-defined reference visit and calculate projected RCI values."><meta property
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto"><li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
+<li class="nav-item dropdown">
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/getting-started.html">Getting started with SciDataReportR</a></li>
+  </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
@@ -30,7 +34,7 @@ user-defined reference visit and calculate projected RCI values."><meta property
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Create a Reliable Change Index (RCI) object</h1>
-      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/v16.25.0/R/CreateRCIObject.R" class="external-link"><code>R/CreateRCIObject.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/master/R/CreateRCIObject.R" class="external-link"><code>R/CreateRCIObject.R</code></a></small>
       <div class="d-none name"><code>CreateRCIObject.Rd</code></div>
     </div>
 
@@ -111,7 +115,14 @@ user-defined reference visit and calculate projected RCI values.</p>
 
 
 <dt id="arg-relabel">Relabel<a class="anchor" aria-label="anchor" href="#arg-relabel"></a></dt>
-<dd><p>Logical; use variable labels when available.</p></dd>
+<dd><p>Logical; use variable labels when available.</p>
+<p>#'</p><div class="section">
+<h3 id="interpretation-guide">Interpretation guide<a class="anchor" aria-label="anchor" href="#interpretation-guide"></a></h3>
+
+
+<p>egression-based RCI values are interpreted similarly to z-scores.</p><table class="table table"><tr><td>RCI cutoff</td><td>Approximate confidence interval</td></tr><tr><td>+/-0.50</td><td>~38%</td></tr><tr><td>+/-1.00</td><td>~68%</td></tr><tr><td>+/-1.645</td><td>~90%</td></tr><tr><td>+/-1.96</td><td>~95%</td></tr><tr><td>+/-2.58</td><td>~99%</td></tr></table><p>Traditional Jacobson-Truax RCI thresholds typically use +/-1.96,
+corresponding to approximately 95% confidence.</p>
+</div></dd>
 
 </dl></div>
     <div class="section level2">

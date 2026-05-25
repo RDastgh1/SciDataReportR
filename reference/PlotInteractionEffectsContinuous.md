@@ -62,7 +62,7 @@ A ggplot object showing the interaction effect
 
 For categorical moderators, separate regression lines are plotted for
 each category. For continuous moderators, regression lines are plotted
-at the mean and ± 1 SD.
+at the mean and +/- 1 SD.
 
 The subtitle shows the p-value for the interaction term. The caption
 lists any covariates included in the model.

@@ -8,16 +8,16 @@
 ## Citation
 
 Source:
-[`DESCRIPTION`](https://github.com/RDastgh1/SciDataReportR/blob/v16.25.0/DESCRIPTION)
+[`DESCRIPTION`](https://github.com/RDastgh1/SciDataReportR/blob/master/DESCRIPTION)
 
-Dastgheyb R (2026). *SciDataReportR: Package for Generating Scientific
-Data Reports*. R package version 16.25.0,
+Dastgheyb R (2026). *SciDataReportR: Workflow Infrastructure for
+Reproducible Scientific Data Reporting*. R package version 17.0.0,
 <https://github.com/RDastgh1/SciDataReportR>.
 
     @Manual{,
-      title = {SciDataReportR: Package for Generating Scientific Data Reports},
+      title = {SciDataReportR: Workflow Infrastructure for Reproducible Scientific Data Reporting},
       author = {Raha Dastgheyb},
       year = {2026},
-      note = {R package version 16.25.0},
+      note = {R package version 17.0.0},
       url = {https://github.com/RDastgh1/SciDataReportR},
     }

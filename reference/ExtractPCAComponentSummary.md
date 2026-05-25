@@ -20,7 +20,7 @@ ExtractPCAComponentSummary(
 
 - PCAObject:
 
-  Output object from CreatePCATable().
+  Output object from CreatePCAObject().
 
 - loading_threshold:
 
@@ -76,7 +76,7 @@ improved readability in HTML tables.
 
 ``` r
 if (FALSE) { # \dontrun{
-pca_obj <- CreatePCATable(
+pca_obj <- CreatePCAObject(
   Data = mtcars,
   VarsToReduce = colnames(mtcars)
 )

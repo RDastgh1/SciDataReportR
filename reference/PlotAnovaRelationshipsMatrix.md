@@ -53,6 +53,15 @@ PlotAnovaRelationshipsMatrix(
 
   Logical, indicating whether ordinal variables should be considered.
 
+- min_n:
+
+  Minimum number of complete observations required for a tested
+  relationship.
+
+- eps:
+
+  Small positive value used to avoid zero-size plotting artifacts.
+
 ## Value
 
 A list containing three ggplot objects: p (scatter plot without multiple

@@ -1,7 +1,8 @@
 # Project PCA scores onto new data
 
-Use an existing PCA solution (either a PCA object from CreatePCATable or
-a loading table) to compute principal component scores on a new dataset.
+Use an existing PCA solution (either a PCA object from CreatePCAObject
+or a loading table) to compute principal component scores on a new
+dataset.
 
 ## Usage
 
@@ -31,10 +32,10 @@ ProjectPCA(
 
   Either:
 
-  - the full object returned by CreatePCATable (when InputType =
+  - the full object returned by CreatePCAObject (when InputType =
     "PCAObj"), or
 
-  - a loading table like CreatePCATable()\$LoadingTable (when InputType
+  - a loading table like CreatePCAObject()\$LoadingTable (when InputType
     = "LoadingTable").
 
 - InputType:

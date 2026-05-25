@@ -1,7 +1,7 @@
 # Plot Phi Correlations Between Binary Variables
 
-Computes pairwise phi coefficients (Φ) between binary categorical
-variables with explicit 0/1 coding (1 == PositiveLevel from
+Computes pairwise phi coefficients between binary categorical variables
+with explicit 0/1 coding (1 == PositiveLevel from
 [`createBinaryMapping()`](https://rdastgh1.github.io/SciDataReportR/reference/createBinaryMapping.md)),
 then renders heatmap-style plots with raw and FDR-adjusted significance.
 

@@ -5,7 +5,7 @@
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<title>Package for Generating Scientific Data Reports • SciDataReportR</title>
+<title>Workflow Infrastructure for Reproducible Scientific Data Reporting • SciDataReportR</title>
 <!-- favicons --><link rel="icon" type="image/png" sizes="96x96" href="favicon-96x96.png">
 <link rel="icon" type="”image/svg+xml”" href="favicon.svg">
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
@@ -15,9 +15,9 @@
 <link href="deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
 <script src="deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
-<script src="deps/headroom-0.11.0/headroom.min.js"></script><script src="deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="deps/search-1.0.0/fuse.min.js"></script><script src="deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="pkgdown.js"></script><meta property="og:title" content="Package for Generating Scientific Data Reports">
-<meta name="description" content="SciDataReportR is a package designed to facilitate the generation of scientific data reports. It provides functions for creating descriptive summary tables, formatting data for analysis, and enhancing data visualization.">
-<meta property="og:description" content="SciDataReportR is a package designed to facilitate the generation of scientific data reports. It provides functions for creating descriptive summary tables, formatting data for analysis, and enhancing data visualization.">
+<script src="deps/headroom-0.11.0/headroom.min.js"></script><script src="deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="deps/search-1.0.0/fuse.min.js"></script><script src="deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="pkgdown.js"></script><meta property="og:title" content="Workflow Infrastructure for Reproducible Scientific Data Reporting">
+<meta name="description" content="Workflow infrastructure for turning labelled, researcher-native life science data frames into reproducible exploratory analyses, metadata-aware reports, statistical comparisons, dimensionality reduction workflows, clustering/projection pipelines, scientific visualizations, and report-ready outputs.">
+<meta property="og:description" content="Workflow infrastructure for turning labelled, researcher-native life science data frames into reproducible exploratory analyses, metadata-aware reports, statistical comparisons, dimensionality reduction workflows, clustering/projection pipelines, scientific visualizations, and report-ready outputs.">
 <meta property="og:image" content="https://rdastgh1.github.io/SciDataReportR/logo.png">
 </head>
 <body>
@@ -28,7 +28,7 @@
 
     <a class="navbar-brand me-2" href="index.html">SciDataReportR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">16.25.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">17.0.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -38,6 +38,12 @@
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto">
 <li class="nav-item"><a class="nav-link" href="reference/index.html">Reference</a></li>
+<li class="nav-item dropdown">
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
+<li><a class="dropdown-item" href="articles/getting-started.html">Getting started with SciDataReportR</a></li>
+  </ul>
+</li>
 <li class="nav-item"><a class="nav-link" href="news/index.html">Changelog</a></li>
       </ul>
 <ul class="navbar-nav">
@@ -58,35 +64,342 @@
 </h1>
 </div>
 <!-- badges: start -->
-<p>SciDataReportR combines custom wrappers and new functions to streamline scientific data reporting in a reproducible manner. The goal is to allow for easy EDA and data analysis with many combinations of variables to allow for both hypothesis generation and hypothesis-driven analysis.</p>
+
+<p>SciDataReportR is an R workflow infrastructure package for turning labelled life science data frames into reproducible exploratory analyses, statistical comparisons, dimensionality reduction workflows, clustering/projection pipelines, scientific visualizations, and report-ready outputs.</p>
+<p>The package is designed for researchers working with practical, researcher-native data structures: data frames, labelled variables, codebooks, variable-type templates, cohorts, visits, outcomes, covariates, and high-dimensional feature sets.</p>
+<div class="section level2">
+<h2 id="why-scidatareportr">Why SciDataReportR?<a class="anchor" aria-label="anchor" href="#why-scidatareportr"></a>
+</h2>
+<p>SciDataReportR helps life science researchers operationalize repeated analysis patterns without rebuilding the same reporting and exploration code for every study.</p>
+<ul>
+<li>Reduces repeated manual EDA, metadata cleanup, comparison tables, visual summaries, and report assembly.</li>
+<li>Keeps labels, variable types, codebooks, and data dictionaries close to the analysis.</li>
+<li>Supports high-dimensional scientific screening across outcomes, cohorts, covariates, and feature sets.</li>
+<li>Enables reusable transformations and projections for new cohorts.</li>
+<li>Follows practical R package conventions from the tidyverse, usethis, roxygen2, and pkgdown ecosystem.</li>
+</ul>
+</div>
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
-<p>You can install the development version of SciDataReportR from <a href="https://github.com/" class="external-link">GitHub</a> with:</p>
+<p>You can install the development version of SciDataReportR from <a href="https://github.com/RDastgh1/SciDataReportR" class="external-link">GitHub</a> with:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># install.packages("devtools")</span></span>
 <span><span class="fu">devtools</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"RDastgh1/SciDataReportR"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
-<h2 id="how-to">How-To<a class="anchor" aria-label="anchor" href="#how-to"></a>
+<h2 id="scientific-workflows">Scientific Workflows<a class="anchor" aria-label="anchor" href="#scientific-workflows"></a>
 </h2>
-<p>We are finalizing work on a vignette, but for how please find examples within these quarto slides: <a href="https://rdastgh1.quarto.pub/rmedicine-2024-scidatareportr" class="external-link uri">https://rdastgh1.quarto.pub/rmedicine-2024-scidatareportr</a></p>
-<!-- ## Example -->
-<!-- This is a basic example which shows you how to solve a common problem: -->
-<!-- ```{r example} -->
-<!-- library(SciDataReportR) -->
-<!-- ## basic example code -->
-<!-- ``` -->
-<!-- What is special about using `README.Rmd` instead of just `README.md`? You can include R chunks like so: -->
-<!-- ```{r cars} -->
-<!-- summary(cars) -->
-<!-- ``` -->
-<!-- You'll still need to render `README.Rmd` regularly, to keep `README.md` up-to-date. `devtools::build_readme()` is handy for this. -->
-<!-- You can also embed plots, for example: -->
-<!-- ```{r pressure, echo = FALSE} -->
-<!-- plot(pressure) -->
-<!-- ``` -->
-<!-- In that case, don't forget to commit and push the resulting figure files, so they display on GitHub and CRAN. -->
+<p>SciDataReportR functions are intended to be used as workflow components rather than alphabetical utilities.</p>
+<table class="table">
+<colgroup>
+<col width="50%">
+<col width="50%">
+</colgroup>
+<thead><tr>
+<th>Workflow family</th>
+<th>Representative functions</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>Data setup and metadata</td>
+<td>
+<code><a href="reference/CreateProjectFolders.html">CreateProjectFolders()</a></code>, <code><a href="reference/CreateVariableTypesTemplate.html">CreateVariableTypesTemplate()</a></code>, <code><a href="reference/MakeDataDictionary.html">MakeDataDictionary()</a></code>, <code><a href="reference/FormattedDataDictionary.html">FormattedDataDictionary()</a></code>, <code><a href="reference/UpdateDataDictionary.html">UpdateDataDictionary()</a></code>
+</td>
+</tr>
+<tr>
+<td>Codebook and harmonization</td>
+<td>
+<code><a href="reference/AddToCodebook.html">AddToCodebook()</a></code>, <code><a href="reference/UpdateCodebook.html">UpdateCodebook()</a></code>, <code><a href="reference/CombineCodebooks.html">CombineCodebooks()</a></code>, <code><a href="reference/MergeCodebooks.html">MergeCodebooks()</a></code>, <code><a href="reference/CodebookMergeApp.html">CodebookMergeApp()</a></code>
+</td>
+</tr>
+<tr>
+<td>Cleaning and preprocessing</td>
+<td>
+<code><a href="reference/ReplaceMissingCode.html">ReplaceMissingCode()</a></code>, <code><a href="reference/ReplaceMissingLabels.html">ReplaceMissingLabels()</a></code>, <code><a href="reference/RevalueData.html">RevalueData()</a></code>, <code><a href="reference/ReValueFactors.html">ReValueFactors()</a></code>, <code><a href="reference/ConvertOrdinalToNumeric.html">ConvertOrdinalToNumeric()</a></code>, <code><a href="reference/windsorize.html">windsorize()</a></code>, <code><a href="reference/IQROutliers.html">IQROutliers()</a></code>
+</td>
+</tr>
+<tr>
+<td>Exploratory profiling</td>
+<td>
+<code><a href="reference/PlotMissingData.html">PlotMissingData()</a></code>, <code><a href="reference/PlotContinuousDistributions.html">PlotContinuousDistributions()</a></code>, <code><a href="reference/PlotCategoricalDistributions.html">PlotCategoricalDistributions()</a></code>, <code><a href="reference/PlotTimeDistribution.html">PlotTimeDistribution()</a></code>, <code><a href="reference/PlotMiningMatrix.html">PlotMiningMatrix()</a></code>
+</td>
+</tr>
+<tr>
+<td>Statistical comparisons</td>
+<td>
+<code><a href="reference/MakeTable1.html">MakeTable1()</a></code>, <code><a href="reference/MakeComparisonTable.html">MakeComparisonTable()</a></code>, <code><a href="reference/MakeFacetCatComparisonTable.html">MakeFacetCatComparisonTable()</a></code>, <code><a href="reference/PlotZScore.html">PlotZScore()</a></code>, <code><a href="reference/Plot2GroupStats.html">Plot2GroupStats()</a></code>
+</td>
+</tr>
+<tr>
+<td>Association and regression mining</td>
+<td>
+<code><a href="reference/PlotAssociations.html">PlotAssociations()</a></code>, <code><a href="reference/PlotCorrelationsHeatmap.html">PlotCorrelationsHeatmap()</a></code>, <code><a href="reference/PlotDirectionalHeatmaps.html">PlotDirectionalHeatmaps()</a></code>, <code><a href="reference/UnivariateRegressionTable.html">UnivariateRegressionTable()</a></code>, <code><a href="reference/plotForestFromTable.html">plotForestFromTable()</a></code>
+</td>
+</tr>
+<tr>
+<td>Dimensionality reduction and projection</td>
+<td>
+<code><a href="reference/CreatePCAObject.html">CreatePCAObject()</a></code>, <code><a href="reference/plotPCA.html">plotPCA()</a></code>, <code><a href="reference/ExtractPCAComponentSummary.html">ExtractPCAComponentSummary()</a></code>, <code><a href="reference/ProjectPCA.html">ProjectPCA()</a></code>, <code><a href="reference/CreateZScoreObject.html">CreateZScoreObject()</a></code>, <code><a href="reference/ProjectZScore.html">ProjectZScore()</a></code>
+</td>
+</tr>
+<tr>
+<td>Normative modeling</td>
+<td>
+<code><a href="reference/CreateNormativeTScoreModel.html">CreateNormativeTScoreModel()</a></code>, <code><a href="reference/ApplyNormativeTScores.html">ApplyNormativeTScores()</a></code>
+</td>
+</tr>
+<tr>
+<td>Clustering and cohort projection</td>
+<td>
+<code><a href="reference/CreateSOMClusterModel.html">CreateSOMClusterModel()</a></code>, <code><a href="reference/ProjectSOMCluster.html">ProjectSOMCluster()</a></code>
+</td>
+</tr>
+<tr>
+<td>Longitudinal and temporal workflows</td>
+<td>
+<code><a href="reference/Merge_ByClosestTime.html">Merge_ByClosestTime()</a></code>, <code><a href="reference/SummarizeTransitions.html">SummarizeTransitions()</a></code>, <code><a href="reference/PlotSwimmerTransitions.html">PlotSwimmerTransitions()</a></code>
+</td>
+</tr>
+<tr>
+<td>Reporting</td>
+<td>
+<code><a href="reference/CreateSummaryTable.html">CreateSummaryTable()</a></code>, <code><a href="reference/CreateStatisticsTable.html">CreateStatisticsTable()</a></code>, <code><a href="reference/use_EDATemplate.html">use_EDATemplate()</a></code>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section level2">
+<h2 id="visualization-gallery">Visualization Gallery<a class="anchor" aria-label="anchor" href="#visualization-gallery"></a>
+</h2>
+<p>Visualization is a cross-cutting SciDataReportR workflow layer. Plot-producing functions also appear in their scientific workflow families because scientists often discover methods through the figures they need.</p>
+<table class="table">
+<colgroup>
+<col width="50%">
+<col width="50%">
+</colgroup>
+<thead><tr>
+<th>Visualization need</th>
+<th>Functions</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>Data quality</td>
+<td>
+<code><a href="reference/PlotMissingData.html">PlotMissingData()</a></code>, <code><a href="reference/PlotContinuousDistributions.html">PlotContinuousDistributions()</a></code>, <code><a href="reference/PlotCategoricalDistributions.html">PlotCategoricalDistributions()</a></code>, <code><a href="reference/IQROutliers.html">IQROutliers()</a></code>
+</td>
+</tr>
+<tr>
+<td>Group comparison</td>
+<td>
+<code><a href="reference/PlotZScore.html">PlotZScore()</a></code>, <code><a href="reference/Plot2GroupStats.html">Plot2GroupStats()</a></code>, <code><a href="reference/PlotPValueComparisons.html">PlotPValueComparisons()</a></code>, <code><a href="reference/PlotSplitViolin.html">PlotSplitViolin()</a></code>
+</td>
+</tr>
+<tr>
+<td>Association and correlation</td>
+<td>
+<code><a href="reference/PlotCorrelationsHeatmap.html">PlotCorrelationsHeatmap()</a></code>, <code><a href="reference/PlotPhiHeatmap.html">PlotPhiHeatmap()</a></code>, <code><a href="reference/PlotPointCorrelationsHeatmap.html">PlotPointCorrelationsHeatmap()</a></code>, <code><a href="reference/PlotDirectionalHeatmaps.html">PlotDirectionalHeatmaps()</a></code>, <code><a href="reference/PlotAssociations.html">PlotAssociations()</a></code>, <code><a href="reference/plotSigCorrelations.html">plotSigCorrelations()</a></code>, <code><a href="reference/plotSigAssociations.html">plotSigAssociations()</a></code>
+</td>
+</tr>
+<tr>
+<td>Regression and interaction</td>
+<td>
+<code><a href="reference/PlotPartialRegressionScatter.html">PlotPartialRegressionScatter()</a></code>, <code><a href="reference/plotForestFromTable.html">plotForestFromTable()</a></code>, <code><a href="reference/PlotInteractionEffectsContinuous.html">PlotInteractionEffectsContinuous()</a></code>, <code><a href="reference/PlotInteractionEffectsMatrix.html">PlotInteractionEffectsMatrix()</a></code>, <code><a href="reference/PlotCatInteractionEffectsMatrix.html">PlotCatInteractionEffectsMatrix()</a></code>, <code><a href="reference/PlotNumInteractionEffectsMatrix.html">PlotNumInteractionEffectsMatrix()</a></code>
+</td>
+</tr>
+<tr>
+<td>Dimensionality reduction and clustering</td>
+<td>
+<code><a href="reference/plotPCA.html">plotPCA()</a></code>, plots produced from <code><a href="reference/CreateSOMClusterModel.html">CreateSOMClusterModel()</a></code> workflows</td>
+</tr>
+<tr>
+<td>Longitudinal and temporal</td>
+<td>
+<code><a href="reference/PlotTimeDistribution.html">PlotTimeDistribution()</a></code>, <code><a href="reference/PlotSwimmerTransitions.html">PlotSwimmerTransitions()</a></code>
+</td>
+</tr>
+<tr>
+<td>Specialized scientific plots</td>
+<td>
+<code><a href="reference/PlotBlandAltman.html">PlotBlandAltman()</a></code>, <code><a href="reference/PlotSpiderChart.html">PlotSpiderChart()</a></code>, <code><a href="reference/PlotPathway_KT.html">PlotPathway_KT()</a></code>
+</td>
+</tr>
+</tbody>
+</table>
+<p>Planned visualization extensions include heatmaps, volcano plots for two-group categorical contrasts, and volcano-style plots for continuous predictors with beta values on the x-axis.</p>
+</div>
+<div class="section level2">
+<h2 id="implemented-methods">Implemented Methods<a class="anchor" aria-label="anchor" href="#implemented-methods"></a>
+</h2>
+<p>SciDataReportR operationalizes practical scientific methods that commonly sit between raw data cleaning and manuscript-ready reporting:</p>
+<ul>
+<li>Codebook, data dictionary, and labelled-variable workflows.</li>
+<li>Cohort comparison with covariates, effect sizes, pairwise contrasts, and report-ready tables.</li>
+<li>Multi-variable z-score comparisons with p-value and FDR signals.</li>
+<li>Correlation, association, regression, and interaction screening.</li>
+<li>PCA creation, summary, visualization, and projection.</li>
+<li>SOM clustering and projection to new data.</li>
+<li>Normative T-score creation and application.</li>
+<li>Longitudinal transition summaries and swimmer-style plotting.</li>
+<li>Scientific visualization outputs tied to reproducible workflows.</li>
+</ul>
+</div>
+<div class="section level2">
+<h2 id="function-inputs-and-workflow-dependencies">Function Inputs and Workflow Dependencies<a class="anchor" aria-label="anchor" href="#function-inputs-and-workflow-dependencies"></a>
+</h2>
+<p>Some functions are designed to consume outputs from other SciDataReportR functions. These relationships are part of the workflow infrastructure and should be checked when composing analyses.</p>
+<p>SciDataReportR now uses workflow-oriented canonical names for new code, while older public names remain available as compatibility aliases. For example, <code><a href="reference/CreatePCATable.html">CreatePCATable()</a></code> still works, but <code><a href="reference/CreatePCAObject.html">CreatePCAObject()</a></code> better describes the reusable PCA object returned by that workflow.</p>
+<table class="table">
+<colgroup>
+<col width="20%">
+<col width="20%">
+<col width="20%">
+<col width="20%">
+<col width="20%">
+</colgroup>
+<thead><tr>
+<th>Function</th>
+<th>Primary input</th>
+<th>Upstream SciDataReportR function</th>
+<th>Output</th>
+<th>Common downstream use</th>
+</tr></thead>
+<tbody>
+<tr>
+<td><code><a href="reference/add_r_and_stars.html">add_r_and_stars()</a></code></td>
+<td>Correlation heatmap result list</td>
+<td><code><a href="reference/PlotCorrelationsHeatmap.html">PlotCorrelationsHeatmap()</a></code></td>
+<td>Annotated <code>ggplot</code>
+</td>
+<td>Add <code><a href="reference/geom_starcaption.html">geom_starcaption()</a></code> for report-ready star explanations</td>
+</tr>
+<tr>
+<td><code><a href="reference/geom_starcaption.html">geom_starcaption()</a></code></td>
+<td>No direct object; added with <code>+</code>
+</td>
+<td>
+<code><a href="reference/PlotCorrelationsHeatmap.html">PlotCorrelationsHeatmap()</a></code> or <code><a href="reference/add_r_and_stars.html">add_r_and_stars()</a></code>
+</td>
+<td>
+<code>labs()</code> caption layer</td>
+<td>Explain <code>*</code>, <code>**</code>, and <code>***</code> thresholds on heatmaps</td>
+</tr>
+<tr>
+<td><code><a href="reference/ApplyNormativeTScores.html">ApplyNormativeTScores()</a></code></td>
+<td>New data and normative scoring object</td>
+<td><code><a href="reference/CreateNormativeTScoreModel.html">CreateNormativeTScoreModel()</a></code></td>
+<td>Applied normative T-scores</td>
+<td>Score future cohorts with the same model</td>
+</tr>
+<tr>
+<td><code><a href="reference/ProjectZScore.html">ProjectZScore()</a></code></td>
+<td>New data and z-score parameters</td>
+<td><code><a href="reference/CreateZScoreObject.html">CreateZScoreObject()</a></code></td>
+<td>Projected standardized scores</td>
+<td>Apply a prior standardization to new data</td>
+</tr>
+<tr>
+<td><code><a href="reference/ProjectPCA.html">ProjectPCA()</a></code></td>
+<td>New data and PCA object</td>
+<td><code><a href="reference/CreatePCAObject.html">CreatePCAObject()</a></code></td>
+<td>Projected PCA scores</td>
+<td>Compare new samples in an existing PCA space</td>
+</tr>
+<tr>
+<td><code><a href="reference/ProjectSOMCluster.html">ProjectSOMCluster()</a></code></td>
+<td>New data and SOM cluster solution</td>
+<td><code><a href="reference/CreateSOMClusterModel.html">CreateSOMClusterModel()</a></code></td>
+<td>Projected SOM/cluster assignments</td>
+<td>Apply an existing cluster solution to future cohorts</td>
+</tr>
+<tr>
+<td><code><a href="reference/ProjectRCI.html">ProjectRCI()</a></code></td>
+<td>New data and RCI object</td>
+<td><code><a href="reference/CreateRCIObject.html">CreateRCIObject()</a></code></td>
+<td>Projected reliable change metrics</td>
+<td>Apply an existing change model</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section level2">
+<h2 id="flagship-workflow-examples">Flagship Workflow Examples<a class="anchor" aria-label="anchor" href="#flagship-workflow-examples"></a>
+</h2>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/RDastgh1/SciDataReportR" class="external-link">SciDataReportR</a></span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Metadata-aware setup</span></span>
+<span><span class="va">variable_types</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/CreateVariableTypesTemplate.html">CreateVariableTypesTemplate</a></span><span class="op">(</span><span class="va">SampleData</span><span class="op">)</span></span>
+<span><span class="va">data_dictionary</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/MakeDataDictionary.html">MakeDataDictionary</a></span><span class="op">(</span><span class="va">SampleData</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Cohort comparison workflow</span></span>
+<span><span class="va">comparison</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/MakeComparisonTable.html">MakeComparisonTable</a></span><span class="op">(</span></span>
+<span>  DataFrame <span class="op">=</span> <span class="va">SampleData</span>,</span>
+<span>  CompVariable <span class="op">=</span> <span class="st">"Diagnosis"</span>,</span>
+<span>  Variables <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"age"</span>, <span class="st">"tau"</span>, <span class="st">"p_tau"</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Correlation heatmap workflow with downstream annotation</span></span>
+<span><span class="va">cor_res</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/PlotCorrelationsHeatmap.html">PlotCorrelationsHeatmap</a></span><span class="op">(</span></span>
+<span>  Data <span class="op">=</span> <span class="va">SampleData</span>,</span>
+<span>  xVars <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"age"</span>, <span class="st">"tau"</span>, <span class="st">"p_tau"</span><span class="op">)</span>,</span>
+<span>  yVars <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Ab_42"</span>, <span class="st">"C_Reactive_Protein"</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">annotated_plot</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/add_r_and_stars.html">add_r_and_stars</a></span><span class="op">(</span><span class="va">cor_res</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="reference/geom_starcaption.html">geom_starcaption</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level2">
+<h2 id="data-structures-and-conventions">Data Structures and Conventions<a class="anchor" aria-label="anchor" href="#data-structures-and-conventions"></a>
+</h2>
+<p>SciDataReportR is built around practical life science data structures:</p>
+<ul>
+<li>Data frames or tibbles with one row per observation, sample, participant, or visit.</li>
+<li>Labelled variables where labels should remain visible in reports and plots.</li>
+<li>Variable-type templates that distinguish continuous, categorical, binary, ordinal, outcome, covariate, and feature variables.</li>
+<li>Codebooks and data dictionaries that document the meaning and structure of datasets.</li>
+<li>Fit/project workflows where a transformation or model learned from one cohort can be applied to a future cohort.</li>
+</ul>
+</div>
+<div class="section level2">
+<h2 id="documentation">Documentation<a class="anchor" aria-label="anchor" href="#documentation"></a>
+</h2>
+<ul>
+<li>Package website: <a href="https://rdastgh1.github.io/SciDataReportR/" class="uri">https://rdastgh1.github.io/SciDataReportR/</a>
+</li>
+<li>Reference index: <a href="https://rdastgh1.github.io/SciDataReportR/reference/" class="uri">https://rdastgh1.github.io/SciDataReportR/reference/</a>
+</li>
+<li>Issues and feature requests: <a href="https://github.com/RDastgh1/SciDataReportR/issues" class="external-link uri">https://github.com/RDastgh1/SciDataReportR/issues</a>
+</li>
+<li>R/Medicine 2024 slides: <a href="https://rdastgh1.quarto.pub/rmedicine-2024-scidatareportr" class="external-link uri">https://rdastgh1.quarto.pub/rmedicine-2024-scidatareportr</a>
+</li>
+</ul>
+</div>
+<div class="section level2">
+<h2 id="roadmap">Roadmap<a class="anchor" aria-label="anchor" href="#roadmap"></a>
+</h2>
+<p>Near-term priorities:</p>
+<ul>
+<li>Expand workflow-oriented vignettes for data setup, codebook harmonization, EDA/reporting, comparisons, visualizations, PCA/projection, SOM projection, normative T-scores, and longitudinal transitions.</li>
+<li>Improve function-level documentation with input object requirements, return structures, and downstream use.</li>
+<li>Add a richer visualization gallery with representative outputs.</li>
+<li>Strengthen release notes, CI, pkgdown organization, and contributor-facing documentation.</li>
+</ul>
+<p>Future directions:</p>
+<ul>
+<li>Heatmap workflows for high-dimensional scientific data.</li>
+<li>Volcano plot workflows for categorical two-group differences.</li>
+<li>Volcano-style workflows for continuous predictors with beta values on the x-axis.</li>
+<li>Workflow templates for cohort comparison, biomarker discovery, longitudinal follow-up, normative scoring, and cluster projection.</li>
+<li>Structured analysis/report cards that summarize inputs, methods, parameters, and outputs.</li>
+<li>Optional AI-native report summaries and machine-readable workflow metadata.</li>
+</ul>
+</div>
+<div class="section level2">
+<h2 id="citation-license-and-contributing">Citation, License, and Contributing<a class="anchor" aria-label="anchor" href="#citation-license-and-contributing"></a>
+</h2>
+<p>SciDataReportR is released under the MIT license. Please cite the package and link to the project website when using it in scientific reports, presentations, or manuscripts.</p>
+<p>Contributions, bug reports, and workflow ideas are welcome through <a href="https://github.com/RDastgh1/SciDataReportR/issues" class="external-link">GitHub issues</a>.</p>
 </div>
 </div>
   </main><aside class="col-md-3"><div class="links">
@@ -120,7 +433,17 @@
 </ul>
 </div>
 
-
+<div class="dev-status">
+<h2 data-toc-skip>Dev status</h2>
+<ul class="list-unstyled">
+<li><a href="https://github.com/RDastgh1/SciDataReportR/actions/workflows/R-CMD-check.yaml" class="external-link"><img src="https://github.com/RDastgh1/SciDataReportR/actions/workflows/R-CMD-check.yaml/badge.svg" alt="R-CMD-check"></a></li>
+<li><a href="https://github.com/RDastgh1/SciDataReportR/actions/workflows/pkgdown.yaml" class="external-link"><img src="https://github.com/RDastgh1/SciDataReportR/actions/workflows/pkgdown.yaml/badge.svg" alt="pkgdown"></a></li>
+<li><a href="https://lifecycle.r-lib.org/articles/stages.html" class="external-link"><img src="https://img.shields.io/badge/lifecycle-maturing-blue.svg" alt="Lifecycle: maturing"></a></li>
+<li><a href="LICENSE.html"><img src="https://img.shields.io/badge/license-MIT-green.svg" alt="License: MIT"></a></li>
+<li><a href="https://github.com/RDastgh1/SciDataReportR/releases" class="external-link"><img src="https://img.shields.io/github/v/release/RDastgh1/SciDataReportR" alt="GitHub release"></a></li>
+<li><a href="https://github.com/RDastgh1/SciDataReportR/issues" class="external-link"><img src="https://img.shields.io/github/issues/RDastgh1/SciDataReportR" alt="GitHub issues"></a></li>
+</ul>
+</div>
 
   </aside>
 </div>

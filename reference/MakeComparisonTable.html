@@ -11,7 +11,7 @@ and optional pairwise comparisons."><meta property="og:image" content="https://r
 
     <a class="navbar-brand me-2" href="../index.html">SciDataReportR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">16.25.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">17.0.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -20,6 +20,10 @@ and optional pairwise comparisons."><meta property="og:image" content="https://r
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto"><li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
+<li class="nav-item dropdown">
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/getting-started.html">Getting started with SciDataReportR</a></li>
+  </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
@@ -32,7 +36,7 @@ and optional pairwise comparisons."><meta property="og:image" content="https://r
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Make comparison table with covariate adjustment, effect sizes, and pairwise contrasts</h1>
-      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/v16.25.0/R/MakeComparisonTable.R" class="external-link"><code>R/MakeComparisonTable.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/master/R/MakeComparisonTable.R" class="external-link"><code>R/MakeComparisonTable.R</code></a></small>
       <div class="d-none name"><code>MakeComparisonTable.Rd</code></div>
     </div>
 
@@ -155,7 +159,7 @@ overall-only table is returned.</p></dd>
 
 
 <dt id="arg-showpositivebinaryonlabel">ShowPositiveBinaryOnLabel<a class="anchor" aria-label="anchor" href="#arg-showpositivebinaryonlabel"></a></dt>
-<dd><p>If TRUE, display only the “positive” level for binary categorical variables.</p></dd>
+<dd><p>If TRUE, display only the "positive" level for binary categorical variables.</p></dd>
 
 
 <dt id="arg-catmethod">CatMethod<a class="anchor" aria-label="anchor" href="#arg-catmethod"></a></dt>
@@ -213,11 +217,11 @@ styling, captioning) and computes additional statistics not provided directly by
 <li><p>3+ groups: Kruskal-Wallis (<code><a href="https://rdrr.io/r/stats/kruskal.test.html" class="external-link">stats::kruskal.test()</a></code>)</p></li>
 </ul></li>
 </ul></li>
-<li><p>With covariates:</p><ul><li><p><code>Parametric = TRUE</code>: ANCOVA via linear model (<code><a href="https://rdrr.io/r/stats/lm.html" class="external-link">stats::lm()</a></code>) with Type II test for the
-grouping term (car::Anova(type = 2)).</p></li>
-<li><p><code>Parametric = FALSE</code>: robust ANCOVA via <code><a href="https://rdrr.io/r/stats/lm.html" class="external-link">stats::lm()</a></code> plus HC3 robust covariance
-(sandwich::vcovHC(type = "HC3")) and a Wald F-test for the grouping term
-(<code><a href="https://rdrr.io/pkg/car/man/linearHypothesis.html" class="external-link">car::linearHypothesis()</a></code>).</p></li>
+<li><p>With covariates:</p><ul><li><p><code>Parametric = TRUE</code>: ANCOVA via a linear model with a Type II test for the
+grouping term using <code><a href="https://rdrr.io/pkg/car/man/Anova.html" class="external-link">car::Anova()</a></code>.</p></li>
+<li><p><code>Parametric = FALSE</code>: robust ANCOVA via a linear model plus HC3 robust covariance
+from <code><a href="https://sandwich.R-Forge.R-project.org/reference/vcovHC.html" class="external-link">sandwich::vcovHC()</a></code> and a Wald F-test for the grouping term using
+<code><a href="https://rdrr.io/pkg/car/man/linearHypothesis.html" class="external-link">car::linearHypothesis()</a></code>.</p></li>
 </ul></li>
 </ul></div>
 
@@ -234,7 +238,7 @@ uses simulated p-value (B = 1e4).</p></li>
 <h4 id="categorical-outcomes-adjusted-covariates-present-">Categorical outcomes (adjusted; covariates present)<a class="anchor" aria-label="anchor" href="#categorical-outcomes-adjusted-covariates-present-"></a></h4>
 
 <ul><li><p>Binary outcome: logistic regression likelihood ratio test (LR) using
-stats::glm(family = binomial) and stats::drop1(test = "Chisq").</p></li>
+<code><a href="https://rdrr.io/r/stats/glm.html" class="external-link">stats::glm()</a></code> with a binomial family and <code><a href="https://rdrr.io/r/stats/add1.html" class="external-link">stats::drop1()</a></code> with a chi-squared test.</p></li>
 <li><p>Multi-category outcome (3+ levels): multinomial LR (default) via <code><a href="https://rdrr.io/pkg/nnet/man/multinom.html" class="external-link">nnet::multinom()</a></code> and
 an LR comparison of models with and without the grouping term.
 Controlled by <code>MultiCatAdjusted</code>, which defaults to <code>"multinomial_LR"</code>.</p></li>
@@ -264,7 +268,8 @@ Controlled by <code>MultiCatAdjusted</code>, which defaults to <code>"multinomia
 <div class="section">
 <h4 id="continuous-outcomes-1">Continuous outcomes<a class="anchor" aria-label="anchor" href="#continuous-outcomes-1"></a></h4>
 
-<ul><li><p>No covariates:</p><ul><li><p>Parametric: stats::pairwise.t.test(pool.sd = FALSE)</p></li>
+<ul><li><p>No covariates:</p><ul><li><p>Parametric: Welch pairwise t-tests using <code><a href="https://rdrr.io/r/stats/pairwise.t.test.html" class="external-link">stats::pairwise.t.test()</a></code> with
+<code>pool.sd = FALSE</code>.</p></li>
 <li><p>Nonparametric: <code><a href="https://rdrr.io/r/stats/pairwise.wilcox.test.html" class="external-link">stats::pairwise.wilcox.test()</a></code></p></li>
 </ul></li>
 <li><p>With covariates:</p><ul><li><p>Uses adjusted means via <code><a href="https://rvlenth.github.io/emmeans/reference/emmeans.html" class="external-link">emmeans::emmeans()</a></code> on the ANCOVA model.</p></li>
@@ -292,8 +297,8 @@ in that case, the function automatically switches to logistic LR for that pair.<
 
 
 <p>Effect sizes are provided when <code>AddEffectSize = TRUE</code>.</p><ul><li><p>Continuous, 2 groups, unadjusted: absolute Cohen's d (|d|) via <code><a href="https://easystats.github.io/effectsize/reference/cohens_d.html" class="external-link">effectsize::cohens_d()</a></code>.</p></li>
-<li><p>Continuous, 3+ groups, unadjusted parametric: eta-squared (η²) via <code><a href="https://easystats.github.io/effectsize/reference/eta_squared.html" class="external-link">effectsize::eta_squared()</a></code>.</p></li>
-<li><p>Continuous, adjusted: partial eta-squared (partial η²) from Type II ANOVA table.</p></li>
+<li><p>Continuous, 3+ groups, unadjusted parametric: eta-squared via <code><a href="https://easystats.github.io/effectsize/reference/eta_squared.html" class="external-link">effectsize::eta_squared()</a></code>.</p></li>
+<li><p>Continuous, adjusted: partial eta-squared from Type II ANOVA table.</p></li>
 <li><p>Continuous, nonparametric: epsilon-squared approximation from Kruskal-Wallis.</p></li>
 <li><p>Categorical: Cramer's V (uses DescTools if available; otherwise a chi-squared-based approximation).</p></li>
 </ul></div>

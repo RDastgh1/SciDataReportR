@@ -15,7 +15,7 @@ If you need true covariate adjustment, use regression-based models (logistic/mul
 
     <a class="navbar-brand me-2" href="../index.html">SciDataReportR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">16.25.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">17.0.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -24,6 +24,10 @@ If you need true covariate adjustment, use regression-based models (logistic/mul
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto"><li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
+<li class="nav-item dropdown">
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/getting-started.html">Getting started with SciDataReportR</a></li>
+  </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
@@ -36,7 +40,7 @@ If you need true covariate adjustment, use regression-based models (logistic/mul
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Plot Chi-Square Tests for Categorical Associations (optionally stratified by covariates)</h1>
-      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/v16.25.0/R/PlotChiSqCovar.R" class="external-link"><code>R/PlotChiSqCovar.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/master/R/PlotChiSqCovar.R" class="external-link"><code>R/PlotChiSqCovar.R</code></a></small>
       <div class="d-none name"><code>PlotChiSqCovar.Rd</code></div>
     </div>
 
@@ -89,14 +93,8 @@ If you need true covariate adjustment, use regression-based models (logistic/mul
 <dd><p>Logical; included for backward compatibility (currently unused here).</p></dd>
 
 
-<dt id="arg-stratify">Stratify<a class="anchor" aria-label="anchor" href="#arg-stratify"></a></dt>
-<dd><p>Logical; if TRUE and covars provided, run chi-square within covariate strata and
-combine p-values with Fisher's method. If FALSE, covars are ignored.</p></dd>
-
-
-<dt id="arg-minexpected">MinExpected<a class="anchor" aria-label="anchor" href="#arg-minexpected"></a></dt>
-<dd><p>Minimum expected cell count threshold for chi-square validity warning.
-(used to annotate; test still runs).</p></dd>
+<dt id="arg-min-n">min_n<a class="anchor" aria-label="anchor" href="#arg-min-n"></a></dt>
+<dd><p>Minimum number of complete observations required for a tested association.</p></dd>
 
 </dl></div>
     <div class="section level2">
