@@ -57,8 +57,7 @@ PlotSplitViolin <- function(
     ...
 ) {
 
-  stopifnot(requireNamespace("gghalves", quietly = TRUE),
-            requireNamespace("emmeans", quietly = TRUE))
+  stopifnot(requireNamespace("emmeans", quietly = TRUE))
 
   star_from  <- match.arg(star_from)
   n_position <- match.arg(n_position)
@@ -177,7 +176,7 @@ PlotSplitViolin <- function(
   df_left <- df[df$.Group == g_left, ]
 
   p <- ggplot2::ggplot() +
-    gghalves::geom_half_violin(
+    geom_sdr_half_violin(
       data = df_left,
       ggplot2::aes(x = 1, y = !!Var, fill = .Group),
       side = "l", alpha = 0.8
@@ -186,7 +185,7 @@ PlotSplitViolin <- function(
   if (!is.null(g_right)) {
     df_right <- df[df$.Group == g_right, ]
     p <- p +
-      gghalves::geom_half_violin(
+      geom_sdr_half_violin(
         data = df_right,
         ggplot2::aes(x = 1, y = !!Var, fill = .Group),
         side = "r", alpha = 0.8

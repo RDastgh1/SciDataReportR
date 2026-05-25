@@ -45,7 +45,6 @@ Suggests:
     effectsize,
     emmeans,
     FactoMineR,
-    gghalves,
     ggnewscale,
     ggdist,
     ggrepel,

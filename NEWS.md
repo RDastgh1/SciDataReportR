@@ -1,5 +1,10 @@
 # SciDataReportR 17.0.0
 
+## Dependency stability
+
+- Internalized the minimal half-violin geom used by `PlotSplitViolin()` so the
+  split-violin workflow no longer depends on the archived `gghalves` package.
+
 # SciDataReportR 16.25.0
 
 ## Documentation and infrastructure positioning

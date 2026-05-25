@@ -56,6 +56,24 @@ test_that("plot compatibility wrappers return ggplot objects", {
   )
 })
 
+test_that("PlotSplitViolin builds with internal half-violin geom", {
+  skip_if_not_installed("emmeans")
+
+  df <- data.frame(
+    group = rep(c("A", "B"), each = 20),
+    value = c(seq(1, 20), seq(6, 25))
+  )
+
+  p <- PlotSplitViolin(df, value, group)
+
+  expect_s3_class(p, "ggplot")
+  expect_equal(
+    unname(vapply(p$layers[1:2], function(layer) class(layer$geom)[1], character(1))),
+    c("GeomSdrHalfViolin", "GeomSdrHalfViolin")
+  )
+  expect_silent(ggplot2::ggplot_build(p))
+})
+
 test_that("PCA and MCA compatibility wrappers expose the same structures", {
   skip_if_not_installed("psych")
   skip_if_not_installed("xtable")
