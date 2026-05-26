@@ -650,9 +650,9 @@ PlotCorrelationsHeatmap <- function(
       ) +
 
       ggplot2::scale_fill_gradient2(
-        low = "#2166AC",
+        high = "#2166AC",
         mid = "white",
-        high = "#B2182B",
+        low = "#B2182B",
         midpoint = 0,
         limits = c(-1, 1),
         na.value = "grey90",

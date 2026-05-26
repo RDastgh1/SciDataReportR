@@ -1,95 +1,107 @@
 #' Create a reusable PCA object and visualizations
 #'
-#' Perform principal component analysis (PCA) on specified variables and create
-#' visualizations. The default `"classic"` mode preserves the original
-#' `psych::principal()` workflow for compatibility with existing
-#' SciDataReportR analyses. The optional `"omics"` mode is designed for
-#' high-dimensional data such as proteomics, metabolomics, and other settings
-#' where the number of variables is much larger than the number of participants.
+#' Perform principal component analysis (PCA) on specified variables and return
+#' reusable PCA results, scores, loading tables, combined data, and plots.
 #'
-#' In `"omics"` mode, the function avoids computing one component per input
-#' variable. Instead, it computes a capped number of components using a faster
-#' PCA backend, applies optional variance filtering, and then applies rotation
-#' and sorting so loadings remain interpretable. This is useful when PCA is being
-#' used for exploratory structure, visualization, latent biological signal, or
-#' clustering rather than exhaustive factor decomposition.
+#' The default `"classic"` mode preserves the original `psych::principal()`
+#' workflow for compatibility with existing SciDataReportR analyses. The
+#' optional `"omics"` mode is designed for high-dimensional data such as
+#' proteomics, metabolomics, flow cytometry, FACS, transcriptomics, and other
+#' settings where the number of variables may be large relative to the number
+#' of participants.
 #'
-#' @param Data The dataset containing the variables for PCA.
-#' @param VarsToReduce A character vector specifying the variables to include in
-#'   the PCA.
-#' @param VariableCategories Optional categorical vector, used to color the
-#'   lollipop plot. Must be the same length and order as `VarsToReduce` if
-#'   provided.
-#' @param minThresh The minimum threshold for cumulative proportion of variance.
-#'   Default is `0.85`. In `"omics"` mode, this threshold is evaluated only
-#'   across the capped scree components.
-#' @param scale Logical, indicating whether to scale the data by standard
-#'   deviation. Default is `TRUE`.
-#' @param center Logical, indicating whether to center the data by subtracting
-#'   the mean. Default is `TRUE`.
-#' @param Ordinal Logical, indicating whether ordinal variables should be
-#'   handled. Currently not used inside this function.
-#' @param numComponents Number of principal components to compute. If `NULL`,
-#'   chosen by `minThresh` in `"classic"` mode and by capped scree results in
-#'   `"omics"` mode.
+#' The function uses raw variable names internally, but by default uses variable
+#' labels in human-facing outputs when labels are available. Variables with
+#' zero or undefined standard deviation after preprocessing are dropped
+#' automatically with a warning so PCA can continue without manual preprocessing.
+#'
+#' @param Data A data frame containing the variables for PCA.
+#' @param VarsToReduce Character vector of raw variable names to include in PCA.
+#' @param VariableCategories Optional vector used to color variables in the
+#'   lollipop loading plot. If supplied, it should be the same length and order
+#'   as `VarsToReduce`.
+#' @param Relabel Logical. If `TRUE`, variable labels are used in output tables
+#'   and plots when available. If `FALSE`, raw variable names are used. Default
+#'   is `TRUE`.
+#' @param minThresh Numeric threshold for cumulative variance used to select the
+#'   number of components when `numComponents = NULL`. Default is `0.85`.
+#' @param scale Logical. If `TRUE`, variables are scaled by their standard
+#'   deviation before PCA. Default is `TRUE`.
+#' @param center Logical. If `TRUE`, variables are centered before PCA. Default
+#'   is `TRUE`.
+#' @param Ordinal Logical. Placeholder retained for backward compatibility.
+#'   Currently not used inside this function.
+#' @param numComponents Optional integer number of components to retain. If
+#'   `NULL`, the number is selected using `minThresh`.
 #' @param Mode Character. Either `"classic"` or `"omics"`. `"classic"` preserves
 #'   the original `psych::principal()` behavior. `"omics"` uses capped PCA logic
-#'   for high-dimensional data.
+#'   for higher-dimensional data.
 #' @param backend Character. PCA backend to use. Options are `"psych"`,
-#'   `"prcomp"`, and `"irlba"`. Default is `"psych"` to preserve backward
-#'   compatibility. In `"omics"` mode, `"irlba"` is recommended for speed.
+#'   `"prcomp"`, and `"irlba"`. Default is `"psych"` for compatibility.
 #' @param rotate Character. Rotation method. Options are `"varimax"` and
-#'   `"none"`. Default is `"varimax"` to preserve interpretability and existing
-#'   loading-table behavior.
-#' @param maxComponents Maximum number of final components to retain in
-#'   `"omics"` mode when `numComponents` is `NULL`. Default is `20`.
-#' @param maxScreeComponents Maximum number of components used to estimate and
-#'   plot the scree curve in `"omics"` mode. Default is `20`.
+#'   `"none"`. Default is `"varimax"`.
+#' @param maxComponents Integer. Maximum number of final components to retain in
+#'   `"omics"` mode when `numComponents = NULL`. Default is `20`.
+#' @param maxScreeComponents Integer. Maximum number of components used to
+#'   estimate and plot the scree curve in `"omics"` mode. Default is `20`.
 #' @param VarianceFilter Optional numeric value for variance filtering before
-#'   PCA in `"omics"` mode. If `VarianceFilterMethod = "top_n"`, this keeps the
-#'   top `VarianceFilter` most variable variables. If
-#'   `VarianceFilterMethod = "variance_quantile"`, this keeps variables with
+#'   PCA in `"omics"` mode. If `VarianceFilterMethod = "top_n"`, keeps the top
+#'   `VarianceFilter` most variable variables. If
+#'   `VarianceFilterMethod = "variance_quantile"`, keeps variables with
 #'   variance at or above the specified quantile.
 #' @param VarianceFilterMethod Character. Either `"top_n"` or
-#'   `"variance_quantile"`.
-#' @param MissingnessWarningThreshold Numeric threshold for warning about high
+#'   `"variance_quantile"`. Default is `"top_n"`.
+#' @param MissingnessWarningThreshold Numeric threshold for warning about
 #'   variable-level missingness. Default is `0.20`.
 #' @param ParticipantMissingnessWarningThreshold Numeric threshold for warning
-#'   about high participant-level missingness. Default is `0.20`.
+#'   about participant-level missingness. Default is `0.20`.
 #' @param imputeMethod Character. Missing-data imputation method. Options are
-#'   `"missRanger"` and `"median"`. Default is `"missRanger"` to preserve the
-#'   original behavior.
+#'   `"missRanger"` and `"median"`. Default is `"missRanger"`.
 #' @param SuppressWarnings Logical. If `TRUE`, suppresses PCA-specific warning
 #'   messages from this function. Default is `FALSE`.
 #'
-#' @return A list containing PCA results and visualizations:
-#'   \item{p_scree}{Scree and variance plot as a ggplot object.}
-#'   \item{pcaresults}{PCA result object. In `"classic"` mode this is the
+#' @return A list with the following elements:
+#' \describe{
+#'   \item{p_scree}{A ggplot scree and cumulative variance plot.}
+#'   \item{pcaresults}{The PCA result object. In `"classic"` mode this is a
 #'   `psych::principal()` result after `psych::fa.sort()`. In `"omics"` mode
-#'   this is a harmonized list with rotated and sorted loadings, scores, and
-#'   variance information.}
-#'   \item{LoadingTable}{Data frame of rotated loadings with variable names and
-#'   labels.}
-#'   \item{Scores}{Matrix or data frame of component scores.}
-#'   \item{CombinedData}{Original data with component scores appended.}
-#'   \item{Lollipop}{Lollipop-style loading plot as a ggplot object.}
-#'   \item{ScaleParams}{List with means, standard deviations, center, and scale.}
-#'   \item{VarsUsed}{Character vector of variables actually used in PCA.}
-#'   \item{VarianceTable}{Table of variance explained by component.}
-#'   \item{Mode}{PCA mode used.}
-#'   \item{Backend}{PCA backend used.}
-#'   \item{Center}{Logical flag indicating if centering was used.}
-#'   \item{Scale}{Logical flag indicating if scaling was used.}
+#'   with `"prcomp"` or `"irlba"`, this is a harmonized list containing loadings,
+#'   scores, variance information, backend, mode, and rotation.}
+#'   \item{LoadingTable}{A data frame of component loadings with raw variable
+#'   names, labels, and duplicate-safe plot labels.}
+#'   \item{Scores}{A data frame of component scores.}
+#'   \item{CombinedData}{The original input data with component scores appended.}
+#'   \item{Lollipop}{A ggplot lollipop loading plot.}
+#'   \item{ScaleParams}{A list containing centering and scaling parameters.}
+#'   \item{VarsUsed}{Character vector of variables actually used in PCA after
+#'   preprocessing.}
+#'   \item{VarianceTable}{A variance table used for optional omics variance
+#'   filtering, or `NULL`.}
+#'   \item{Preprocessing}{A list documenting variables dropped during
+#'   preprocessing and missingness summaries.}
+#'   \item{Mode}{The PCA mode used.}
+#'   \item{Backend}{The PCA backend used.}
+#'   \item{Center}{Logical flag indicating whether centering was used.}
+#'   \item{Scale}{Logical flag indicating whether scaling was used.}
+#' }
 #'
 #' @examples
-#' \dontrun{
 #' PCA <- CreatePCAObject(
 #'   Data = mtcars,
 #'   VarsToReduce = names(mtcars),
-#'   numComponents = 3
+#'   numComponents = 3,
+#'   imputeMethod = "median"
 #' )
 #'
-#' PCA_Omics <- CreatePCAObject(
+#' PCA_raw_names <- CreatePCAObject(
+#'   Data = mtcars,
+#'   VarsToReduce = names(mtcars),
+#'   Relabel = FALSE,
+#'   numComponents = 3,
+#'   imputeMethod = "median"
+#' )
+#'
+#' PCA_omics <- CreatePCAObject(
 #'   Data = mtcars,
 #'   VarsToReduce = names(mtcars),
 #'   Mode = "omics",
@@ -98,28 +110,28 @@
 #'   maxScreeComponents = 5,
 #'   imputeMethod = "median"
 #' )
-#' }
 #'
 #' @export
 CreatePCAObject <- function(Data,
-                           VarsToReduce,
-                           VariableCategories = NULL,
-                           minThresh = 0.85,
-                           scale = TRUE,
-                           center = TRUE,
-                           Ordinal = FALSE,
-                           numComponents = NULL,
-                           Mode = c("classic", "omics"),
-                           backend = c("psych", "prcomp", "irlba"),
-                           rotate = c("varimax", "none"),
-                           maxComponents = 20,
-                           maxScreeComponents = 20,
-                           VarianceFilter = NULL,
-                           VarianceFilterMethod = c("top_n", "variance_quantile"),
-                           MissingnessWarningThreshold = 0.20,
-                           ParticipantMissingnessWarningThreshold = 0.20,
-                           imputeMethod = c("missRanger", "median"),
-                           SuppressWarnings = FALSE) {
+                            VarsToReduce,
+                            VariableCategories = NULL,
+                            Relabel = TRUE,
+                            minThresh = 0.85,
+                            scale = TRUE,
+                            center = TRUE,
+                            Ordinal = FALSE,
+                            numComponents = NULL,
+                            Mode = c("classic", "omics"),
+                            backend = c("psych", "prcomp", "irlba"),
+                            rotate = c("varimax", "none"),
+                            maxComponents = 20,
+                            maxScreeComponents = 20,
+                            VarianceFilter = NULL,
+                            VarianceFilterMethod = c("top_n", "variance_quantile"),
+                            MissingnessWarningThreshold = 0.20,
+                            ParticipantMissingnessWarningThreshold = 0.20,
+                            imputeMethod = c("missRanger", "median"),
+                            SuppressWarnings = FALSE) {
 
   Mode <- match.arg(Mode)
   backend <- match.arg(backend)
@@ -134,6 +146,34 @@ CreatePCAObject <- function(Data,
     )
   }
 
+  if (!is.data.frame(Data)) {
+    stop("Data must be a data frame.")
+  }
+
+  if (!is.character(VarsToReduce) || length(VarsToReduce) == 0) {
+    stop("VarsToReduce must be a non-empty character vector of variable names.")
+  }
+
+  if (!is.logical(Relabel) || length(Relabel) != 1) {
+    stop("Relabel must be a single logical value: TRUE or FALSE.")
+  }
+
+  if (!is.logical(SuppressWarnings) || length(SuppressWarnings) != 1) {
+    stop("SuppressWarnings must be a single logical value: TRUE or FALSE.")
+  }
+
+  if (!is.null(numComponents)) {
+    if (!is.numeric(numComponents) || length(numComponents) != 1 || numComponents < 1) {
+      stop("numComponents must be NULL or a single positive number.")
+    }
+
+    numComponents <- as.integer(numComponents)
+  }
+
+  if (!is.numeric(minThresh) || length(minThresh) != 1 || minThresh <= 0 || minThresh > 1) {
+    stop("minThresh must be a single numeric value greater than 0 and less than or equal to 1.")
+  }
+
   classcolors <- c(
     paletteer::paletteer_d("calecopal::superbloom2"),
     paletteer::paletteer_d("calecopal::vermillion"),
@@ -141,20 +181,8 @@ CreatePCAObject <- function(Data,
     paletteer::paletteer_d("fishualize::Bodianus_rufus")
   )
 
-  # 1. Label codebook (always use labels if present)
-  Data <- ReplaceMissingLabels(Data)
-  lbls <- sjlabelled::get_label(Data)
+  # Validate inputs
 
-  lbls[is.null(lbls)] <- ""
-  lbls[lbls == ""] <- colnames(Data)[lbls == ""]
-
-  LabelCodebook <- data.frame(
-    Variable = colnames(Data),
-    Labels   = lbls,
-    stringsAsFactors = FALSE
-  )
-
-  # 2. Subset to PCA variables
   missing_vars <- setdiff(VarsToReduce, colnames(Data))
 
   if (length(missing_vars) > 0) {
@@ -164,20 +192,70 @@ CreatePCAObject <- function(Data,
     )
   }
 
+  if (!is.null(VariableCategories) && length(VariableCategories) != length(VarsToReduce)) {
+    stop(
+      "VariableCategories must be NULL or the same length as VarsToReduce. ",
+      "Received ", length(VariableCategories), " categories for ",
+      length(VarsToReduce), " variables."
+    )
+  }
+
+  # Prepare labels
+
+  Data <- ReplaceMissingLabels(Data)
+
+  lbls <- sjlabelled::get_label(Data)
+
+  if (is.null(lbls)) {
+    lbls <- rep("", ncol(Data))
+    names(lbls) <- colnames(Data)
+  }
+
+  lbls[is.na(lbls)] <- ""
+  lbls[lbls == ""] <- colnames(Data)[lbls == ""]
+
+  LabelCodebook <- data.frame(
+    Variable = colnames(Data),
+    Labels = as.character(lbls),
+    stringsAsFactors = FALSE
+  )
+
+  if (!Relabel) {
+    LabelCodebook$Labels <- LabelCodebook$Variable
+  }
+
+  # Prepare data
+
+  VarsOriginal <- VarsToReduce
+  VariableCategoryTable <- NULL
+
+  if (!is.null(VariableCategories)) {
+    VariableCategoryTable <- data.frame(
+      Variable = VarsToReduce,
+      Category = as.character(VariableCategories),
+      stringsAsFactors = FALSE
+    )
+  }
+
   DataSubset <- Data[VarsToReduce]
 
   is_num <- vapply(DataSubset, is.numeric, logical(1))
-  if (!all(is_num)) {
-    warning(
-      "Dropping non numeric variables from PCA: ",
-      paste(VarsToReduce[!is_num], collapse = ", ")
-    )
+  dropped_non_numeric <- VarsToReduce[!is_num]
+
+  if (length(dropped_non_numeric) > 0) {
+    if (!SuppressWarnings) {
+      warning(
+        "Dropping non-numeric PCA variables: ",
+        paste(dropped_non_numeric, collapse = ", ")
+      )
+    }
+
     VarsToReduce <- VarsToReduce[is_num]
-    DataSubset   <- DataSubset[VarsToReduce]
+    DataSubset <- DataSubset[VarsToReduce]
   }
 
-  if (length(VarsToReduce) == 0) {
-    stop("No numeric VarsToReduce available for PCA.")
+  if (length(VarsToReduce) < 2) {
+    stop("At least 2 numeric VarsToReduce are required for PCA.")
   }
 
   if (Mode == "classic" &&
@@ -191,7 +269,6 @@ CreatePCAObject <- function(Data,
     )
   }
 
-  # 3. Warn about missingness
   variable_missingness <- colMeans(is.na(DataSubset))
   participant_missingness <- rowMeans(is.na(DataSubset))
 
@@ -208,6 +285,8 @@ CreatePCAObject <- function(Data,
       length(high_missing_vars),
       " PCA variables have missingness above ",
       MissingnessWarningThreshold,
+      ": ",
+      paste(high_missing_vars, collapse = ", "),
       ". Consider filtering before PCA."
     )
   }
@@ -221,8 +300,10 @@ CreatePCAObject <- function(Data,
     )
   }
 
-  # 4. Optional variance filtering for omics-scale PCA
+  # Optional variance filtering
+
   VarianceTable <- NULL
+  dropped_by_variance_filter <- character(0)
 
   if (Mode == "omics" && !is.null(VarianceFilter)) {
     variable_variance <- vapply(
@@ -240,12 +321,28 @@ CreatePCAObject <- function(Data,
       dplyr::arrange(dplyr::desc(Variance))
 
     if (VarianceFilterMethod == "top_n") {
+      if (!is.numeric(VarianceFilter) ||
+          length(VarianceFilter) != 1 ||
+          VarianceFilter < 1) {
+        stop("When VarianceFilterMethod = 'top_n', VarianceFilter must be a single positive number.")
+      }
+
       VarsKeep <- VarianceTable %>%
-        dplyr::slice_head(n = VarianceFilter) %>%
+        dplyr::slice_head(n = as.integer(VarianceFilter)) %>%
         dplyr::pull(Variable)
     }
 
     if (VarianceFilterMethod == "variance_quantile") {
+      if (!is.numeric(VarianceFilter) ||
+          length(VarianceFilter) != 1 ||
+          VarianceFilter < 0 ||
+          VarianceFilter > 1) {
+        stop(
+          "When VarianceFilterMethod = 'variance_quantile', ",
+          "VarianceFilter must be a single numeric value between 0 and 1."
+        )
+      }
+
       variance_cutoff <- stats::quantile(
         variable_variance,
         probs = VarianceFilter,
@@ -257,23 +354,40 @@ CreatePCAObject <- function(Data,
         dplyr::pull(Variable)
     }
 
+    dropped_by_variance_filter <- setdiff(VarsToReduce, VarsKeep)
+
     DataSubset <- DataSubset[VarsKeep]
     VarsToReduce <- VarsKeep
-
-    if (!is.null(VariableCategories)) {
-      VariableCategories <- VariableCategories[
-        match(VarsToReduce, names(Data[VarsToReduce]))
-      ]
-    }
   }
 
-  # 5. Impute missing data
+  if (length(VarsToReduce) < 2) {
+    stop("Fewer than 2 PCA variables remain after variance filtering.")
+  }
+
+  # Impute missing data
+
   if (sum(is.na(DataSubset)) > 0) {
     if (imputeMethod == "missRanger") {
+      if (!requireNamespace("missRanger", quietly = TRUE)) {
+        stop(
+          "The missRanger package is required when imputeMethod = 'missRanger'. ",
+          "Install it with install.packages('missRanger') or use imputeMethod = 'median'."
+        )
+      }
+
       set.seed(123456)
-      colnames(DataSubset) <- make.names(VarsToReduce)
-      DataSubset <- missRanger::missRanger(DataSubset, num.trees = 100)
-      colnames(DataSubset) <- VarsToReduce
+
+      original_names <- colnames(DataSubset)
+      safe_names <- make.names(original_names, unique = TRUE)
+
+      colnames(DataSubset) <- safe_names
+
+      DataSubset <- missRanger::missRanger(
+        data = DataSubset,
+        num.trees = 100
+      )
+
+      colnames(DataSubset) <- original_names
     }
 
     if (imputeMethod == "median") {
@@ -281,18 +395,58 @@ CreatePCAObject <- function(Data,
         dplyr::mutate(
           dplyr::across(
             dplyr::everything(),
-            ~ ifelse(is.na(.x), stats::median(.x, na.rm = TRUE), .x)
+            ~ {
+              med <- stats::median(.x, na.rm = TRUE)
+
+              if (is.na(med)) {
+                return(.x)
+              }
+
+              dplyr::if_else(is.na(.x), med, .x)
+            }
           )
         )
     }
   }
 
-  # 6. Scale and center once, and store parameters
+  # Drop zero or undefined variance variables after imputation
+
+  raw_sds <- vapply(
+    DataSubset,
+    stats::sd,
+    numeric(1),
+    na.rm = TRUE
+  )
+
+  zero_sd_vars <- names(raw_sds)[raw_sds == 0 | is.na(raw_sds)]
+
+  if (length(zero_sd_vars) > 0) {
+    if (!SuppressWarnings) {
+      warning(
+        "Dropping PCA variables with zero or undefined standard deviation after preprocessing: ",
+        paste(zero_sd_vars, collapse = ", ")
+      )
+    }
+
+    VarsToReduce <- setdiff(VarsToReduce, zero_sd_vars)
+    DataSubset <- DataSubset[, VarsToReduce, drop = FALSE]
+  }
+
+  if (length(VarsToReduce) < 2) {
+    stop("Fewer than 2 valid PCA variables remain after preprocessing.")
+  }
+
+  # Center and scale once
+
   if (center || scale) {
-    DataSubset_scaled <- scale(DataSubset, center = center, scale = scale)
+    DataSubset_scaled <- scale(
+      DataSubset,
+      center = center,
+      scale = scale
+    )
 
     scale_means <- attr(DataSubset_scaled, "scaled:center")
-    scale_sds   <- attr(DataSubset_scaled, "scaled:scale")
+    scale_sds <- attr(DataSubset_scaled, "scaled:scale")
 
     if (is.null(scale_means)) {
       scale_means <- rep(0, length(VarsToReduce))
@@ -307,66 +461,90 @@ CreatePCAObject <- function(Data,
     DataSubset_scaled <- as.matrix(DataSubset)
 
     scale_means <- rep(0, length(VarsToReduce))
-    scale_sds   <- rep(1, length(VarsToReduce))
+    scale_sds <- rep(1, length(VarsToReduce))
     names(scale_means) <- VarsToReduce
-    names(scale_sds)   <- VarsToReduce
+    names(scale_sds) <- VarsToReduce
   }
 
-  zero_sd_vars <- names(scale_sds)[scale_sds == 0 | is.na(scale_sds)]
+  post_scale_bad_vars <- names(scale_sds)[scale_sds == 0 | is.na(scale_sds)]
 
-  if (length(zero_sd_vars) > 0) {
+  if (length(post_scale_bad_vars) > 0) {
     stop(
-      "Some PCA variables have zero or undefined standard deviation after preprocessing: ",
-      paste(zero_sd_vars, collapse = ", ")
+      "Internal PCA preprocessing error. These variables still have zero or undefined SD after filtering: ",
+      paste(post_scale_bad_vars, collapse = ", ")
     )
   }
+
+  DataSubset_scaled <- as.matrix(DataSubset_scaled)
 
   n_vars <- length(VarsToReduce)
 
-  # 7. Classic PCA path
+  # Run PCA
+
   if (Mode == "classic") {
     fit1 <- psych::principal(
-      r        = DataSubset_scaled,
+      r = DataSubset_scaled,
       nfactors = n_vars,
-      rotate   = "none",
-      scores   = FALSE
+      rotate = "none",
+      scores = FALSE
     )
 
+    Vaccounted <- as.data.frame(t(fit1$Vaccounted))
+
     if (is.null(numComponents)) {
-      nc <- min(which(fit1$Vaccounted[3, ] > minThresh))
+      nc_candidates <- which(Vaccounted$`Cumulative Proportion` > minThresh)
+
+      if (length(nc_candidates) == 0) {
+        nc <- ncol(Vaccounted)
+      } else {
+        nc <- min(nc_candidates)
+      }
     } else {
-      nc <- numComponents
+      nc <- min(numComponents, n_vars)
     }
 
-    Vaccounted <- as.data.frame(t(fit1$Vaccounted))
     Vaccounted$Component <- factor(
       rownames(Vaccounted),
       levels = rownames(Vaccounted)
     )
 
-    p_scree <- ggplot(Vaccounted, aes(x = Component)) +
-      geom_line(aes(y = `Cumulative Var`, group = 1)) +
-      geom_point(aes(y = `Cumulative Proportion`)) +
-      geom_col(aes(y = `Proportion Var`)) +
-      geom_hline(aes(yintercept = minThresh), linetype = "dashed") +
-      theme_bw()
+    p_scree <- ggplot2::ggplot(
+      Vaccounted,
+      ggplot2::aes(x = Component)
+    ) +
+      ggplot2::geom_line(
+        ggplot2::aes(y = `Cumulative Var`, group = 1)
+      ) +
+      ggplot2::geom_point(
+        ggplot2::aes(y = `Cumulative Proportion`)
+      ) +
+      ggplot2::geom_col(
+        ggplot2::aes(y = `Proportion Var`)
+      ) +
+      ggplot2::geom_hline(
+        ggplot2::aes(yintercept = minThresh),
+        linetype = "dashed"
+      ) +
+      ggplot2::theme_bw()
 
     fit <- psych::principal(
-      r        = DataSubset_scaled,
+      r = DataSubset_scaled,
       nfactors = nc,
-      rotate   = rotate,
-      scores   = TRUE
+      rotate = rotate,
+      scores = TRUE
     )
 
     fit <- psych::fa.sort(fit)
 
-    LoadingTable <- as.data.frame(xtable::xtable(unclass(fit$loadings)))
+    LoadingTable <- as.data.frame(
+      xtable::xtable(unclass(fit$loadings))
+    )
+
     LoadingTable$Variable <- rownames(LoadingTable)
 
     scores <- fit$scores
   }
 
-  # 8. Omics PCA path
   if (Mode == "omics") {
     max_possible_components <- min(
       nrow(DataSubset_scaled) - 1,
@@ -409,10 +587,10 @@ CreatePCAObject <- function(Data,
 
     if (backend == "psych") {
       fit_scree <- psych::principal(
-        r        = DataSubset_scaled,
+        r = DataSubset_scaled,
         nfactors = scree_n,
-        rotate   = "none",
-        scores   = FALSE
+        rotate = "none",
+        scores = FALSE
       )
     }
 
@@ -442,18 +620,32 @@ CreatePCAObject <- function(Data,
       levels = rownames(Vaccounted)
     )
 
-    p_scree <- ggplot(Vaccounted, aes(x = Component)) +
-      geom_line(aes(y = `Cumulative Var`, group = 1)) +
-      geom_point(aes(y = `Cumulative Proportion`)) +
-      geom_col(aes(y = `Proportion Var`)) +
-      geom_hline(aes(yintercept = minThresh), linetype = "dashed") +
-      theme_bw()
+    p_scree <- ggplot2::ggplot(
+      Vaccounted,
+      ggplot2::aes(x = Component)
+    ) +
+      ggplot2::geom_line(
+        ggplot2::aes(y = `Cumulative Var`, group = 1)
+      ) +
+      ggplot2::geom_point(
+        ggplot2::aes(y = `Cumulative Proportion`)
+      ) +
+      ggplot2::geom_col(
+        ggplot2::aes(y = `Proportion Var`)
+      ) +
+      ggplot2::geom_hline(
+        ggplot2::aes(yintercept = minThresh),
+        linetype = "dashed"
+      ) +
+      ggplot2::theme_bw()
 
     if (is.null(numComponents)) {
-      nc_from_thresh <- min(which(Vaccounted$`Cumulative Proportion` > minThresh))
+      nc_candidates <- which(Vaccounted$`Cumulative Proportion` > minThresh)
 
-      if (is.infinite(nc_from_thresh) || is.na(nc_from_thresh)) {
+      if (length(nc_candidates) == 0) {
         nc_from_thresh <- min(maxComponents, scree_n)
+      } else {
+        nc_from_thresh <- min(nc_candidates)
       }
 
       nc <- min(nc_from_thresh, maxComponents, scree_n)
@@ -481,15 +673,18 @@ CreatePCAObject <- function(Data,
 
     if (backend == "psych") {
       fit <- psych::principal(
-        r        = DataSubset_scaled,
+        r = DataSubset_scaled,
         nfactors = nc,
-        rotate   = rotate,
-        scores   = TRUE
+        rotate = rotate,
+        scores = TRUE
       )
 
       fit <- psych::fa.sort(fit)
 
-      LoadingTable <- as.data.frame(xtable::xtable(unclass(fit$loadings)))
+      LoadingTable <- as.data.frame(
+        xtable::xtable(unclass(fit$loadings))
+      )
+
       LoadingTable$Variable <- rownames(LoadingTable)
 
       scores <- fit$scores
@@ -519,7 +714,6 @@ CreatePCAObject <- function(Data,
         scores_final <- scores_raw
       }
 
-      # Keep fa.sort-style interpretability while preserving score/loading matches
       sort_index <- apply(abs(loadings_final), 2, max)
       component_order <- order(sort_index, decreasing = TRUE)
 
@@ -537,7 +731,10 @@ CreatePCAObject <- function(Data,
 
       class(loadings_final) <- "loadings"
 
-      LoadingTable <- as.data.frame(xtable::xtable(unclass(loadings_final)))
+      LoadingTable <- as.data.frame(
+        xtable::xtable(unclass(loadings_final))
+      )
+
       LoadingTable$Variable <- rownames(LoadingTable)
 
       scores <- scores_final
@@ -566,7 +763,8 @@ CreatePCAObject <- function(Data,
     }
   }
 
-  # 9. Loading table
+  # Apply labels
+
   LoadingTable <- dplyr::left_join(
     LoadingTable,
     LabelCodebook,
@@ -574,11 +772,30 @@ CreatePCAObject <- function(Data,
     multiple = "first"
   )
 
-  # 10. Scores and combined data
+  LoadingTable <- LoadingTable %>%
+    dplyr::mutate(
+      Labels = dplyr::if_else(
+        is.na(.data$Labels) | .data$Labels == "",
+        .data$Variable,
+        .data$Labels
+      ),
+      PlotLabel = make.unique(as.character(.data$Labels))
+    )
+
+  if (!Relabel) {
+    LoadingTable <- LoadingTable %>%
+      dplyr::mutate(
+        Labels = .data$Variable,
+        PlotLabel = .data$Variable
+      )
+  }
+
+  # Build outputs
+
   Scores <- as.data.frame(scores)
+
   CombinedData <- cbind(Data, Scores)
 
-  # 11. Lollipop plot data
   rc_cols <- names(LoadingTable)[grepl("^RC", names(LoadingTable))]
 
   meltedLoading <- LoadingTable %>%
@@ -590,96 +807,137 @@ CreatePCAObject <- function(Data,
   )
 
   meltedLoading <- meltedLoading %>%
-    dplyr::group_by(Variable) %>%
-    dplyr::arrange(value, .by_group = TRUE) %>%
-    dplyr::mutate(color = abs(value) > 0.4)
+    dplyr::group_by(.data$Variable) %>%
+    dplyr::arrange(.data$value, .by_group = TRUE) %>%
+    dplyr::mutate(
+      TopContributor = abs(.data$value) > 0.4
+    ) %>%
+    dplyr::ungroup()
 
-  meltedLoading$TopContributor <- meltedLoading$color
-
-  if (is.null(VariableCategories)) {
+  if (is.null(VariableCategoryTable)) {
     meltedLoading$color <- "black"
   } else {
-    meltedLoading$color <- VariableCategories[
-      match(meltedLoading$Variable, VarsToReduce)
-    ]
+    meltedLoading <- meltedLoading %>%
+      dplyr::left_join(
+        VariableCategoryTable,
+        by = "Variable"
+      ) %>%
+      dplyr::mutate(
+        color = .data$Category
+      )
   }
 
-  meltedLoading$Labels <- factor(
-    meltedLoading$Labels,
-    levels = rev(LoadingTable$Labels)
+  meltedLoading$PlotLabel <- factor(
+    meltedLoading$PlotLabel,
+    levels = rev(unique(LoadingTable$PlotLabel))
   )
 
-  if (is.null(VariableCategories)) {
-    p <- ggplot(
+  if (is.null(VariableCategoryTable)) {
+    p <- ggplot2::ggplot(
       meltedLoading,
-      aes(
-        x     = Labels,
-        y     = value,
+      ggplot2::aes(
+        x = PlotLabel,
+        y = value,
         alpha = TopContributor,
         color = color
       )
     ) +
-      coord_flip() +
-      geom_segment(
+      ggplot2::coord_flip() +
+      ggplot2::geom_segment(
         linewidth = 2,
-        aes(x = Labels, xend = Labels, y = 0, yend = value)
-      )+
-      facet_wrap(vars(name), nrow = 1) +
-      theme(
-        legend.position = "none",
-        strip.text.y    = element_text(angle = 45),
-        axis.title.x    = element_blank(),
-        axis.title.y    = element_blank()
+        ggplot2::aes(
+          x = PlotLabel,
+          xend = PlotLabel,
+          y = 0,
+          yend = value
+        )
       ) +
-      geom_point() +
-      scale_color_manual(values = c("black"))
+      ggplot2::facet_wrap(
+        ggplot2::vars(name),
+        nrow = 1
+      ) +
+      ggplot2::theme_bw() +
+      ggplot2::theme(
+        legend.position = "none",
+        strip.text.y = ggplot2::element_text(angle = 45),
+        axis.title.x = ggplot2::element_blank(),
+        axis.title.y = ggplot2::element_blank()
+      ) +
+      ggplot2::geom_point() +
+      ggplot2::scale_color_manual(values = c("black"))
   } else {
-    p <- ggplot(
+    p <- ggplot2::ggplot(
       meltedLoading,
-      aes(
-        x     = Labels,
-        y     = value,
+      ggplot2::aes(
+        x = PlotLabel,
+        y = value,
         alpha = TopContributor,
         color = color
       )
     ) +
-      coord_flip() +
-      geom_segment(
-        size = 2,
-        aes(x = Labels, xend = Labels, y = 0, yend = value)
+      ggplot2::coord_flip() +
+      ggplot2::geom_segment(
+        linewidth = 2,
+        ggplot2::aes(
+          x = PlotLabel,
+          xend = PlotLabel,
+          y = 0,
+          yend = value
+        )
       ) +
-      facet_wrap(vars(name), nrow = 1) +
-      theme(
+      ggplot2::facet_wrap(
+        ggplot2::vars(name),
+        nrow = 1
+      ) +
+      ggplot2::theme_bw() +
+      ggplot2::theme(
         legend.position = "none",
-        strip.text.y    = element_text(angle = 45),
-        axis.title.x    = element_blank(),
-        axis.title.y    = element_blank()
+        strip.text.y = ggplot2::element_text(angle = 45),
+        axis.title.x = ggplot2::element_blank(),
+        axis.title.y = ggplot2::element_blank()
       ) +
-      geom_point() +
-      scale_color_manual(values = classcolors)
+      ggplot2::geom_point() +
+      ggplot2::scale_color_manual(values = classcolors)
   }
 
   ScaleParams <- list(
-    means  = scale_means,
-    sds    = scale_sds,
+    means = scale_means,
+    sds = scale_sds,
     center = center,
-    scale  = scale
+    scale = scale
   )
 
+  Preprocessing <- list(
+    OriginalVariables = VarsOriginal,
+    DroppedNonNumeric = dropped_non_numeric,
+    DroppedByVarianceFilter = dropped_by_variance_filter,
+    DroppedZeroVariance = zero_sd_vars,
+    FinalVariablesUsed = VarsToReduce,
+    NumOriginalVariables = length(VarsOriginal),
+    NumFinalVariables = length(VarsToReduce),
+    VariableMissingness = variable_missingness,
+    ParticipantMissingness = participant_missingness,
+    HighMissingVariables = high_missing_vars,
+    HighMissingParticipants = high_missing_participants
+  )
+
+  # Return result
+
   return(list(
-    p_scree      = p_scree,
-    pcaresults   = fit,
+    p_scree = p_scree,
+    pcaresults = fit,
     LoadingTable = LoadingTable,
-    Scores       = Scores,
+    Scores = Scores,
     CombinedData = CombinedData,
-    Lollipop     = p,
-    ScaleParams  = ScaleParams,
-    VarsUsed     = VarsToReduce,
+    Lollipop = p,
+    ScaleParams = ScaleParams,
+    VarsUsed = VarsToReduce,
     VarianceTable = VarianceTable,
-    Mode         = Mode,
-    Backend      = backend,
-    Center       = center,
-    Scale        = scale
+    Preprocessing = Preprocessing,
+    Mode = Mode,
+    Backend = backend,
+    Center = center,
+    Scale = scale
   ))
 }
 
@@ -690,7 +948,17 @@ CreatePCAObject <- function(Data,
 #' static table.
 #'
 #' @param ... Arguments passed to [CreatePCAObject()].
+#'
 #' @return The same object returned by [CreatePCAObject()].
+#'
+#' @examples
+#' PCA <- CreatePCATable(
+#'   Data = mtcars,
+#'   VarsToReduce = names(mtcars),
+#'   numComponents = 3,
+#'   imputeMethod = "median"
+#' )
+#'
 #' @export
 CreatePCATable <- function(...) {
   CreatePCAObject(...)
