@@ -1,143 +1,66 @@
 #' Make comparison table with covariate adjustment, effect sizes, and pairwise contrasts
 #'
-#' Create a label-friendly comparison table (via **gtsummary**) summarizing variables across
-#' groups, with optional global hypothesis tests, covariate-adjusted tests, effect sizes,
-#' and optional pairwise comparisons.
-#'
-#' This function is designed for publication tables where you want the **Test** column to
-#' reflect the method used for the reported p-value(s), while still leveraging gtsummary's
-#' formatting, labeling, and table structure.
+#' Create a label-aware comparison table using `gtsummary::tbl_summary()` with
+#' optional global hypothesis tests, covariate-adjusted tests, effect sizes, and
+#' pairwise comparisons.
 #'
 #' @details
-#' ## Overview
-#' `MakeComparisonTable()` is a wrapper around [gtsummary::tbl_summary()] that:
-#' - creates group-wise descriptive summaries,
-#' - optionally adds an overall summary column,
-#' - computes global p-values (unadjusted or covariate-adjusted),
-#' - optionally computes effect sizes,
-#' - optionally computes pairwise p-values (with multiplicity control and optional referent),
-#' - adds a **Notes** column to explain common edge cases (e.g., complete-case filtering dropping
-#'   a group level, causing missing adjusted pairwise contrasts).
+#' Continuous variables are numeric variables with more than two unique
+#' non-missing values. Numeric variables with exactly two unique values are
+#' treated as dichotomous categorical variables.
 #'
-#' The function aims to use gtsummary capabilities wherever possible (summary, formatting,
-#' styling, captioning) and computes additional statistics not provided directly by gtsummary
-#' (adjusted global tests, adjusted pairwise, effect sizes).
+#' When covariates are supplied, continuous outcomes are tested using ANCOVA
+#' with Type II tests. If `Parametric = FALSE`, robust HC3 covariance is used
+#' for the group-level Wald test and adjusted pairwise comparisons.
 #'
-#' ## Variable typing rules
-#' - Continuous: numeric variables with > 2 unique non-missing values.
-#' - Dichotomous numeric: numeric variables with exactly 2 unique non-missing values (treated as categorical).
-#' - Categorical: factors, characters, logicals, and non-numeric variables (or dichotomous numeric).
+#' Binary categorical outcomes with covariates are tested using logistic
+#' regression likelihood-ratio tests. Multicategory categorical outcomes with
+#' covariates are tested using multinomial likelihood-ratio tests.
 #'
-#' ## Global tests (p-values)
-#' Global p-values are computed per variable, using complete-case data for the required fields.
-#'
-#' ### Continuous outcomes
-#' - No covariates:
-#'   - `Parametric = TRUE`:
-#'     - 2 groups: Welch t-test ([stats::t.test()], unequal variances)
-#'     - 3+ groups: one-way ANOVA ([stats::aov()])
-#'   - `Parametric = FALSE`:
-#'     - 2 groups: Wilcoxon rank-sum ([stats::wilcox.test()])
-#'     - 3+ groups: Kruskal-Wallis ([stats::kruskal.test()])
-#' - With covariates:
-#'   - `Parametric = TRUE`: ANCOVA via a linear model with a Type II test for the
-#'     grouping term using `car::Anova()`.
-#'   - `Parametric = FALSE`: robust ANCOVA via a linear model plus HC3 robust covariance
-#'     from `sandwich::vcovHC()` and a Wald F-test for the grouping term using
-#'     `car::linearHypothesis()`.
-#'
-#' ### Categorical outcomes (unadjusted)
-#' - `CatMethod = "chisq"`: Pearson chi-squared with `correct = FALSE` ([stats::chisq.test()]).
-#' - `CatMethod = "fisher"`: Fisher's exact test ([stats::fisher.test()]); for RxC tables,
-#'   uses simulated p-value (B = 1e4).
-#' - `CatMethod = "auto"` (default): uses chi-squared unless expected counts are small; then Fisher.
-#'
-#' ### Categorical outcomes (adjusted; covariates present)
-#' - Binary outcome: logistic regression likelihood ratio test (LR) using
-#'   `stats::glm()` with a binomial family and `stats::drop1()` with a chi-squared test.
-#' - Multi-category outcome (3+ levels): multinomial LR (default) via [nnet::multinom()] and
-#'   an LR comparison of models with and without the grouping term.
-#'   Controlled by `MultiCatAdjusted`, which defaults to `"multinomial_LR"`.
-#'
-#' ## Pairwise comparisons
-#' Pairwise columns are added when `AddPairwise = TRUE`.
-#'
-#' ### Which pairs are compared
-#' - If `Referent` is `NULL`: all pairwise group comparisons.
-#' - If `Referent` is set: all groups are compared against the referent (treatment-vs-control).
-#'
-#' ### Multiplicity control
-#' - `PairwiseMethod` defaults to `"bonferroni"` and may be any value in [stats::p.adjust.methods].
-#' - Use `"none"` for no adjustment.
-#'
-#' ### Continuous outcomes
-#' - No covariates:
-#'   - Parametric: Welch pairwise t-tests using `stats::pairwise.t.test()` with
-#'     `pool.sd = FALSE`.
-#'   - Nonparametric: [stats::pairwise.wilcox.test()]
-#' - With covariates:
-#'   - Uses adjusted means via [emmeans::emmeans()] on the ANCOVA model.
-#'   - If `Parametric = FALSE`, the same ANCOVA model is used, but pairwise inference uses the
-#'     HC3 robust covariance matrix supplied to emmeans (so adjusted pairwise still works).
-#'
-#' ### Categorical outcomes
-#' - No covariates: pairwise chi-squared or Fisher (per `CatMethod`) on the 2-group subset.
-#' - With covariates:
-#'   - Binary outcome: for each pair, fit logistic models with and without group and use LR p-value.
-#'   - Multi-category outcome: for each pair, fit multinomial models with and without group and use LR p-value.
-#'   - Edge case: in a given pairwise subset, a multi-category outcome may collapse to 2 levels;
-#'     in that case, the function automatically switches to logistic LR for that pair.
-#'
-#' ## Effect sizes
-#' Effect sizes are provided when `AddEffectSize = TRUE`.
-#'
-#' - Continuous, 2 groups, unadjusted: absolute Cohen's d (|d|) via [effectsize::cohens_d()].
-#' - Continuous, 3+ groups, unadjusted parametric: eta-squared via [effectsize::eta_squared()].
-#' - Continuous, adjusted: partial eta-squared from Type II ANOVA table.
-#' - Continuous, nonparametric: epsilon-squared approximation from Kruskal-Wallis.
-#' - Categorical: Cramer's V (uses DescTools if available; otherwise a chi-squared-based approximation).
-#'
-#' ## Captions
-#' The caption describes:
-#' - display statistic for continuous variables (mean SD vs median IQR),
-#' - whether covariates were used (and how continuous outcomes were tested),
-#' - categorical test selection (`CatMethod`),
-#' - adjusted multi-category method (`MultiCatAdjusted`),
-#' - pairwise inclusion and multiplicity control (`PairwiseMethod`).
+#' Pairwise comparisons preserve non-standard group labels and variable names.
 #'
 #' @param DataFrame A data frame.
-#' @param CompVariable Grouping variable name (character scalar). If NULL or missing and
-#'   `IncludeOverallStats = TRUE`, an overall-only table is returned.
-#' @param Variables Character vector of variables to include. You may also pass additional
-#'   variable names as unnamed arguments via `...` (convenience).
-#' @param ... Optional additional variable names (character scalars). Useful when you accidentally
-#'   typed `Variables="A", "B"` instead of `Variables=c("A","B")`.
-#' @param Covariates Optional covariate names (character vector) used for adjusted models.
-#'   Any covariates appearing in `Variables` are removed from the displayed table with a warning.
-#' @param ValueDigits Digits for summary statistics (default 2).
-#' @param pDigits Digits to display formatted p-values using [format.pval()].
-#' @param AddEffectSize Add effect sizes column (default FALSE).
-#' @param EffectSizeDigits Digits for effect sizes (default 2).
-#' @param AddPairwise Add pairwise p-value columns (default FALSE).
-#' @param PairwiseMethod P-adjustment method (default "bonferroni"). Use "none" for no adjustment.
-#'   Must be one of "none" or [stats::p.adjust.methods].
-#' @param Parametric If TRUE, use parametric tests where relevant. If FALSE and covariates are present,
-#'   robust ANCOVA is used for continuous outcomes and robust covariance is used for continuous pairwise.
-#' @param ParametricDisplay If TRUE show mean (SD); if FALSE show median [IQR]. Defaults to `Parametric`.
-#' @param IncludeOverallN If TRUE add overall N column.
-#' @param IncludeMissing If TRUE include missing/unknown category rows in summaries.
-#' @param suppress_warnings If TRUE suppress gtsummary warnings.
-#' @param Referent Optional reference level for pairwise contrasts (character scalar). If set,
-#'   pairwise comparisons are against this referent.
-#' @param IncludeOverallStats If TRUE and `CompVariable` is provided, add an overall summary
-#'   column as the first statistic column. If no valid grouping variable is provided, an
-#'   overall-only table is returned.
-#' @param ShowPositiveBinaryOnLabel If TRUE, display only the "positive" level for binary categorical variables.
-#' @param CatMethod Categorical test method: "chisq", "fisher", or "auto" (default).
-#' @param MultiCatAdjusted Adjusted multi-category method when covariates are present:
-#'   currently supports "multinomial_LR" (default) or "none".
+#' @param CompVariable Character scalar naming the grouping variable.
+#' @param Variables Character vector of variables to summarize.
+#' @param ... Optional additional variable names supplied individually.
+#' @param Covariates Optional character vector of covariates for adjusted models.
+#' @param ValueDigits Number of digits for descriptive statistics.
+#' @param pDigits Number of digits for p-values.
+#' @param AddEffectSize Logical; add effect-size columns.
+#' @param EffectSizeDigits Number of digits for effect sizes.
+#' @param AddPairwise Logical; add pairwise comparison columns.
+#' @param PairwiseMethod P-value adjustment method. Use `"none"` for no adjustment.
+#' @param Parametric Logical; use parametric tests for continuous outcomes.
+#' @param ParametricDisplay Logical; display continuous summaries as mean (SD).
+#' If `FALSE`, display median [IQR]. Defaults to `Parametric`.
+#' @param IncludeOverallN Logical; add N column.
+#' @param IncludeMissing Logical; include missing rows in summaries.
+#' @param suppress_warnings Logical; suppress selected gtsummary warnings.
+#' @param Referent Optional reference group for pairwise comparisons.
+#' @param IncludeOverallStats Logical; add overall summary column.
+#' @param ShowPositiveBinaryOnLabel Logical; for binary variables, show only the
+#' positive level where identifiable.
+#' @param CatMethod Categorical test method. One of `"auto"`, `"chisq"`, `"fisher"`.
+#' @param MultiCatAdjusted Adjusted multicategory method. Currently
+#' `"multinomial_LR"` or `"none"`.
+#' @param ShowNotes Whether to show Notes column. One of `"auto"`, `"always"`,
+#' or `"never"`.
+#' @param NotesPosition Notes column position. One of `"last"`, `"after_test"`,
+#' or `"before_pairwise"`.
 #'
-#' @return A `gtsummary::tbl_summary` object with added columns in `table_body`.
+#' @return A `gtsummary` object.
+#'
+#' @examples
+#' \dontrun{
+#' MakeComparisonTable(
+#'   DataFrame = mtcars,
+#'   CompVariable = "am",
+#'   Variables = c("mpg", "hp", "wt"),
+#'   AddEffectSize = TRUE,
+#'   AddPairwise = TRUE
+#' )
+#' }
+#'
 #' @export
 MakeComparisonTable <- function(
     DataFrame,
@@ -160,10 +83,19 @@ MakeComparisonTable <- function(
     IncludeOverallStats = FALSE,
     ShowPositiveBinaryOnLabel = TRUE,
     CatMethod = c("auto", "chisq", "fisher"),
-    MultiCatAdjusted = c("multinomial_LR", "none")
+    MultiCatAdjusted = c("multinomial_LR", "none"),
+    ShowNotes = c("auto", "always", "never"),
+    NotesPosition = c("last", "after_test", "before_pairwise")
 ) {
 
-  if (is.null(ParametricDisplay)) ParametricDisplay <- Parametric
+  if (is.null(ParametricDisplay)) {
+    ParametricDisplay <- Parametric
+  }
+
+  CatMethod <- match.arg(CatMethod)
+  MultiCatAdjusted <- match.arg(MultiCatAdjusted)
+  ShowNotes <- match.arg(ShowNotes)
+  NotesPosition <- match.arg(NotesPosition)
 
   extra_vars <- list(...)
   if (length(extra_vars) > 0) {
@@ -177,12 +109,23 @@ MakeComparisonTable <- function(
   if (!is.character(Variables)) {
     stop("Variables must be a character vector.")
   }
+
   Variables <- unique(Variables)
 
-  CatMethod <- match.arg(CatMethod)
-  MultiCatAdjusted <- match.arg(MultiCatAdjusted)
+  req_pkgs <- c(
+    "gtsummary", "dplyr", "tidyr", "purrr", "tibble", "rlang",
+    "tidyselect", "car", "emmeans", "effectsize", "sandwich"
+  )
 
-  if (is.null(PairwiseMethod)) PairwiseMethod <- "none"
+  ok <- vapply(req_pkgs, requireNamespace, logical(1), quietly = TRUE)
+  if (any(!ok)) {
+    stop("Please install: ", paste(req_pkgs[!ok], collapse = ", "))
+  }
+
+  if (is.null(PairwiseMethod)) {
+    PairwiseMethod <- "none"
+  }
+
   valid_methods <- c("none", stats::p.adjust.methods)
   if (!is.character(PairwiseMethod) ||
       length(PairwiseMethod) != 1 ||
@@ -195,33 +138,25 @@ MakeComparisonTable <- function(
     )
   }
 
-  req_pkgs <- c(
-    "gtsummary", "dplyr", "tidyr", "purrr", "tibble", "rlang",
-    "tidyselect", "car", "emmeans", "effectsize", "sandwich"
-  )
-  ok <- vapply(req_pkgs, requireNamespace, logical(1), quietly = TRUE)
-  if (any(!ok)) {
-    stop("Please install: ", paste(req_pkgs[!ok], collapse = ", "))
-  }
-
   comp_present <- !is.null(CompVariable) &&
     is.character(CompVariable) &&
     length(CompVariable) == 1 &&
     CompVariable %in% names(DataFrame)
 
-  # Overall-only mode should depend only on whether a valid grouping variable exists
   overall_mode <- !comp_present
 
-  if (!overall_mode && !CompVariable %in% names(DataFrame)) {
-    stop("Grouping variable not found: ", CompVariable)
-  }
-
   if (!all(Variables %in% names(DataFrame))) {
-    stop("Variable(s) not found: ", paste(setdiff(Variables, names(DataFrame)), collapse = ", "))
+    stop(
+      "Variable(s) not found: ",
+      paste(setdiff(Variables, names(DataFrame)), collapse = ", ")
+    )
   }
 
   if (!is.null(Covariates) && !all(Covariates %in% names(DataFrame))) {
-    stop("Covariate(s) not found: ", paste(setdiff(Covariates, names(DataFrame)), collapse = ", "))
+    stop(
+      "Covariate(s) not found: ",
+      paste(setdiff(Covariates, names(DataFrame)), collapse = ", ")
+    )
   }
 
   if (!is.null(Referent) && (!is.character(Referent) || length(Referent) != 1)) {
@@ -256,9 +191,17 @@ MakeComparisonTable <- function(
     stats::as.formula(paste(btick(lhs), "~", rhs))
   }
 
-  norm <- function(x) gsub("\\s+", " ", trimws(as.character(x)))
-  pair_label <- function(a, b) paste(a, b, sep = " - ")
-  pair_key <- function(a, b) paste(sort(c(norm(a), norm(b))), collapse = "||")
+  norm <- function(x) {
+    gsub("\\s+", " ", trimws(as.character(x)))
+  }
+
+  pair_label <- function(a, b) {
+    paste(a, b, sep = " - ")
+  }
+
+  pair_key <- function(a, b) {
+    paste(sort(c(norm(a), norm(b))), collapse = "||")
+  }
 
   fmt_p <- function(p, digits = 3) {
     if (is.na(p)) return(NA_character_)
@@ -275,19 +218,28 @@ MakeComparisonTable <- function(
   cat_global_test <- function(tab, method = c("auto", "chisq", "fisher")) {
     method <- match.arg(method)
     tab <- clean_tab(tab)
+
     if (nrow(tab) < 2 || ncol(tab) < 2) {
       return(list(p = NA_real_, label = "Insufficient data"))
     }
 
+    chi <- tryCatch(
+      suppressWarnings(stats::chisq.test(tab, correct = FALSE)),
+      error = function(e) NULL
+    )
+
     if (method == "chisq") {
-      chi <- tryCatch(stats::chisq.test(tab, correct = FALSE), error = function(e) NULL)
       if (!is.null(chi) && !is.null(chi$p.value)) {
         return(list(p = as.numeric(chi$p.value), label = "Pearson chi-squared"))
       }
       return(list(p = NA_real_, label = "Chi-squared failed"))
     }
 
-    if (method == "fisher") {
+    use_fisher <- method == "fisher" ||
+      is.null(chi) ||
+      any(chi$expected < 5)
+
+    if (use_fisher) {
       fish <- tryCatch(
         if (nrow(tab) == 2 && ncol(tab) == 2) {
           stats::fisher.test(tab)
@@ -296,51 +248,79 @@ MakeComparisonTable <- function(
         },
         error = function(e) NULL
       )
+
       if (!is.null(fish) && !is.null(fish$p.value)) {
         return(list(
           p = as.numeric(fish$p.value),
           label = if (nrow(tab) == 2 && ncol(tab) == 2) "Fisher exact" else "Fisher (sim.)"
         ))
       }
+
       return(list(p = NA_real_, label = "Fisher failed"))
     }
 
-    chi_exp <- tryCatch(stats::chisq.test(tab, correct = FALSE)$expected, error = function(e) NULL)
-    if (is.null(chi_exp) || any(chi_exp < 5)) {
-      return(cat_global_test(tab, method = "fisher"))
-    }
-    cat_global_test(tab, method = "chisq")
+    list(p = as.numeric(chi$p.value), label = "Pearson chi-squared")
   }
 
   cramers_v <- function(tab) {
     tab <- clean_tab(tab)
-    if (nrow(tab) < 2 || ncol(tab) < 2) return(NA_real_)
+
+    if (nrow(tab) < 2 || ncol(tab) < 2) {
+      return(NA_real_)
+    }
 
     if (requireNamespace("DescTools", quietly = TRUE)) {
       return(as.numeric(DescTools::CramerV(tab, method = "bias.corrected")))
     }
 
-    chi <- tryCatch(stats::chisq.test(tab, correct = FALSE)$statistic, error = function(e) NA_real_)
-    if (is.na(chi)) return(NA_real_)
+    chi <- tryCatch(
+      suppressWarnings(stats::chisq.test(tab, correct = FALSE)$statistic),
+      error = function(e) NA_real_
+    )
+
     n <- sum(tab)
     m <- min(nrow(tab), ncol(tab)) - 1
-    if (m <= 0 || n <= 0) return(NA_real_)
+
+    if (!is.finite(chi) || m <= 0 || n <= 0) {
+      return(NA_real_)
+    }
+
     sqrt(as.numeric(chi) / (n * m))
   }
 
   robust_group_p <- function(fit_lm, group_term) {
     V <- tryCatch(sandwich::vcovHC(fit_lm, type = "HC3"), error = function(e) NULL)
     if (is.null(V)) return(NA_real_)
-    cn <- names(stats::coef(fit_lm))
-    idx <- grep(paste0("^", group_term), cn)
+
+    mm <- tryCatch(stats::model.matrix(fit_lm), error = function(e) NULL)
+    if (is.null(mm)) return(NA_real_)
+
+    term_labels <- attr(stats::terms(fit_lm), "term.labels")
+    group_pos <- match(group_term, term_labels)
+
+    if (is.na(group_pos)) return(NA_real_)
+
+    assign_vec <- attr(mm, "assign")
+    idx <- which(assign_vec == group_pos)
+    idx <- idx[idx != 1]
+
     if (!length(idx)) return(NA_real_)
+
+    cn <- colnames(mm)
+
     L <- matrix(0, nrow = length(idx), ncol = length(cn))
     L[cbind(seq_along(idx), idx)] <- 1
+    colnames(L) <- cn
+
     lh <- tryCatch(
       car::linearHypothesis(fit_lm, hypothesis.matrix = L, vcov. = V, test = "F"),
       error = function(e) NULL
     )
-    if (is.null(lh) || !"Pr(>F)" %in% colnames(lh)) return(NA_real_)
+
+    if (is.null(lh) || !"Pr(>F)" %in% colnames(lh)) {
+      return(NA_real_)
+    }
+
     as.numeric(lh[2, "Pr(>F)"])
   }
 
@@ -350,25 +330,24 @@ MakeComparisonTable <- function(
     }
 
     df_cc[[y]] <- droplevels(as_factor_drop(df_cc[[y]]))
+
     if (nlevels(df_cc[[y]]) < 3) {
       return(list(p = NA_real_, label = "Multinomial LR (collapsed)"))
     }
 
     f_full <- fmla(y, c(group, covs))
-    f_red <- if (length(covs)) {
-      fmla(y, covs)
-    } else {
-      stats::as.formula(paste(btick(y), "~ 1"))
-    }
+    f_red <- if (length(covs)) fmla(y, covs) else stats::as.formula(paste(btick(y), "~ 1"))
 
     m_full <- tryCatch(nnet::multinom(f_full, data = df_cc, trace = FALSE), error = function(e) NULL)
     m_red <- tryCatch(nnet::multinom(f_red, data = df_cc, trace = FALSE), error = function(e) NULL)
+
     if (is.null(m_full) || is.null(m_red)) {
       return(list(p = NA_real_, label = "Multinomial LR (failed)"))
     }
 
     lr <- 2 * (as.numeric(stats::logLik(m_full)) - as.numeric(stats::logLik(m_red)))
     df_lr <- attr(stats::logLik(m_full), "df") - attr(stats::logLik(m_red), "df")
+
     if (!is.finite(lr) || !is.finite(df_lr) || df_lr <= 0) {
       return(list(p = NA_real_, label = "Multinomial LR (invalid)"))
     }
@@ -397,6 +376,7 @@ MakeComparisonTable <- function(
       }
 
       k <- nlevels(sub[[y]])
+
       if (k < 2) {
         return(tibble::tibble(
           key = pair_key(a, b),
@@ -405,16 +385,13 @@ MakeComparisonTable <- function(
         ))
       }
 
-      if (k == 2) {
-        f_full <- fmla(y, c(group, covs))
-        f_red <- if (length(covs)) {
-          fmla(y, covs)
-        } else {
-          stats::as.formula(paste(btick(y), "~ 1"))
-        }
+      f_full <- fmla(y, c(group, covs))
+      f_red <- if (length(covs)) fmla(y, covs) else stats::as.formula(paste(btick(y), "~ 1"))
 
+      if (k == 2) {
         m_full <- tryCatch(stats::glm(f_full, data = sub, family = stats::binomial()), error = function(e) NULL)
         m_red <- tryCatch(stats::glm(f_red, data = sub, family = stats::binomial()), error = function(e) NULL)
+
         if (is.null(m_full) || is.null(m_red)) {
           return(tibble::tibble(
             key = pair_key(a, b),
@@ -441,15 +418,9 @@ MakeComparisonTable <- function(
         ))
       }
 
-      f_full <- fmla(y, c(group, covs))
-      f_red <- if (length(covs)) {
-        fmla(y, covs)
-      } else {
-        stats::as.formula(paste(btick(y), "~ 1"))
-      }
-
       m_full <- tryCatch(nnet::multinom(f_full, data = sub, trace = FALSE), error = function(e) NULL)
       m_red <- tryCatch(nnet::multinom(f_red, data = sub, trace = FALSE), error = function(e) NULL)
+
       if (is.null(m_full) || is.null(m_red)) {
         return(tibble::tibble(
           key = pair_key(a, b),
@@ -460,6 +431,7 @@ MakeComparisonTable <- function(
 
       lr <- 2 * (as.numeric(stats::logLik(m_full)) - as.numeric(stats::logLik(m_red)))
       df_lr <- attr(stats::logLik(m_full), "df") - attr(stats::logLik(m_red), "df")
+
       p <- if (is.finite(lr) && is.finite(df_lr) && df_lr > 0) {
         stats::pchisq(lr, df = df_lr, lower.tail = FALSE)
       } else {
@@ -480,10 +452,104 @@ MakeComparisonTable <- function(
     out
   }
 
+  pairwise_cont_emmeans <- function(df_cc, var, group, covs, combos, PairwiseMethod, robust = FALSE) {
+    fit <- tryCatch(
+      stats::lm(fmla(var, c(group, covs)), data = df_cc),
+      error = function(e) NULL
+    )
+
+    out_template <- purrr::map_dfr(combos, function(cp) {
+      tibble::tibble(
+        variable = var,
+        contrast_label = pair_label(cp[1], cp[2]),
+        key = pair_key(cp[1], cp[2]),
+        p_val = NA_real_
+      )
+    })
+
+    if (is.null(fit)) {
+      return(dplyr::select(out_template, "variable", "contrast_label", "p_val"))
+    }
+
+    V <- NULL
+    if (robust) {
+      V <- tryCatch(sandwich::vcovHC(fit, type = "HC3"), error = function(e) NULL)
+    }
+
+    emm <- tryCatch(
+      if (is.null(V)) {
+        emmeans::emmeans(fit, specs = stats::as.formula(paste0("~", btick(group))))
+      } else {
+        emmeans::emmeans(fit, specs = stats::as.formula(paste0("~", btick(group))), vcov. = V)
+      },
+      error = function(e) NULL
+    )
+
+    if (is.null(emm)) {
+      return(dplyr::select(out_template, "variable", "contrast_label", "p_val"))
+    }
+
+    emm_df <- tryCatch(as.data.frame(emm), error = function(e) NULL)
+    if (is.null(emm_df) || !(group %in% names(emm_df))) {
+      return(dplyr::select(out_template, "variable", "contrast_label", "p_val"))
+    }
+
+    emm_levels <- as.character(emm_df[[group]])
+
+    contrast_list <- list()
+
+    for (cp in combos) {
+      a <- cp[1]
+      b <- cp[2]
+
+      if (!(a %in% emm_levels) || !(b %in% emm_levels)) next
+
+      v <- rep(0, length(emm_levels))
+      v[match(a, emm_levels)] <- 1
+      v[match(b, emm_levels)] <- -1
+
+      contrast_list[[pair_key(a, b)]] <- v
+    }
+
+    if (!length(contrast_list)) {
+      return(dplyr::select(out_template, "variable", "contrast_label", "p_val"))
+    }
+
+    ctr <- tryCatch(
+      emmeans::contrast(emm, method = contrast_list),
+      error = function(e) NULL
+    )
+
+    if (is.null(ctr)) {
+      return(dplyr::select(out_template, "variable", "contrast_label", "p_val"))
+    }
+
+    adj_method <- if (identical(PairwiseMethod, "none")) "none" else PairwiseMethod
+
+    res <- tryCatch(
+      as.data.frame(summary(ctr, adjust = adj_method)),
+      error = function(e) NULL
+    )
+
+    if (is.null(res) || !("p.value" %in% names(res))) {
+      return(dplyr::select(out_template, "variable", "contrast_label", "p_val"))
+    }
+
+    got <- tibble::tibble(
+      key = as.character(res$contrast),
+      p_val = as.numeric(res$p.value)
+    )
+
+    out_template %>%
+      dplyr::mutate(p_val = got$p_val[match(.data$key, got$key)]) %>%
+      dplyr::select("variable", "contrast_label", "p_val")
+  }
+
   cols <- c(Variables, Covariates)
   if (!overall_mode) cols <- c(CompVariable, cols)
 
   df <- dplyr::select(DataFrame, tidyselect::all_of(cols))
+
   if (!overall_mode) {
     df[[CompVariable]] <- as_factor_drop(df[[CompVariable]])
   }
@@ -497,6 +563,7 @@ MakeComparisonTable <- function(
   if (length(drop)) {
     warning("Dropping constant variable(s): ", paste(drop, collapse = ", "))
   }
+
   Variables <- keep
 
   if (!length(Variables)) {
@@ -520,13 +587,15 @@ MakeComparisonTable <- function(
   }
 
   value_list <- NULL
+
   if (isTRUE(ShowPositiveBinaryOnLabel)) {
-    pos_tokens <- c("TRUE", "1", "YES", "Yes")
+    pos_tokens <- c("TRUE", "True", "true", "1", "YES", "Yes", "yes")
     vmap <- list()
 
     for (v in Variables) {
       x <- df[[v]]
       ux <- unique(x[!is.na(x)])
+
       if (length(ux) != 2) next
 
       if (is.logical(x)) {
@@ -551,9 +620,25 @@ MakeComparisonTable <- function(
   stat_cont <- if (ParametricDisplay) "{mean} ({sd})" else "{median} [{p25}, {p75}]"
   stat_cat <- "{n} ({p}%)"
 
-  if (overall_mode) {
-    tbl <- gtsummary::tbl_summary(
+  build_tbl_summary <- function(by_var = NULL) {
+    if (is.null(by_var)) {
+      return(gtsummary::tbl_summary(
+        df,
+        include = tidyselect::all_of(Variables),
+        missing = if (IncludeMissing) "ifany" else "no",
+        statistic = list(
+          gtsummary::all_continuous() ~ stat_cont,
+          gtsummary::all_categorical() ~ stat_cat
+        ),
+        digits = list(gtsummary::all_continuous() ~ ValueDigits),
+        type = type_list,
+        value = value_list
+      ))
+    }
+
+    gtsummary::tbl_summary(
       df,
+      by = tidyselect::all_of(by_var),
       include = tidyselect::all_of(Variables),
       missing = if (IncludeMissing) "ifany" else "no",
       statistic = list(
@@ -564,9 +649,12 @@ MakeComparisonTable <- function(
       type = type_list,
       value = value_list
     )
+  }
+
+  if (overall_mode) {
+    tbl <- if (suppress_warnings) suppressWarnings(build_tbl_summary()) else build_tbl_summary()
 
     if (IncludeOverallN) tbl <- tbl %>% gtsummary::add_n()
-    if (suppress_warnings) tbl <- suppressWarnings(tbl)
 
     cap <- sprintf(
       "Overall summary (display: %s; categorical global test: %s).",
@@ -577,26 +665,17 @@ MakeComparisonTable <- function(
     return(tbl %>% gtsummary::modify_caption(cap))
   }
 
-  tbl <- gtsummary::tbl_summary(
-    df,
-    by = CompVariable,
-    include = tidyselect::all_of(Variables),
-    missing = if (IncludeMissing) "ifany" else "no",
-    statistic = list(
-      gtsummary::all_continuous() ~ stat_cont,
-      gtsummary::all_categorical() ~ stat_cat
-    ),
-    digits = list(gtsummary::all_continuous() ~ ValueDigits),
-    type = type_list,
-    value = value_list
-  )
+  tbl <- if (suppress_warnings) {
+    suppressWarnings(build_tbl_summary(CompVariable))
+  } else {
+    build_tbl_summary(CompVariable)
+  }
 
   if (isTRUE(IncludeOverallStats)) {
     tbl <- tbl %>% gtsummary::add_overall(last = FALSE)
   }
 
   if (IncludeOverallN) tbl <- tbl %>% gtsummary::add_n()
-  if (suppress_warnings) tbl <- suppressWarnings(tbl)
 
   if (nlevels(df[[CompVariable]]) < 2) {
     cap <- sprintf("Overall summary (only one level present in '%s').", CompVariable)
@@ -610,22 +689,6 @@ MakeComparisonTable <- function(
     lapply(setdiff(lvls_all, Referent), function(x) c(Referent, x))
   } else {
     utils::combn(lvls_all, 2, simplify = FALSE)
-  }
-
-  canon_level <- function(s, lvls, group_name) {
-    s <- norm(s)
-    s <- gsub("^`|`$", "", s)
-    if (s %in% lvls) return(s)
-
-    if (startsWith(s, group_name)) {
-      candidate <- sub(paste0("^", group_name), "", s)
-      if (candidate %in% lvls) return(candidate)
-    }
-
-    candidate2 <- sub(paste0("^", group_name, "\\s*"), "", s)
-    if (candidate2 %in% lvls) return(candidate2)
-
-    s
   }
 
   pdat <- purrr::map_dfr(Variables, function(var) {
@@ -654,6 +717,7 @@ MakeComparisonTable <- function(
         df_cc[[CompVariable]] <- droplevels(as_factor_drop(df_cc[[CompVariable]]))
 
         dropped_levels <- setdiff(lvls_all, levels(df_cc[[CompVariable]]))
+
         if (length(dropped_levels)) {
           notes <- paste0(
             "Adjusted analyses dropped group level(s): ",
@@ -673,6 +737,7 @@ MakeComparisonTable <- function(
         }
 
         fit <- tryCatch(stats::lm(fmla(var, c(CompVariable, Covariates)), data = df_cc), error = function(e) NULL)
+
         if (is.null(fit)) {
           return(tibble::tibble(
             variable = var,
@@ -690,6 +755,7 @@ MakeComparisonTable <- function(
 
         if (Parametric) {
           a2 <- tryCatch(car::Anova(fit, type = 2), error = function(e) NULL)
+
           p_adj <- if (!is.null(a2) && CompVariable %in% rownames(a2)) {
             as.numeric(a2[CompVariable, "Pr(>F)"])
           } else {
@@ -706,6 +772,7 @@ MakeComparisonTable <- function(
         }
 
         p_rb <- robust_group_p(fit, CompVariable)
+
         return(tibble::tibble(
           variable = var,
           p_unadj = p_un,
@@ -766,7 +833,9 @@ MakeComparisonTable <- function(
     x <- as_factor_drop(df_vg[[var]])
     g <- as_factor_drop(df_vg[[CompVariable]])
     tab <- table(x, g)
+
     tst <- cat_global_test(tab, method = CatMethod)
+
     p_un <- tst$p
     test_label <- tst$label
     p_adj <- NA_real_
@@ -778,6 +847,7 @@ MakeComparisonTable <- function(
       df_cc[[var]] <- droplevels(as_factor_drop(df_cc[[var]]))
 
       dropped_levels <- setdiff(lvls_all, levels(df_cc[[CompVariable]]))
+
       if (length(dropped_levels)) {
         notes <- paste0(
           "Adjusted analyses dropped group level(s): ",
@@ -793,15 +863,24 @@ MakeComparisonTable <- function(
       if (nlevels(df_cc[[var]]) == 2 &&
           nlevels(df_cc[[CompVariable]]) >= 2 &&
           nrow(df_cc) >= 5) {
-        gm <- tryCatch(
+        gm_full <- tryCatch(
           stats::glm(fmla(var, c(CompVariable, Covariates)), data = df_cc, family = stats::binomial()),
           error = function(e) NULL
         )
 
-        if (!is.null(gm)) {
-          d1 <- tryCatch(stats::drop1(gm, test = "Chisq"), error = function(e) NULL)
-          if (!is.null(d1) && CompVariable %in% rownames(d1)) {
-            p_adj <- as.numeric(d1[CompVariable, "Pr(>Chi)"])
+        gm_red <- tryCatch(
+          if (length(Covariates)) {
+            stats::glm(fmla(var, Covariates), data = df_cc, family = stats::binomial())
+          } else {
+            stats::glm(stats::as.formula(paste(btick(var), "~ 1")), data = df_cc, family = stats::binomial())
+          },
+          error = function(e) NULL
+        )
+
+        if (!is.null(gm_full) && !is.null(gm_red)) {
+          an <- tryCatch(stats::anova(gm_red, gm_full, test = "Chisq"), error = function(e) NULL)
+          if (!is.null(an) && "Pr(>Chi)" %in% names(an)) {
+            p_adj <- as.numeric(an$`Pr(>Chi)`[2])
             test_label <- "Logistic regression (LR)"
           }
         }
@@ -845,7 +924,7 @@ MakeComparisonTable <- function(
     ) %>%
     gtsummary::modify_header(p.value_fmt ~ "**p-value**") %>%
     gtsummary::modify_header(Test ~ "**Test**") %>%
-    gtsummary::modify_header(Notes ~ "**Notes**")
+    gtsummary::modify_column_unhide(columns = c("p.value_fmt", "Test"))
 
   tbl <- tbl %>%
     gtsummary::modify_table_styling(
@@ -886,12 +965,14 @@ MakeComparisonTable <- function(
           et <- tryCatch(effectsize::eta_squared(a2, partial = TRUE), error = function(e) NULL)
 
           val <- NA_real_
+
           if (!is.null(et)) {
             idx <- if ("Parameter" %in% names(et)) {
               et$Parameter == CompVariable
             } else {
               rownames(et) == CompVariable
             }
+
             val <- suppressWarnings(et$Eta2_partial[idx][1])
           }
 
@@ -934,10 +1015,12 @@ MakeComparisonTable <- function(
         }
 
         n <- nrow(df_vg)
+
         H <- tryCatch(
           stats::kruskal.test(fmla(var, CompVariable), data = df_vg)$statistic,
           error = function(e) NA_real_
         )
+
         eps2 <- suppressWarnings(as.numeric((H - k + 1) / (n - k)))
 
         return(tibble::tibble(
@@ -947,14 +1030,14 @@ MakeComparisonTable <- function(
         ))
       }
 
-      x <- as_factor_drop(df_vg[[var]])
-      g <- as_factor_drop(df_vg[[CompVariable]])
-      tab <- table(x, g)
-      v <- cramers_v(tab)
+      tab <- table(
+        as_factor_drop(df_vg[[var]]),
+        as_factor_drop(df_vg[[CompVariable]])
+      )
 
       tibble::tibble(
         variable = var,
-        effect_size = v,
+        effect_size = cramers_v(tab),
         es_method = "Cramer's V"
       )
     })
@@ -974,7 +1057,8 @@ MakeComparisonTable <- function(
         }
       ) %>%
       gtsummary::modify_header(effect_size ~ "**Effect size**") %>%
-      gtsummary::modify_header(ES_Method ~ "**ES method**")
+      gtsummary::modify_header(ES_Method ~ "**ES method**") %>%
+      gtsummary::modify_column_unhide(columns = c("effect_size", "ES_Method"))
   }
 
   if (AddPairwise && length(combos_all) > 0) {
@@ -995,77 +1079,19 @@ MakeComparisonTable <- function(
         df_cc <- df[stats::complete.cases(df[, cols_cc, drop = FALSE]), , drop = FALSE]
         df_cc[[CompVariable]] <- droplevels(as_factor_drop(df_cc[[CompVariable]]))
 
-        if (!is.null(Referent) && Referent %in% levels(df_cc[[CompVariable]])) {
-          df_cc[[CompVariable]] <- stats::relevel(df_cc[[CompVariable]], ref = Referent)
-        }
-
         if (nlevels(df_cc[[CompVariable]]) < 2 || nrow(df_cc) < 3) {
           return(dplyr::select(out_template, "variable", "contrast_label", "p_val"))
         }
 
-        fit <- tryCatch(stats::lm(fmla(var, c(CompVariable, Covariates)), data = df_cc), error = function(e) NULL)
-        if (is.null(fit)) {
-          return(dplyr::select(out_template, "variable", "contrast_label", "p_val"))
-        }
-
-        V <- NULL
-        if (!Parametric) {
-          V <- tryCatch(sandwich::vcovHC(fit, type = "HC3"), error = function(e) NULL)
-        }
-
-        emm <- tryCatch(
-          if (is.null(V)) {
-            emmeans::emmeans(fit, specs = CompVariable)
-          } else {
-            emmeans::emmeans(fit, specs = CompVariable, vcov. = V)
-          },
-          error = function(e) NULL
-        )
-        if (is.null(emm)) {
-          return(dplyr::select(out_template, "variable", "contrast_label", "p_val"))
-        }
-
-        ctr <- tryCatch(
-          if (!is.null(Referent)) {
-            emmeans::contrast(emm, method = "trt.vs.ctrl", ref = 1)
-          } else {
-            emmeans::contrast(emm, method = "pairwise")
-          },
-          error = function(e) NULL
-        )
-        if (is.null(ctr)) {
-          return(dplyr::select(out_template, "variable", "contrast_label", "p_val"))
-        }
-
-        res <- tryCatch(as.data.frame(summary(ctr, adjust = PairwiseMethod)), error = function(e) NULL)
-        if (is.null(res) || !("p.value" %in% names(res))) {
-          res <- tryCatch(as.data.frame(summary(ctr)), error = function(e) NULL)
-          if (is.null(res) || !("p.value" %in% names(res))) {
-            return(dplyr::select(out_template, "variable", "contrast_label", "p_val"))
-          }
-          if (!identical(PairwiseMethod, "none")) {
-            res$p.value <- stats::p.adjust(res$p.value, method = PairwiseMethod)
-          }
-        }
-
-        res$contrast <- as.character(res$contrast)
-
-        got <- tibble::tibble(
-          key = vapply(res$contrast, function(s) {
-            parts <- strsplit(norm(s), "\\s*-\\s*")[[1]]
-            if (length(parts) != 2) return(NA_character_)
-            a <- canon_level(parts[1], lvls_all, CompVariable)
-            b <- canon_level(parts[2], lvls_all, CompVariable)
-            pair_key(a, b)
-          }, character(1)),
-          p_val = as.numeric(res$p.value)
-        )
-
-        return(
-          out_template %>%
-            dplyr::mutate(p_val = got$p_val[match(.data$key, got$key)]) %>%
-            dplyr::select("variable", "contrast_label", "p_val")
-        )
+        return(pairwise_cont_emmeans(
+          df_cc = df_cc,
+          var = var,
+          group = CompVariable,
+          covs = Covariates,
+          combos = combos_all,
+          PairwiseMethod = PairwiseMethod,
+          robust = !Parametric
+        ))
       }
 
       if (!is_cont && !is.null(Covariates)) {
@@ -1073,10 +1099,6 @@ MakeComparisonTable <- function(
         df_cc <- df[stats::complete.cases(df[, cols_cc, drop = FALSE]), , drop = FALSE]
         df_cc[[CompVariable]] <- droplevels(as_factor_drop(df_cc[[CompVariable]]))
         df_cc[[var]] <- droplevels(as_factor_drop(df_cc[[var]]))
-
-        if (!is.null(Referent) && Referent %in% levels(df_cc[[CompVariable]])) {
-          df_cc[[CompVariable]] <- stats::relevel(df_cc[[CompVariable]], ref = Referent)
-        }
 
         got <- pairwise_cat_lr(
           df_cc,
@@ -1102,54 +1124,18 @@ MakeComparisonTable <- function(
           return(dplyr::select(out_template, "variable", "contrast_label", "p_val"))
         }
 
-        if (Parametric) {
-          res <- tryCatch(
-            stats::pairwise.t.test(
-              x = df_vg[[var]],
-              g = df_vg[[CompVariable]],
-              p.adjust.method = PairwiseMethod,
-              pool.sd = FALSE
-            ),
-            error = function(e) NULL
-          )
-
-          if (is.null(res) || is.null(res$p.value)) {
-            return(dplyr::select(out_template, "variable", "contrast_label", "p_val"))
-          }
-
-          r <- as.data.frame(as.table(res$p.value))
-          r <- r[!is.na(r$Freq), , drop = FALSE]
-
-          out <- purrr::map_dfr(combos_all, function(cp) {
-            pv <- NA_real_
-            hit1 <- r$Freq[r$Var1 == cp[2] & r$Var2 == cp[1]]
-            hit2 <- r$Freq[r$Var1 == cp[1] & r$Var2 == cp[2]]
-            if (length(hit1)) pv <- hit1[1]
-            if (is.na(pv) && length(hit2)) pv <- hit2[1]
-
-            tibble::tibble(
-              variable = var,
-              contrast_label = pair_label(cp[1], cp[2]),
-              p_val = as.numeric(pv)
-            )
-          })
-
-          return(out)
-        }
-
         out <- purrr::map_dfr(combos_all, function(cp) {
           sub <- df_vg[df_vg[[CompVariable]] %in% cp, , drop = FALSE]
           sub[[CompVariable]] <- droplevels(as_factor_drop(sub[[CompVariable]]))
 
-          if (nlevels(sub[[CompVariable]]) < 2) {
-            return(tibble::tibble(
-              variable = var,
-              contrast_label = pair_label(cp[1], cp[2]),
-              p_val = NA_real_
-            ))
-          }
-
-          p <- tryCatch(stats::wilcox.test(fmla(var, CompVariable), data = sub)$p.value, error = function(e) NA_real_)
+          p <- tryCatch(
+            if (Parametric) {
+              stats::t.test(fmla(var, CompVariable), data = sub, var.equal = FALSE)$p.value
+            } else {
+              stats::wilcox.test(fmla(var, CompVariable), data = sub)$p.value
+            },
+            error = function(e) NA_real_
+          )
 
           tibble::tibble(
             variable = var,
@@ -1175,7 +1161,12 @@ MakeComparisonTable <- function(
       out <- purrr::map_dfr(combos_all, function(cp) {
         sub <- df_vg[df_vg[[CompVariable]] %in% cp, , drop = FALSE]
         sub[[CompVariable]] <- droplevels(as_factor_drop(sub[[CompVariable]]))
-        tab <- table(as_factor_drop(sub[[var]]), as_factor_drop(sub[[CompVariable]]))
+
+        tab <- table(
+          as_factor_drop(sub[[var]]),
+          as_factor_drop(sub[[CompVariable]])
+        )
+
         tst <- cat_global_test(tab, method = CatMethod)
 
         tibble::tibble(
@@ -1195,6 +1186,7 @@ MakeComparisonTable <- function(
     if (nrow(pw_long) > 0) {
       contrast_levels <- unique(pw_long$contrast_label)
       safe_names <- make.unique(paste0("pw_", make.names(contrast_levels)))
+
       map_cols <- tibble::tibble(
         contrast_label = contrast_levels,
         col_safe = safe_names
@@ -1235,7 +1227,51 @@ MakeComparisonTable <- function(
             rows = .data$.is_main_row & !is.na(.data[[col]]) & .data[[col]] <= 0.05,
             text_format = "bold"
           ) %>%
-          gtsummary::modify_header(!!rlang::sym(col) := paste0("**", lab, "**"))
+          gtsummary::modify_header(!!rlang::sym(col) := paste0("**", lab, "**")) %>%
+          gtsummary::modify_column_unhide(columns = tidyselect::all_of(col))
+      }
+    }
+  }
+
+  if ("Notes" %in% names(tbl$table_body)) {
+    has_notes <- any(!is.na(tbl$table_body$Notes) & nzchar(tbl$table_body$Notes))
+
+    if (ShowNotes == "never" || (ShowNotes == "auto" && !has_notes)) {
+      tbl <- tbl %>%
+        gtsummary::modify_column_hide(columns = "Notes")
+    } else {
+      tbl <- tbl %>%
+        gtsummary::modify_header(Notes ~ "**Notes**") %>%
+        gtsummary::modify_column_unhide(columns = "Notes")
+
+      if (NotesPosition == "last") {
+        tbl <- tbl %>%
+          gtsummary::modify_table_body(
+            ~ .x %>% dplyr::relocate("Notes", .after = dplyr::last_col())
+          )
+      }
+
+      if (NotesPosition == "after_test") {
+        tbl <- tbl %>%
+          gtsummary::modify_table_body(
+            ~ .x %>% dplyr::relocate("Notes", .after = "Test")
+          )
+      }
+
+      if (NotesPosition == "before_pairwise") {
+        first_pw <- names(tbl$table_body)[grepl("^pw_", names(tbl$table_body))][1]
+
+        if (!is.na(first_pw)) {
+          tbl <- tbl %>%
+            gtsummary::modify_table_body(
+              ~ .x %>% dplyr::relocate("Notes", .before = tidyselect::all_of(first_pw))
+            )
+        } else {
+          tbl <- tbl %>%
+            gtsummary::modify_table_body(
+              ~ .x %>% dplyr::relocate("Notes", .after = "Test")
+            )
+        }
       }
     }
   }
