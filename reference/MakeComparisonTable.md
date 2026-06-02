@@ -1,9 +1,9 @@
 # Make comparison table with covariate adjustment, effect sizes, and pairwise contrasts
 
-Create a label-friendly comparison table (via **gtsummary**) summarizing
-variables across groups, with optional global hypothesis tests,
-covariate-adjusted tests, effect sizes, and optional pairwise
-comparisons.
+Create a label-aware comparison table using
+[`gtsummary::tbl_summary()`](https://www.danieldsjoberg.com/gtsummary/reference/tbl_summary.html)
+with optional global hypothesis tests, covariate-adjusted tests, effect
+sizes, and pairwise comparisons.
 
 ## Usage
 
@@ -29,7 +29,9 @@ MakeComparisonTable(
   IncludeOverallStats = FALSE,
   ShowPositiveBinaryOnLabel = TRUE,
   CatMethod = c("auto", "chisq", "fisher"),
-  MultiCatAdjusted = c("multinomial_LR", "none")
+  MultiCatAdjusted = c("multinomial_LR", "none"),
+  ShowNotes = c("auto", "always", "never"),
+  NotesPosition = c("last", "after_test", "before_pairwise")
 )
 ```
 
@@ -41,298 +43,130 @@ MakeComparisonTable(
 
 - CompVariable:
 
-  Grouping variable name (character scalar). If NULL or missing and
-  `IncludeOverallStats = TRUE`, an overall-only table is returned.
+  Character scalar naming the grouping variable.
 
 - Variables:
 
-  Character vector of variables to include. You may also pass additional
-  variable names as unnamed arguments via `...` (convenience).
+  Character vector of variables to summarize.
 
 - ...:
 
-  Optional additional variable names (character scalars). Useful when
-  you accidentally typed `Variables="A", "B"` instead of
-  `Variables=c("A","B")`.
+  Optional additional variable names supplied individually.
 
 - Covariates:
 
-  Optional covariate names (character vector) used for adjusted models.
-  Any covariates appearing in `Variables` are removed from the displayed
-  table with a warning.
+  Optional character vector of covariates for adjusted models.
 
 - ValueDigits:
 
-  Digits for summary statistics (default 2).
+  Number of digits for descriptive statistics.
 
 - pDigits:
 
-  Digits to display formatted p-values using
-  [`format.pval()`](https://rdrr.io/r/base/format.pval.html).
+  Number of digits for p-values.
 
 - AddEffectSize:
 
-  Add effect sizes column (default FALSE).
+  Logical; add effect-size columns.
 
 - EffectSizeDigits:
 
-  Digits for effect sizes (default 2).
+  Number of digits for effect sizes.
 
 - AddPairwise:
 
-  Add pairwise p-value columns (default FALSE).
+  Logical; add pairwise comparison columns.
 
 - PairwiseMethod:
 
-  P-adjustment method (default "bonferroni"). Use "none" for no
-  adjustment. Must be one of "none" or
-  [stats::p.adjust.methods](https://rdrr.io/r/stats/p.adjust.html).
+  P-value adjustment method. Use `"none"` for no adjustment.
 
 - Parametric:
 
-  If TRUE, use parametric tests where relevant. If FALSE and covariates
-  are present, robust ANCOVA is used for continuous outcomes and robust
-  covariance is used for continuous pairwise.
+  Logical; use parametric tests for continuous outcomes.
 
 - ParametricDisplay:
 
-  If TRUE show mean (SD); if FALSE show median
-  [IQR](https://rdrr.io/r/stats/IQR.html). Defaults to `Parametric`.
+  Logical; display continuous summaries as mean (SD). If `FALSE`,
+  display median [IQR](https://rdrr.io/r/stats/IQR.html). Defaults to
+  `Parametric`.
 
 - IncludeOverallN:
 
-  If TRUE add overall N column.
+  Logical; add N column.
 
 - IncludeMissing:
 
-  If TRUE include missing/unknown category rows in summaries.
+  Logical; include missing rows in summaries.
 
 - suppress_warnings:
 
-  If TRUE suppress gtsummary warnings.
+  Logical; suppress selected gtsummary warnings.
 
 - Referent:
 
-  Optional reference level for pairwise contrasts (character scalar). If
-  set, pairwise comparisons are against this referent.
+  Optional reference group for pairwise comparisons.
 
 - IncludeOverallStats:
 
-  If TRUE and `CompVariable` is provided, add an overall summary column
-  as the first statistic column. If no valid grouping variable is
-  provided, an overall-only table is returned.
+  Logical; add overall summary column.
 
 - ShowPositiveBinaryOnLabel:
 
-  If TRUE, display only the "positive" level for binary categorical
-  variables.
+  Logical; for binary variables, show only the positive level where
+  identifiable.
 
 - CatMethod:
 
-  Categorical test method: "chisq", "fisher", or "auto" (default).
+  Categorical test method. One of `"auto"`, `"chisq"`, `"fisher"`.
 
 - MultiCatAdjusted:
 
-  Adjusted multi-category method when covariates are present: currently
-  supports "multinomial_LR" (default) or "none".
+  Adjusted multicategory method. Currently `"multinomial_LR"` or
+  `"none"`.
+
+- ShowNotes:
+
+  Whether to show Notes column. One of `"auto"`, `"always"`, or
+  `"never"`.
+
+- NotesPosition:
+
+  Notes column position. One of `"last"`, `"after_test"`, or
+  `"before_pairwise"`.
 
 ## Value
 
-A
-[`gtsummary::tbl_summary`](https://www.danieldsjoberg.com/gtsummary/reference/tbl_summary.html)
-object with added columns in `table_body`.
+A `gtsummary` object.
 
 ## Details
 
-This function is designed for publication tables where you want the
-**Test** column to reflect the method used for the reported p-value(s),
-while still leveraging gtsummary's formatting, labeling, and table
-structure.
-
-### Overview
-
-`MakeComparisonTable()` is a wrapper around
-[`gtsummary::tbl_summary()`](https://www.danieldsjoberg.com/gtsummary/reference/tbl_summary.html)
-that:
-
-- creates group-wise descriptive summaries,
-
-- optionally adds an overall summary column,
-
-- computes global p-values (unadjusted or covariate-adjusted),
-
-- optionally computes effect sizes,
-
-- optionally computes pairwise p-values (with multiplicity control and
-  optional referent),
-
-- adds a **Notes** column to explain common edge cases (e.g.,
-  complete-case filtering dropping a group level, causing missing
-  adjusted pairwise contrasts).
-
-The function aims to use gtsummary capabilities wherever possible
-(summary, formatting, styling, captioning) and computes additional
-statistics not provided directly by gtsummary (adjusted global tests,
-adjusted pairwise, effect sizes).
-
-### Variable typing rules
-
-- Continuous: numeric variables with \> 2 unique non-missing values.
-
-- Dichotomous numeric: numeric variables with exactly 2 unique
-  non-missing values (treated as categorical).
-
-- Categorical: factors, characters, logicals, and non-numeric variables
-  (or dichotomous numeric).
-
-### Global tests (p-values)
-
-Global p-values are computed per variable, using complete-case data for
-the required fields.
-
-#### Continuous outcomes
-
-- No covariates:
-
-  - `Parametric = TRUE`:
-
-    - 2 groups: Welch t-test
-      ([`stats::t.test()`](https://rdrr.io/r/stats/t.test.html), unequal
-      variances)
-
-    - 3+ groups: one-way ANOVA
-      ([`stats::aov()`](https://rdrr.io/r/stats/aov.html))
-
-  - `Parametric = FALSE`:
-
-    - 2 groups: Wilcoxon rank-sum
-      ([`stats::wilcox.test()`](https://rdrr.io/r/stats/wilcox.test.html))
-
-    - 3+ groups: Kruskal-Wallis
-      ([`stats::kruskal.test()`](https://rdrr.io/r/stats/kruskal.test.html))
-
-- With covariates:
-
-  - `Parametric = TRUE`: ANCOVA via a linear model with a Type II test
-    for the grouping term using
-    [`car::Anova()`](https://rdrr.io/pkg/car/man/Anova.html).
-
-  - `Parametric = FALSE`: robust ANCOVA via a linear model plus HC3
-    robust covariance from
-    [`sandwich::vcovHC()`](https://sandwich.R-Forge.R-project.org/reference/vcovHC.html)
-    and a Wald F-test for the grouping term using
-    [`car::linearHypothesis()`](https://rdrr.io/pkg/car/man/linearHypothesis.html).
-
-#### Categorical outcomes (unadjusted)
-
-- `CatMethod = "chisq"`: Pearson chi-squared with `correct = FALSE`
-  ([`stats::chisq.test()`](https://rdrr.io/r/stats/chisq.test.html)).
-
-- `CatMethod = "fisher"`: Fisher's exact test
-  ([`stats::fisher.test()`](https://rdrr.io/r/stats/fisher.test.html));
-  for RxC tables, uses simulated p-value (B = 1e4).
-
-- `CatMethod = "auto"` (default): uses chi-squared unless expected
-  counts are small; then Fisher.
-
-#### Categorical outcomes (adjusted; covariates present)
-
-- Binary outcome: logistic regression likelihood ratio test (LR) using
-  [`stats::glm()`](https://rdrr.io/r/stats/glm.html) with a binomial
-  family and [`stats::drop1()`](https://rdrr.io/r/stats/add1.html) with
-  a chi-squared test.
-
-- Multi-category outcome (3+ levels): multinomial LR (default) via
-  [`nnet::multinom()`](https://rdrr.io/pkg/nnet/man/multinom.html) and
-  an LR comparison of models with and without the grouping term.
-  Controlled by `MultiCatAdjusted`, which defaults to
-  `"multinomial_LR"`.
-
-### Pairwise comparisons
-
-Pairwise columns are added when `AddPairwise = TRUE`.
-
-#### Which pairs are compared
-
-- If `Referent` is `NULL`: all pairwise group comparisons.
-
-- If `Referent` is set: all groups are compared against the referent
-  (treatment-vs-control).
-
-#### Multiplicity control
-
-- `PairwiseMethod` defaults to `"bonferroni"` and may be any value in
-  [stats::p.adjust.methods](https://rdrr.io/r/stats/p.adjust.html).
-
-- Use `"none"` for no adjustment.
-
-#### Continuous outcomes
-
-- No covariates:
-
-  - Parametric: Welch pairwise t-tests using
-    [`stats::pairwise.t.test()`](https://rdrr.io/r/stats/pairwise.t.test.html)
-    with `pool.sd = FALSE`.
-
-  - Nonparametric:
-    [`stats::pairwise.wilcox.test()`](https://rdrr.io/r/stats/pairwise.wilcox.test.html)
-
-- With covariates:
-
-  - Uses adjusted means via
-    [`emmeans::emmeans()`](https://rvlenth.github.io/emmeans/reference/emmeans.html)
-    on the ANCOVA model.
-
-  - If `Parametric = FALSE`, the same ANCOVA model is used, but pairwise
-    inference uses the HC3 robust covariance matrix supplied to emmeans
-    (so adjusted pairwise still works).
-
-#### Categorical outcomes
-
-- No covariates: pairwise chi-squared or Fisher (per `CatMethod`) on the
-  2-group subset.
-
-- With covariates:
-
-  - Binary outcome: for each pair, fit logistic models with and without
-    group and use LR p-value.
-
-  - Multi-category outcome: for each pair, fit multinomial models with
-    and without group and use LR p-value.
-
-  - Edge case: in a given pairwise subset, a multi-category outcome may
-    collapse to 2 levels; in that case, the function automatically
-    switches to logistic LR for that pair.
-
-### Effect sizes
-
-Effect sizes are provided when `AddEffectSize = TRUE`.
-
-- Continuous, 2 groups, unadjusted: absolute Cohen's d (\|d\|) via
-  [`effectsize::cohens_d()`](https://easystats.github.io/effectsize/reference/cohens_d.html).
-
-- Continuous, 3+ groups, unadjusted parametric: eta-squared via
-  [`effectsize::eta_squared()`](https://easystats.github.io/effectsize/reference/eta_squared.html).
-
-- Continuous, adjusted: partial eta-squared from Type II ANOVA table.
-
-- Continuous, nonparametric: epsilon-squared approximation from
-  Kruskal-Wallis.
-
-- Categorical: Cramer's V (uses DescTools if available; otherwise a
-  chi-squared-based approximation).
-
-### Captions
-
-The caption describes:
-
-- display statistic for continuous variables (mean SD vs median IQR),
-
-- whether covariates were used (and how continuous outcomes were
-  tested),
-
-- categorical test selection (`CatMethod`),
-
-- adjusted multi-category method (`MultiCatAdjusted`),
-
-- pairwise inclusion and multiplicity control (`PairwiseMethod`).
+Continuous variables are numeric variables with more than two unique
+non-missing values. Numeric variables with exactly two unique values are
+treated as dichotomous categorical variables.
+
+When covariates are supplied, continuous outcomes are tested using
+ANCOVA with Type II tests. If `Parametric = FALSE`, robust HC3
+covariance is used for the group-level Wald test and adjusted pairwise
+comparisons.
+
+Binary categorical outcomes with covariates are tested using logistic
+regression likelihood-ratio tests. Multicategory categorical outcomes
+with covariates are tested using multinomial likelihood-ratio tests.
+
+Pairwise comparisons preserve non-standard group labels and variable
+names.
+
+## Examples
+
+``` r
+if (FALSE) { # \dontrun{
+MakeComparisonTable(
+  DataFrame = mtcars,
+  CompVariable = "am",
+  Variables = c("mpg", "hp", "wt"),
+  AddEffectSize = TRUE,
+  AddPairwise = TRUE
+)
+} # }
+```

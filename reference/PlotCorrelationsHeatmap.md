@@ -1,8 +1,19 @@
 # Plot correlations heatmap
 
-Calculates correlations (or partial correlations) and plots a heatmap.
-Fully label-aware, robust to non-syntactic names, and safe for
-real-world data.
+Computes correlations or partial correlations and plots a heatmap.
+Handles:
+
+- continuous + categorical covariates
+
+- labelled data
+
+- non-syntactic names
+
+- sparse real-world datasets
+
+- ordinal variables
+
+- partial correlations via residualization
 
 ## Usage
 
@@ -24,40 +35,40 @@ PlotCorrelationsHeatmap(
 
 - Data:
 
-  A data frame.
+  data.frame
 
 - xVars:
 
-  Character vector of x variables.
+  character vector
 
 - yVars:
 
-  Character vector of y variables.
+  character vector
 
 - covars:
 
-  Optional covariates.
+  optional covariates
 
 - method:
 
-  Correlation method.
+  pearson/spearman/kendall
 
 - Relabel:
 
-  Use labels if available.
+  use labels
 
 - Ordinal:
 
-  Convert ordinal variables.
+  include ordinal vars
 
 - min_n:
 
-  Minimum N required.
+  minimum complete rows
 
 - eps:
 
-  Variance tolerance.
+  variance tolerance
 
 ## Value
 
-A list with correlation matrices and plots.
+list

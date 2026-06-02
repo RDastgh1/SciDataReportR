@@ -24,3 +24,14 @@ CreatePCATable(...)
 
 The same object returned by
 [`CreatePCAObject()`](https://rdastgh1.github.io/SciDataReportR/reference/CreatePCAObject.md).
+
+## Examples
+
+``` r
+PCA <- CreatePCATable(
+  Data = mtcars,
+  VarsToReduce = names(mtcars),
+  numComponents = 3,
+  imputeMethod = "median"
+)
+```

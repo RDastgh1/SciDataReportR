@@ -52,6 +52,7 @@
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/PlotCatInteractionEffectsMatrix.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/PlotCategoricalDistributions.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/PlotChiSqCovar.html</loc></url>
+<url><loc>https://rdastgh1.github.io/SciDataReportR/reference/PlotClusterBoxplot.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/PlotContinuousDistributions.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/PlotCorrelationsHeatmap.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/PlotDirectionalHeatmaps.html</loc></url>
@@ -69,6 +70,8 @@
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/PlotSplitViolin.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/PlotSwimmerTransitions.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/PlotTimeDistribution.html</loc></url>
+<url><loc>https://rdastgh1.github.io/SciDataReportR/reference/PlotTimeSwimmer.html</loc></url>
+<url><loc>https://rdastgh1.github.io/SciDataReportR/reference/PlotVolcanoEffects.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/PlotZScore.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/PrepNumericData.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/ProjectPCA.html</loc></url>

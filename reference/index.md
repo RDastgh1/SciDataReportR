@@ -101,6 +101,8 @@
 - [`PlotChiSqCovar()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotChiSqCovar.md)
   : Plot Chi-Square Tests for Categorical Associations (optionally
   stratified by covariates)
+- [`PlotClusterBoxplot()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotClusterBoxplot.md)
+  : Plot cluster boxplots by variable
 - [`PlotContinuousDistributions()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotContinuousDistributions.md)
   : Plot Continuous Distributions
 - [`PlotCorrelationsHeatmap()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotCorrelationsHeatmap.md)
@@ -138,6 +140,10 @@
   visits
 - [`PlotTimeDistribution()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotTimeDistribution.md)
   : Plot Time Distribution
+- [`PlotTimeSwimmer()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotTimeSwimmer.md)
+  : Plot longitudinal swimmer timelines
+- [`PlotVolcanoEffects()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotVolcanoEffects.md)
+  : Plot volcano-style association effects
 - [`PlotZScore()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotZScore.md)
   : Plot Z-score group differences with statistical significance
 - [`PrepNumericData()`](https://rdastgh1.github.io/SciDataReportR/reference/PrepNumericData.md)
@@ -197,7 +203,7 @@
 - [`plotForestFromTable()`](https://rdastgh1.github.io/SciDataReportR/reference/plotForestFromTable.md)
   : Create a Forest Plot from Univariate Regression Tables
 - [`plotPCA()`](https://rdastgh1.github.io/SciDataReportR/reference/plotPCA.md)
-  : Plot 3D PCA Scores
+  : Plot PCA scores
 - [`plotSigAssociations()`](https://rdastgh1.github.io/SciDataReportR/reference/plotSigAssociations.md)
   : Plot Significant Associations
 - [`plotSigCorrelations()`](https://rdastgh1.github.io/SciDataReportR/reference/plotSigCorrelations.md)

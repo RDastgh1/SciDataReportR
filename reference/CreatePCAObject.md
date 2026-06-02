@@ -1,13 +1,8 @@
 # Create a reusable PCA object and visualizations
 
 Perform principal component analysis (PCA) on specified variables and
-create visualizations. The default `"classic"` mode preserves the
-original
-[`psych::principal()`](https://rdrr.io/pkg/psych/man/principal.html)
-workflow for compatibility with existing SciDataReportR analyses. The
-optional `"omics"` mode is designed for high-dimensional data such as
-proteomics, metabolomics, and other settings where the number of
-variables is much larger than the number of participants.
+return reusable PCA results, scores, loading tables, combined data, and
+plots.
 
 ## Usage
 
@@ -16,6 +11,7 @@ CreatePCAObject(
   Data,
   VarsToReduce,
   VariableCategories = NULL,
+  Relabel = TRUE,
   minThresh = 0.85,
   scale = TRUE,
   center = TRUE,
@@ -39,100 +35,102 @@ CreatePCAObject(
 
 - Data:
 
-  The dataset containing the variables for PCA.
+  A data frame containing the variables for PCA.
 
 - VarsToReduce:
 
-  A character vector specifying the variables to include in the PCA.
+  Character vector of raw variable names to include in PCA.
 
 - VariableCategories:
 
-  Optional categorical vector, used to color the lollipop plot. Must be
-  the same length and order as `VarsToReduce` if provided.
+  Optional vector used to color variables in the lollipop loading plot.
+  If supplied, it should be the same length and order as `VarsToReduce`.
+
+- Relabel:
+
+  Logical. If `TRUE`, variable labels are used in output tables and
+  plots when available. If `FALSE`, raw variable names are used. Default
+  is `TRUE`.
 
 - minThresh:
 
-  The minimum threshold for cumulative proportion of variance. Default
-  is `0.85`. In `"omics"` mode, this threshold is evaluated only across
-  the capped scree components.
+  Numeric threshold for cumulative variance used to select the number of
+  components when `numComponents = NULL`. Default is `0.85`.
 
 - scale:
 
-  Logical, indicating whether to scale the data by standard deviation.
-  Default is `TRUE`.
+  Logical. If `TRUE`, variables are scaled by their standard deviation
+  before PCA. Default is `TRUE`.
 
 - center:
 
-  Logical, indicating whether to center the data by subtracting the
-  mean. Default is `TRUE`.
+  Logical. If `TRUE`, variables are centered before PCA. Default is
+  `TRUE`.
 
 - Ordinal:
 
-  Logical, indicating whether ordinal variables should be handled.
-  Currently not used inside this function.
+  Logical. Placeholder retained for backward compatibility. Currently
+  not used inside this function.
 
 - numComponents:
 
-  Number of principal components to compute. If `NULL`, chosen by
-  `minThresh` in `"classic"` mode and by capped scree results in
-  `"omics"` mode.
+  Optional integer number of components to retain. If `NULL`, the number
+  is selected using `minThresh`.
 
 - Mode:
 
   Character. Either `"classic"` or `"omics"`. `"classic"` preserves the
   original
   [`psych::principal()`](https://rdrr.io/pkg/psych/man/principal.html)
-  behavior. `"omics"` uses capped PCA logic for high-dimensional data.
+  behavior. `"omics"` uses capped PCA logic for higher-dimensional data.
 
 - backend:
 
   Character. PCA backend to use. Options are `"psych"`, `"prcomp"`, and
-  `"irlba"`. Default is `"psych"` to preserve backward compatibility. In
-  `"omics"` mode, `"irlba"` is recommended for speed.
+  `"irlba"`. Default is `"psych"` for compatibility.
 
 - rotate:
 
   Character. Rotation method. Options are `"varimax"` and `"none"`.
-  Default is `"varimax"` to preserve interpretability and existing
-  loading-table behavior.
+  Default is `"varimax"`.
 
 - maxComponents:
 
-  Maximum number of final components to retain in `"omics"` mode when
-  `numComponents` is `NULL`. Default is `20`.
+  Integer. Maximum number of final components to retain in `"omics"`
+  mode when `numComponents = NULL`. Default is `20`.
 
 - maxScreeComponents:
 
-  Maximum number of components used to estimate and plot the scree curve
-  in `"omics"` mode. Default is `20`.
+  Integer. Maximum number of components used to estimate and plot the
+  scree curve in `"omics"` mode. Default is `20`.
 
 - VarianceFilter:
 
   Optional numeric value for variance filtering before PCA in `"omics"`
-  mode. If `VarianceFilterMethod = "top_n"`, this keeps the top
+  mode. If `VarianceFilterMethod = "top_n"`, keeps the top
   `VarianceFilter` most variable variables. If
-  `VarianceFilterMethod = "variance_quantile"`, this keeps variables
-  with variance at or above the specified quantile.
+  `VarianceFilterMethod = "variance_quantile"`, keeps variables with
+  variance at or above the specified quantile.
 
 - VarianceFilterMethod:
 
-  Character. Either `"top_n"` or `"variance_quantile"`.
+  Character. Either `"top_n"` or `"variance_quantile"`. Default is
+  `"top_n"`.
 
 - MissingnessWarningThreshold:
 
-  Numeric threshold for warning about high variable-level missingness.
+  Numeric threshold for warning about variable-level missingness.
   Default is `0.20`.
 
 - ParticipantMissingnessWarningThreshold:
 
-  Numeric threshold for warning about high participant-level
-  missingness. Default is `0.20`.
+  Numeric threshold for warning about participant-level missingness.
+  Default is `0.20`.
 
 - imputeMethod:
 
   Character. Missing-data imputation method. Options are `"missRanger"`
-  and `"median"`. Default is `"missRanger"` to preserve the original
-  behavior.
+  and `"median"`. Default is `"missRanger"`.
 
 - SuppressWarnings:
 
@@ -141,86 +139,109 @@ CreatePCAObject(
 
 ## Value
 
-A list containing PCA results and visualizations:
+A list with the following elements:
 
 - p_scree:
 
-  Scree and variance plot as a ggplot object.
+  A ggplot scree and cumulative variance plot.
 
 - pcaresults:
 
-  PCA result object. In `"classic"` mode this is the
+  The PCA result object. In `"classic"` mode this is a
   [`psych::principal()`](https://rdrr.io/pkg/psych/man/principal.html)
   result after
   [`psych::fa.sort()`](https://rdrr.io/pkg/psych/man/fa.sort.html). In
-  `"omics"` mode this is a harmonized list with rotated and sorted
-  loadings, scores, and variance information.
+  `"omics"` mode with `"prcomp"` or `"irlba"`, this is a harmonized list
+  containing loadings, scores, variance information, backend, mode, and
+  rotation.
 
 - LoadingTable:
 
-  Data frame of rotated loadings with variable names and labels.
+  A data frame of component loadings with raw variable names, labels,
+  and duplicate-safe plot labels.
 
 - Scores:
 
-  Matrix or data frame of component scores.
+  A data frame of component scores.
 
 - CombinedData:
 
-  Original data with component scores appended.
+  The original input data with component scores appended.
 
 - Lollipop:
 
-  Lollipop-style loading plot as a ggplot object.
+  A ggplot lollipop loading plot.
 
 - ScaleParams:
 
-  List with means, standard deviations, center, and scale.
+  A list containing centering and scaling parameters.
 
 - VarsUsed:
 
-  Character vector of variables actually used in PCA.
+  Character vector of variables actually used in PCA after
+  preprocessing.
 
 - VarianceTable:
 
-  Table of variance explained by component.
+  A variance table used for optional omics variance filtering, or
+  `NULL`.
+
+- Preprocessing:
+
+  A list documenting variables dropped during preprocessing and
+  missingness summaries.
 
 - Mode:
 
-  PCA mode used.
+  The PCA mode used.
 
 - Backend:
 
-  PCA backend used.
+  The PCA backend used.
 
 - Center:
 
-  Logical flag indicating if centering was used.
+  Logical flag indicating whether centering was used.
 
 - Scale:
 
-  Logical flag indicating if scaling was used.
+  Logical flag indicating whether scaling was used.
 
 ## Details
 
-In `"omics"` mode, the function avoids computing one component per input
-variable. Instead, it computes a capped number of components using a
-faster PCA backend, applies optional variance filtering, and then
-applies rotation and sorting so loadings remain interpretable. This is
-useful when PCA is being used for exploratory structure, visualization,
-latent biological signal, or clustering rather than exhaustive factor
-decomposition.
+The default `"classic"` mode preserves the original
+[`psych::principal()`](https://rdrr.io/pkg/psych/man/principal.html)
+workflow for compatibility with existing SciDataReportR analyses. The
+optional `"omics"` mode is designed for high-dimensional data such as
+proteomics, metabolomics, flow cytometry, FACS, transcriptomics, and
+other settings where the number of variables may be large relative to
+the number of participants.
+
+The function uses raw variable names internally, but by default uses
+variable labels in human-facing outputs when labels are available.
+Variables with zero or undefined standard deviation after preprocessing
+are dropped automatically with a warning so PCA can continue without
+manual preprocessing.
 
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
 PCA <- CreatePCAObject(
   Data = mtcars,
   VarsToReduce = names(mtcars),
-  numComponents = 3
+  numComponents = 3,
+  imputeMethod = "median"
 )
 
-PCA_Omics <- CreatePCAObject(
+PCA_raw_names <- CreatePCAObject(
+  Data = mtcars,
+  VarsToReduce = names(mtcars),
+  Relabel = FALSE,
+  numComponents = 3,
+  imputeMethod = "median"
+)
+
+PCA_omics <- CreatePCAObject(
   Data = mtcars,
   VarsToReduce = names(mtcars),
   Mode = "omics",
@@ -229,5 +250,5 @@ PCA_Omics <- CreatePCAObject(
   maxScreeComponents = 5,
   imputeMethod = "median"
 )
-} # }
+#> Warning: STATS is longer than the extent of 'dim(x)[MARGIN]'
 ```
