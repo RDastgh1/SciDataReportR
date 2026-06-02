@@ -17,28 +17,36 @@ PlotCorrelationsHeatmap(
 )
 }
 \arguments{
-\item{Data}{A data frame.}
+\item{Data}{data.frame}
 
-\item{xVars}{Character vector of x variables.}
+\item{xVars}{character vector}
 
-\item{yVars}{Character vector of y variables.}
+\item{yVars}{character vector}
 
-\item{covars}{Optional covariates.}
+\item{covars}{optional covariates}
 
-\item{method}{Correlation method.}
+\item{method}{pearson/spearman/kendall}
 
-\item{Relabel}{Use labels if available.}
+\item{Relabel}{use labels}
 
-\item{Ordinal}{Convert ordinal variables.}
+\item{Ordinal}{include ordinal vars}
 
-\item{min_n}{Minimum N required.}
+\item{min_n}{minimum complete rows}
 
-\item{eps}{Variance tolerance.}
+\item{eps}{variance tolerance}
 }
 \value{
-A list with correlation matrices and plots.
+list
 }
 \description{
-Calculates correlations (or partial correlations) and plots a heatmap.
-Fully label-aware, robust to non-syntactic names, and safe for real-world data.
+Computes correlations or partial correlations and plots a heatmap.
+Handles:
+\itemize{
+\item continuous + categorical covariates
+\item labelled data
+\item non-syntactic names
+\item sparse real-world datasets
+\item ordinal variables
+\item partial correlations via residualization
+}
 }

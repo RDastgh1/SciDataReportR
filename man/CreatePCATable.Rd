@@ -17,3 +17,12 @@ Compatibility alias for \code{\link[=CreatePCAObject]{CreatePCAObject()}}. Prefe
 new code because this workflow returns a reusable PCA object, not only a
 static table.
 }
+\examples{
+PCA <- CreatePCATable(
+  Data = mtcars,
+  VarsToReduce = names(mtcars),
+  numComponents = 3,
+  imputeMethod = "median"
+)
+
+}

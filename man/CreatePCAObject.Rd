@@ -8,6 +8,7 @@ CreatePCAObject(
   Data,
   VarsToReduce,
   VariableCategories = NULL,
+  Relabel = TRUE,
   minThresh = 0.85,
   scale = TRUE,
   center = TRUE,
@@ -27,117 +28,130 @@ CreatePCAObject(
 )
 }
 \arguments{
-\item{Data}{The dataset containing the variables for PCA.}
+\item{Data}{A data frame containing the variables for PCA.}
 
-\item{VarsToReduce}{A character vector specifying the variables to include in
-the PCA.}
+\item{VarsToReduce}{Character vector of raw variable names to include in PCA.}
 
-\item{VariableCategories}{Optional categorical vector, used to color the
-lollipop plot. Must be the same length and order as \code{VarsToReduce} if
-provided.}
+\item{VariableCategories}{Optional vector used to color variables in the
+lollipop loading plot. If supplied, it should be the same length and order
+as \code{VarsToReduce}.}
 
-\item{minThresh}{The minimum threshold for cumulative proportion of variance.
-Default is \code{0.85}. In \code{"omics"} mode, this threshold is evaluated only
-across the capped scree components.}
+\item{Relabel}{Logical. If \code{TRUE}, variable labels are used in output tables
+and plots when available. If \code{FALSE}, raw variable names are used. Default
+is \code{TRUE}.}
 
-\item{scale}{Logical, indicating whether to scale the data by standard
-deviation. Default is \code{TRUE}.}
+\item{minThresh}{Numeric threshold for cumulative variance used to select the
+number of components when \code{numComponents = NULL}. Default is \code{0.85}.}
 
-\item{center}{Logical, indicating whether to center the data by subtracting
-the mean. Default is \code{TRUE}.}
+\item{scale}{Logical. If \code{TRUE}, variables are scaled by their standard
+deviation before PCA. Default is \code{TRUE}.}
 
-\item{Ordinal}{Logical, indicating whether ordinal variables should be
-handled. Currently not used inside this function.}
+\item{center}{Logical. If \code{TRUE}, variables are centered before PCA. Default
+is \code{TRUE}.}
 
-\item{numComponents}{Number of principal components to compute. If \code{NULL},
-chosen by \code{minThresh} in \code{"classic"} mode and by capped scree results in
-\code{"omics"} mode.}
+\item{Ordinal}{Logical. Placeholder retained for backward compatibility.
+Currently not used inside this function.}
+
+\item{numComponents}{Optional integer number of components to retain. If
+\code{NULL}, the number is selected using \code{minThresh}.}
 
 \item{Mode}{Character. Either \code{"classic"} or \code{"omics"}. \code{"classic"} preserves
 the original \code{psych::principal()} behavior. \code{"omics"} uses capped PCA logic
-for high-dimensional data.}
+for higher-dimensional data.}
 
 \item{backend}{Character. PCA backend to use. Options are \code{"psych"},
-\code{"prcomp"}, and \code{"irlba"}. Default is \code{"psych"} to preserve backward
-compatibility. In \code{"omics"} mode, \code{"irlba"} is recommended for speed.}
+\code{"prcomp"}, and \code{"irlba"}. Default is \code{"psych"} for compatibility.}
 
 \item{rotate}{Character. Rotation method. Options are \code{"varimax"} and
-\code{"none"}. Default is \code{"varimax"} to preserve interpretability and existing
-loading-table behavior.}
+\code{"none"}. Default is \code{"varimax"}.}
 
-\item{maxComponents}{Maximum number of final components to retain in
-\code{"omics"} mode when \code{numComponents} is \code{NULL}. Default is \code{20}.}
+\item{maxComponents}{Integer. Maximum number of final components to retain in
+\code{"omics"} mode when \code{numComponents = NULL}. Default is \code{20}.}
 
-\item{maxScreeComponents}{Maximum number of components used to estimate and
-plot the scree curve in \code{"omics"} mode. Default is \code{20}.}
+\item{maxScreeComponents}{Integer. Maximum number of components used to
+estimate and plot the scree curve in \code{"omics"} mode. Default is \code{20}.}
 
 \item{VarianceFilter}{Optional numeric value for variance filtering before
-PCA in \code{"omics"} mode. If \code{VarianceFilterMethod = "top_n"}, this keeps the
-top \code{VarianceFilter} most variable variables. If
-\code{VarianceFilterMethod = "variance_quantile"}, this keeps variables with
+PCA in \code{"omics"} mode. If \code{VarianceFilterMethod = "top_n"}, keeps the top
+\code{VarianceFilter} most variable variables. If
+\code{VarianceFilterMethod = "variance_quantile"}, keeps variables with
 variance at or above the specified quantile.}
 
 \item{VarianceFilterMethod}{Character. Either \code{"top_n"} or
-\code{"variance_quantile"}.}
+\code{"variance_quantile"}. Default is \code{"top_n"}.}
 
-\item{MissingnessWarningThreshold}{Numeric threshold for warning about high
+\item{MissingnessWarningThreshold}{Numeric threshold for warning about
 variable-level missingness. Default is \code{0.20}.}
 
 \item{ParticipantMissingnessWarningThreshold}{Numeric threshold for warning
-about high participant-level missingness. Default is \code{0.20}.}
+about participant-level missingness. Default is \code{0.20}.}
 
 \item{imputeMethod}{Character. Missing-data imputation method. Options are
-\code{"missRanger"} and \code{"median"}. Default is \code{"missRanger"} to preserve the
-original behavior.}
+\code{"missRanger"} and \code{"median"}. Default is \code{"missRanger"}.}
 
 \item{SuppressWarnings}{Logical. If \code{TRUE}, suppresses PCA-specific warning
 messages from this function. Default is \code{FALSE}.}
 }
 \value{
-A list containing PCA results and visualizations:
-\item{p_scree}{Scree and variance plot as a ggplot object.}
-\item{pcaresults}{PCA result object. In \code{"classic"} mode this is the
+A list with the following elements:
+\describe{
+\item{p_scree}{A ggplot scree and cumulative variance plot.}
+\item{pcaresults}{The PCA result object. In \code{"classic"} mode this is a
 \code{psych::principal()} result after \code{psych::fa.sort()}. In \code{"omics"} mode
-this is a harmonized list with rotated and sorted loadings, scores, and
-variance information.}
-\item{LoadingTable}{Data frame of rotated loadings with variable names and
-labels.}
-\item{Scores}{Matrix or data frame of component scores.}
-\item{CombinedData}{Original data with component scores appended.}
-\item{Lollipop}{Lollipop-style loading plot as a ggplot object.}
-\item{ScaleParams}{List with means, standard deviations, center, and scale.}
-\item{VarsUsed}{Character vector of variables actually used in PCA.}
-\item{VarianceTable}{Table of variance explained by component.}
-\item{Mode}{PCA mode used.}
-\item{Backend}{PCA backend used.}
-\item{Center}{Logical flag indicating if centering was used.}
-\item{Scale}{Logical flag indicating if scaling was used.}
+with \code{"prcomp"} or \code{"irlba"}, this is a harmonized list containing loadings,
+scores, variance information, backend, mode, and rotation.}
+\item{LoadingTable}{A data frame of component loadings with raw variable
+names, labels, and duplicate-safe plot labels.}
+\item{Scores}{A data frame of component scores.}
+\item{CombinedData}{The original input data with component scores appended.}
+\item{Lollipop}{A ggplot lollipop loading plot.}
+\item{ScaleParams}{A list containing centering and scaling parameters.}
+\item{VarsUsed}{Character vector of variables actually used in PCA after
+preprocessing.}
+\item{VarianceTable}{A variance table used for optional omics variance
+filtering, or \code{NULL}.}
+\item{Preprocessing}{A list documenting variables dropped during
+preprocessing and missingness summaries.}
+\item{Mode}{The PCA mode used.}
+\item{Backend}{The PCA backend used.}
+\item{Center}{Logical flag indicating whether centering was used.}
+\item{Scale}{Logical flag indicating whether scaling was used.}
+}
 }
 \description{
-Perform principal component analysis (PCA) on specified variables and create
-visualizations. The default \code{"classic"} mode preserves the original
-\code{psych::principal()} workflow for compatibility with existing
-SciDataReportR analyses. The optional \code{"omics"} mode is designed for
-high-dimensional data such as proteomics, metabolomics, and other settings
-where the number of variables is much larger than the number of participants.
+Perform principal component analysis (PCA) on specified variables and return
+reusable PCA results, scores, loading tables, combined data, and plots.
 }
 \details{
-In \code{"omics"} mode, the function avoids computing one component per input
-variable. Instead, it computes a capped number of components using a faster
-PCA backend, applies optional variance filtering, and then applies rotation
-and sorting so loadings remain interpretable. This is useful when PCA is being
-used for exploratory structure, visualization, latent biological signal, or
-clustering rather than exhaustive factor decomposition.
+The default \code{"classic"} mode preserves the original \code{psych::principal()}
+workflow for compatibility with existing SciDataReportR analyses. The
+optional \code{"omics"} mode is designed for high-dimensional data such as
+proteomics, metabolomics, flow cytometry, FACS, transcriptomics, and other
+settings where the number of variables may be large relative to the number
+of participants.
+
+The function uses raw variable names internally, but by default uses variable
+labels in human-facing outputs when labels are available. Variables with
+zero or undefined standard deviation after preprocessing are dropped
+automatically with a warning so PCA can continue without manual preprocessing.
 }
 \examples{
-\dontrun{
 PCA <- CreatePCAObject(
   Data = mtcars,
   VarsToReduce = names(mtcars),
-  numComponents = 3
+  numComponents = 3,
+  imputeMethod = "median"
 )
 
-PCA_Omics <- CreatePCAObject(
+PCA_raw_names <- CreatePCAObject(
+  Data = mtcars,
+  VarsToReduce = names(mtcars),
+  Relabel = FALSE,
+  numComponents = 3,
+  imputeMethod = "median"
+)
+
+PCA_omics <- CreatePCAObject(
   Data = mtcars,
   VarsToReduce = names(mtcars),
   Mode = "omics",
@@ -146,6 +160,5 @@ PCA_Omics <- CreatePCAObject(
   maxScreeComponents = 5,
   imputeMethod = "median"
 )
-}
 
 }
