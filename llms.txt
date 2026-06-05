@@ -225,6 +225,8 @@ Contributions, bug reports, and workflow ideas are welcome through
   : Interactive codebook harmonization dashboard
 - [`CombineCodebooks()`](https://rdastgh1.github.io/SciDataReportR/reference/CombineCodebooks.md)
   : Combine Two Codebooks with Conflict Detection
+- [`CompareDatasets()`](https://rdastgh1.github.io/SciDataReportR/reference/CompareDatasets.md)
+  : Compare two versions of a dataset
 - [`ConvertOrdinalToNumeric()`](https://rdastgh1.github.io/SciDataReportR/reference/ConvertOrdinalToNumeric.md)
   : ConvertOrdinalToNumeric
 - [`CreateMCAObject()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateMCAObject.md)
@@ -261,6 +263,10 @@ Contributions, bug reports, and workflow ideas are welcome through
   parameters
 - [`CreateZScorePlot()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateZScorePlot.md)
   : Create a Z-score plot with statistical significance
+- [`ExploreDatasetComparison()`](https://rdastgh1.github.io/SciDataReportR/reference/ExploreDatasetComparison.md)
+  : Explore dataset comparison results interactively
+- [`ExploreMergeValidation()`](https://rdastgh1.github.io/SciDataReportR/reference/ExploreMergeValidation.md)
+  : Explore merge validation results interactively
 - [`ExtractPCAComponentSummary()`](https://rdastgh1.github.io/SciDataReportR/reference/ExtractPCAComponentSummary.md)
   : Extract PCA component summaries
 - [`FormattedDataDictionary()`](https://rdastgh1.github.io/SciDataReportR/reference/FormattedDataDictionary.md)
@@ -315,12 +321,16 @@ Contributions, bug reports, and workflow ideas are welcome through
   : Plot Continuous Distributions
 - [`PlotCorrelationsHeatmap()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotCorrelationsHeatmap.md)
   : Plot correlations heatmap
+- [`PlotDatasetComparison()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotDatasetComparison.md)
+  : Plot dataset comparison diagnostics
 - [`PlotDirectionalHeatmaps()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotDirectionalHeatmaps.md)
   : Create directional heatmaps across continuous & binary variables
 - [`PlotInteractionEffectsContinuous()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotInteractionEffectsContinuous.md)
   : Plot Single Interaction Effect
 - [`PlotInteractionEffectsMatrix()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotInteractionEffectsMatrix.md)
   : Plot Interaction Effects Matrix
+- [`PlotMergeValidation()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotMergeValidation.md)
+  : Plot merge validation diagnostics
 - [`PlotMiningMatrix()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotMiningMatrix.md)
   : PlotMiningMatrix
 - [`PlotMissingData()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotMissingData.md)
@@ -389,6 +399,8 @@ Contributions, bug reports, and workflow ideas are welcome through
   : Update an existing codebook based on a given dataframe
 - [`UpdateDataDictionary()`](https://rdastgh1.github.io/SciDataReportR/reference/UpdateDataDictionary.md)
   : Update an existing data dictionary with new variables and types
+- [`ValidateMerge()`](https://rdastgh1.github.io/SciDataReportR/reference/ValidateMerge.md)
+  : Validate a merged dataset against its source datasets
 - [`add_r_and_stars()`](https://rdastgh1.github.io/SciDataReportR/reference/add_r_and_stars.md)
   : Add r-values and significance stars to a correlations heatmap
 - [`calculate_pathway_results()`](https://rdastgh1.github.io/SciDataReportR/reference/calculate_pathway_results.md)
