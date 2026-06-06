@@ -247,32 +247,40 @@ CompareDatasets <- function(
 
   # Audit variable names
 
-  old_variable_map <- tibble::tibble(
-    OldVariable = names(OldData),
-    Variable = stringr::str_remove(
-  OldVariable,
-  "\\.\\.\\.[0-9]+$"
-),
+  # Audit variable names
 
-Variable = dplyr::if_else(
-  Variable == "",
-  OldVariable,
-  Variable
-)
+  old_raw_names <- names(OldData)
+  old_base_names <- stringr::str_remove(
+    old_raw_names,
+    "\\.\\.\\.[0-9]+$"
+  )
+
+  old_base_names <- dplyr::if_else(
+    old_base_names == "",
+    old_raw_names,
+    old_base_names
+  )
+
+  new_raw_names <- names(NewData)
+  new_base_names <- stringr::str_remove(
+    new_raw_names,
+    "\\.\\.\\.[0-9]+$"
+  )
+
+  new_base_names <- dplyr::if_else(
+    new_base_names == "",
+    new_raw_names,
+    new_base_names
+  )
+
+  old_variable_map <- tibble::tibble(
+    OldVariable = old_raw_names,
+    Variable = old_base_names
   )
 
   new_variable_map <- tibble::tibble(
-    NewVariable = names(NewData),
-Variable = stringr::str_remove(
-  NewVariable,
-  "\\.\\.\\.[0-9]+$"
-),
-
-Variable = dplyr::if_else(
-  Variable == "",
-  NewVariable,
-  Variable
-)
+    NewVariable = new_raw_names,
+    Variable = new_base_names
   )
 
   old_variable_bases <- old_variable_map %>%
