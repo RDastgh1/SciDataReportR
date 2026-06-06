@@ -494,6 +494,7 @@ ExploreDatasetComparison <- function(
 
   checks_table <- reactable::reactable(
     checks_table_df,
+    width = "100%",
     searchable = TRUE,
     filterable = TRUE,
     highlight = TRUE,
@@ -595,6 +596,7 @@ ExploreDatasetComparison <- function(
 
   variable_changes_table <- reactable::reactable(
     variable_changes_df,
+    width = "100%",
     searchable = TRUE,
     filterable = TRUE,
     highlight = TRUE,
@@ -758,6 +760,7 @@ ExploreDatasetComparison <- function(
 
       reactable::reactable(
         detail_display,
+        width = "100%",
         searchable = TRUE,
         filterable = TRUE,
         highlight = TRUE,
@@ -796,6 +799,9 @@ ExploreDatasetComparison <- function(
         .sdr-dashboard {
           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
           color: #263238;
+           width: 100%;
+  max-width: none;
+  overflow-x: auto;
         }
 
         .sdr-title {

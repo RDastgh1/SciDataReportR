@@ -648,6 +648,7 @@ ExploreMergeValidation <- function(
 
   checks_table <- reactable::reactable(
     checks_table_df,
+    width = "100%",
     searchable = TRUE,
     filterable = TRUE,
     highlight = TRUE,
@@ -736,6 +737,7 @@ ExploreMergeValidation <- function(
 
   coverage_table <- reactable::reactable(
     coverage_table_df,
+     width = "100%",
     searchable = TRUE,
     filterable = TRUE,
     highlight = TRUE,
@@ -791,6 +793,7 @@ ExploreMergeValidation <- function(
 
   join_audit_table <- reactable::reactable(
     join_audit_table_df,
+     width = "100%",
     searchable = TRUE,
     filterable = TRUE,
     highlight = TRUE,
@@ -876,6 +879,7 @@ ExploreMergeValidation <- function(
 
   conflicts_table <- reactable::reactable(
     duplicate_variables_df,
+    width = "100%",
     searchable = TRUE,
     filterable = TRUE,
     highlight = TRUE,
@@ -1017,6 +1021,7 @@ ExploreMergeValidation <- function(
 
       reactable::reactable(
         detail_display,
+        width = "100%",
         searchable = TRUE,
         filterable = TRUE,
         highlight = TRUE,
@@ -1044,6 +1049,7 @@ ExploreMergeValidation <- function(
   actions_table <- if ("SuggestedActions" %in% names(MergeObj) && nrow(MergeObj$SuggestedActions) > 0) {
     reactable::reactable(
       MergeObj$SuggestedActions,
+      width = "100%",
       searchable = TRUE,
       filterable = TRUE,
       highlight = TRUE,
@@ -1110,6 +1116,9 @@ ExploreMergeValidation <- function(
         .sdr-dashboard {
           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
           color: #263238;
+          width: 100%;
+  max-width: none;
+  overflow-x: auto;
         }
 
         .sdr-title {
