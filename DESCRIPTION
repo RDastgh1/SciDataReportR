@@ -85,6 +85,6 @@ Suggests:
 Depends: 
     R (>= 2.10)
 LazyData: true
-VignetteBuilder: quarto
+VignetteBuilder: quarto, knitr
 Config/roxygen2/version: 8.0.0
 Config/testthat/edition: 3

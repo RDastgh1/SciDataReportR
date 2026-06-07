@@ -144,37 +144,65 @@ ExploreDatasetComparison <- function(
     "None"
   }
 
-  added_variables_preview <- if (nrow(CompareObj$AddedVariables) > 0) {
-    CompareObj$AddedVariables %>%
-      dplyr::slice_head(n = TopN) %>%
+added_variables_preview <- if (nrow(CompareObj$AddedVariables) > 0) {
+
+  tmp <- CompareObj$AddedVariables %>%
+    dplyr::slice_head(n = TopN)
+
+  if ("NewVariables" %in% names(tmp)) {
+    tmp <- tmp %>%
       dplyr::mutate(
-        Text = dplyr::if_else(
-          "NewVariables" %in% names(.),
-          paste0(Variable, " [", NewVariables, "]"),
-          Variable
+        Text = paste0(
+          Variable,
+          " [",
+          NewVariables,
+          "]"
         )
-      ) %>%
-      dplyr::pull(Text) %>%
-      paste(collapse = "<br>")
+      )
   } else {
-    "None"
+    tmp <- tmp %>%
+      dplyr::mutate(
+        Text = Variable
+      )
   }
 
-  removed_variables_preview <- if (nrow(CompareObj$RemovedVariables) > 0) {
-    CompareObj$RemovedVariables %>%
-      dplyr::slice_head(n = TopN) %>%
+  tmp %>%
+    dplyr::pull(Text) %>%
+    paste(collapse = "<br>")
+
+} else {
+  "None"
+}
+
+removed_variables_preview <- if (nrow(CompareObj$RemovedVariables) > 0) {
+
+  tmp <- CompareObj$RemovedVariables %>%
+    dplyr::slice_head(n = TopN)
+
+  if ("OldVariables" %in% names(tmp)) {
+    tmp <- tmp %>%
       dplyr::mutate(
-        Text = dplyr::if_else(
-          "OldVariables" %in% names(.),
-          paste0(Variable, " [", OldVariables, "]"),
-          Variable
+        Text = paste0(
+          Variable,
+          " [",
+          OldVariables,
+          "]"
         )
-      ) %>%
-      dplyr::pull(Text) %>%
-      paste(collapse = "<br>")
+      )
   } else {
-    "None"
+    tmp <- tmp %>%
+      dplyr::mutate(
+        Text = Variable
+      )
   }
+
+  tmp %>%
+    dplyr::pull(Text) %>%
+    paste(collapse = "<br>")
+
+} else {
+  "None"
+}
 
   duplicate_key_preview <- if (
     nrow(CompareObj$DuplicateKeys$Old) > 0 ||
