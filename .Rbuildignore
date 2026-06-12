@@ -12,3 +12,5 @@ conflicted copy
 ^\.positai$
 ^\.claude$
 ^vignettes/\.quarto$
+^doc$
+^Meta$

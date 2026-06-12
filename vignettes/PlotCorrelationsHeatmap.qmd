@@ -1,0 +1,312 @@
+---
+title: "Exploring associations with PlotCorrelationsHeatmap()"
+description: "Create correlation heatmaps, perform FDR correction, adjust for covariates, and investigate significant associations."
+format:
+  html:
+    toc: true
+    number-sections: true
+execute:
+  warning: false
+  message: false
+vignette: >
+  %\VignetteIndexEntry{Exploring associations with PlotCorrelationsHeatmap()}
+  %\VignetteEngine{quarto::html}
+  %\VignetteEncoding{UTF-8}
+---
+
+## Overview
+
+`PlotCorrelationsHeatmap()` computes correlations or partial correlations and visualizes the results as a heatmap.
+
+This vignette demonstrates:
+
+* Correlations among biomarkers
+* Correlations between biomarkers and clinical variables
+* Pearson versus Spearman correlations
+* False discovery rate (FDR) correction
+* Covariate-adjusted correlations
+* Annotating heatmaps with correlation coefficients and significance stars
+* Interactive exploration using plotly
+* Follow-up visualization of significant correlations
+
+## Load packages
+
+```{r}
+library(SciDataReportR)
+library(dplyr)
+library(plotly)
+```
+
+## Load example data
+
+SciDataReportR includes an example dataset and variable type specification file.
+
+```{r}
+data("SampleData")
+data("SampleVariableTypes")
+
+RevaluedObj <- RevalueData(
+  SampleData,
+  SampleVariableTypes
+)
+
+df_Revalued <- RevaluedObj$RevaluedData
+```
+
+## Select biomarkers
+
+For this vignette we will examine relationships among a panel of biomarkers.
+
+```{r}
+biomarkers <- c(
+  "AXL",
+  "Calbindin",
+  "Ferritin",
+  "MMP7",
+  "MMP10",
+  "NFL",
+  "GFAP",
+  "IL6",
+  "VCAM1",
+  "ICAM1",
+  "CRP",
+  "TNFa",
+  "MCP1",
+  "YKL40",
+  "Tau"
+)
+```
+
+## Correlations among biomarkers
+
+When only `xVars` are supplied, a square correlation matrix is generated.
+
+```{r}
+CorrObj <- PlotCorrelationsHeatmap(
+  Data = df_Revalued,
+  xVars = biomarkers
+)
+
+CorrObj$Unadjusted$plot
+```
+
+Each tile represents the correlation coefficient between two biomarkers. Positive and negative correlations are represented by opposite ends of the color scale.
+
+## Correlations between biomarkers and clinical variables
+
+A rectangular correlation matrix can be created by supplying both `xVars` and `yVars`.
+
+```{r}
+clinical_vars <- c(
+  "age",
+  "Insulin"
+)
+```
+
+```{r}
+CorrObj_Clinical <- PlotCorrelationsHeatmap(
+  Data = df_Revalued,
+  xVars = biomarkers,
+  yVars = clinical_vars
+)
+
+CorrObj_Clinical$Unadjusted$plot
+```
+
+This approach is useful for screening biomarker-clinical relationships.
+
+## Pearson versus Spearman correlations
+
+The choice of correlation method depends on the characteristics of the data.
+
+| Method | Recommended Use |
+|----------|----------|
+| Pearson | Approximately normal variables with linear relationships |
+| Spearman | Skewed variables, outliers, or monotonic relationships |
+| Kendall | Small samples or ordinal variables |
+
+### Pearson correlations
+
+Pearson correlation measures linear relationships between variables and is most appropriate when variables are approximately normally distributed.
+
+```{r}
+PearsonObj <- PlotCorrelationsHeatmap(
+  Data = df_Revalued,
+  xVars = biomarkers,
+  method = "pearson"
+)
+
+PearsonObj$Unadjusted$plot
+```
+
+### Spearman correlations
+
+Spearman correlation is rank-based and is often preferred for biomarker data because it is more robust to skewed distributions and outliers.
+
+```{r}
+SpearmanObj <- PlotCorrelationsHeatmap(
+  Data = df_Revalued,
+  xVars = biomarkers,
+  method = "spearman"
+)
+
+SpearmanObj$Unadjusted$plot
+```
+
+Researchers frequently compare both methods to determine whether findings are sensitive to distributional assumptions.
+
+## Unadjusted versus FDR-corrected significance
+
+`PlotCorrelationsHeatmap()` automatically computes both unadjusted and FDR-corrected p-values.
+
+### Unadjusted significance
+
+```{r}
+CorrObj$Unadjusted$plot
+```
+
+### FDR-corrected significance
+
+```{r}
+CorrObj$FDRCorrected$plot
+```
+
+When evaluating many correlations simultaneously, false discovery rate correction is recommended to reduce the likelihood of false positive findings.
+
+## Adding correlation coefficients and significance stars
+
+The default heatmaps display significance stars. Additional annotations can be added using `add_r_and_stars()`.
+
+### Raw p-values
+
+```{r}
+add_r_and_stars(
+  CorrObj,
+  star_from = "raw"
+)
+```
+
+### FDR-corrected p-values
+
+```{r}
+add_r_and_stars(
+  CorrObj,
+  star_from = "fdr"
+)
+```
+
+These annotated heatmaps are useful for presentations and publications.
+
+## Adjusting for covariates
+
+Partial correlations can be estimated by specifying one or more covariates.
+
+The example below adjusts all correlations for age.
+
+```{r}
+CorrObj_AgeAdjusted <- PlotCorrelationsHeatmap(
+  Data = df_Revalued,
+  xVars = biomarkers,
+  covars = "age"
+)
+
+CorrObj_AgeAdjusted$FDRCorrected$plot
+```
+
+When covariates are supplied, variables are residualized prior to correlation testing. This can help account for potential confounding factors.
+
+## Interactive heatmaps
+
+Heatmaps can be converted into interactive visualizations using plotly.
+
+```{r}
+ggplotly(
+  CorrObj$FDRCorrected$plot
+)
+```
+
+Interactive plots allow users to:
+
+* Hover over cells to inspect values
+* Zoom into regions of interest
+* Explore large correlation matrices
+
+## Investigating significant correlations
+
+Significant correlations can be examined individually using `plotSigCorrelations()`.
+
+```{r}
+SigPlots <- plotSigCorrelations(
+  DataFrame = df_Revalued,
+  CorrelationHeatmapObject = CorrObj
+)
+```
+
+The resulting object contains a list of scatterplots for significant associations.
+
+```{r}
+length(SigPlots)
+```
+
+These plots can be combined into a single figure.
+
+```{r}
+#| column: screen
+#| fig-height: 12
+#| fig-width: 12
+AssemblePlots(
+  SigPlots,
+  LegendPosition = "none",
+  ncol = 3
+)
+```
+
+This workflow provides a convenient way to visually inspect the relationships underlying significant heatmap cells.
+
+## Accessing correlation results
+
+The returned object stores both correlation estimates and p-values.
+
+### Unadjusted results
+
+```{r}
+head(
+  CorrObj$Unadjusted$r
+)
+```
+
+### FDR-corrected results
+
+```{r}
+head(
+  CorrObj$FDRCorrected$p
+)
+```
+
+These results can be exported for reporting or used in downstream analyses.
+
+## Summary
+
+`PlotCorrelationsHeatmap()` provides a comprehensive workflow for exploratory association analysis, including:
+
+* Pearson, Spearman, and Kendall correlations
+* Partial correlations using covariate adjustment
+* Automatic FDR correction
+* Label-aware visualization
+* Interactive heatmaps
+* Correlation coefficient annotation
+* Follow-up visualization of significant associations
+
+## Related functions
+
+* `add_r_and_stars()`
+* `plotSigCorrelations()`
+* `MakeComparisonTable()`
+* `PlotVolcanoEffects()`
+* `CreatePCA()`
+
+## Session information
+
+```{r}
+sessionInfo()
+```
