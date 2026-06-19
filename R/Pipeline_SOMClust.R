@@ -15,6 +15,12 @@
 #' - In \code{method = "finalize"}, fit a user-specified model and number
 #'   of profiles.
 #' - Map node-level clusters and posterior probabilities back to individuals.
+#' - Store training variable summaries used later to quantify whether projected
+#'   cohorts fall outside the original training range.
+#'
+#' This supports a train once, project many clinical phenotyping workflow: learn
+#' phenotype structure in a training cohort, then project new cohorts into the
+#' fixed phenotype space without reclustering.
 #'
 #' Missing data:
 #' - SOM and clustering are fit only on rows with complete Z-scores.
@@ -105,6 +111,11 @@
 #'   fits in diagnostics.
 #' @param min_nodes_per_cluster Optional minimum average SOM nodes per cluster
 #'   considered before attempting a candidate profile count.
+#' @param high_dist_quantile Numeric value between 0 and 1 used to define
+#'   high SOM-distance flags from the training distance distribution. Default
+#'   is \code{0.95}.
+#' @param low_prob_threshold Numeric posterior probability threshold used to
+#'   flag uncertain phenotype membership. Default is \code{0.70}.
 #'
 #' @details
 #' The AHP-style index is computed by:
@@ -130,9 +141,9 @@
 #'           and only the cluster column appended
 #'     \item \code{fit_plot}: ggplot of AIC/BIC/Entropy vs k and model
 #'     \item \code{ModelInfo_SOM}: list with \code{som_model},
-#'           \code{som_codes}, \code{som_grid}, \code{SOMFit} (distance
-#'           diagnostics, baselines, and per-cluster flags), \code{plots}
-#'           (aweSOM plots)
+#'           \code{som_codes}, \code{som_grid}, \code{training_variable_summary},
+#'           \code{SOMFit} (distance diagnostics, baselines, and per-cluster
+#'           flags), \code{plots} (aweSOM plots)
 #'     \item \code{ModelInfo_MClust}: list with \code{lpa_models},
 #'           \code{fit_table}, \code{AHP} information, and \code{diagnostics}
 #'           for LPA warnings, failures, runtimes, and preprocessing
@@ -174,7 +185,9 @@ CreateSOMClusterModel <- function(
     lpa_zero_sd_tol  = 1e-8,
     skip_model_after_n_failures = 2L,
     slow_fit_seconds = 120,
-    min_nodes_per_cluster = 5
+    min_nodes_per_cluster = 5,
+    high_dist_quantile = 0.95,
+    low_prob_threshold = 0.70
 ) {
 
   method     <- match.arg(method)
@@ -244,6 +257,14 @@ CreateSOMClusterModel <- function(
        length(min_nodes_per_cluster) != 1 ||
        min_nodes_per_cluster <= 0)) {
     stop("min_nodes_per_cluster must be NULL or a single positive numeric value.")
+  }
+  if (!is.numeric(high_dist_quantile) || length(high_dist_quantile) != 1 ||
+      is.na(high_dist_quantile) || high_dist_quantile <= 0 || high_dist_quantile >= 1) {
+    stop("high_dist_quantile must be a single numeric value between 0 and 1.")
+  }
+  if (!is.numeric(low_prob_threshold) || length(low_prob_threshold) != 1 ||
+      is.na(low_prob_threshold) || low_prob_threshold < 0 || low_prob_threshold > 1) {
+    stop("low_prob_threshold must be a single numeric value between 0 and 1.")
   }
 
   # Stable row id ----------------------------------------------------------
@@ -333,6 +354,41 @@ CreateSOMClusterModel <- function(
 
     vars_used <- variables
   }
+
+
+
+  # Training variable summary ---------------------------------------------
+
+  training_variable_summary <- dplyr::tibble(
+    Variable = vars_used
+  ) %>%
+    dplyr::mutate(
+      present_in_training = Variable %in% names(df_scidr),
+      is_numeric = vapply(Variable, function(v) {
+        v %in% names(df_scidr) && is.numeric(df_scidr[[v]])
+      }, logical(1)),
+      n_training = vapply(Variable, function(v) {
+        if (!v %in% names(df_scidr)) NA_integer_ else length(df_scidr[[v]])
+      }, integer(1)),
+      n_missing = vapply(Variable, function(v) {
+        if (!v %in% names(df_scidr)) NA_integer_ else sum(is.na(df_scidr[[v]]))
+      }, integer(1)),
+      prop_missing = vapply(Variable, function(v) {
+        if (!v %in% names(df_scidr)) NA_real_ else mean(is.na(df_scidr[[v]]))
+      }, numeric(1)),
+      mean = vapply(Variable, function(v) {
+        if (!v %in% names(df_scidr) || !is.numeric(df_scidr[[v]])) NA_real_ else mean(df_scidr[[v]], na.rm = TRUE)
+      }, numeric(1)),
+      sd = vapply(Variable, function(v) {
+        if (!v %in% names(df_scidr) || !is.numeric(df_scidr[[v]])) NA_real_ else stats::sd(df_scidr[[v]], na.rm = TRUE)
+      }, numeric(1)),
+      min = vapply(Variable, function(v) {
+        if (!v %in% names(df_scidr) || !is.numeric(df_scidr[[v]]) || all(is.na(df_scidr[[v]]))) NA_real_ else min(df_scidr[[v]], na.rm = TRUE)
+      }, numeric(1)),
+      max = vapply(Variable, function(v) {
+        if (!v %in% names(df_scidr) || !is.numeric(df_scidr[[v]]) || all(is.na(df_scidr[[v]]))) NA_real_ else max(df_scidr[[v]], na.rm = TRUE)
+      }, numeric(1))
+    )
 
   # Z-scores ---------------------------------------------------------------
 
@@ -1030,6 +1086,90 @@ CreateSOMClusterModel <- function(
       .groups = "drop"
     )
 
+  overall_high_cutoff <- as.numeric(stats::quantile(
+    dist_train,
+    probs = high_dist_quantile,
+    na.rm = TRUE
+  ))
+
+  dist_by_cluster_cutoffs <- som_fit_non_na %>%
+    dplyr::filter(!is.na(.data$SOM_Distance), !is.na(.data$Cluster)) %>%
+    dplyr::group_by(.data$Cluster) %>%
+    dplyr::summarise(
+      train_cluster_high_cutoff = as.numeric(stats::quantile(
+        .data$SOM_Distance,
+        probs = high_dist_quantile,
+        na.rm = TRUE
+      )),
+      .groups = "drop"
+    )
+
+  som_fit_tbl <- som_fit_tbl %>%
+    dplyr::mutate(
+      SOMDist_z_overall = if (is.finite(overall_sd) && overall_sd > 0) {
+        (.data$SOM_Distance - overall_mean) / overall_sd
+      } else {
+        NA_real_
+      },
+      SOMDist_percentile_train = vapply(.data$SOM_Distance, function(x) {
+        if (is.na(x) || length(dist_train) == 0) {
+          NA_real_
+        } else {
+          mean(dist_train <= x, na.rm = TRUE)
+        }
+      }, numeric(1)),
+      Flag_SOMDist_overallHigh =
+        !is.na(.data$SOM_Distance) &
+        !is.na(overall_high_cutoff) &
+        .data$SOM_Distance > overall_high_cutoff
+    ) %>%
+    dplyr::left_join(dist_by_cluster_cutoffs, by = "Cluster") %>%
+    dplyr::mutate(
+      Flag_SOMDist_clusterHigh =
+        !is.na(.data$SOM_Distance) &
+        !is.na(.data$train_cluster_high_cutoff) &
+        .data$SOM_Distance > .data$train_cluster_high_cutoff,
+      Projection_Fit_Class = dplyr::case_when(
+        is.na(.data$SOM_Distance) ~ NA_character_,
+        (.data$Flag_SOMDist_overallHigh | .data$Flag_SOMDist_clusterHigh) &
+          (is.na(.data$max_prob) | .data$max_prob < low_prob_threshold) ~
+          "Potential novel phenotype",
+        .data$Flag_SOMDist_overallHigh | .data$Flag_SOMDist_clusterHigh ~
+          "Poor SOM fit",
+        !is.na(.data$max_prob) & .data$max_prob < low_prob_threshold ~
+          "Uncertain membership",
+        TRUE ~ "Good fit"
+      )
+    )
+
+  som_fit_non_na <- som_fit_tbl[!is.na(som_fit_tbl$SOM_Distance), ]
+
+  cluster_occupancy <- som_fit_non_na %>%
+    dplyr::filter(!is.na(.data$Cluster)) %>%
+    dplyr::count(.data$Cluster, name = "n") %>%
+    dplyr::mutate(prop = .data$n / sum(.data$n))
+
+  training_cluster_fit_summary <- som_fit_non_na %>%
+    dplyr::filter(!is.na(.data$Cluster)) %>%
+    dplyr::group_by(.data$Cluster) %>%
+    dplyr::summarise(
+      n = dplyr::n(),
+      mean_distance = mean(.data$SOM_Distance, na.rm = TRUE),
+      median_distance = stats::median(.data$SOM_Distance, na.rm = TRUE),
+      mean_probability = mean(.data$prob_assigned, na.rm = TRUE),
+      median_probability = stats::median(.data$prob_assigned, na.rm = TRUE),
+      mean_distance_percentile = mean(.data$SOMDist_percentile_train, na.rm = TRUE),
+      median_distance_percentile = stats::median(.data$SOMDist_percentile_train, na.rm = TRUE),
+      prop_high_distance = mean(.data$Flag_SOMDist_overallHigh | .data$Flag_SOMDist_clusterHigh, na.rm = TRUE),
+      prop_low_probability = mean(.data$prob_assigned < low_prob_threshold, na.rm = TRUE),
+      prop_poor_fit = mean(.data$Projection_Fit_Class == "Poor SOM fit", na.rm = TRUE),
+      prop_potential_novel = mean(.data$Projection_Fit_Class == "Potential novel phenotype", na.rm = TRUE),
+      .groups = "drop"
+    )
+
+  potential_novel_cases <- som_fit_tbl %>%
+    dplyr::filter(.data$Projection_Fit_Class == "Potential novel phenotype")
+
   p_dist_hist <- ggplot2::ggplot(
     som_fit_non_na,
     ggplot2::aes(x = SOM_Distance)
@@ -1054,6 +1194,82 @@ CreateSOMClusterModel <- function(
       y     = "Distance to BMU"
     )
 
+  p_dist_ecdf <- ggplot2::ggplot(
+    som_fit_non_na,
+    ggplot2::aes(x = .data$SOM_Distance)
+  ) +
+    ggplot2::stat_ecdf() +
+    ggplot2::theme_bw() +
+    ggplot2::labs(
+      title = "Training SOM distance ECDF",
+      x = "Distance to BMU",
+      y = "Empirical cumulative probability"
+    )
+
+  p_cluster_fit_summary <- ggplot2::ggplot(
+    training_cluster_fit_summary,
+    ggplot2::aes(x = factor(.data$Cluster), y = .data$prop_high_distance)
+  ) +
+    ggplot2::geom_col() +
+    ggplot2::theme_bw() +
+    ggplot2::labs(
+      title = "High-distance training cases by cluster",
+      x = "Cluster",
+      y = "Proportion"
+    )
+
+  PhenotypeReference <- list(
+    training_variable_summary = training_variable_summary,
+    distance_reference = list(
+      mean = overall_mean,
+      median = stats::median(dist_train, na.rm = TRUE),
+      sd = overall_sd,
+      p90 = as.numeric(stats::quantile(dist_train, 0.90, na.rm = TRUE)),
+      p95 = as.numeric(stats::quantile(dist_train, 0.95, na.rm = TRUE)),
+      p99 = as.numeric(stats::quantile(dist_train, 0.99, na.rm = TRUE)),
+      high_dist_quantile = high_dist_quantile,
+      high_dist_cutoff = overall_high_cutoff
+    ),
+    node_occupancy = som_node_occupancy,
+    cluster_occupancy = cluster_occupancy,
+    projection_thresholds = list(
+      high_dist_quantile = high_dist_quantile,
+      low_prob_threshold = low_prob_threshold
+    ),
+    Health = list(
+      n_training = nrow(df_scidr),
+      n_complete = sum(complete_rows),
+      n_excluded = sum(!complete_rows),
+      prop_excluded = mean(!complete_rows),
+      mean_distance = overall_mean,
+      median_distance = stats::median(dist_train, na.rm = TRUE),
+      node_utilization = mean(som_node_occupancy$n > 0),
+      empty_nodes = sum(som_node_occupancy$n == 0),
+      singleton_nodes = sum(som_node_occupancy$n == 1),
+      mean_node_occupancy = mean(som_node_occupancy$n),
+      median_node_occupancy = stats::median(som_node_occupancy$n)
+    ),
+    FitDiagnostics = list(
+      overall_fit_summary = dplyr::tibble(
+        n = nrow(som_fit_non_na),
+        mean_distance = overall_mean,
+        median_distance = stats::median(dist_train, na.rm = TRUE),
+        sd_distance = overall_sd,
+        high_distance_cutoff = overall_high_cutoff,
+        prop_high_distance = mean(som_fit_non_na$Flag_SOMDist_overallHigh, na.rm = TRUE),
+        prop_low_probability = mean(som_fit_non_na$prob_assigned < low_prob_threshold, na.rm = TRUE),
+        prop_poor_fit = mean(som_fit_non_na$Projection_Fit_Class == "Poor SOM fit", na.rm = TRUE),
+        prop_potential_novel = mean(som_fit_non_na$Projection_Fit_Class == "Potential novel phenotype", na.rm = TRUE)
+      ),
+      cluster_fit_summary = training_cluster_fit_summary,
+      potential_novel_cases = potential_novel_cases
+    ),
+    plots = list(
+      distance_ecdf = p_dist_ecdf,
+      cluster_fit_summary_plot = p_cluster_fit_summary
+    )
+  )
+
   SOMFit <- list(
     train_quant_error = train_quant_err,
     distance_summary  = dist_summary,
@@ -1075,6 +1291,8 @@ CreateSOMClusterModel <- function(
     som_model = som_model,
     som_codes = som_codes,
     som_grid  = som_grid,
+    training_variable_summary = training_variable_summary,
+    PhenotypeReference = PhenotypeReference,
     som_grid_info = list(
       som_xdim_initial = som_grid_initial_xdim,
       som_ydim_initial = som_grid_initial_ydim,
@@ -1115,7 +1333,7 @@ CreateSOMClusterModel <- function(
       y     = "Density"
     )
 
-  indiv_non_na <- individual_tbl[!is.na(individual_tbl$max_prob), ]
+  indiv_non_na <- som_fit_tbl[!is.na(som_fit_tbl$max_prob), ]
   indiv_non_na$Cluster <- factor(indiv_non_na$Cluster)
 
   individual_MaxProbBoxplot <- ggplot2::ggplot(
@@ -1146,7 +1364,7 @@ CreateSOMClusterModel <- function(
 
   ProbFit <- list(
     node       = node_df,
-    individual = individual_tbl,
+    individual = som_fit_tbl,
     plots      = list(
       node_MaxProbBoxplot            = node_MaxProbBoxplot,
       node_ProbAssignedDensity       = node_ProbAssignedDensity,

@@ -7,7 +7,8 @@
 #'
 #' Variables can optionally be z-scored across all participants before plotting.
 #' Reference lines can be automatically added for z-score or T-score style
-#' interpretation, or omitted entirely for custom overlays.
+#' interpretation, or omitted entirely for custom overlays. By default,
+#' reference lines are only added automatically when `Scale = TRUE`.
 #'
 #' Variable labels are used by default when available from a codebook or from
 #' variable label attributes.
@@ -23,6 +24,8 @@
 #'   Used for axis labeling and reference-line defaults.
 #' @param ReferenceLines Character. One of `"auto"`, `"z"`, `"t"`, or
 #'   `"none"`.
+#'
+#'   If `"auto"`, z-score reference lines are added only when `Scale = TRUE`.
 #'
 #'   If `"z"`, lines are added at `-1`, `-0.5`, `0`, `0.5`, and `1`.
 #'
@@ -42,6 +45,10 @@
 #'   attributes. Default is `TRUE`.
 #' @param FillTitle Character string used as the fill legend title. Default is
 #'   `"Test"`.
+#' @param Palette Optional character vector of colors used for the fill scale.
+#'   If `NULL`, a stable 20-color default palette is used. If more than 20
+#'   variables are plotted, colors are interpolated from the default palette so
+#'   the function does not fail.
 #' @param YLabel Optional y-axis label. If `NULL`, an appropriate label is
 #'   chosen automatically from `Scale` and `ScoreType`.
 #' @param BoxplotWidth Numeric width passed to
@@ -79,6 +86,7 @@ PlotClusterBoxplot <- function(
     ClusterLabel = c("n_percent", "n", "none"),
     Relabel = TRUE,
     FillTitle = "Test",
+    Palette = NULL,
     YLabel = NULL,
     BoxplotWidth = 0.75,
     OutlierSize = 0.8,
@@ -160,6 +168,47 @@ PlotClusterBoxplot <- function(
     }
   }
 
+  if (!is.logical(Scale) || length(Scale) != 1 || is.na(Scale)) {
+    stop("Scale must be TRUE or FALSE.")
+  }
+
+  if (!is.logical(Relabel) || length(Relabel) != 1 || is.na(Relabel)) {
+    stop("Relabel must be TRUE or FALSE.")
+  }
+
+  if (!is.character(FillTitle) || length(FillTitle) != 1) {
+    stop("FillTitle must be a single character string.")
+  }
+
+  if (!is.null(Palette) && !is.character(Palette)) {
+    stop("Palette must be NULL or a character vector of color values.")
+  }
+
+  if (!is.null(YLabel) && (!is.character(YLabel) || length(YLabel) != 1)) {
+    stop("YLabel must be NULL or a single character string.")
+  }
+
+  if (!is.numeric(BoxplotWidth) ||
+      length(BoxplotWidth) != 1 ||
+      is.na(BoxplotWidth) ||
+      BoxplotWidth <= 0) {
+    stop("BoxplotWidth must be a single positive number.")
+  }
+
+  if (!is.numeric(OutlierSize) ||
+      length(OutlierSize) != 1 ||
+      is.na(OutlierSize) ||
+      OutlierSize < 0) {
+    stop("OutlierSize must be a single non-negative number.")
+  }
+
+  if (!is.numeric(BaseSize) ||
+      length(BaseSize) != 1 ||
+      is.na(BaseSize) ||
+      BaseSize <= 0) {
+    stop("BaseSize must be a single positive number.")
+  }
+
   # Prepare data
 
   plot_data <- Data %>%
@@ -179,39 +228,62 @@ PlotClusterBoxplot <- function(
   }
 
   if (!is.factor(plot_data$.ClusterPlot)) {
+
+    cluster_levels <- plot_data$.ClusterPlot %>%
+      unique() %>%
+      stats::na.omit() %>%
+      sort()
+
     plot_data <- plot_data %>%
       dplyr::mutate(
         .ClusterPlot = factor(
           .data$.ClusterPlot,
-          levels = sort(unique(.data$.ClusterPlot))
+          levels = cluster_levels
         )
       )
   }
 
   cluster_counts <- plot_data %>%
     dplyr::filter(!is.na(.data$.ClusterPlot)) %>%
-    dplyr::count(.data$.ClusterPlot, name = "n") %>%
+    dplyr::count(.ClusterPlot, name = "n") %>%
     dplyr::mutate(
       Percent = 100 * .data$n / sum(.data$n),
-      ClusterBase = as.character(.data$.ClusterPlot),
-      ClusterDisplay = dplyr::case_when(
-        ClusterLabel == "n_percent" ~ paste0(
+      ClusterBase = as.character(.data$.ClusterPlot)
+    )
+
+  if (ClusterLabel == "n_percent") {
+
+    cluster_counts <- cluster_counts %>%
+      dplyr::mutate(
+        ClusterDisplay = paste0(
           .data$ClusterBase,
           " (n = ",
           .data$n,
           ", ",
-          sprintf("%.0f%%", .data$Percent),
+          sprintf("%.0f", .data$Percent),
           "%)"
-        ),
-        ClusterLabel == "n" ~ paste0(
+        )
+      )
+
+  } else if (ClusterLabel == "n") {
+
+    cluster_counts <- cluster_counts %>%
+      dplyr::mutate(
+        ClusterDisplay = paste0(
           .data$ClusterBase,
           " (n = ",
           .data$n,
           ")"
-        ),
-        TRUE ~ .data$ClusterBase
+        )
       )
-    )
+
+  } else {
+
+    cluster_counts <- cluster_counts %>%
+      dplyr::mutate(
+        ClusterDisplay = .data$ClusterBase
+      )
+  }
 
   cluster_label_lookup <- stats::setNames(
     cluster_counts$ClusterDisplay,
@@ -219,7 +291,7 @@ PlotClusterBoxplot <- function(
   )
 
   long_data <- plot_data %>%
-    dplyr::select(.data$.ClusterPlot, dplyr::all_of(Variables)) %>%
+    dplyr::select(dplyr::all_of(c(".ClusterPlot", Variables))) %>%
     tidyr::pivot_longer(
       cols = dplyr::all_of(Variables),
       names_to = "Variable",
@@ -243,7 +315,7 @@ PlotClusterBoxplot <- function(
             as.character(.data$Label)
           )
         ) %>%
-        dplyr::select(.data$Variable, .data$Label)
+        dplyr::select(dplyr::all_of(c("Variable", "Label")))
 
       label_lookup[codebook_labels$Variable] <- codebook_labels$Label
     }
@@ -255,6 +327,7 @@ PlotClusterBoxplot <- function(
         attr_label <- attr(Data[[this_var]], "label", exact = TRUE)
 
         if (!is.null(attr_label) &&
+            length(attr_label) == 1 &&
             !is.na(attr_label) &&
             attr_label != "") {
 
@@ -311,11 +384,11 @@ PlotClusterBoxplot <- function(
 
   if (ReferenceLines == "auto") {
 
-    ReferenceLines <- dplyr::case_when(
-      ScoreType == "z" ~ "z",
-      ScoreType == "t" ~ "t",
-      TRUE ~ "none"
-    )
+    if (Scale) {
+      ReferenceLines <- "z"
+    } else {
+      ReferenceLines <- "none"
+    }
   }
 
   # Resolve y-axis label
@@ -329,6 +402,54 @@ PlotClusterBoxplot <- function(
       TRUE ~ "Score"
     )
   }
+
+  # Resolve fill palette
+
+  fill_levels <- levels(long_data$Label)
+  n_fill_levels <- length(fill_levels)
+
+  default_palette <- c(
+    "#4E79A7",
+    "#F28E2B",
+    "#E15759",
+    "#76B7B2",
+    "#59A14F",
+    "#EDC948",
+    "#B07AA1",
+    "#FF9DA7",
+    "#9C755F",
+    "#BAB0AC",
+    "#1F77B4",
+    "#FF7F0E",
+    "#2CA02C",
+    "#D62728",
+    "#9467BD",
+    "#8C564B",
+    "#E377C2",
+    "#7F7F7F",
+    "#BCBD22",
+    "#17BECF"
+  )
+
+  if (is.null(Palette)) {
+
+    if (n_fill_levels <= length(default_palette)) {
+
+      Palette <- default_palette[seq_len(n_fill_levels)]
+
+    } else {
+
+      Palette <- grDevices::colorRampPalette(default_palette)(
+        n_fill_levels
+      )
+    }
+
+  } else {
+
+    Palette <- rep(Palette, length.out = n_fill_levels)
+  }
+
+  names(Palette) <- fill_levels
 
   # Build plot
 
@@ -347,9 +468,13 @@ PlotClusterBoxplot <- function(
     ) +
     ggplot2::scale_x_discrete(
       labels = cluster_label_lookup,
-      drop = FALSE
+      drop = FALSE,
+      na.translate = TRUE
     ) +
-    ggplot2::scale_fill_discrete(name = FillTitle) +
+    ggplot2::scale_fill_manual(
+      values = Palette,
+      name = FillTitle
+    ) +
     ggplot2::labs(
       x = "Cluster",
       y = YLabel
@@ -369,7 +494,8 @@ PlotClusterBoxplot <- function(
         angle = 0,
         hjust = 0.5
       ),
-      legend.title = ggplot2::element_text(face = "bold")
+      legend.title = ggplot2::element_text(face = "bold"),
+      legend.key.height = grid::unit(0.5, "cm")
     )
 
   # Add reference lines
