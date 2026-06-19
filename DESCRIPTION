@@ -1,6 +1,6 @@
 Package: SciDataReportR
 Title: Workflow Infrastructure for Reproducible Scientific Data Reporting
-Version: 19.8.0
+Version: 19.9.0
 Authors@R: 
     person("Raha", "Dastgheyb", , "raha@jhmi.edu", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0002-4992-711X"))
