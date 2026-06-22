@@ -10,6 +10,13 @@
 #' settings where the number of variables may be large relative to the number
 #' of participants.
 #'
+#' Missing data are not imputed by default. With the default
+#' `MissingDataStrategy = "complete_cases"`, PCA is fit using only rows that
+#' are complete across the final PCA variables, and rows with missing PCA inputs
+#' receive `NA` component scores in `Scores` and `CombinedData`. To impute
+#' missing values, set `MissingDataStrategy = "impute"` explicitly and choose
+#' an imputation method with `ImputeMethod`.
+#'
 #' The function uses raw variable names internally, but by default uses variable
 #' labels in human-facing outputs when labels are available. Variables with
 #' zero or undefined standard deviation after preprocessing are dropped
@@ -55,8 +62,24 @@
 #'   variable-level missingness. Default is `0.20`.
 #' @param ParticipantMissingnessWarningThreshold Numeric threshold for warning
 #'   about participant-level missingness. Default is `0.20`.
-#' @param imputeMethod Character. Missing-data imputation method. Options are
-#'   `"missRanger"` and `"median"`. Default is `"missRanger"`.
+#' @param MissingDataStrategy Character. Missing-data handling strategy. Options
+#'   are `"complete_cases"`, `"impute"`, and `"stop"`. Default is
+#'   `"complete_cases"`, which fits PCA only on rows complete across the final
+#'   PCA variables and returns `NA` PCA scores for incomplete rows.
+#' @param ImputeMethod Character. Missing-data imputation method used only when
+#'   `MissingDataStrategy = "impute"`. Options are `"missRanger"` and
+#'   `"median"`. Default is `"missRanger"`.
+#' @param MaxMissingForImputation Numeric value between 0 and 1. When
+#'   `MissingDataStrategy = "impute"`, rows with missingness greater than this
+#'   value across the final PCA variables are excluded from PCA scoring and
+#'   receive `NA` component scores. Default is `0.20`, meaning rows can be
+#'   imputed if at least 80 percent of PCA variables are observed.
+#' @param ImputeRowsWithAllMissing Logical. If `FALSE`, rows with 100 percent
+#'   missingness across PCA variables are not imputed even if
+#'   `MaxMissingForImputation = 1`. Default is `FALSE`.
+#' @param imputeMethod Deprecated compatibility alias for `ImputeMethod`. If
+#'   supplied, it sets `ImputeMethod` and uses `MissingDataStrategy = "impute"`
+#'   unless `MissingDataStrategy` was explicitly set.
 #' @param SuppressWarnings Logical. If `TRUE`, suppresses PCA-specific warning
 #'   messages from this function. Default is `FALSE`.
 #'
@@ -69,7 +92,8 @@
 #'   scores, variance information, backend, mode, and rotation.}
 #'   \item{LoadingTable}{A data frame of component loadings with raw variable
 #'   names, labels, and duplicate-safe plot labels.}
-#'   \item{Scores}{A data frame of component scores.}
+#'   \item{Scores}{A data frame of component scores aligned to the original row
+#'   order of `Data`. Rows not used for PCA scoring receive `NA` scores.}
 #'   \item{CombinedData}{The original input data with component scores appended.}
 #'   \item{Lollipop}{A ggplot lollipop loading plot.}
 #'   \item{ScaleParams}{A list containing centering and scaling parameters.}
@@ -78,7 +102,8 @@
 #'   \item{VarianceTable}{A variance table used for optional omics variance
 #'   filtering, or `NULL`.}
 #'   \item{Preprocessing}{A list documenting variables dropped during
-#'   preprocessing and missingness summaries.}
+#'   preprocessing, missingness summaries, rows used for PCA, rows excluded from
+#'   PCA, and rows imputed.}
 #'   \item{Mode}{The PCA mode used.}
 #'   \item{Backend}{The PCA backend used.}
 #'   \item{Center}{Logical flag indicating whether centering was used.}
@@ -89,16 +114,23 @@
 #' PCA <- CreatePCAObject(
 #'   Data = mtcars,
 #'   VarsToReduce = names(mtcars),
+#'   numComponents = 3
+#' )
+#'
+#' PCA_imputed <- CreatePCAObject(
+#'   Data = mtcars,
+#'   VarsToReduce = names(mtcars),
 #'   numComponents = 3,
-#'   imputeMethod = "median"
+#'   MissingDataStrategy = "impute",
+#'   ImputeMethod = "median",
+#'   MaxMissingForImputation = 0.20
 #' )
 #'
 #' PCA_raw_names <- CreatePCAObject(
 #'   Data = mtcars,
 #'   VarsToReduce = names(mtcars),
 #'   Relabel = FALSE,
-#'   numComponents = 3,
-#'   imputeMethod = "median"
+#'   numComponents = 3
 #' )
 #'
 #' PCA_omics <- CreatePCAObject(
@@ -107,8 +139,7 @@
 #'   Mode = "omics",
 #'   backend = "prcomp",
 #'   maxComponents = 5,
-#'   maxScreeComponents = 5,
-#'   imputeMethod = "median"
+#'   maxScreeComponents = 5
 #' )
 #'
 #' @export
@@ -130,14 +161,42 @@ CreatePCAObject <- function(Data,
                             VarianceFilterMethod = c("top_n", "variance_quantile"),
                             MissingnessWarningThreshold = 0.20,
                             ParticipantMissingnessWarningThreshold = 0.20,
-                            imputeMethod = c("missRanger", "median"),
+                            MissingDataStrategy = c("complete_cases", "impute", "stop"),
+                            ImputeMethod = c("missRanger", "median"),
+                            MaxMissingForImputation = 0.20,
+                            ImputeRowsWithAllMissing = FALSE,
+                            imputeMethod = NULL,
                             SuppressWarnings = FALSE) {
+
+  missing_data_strategy_missing <- missing(MissingDataStrategy)
 
   Mode <- match.arg(Mode)
   backend <- match.arg(backend)
   rotate <- match.arg(rotate)
   VarianceFilterMethod <- match.arg(VarianceFilterMethod)
-  imputeMethod <- match.arg(imputeMethod)
+  MissingDataStrategy <- match.arg(MissingDataStrategy)
+
+  if (!is.null(imputeMethod)) {
+    if (!is.character(imputeMethod) || length(imputeMethod) != 1) {
+      stop("imputeMethod must be NULL or a single character value.")
+    }
+
+    ImputeMethod <- imputeMethod
+
+    if (missing_data_strategy_missing) {
+      MissingDataStrategy <- "impute"
+    }
+
+    if (!SuppressWarnings) {
+      warning(
+        "imputeMethod is deprecated. Please use ImputeMethod instead. ",
+        "Because imputeMethod was supplied, MissingDataStrategy was set to 'impute' ",
+        "unless MissingDataStrategy was explicitly provided."
+      )
+    }
+  }
+
+  ImputeMethod <- match.arg(ImputeMethod)
 
   if (Mode == "omics" && backend == "psych" && !SuppressWarnings) {
     warning(
@@ -160,6 +219,18 @@ CreatePCAObject <- function(Data,
 
   if (!is.logical(SuppressWarnings) || length(SuppressWarnings) != 1) {
     stop("SuppressWarnings must be a single logical value: TRUE or FALSE.")
+  }
+
+  if (!is.logical(ImputeRowsWithAllMissing) || length(ImputeRowsWithAllMissing) != 1) {
+    stop("ImputeRowsWithAllMissing must be a single logical value: TRUE or FALSE.")
+  }
+
+  if (!is.numeric(MaxMissingForImputation) ||
+      length(MaxMissingForImputation) != 1 ||
+      is.na(MaxMissingForImputation) ||
+      MaxMissingForImputation < 0 ||
+      MaxMissingForImputation > 1) {
+    stop("MaxMissingForImputation must be a single numeric value between 0 and 1.")
   }
 
   if (!is.null(numComponents)) {
@@ -296,7 +367,7 @@ CreatePCAObject <- function(Data,
       length(high_missing_participants),
       " rows have missingness above ",
       ParticipantMissingnessWarningThreshold,
-      ". Consider filtering participants before PCA."
+      ". MissingDataStrategy controls whether these rows are excluded, imputed, or trigger an error."
     )
   }
 
@@ -364,55 +435,154 @@ CreatePCAObject <- function(Data,
     stop("Fewer than 2 PCA variables remain after variance filtering.")
   }
 
-  # Impute missing data
+  participant_missingness_final_vars <- rowMeans(is.na(DataSubset))
+  complete_case_rows <- which(stats::complete.cases(DataSubset))
+  incomplete_case_rows <- which(!stats::complete.cases(DataSubset))
 
-  if (sum(is.na(DataSubset)) > 0) {
-    if (imputeMethod == "missRanger") {
-      if (!requireNamespace("missRanger", quietly = TRUE)) {
-        stop(
-          "The missRanger package is required when imputeMethod = 'missRanger'. ",
-          "Install it with install.packages('missRanger') or use imputeMethod = 'median'."
-        )
-      }
+  rows_imputed <- integer(0)
+  rows_excluded_missing <- integer(0)
+  rows_too_missing_to_impute <- integer(0)
+  rows_all_missing <- which(participant_missingness_final_vars == 1)
 
-      set.seed(123456)
+  # Handle missing data
 
-      original_names <- colnames(DataSubset)
-      safe_names <- make.names(original_names, unique = TRUE)
+  if (MissingDataStrategy == "stop" && anyNA(DataSubset)) {
+    stop(
+      "MissingDataStrategy = 'stop' but missing values were found in PCA variables. ",
+      "Use MissingDataStrategy = 'complete_cases' to score only complete rows, ",
+      "or MissingDataStrategy = 'impute' to impute eligible rows."
+    )
+  }
 
-      colnames(DataSubset) <- safe_names
+  if (MissingDataStrategy == "complete_cases") {
+    rows_used_for_pca <- complete_case_rows
+    rows_excluded_missing <- incomplete_case_rows
 
-      DataSubset <- missRanger::missRanger(
-        data = DataSubset,
-        num.trees = 100
+    if (length(rows_excluded_missing) > 0 && !SuppressWarnings) {
+      warning(
+        length(rows_excluded_missing),
+        " rows have missing values in PCA variables and will receive NA PCA scores. ",
+        "Set MissingDataStrategy = 'impute' to impute eligible rows."
       )
-
-      colnames(DataSubset) <- original_names
     }
 
-    if (imputeMethod == "median") {
-      DataSubset <- DataSubset %>%
-        dplyr::mutate(
-          dplyr::across(
-            dplyr::everything(),
-            ~ {
-              med <- stats::median(.x, na.rm = TRUE)
+    DataForPCA <- DataSubset[rows_used_for_pca, , drop = FALSE]
+  }
 
-              if (is.na(med)) {
-                return(.x)
-              }
+  if (MissingDataStrategy == "stop") {
+    rows_used_for_pca <- seq_len(nrow(DataSubset))
+    DataForPCA <- DataSubset
+  }
 
-              dplyr::if_else(is.na(.x), med, .x)
-            }
+  if (MissingDataStrategy == "impute") {
+    rows_eligible_for_imputation <- which(
+      participant_missingness_final_vars <= MaxMissingForImputation
+    )
+
+    if (!ImputeRowsWithAllMissing) {
+      rows_eligible_for_imputation <- setdiff(
+        rows_eligible_for_imputation,
+        rows_all_missing
+      )
+    }
+
+    rows_used_for_pca <- rows_eligible_for_imputation
+    rows_excluded_missing <- setdiff(seq_len(nrow(DataSubset)), rows_used_for_pca)
+    rows_too_missing_to_impute <- which(
+      participant_missingness_final_vars > MaxMissingForImputation
+    )
+
+    if (!ImputeRowsWithAllMissing) {
+      rows_too_missing_to_impute <- union(
+        rows_too_missing_to_impute,
+        rows_all_missing
+      )
+    }
+
+    rows_too_missing_to_impute <- sort(unique(rows_too_missing_to_impute))
+
+    DataForPCA <- DataSubset[rows_used_for_pca, , drop = FALSE]
+
+    rows_imputed <- rows_used_for_pca[
+      !stats::complete.cases(DataSubset[rows_used_for_pca, , drop = FALSE])
+    ]
+
+    if (length(rows_excluded_missing) > 0 && !SuppressWarnings) {
+      warning(
+        length(rows_excluded_missing),
+        " rows exceeded the allowed missingness threshold for imputation and will receive NA PCA scores. ",
+        "Current MaxMissingForImputation = ",
+        MaxMissingForImputation,
+        "."
+      )
+    }
+
+    if (anyNA(DataForPCA)) {
+      if (ImputeMethod == "missRanger") {
+        if (!requireNamespace("missRanger", quietly = TRUE)) {
+          stop(
+            "The missRanger package is required when ImputeMethod = 'missRanger'. ",
+            "Install it with install.packages('missRanger') or use ImputeMethod = 'median'."
           )
+        }
+
+        set.seed(123456)
+
+        original_names <- colnames(DataForPCA)
+        safe_names <- make.names(original_names, unique = TRUE)
+
+        colnames(DataForPCA) <- safe_names
+
+        DataForPCA <- missRanger::missRanger(
+          data = DataForPCA,
+          num.trees = 100
         )
+
+        colnames(DataForPCA) <- original_names
+      }
+
+      if (ImputeMethod == "median") {
+        DataForPCA <- DataForPCA %>%
+          dplyr::mutate(
+            dplyr::across(
+              dplyr::everything(),
+              ~ {
+                med <- stats::median(.x, na.rm = TRUE)
+
+                if (is.na(med)) {
+                  return(.x)
+                }
+
+                dplyr::if_else(is.na(.x), med, .x)
+              }
+            )
+          )
+      }
     }
   }
 
-  # Drop zero or undefined variance variables after imputation
+  if (nrow(DataForPCA) < 2) {
+    stop(
+      "Fewer than 2 rows are available for PCA after missing-data handling. ",
+      "Consider using MissingDataStrategy = 'impute', increasing MaxMissingForImputation, ",
+      "or reducing VarsToReduce."
+    )
+  }
+
+  if (anyNA(DataForPCA)) {
+    vars_still_missing <- names(which(colSums(is.na(DataForPCA)) > 0))
+
+    stop(
+      "Missing values remain after missing-data handling in these PCA variables: ",
+      paste(vars_still_missing, collapse = ", "),
+      ". PCA cannot proceed with missing values."
+    )
+  }
+
+  # Drop zero or undefined variance variables after missing-data handling
 
   raw_sds <- vapply(
-    DataSubset,
+    DataForPCA,
     stats::sd,
     numeric(1),
     na.rm = TRUE
@@ -430,6 +600,7 @@ CreatePCAObject <- function(Data,
 
     VarsToReduce <- setdiff(VarsToReduce, zero_sd_vars)
     DataSubset <- DataSubset[, VarsToReduce, drop = FALSE]
+    DataForPCA <- DataForPCA[, VarsToReduce, drop = FALSE]
   }
 
   if (length(VarsToReduce) < 2) {
@@ -440,7 +611,7 @@ CreatePCAObject <- function(Data,
 
   if (center || scale) {
     DataSubset_scaled <- scale(
-      DataSubset,
+      DataForPCA,
       center = center,
       scale = scale
     )
@@ -458,7 +629,7 @@ CreatePCAObject <- function(Data,
       names(scale_sds) <- VarsToReduce
     }
   } else {
-    DataSubset_scaled <- as.matrix(DataSubset)
+    DataSubset_scaled <- as.matrix(DataForPCA)
 
     scale_means <- rep(0, length(VarsToReduce))
     scale_sds <- rep(1, length(VarsToReduce))
@@ -792,7 +963,21 @@ CreatePCAObject <- function(Data,
 
   # Build outputs
 
-  Scores <- as.data.frame(scores)
+  ScoresUsedRows <- as.data.frame(scores)
+
+  rc_score_cols <- colnames(ScoresUsedRows)
+
+  Scores <- as.data.frame(
+    matrix(
+      NA_real_,
+      nrow = nrow(Data),
+      ncol = length(rc_score_cols)
+    )
+  )
+
+  colnames(Scores) <- rc_score_cols
+
+  Scores[rows_used_for_pca, rc_score_cols] <- ScoresUsedRows
 
   CombinedData <- cbind(Data, Scores)
 
@@ -917,8 +1102,27 @@ CreatePCAObject <- function(Data,
     NumFinalVariables = length(VarsToReduce),
     VariableMissingness = variable_missingness,
     ParticipantMissingness = participant_missingness,
+    ParticipantMissingnessFinalVars = participant_missingness_final_vars,
     HighMissingVariables = high_missing_vars,
-    HighMissingParticipants = high_missing_participants
+    HighMissingParticipants = high_missing_participants,
+    MissingDataStrategy = MissingDataStrategy,
+    ImputeMethod = ifelse(MissingDataStrategy == "impute", ImputeMethod, NA_character_),
+    MaxMissingForImputation = ifelse(
+      MissingDataStrategy == "impute",
+      MaxMissingForImputation,
+      NA_real_
+    ),
+    ImputeRowsWithAllMissing = ImputeRowsWithAllMissing,
+    CompleteCaseRows = complete_case_rows,
+    IncompleteCaseRows = incomplete_case_rows,
+    RowsUsedForPCA = rows_used_for_pca,
+    RowsExcludedFromPCA = rows_excluded_missing,
+    RowsImputed = rows_imputed,
+    RowsTooMissingToImpute = rows_too_missing_to_impute,
+    RowsAllMissing = rows_all_missing,
+    NumRowsUsedForPCA = length(rows_used_for_pca),
+    NumRowsExcludedFromPCA = length(rows_excluded_missing),
+    NumRowsImputed = length(rows_imputed)
   )
 
   # Return result
@@ -955,8 +1159,7 @@ CreatePCAObject <- function(Data,
 #' PCA <- CreatePCATable(
 #'   Data = mtcars,
 #'   VarsToReduce = names(mtcars),
-#'   numComponents = 3,
-#'   imputeMethod = "median"
+#'   numComponents = 3
 #' )
 #'
 #' @export
