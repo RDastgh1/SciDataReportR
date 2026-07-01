@@ -15,6 +15,7 @@ PlotClusterBoxplot(
   ClusterLabel = c("n_percent", "n", "none"),
   Relabel = TRUE,
   FillTitle = "Test",
+  Palette = NULL,
   YLabel = NULL,
   BoxplotWidth = 0.75,
   OutlierSize = 0.8,
@@ -40,6 +41,8 @@ Used for axis labeling and reference-line defaults.}
 \item{ReferenceLines}{Character. One of \code{"auto"}, \code{"z"}, \code{"t"}, or
 \code{"none"}.
 
+If \code{"auto"}, z-score reference lines are added only when \code{Scale = TRUE}.
+
 If \code{"z"}, lines are added at \code{-1}, \code{-0.5}, \code{0}, \code{0.5}, and \code{1}.
 
 If \code{"t"}, lines are added at \code{40}, \code{45}, \code{50}, \code{55}, and \code{60}.
@@ -61,6 +64,11 @@ attributes. Default is \code{TRUE}.}
 
 \item{FillTitle}{Character string used as the fill legend title. Default is
 \code{"Test"}.}
+
+\item{Palette}{Optional character vector of colors used for the fill scale.
+If \code{NULL}, a stable 20-color default palette is used. If more than 20
+variables are plotted, colors are interpolated from the default palette so
+the function does not fail.}
 
 \item{YLabel}{Optional y-axis label. If \code{NULL}, an appropriate label is
 chosen automatically from \code{Scale} and \code{ScoreType}.}
@@ -84,7 +92,8 @@ across discovered clusters or subgroup solutions.
 \details{
 Variables can optionally be z-scored across all participants before plotting.
 Reference lines can be automatically added for z-score or T-score style
-interpretation, or omitted entirely for custom overlays.
+interpretation, or omitted entirely for custom overlays. By default,
+reference lines are only added automatically when \code{Scale = TRUE}.
 
 Variable labels are used by default when available from a codebook or from
 variable label attributes.

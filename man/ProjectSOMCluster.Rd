@@ -2,9 +2,15 @@
 % Please edit documentation in R/Project_SOMClust.R
 \name{ProjectSOMCluster}
 \alias{ProjectSOMCluster}
-\title{Project new data onto an existing SOM + cluster solution}
+\title{Project new data onto an existing SOM clinical phenotype space}
 \usage{
-ProjectSOMCluster(object, new_df, ClusterName = NULL)
+ProjectSOMCluster(
+  object,
+  new_df,
+  ClusterName = NULL,
+  high_dist_quantile = 0.95,
+  low_prob_threshold = 0.7
+)
 }
 \arguments{
 \item{object}{A SOM cluster model object from \code{\link[=CreateSOMClusterModel]{CreateSOMClusterModel()}}.}
@@ -14,6 +20,13 @@ ProjectSOMCluster(object, new_df, ClusterName = NULL)
 \item{ClusterName}{Optional name for the cluster column; defaults to
 \code{object$ClusterName}. If that column already exists in \code{new_df}
 it is overwritten (with a message).}
+
+\item{high_dist_quantile}{Numeric value between 0 and 1 used to define
+high SOM-distance flags from the training distance distribution. Default
+is \code{0.95}.}
+
+\item{low_prob_threshold}{Numeric posterior probability threshold used to
+flag uncertain phenotype membership. Default is \code{0.70}.}
 }
 \value{
 A list of class \code{"Project_SOMClust"} with components:
@@ -31,7 +44,11 @@ original model objects for convenience.
 }
 }
 \description{
-Given a fitted \code{CreateSOMClusterModel()} object, project a new data frame onto:
+Train once, project many: a reusable unsupervised clinical phenotyping
+framework that learns phenotype structure in a training cohort and projects
+new participants into the fixed phenotype space while quantifying membership
+uncertainty and projection fit. Given a fitted \code{CreateSOMClusterModel()}
+object, project a new data frame onto:
 \itemize{
 \item The same Z-score scaling (via SciDataReportR::ProjectZScore()) when
 the training object used computed or projected Z-scores.

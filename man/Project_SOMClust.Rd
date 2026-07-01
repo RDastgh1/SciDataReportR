@@ -2,7 +2,7 @@
 % Please edit documentation in R/Project_SOMClust.R
 \name{Project_SOMClust}
 \alias{Project_SOMClust}
-\title{Project new data onto an existing SOM + cluster solution}
+\title{Project new data onto an existing SOM clinical phenotype space}
 \usage{
 Project_SOMClust(...)
 }

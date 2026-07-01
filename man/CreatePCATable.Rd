@@ -21,8 +21,7 @@ static table.
 PCA <- CreatePCATable(
   Data = mtcars,
   VarsToReduce = names(mtcars),
-  numComponents = 3,
-  imputeMethod = "median"
+  numComponents = 3
 )
 
 }

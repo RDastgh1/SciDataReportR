@@ -7,6 +7,7 @@
 PlotMissingData(
   DataFrame,
   Variables = NULL,
+  HoverVars = NULL,
   Relabel = TRUE,
   show_perc = TRUE,
   show_perc_var = TRUE,
@@ -14,21 +15,37 @@ PlotMissingData(
 )
 }
 \arguments{
-\item{DataFrame}{The dataframe containing missing data.}
+\item{DataFrame}{A data frame.}
 
-\item{Variables}{A character vector specifying the variables to be included in the plot. If NULL (default), all variables in the dataframe will be used.}
+\item{Variables}{Character vector of variables to visualize. If NULL,
+all columns except HoverVars are used.}
 
-\item{Relabel}{Logical indicating whether to relabel the columns based on their labels. Default is TRUE.}
+\item{HoverVars}{Optional character vector of columns to include in hover
+text. Useful for participant IDs, visit names, dates, sites, etc.}
 
-\item{show_perc}{Logical indicating whether to show percentage labels in legend. Default is TRUE.}
+\item{Relabel}{Logical. If TRUE, variable labels are used when available.}
 
-\item{show_perc_var}{Logical indicating whether to show percentage of missing for each variable. Default is TRUE.}
+\item{show_perc}{Logical. If TRUE, overall missingness percentages are shown
+in the legend.}
 
-\item{cluster}{Logical indicating whether to cluster rows by missingness pattern. Default is FALSE.}
+\item{show_perc_var}{Logical. If TRUE, variable-specific missingness
+percentages are appended to y-axis labels.}
+
+\item{cluster}{Logical. If TRUE, variables are clustered by missingness
+pattern.}
 }
 \value{
-A ggplot object visualizing missing data with variables as rows.
+A ggplot object.
 }
 \description{
-A custom function to plot missing data with variables as rows and observations as columns.
+Visualize missing data patterns with variables as rows and observations as
+columns. Optional hover variables can be included to facilitate quality
+control workflows when converting the plot to an interactive Plotly figure.
+}
+\examples{
+PlotMissingData(
+  mtcars,
+  HoverVars = "cyl"
+)
+
 }

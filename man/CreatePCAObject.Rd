@@ -23,7 +23,11 @@ CreatePCAObject(
   VarianceFilterMethod = c("top_n", "variance_quantile"),
   MissingnessWarningThreshold = 0.2,
   ParticipantMissingnessWarningThreshold = 0.2,
-  imputeMethod = c("missRanger", "median"),
+  MissingDataStrategy = c("complete_cases", "impute", "stop"),
+  ImputeMethod = c("missRanger", "median"),
+  MaxMissingForImputation = 0.2,
+  ImputeRowsWithAllMissing = FALSE,
+  imputeMethod = NULL,
   SuppressWarnings = FALSE
 )
 }
@@ -86,8 +90,28 @@ variable-level missingness. Default is \code{0.20}.}
 \item{ParticipantMissingnessWarningThreshold}{Numeric threshold for warning
 about participant-level missingness. Default is \code{0.20}.}
 
-\item{imputeMethod}{Character. Missing-data imputation method. Options are
-\code{"missRanger"} and \code{"median"}. Default is \code{"missRanger"}.}
+\item{MissingDataStrategy}{Character. Missing-data handling strategy. Options
+are \code{"complete_cases"}, \code{"impute"}, and \code{"stop"}. Default is
+\code{"complete_cases"}, which fits PCA only on rows complete across the final
+PCA variables and returns \code{NA} PCA scores for incomplete rows.}
+
+\item{ImputeMethod}{Character. Missing-data imputation method used only when
+\code{MissingDataStrategy = "impute"}. Options are \code{"missRanger"} and
+\code{"median"}. Default is \code{"missRanger"}.}
+
+\item{MaxMissingForImputation}{Numeric value between 0 and 1. When
+\code{MissingDataStrategy = "impute"}, rows with missingness greater than this
+value across the final PCA variables are excluded from PCA scoring and
+receive \code{NA} component scores. Default is \code{0.20}, meaning rows can be
+imputed if at least 80 percent of PCA variables are observed.}
+
+\item{ImputeRowsWithAllMissing}{Logical. If \code{FALSE}, rows with 100 percent
+missingness across PCA variables are not imputed even if
+\code{MaxMissingForImputation = 1}. Default is \code{FALSE}.}
+
+\item{imputeMethod}{Deprecated compatibility alias for \code{ImputeMethod}. If
+supplied, it sets \code{ImputeMethod} and uses \code{MissingDataStrategy = "impute"}
+unless \code{MissingDataStrategy} was explicitly set.}
 
 \item{SuppressWarnings}{Logical. If \code{TRUE}, suppresses PCA-specific warning
 messages from this function. Default is \code{FALSE}.}
@@ -102,7 +126,8 @@ with \code{"prcomp"} or \code{"irlba"}, this is a harmonized list containing loa
 scores, variance information, backend, mode, and rotation.}
 \item{LoadingTable}{A data frame of component loadings with raw variable
 names, labels, and duplicate-safe plot labels.}
-\item{Scores}{A data frame of component scores.}
+\item{Scores}{A data frame of component scores aligned to the original row
+order of \code{Data}. Rows not used for PCA scoring receive \code{NA} scores.}
 \item{CombinedData}{The original input data with component scores appended.}
 \item{Lollipop}{A ggplot lollipop loading plot.}
 \item{ScaleParams}{A list containing centering and scaling parameters.}
@@ -111,7 +136,8 @@ preprocessing.}
 \item{VarianceTable}{A variance table used for optional omics variance
 filtering, or \code{NULL}.}
 \item{Preprocessing}{A list documenting variables dropped during
-preprocessing and missingness summaries.}
+preprocessing, missingness summaries, rows used for PCA, rows excluded from
+PCA, and rows imputed.}
 \item{Mode}{The PCA mode used.}
 \item{Backend}{The PCA backend used.}
 \item{Center}{Logical flag indicating whether centering was used.}
@@ -130,6 +156,13 @@ proteomics, metabolomics, flow cytometry, FACS, transcriptomics, and other
 settings where the number of variables may be large relative to the number
 of participants.
 
+Missing data are not imputed by default. With the default
+\code{MissingDataStrategy = "complete_cases"}, PCA is fit using only rows that
+are complete across the final PCA variables, and rows with missing PCA inputs
+receive \code{NA} component scores in \code{Scores} and \code{CombinedData}. To impute
+missing values, set \code{MissingDataStrategy = "impute"} explicitly and choose
+an imputation method with \code{ImputeMethod}.
+
 The function uses raw variable names internally, but by default uses variable
 labels in human-facing outputs when labels are available. Variables with
 zero or undefined standard deviation after preprocessing are dropped
@@ -139,16 +172,23 @@ automatically with a warning so PCA can continue without manual preprocessing.
 PCA <- CreatePCAObject(
   Data = mtcars,
   VarsToReduce = names(mtcars),
+  numComponents = 3
+)
+
+PCA_imputed <- CreatePCAObject(
+  Data = mtcars,
+  VarsToReduce = names(mtcars),
   numComponents = 3,
-  imputeMethod = "median"
+  MissingDataStrategy = "impute",
+  ImputeMethod = "median",
+  MaxMissingForImputation = 0.20
 )
 
 PCA_raw_names <- CreatePCAObject(
   Data = mtcars,
   VarsToReduce = names(mtcars),
   Relabel = FALSE,
-  numComponents = 3,
-  imputeMethod = "median"
+  numComponents = 3
 )
 
 PCA_omics <- CreatePCAObject(
@@ -157,8 +197,7 @@ PCA_omics <- CreatePCAObject(
   Mode = "omics",
   backend = "prcomp",
   maxComponents = 5,
-  maxScreeComponents = 5,
-  imputeMethod = "median"
+  maxScreeComponents = 5
 )
 
 }

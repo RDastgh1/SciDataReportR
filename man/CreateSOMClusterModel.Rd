@@ -34,7 +34,9 @@ CreateSOMClusterModel(
   lpa_zero_sd_tol = 1e-08,
   skip_model_after_n_failures = 2L,
   slow_fit_seconds = 120,
-  min_nodes_per_cluster = 5
+  min_nodes_per_cluster = 5,
+  high_dist_quantile = 0.95,
+  low_prob_threshold = 0.7
 )
 }
 \arguments{
@@ -130,6 +132,13 @@ fits in diagnostics.}
 
 \item{min_nodes_per_cluster}{Optional minimum average SOM nodes per cluster
 considered before attempting a candidate profile count.}
+
+\item{high_dist_quantile}{Numeric value between 0 and 1 used to define
+high SOM-distance flags from the training distance distribution. Default
+is \code{0.95}.}
+
+\item{low_prob_threshold}{Numeric posterior probability threshold used to
+flag uncertain phenotype membership. Default is \code{0.70}.}
 }
 \value{
 A list of class \code{"Pipeline_SOMClust"} with components:
@@ -141,9 +150,9 @@ A list of class \code{"Pipeline_SOMClust"} with components:
 and only the cluster column appended
 \item \code{fit_plot}: ggplot of AIC/BIC/Entropy vs k and model
 \item \code{ModelInfo_SOM}: list with \code{som_model},
-\code{som_codes}, \code{som_grid}, \code{SOMFit} (distance
-diagnostics, baselines, and per-cluster flags), \code{plots}
-(aweSOM plots)
+\code{som_codes}, \code{som_grid}, \code{training_variable_summary},
+\code{SOMFit} (distance diagnostics, baselines, and per-cluster
+flags), \code{plots} (aweSOM plots)
 \item \code{ModelInfo_MClust}: list with \code{lpa_models},
 \code{fit_table}, \code{AHP} information, and \code{diagnostics}
 for LPA warnings, failures, runtimes, and preprocessing
@@ -168,7 +177,13 @@ index combining AIC, BIC, and Entropy.
 \item In \code{method = "finalize"}, fit a user-specified model and number
 of profiles.
 \item Map node-level clusters and posterior probabilities back to individuals.
+\item Store training variable summaries used later to quantify whether projected
+cohorts fall outside the original training range.
 }
+
+This supports a train once, project many clinical phenotyping workflow: learn
+phenotype structure in a training cohort, then project new cohorts into the
+fixed phenotype space without reclustering.
 
 Missing data:
 \itemize{
