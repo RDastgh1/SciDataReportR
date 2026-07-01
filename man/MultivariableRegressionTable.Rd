@@ -9,14 +9,19 @@ MultivariableRegressionTable(
   OutcomeVars,
   PredictorVars,
   Covars = NULL,
-  Standardize = FALSE,
+  Standardize = TRUE,
   Relabel = TRUE,
   FDR = TRUE,
   FDRAlpha = 0.05,
   Method = c("lm", "ridge", "lasso", "elasticnet"),
   CVFolds = 10,
   Lambda = c("lambda.min", "lambda.1se"),
-  Seed = 123
+  Seed = 123,
+  MissingDataStrategy = c("drop_sparse_impute", "impute", "complete_cases",
+    "drop_sparse_complete_cases"),
+  MaxMissingPredictor = 0.3,
+  ImputeMethod = c("median_mode"),
+  MinCompleteCases = NULL
 )
 }
 \arguments{
@@ -49,6 +54,21 @@ regression terms.}
 \code{"lambda.min"} or \code{"lambda.1se"}.}
 
 \item{Seed}{Random seed used for deterministic cross-validation folds.}
+
+\item{MissingDataStrategy}{Missing-data handling strategy. The default,
+\code{"drop_sparse_impute"}, drops sparse predictors and covariates, then
+imputes remaining predictor missingness.}
+
+\item{MaxMissingPredictor}{Maximum allowed missingness proportion for
+predictors and covariates before they are dropped by sparse-drop
+strategies. Default is \code{0.30}.}
+
+\item{ImputeMethod}{Imputation method for predictor/covariate missingness.
+Currently \code{"median_mode"}: median for numeric variables and mode for
+factor, character, and logical variables.}
+
+\item{MinCompleteCases}{Optional minimum number of modeling rows required
+after missing-data handling.}
 }
 \value{
 A named list with stable components: \code{Models}, \code{FormattedTable},

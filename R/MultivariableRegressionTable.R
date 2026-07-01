@@ -21,6 +21,17 @@
 #' @param Lambda Lambda selection rule for penalized models. One of
 #'   `"lambda.min"` or `"lambda.1se"`.
 #' @param Seed Random seed used for deterministic cross-validation folds.
+#' @param MissingDataStrategy Missing-data handling strategy. The default,
+#'   `"drop_sparse_impute"`, drops sparse predictors and covariates, then
+#'   imputes remaining predictor missingness.
+#' @param MaxMissingPredictor Maximum allowed missingness proportion for
+#'   predictors and covariates before they are dropped by sparse-drop
+#'   strategies. Default is `0.30`.
+#' @param ImputeMethod Imputation method for predictor/covariate missingness.
+#'   Currently `"median_mode"`: median for numeric variables and mode for
+#'   factor, character, and logical variables.
+#' @param MinCompleteCases Optional minimum number of modeling rows required
+#'   after missing-data handling.
 #'
 #' @return A named list with stable components: `Models`, `FormattedTable`,
 #'   `LargeTable`, `RegressionMatrix`, `VariableImportanceMatrix`,
@@ -32,18 +43,24 @@ MultivariableRegressionTable <- function(
     OutcomeVars,
     PredictorVars,
     Covars = NULL,
-    Standardize = FALSE,
+    Standardize = TRUE,
     Relabel = TRUE,
     FDR = TRUE,
     FDRAlpha = 0.05,
     Method = c("lm", "ridge", "lasso", "elasticnet"),
     CVFolds = 10,
     Lambda = c("lambda.min", "lambda.1se"),
-    Seed = 123
+    Seed = 123,
+    MissingDataStrategy = c("drop_sparse_impute", "impute", "complete_cases", "drop_sparse_complete_cases"),
+    MaxMissingPredictor = 0.30,
+    ImputeMethod = c("median_mode"),
+    MinCompleteCases = NULL
 ) {
 
   Method <- match.arg(Method)
   Lambda <- match.arg(Lambda)
+  MissingDataStrategy <- match.arg(MissingDataStrategy)
+  ImputeMethod <- match.arg(ImputeMethod)
 
   if (!is.data.frame(Data)) {
     stop("Data must be a data frame.")
@@ -75,6 +92,20 @@ MultivariableRegressionTable <- function(
   if (!is.numeric(Seed) || length(Seed) != 1 || is.na(Seed)) {
     stop("Seed must be a single numeric value.")
   }
+  if (!is.numeric(MaxMissingPredictor) ||
+      length(MaxMissingPredictor) != 1 ||
+      is.na(MaxMissingPredictor) ||
+      MaxMissingPredictor < 0 ||
+      MaxMissingPredictor > 1) {
+    stop("MaxMissingPredictor must be a single numeric value between 0 and 1.")
+  }
+  if (!is.null(MinCompleteCases) &&
+      (!is.numeric(MinCompleteCases) ||
+       length(MinCompleteCases) != 1 ||
+       is.na(MinCompleteCases) ||
+       MinCompleteCases < 1)) {
+    stop("MinCompleteCases must be NULL or a single positive number.")
+  }
 
   all_model_vars <- unique(c(OutcomeVars, PredictorVars, Covars))
   missing_vars <- setdiff(all_model_vars, names(Data))
@@ -88,13 +119,33 @@ MultivariableRegressionTable <- function(
 
   CVFolds <- as.integer(CVFolds)
   Seed <- as.integer(Seed)
+  if (!is.null(MinCompleteCases)) {
+    MinCompleteCases <- as.integer(MinCompleteCases)
+  }
   model_terms <- unique(c(PredictorVars, Covars))
   label_lookup <- ScidrRegressionLabels(Data, unique(c(OutcomeVars, model_terms)), Relabel)
   outcome_families <- stats::setNames(
     vapply(OutcomeVars, function(outcome) ScidrOutcomeFamily(Data[[outcome]], outcome), character(1)),
     OutcomeVars
   )
-  multicollinearity <- ScidrRegressionMulticollinearity(Data, model_terms)
+  global_missingness <- ScidrPredictorMissingnessSummary(Data, model_terms)
+  globally_dropped_terms <- if (MissingDataStrategy %in% c("drop_sparse_impute", "drop_sparse_complete_cases")) {
+    global_missingness$Variable[global_missingness$MissingProportion > MaxMissingPredictor]
+  } else {
+    character(0)
+  }
+  retained_model_terms <- setdiff(model_terms, globally_dropped_terms)
+
+  if (length(intersect(PredictorVars, retained_model_terms)) == 0) {
+    stop(
+      "All PredictorVars were dropped for missingness. ",
+      "MaxMissingPredictor = ", MaxMissingPredictor, ". ",
+      "Dropped predictors: ", paste(intersect(PredictorVars, globally_dropped_terms), collapse = ", "), ". ",
+      "Increase MaxMissingPredictor, use MissingDataStrategy = 'impute', or reduce PredictorVars."
+    )
+  }
+
+  multicollinearity <- ScidrRegressionMulticollinearity(Data, retained_model_terms)
 
   if (any(outcome_families == "logistic") && !requireNamespace("pROC", quietly = TRUE)) {
     stop("Package 'pROC' is required for logistic regression diagnostics.")
@@ -110,19 +161,39 @@ MultivariableRegressionTable <- function(
   for (outcome_index in seq_along(OutcomeVars)) {
     outcome <- OutcomeVars[[outcome_index]]
     outcome_family <- outcome_families[[outcome]]
-    model_data <- Data[, unique(c(outcome, model_terms)), drop = FALSE]
-    complete_rows <- stats::complete.cases(model_data)
-    df_model <- model_data[complete_rows, , drop = FALSE]
-    missing_removed <- sum(!complete_rows)
-    percent_removed <- missing_removed / nrow(Data)
+    missing_info <- ScidrPrepareRegressionModelData(
+      Data = Data,
+      outcome = outcome,
+      model_terms = model_terms,
+      retained_model_terms = retained_model_terms,
+      dropped_terms = globally_dropped_terms,
+      missing_data_strategy = MissingDataStrategy,
+      impute_method = ImputeMethod,
+      max_missing_predictor = MaxMissingPredictor
+    )
+    df_model <- missing_info$ModelData
+    complete_rows <- missing_info$ModelRows
+    model_terms_outcome <- missing_info$ModelTerms
+    predictor_vars_outcome <- intersect(PredictorVars, model_terms_outcome)
+    missing_removed <- missing_info$MissingRemoved
+    percent_removed <- missing_info$PercentRemoved
+    min_rows_required <- if (is.null(MinCompleteCases)) length(model_terms_outcome) + 2 else MinCompleteCases
 
-    if (nrow(df_model) <= length(model_terms) + 1) {
-      stop("Outcome ", outcome, " does not have enough complete cases for the requested model.")
+    if (nrow(df_model) < min_rows_required) {
+      stop(ScidrNotEnoughRowsMessage(outcome, missing_info, min_rows_required))
     }
 
     if (outcome_family == "logistic") {
       outcome_info <- ScidrPrepareBinaryOutcome(df_model[[outcome]], outcome)
       df_model[[outcome]] <- outcome_info$Value
+      remaining_levels <- unique(df_model[[outcome]][!is.na(df_model[[outcome]])])
+      if (length(remaining_levels) < 2) {
+        stop(
+          "Outcome ", outcome, " has only one level after missing-data handling: ",
+          paste(remaining_levels, collapse = ", "), ". ",
+          "Use a less restrictive missing-data strategy or check the outcome coding."
+        )
+      }
     } else {
       outcome_info <- list(Levels = NA_character_)
     }
@@ -131,8 +202,8 @@ MultivariableRegressionTable <- function(
       ScidrFitOrdinaryRegression(
         df_model = df_model,
         outcome = outcome,
-        model_terms = model_terms,
-        predictor_vars = PredictorVars,
+        model_terms = model_terms_outcome,
+        predictor_vars = predictor_vars_outcome,
         outcome_family = outcome_family,
         standardize_estimates = Standardize
       )
@@ -140,8 +211,8 @@ MultivariableRegressionTable <- function(
       ScidrFitPenalizedRegression(
         df_model = df_model,
         outcome = outcome,
-        model_terms = model_terms,
-        predictor_vars = PredictorVars,
+        model_terms = model_terms_outcome,
+        predictor_vars = predictor_vars_outcome,
         outcome_family = outcome_family,
         method = Method,
         cv_folds = CVFolds,
@@ -159,6 +230,9 @@ MultivariableRegressionTable <- function(
     fit_result$TermTable$RegressionMethod <- Method
     fit_result$TermTable$MissingRemoved <- missing_removed
     fit_result$TermTable$PercentRemoved <- percent_removed
+    fit_result$TermTable$MissingDataStrategy <- MissingDataStrategy
+    fit_result$TermTable$Imputed <- fit_result$TermTable$Predictor %in% missing_info$ImputedVariables
+    fit_result$TermTable$DroppedForMissingness <- FALSE
 
     predictions <- ScidrRegressionPredictions(
       fit_result = fit_result,
@@ -184,6 +258,11 @@ MultivariableRegressionTable <- function(
     diagnostics$RegressionMethod <- Method
     diagnostics$MissingRemoved <- missing_removed
     diagnostics$PercentRemoved <- percent_removed
+    diagnostics$MissingDataStrategy <- MissingDataStrategy
+    diagnostics$DroppedPredictors <- I(list(intersect(PredictorVars, missing_info$DroppedVariables)))
+    diagnostics$ImputedPredictors <- I(list(intersect(PredictorVars, missing_info$ImputedVariables)))
+    diagnostics$DroppedPredictorCount <- length(intersect(PredictorVars, missing_info$DroppedVariables))
+    diagnostics$ImputedPredictorCount <- length(intersect(PredictorVars, missing_info$ImputedVariables))
 
     fit_result$TermTable$SampleSize <- diagnostics$SampleSize[[1]]
 
@@ -195,6 +274,13 @@ MultivariableRegressionTable <- function(
       Outcome = outcome,
       MissingRemoved = missing_removed,
       PercentRemoved = percent_removed,
+      OriginalN = nrow(Data),
+      OutcomeNonMissingN = missing_info$OutcomeNonMissingN,
+      CompleteCaseN = missing_info$CompleteCaseN,
+      FinalN = nrow(df_model),
+      MissingDataStrategy = MissingDataStrategy,
+      DroppedVariables = I(list(missing_info$DroppedVariables)),
+      ImputedVariables = I(list(missing_info$ImputedVariables)),
       stringsAsFactors = FALSE
     )
     tuning_list[[outcome]] <- fit_result$Tuning
@@ -239,7 +325,8 @@ MultivariableRegressionTable <- function(
   model_summary <- diagnostics[, c(
     "Outcome", "OutcomeLabel", "OutcomeFamily", "RegressionMethod", "SampleSize",
     "MissingRemoved", "PercentRemoved", "PredictorCount", "Converged",
-    "R2", "AdjustedR2", "AUC", "McFaddenR2", "RMSE", "AIC", "BIC"
+    "R2", "AdjustedR2", "AUC", "McFaddenR2", "RMSE", "AIC", "BIC",
+    "DroppedPredictorCount", "ImputedPredictorCount"
   ), drop = FALSE]
   model_summary$MaximumVIF <- multicollinearity$MaximumVIF
   model_summary$MaximumCorrelation <- multicollinearity$MaximumCorrelation
@@ -256,10 +343,17 @@ MultivariableRegressionTable <- function(
       CVFolds = CVFolds,
       Lambda = Lambda,
       Seed = Seed,
+      MissingDataStrategy = MissingDataStrategy,
+      MaxMissingPredictor = MaxMissingPredictor,
+      ImputeMethod = ImputeMethod,
+      MinCompleteCases = MinCompleteCases,
       ModelFamilies = outcome_families,
       Tuning = tuning_list
     ),
-    Missingness = dplyr::bind_rows(missing_tables),
+    Missingness = list(
+      Outcomes = dplyr::bind_rows(missing_tables),
+      Predictors = global_missingness
+    ),
     Session = utils::sessionInfo(),
     PackageVersion = as.character(utils::packageVersion("SciDataReportR")),
     FunctionCall = match.call()
@@ -288,17 +382,129 @@ ScidrOutcomeFamily <- function(x, outcome) {
   if (is.logical(non_missing)) {
     return("logistic")
   }
-  if (is.factor(non_missing) && length(levels(droplevels(non_missing))) == 2) {
-    return("logistic")
+  if (is.factor(non_missing)) {
+    n_levels <- length(levels(droplevels(non_missing)))
+    if (n_levels == 2) {
+      return("logistic")
+    }
+    if (n_levels > 2) {
+      stop(
+        "Outcome ", outcome, " has ", n_levels, " levels. ",
+        "Multinomial regression is not yet supported; logistic regression requires a two-level factor or logical outcome."
+      )
+    }
   }
   stop("Outcome ", outcome, " must be numeric, logical, or a two-level factor.")
+}
+
+ScidrPredictorMissingnessSummary <- function(Data, model_terms) {
+  if (length(model_terms) == 0) {
+    return(data.frame(
+      Variable = character(0),
+      MissingCount = integer(0),
+      MissingProportion = numeric(0),
+      stringsAsFactors = FALSE
+    ))
+  }
+
+  data.frame(
+    Variable = model_terms,
+    MissingCount = vapply(model_terms, function(var) sum(is.na(Data[[var]])), integer(1)),
+    MissingProportion = vapply(model_terms, function(var) mean(is.na(Data[[var]])), numeric(1)),
+    stringsAsFactors = FALSE
+  )
+}
+
+ScidrPrepareRegressionModelData <- function(Data,
+                                            outcome,
+                                            model_terms,
+                                            retained_model_terms,
+                                            dropped_terms,
+                                            missing_data_strategy,
+                                            impute_method,
+                                            max_missing_predictor) {
+  use_imputation <- missing_data_strategy %in% c("drop_sparse_impute", "impute")
+  model_terms_outcome <- retained_model_terms
+  model_data <- Data[, unique(c(outcome, model_terms_outcome)), drop = FALSE]
+  outcome_nonmissing_rows <- !is.na(model_data[[outcome]])
+  outcome_nonmissing_n <- sum(outcome_nonmissing_rows)
+  complete_case_n <- sum(stats::complete.cases(model_data))
+
+  if (use_imputation) {
+    model_data <- model_data[outcome_nonmissing_rows, , drop = FALSE]
+    imputed_variables <- character(0)
+    for (term in model_terms_outcome) {
+      missing_idx <- is.na(model_data[[term]])
+      if (any(missing_idx)) {
+        model_data[[term]][missing_idx] <- ScidrImputeValue(model_data[[term]], impute_method)
+        imputed_variables <- c(imputed_variables, term)
+      }
+    }
+    model_rows <- rep(FALSE, nrow(Data))
+    model_rows[which(outcome_nonmissing_rows)] <- TRUE
+  } else {
+    complete_rows <- stats::complete.cases(model_data)
+    model_data <- model_data[complete_rows, , drop = FALSE]
+    model_rows <- rep(FALSE, nrow(Data))
+    model_rows[which(complete_rows)] <- TRUE
+    imputed_variables <- character(0)
+  }
+
+  list(
+    ModelData = model_data,
+    ModelRows = model_rows,
+    ModelTerms = model_terms_outcome,
+    DroppedVariables = dropped_terms,
+    ImputedVariables = unique(imputed_variables),
+    MissingRemoved = nrow(Data) - nrow(model_data),
+    PercentRemoved = (nrow(Data) - nrow(model_data)) / nrow(Data),
+    OriginalN = nrow(Data),
+    OutcomeNonMissingN = outcome_nonmissing_n,
+    CompleteCaseN = complete_case_n,
+    MaxMissingPredictor = max_missing_predictor
+  )
+}
+
+ScidrImputeValue <- function(x, impute_method) {
+  if (all(is.na(x))) {
+    stop("Cannot impute a predictor or covariate with all values missing.")
+  }
+
+  if (is.numeric(x)) {
+    return(stats::median(x, na.rm = TRUE))
+  }
+
+  observed <- x[!is.na(x)]
+  mode_value <- names(sort(table(observed), decreasing = TRUE))[1]
+
+  if (is.factor(x)) {
+    return(factor(mode_value, levels = levels(x)))
+  }
+  if (is.logical(x)) {
+    return(mode_value == "TRUE")
+  }
+  mode_value
+}
+
+ScidrNotEnoughRowsMessage <- function(outcome, missing_info, min_rows_required) {
+  paste0(
+    "Outcome ", outcome, " does not have enough rows after missing-data handling. ",
+    "Original N = ", missing_info$OriginalN, "; ",
+    "outcome non-missing N = ", missing_info$OutcomeNonMissingN, "; ",
+    "complete-case N before imputation = ", missing_info$CompleteCaseN, "; ",
+    "final model N = ", nrow(missing_info$ModelData), "; ",
+    "minimum required N = ", min_rows_required, ". ",
+    "Dropped for missingness: ",
+    ifelse(length(missing_info$DroppedVariables) == 0, "none", paste(missing_info$DroppedVariables, collapse = ", ")),
+    ". Try MissingDataStrategy = 'drop_sparse_impute', increasing MaxMissingPredictor, reducing predictors, or lowering MinCompleteCases if statistically appropriate."
+  )
 }
 
 ScidrPrepareBinaryOutcome <- function(x, outcome) {
   if (is.logical(x)) {
     return(list(Value = as.integer(x), Levels = c("FALSE", "TRUE")))
   }
-  x <- droplevels(as.factor(x))
+  x <- as.factor(x)
   if (length(levels(x)) != 2) {
     stop("Outcome ", outcome, " must have exactly two levels for logistic regression.")
   }
