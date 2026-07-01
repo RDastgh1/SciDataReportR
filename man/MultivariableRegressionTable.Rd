@@ -74,7 +74,8 @@ after missing-data handling.}
 A named list with stable components: \code{Models}, \code{FormattedTable},
 \code{LargeTable}, \code{RegressionMatrix}, \code{VariableImportanceMatrix},
 \code{Predictions}, \code{Diagnostics}, \code{ModelSummary}, \code{Multicollinearity},
-\code{Plots}, and \code{Metadata}.
+\code{Plots}, and \code{Metadata}. \code{Plots} contains ggplot objects built from the
+stored result tables and predictions without refitting models.
 }
 \description{
 Fit one multivariable regression model per outcome and return a stable,

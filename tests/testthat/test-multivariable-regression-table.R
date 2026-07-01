@@ -34,6 +34,10 @@ test_that("MultivariableRegressionTable returns a stable ordinary regression obj
   expect_s3_class(res$Predictions, "data.frame")
   expect_s3_class(res$Diagnostics, "data.frame")
   expect_s3_class(res$ModelSummary, "data.frame")
+  expect_true(length(res$Plots) > 0)
+  expect_s3_class(res$Plots$RegressionMatrix, "ggplot")
+  expect_s3_class(res$Plots$VariableImportanceMatrix, "ggplot")
+  expect_s3_class(res$Plots$ObservedVsPredicted, "ggplot")
 
   expect_true(all(c("OutcomeIndex", "PredictorIndex", "HoverText") %in% names(res$RegressionMatrix)))
   expect_true(all(c("VariableImportance", "VariableImportanceType") %in% names(res$VariableImportanceMatrix)))

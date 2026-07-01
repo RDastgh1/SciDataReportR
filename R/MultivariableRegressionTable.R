@@ -36,7 +36,8 @@
 #' @return A named list with stable components: `Models`, `FormattedTable`,
 #'   `LargeTable`, `RegressionMatrix`, `VariableImportanceMatrix`,
 #'   `Predictions`, `Diagnostics`, `ModelSummary`, `Multicollinearity`,
-#'   `Plots`, and `Metadata`.
+#'   `Plots`, and `Metadata`. `Plots` contains ggplot objects built from the
+#'   stored result tables and predictions without refitting models.
 #' @export
 MultivariableRegressionTable <- function(
     Data,
@@ -359,6 +360,13 @@ MultivariableRegressionTable <- function(
     FunctionCall = match.call()
   )
 
+  plots <- ScidrRegressionPlots(
+    regression_matrix = regression_matrix,
+    variable_importance_matrix = variable_importance_matrix,
+    predictions = predictions,
+    model_summary = model_summary
+  )
+
   return(list(
     Models = model_list,
     FormattedTable = as.data.frame(formatted_table),
@@ -369,7 +377,7 @@ MultivariableRegressionTable <- function(
     Diagnostics = as.data.frame(diagnostics),
     ModelSummary = as.data.frame(model_summary),
     Multicollinearity = multicollinearity,
-    Plots = list(),
+    Plots = plots,
     Metadata = metadata
   ))
 }
@@ -1058,4 +1066,184 @@ ScidrRegressionHoverText <- function(tbl) {
     "<b>", importance_label, ":</b> ", signif(tbl$VariableImportance, 3), "<br>",
     "<b>Sample size:</b> ", tbl$SampleSize
   )
+}
+
+ScidrRegressionPlots <- function(regression_matrix,
+                                 variable_importance_matrix,
+                                 predictions,
+                                 model_summary) {
+  plots <- list()
+
+  if (nrow(regression_matrix) > 0) {
+    plot_data <- regression_matrix
+    plot_data$PredictorLabel <- factor(
+      plot_data$PredictorLabel,
+      levels = rev(unique(plot_data$PredictorLabel[order(plot_data$PredictorIndex)]))
+    )
+    plot_data$OutcomeLabel <- factor(
+      plot_data$OutcomeLabel,
+      levels = unique(plot_data$OutcomeLabel[order(plot_data$OutcomeIndex)])
+    )
+
+    plots$RegressionMatrix <- ggplot2::ggplot(
+      plot_data,
+      ggplot2::aes(
+        x = .data$OutcomeLabel,
+        y = .data$PredictorLabel,
+        fill = .data$StandardizedBeta,
+        text = .data$HoverText
+      )
+    ) +
+      ggplot2::geom_tile(color = "white", linewidth = 0.4) +
+      ggplot2::scale_fill_gradient2(
+        low = "#2166AC",
+        mid = "white",
+        high = "#B2182B",
+        midpoint = 0,
+        na.value = "grey90"
+      ) +
+      ggplot2::labs(
+        x = NULL,
+        y = NULL,
+        fill = "Standardized beta"
+      ) +
+      ggplot2::theme_minimal() +
+      ggplot2::theme(
+        panel.grid = ggplot2::element_blank(),
+        axis.text.x = ggplot2::element_text(angle = 45, hjust = 1)
+      )
+  }
+
+  if (nrow(variable_importance_matrix) > 0) {
+    importance_data <- variable_importance_matrix
+    importance_data$PredictorLabel <- factor(
+      importance_data$PredictorLabel,
+      levels = rev(unique(importance_data$PredictorLabel[order(importance_data$PredictorIndex)]))
+    )
+    importance_data$OutcomeLabel <- factor(
+      importance_data$OutcomeLabel,
+      levels = unique(importance_data$OutcomeLabel[order(importance_data$OutcomeIndex)])
+    )
+
+    plots$VariableImportanceMatrix <- ggplot2::ggplot(
+      importance_data,
+      ggplot2::aes(
+        x = .data$OutcomeLabel,
+        y = .data$PredictorLabel,
+        fill = .data$VariableImportance,
+        text = .data$HoverText
+      )
+    ) +
+      ggplot2::geom_tile(color = "white", linewidth = 0.4) +
+      ggplot2::scale_fill_gradient(
+        low = "grey95",
+        high = "#1B7837",
+        na.value = "grey90"
+      ) +
+      ggplot2::labs(
+        x = NULL,
+        y = NULL,
+        fill = unique(stats::na.omit(importance_data$VariableImportanceType))[1]
+      ) +
+      ggplot2::theme_minimal() +
+      ggplot2::theme(
+        panel.grid = ggplot2::element_blank(),
+        axis.text.x = ggplot2::element_text(angle = 45, hjust = 1)
+      )
+  }
+
+  if (nrow(model_summary) > 0) {
+    diagnostics_long <- ScidrRegressionDiagnosticsPlotData(model_summary)
+    if (nrow(diagnostics_long) > 0) {
+      plots$RegressionDiagnostics <- ggplot2::ggplot(
+        diagnostics_long,
+        ggplot2::aes(
+          x = .data$OutcomeLabel,
+          y = .data$Value,
+          fill = .data$Metric
+        )
+      ) +
+        ggplot2::geom_col(position = "dodge", width = 0.7) +
+        ggplot2::facet_wrap(~Metric, scales = "free_y") +
+        ggplot2::labs(x = NULL, y = NULL, fill = NULL) +
+        ggplot2::theme_minimal() +
+        ggplot2::theme(
+          legend.position = "none",
+          axis.text.x = ggplot2::element_text(angle = 45, hjust = 1)
+        )
+    }
+  }
+
+  if (nrow(predictions) > 0) {
+    if (any(!is.na(predictions$Predicted) & !is.na(predictions$Observed))) {
+      plots$ObservedVsPredicted <- ggplot2::ggplot(
+        predictions,
+        ggplot2::aes(x = .data$Observed, y = .data$Predicted)
+      ) +
+        ggplot2::geom_point(alpha = 0.7, na.rm = TRUE) +
+        ggplot2::geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "grey40") +
+        ggplot2::facet_wrap(~Outcome, scales = "free") +
+        ggplot2::labs(x = "Observed", y = "Predicted") +
+        ggplot2::theme_minimal()
+    }
+
+    if (any(!is.na(predictions$Residual))) {
+      plots$Residuals <- ggplot2::ggplot(
+        predictions,
+        ggplot2::aes(x = .data$Predicted, y = .data$Residual)
+      ) +
+        ggplot2::geom_hline(yintercept = 0, linetype = "dashed", color = "grey40") +
+        ggplot2::geom_point(alpha = 0.7, na.rm = TRUE) +
+        ggplot2::facet_wrap(~Outcome, scales = "free") +
+        ggplot2::labs(x = "Predicted", y = "Residual") +
+        ggplot2::theme_minimal()
+    }
+
+    if (any(!is.na(predictions$PredictedProbability))) {
+      plots$Calibration <- ggplot2::ggplot(
+        predictions,
+        ggplot2::aes(x = .data$PredictedProbability, y = .data$Observed)
+      ) +
+        ggplot2::geom_point(alpha = 0.35, na.rm = TRUE) +
+        ggplot2::geom_smooth(method = "loess", se = FALSE, na.rm = TRUE) +
+        ggplot2::geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "grey40") +
+        ggplot2::facet_wrap(~Outcome) +
+        ggplot2::labs(x = "Predicted probability", y = "Observed") +
+        ggplot2::theme_minimal()
+    }
+
+    if (any(!is.na(predictions$Leverage)) || any(!is.na(predictions$CooksDistance))) {
+      plots$Influence <- ggplot2::ggplot(
+        predictions,
+        ggplot2::aes(x = .data$Leverage, y = .data$CooksDistance)
+      ) +
+        ggplot2::geom_point(alpha = 0.7, na.rm = TRUE) +
+        ggplot2::facet_wrap(~Outcome, scales = "free") +
+        ggplot2::labs(x = "Leverage", y = "Cook's distance") +
+        ggplot2::theme_minimal()
+    }
+  }
+
+  plots
+}
+
+ScidrRegressionDiagnosticsPlotData <- function(model_summary) {
+  metric_candidates <- c("R2", "AdjustedR2", "AUC", "McFaddenR2", "RMSE", "AIC", "BIC")
+  metric_candidates <- intersect(metric_candidates, names(model_summary))
+  if (length(metric_candidates) == 0) {
+    return(data.frame(Outcome = character(0), OutcomeLabel = character(0), Metric = character(0), Value = numeric(0)))
+  }
+
+  rows <- lapply(metric_candidates, function(metric) {
+    data.frame(
+      Outcome = model_summary$Outcome,
+      OutcomeLabel = model_summary$OutcomeLabel,
+      Metric = metric,
+      Value = suppressWarnings(as.numeric(model_summary[[metric]])),
+      stringsAsFactors = FALSE
+    )
+  })
+  out <- dplyr::bind_rows(rows)
+  out <- out[!is.na(out$Value), , drop = FALSE]
+  out
 }
