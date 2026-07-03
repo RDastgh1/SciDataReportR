@@ -9,7 +9,9 @@ UnivariateRegressionTable(
   OutcomeVars,
   PredictorVars,
   Covars = NULL,
-  Standardize = FALSE
+  Standardize = FALSE,
+  Method = c("auto", "lm", "logistic"),
+  LogisticExponentiate = TRUE
 )
 }
 \arguments{
@@ -22,13 +24,21 @@ UnivariateRegressionTable(
 \item{Covars}{Character vector of covariate variable names (default: NULL)}
 
 \item{Standardize}{Logical indicating whether to standardize numeric variables (default: FALSE)}
+
+\item{Method}{Character. Regression method to use. \code{"auto"} detects linear
+regression for numeric outcomes and logistic regression for two-level
+outcomes. \code{"lm"} and \code{"logistic"} force one model family for all outcomes.}
+
+\item{LogisticExponentiate}{Logical. If \code{TRUE}, logistic regression estimates
+are exponentiated and reported as odds ratios.}
 }
 \value{
 A list containing:
 \itemize{
 \item FormattedTable: A merged table with formatted regression results
 \item LargeTable: A merged table with unformatted regression results
-\item ModelSummaries: A list of lm model summaries
+\item ModelSummaries: A list of fitted model objects
+\item Metadata: Outcome families and analysis settings
 }
 }
 \description{

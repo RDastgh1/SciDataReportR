@@ -4,7 +4,7 @@
 \alias{plotForestFromTable}
 \title{Create a Forest Plot from Univariate Regression Tables}
 \usage{
-plotForestFromTable(UnivariateRegressionTables, pSize = 2)
+plotForestFromTable(UnivariateRegressionTables, pSize = 2, Flip = FALSE)
 }
 \arguments{
 \item{UnivariateRegressionTables}{A list containing formatted regression tables and styling information. Expected structure:
@@ -14,6 +14,9 @@ plotForestFromTable(UnivariateRegressionTables, pSize = 2)
 }}
 
 \item{pSize}{Numeric. Size of the points in the plot. Default is 2.}
+
+\item{Flip}{Logical. If \code{FALSE}, outcomes are facets and predictors/terms
+are rows. If \code{TRUE}, predictors/terms are facets and outcomes are rows.}
 }
 \value{
 A ggplot object representing the forest plot.
