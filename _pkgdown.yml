@@ -1,18 +1,4 @@
 url: https://rdastgh1.github.io/SciDataReportR/
 template:
   bootstrap: 5
-  light-switch: true
-  bslib:
-    bootswatch: lux
-    pkgdown-nav-height: 100px
-articles:
-  - title: Getting Started
-    contents:
-      - getting-started
 
-  - title: Function Tutorials
-    contents:
-      - MakeComparisonTable
-      - PlotCorrelationsHeatmap
-      - PlotMiningMatrix
-      - UnivariateRegressions
