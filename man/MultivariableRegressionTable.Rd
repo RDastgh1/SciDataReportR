@@ -5,10 +5,10 @@
 \title{Multivariable regression table}
 \usage{
 MultivariableRegressionTable(
-  Data,
-  OutcomeVars,
-  PredictorVars,
-  Covars = NULL,
+  data,
+  outcome_vars,
+  predictor_vars,
+  covariates = NULL,
   Standardize = TRUE,
   Relabel = TRUE,
   FDR = TRUE,
@@ -21,17 +21,21 @@ MultivariableRegressionTable(
     "drop_sparse_complete_cases"),
   MaxMissingPredictor = 0.3,
   ImputeMethod = c("median_mode"),
-  MinCompleteCases = NULL
+  MinCompleteCases = NULL,
+  Data = lifecycle::deprecated(),
+  OutcomeVars = lifecycle::deprecated(),
+  PredictorVars = lifecycle::deprecated(),
+  Covars = lifecycle::deprecated()
 )
 }
 \arguments{
-\item{Data}{Data frame containing outcomes, predictors, and covariates.}
+\item{data}{Data frame containing outcomes, predictors, and covariates.}
 
-\item{OutcomeVars}{Character vector of outcome variable names.}
+\item{outcome_vars}{Character vector of outcome variable names.}
 
-\item{PredictorVars}{Character vector of predictor variable names.}
+\item{predictor_vars}{Character vector of predictor variable names.}
 
-\item{Covars}{Optional character vector of covariate variable names.}
+\item{covariates}{Optional character vector of covariate variable names.}
 
 \item{Standardize}{Logical. If \code{TRUE}, ordinary models are fit on
 standardized continuous variables for the primary estimate. Standardized
@@ -69,6 +73,14 @@ factor, character, and logical variables.}
 
 \item{MinCompleteCases}{Optional minimum number of modeling rows required
 after missing-data handling.}
+
+\item{Data}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
+
+\item{OutcomeVars}{\strong{Deprecated} (since 19.15.0). Use \code{outcome_vars} instead.}
+
+\item{PredictorVars}{\strong{Deprecated} (since 19.15.0). Use \code{predictor_vars} instead.}
+
+\item{Covars}{\strong{Deprecated} (since 19.15.0). Use \code{covariates} instead.}
 }
 \value{
 A named list with stable components: \code{Models}, \code{FormattedTable},

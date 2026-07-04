@@ -19,7 +19,7 @@ static table.
 }
 \examples{
 PCA <- CreatePCATable(
-  Data = mtcars,
+  data = mtcars,
   VarsToReduce = names(mtcars),
   numComponents = 3
 )

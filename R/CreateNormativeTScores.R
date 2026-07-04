@@ -13,7 +13,7 @@
 #' `include_practice_effect = TRUE`, `count_var` is added to the model and all
 #' available visits in the reference group are used.
 #'
-#' @param df A data frame containing the test variable, count variable,
+#' @param data A data frame containing the test variable, count variable,
 #'   reference group variable, and covariates.
 #' @param test_var A character string naming the raw test score variable.
 #' @param count_var A character string naming the visit count or practice count
@@ -74,7 +74,7 @@
 #' )
 #'
 #' out <- CreateNormativeTScoreModel(
-#'   df = df,
+#'   data = df,
 #'   test_var = "TrailsA",
 #'   count_var = "Visit",
 #'   covariates = c("Age", "Education", "Sex"),
@@ -89,21 +89,30 @@
 #'
 #' out$data
 #' out$model
+#' @param df \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
 #' @export
-CreateNormativeTScoreModel <- function(df,
-                                   test_var,
-                                   count_var,
-                                   covariates,
-                                   reference_var,
-                                   reference_value,
-                                   include_practice_effect = FALSE,
-                                   baseline_count_value = 1,
-                                   reverse_score = FALSE,
-                                   convert_seconds = FALSE,
-                                   seconds_divisor = 1000,
-                                   log_transform = TRUE,
-                                   codebook = NULL,
-                                   return_plots = TRUE) {
+CreateNormativeTScoreModel <- function(data,
+    test_var,
+    count_var,
+    covariates,
+    reference_var,
+    reference_value,
+    include_practice_effect = FALSE,
+    baseline_count_value = 1,
+    reverse_score = FALSE,
+    convert_seconds = FALSE,
+    seconds_divisor = 1000,
+    log_transform = TRUE,
+    codebook = NULL,
+    return_plots = TRUE,
+    df = lifecycle::deprecated()) {
+  # Deprecated argument shims (SciDataReportR 19.15.0)
+  if (lifecycle::is_present(df)) {
+    lifecycle::deprecate_warn("19.15.0", "CreateNormativeTScoreModel(df)", "CreateNormativeTScoreModel(data)")
+    data <- df
+  }
+  if (!missing(data)) df <- data
+
 
   # Validate inputs
 

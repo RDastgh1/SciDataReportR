@@ -4,12 +4,21 @@
 \alias{MakeDataDictionary}
 \title{Create a data dictionary for a data frame}
 \usage{
-MakeDataDictionary(DataFrame, numdecimals = 2)
+MakeDataDictionary(
+  data,
+  digits = 2,
+  DataFrame = lifecycle::deprecated(),
+  numdecimals = lifecycle::deprecated()
+)
 }
 \arguments{
-\item{DataFrame}{A data frame.}
+\item{data}{A data frame.}
 
-\item{numdecimals}{Number of decimals to display for numeric variables.}
+\item{digits}{Number of decimals to display for numeric variables.}
+
+\item{DataFrame}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
+
+\item{numdecimals}{\strong{Deprecated} (since 19.15.0). Use \code{digits} instead.}
 }
 \value{
 A data frame with one row per variable and stable summary columns.

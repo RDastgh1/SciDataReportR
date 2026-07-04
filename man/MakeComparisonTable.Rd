@@ -5,15 +5,15 @@
 \title{Make comparison table with covariate adjustment, effect sizes, and pairwise contrasts}
 \usage{
 MakeComparisonTable(
-  DataFrame,
-  CompVariable = NULL,
-  Variables,
+  data,
+  group_var = NULL,
+  variables,
   ...,
-  Covariates = NULL,
-  ValueDigits = 2,
-  pDigits = 3,
+  covariates = NULL,
+  value_digits = 2,
+  p_digits = 3,
   AddEffectSize = FALSE,
-  EffectSizeDigits = 2,
+  effect_size_digits = 2,
   AddPairwise = FALSE,
   PairwiseMethod = "bonferroni",
   Parametric = TRUE,
@@ -27,27 +27,34 @@ MakeComparisonTable(
   CatMethod = c("auto", "chisq", "fisher"),
   MultiCatAdjusted = c("multinomial_LR", "none"),
   ShowNotes = c("auto", "always", "never"),
-  NotesPosition = c("last", "after_test", "before_pairwise")
+  NotesPosition = c("last", "after_test", "before_pairwise"),
+  DataFrame = lifecycle::deprecated(),
+  CompVariable = lifecycle::deprecated(),
+  Variables = lifecycle::deprecated(),
+  Covariates = lifecycle::deprecated(),
+  ValueDigits = lifecycle::deprecated(),
+  pDigits = lifecycle::deprecated(),
+  EffectSizeDigits = lifecycle::deprecated()
 )
 }
 \arguments{
-\item{DataFrame}{A data frame.}
+\item{data}{A data frame.}
 
-\item{CompVariable}{Character scalar naming the grouping variable.}
+\item{group_var}{Character scalar naming the grouping variable.}
 
-\item{Variables}{Character vector of variables to summarize.}
+\item{variables}{Character vector of variables to summarize.}
 
 \item{...}{Optional additional variable names supplied individually.}
 
-\item{Covariates}{Optional character vector of covariates for adjusted models.}
+\item{covariates}{Optional character vector of covariates for adjusted models.}
 
-\item{ValueDigits}{Number of digits for descriptive statistics.}
+\item{value_digits}{Number of digits for descriptive statistics.}
 
-\item{pDigits}{Number of digits for p-values.}
+\item{p_digits}{Number of digits for p-values.}
 
 \item{AddEffectSize}{Logical; add effect-size columns.}
 
-\item{EffectSizeDigits}{Number of digits for effect sizes.}
+\item{effect_size_digits}{Number of digits for effect sizes.}
 
 \item{AddPairwise}{Logical; add pairwise comparison columns.}
 
@@ -81,6 +88,20 @@ or \code{"never"}.}
 
 \item{NotesPosition}{Notes column position. One of \code{"last"}, \code{"after_test"},
 or \code{"before_pairwise"}.}
+
+\item{DataFrame}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
+
+\item{CompVariable}{\strong{Deprecated} (since 19.15.0). Use \code{group_var} instead.}
+
+\item{Variables}{\strong{Deprecated} (since 19.15.0). Use \code{variables} instead.}
+
+\item{Covariates}{\strong{Deprecated} (since 19.15.0). Use \code{covariates} instead.}
+
+\item{ValueDigits}{\strong{Deprecated} (since 19.15.0). Use \code{value_digits} instead.}
+
+\item{pDigits}{\strong{Deprecated} (since 19.15.0). Use \code{p_digits} instead.}
+
+\item{EffectSizeDigits}{\strong{Deprecated} (since 19.15.0). Use \code{effect_size_digits} instead.}
 }
 \value{
 A \code{gtsummary} object.
@@ -108,9 +129,9 @@ Pairwise comparisons preserve non-standard group labels and variable names.
 \examples{
 \dontrun{
 MakeComparisonTable(
-  DataFrame = mtcars,
+  data = mtcars,
   CompVariable = "am",
-  Variables = c("mpg", "hp", "wt"),
+  variables = c("mpg", "hp", "wt"),
   AddEffectSize = TRUE,
   AddPairwise = TRUE
 )

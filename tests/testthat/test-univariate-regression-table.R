@@ -253,3 +253,28 @@ test_that("plotForestFromTable preserves table spanner labels when metadata has 
     c("CBF", "Extraction fraction")
   )
 })
+
+test_that("plotForestFromTable uses odds ratio null line for logistic models", {
+  set.seed(916)
+  df <- data.frame(
+    ybin = factor(
+      sample(c("Typical", "High"), 90, replace = TRUE),
+      levels = c("Typical", "High")
+    ),
+    x1 = rnorm(90),
+    x2 = rnorm(90)
+  )
+
+  res <- UnivariateRegressionTable(
+    Data = df,
+    OutcomeVars = "ybin",
+    PredictorVars = c("x1", "x2"),
+    Standardize = TRUE
+  )
+  p <- plotForestFromTable(res)
+  built_plot <- ggplot2::ggplot_build(p)
+  vline_data <- built_plot$data[[3]]
+
+  expect_equal(unique(vline_data$xintercept), 1)
+  expect_equal(p$labels$x, "Odds ratio")
+})

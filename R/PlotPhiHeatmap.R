@@ -4,7 +4,7 @@
 #' with explicit 0/1 coding (1 == PositiveLevel from `createBinaryMapping()`),
 #' then renders heatmap-style plots with raw and FDR-adjusted significance.
 #'
-#' @param Data A dataframe.
+#' @param data A dataframe.
 #' @param CatVars Character vector of binary categorical variable names.
 #' @param Relabel Logical; if TRUE, uses sjlabelled variable labels for axes.
 #' @param binary_map Optional mapping as returned by `createBinaryMapping()`.
@@ -15,8 +15,27 @@
 #'   - `method` = "Phi"
 #'   - `Relabel`
 #'   - `BinaryMapping` (used)
+#' @param fdr_scope Either `"matrix"` (default) or `"per_outcome"`, passed to
+#'   [ApplyFDRCorrection()]. `"matrix"` corrects across all p-values at once
+#'   (historical behavior). `"per_outcome"` corrects separately within
+#'   each y-axis variable (`YVar`); the Phi matrix is symmetric, so this
+#'   treats each variable's row of tiles as one family.
+#' @param Data \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
 #' @export
-PlotPhiHeatmap <- function(Data, CatVars, Relabel = TRUE, binary_map = NULL) {
+PlotPhiHeatmap <- function(data,
+    CatVars,
+    Relabel = TRUE,
+    binary_map = NULL,
+    fdr_scope = c("matrix", "per_outcome"),
+    Data = lifecycle::deprecated()) {
+  # Deprecated argument shims (SciDataReportR 19.15.0)
+  if (lifecycle::is_present(Data)) {
+    lifecycle::deprecate_warn("19.15.0", "PlotPhiHeatmap(Data)", "PlotPhiHeatmap(data)")
+    data <- Data
+  }
+  if (!missing(data)) Data <- data
+  fdr_scope <- match.arg(fdr_scope)
+
 
   # ---- helpers -------------------------------------------------------------
   # encode a binary vector to {0,1} using mapping (1 == PositiveLevel)
@@ -112,7 +131,13 @@ PlotPhiHeatmap <- function(Data, CatVars, Relabel = TRUE, binary_map = NULL) {
   stat.test <- do.call(rbind, stat.list)
 
   # multiple testing (FDR); keep NA as NA
-  stat.test$p.adj <- stats::p.adjust(stat.test$p_value, method = "fdr")
+  # The matrix is symmetric; for "per_outcome", p-values are grouped by the
+  # y-axis variable (YVar), i.e. each y-variable's row of tiles is one family.
+  stat.test$p.adj <- ApplyFDRCorrection(
+    stat.test$p_value,
+    fdr_scope = fdr_scope,
+    outcome_ids = stat.test$YVar
+  )
 
   # significance stars
   stat.test <- stat.test %>%
@@ -204,11 +229,15 @@ PlotPhiHeatmap <- function(Data, CatVars, Relabel = TRUE, binary_map = NULL) {
   M     <- list(PvalTable = stat.test, plot = p)
   M_FDR <- list(PvalTable = stat.test, plot = p_FDR)
 
-  list(
+  out <- list(
     Unadjusted    = M,
     FDRCorrected  = M_FDR,
     method        = "Phi",
     Relabel       = Relabel,
     BinaryMapping = binary_map
   )
+  # Standardized p-value element aliases (old names kept)
+  out$p <- out$Unadjusted
+  out$p_fdr <- out$FDRCorrected
+  out
 }

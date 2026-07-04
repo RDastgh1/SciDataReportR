@@ -4,16 +4,23 @@
 \alias{getBinaryVars}
 \title{Identify Binary Variables}
 \usage{
-getBinaryVars(DataFrame, Ordinal = TRUE, Revalued = TRUE)
+getBinaryVars(
+  data,
+  Ordinal = TRUE,
+  Revalued = TRUE,
+  DataFrame = lifecycle::deprecated()
+)
 }
 \arguments{
-\item{DataFrame}{A dataframe to analyze for binary variables.}
+\item{data}{A dataframe to analyze for binary variables.}
 
 \item{Ordinal}{Logical. If TRUE, ordinal factors are included in the search
 for binary variables. Default is TRUE.}
 
 \item{Revalued}{Logical. If TRUE, the function checks factors and their levels;
 otherwise, it checks for variables with two unique values.}
+
+\item{DataFrame}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
 }
 \value{
 A character vector containing the names of binary variables.

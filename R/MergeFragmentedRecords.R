@@ -16,7 +16,7 @@
 #' Within each group, observations are ordered by `session_var`, and
 #' the first non-missing value encountered for each variable is retained.
 #'
-#' @param df A data frame containing fragmented records.
+#' @param data A data frame containing fragmented records.
 #' @param id_var Character string specifying the participant identifier
 #'   variable. Default is `"subject"`.
 #' @param date_var Character string specifying the visit or assessment
@@ -66,18 +66,25 @@
 #' No attempt is made to resolve conflicting non-missing values across
 #' sessions. If multiple non-missing values exist for the same variable,
 #' the first value encountered after sorting is retained.
+#' @param df \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
 #' @export
-MergeFragmentedRecords <- function(
-  df,
-  id_var = "subject",
-  date_var = "date",
-  session_var = "session",
-  keep_session = TRUE,
-  session_name = "first_session",
-  n_rows_name = "n_rows_collapsed",
-  arrange_desc_session = FALSE,
-  empty_strings_to_na = TRUE
-) {
+MergeFragmentedRecords <- function(data,
+    id_var = "subject",
+    date_var = "date",
+    session_var = "session",
+    keep_session = TRUE,
+    session_name = "first_session",
+    n_rows_name = "n_rows_collapsed",
+    arrange_desc_session = FALSE,
+    empty_strings_to_na = TRUE,
+    df = lifecycle::deprecated()) {
+  # Deprecated argument shims (SciDataReportR 19.15.0)
+  if (lifecycle::is_present(df)) {
+    lifecycle::deprecate_warn("19.15.0", "MergeFragmentedRecords(df)", "MergeFragmentedRecords(data)")
+    data <- df
+  }
+  if (!missing(data)) df <- data
+
 
   stopifnot(is.data.frame(df))
 

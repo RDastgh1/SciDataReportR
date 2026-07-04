@@ -5,23 +5,26 @@
 \title{Plot Point-Biserial Correlations Between Binary and Continuous Variables}
 \usage{
 PlotPointCorrelationsHeatmap(
-  Data,
+  data,
   CatVars,
   ContVars,
-  Covariates = NULL,
+  covariates = NULL,
   Relabel = TRUE,
   Ordinal = TRUE,
-  binary_map = NULL
+  binary_map = NULL,
+  fdr_scope = c("matrix", "per_outcome"),
+  Data = lifecycle::deprecated(),
+  Covariates = lifecycle::deprecated()
 )
 }
 \arguments{
-\item{Data}{A dataframe.}
+\item{data}{A dataframe.}
 
 \item{CatVars}{Character vector of binary categorical variables.}
 
 \item{ContVars}{Character vector of continuous variables.}
 
-\item{Covariates}{Optional covariates (reserved).}
+\item{covariates}{Optional covariates (reserved).}
 
 \item{Relabel}{Logical; use sjlabelled variable labels for axes.}
 
@@ -29,6 +32,15 @@ PlotPointCorrelationsHeatmap(
 
 \item{binary_map}{Optional mapping as returned by \code{createBinaryMapping()}.
 If NULL, a mapping is created internally for \code{CatVars}.}
+
+\item{fdr_scope}{Either \code{"matrix"} (default) or \code{"per_outcome"}, passed to
+\code{\link[=ApplyFDRCorrection]{ApplyFDRCorrection()}}. \code{"matrix"} corrects across all p-values at once
+(historical behavior). \code{"per_outcome"} corrects separately within each
+continuous variable: outcomes are the continuous variables (\code{ContVars}).}
+
+\item{Data}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
+
+\item{Covariates}{\strong{Deprecated} (since 19.15.0). Use \code{covariates} instead.}
 }
 \value{
 A list with Unadjusted, FDRCorrected, method ("R_pb"), Relabel, Covariates, BinaryMapping.

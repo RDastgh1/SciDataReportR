@@ -11,9 +11,9 @@
 #' Outliers are visually highlighted using jittered points colored red, while the
 #' boxplot remains uncolored to prevent creation of a separate outlier-only box.
 #'
-#' @param df A data frame or tibble containing the variable to evaluate.
+#' @param data A data frame or tibble containing the variable to evaluate.
 #' @param Variable A string specifying the name of the numeric variable to test.
-#' @param id A string specifying the identifier column to include in the returned
+#' @param id_var A string specifying the identifier column to include in the returned
 #'   outlier table. If \code{NULL}, no ID column is included in the returned table.
 #'   Defaults to \code{NULL}.
 #' @param group A string specifying the grouping or batch column to use on the
@@ -47,8 +47,27 @@
 #'   IQROutliers(df_Revalued_Data, "PS", id = NULL, group = NULL)
 #' }
 #'
+#' @param df \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
+#' @param id \strong{Deprecated} (since 19.15.0). Use \code{id_var} instead.
 #' @export
-IQROutliers <- function(df, Variable, id = NULL, group = NULL) {
+IQROutliers <- function(data,
+    Variable,
+    id_var = NULL,
+    group = NULL,
+    df = lifecycle::deprecated(),
+    id = lifecycle::deprecated()) {
+  # Deprecated argument shims (SciDataReportR 19.15.0)
+  if (lifecycle::is_present(df)) {
+    lifecycle::deprecate_warn("19.15.0", "IQROutliers(df)", "IQROutliers(data)")
+    data <- df
+  }
+  if (!missing(data)) df <- data
+  if (lifecycle::is_present(id)) {
+    lifecycle::deprecate_warn("19.15.0", "IQROutliers(id)", "IQROutliers(id_var)")
+    id_var <- id
+  }
+  id <- id_var
+
 
   if (!Variable %in% names(df)) stop("Variable not found in dataframe.")
   if (!is.null(id) && !id %in% names(df)) stop("ID column not found in dataframe.")

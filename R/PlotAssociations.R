@@ -2,15 +2,26 @@
 #'
 #' This function generates scatter plots or box plots to visualize the relationship between two variables.
 #'
-#' @param DataFrame The data frame containing the variables of interest.
+#' @param data The data frame containing the variables of interest.
 #' @param Var1 The name of the first variable.
 #' @param Var2 The name of the second variable.
 #' @param Ordinal Logical, indicating whether ordinal variables should be included.
 #' @return A ggplot object representing the relationship between the variables.
 #' @import ggplot2 ggstatsplot dplyr
+#' @param DataFrame \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
 #' @export
-PlotAssociations <- function (DataFrame, Var1, Var2, Ordinal = FALSE)
-{
+PlotAssociations <- function(data,
+    Var1,
+    Var2,
+    Ordinal = FALSE,
+    DataFrame = lifecycle::deprecated()) {
+  # Deprecated argument shims (SciDataReportR 19.15.0)
+  if (lifecycle::is_present(DataFrame)) {
+    lifecycle::deprecate_warn("19.15.0", "PlotAssociations(DataFrame)", "PlotAssociations(data)")
+    data <- DataFrame
+  }
+  if (!missing(data)) DataFrame <- data
+
   TestFrame <- na.omit(DataFrame[c(Var1, Var2)])
   if (nrow(TestFrame) == 0) {
     return(ggplot(DataFrame, aes_string(x = Var1, y = Var2)))

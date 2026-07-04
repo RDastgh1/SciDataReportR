@@ -398,7 +398,7 @@
 #'   within each participant.
 #' @param show_y_axis_labels Logical. If `TRUE`, show participant labels on the
 #'   y-axis. Defaults to `FALSE`.
-#' @param make_interactive Logical. If `TRUE`, return an interactive plotly object.
+#' @param interactive Logical. If `TRUE`, return an interactive plotly object.
 #'   Defaults to `FALSE`.
 #' @param plot_title Optional custom plot title.
 #' @param x_label Optional x-axis label.
@@ -436,12 +436,12 @@
 #' When `x_axis_type = "time_from_baseline"`, each participant starts at time 0
 #' based on their earliest observed date.
 #'
-#' When `make_interactive = TRUE`, the function returns a `plotly` object and
+#' When `interactive = TRUE`, the function returns a `plotly` object and
 #' uses the internally prepared tooltip text for hover labels.
 #'
 #' @return A `ggplot` object by default.
 #'
-#' If `make_interactive = TRUE`, returns a `plotly` object.
+#' If `interactive = TRUE`, returns a `plotly` object.
 #'
 #' If `return_data = TRUE`, returns a list with:
 #' - `plot`: the `ggplot` or `plotly` object
@@ -477,34 +477,34 @@
 #'   x_axis_type = "time_from_baseline",
 #'   time_from_baseline_unit = "months"
 #' )
+#' @param make_interactive \strong{Deprecated} (since 19.15.0). Use \code{interactive} instead.
 #' @export
 PlotSwimmerTransitions <- function(data,
-                                   id_var,
-                                   time_var,
-                                   status_var,
-                                   date_var = NULL,
-                                   participant_subset = NULL,
-                                   max_participants = NULL,
-                                   order_participants_by = c(
-                                     "first_positive",
-                                     "first_transition",
-                                     "ever_positive",
-                                     "ever_positive_then_burden",
-                                     "input_order",
-                                     "n_visits",
-                                     "n_positive",
-                                     "pct_positive"
-                                   ),
-                                   x_axis_type = c("visit", "date", "time_from_baseline"),
-                                   time_from_baseline_unit = c("days", "months", "years"),
-                                   show_transition_points = TRUE,
-                                   show_lines = TRUE,
-                                   show_y_axis_labels = FALSE,
-                                   make_interactive = FALSE,
-                                   plot_title = NULL,
-                                   x_label = NULL,
-                                   y_label = NULL,
-                                   return_data = FALSE) {
+    id_var,
+    time_var,
+    status_var,
+    date_var = NULL,
+    participant_subset = NULL,
+    max_participants = NULL,
+    order_participants_by = c("first_positive", "first_transition", "ever_positive", "ever_positive_then_burden", "input_order", "n_visits", "n_positive", "pct_positive"),
+    x_axis_type = c("visit", "date", "time_from_baseline"),
+    time_from_baseline_unit = c("days", "months", "years"),
+    show_transition_points = TRUE,
+    show_lines = TRUE,
+    show_y_axis_labels = FALSE,
+    interactive = FALSE,
+    plot_title = NULL,
+    x_label = NULL,
+    y_label = NULL,
+    return_data = FALSE,
+    make_interactive = lifecycle::deprecated()) {
+  # Deprecated argument shims (SciDataReportR 19.15.0)
+  if (lifecycle::is_present(make_interactive)) {
+    lifecycle::deprecate_warn("19.15.0", "PlotSwimmerTransitions(make_interactive)", "PlotSwimmerTransitions(interactive)")
+    interactive <- make_interactive
+  }
+  make_interactive <- interactive
+
 
   order_participants_by <- match.arg(order_participants_by)
   x_axis_type <- match.arg(x_axis_type)
@@ -533,7 +533,7 @@ PlotSwimmerTransitions <- function(data,
   }
 
   if (make_interactive && !requireNamespace("plotly", quietly = TRUE)) {
-    stop("Package `plotly` must be installed when `make_interactive = TRUE`.")
+    stop("Package `plotly` must be installed when `interactive = TRUE`.")
   }
 
   # Build outputs

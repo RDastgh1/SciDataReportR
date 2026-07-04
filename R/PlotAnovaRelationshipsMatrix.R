@@ -4,10 +4,10 @@
 #' using ANOVA or Kruskal-Wallis tests. It generates a "heatmap" with points
 #' colored and shaped based on statistical significance and effect size.
 #'
-#' @param Data The data frame containing the variables of interest.
+#' @param data The data frame containing the variables of interest.
 #' @param CatVars Character vector of categorical variable names.
 #' @param ContVars Character vector of continuous variable names.
-#' @param Covariates Optional character vector of covariate names for ANCOVA analysis.
+#' @param covariates Optional character vector of covariate names for ANCOVA analysis.
 #' @param Relabel Logical indicating whether to relabel variables with their labels (default is TRUE).
 #' @param Ordinal Logical, indicating whether ordinal variables should be considered.
 #' @param Parametric Logical indicating whether to use parametric (ANOVA) or non-parametric (Kruskal-Wallis) tests (default is TRUE).
@@ -20,18 +20,38 @@
 #' @importFrom tidyr pivot_longer
 #' @importFrom rstatix anova_test kruskal_test get_summary_stats add_significance adjust_pvalue
 #' @importFrom stats na.omit var
+#' @param fdr_scope Either `"matrix"` (default) or `"per_outcome"`, passed to
+#'   [ApplyFDRCorrection()]. `"matrix"` corrects across all p-values at once
+#'   (historical behavior). `"per_outcome"` corrects separately within each
+#'   outcome: outcomes are the continuous variables (`ContVars`).
+#' @param Data \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
+#' @param Covariates \strong{Deprecated} (since 19.15.0). Use \code{covariates} instead.
 #' @export
-PlotAnovaRelationshipsMatrix <- function(
-    Data,
+PlotAnovaRelationshipsMatrix <- function(data,
     CatVars,
     ContVars,
-    Covariates = NULL,
+    covariates = NULL,
     Relabel = TRUE,
     Parametric = TRUE,
     Ordinal = FALSE,
     min_n = 4,
-    eps = 1e-8
-) {
+    eps = 1e-08,
+    Data = lifecycle::deprecated(),
+    fdr_scope = c("matrix", "per_outcome"),
+    Covariates = lifecycle::deprecated()) {
+  # Deprecated argument shims (SciDataReportR 19.15.0)
+  if (lifecycle::is_present(Data)) {
+    lifecycle::deprecate_warn("19.15.0", "PlotAnovaRelationshipsMatrix(Data)", "PlotAnovaRelationshipsMatrix(data)")
+    data <- Data
+  }
+  if (!missing(data)) Data <- data
+  if (lifecycle::is_present(Covariates)) {
+    lifecycle::deprecate_warn("19.15.0", "PlotAnovaRelationshipsMatrix(Covariates)", "PlotAnovaRelationshipsMatrix(covariates)")
+    covariates <- Covariates
+  }
+  Covariates <- covariates
+  fdr_scope <- match.arg(fdr_scope)
+
 
   method <- if (isTRUE(Parametric)) "Anova" else "Kruskal"
 
@@ -43,11 +63,14 @@ PlotAnovaRelationshipsMatrix <- function(
     empty <- data.frame()
     p0 <- ggplot2::ggplot(data.frame(x = 1, y = 1), ggplot2::aes(x, y)) +
       ggplot2::geom_blank() + ggplot2::theme_void()
-    list(
+    out <- list(
       Unadjusted = list(PvalTable = empty, plot = p0),
       FDRCorrected = list(PvalTable = empty, plot = p0),
       method = method, Relabel = Relabel, Covariates = Covariates
     )
+    out$p <- out$Unadjusted
+    out$p_fdr <- out$FDRCorrected
+    out
   }
 
   if (length(CatVars) == 0 || length(ContVars) == 0) return(empty_return())
@@ -173,8 +196,14 @@ PlotAnovaRelationshipsMatrix <- function(
   }
 
   stat.test <- stat.test |>
-    rstatix::add_significance(p.col = "p", output.col = "p.signif") |>
-    rstatix::adjust_pvalue(p.col = "p", output.col = "p.adj", method = "fdr") |>
+    rstatix::add_significance(p.col = "p", output.col = "p.signif")
+  # Outcomes are the continuous variables (ContVars) for "per_outcome".
+  stat.test$p.adj <- ApplyFDRCorrection(
+    stat.test$p,
+    fdr_scope = fdr_scope,
+    outcome_ids = stat.test$ContinuousVariable
+  )
+  stat.test <- stat.test |>
     rstatix::add_significance(p.col = "p.adj", output.col = "p.adj.signif")
 
   stat.test$logp <- -log10(stat.test$p)
@@ -271,9 +300,13 @@ PlotAnovaRelationshipsMatrix <- function(
       name = "Effect Size"
     )
 
-  list(
+  out <- list(
     Unadjusted = list(PvalTable = stat.test, plot = p),
     FDRCorrected = list(PvalTable = stat.test, plot = p_FDR),
     method = method, Relabel = Relabel, Covariates = Covariates
   )
+  # Standardized p-value element aliases (old names kept)
+  out$p <- out$Unadjusted
+  out$p_fdr <- out$FDRCorrected
+  out
 }

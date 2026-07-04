@@ -4,12 +4,14 @@
 \alias{getCatVars}
 \title{Get Categorical Variables}
 \usage{
-getCatVars(DataFrame, Ordinal = TRUE)
+getCatVars(data, Ordinal = TRUE, DataFrame = lifecycle::deprecated())
 }
 \arguments{
-\item{DataFrame}{The data frame from which to extract categorical variables.}
+\item{data}{The data frame from which to extract categorical variables.}
 
 \item{Ordinal}{Logical, indicating whether to include ordinal variables.}
+
+\item{DataFrame}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
 }
 \value{
 A character vector containing the names of categorical variables.

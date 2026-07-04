@@ -6,13 +6,24 @@
 #' - Numeric 0/1 (or any 2-value numeric) maps Positive to the numeric maximum.
 #' - Characters / unordered factors use minimal heuristics (no race/PWH/sex terms).
 #'
-#' @param Data A dataframe.
+#' @param data A dataframe.
 #' @param CatVars Character vector of candidate binary variables.
 #' @param prefer Optional named character vector of explicit positive levels,
 #'   e.g., c(STATUS = "PWH", Smoker = "Yes"). This overrides other rules.
 #' @return A data.frame with columns: Variable, Label, PositiveLevel, NegativeLevel.
+#' @param Data \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
 #' @export
-createBinaryMapping <- function(Data, CatVars, prefer = NULL) {
+createBinaryMapping <- function(data,
+    CatVars,
+    prefer = NULL,
+    Data = lifecycle::deprecated()) {
+  # Deprecated argument shims (SciDataReportR 19.15.0)
+  if (lifecycle::is_present(Data)) {
+    lifecycle::deprecate_warn("19.15.0", "createBinaryMapping(Data)", "createBinaryMapping(data)")
+    data <- Data
+  }
+  if (!missing(data)) Data <- data
+
 
   # choose PositiveLevel for var given observed levels (character)
   choose_positive <- function(var, lvls_chr, is_ordered_factor = FALSE) {

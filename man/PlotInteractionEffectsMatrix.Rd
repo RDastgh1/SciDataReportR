@@ -5,29 +5,47 @@
 \title{Plot Interaction Effects Matrix}
 \usage{
 PlotInteractionEffectsMatrix(
-  Data,
+  data,
   interVar = NULL,
-  outcomeVars = NULL,
-  predictorVars = NULL,
-  covars = NULL,
+  outcome_vars = NULL,
+  predictor_vars = NULL,
+  covariates = NULL,
   Relabel = TRUE,
-  Ordinal = FALSE
+  Ordinal = FALSE,
+  Data = lifecycle::deprecated(),
+  outcomeVars = lifecycle::deprecated(),
+  predictorVars = lifecycle::deprecated(),
+  fdr_scope = c("matrix", "per_outcome"),
+  covars = lifecycle::deprecated()
 )
 }
 \arguments{
-\item{Data}{A data frame containing the variables to be analyzed}
+\item{data}{A data frame containing the variables to be analyzed}
 
 \item{interVar}{Character string specifying the interaction variable (moderator). Can be categorical or continuous.}
 
-\item{outcomeVars}{Character vector of outcome variable names (displayed on rows)}
+\item{outcome_vars}{Character vector of outcome variable names (displayed on rows)}
 
-\item{predictorVars}{Character vector of predictor variable names (displayed on columns)}
+\item{predictor_vars}{Character vector of predictor variable names (displayed on columns)}
 
-\item{covars}{Character vector of covariate names to include in the models}
+\item{covariates}{Character vector of covariate names to include in the models}
 
 \item{Relabel}{Logical indicating whether to use variable labels if available (default: TRUE)}
 
 \item{Ordinal}{Logical indicating whether to treat ordered factors as numeric (default: FALSE)}
+
+\item{Data}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
+
+\item{outcomeVars}{\strong{Deprecated} (since 19.15.0). Use \code{outcome_vars} instead.}
+
+\item{predictorVars}{\strong{Deprecated} (since 19.15.0). Use \code{predictor_vars} instead.}
+
+\item{fdr_scope}{Either \code{"matrix"} (default) or \code{"per_outcome"}, passed to
+\code{\link[=ApplyFDRCorrection]{ApplyFDRCorrection()}}. \code{"matrix"} corrects across all interaction
+p-values at once (historical behavior). \code{"per_outcome"} corrects
+separately within each outcome variable (\code{outcome_vars}).}
+
+\item{covars}{\strong{Deprecated} (since 19.15.0). Use \code{covariates} instead.}
 }
 \value{
 A list containing:
@@ -84,7 +102,7 @@ Darker colors indicate higher significance:
 \dontrun{
 # With categorical interaction variable
 results <- PlotInteractionEffectsMatrix(
-  Data = mydata,
+  data = mydata,
   interVar = "HIV_status",
   outcomeVars = sleep_vars,
   predictorVars = metabolites,
@@ -93,7 +111,7 @@ results <- PlotInteractionEffectsMatrix(
 
 # With continuous interaction variable
 results <- PlotInteractionEffectsMatrix(
-  Data = mydata,
+  data = mydata,
   interVar = "age",
   outcomeVars = sleep_vars,
   predictorVars = metabolites,

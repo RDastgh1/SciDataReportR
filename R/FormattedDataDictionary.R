@@ -3,15 +3,32 @@
 #' This function generates a formatted data dictionary table using the specified data frame.
 #' The table includes variable names, labels, types, and additional formatting based on variable types.
 #'
-#' @param DataFrame The data frame for which the data dictionary is to be created.
-#' @param numdecimals Number of decimals to display for numeric variables (default: 2).
+#' @param data The data frame for which the data dictionary is to be created.
+#' @param digits Number of decimals to display for numeric variables (default: 2).
 #'
 #' @return A formatted data dictionary table (gt object).
 #'
 #' @details This function requires the `gt` package. If not installed, the function will return an error.
 
+#' @param DataFrame \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
+#' @param numdecimals \strong{Deprecated} (since 19.15.0). Use \code{digits} instead.
 #' @export
-FormattedDataDictionary <- function(DataFrame, numdecimals = 2) {
+FormattedDataDictionary <- function(data,
+    digits = 2,
+    DataFrame = lifecycle::deprecated(),
+    numdecimals = lifecycle::deprecated()) {
+  # Deprecated argument shims (SciDataReportR 19.15.0)
+  if (lifecycle::is_present(DataFrame)) {
+    lifecycle::deprecate_warn("19.15.0", "FormattedDataDictionary(DataFrame)", "FormattedDataDictionary(data)")
+    data <- DataFrame
+  }
+  if (!missing(data)) DataFrame <- data
+  if (lifecycle::is_present(numdecimals)) {
+    lifecycle::deprecate_warn("19.15.0", "FormattedDataDictionary(numdecimals)", "FormattedDataDictionary(digits)")
+    digits <- numdecimals
+  }
+  numdecimals <- digits
+
   # Ensure `gt` is installed
   if (!requireNamespace("gt", quietly = TRUE)) {
     stop("The 'gt' package is required but not installed. Please install it using install.packages('gt').")

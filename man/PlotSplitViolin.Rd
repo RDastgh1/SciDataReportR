@@ -7,8 +7,8 @@
 PlotSplitViolin(
   data,
   Var,
-  Group,
-  covars = NULL,
+  group_var,
+  covariates = NULL,
   nonparametric = FALSE,
   annotation_text = NULL,
   show_ns = FALSE,
@@ -25,7 +25,9 @@ PlotSplitViolin(
   star_quantile = 0.995,
   star_pad = 0.05,
   star_size = 6,
-  ...
+  ...,
+  Group = lifecycle::deprecated(),
+  covars = lifecycle::deprecated()
 )
 }
 \arguments{
@@ -33,9 +35,9 @@ PlotSplitViolin(
 
 \item{Var}{Numeric outcome variable (tidy-eval).}
 
-\item{Group}{Grouping variable (<= 2 unique values).}
+\item{group_var}{Grouping variable (<= 2 unique values).}
 
-\item{covars}{Character vector of covariates (default \code{NULL}).}
+\item{covariates}{Character vector of covariates (default \code{NULL}).}
 
 \item{nonparametric}{Logical. If \code{FALSE}, uses linear model + emmeans contrast.
 If \code{TRUE}, uses Wilcoxon (with residualization if covariates are present).}
@@ -71,6 +73,10 @@ If \code{TRUE}, uses Wilcoxon (with residualization if covariates are present).}
 \item{star_size}{Text size for annotation.}
 
 \item{...}{Additional arguments reserved for future extensions.}
+
+\item{Group}{\strong{Deprecated} (since 19.15.0). Use \code{group_var} instead.}
+
+\item{covars}{\strong{Deprecated} (since 19.15.0). Use \code{covariates} instead.}
 }
 \value{
 A ggplot2 object.

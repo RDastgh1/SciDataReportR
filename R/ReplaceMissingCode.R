@@ -2,13 +2,30 @@
 #'
 #' This function replaces specified missing codes in a data frame with `NA` values based on a given variable codebook.
 #'
-#' @param DataFrame A data frame containing the data.
-#' @param VariableCodebook A data frame containing the variable codebook. It should have columns `Variable` and `MissingCode`, where `Variable` specifies the variable name in the data frame and `MissingCode` specifies the code to be replaced with `NA`.
+#' @param data A data frame containing the data.
+#' @param codebook A data frame containing the variable codebook. It should have columns `Variable` and `MissingCode`, where `Variable` specifies the variable name in the data frame and `MissingCode` specifies the code to be replaced with `NA`.
 #'
 #' @return A data frame with specified missing codes replaced by `NA`.
 
+#' @param DataFrame \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
+#' @param VariableCodebook \strong{Deprecated} (since 19.15.0). Use \code{codebook} instead.
 #' @export
-ReplaceMissingCode <- function(DataFrame, VariableCodebook) {
+ReplaceMissingCode <- function(data,
+    codebook,
+    DataFrame = lifecycle::deprecated(),
+    VariableCodebook = lifecycle::deprecated()) {
+  # Deprecated argument shims (SciDataReportR 19.15.0)
+  if (lifecycle::is_present(DataFrame)) {
+    lifecycle::deprecate_warn("19.15.0", "ReplaceMissingCode(DataFrame)", "ReplaceMissingCode(data)")
+    data <- DataFrame
+  }
+  if (!missing(data)) DataFrame <- data
+  if (lifecycle::is_present(VariableCodebook)) {
+    lifecycle::deprecate_warn("19.15.0", "ReplaceMissingCode(VariableCodebook)", "ReplaceMissingCode(codebook)")
+    codebook <- VariableCodebook
+  }
+  if (!missing(codebook)) VariableCodebook <- codebook
+
   # Filter out rows where MissingCode is NA
   CodeSubset <- VariableCodebook %>% dplyr::filter(!is.na(MissingCode))
 

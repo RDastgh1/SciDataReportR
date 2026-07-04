@@ -11,7 +11,7 @@
 #' Character and factor variables are converted using
 #' `as.numeric(as.character(x))` to avoid incorrect factor level coercion.
 #'
-#' @param df A data frame.
+#' @param data A data frame.
 #' @param variables Character vector of variable names to process.
 #'   Defaults to all columns.
 #'
@@ -27,8 +27,18 @@
 #'
 #' PrepNumericData(df)
 #'
+#' @param df \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
 #' @export
-PrepNumericData <- function(df, variables = names(df)) {
+PrepNumericData <- function(data,
+    variables = names(data),
+    df = lifecycle::deprecated()) {
+  # Deprecated argument shims (SciDataReportR 19.15.0)
+  if (lifecycle::is_present(df)) {
+    lifecycle::deprecate_warn("19.15.0", "PrepNumericData(df)", "PrepNumericData(data)")
+    data <- df
+  }
+  if (!missing(data)) df <- data
+
 
   # ---------------------------
   # Validate inputs

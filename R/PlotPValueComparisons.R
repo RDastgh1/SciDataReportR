@@ -3,10 +3,10 @@
 #' This function generates a plot comparing p-values for different variables
 #' across two or more groups.
 #'
-#' @param Data Data frame containing the variables to compare.
-#' @param GroupVariable Character string specifying the name of the column in
+#' @param data Data frame containing the variables to compare.
+#' @param group_var Character string specifying the name of the column in
 #'   `Data` that contains the group labels.
-#' @param Variables Character vector specifying the names of the columns in
+#' @param variables Character vector specifying the names of the columns in
 #'   `Data` to include in the comparison. If `NULL`, all columns except
 #'   `GroupVariable` are included.
 #' @param VariableCategories Character vector specifying the categories for
@@ -18,8 +18,35 @@
 #'
 #' @importFrom dplyr select summarise_if
 #' @importFrom ggplot2 ggplot geom_point scale_y_discrete xlab
+#' @param Data \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
+#' @param GroupVariable \strong{Deprecated} (since 19.15.0). Use \code{group_var} instead.
+#' @param Variables \strong{Deprecated} (since 19.15.0). Use \code{variables} instead.
 #' @export
-PlotPValueComparisons <- function(Data, GroupVariable, Variables = NULL, VariableCategories = NULL, Relabel = TRUE) {
+PlotPValueComparisons <- function(data,
+    group_var,
+    variables = NULL,
+    VariableCategories = NULL,
+    Relabel = TRUE,
+    Data = lifecycle::deprecated(),
+    GroupVariable = lifecycle::deprecated(),
+    Variables = lifecycle::deprecated()) {
+  # Deprecated argument shims (SciDataReportR 19.15.0)
+  if (lifecycle::is_present(Data)) {
+    lifecycle::deprecate_warn("19.15.0", "PlotPValueComparisons(Data)", "PlotPValueComparisons(data)")
+    data <- Data
+  }
+  if (!missing(data)) Data <- data
+  if (lifecycle::is_present(GroupVariable)) {
+    lifecycle::deprecate_warn("19.15.0", "PlotPValueComparisons(GroupVariable)", "PlotPValueComparisons(group_var)")
+    group_var <- GroupVariable
+  }
+  if (!missing(group_var)) GroupVariable <- group_var
+  if (lifecycle::is_present(Variables)) {
+    lifecycle::deprecate_warn("19.15.0", "PlotPValueComparisons(Variables)", "PlotPValueComparisons(variables)")
+    variables <- Variables
+  }
+  Variables <- variables
+
   # Validate and prepare Variables
   if (is.null(Variables)) {
     Variables <- Data %>% select(-all_of(GroupVariable)) %>% colnames()

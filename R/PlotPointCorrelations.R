@@ -3,19 +3,45 @@
 #' Calculates point-biserial correlations (binary vs continuous) with explicit 0/1 coding
 #' where 1 == PositiveLevel from `createBinaryMapping()`, and renders heatmap-style tiles.
 #'
-#' @param Data A dataframe.
+#' @param data A dataframe.
 #' @param CatVars Character vector of binary categorical variables.
 #' @param ContVars Character vector of continuous variables.
-#' @param Covariates Optional covariates (reserved).
+#' @param covariates Optional covariates (reserved).
 #' @param Relabel Logical; use sjlabelled variable labels for axes.
 #' @param Ordinal Logical; reserved for future use.
 #' @param binary_map Optional mapping as returned by `createBinaryMapping()`.
 #'   If NULL, a mapping is created internally for `CatVars`.
 #' @return A list with Unadjusted, FDRCorrected, method ("R_pb"), Relabel, Covariates, BinaryMapping.
+#' @param fdr_scope Either `"matrix"` (default) or `"per_outcome"`, passed to
+#'   [ApplyFDRCorrection()]. `"matrix"` corrects across all p-values at once
+#'   (historical behavior). `"per_outcome"` corrects separately within each
+#'   continuous variable: outcomes are the continuous variables (`ContVars`).
+#' @param Data \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
+#' @param Covariates \strong{Deprecated} (since 19.15.0). Use \code{covariates} instead.
 #' @export
-PlotPointCorrelationsHeatmap <- function (
-    Data, CatVars, ContVars, Covariates = NULL, Relabel = TRUE, Ordinal = TRUE, binary_map = NULL
-) {
+PlotPointCorrelationsHeatmap <- function(data,
+    CatVars,
+    ContVars,
+    covariates = NULL,
+    Relabel = TRUE,
+    Ordinal = TRUE,
+    binary_map = NULL,
+    fdr_scope = c("matrix", "per_outcome"),
+    Data = lifecycle::deprecated(),
+    Covariates = lifecycle::deprecated()) {
+  # Deprecated argument shims (SciDataReportR 19.15.0)
+  if (lifecycle::is_present(Data)) {
+    lifecycle::deprecate_warn("19.15.0", "PlotPointCorrelationsHeatmap(Data)", "PlotPointCorrelationsHeatmap(data)")
+    data <- Data
+  }
+  if (!missing(data)) Data <- data
+  if (lifecycle::is_present(Covariates)) {
+    lifecycle::deprecate_warn("19.15.0", "PlotPointCorrelationsHeatmap(Covariates)", "PlotPointCorrelationsHeatmap(covariates)")
+    covariates <- Covariates
+  }
+  Covariates <- covariates
+  fdr_scope <- match.arg(fdr_scope)
+
   # ---- helpers ----
   .is_binary <- function(x) length(unique(stats::na.omit(x))) == 2
 
@@ -93,8 +119,14 @@ PlotPointCorrelationsHeatmap <- function (
     }) %>%
     dplyr::ungroup()
 
-  # FDR & stars
-  stat.test$p.adj <- stats::p.adjust(stat.test$p_value, method = "fdr")
+  # FDR & stars. For "per_outcome", p-values are grouped by the continuous
+  # variable: outcomes are the continuous variables (ContVars), matching the
+  # ANOVA/mining convention that continuous measures are the outcomes.
+  stat.test$p.adj <- ApplyFDRCorrection(
+    stat.test$p_value,
+    fdr_scope = fdr_scope,
+    outcome_ids = stat.test$ContinuousVariable
+  )
   stat.test <- stat.test %>%
     rstatix::add_significance("p_value", output.col = "p<.05") %>%
     rstatix::add_significance("p.adj",   output.col = "p.adj.signif")
@@ -177,12 +209,16 @@ PlotPointCorrelationsHeatmap <- function (
   M     <- list(PvalTable = stat.test, plot = p)
   M_FDR <- list(PvalTable = stat.test, plot = p_FDR)
 
-  return(list(
+  out <- list(
     Unadjusted    = M,
     FDRCorrected  = M_FDR,
     method        = "R_pb",
     Relabel       = Relabel,
     Covariates    = Covariates,
     BinaryMapping = binary_map
-  ))
+  )
+  # Standardized p-value element aliases (old names kept)
+  out$p <- out$Unadjusted
+  out$p_fdr <- out$FDRCorrected
+  return(out)
 }

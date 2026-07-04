@@ -220,7 +220,7 @@ ProjectSOMCluster <- function(
     }
 
     z_proj <- SciDataReportR::ProjectZScore(
-      df                 = new_df_scidr,
+      data                 = new_df_scidr,
       variables          = vars_used,
       parameters         = Z_obj,
       ParameterInputType = "ZScoreObj",

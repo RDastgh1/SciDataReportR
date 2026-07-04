@@ -8,7 +8,7 @@
 #' `CreateNormativeTScoreModel()`. It uses the saved model and preprocessing
 #' settings to score new observations consistently.
 #'
-#' @param df A data frame containing the test variable, count variable, and
+#' @param data A data frame containing the test variable, count variable, and
 #'   all predictors required by the normative model.
 #' @param normative_obj A list returned by `CreateNormativeTScoreModel()`.
 #' @param score_prefix A character string prefix used when naming output
@@ -43,7 +43,7 @@
 #' )
 #'
 #' norm_obj <- CreateNormativeTScoreModel(
-#'   df = df,
+#'   data = df,
 #'   test_var = "TrailsA",
 #'   count_var = "Visit",
 #'   covariates = c("Age", "Education", "Sex"),
@@ -57,14 +57,23 @@
 #' )
 #'
 #' scored_df <- ApplyNormativeTScores(
-#'   df = df,
+#'   data = df,
 #'   normative_obj = norm_obj
 #' )
 #'
+#' @param df \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
 #' @export
-ApplyNormativeTScores <- function(df,
-                                  normative_obj,
-                                  score_prefix = "Norm") {
+ApplyNormativeTScores <- function(data,
+    normative_obj,
+    score_prefix = "Norm",
+    df = lifecycle::deprecated()) {
+  # Deprecated argument shims (SciDataReportR 19.15.0)
+  if (lifecycle::is_present(df)) {
+    lifecycle::deprecate_warn("19.15.0", "ApplyNormativeTScores(df)", "ApplyNormativeTScores(data)")
+    data <- df
+  }
+  if (!missing(data)) df <- data
+
 
   # Validate inputs
 

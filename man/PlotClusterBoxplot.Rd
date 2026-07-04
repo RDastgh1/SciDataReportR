@@ -5,10 +5,10 @@
 \title{Plot cluster boxplots by variable}
 \usage{
 PlotClusterBoxplot(
-  Data,
+  data,
   ClusterVar,
-  Variables,
-  Codebook = NULL,
+  variables,
+  codebook = NULL,
   Scale = FALSE,
   ScoreType = c("auto", "z", "t", "raw"),
   ReferenceLines = c("auto", "z", "t", "none"),
@@ -19,17 +19,20 @@ PlotClusterBoxplot(
   YLabel = NULL,
   BoxplotWidth = 0.75,
   OutlierSize = 0.8,
-  BaseSize = 14
+  BaseSize = 14,
+  Data = lifecycle::deprecated(),
+  Variables = lifecycle::deprecated(),
+  Codebook = lifecycle::deprecated()
 )
 }
 \arguments{
-\item{Data}{A data frame.}
+\item{data}{A data frame.}
 
 \item{ClusterVar}{Character string naming the cluster/grouping variable.}
 
-\item{Variables}{Character vector of variable names to plot.}
+\item{variables}{Character vector of variable names to plot.}
 
-\item{Codebook}{Optional codebook data frame with columns \code{Variable} and
+\item{codebook}{Optional codebook data frame with columns \code{Variable} and
 \code{Label}.}
 
 \item{Scale}{Logical. If \code{TRUE}, variables are z-scored across all
@@ -79,6 +82,12 @@ chosen automatically from \code{Scale} and \code{ScoreType}.}
 \item{OutlierSize}{Numeric size of outlier points. Default is \code{0.8}.}
 
 \item{BaseSize}{Base font size for the plot theme. Default is \code{14}.}
+
+\item{Data}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
+
+\item{Variables}{\strong{Deprecated} (since 19.15.0). Use \code{variables} instead.}
+
+\item{Codebook}{\strong{Deprecated} (since 19.15.0). Use \code{codebook} instead.}
 }
 \value{
 A \code{ggplot} object.
@@ -100,17 +109,17 @@ variable label attributes.
 }
 \examples{
 PlotClusterBoxplot(
-  Data = mtcars,
+  data = mtcars,
   ClusterVar = "cyl",
-  Variables = c("mpg", "disp", "hp"),
+  variables = c("mpg", "disp", "hp"),
   Scale = TRUE,
   ReferenceLines = "z"
 )
 
 PlotClusterBoxplot(
-  Data = mtcars,
+  data = mtcars,
   ClusterVar = "cyl",
-  Variables = c("mpg", "disp", "hp"),
+  variables = c("mpg", "disp", "hp"),
   ClusterLabel = "n"
 )
 

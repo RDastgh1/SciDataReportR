@@ -7,8 +7,8 @@
 #'
 #' @param data A data frame containing `Var`, `Group`, and optional covariates.
 #' @param Var Numeric outcome variable (tidy-eval).
-#' @param Group Grouping variable (<= 2 unique values).
-#' @param covars Character vector of covariates (default `NULL`).
+#' @param group_var Grouping variable (<= 2 unique values).
+#' @param covariates Character vector of covariates (default `NULL`).
 #' @param nonparametric Logical. If `FALSE`, uses linear model + emmeans contrast.
 #' If `TRUE`, uses Wilcoxon (with residualization if covariates are present).
 #' @param annotation_text Optional manual annotation (e.g., "*", "ns").
@@ -30,32 +30,45 @@
 #'
 #' @return A ggplot2 object.
 #'
+#' @param Group \strong{Deprecated} (since 19.15.0). Use \code{group_var} instead.
+#' @param covars \strong{Deprecated} (since 19.15.0). Use \code{covariates} instead.
 #' @export
-PlotSplitViolin <- function(
-    data,
+PlotSplitViolin <- function(data,
     Var,
-    Group,
-    covars = NULL,
+    group_var,
+    covariates = NULL,
     nonparametric = FALSE,
     annotation_text = NULL,
     show_ns = FALSE,
     plot_title = NULL,
     use_var_label_as_title = FALSE,
     show_n = TRUE,
-    n_position = c("legend","top"),
+    n_position = c("legend", "top"),
     n_size = 3.5,
     left_group = NULL,
     color_palette = NULL,
     box_offset = 0.11,
-    box_width  = 0.15,
-
-    star_from = c("quantile","data_max","whisker"),
+    box_width = 0.15,
+    star_from = c("quantile", "data_max", "whisker"),
     star_quantile = 0.995,
     star_pad = 0.05,
     star_size = 6,
+    ...,
+    Group = lifecycle::deprecated(),
+    covars = lifecycle::deprecated()) {
+  # Deprecated argument shims (SciDataReportR 19.15.0)
+  # `group_var` (and the deprecated `Group`) accept bare column names (NSE),
+  # so the deprecated argument is detected with missing() and captured with
+  # ensym() below - it must never be evaluated directly.
+  if (!missing(Group)) {
+    lifecycle::deprecate_warn("19.15.0", "PlotSplitViolin(Group)", "PlotSplitViolin(group_var)")
+  }
+  if (lifecycle::is_present(covars)) {
+    lifecycle::deprecate_warn("19.15.0", "PlotSplitViolin(covars)", "PlotSplitViolin(covariates)")
+    covariates <- covars
+  }
+  covars <- covariates
 
-    ...
-) {
 
   stopifnot(requireNamespace("emmeans", quietly = TRUE))
 
@@ -65,7 +78,7 @@ PlotSplitViolin <- function(
   if (is.null(covars)) covars <- character(0)
 
   Var   <- rlang::ensym(Var)
-  Group <- rlang::ensym(Group)
+  Group <- if (!missing(group_var)) rlang::ensym(group_var) else rlang::ensym(Group)
 
   var_nm <- rlang::as_string(Var)
   var_safe <- paste0("`", var_nm, "`")

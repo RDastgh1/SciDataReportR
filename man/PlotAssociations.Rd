@@ -4,16 +4,24 @@
 \alias{PlotAssociations}
 \title{Plot Associations}
 \usage{
-PlotAssociations(DataFrame, Var1, Var2, Ordinal = FALSE)
+PlotAssociations(
+  data,
+  Var1,
+  Var2,
+  Ordinal = FALSE,
+  DataFrame = lifecycle::deprecated()
+)
 }
 \arguments{
-\item{DataFrame}{The data frame containing the variables of interest.}
+\item{data}{The data frame containing the variables of interest.}
 
 \item{Var1}{The name of the first variable.}
 
 \item{Var2}{The name of the second variable.}
 
 \item{Ordinal}{Logical, indicating whether ordinal variables should be included.}
+
+\item{DataFrame}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
 }
 \value{
 A ggplot object representing the relationship between the variables.

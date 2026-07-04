@@ -239,17 +239,17 @@ CodebookMergeApp <- function(
 
         "Overview",
 
-        br(),
+        shiny::br(),
 
         shiny::fluidRow(
 
           shiny::column(
             6,
 
-            div(
+            shiny::div(
               class = "cardbox",
 
-              h3("Variable Presence"),
+              shiny::h3("Variable Presence"),
 
               DT::DTOutput(
                 "presence_table"
@@ -260,10 +260,10 @@ CodebookMergeApp <- function(
           shiny::column(
             6,
 
-            div(
+            shiny::div(
               class = "cardbox",
 
-              h3("Structure Comparison"),
+              shiny::h3("Structure Comparison"),
 
               DT::DTOutput(
                 "structure_table"
@@ -277,7 +277,7 @@ CodebookMergeApp <- function(
 
         "Harmonization",
 
-        br(),
+        shiny::br(),
 
         shiny::fluidRow(
 
@@ -285,10 +285,10 @@ CodebookMergeApp <- function(
 
             width = 7,
 
-            div(
+            shiny::div(
               class = "cardbox",
 
-              h3("Conflict Browser"),
+              shiny::h3("Conflict Browser"),
 
               DT::DTOutput(
                 "harmonization_table"
@@ -300,16 +300,16 @@ CodebookMergeApp <- function(
 
             width = 5,
 
-            div(
+            shiny::div(
               class = "cardbox",
 
-              h3("Resolution"),
+              shiny::h3("Resolution"),
 
               shiny::uiOutput(
                 "selected_conflict_ui"
               ),
 
-              br(),
+              shiny::br(),
 
               shinyWidgets::pickerInput(
                 "resolution_choice",
@@ -326,7 +326,7 @@ CodebookMergeApp <- function(
                 )
               ),
 
-              br(),
+              shiny::br(),
 
               shiny::actionButton(
                 "save_resolution",
@@ -334,8 +334,8 @@ CodebookMergeApp <- function(
                 class = "btn-success"
               ),
 
-              br(),
-              br(),
+              shiny::br(),
+              shiny::br(),
 
               DT::DTOutput(
                 "saved_resolutions"
@@ -349,17 +349,17 @@ CodebookMergeApp <- function(
 
         "Export",
 
-        br(),
+        shiny::br(),
 
         shiny::fluidRow(
 
           shiny::column(
             6,
 
-            div(
+            shiny::div(
               class = "cardbox",
 
-              h3("Merge Rules"),
+              shiny::h3("Merge Rules"),
 
               shiny::fluidRow(
 
@@ -383,7 +383,7 @@ CodebookMergeApp <- function(
                 )
               ),
 
-              br(),
+              shiny::br(),
 
               shiny::textAreaInput(
                 "rules_text",
@@ -397,16 +397,16 @@ CodebookMergeApp <- function(
           shiny::column(
             6,
 
-            div(
+            shiny::div(
               class = "cardbox",
 
-              h3("Merged Codebook Preview"),
+              shiny::h3("Merged Codebook Preview"),
 
               DT::DTOutput(
                 "merged_preview"
               ),
 
-              br(),
+              shiny::br(),
 
               shiny::downloadButton(
                 "download_merged",
@@ -701,7 +701,7 @@ CodebookMergeApp <- function(
 
       shiny::tagList(
 
-        h4(
+        shiny::h4(
           paste0(
             row[[VariableCol]],
             " : ",
@@ -709,7 +709,7 @@ CodebookMergeApp <- function(
           )
         ),
 
-        br(),
+        shiny::br(),
 
         purrr::map(
           1:nrow(values),
@@ -733,7 +733,7 @@ CodebookMergeApp <- function(
               "#D9D9D9"
             )
 
-            div(
+            shiny::div(
 
               style = paste0(
                 "
@@ -746,7 +746,7 @@ CodebookMergeApp <- function(
               ),
 
               tags$b(values$Source[i]),
-              br(),
+              shiny::br(),
               values$Value[i]
             )
           }
@@ -754,7 +754,7 @@ CodebookMergeApp <- function(
       )
     })
 
-    observe({
+    shiny::observe({
 
       shiny::req(selected_conflict())
 
@@ -793,7 +793,7 @@ CodebookMergeApp <- function(
       )
     })
 
-    observeEvent(
+    shiny::observeEvent(
 
       input$save_resolution,
 
@@ -838,7 +838,7 @@ CodebookMergeApp <- function(
 
     # Export ---------------------------------------------------------------
 
-    observeEvent(
+    shiny::observeEvent(
 
       input$generate_rules,
 
@@ -923,7 +923,7 @@ CodebookMergeApp <- function(
       }
     )
 
-    observeEvent(
+    shiny::observeEvent(
 
       input$copy_rules,
 

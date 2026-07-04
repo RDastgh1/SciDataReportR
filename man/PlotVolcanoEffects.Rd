@@ -5,10 +5,10 @@
 \title{Plot volcano-style association effects}
 \usage{
 PlotVolcanoEffects(
-  Data,
-  xVars,
-  yVar,
-  Covariates = NULL,
+  data,
+  predictor_vars,
+  outcome_var,
+  covariates = NULL,
   OutcomeType = c("auto", "continuous", "categorical"),
   EffectMetric = c("auto", "cohens_d", "log2fc"),
   AdjustMethod = "fdr",
@@ -18,18 +18,23 @@ PlotVolcanoEffects(
   LabelMode = c("none", "top_n", "significant", "fdr", "extreme"),
   TopN = 10,
   Relabel = TRUE,
-  Codebook = NULL,
-  InteractiveLabels = TRUE
+  codebook = NULL,
+  InteractiveLabels = TRUE,
+  Data = lifecycle::deprecated(),
+  xVars = lifecycle::deprecated(),
+  yVar = lifecycle::deprecated(),
+  Covariates = lifecycle::deprecated(),
+  Codebook = lifecycle::deprecated()
 )
 }
 \arguments{
-\item{Data}{A data frame.}
+\item{data}{A data frame.}
 
-\item{xVars}{Character vector of predictor variable names to screen.}
+\item{predictor_vars}{Character vector of predictor variable names to screen.}
 
-\item{yVar}{Character string naming the outcome variable.}
+\item{outcome_var}{Character string naming the outcome variable.}
 
-\item{Covariates}{Optional character vector of covariate variable names.}
+\item{covariates}{Optional character vector of covariate variable names.}
 
 \item{OutcomeType}{Outcome type. One of \code{"auto"}, \code{"continuous"}, or
 \code{"categorical"}. If \code{"auto"}, numeric outcomes are treated as continuous
@@ -59,11 +64,21 @@ scaled predictor and scaled outcome.}
 Labels are pulled first from \code{Codebook} if supplied, then from variable
 label attributes. Default is \code{TRUE}.}
 
-\item{Codebook}{Optional codebook data frame with columns \code{Variable} and
+\item{codebook}{Optional codebook data frame with columns \code{Variable} and
 \code{Label}.}
 
 \item{InteractiveLabels}{Logical. If \code{TRUE}, a \code{text} aesthetic is added for
 compatibility with \code{plotly::ggplotly(tooltip = "text")}. Default is \code{TRUE}.}
+
+\item{Data}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
+
+\item{xVars}{\strong{Deprecated} (since 19.15.0). Use \code{predictor_vars} instead.}
+
+\item{yVar}{\strong{Deprecated} (since 19.15.0). Use \code{outcome_var} instead.}
+
+\item{Covariates}{\strong{Deprecated} (since 19.15.0). Use \code{covariates} instead.}
+
+\item{Codebook}{\strong{Deprecated} (since 19.15.0). Use \code{codebook} instead.}
 }
 \value{
 A named list with \code{RawPPlot}, \code{FDRPlot}, and \code{ResultsTable}.
@@ -85,19 +100,19 @@ covariates. Invalid predictor variables are removed with a warning.
 }
 \examples{
 PlotVolcanoEffects(
-  Data = mtcars,
-  xVars = c("disp", "hp", "drat", "wt", "qsec"),
-  yVar = "mpg",
-  Covariates = "cyl",
+  data = mtcars,
+  predictor_vars = c("disp", "hp", "drat", "wt", "qsec"),
+  outcome_var = "mpg",
+  covariates = "cyl",
   OutcomeType = "continuous",
   LabelMode = "top_n",
   TopN = 3
 )
 
 PlotVolcanoEffects(
-  Data = mtcars,
-  xVars = c("mpg", "disp", "hp", "drat", "wt", "qsec"),
-  yVar = "am",
+  data = mtcars,
+  predictor_vars = c("mpg", "disp", "hp", "drat", "wt", "qsec"),
+  outcome_var = "am",
   OutcomeType = "categorical",
   EffectMetric = "cohens_d",
   LabelMode = "top_n",

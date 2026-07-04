@@ -3,14 +3,24 @@
 #'
 #' Generate a table of statistics including means, standard deviations, counts, and p-values.
 #'
-#' @param Data The data frame containing the variables of interest.
+#' @param data The data frame containing the variables of interest.
 #' @param TargetVar The target variable for which statistics will be calculated.
 #' @return A formatted HTML table displaying statistics.
 #' @importFrom dplyr mutate rename
 #' @importFrom kableExtra cell_spec kable kable_styling scroll_box
+#' @param Data \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
 #' @export
 
-CreateStatisticsTable <- function(Data,  TargetVar){
+CreateStatisticsTable <- function(data,
+    TargetVar,
+    Data = lifecycle::deprecated()) {
+  # Deprecated argument shims (SciDataReportR 19.15.0)
+  if (lifecycle::is_present(Data)) {
+    lifecycle::deprecate_warn("19.15.0", "CreateStatisticsTable(Data)", "CreateStatisticsTable(data)")
+    data <- Data
+  }
+  if (!missing(data)) Data <- data
+
 
   tab1<-arsenal::tableby(as.formula(paste(TargetVar, "~ .")), data = Data, digits.pct = 1, digits.count = 1, numeric.stats = c("Nmiss2", "meansd"), cat.test = "chisq")
   sd<-as.data.frame(summary(tab1, text = FALSE))

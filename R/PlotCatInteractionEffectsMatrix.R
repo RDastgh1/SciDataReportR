@@ -5,9 +5,9 @@
 #'
 #' This function calculates and visualizes the interaction effects between categorical variables.
 #'
-#' @param Data The dataset containing the variables.
-#' @param xVars A character vector of the names of the x-axis categorical variables.
-#' @param yVars A character vector of the names of the y-axis categorical variables. Defaults to NULL,
+#' @param data The dataset containing the variables.
+#' @param predictor_vars A character vector of the names of the x-axis categorical variables.
+#' @param outcome_vars A character vector of the names of the y-axis categorical variables. Defaults to NULL,
 #'        in which case it takes the same values as xVars.
 #' @param xVarLabels A character vector of labels for the x-axis variables. Defaults to NULL,
 #'        in which case it takes the same values as xVars.
@@ -16,8 +16,42 @@
 #' @param interVar The name of the interaction variable.
 #' @return A list containing matrices of interaction coefficients, p-values, ggplot objects for visualizations,
 #'         and tables of FDR-corrected p-values.
+#' @param fdr_scope Either `"matrix"` (default) or `"per_outcome"`, passed to
+#'   [ApplyFDRCorrection()]. `"matrix"` corrects across all interaction
+#'   p-values at once (historical behavior). `"per_outcome"` corrects
+#'   separately within each y-axis variable (`outcome_vars`).
+#' @param Data \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
+#' @param xVars \strong{Deprecated} (since 19.15.0). Use \code{predictor_vars} instead.
+#' @param yVars \strong{Deprecated} (since 19.15.0). Use \code{outcome_vars} instead.
 #' @export
-PlotCatInteractionEffectsMatrix <- function(Data, xVars, yVars = NULL, xVarLabels = NULL, yVarLabels = NULL, interVar ) {
+PlotCatInteractionEffectsMatrix <- function(data,
+    predictor_vars,
+    outcome_vars = NULL,
+    xVarLabels = NULL,
+    yVarLabels = NULL,
+    interVar,
+    Data = lifecycle::deprecated(),
+    xVars = lifecycle::deprecated(),
+    fdr_scope = c("matrix", "per_outcome"),
+    yVars = lifecycle::deprecated()) {
+  # Deprecated argument shims (SciDataReportR 19.15.0)
+  if (lifecycle::is_present(Data)) {
+    lifecycle::deprecate_warn("19.15.0", "PlotCatInteractionEffectsMatrix(Data)", "PlotCatInteractionEffectsMatrix(data)")
+    data <- Data
+  }
+  if (!missing(data)) Data <- data
+  if (lifecycle::is_present(xVars)) {
+    lifecycle::deprecate_warn("19.15.0", "PlotCatInteractionEffectsMatrix(xVars)", "PlotCatInteractionEffectsMatrix(predictor_vars)")
+    predictor_vars <- xVars
+  }
+  if (!missing(predictor_vars)) xVars <- predictor_vars
+  if (lifecycle::is_present(yVars)) {
+    lifecycle::deprecate_warn("19.15.0", "PlotCatInteractionEffectsMatrix(yVars)", "PlotCatInteractionEffectsMatrix(outcome_vars)")
+    outcome_vars <- yVars
+  }
+  yVars <- outcome_vars
+  fdr_scope <- match.arg(fdr_scope)
+
   if(is.null(yVars)){
     yVars = xVars
   }
@@ -91,7 +125,12 @@ PlotCatInteractionEffectsMatrix <- function(Data, xVars, yVars = NULL, xVarLabel
   m_G$sig <- paste(m_G$sign, m_G$sig) %>% factor(levels = c("+ ***", "+ **", "+ *","ns ", "- *", "- **", "- ***"))
 
   ## FDR correction for r_P
-  m_G$P_FDR <- p.adjust(m_G$P, method = "fdr")
+  # Outcomes are the y-axis variables (outcome_vars / Y) for "per_outcome".
+  m_G$P_FDR <- ApplyFDRCorrection(
+    m_G$P,
+    fdr_scope = fdr_scope,
+    outcome_ids = m_G$Y
+  )
   m_G$sign_FDR <- sign(m_G$S) %>% factor(levels = c(-1, 0, 1), labels = c("-", "ns", "+"))
   m_G$sign_FDR[m_G$P_FDR > 0.05] <- "ns"
   m_G$sig_FDR <- gtools::stars.pval(m_G$P_FDR)
@@ -121,5 +160,7 @@ PlotCatInteractionEffectsMatrix <- function(Data, xVars, yVars = NULL, xVarLabel
     select(X, Y, P_FDR) %>%
     pivot_wider(names_from = X, values_from = P_FDR)
 
-  return(list(C = r_C, pvals = r_P, p = p, p_FDR = p_FDR, pvals_FDR = pvaltable_FDR))
+  # Standardized p-value element aliases (old names kept)
+  return(list(C = r_C, pvals = r_P, p = p, p_FDR = p_FDR, pvals_FDR = pvaltable_FDR,
+              p_fdr = p_FDR, pvals_fdr = pvaltable_FDR))
 }

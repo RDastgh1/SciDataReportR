@@ -11,7 +11,7 @@
 #' @param Plot Character value specifying which plot to return. Options are
 #'   `"All"`, `"Checks"`, `"SummaryMetrics"`, `"StructureChanges"`,
 #'   `"VariableChanges"`, and `"TopChangedVariables"`. Default is `"All"`.
-#' @param Interactive Logical; if `TRUE`, plots are converted to interactive
+#' @param interactive Logical; if `TRUE`, plots are converted to interactive
 #'   `plotly` objects using `plotly::ggplotly()`. Default is `TRUE`.
 #' @param TopN Integer number of variables or records to preview in plots and
 #'   hover text. Default is `10`.
@@ -20,20 +20,20 @@
 #' object. Plot objects are either `ggplot` objects or `plotly` htmlwidgets,
 #' depending on `Interactive`.
 #'
+#' @param Interactive \strong{Deprecated} (since 19.15.0). Use \code{interactive} instead.
 #' @export
-PlotDatasetComparison <- function(
-    CompareObj,
-    Plot = c(
-      "All",
-      "Checks",
-      "SummaryMetrics",
-      "StructureChanges",
-      "VariableChanges",
-      "TopChangedVariables"
-    ),
-    Interactive = TRUE,
-    TopN = 10
-) {
+PlotDatasetComparison <- function(CompareObj,
+    Plot = c("All", "Checks", "SummaryMetrics", "StructureChanges", "VariableChanges", "TopChangedVariables"),
+    interactive = TRUE,
+    TopN = 10,
+    Interactive = lifecycle::deprecated()) {
+  # Deprecated argument shims (SciDataReportR 19.15.0)
+  if (lifecycle::is_present(Interactive)) {
+    lifecycle::deprecate_warn("19.15.0", "PlotDatasetComparison(Interactive)", "PlotDatasetComparison(interactive)")
+    interactive <- Interactive
+  }
+  Interactive <- interactive
+
 
   # Validate inputs
 
@@ -87,8 +87,8 @@ PlotDatasetComparison <- function(
 
   if (Interactive && !requireNamespace("plotly", quietly = TRUE)) {
     stop(
-      "The plotly package is required when Interactive = TRUE. ",
-      "Install it with install.packages('plotly') or set Interactive = FALSE."
+      "The plotly package is required when interactive = TRUE. ",
+      "Install it with install.packages('plotly') or set interactive = FALSE."
     )
   }
 

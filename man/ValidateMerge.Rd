@@ -4,7 +4,13 @@
 \alias{ValidateMerge}
 \title{Validate a merged dataset against its source datasets}
 \usage{
-ValidateMerge(LeftData, RightData, MergedData, Keys)
+ValidateMerge(
+  LeftData,
+  RightData,
+  MergedData,
+  keys,
+  Keys = lifecycle::deprecated()
+)
 }
 \arguments{
 \item{LeftData}{A data frame used as one source for the merge.}
@@ -13,8 +19,10 @@ ValidateMerge(LeftData, RightData, MergedData, Keys)
 
 \item{MergedData}{The merged data frame to audit.}
 
-\item{Keys}{Character vector of key variables intended to define the merge.
+\item{keys}{Character vector of key variables intended to define the merge.
 Multiple keys are supported, such as \code{c("study_id", "TimePoint")}.}
+
+\item{Keys}{\strong{Deprecated} (since 19.15.0). Use \code{keys} instead.}
 }
 \value{
 A list with merge validation results, including:

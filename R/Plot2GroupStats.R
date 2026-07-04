@@ -1,13 +1,13 @@
 #' Plot & Summarize Group Stats via MakeComparisonTable
 #' (BH q from p; SHAPE by p; COLOR by Category (vector or data frame); stable point size; palette via paletteer)
 #'
-#' @param Data data.frame
-#' @param Variables character vector of variables to analyze
+#' @param data data.frame
+#' @param variables character vector of variables to analyze
 #' @param VariableCategories optional:
 #'        - data frame with columns Variable, Category; OR
 #'        - vector of categories (named by variable OR unnamed aligned to `Variables`)
 #' @param impClust,normalClust labels for the two groups (impClust plotted to the RIGHT for signed axes)
-#' @param GroupVar column name in `Data` holding the group labels
+#' @param group_var column name in `Data` holding the group labels
 #' @param missing_threshold drop vars with > this fraction missing (default 0.80)
 #' @param max_levels drop factors with > this many levels (default 10)
 #' @param label_q label threshold using q (default 0.05)
@@ -18,19 +18,45 @@
 #' @param point_size numeric constant for point size (default 3.5)
 #'
 #' @return list(plot=ggplot, table=gtsummary, pvaltable=data.frame, data_used=tibble)
+#' @param Data \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
+#' @param Variables \strong{Deprecated} (since 19.15.0). Use \code{variables} instead.
+#' @param GroupVar \strong{Deprecated} (since 19.15.0). Use \code{group_var} instead.
 #' @export
 #' @import dplyr ggplot2 gtsummary
-Plot2GroupStats <- function(
-    Data, Variables, VariableCategories = NULL,
-    impClust, normalClust, GroupVar,
-    missing_threshold = 0.80, max_levels = 10,
+Plot2GroupStats <- function(data,
+    variables,
+    VariableCategories = NULL,
+    impClust,
+    normalClust,
+    group_var,
+    missing_threshold = 0.8,
+    max_levels = 10,
     label_q = 0.05,
-    x_axis = c("signed_logp","signed_effect","effect","logp"),
-    sort_by = c("q","p","effect","signed_logp","signed_effect","none"),
+    x_axis = c("signed_logp", "signed_effect", "effect", "logp"),
+    sort_by = c("q", "p", "effect", "signed_logp", "signed_effect", "none"),
     mct_args = list(),
     palette = "pals::alphabet",
-    point_size = 3.5
-){
+    point_size = 3.5,
+    Data = lifecycle::deprecated(),
+    Variables = lifecycle::deprecated(),
+    GroupVar = lifecycle::deprecated()) {
+  # Deprecated argument shims (SciDataReportR 19.15.0)
+  if (lifecycle::is_present(Data)) {
+    lifecycle::deprecate_warn("19.15.0", "Plot2GroupStats(Data)", "Plot2GroupStats(data)")
+    data <- Data
+  }
+  if (!missing(data)) Data <- data
+  if (lifecycle::is_present(Variables)) {
+    lifecycle::deprecate_warn("19.15.0", "Plot2GroupStats(Variables)", "Plot2GroupStats(variables)")
+    variables <- Variables
+  }
+  if (!missing(variables)) Variables <- variables
+  if (lifecycle::is_present(GroupVar)) {
+    lifecycle::deprecate_warn("19.15.0", "Plot2GroupStats(GroupVar)", "Plot2GroupStats(group_var)")
+    group_var <- GroupVar
+  }
+  if (!missing(group_var)) GroupVar <- group_var
+
   x_axis  <- match.arg(x_axis)
   sort_by <- match.arg(sort_by)
 
@@ -114,11 +140,11 @@ Plot2GroupStats <- function(
 
   # ---- MakeComparisonTable --------------------------------------------------
   mct_defaults <- list(
-    DataFrame    = tData,
-    Variables    = vars_in,
-    CompVariable = "GroupVar",
-    ValueDigits  = 2,
-    pDigits      = 3
+    data      = tData,
+    variables = vars_in,
+    group_var = "GroupVar",
+    value_digits = 2,
+    p_digits  = 3
   )
   # Ask for absolute effect sizes unless user overrode; direction comes from data
   if ("AddEffectSize" %in% names(formals(SciDataReportR::MakeComparisonTable)) &&

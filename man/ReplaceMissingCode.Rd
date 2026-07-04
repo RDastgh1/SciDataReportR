@@ -4,12 +4,21 @@
 \alias{ReplaceMissingCode}
 \title{Replace Missing Codes with NA}
 \usage{
-ReplaceMissingCode(DataFrame, VariableCodebook)
+ReplaceMissingCode(
+  data,
+  codebook,
+  DataFrame = lifecycle::deprecated(),
+  VariableCodebook = lifecycle::deprecated()
+)
 }
 \arguments{
-\item{DataFrame}{A data frame containing the data.}
+\item{data}{A data frame containing the data.}
 
-\item{VariableCodebook}{A data frame containing the variable codebook. It should have columns \code{Variable} and \code{MissingCode}, where \code{Variable} specifies the variable name in the data frame and \code{MissingCode} specifies the code to be replaced with \code{NA}.}
+\item{codebook}{A data frame containing the variable codebook. It should have columns \code{Variable} and \code{MissingCode}, where \code{Variable} specifies the variable name in the data frame and \code{MissingCode} specifies the code to be replaced with \code{NA}.}
+
+\item{DataFrame}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
+
+\item{VariableCodebook}{\strong{Deprecated} (since 19.15.0). Use \code{codebook} instead.}
 }
 \value{
 A data frame with specified missing codes replaced by \code{NA}.

@@ -5,7 +5,7 @@
 \title{SOM + latent profile clustering pipeline (with AHP and distance baselines)}
 \usage{
 CreateSOMClusterModel(
-  df,
+  data,
   variables = NULL,
   method = c("exploratory", "finalize"),
   k_range = 2:15,
@@ -25,7 +25,7 @@ CreateSOMClusterModel(
   Relabel = TRUE,
   ZScorePrefix = "Z_",
   ZScoreVars = NULL,
-  id_col = NULL,
+  id_var = NULL,
   lpa_progress = FALSE,
   lpa_em_itmax = 100L,
   lpa_em_tol = 1e-05,
@@ -36,11 +36,13 @@ CreateSOMClusterModel(
   slow_fit_seconds = 120,
   min_nodes_per_cluster = 5,
   high_dist_quantile = 0.95,
-  low_prob_threshold = 0.7
+  low_prob_threshold = 0.7,
+  df = lifecycle::deprecated(),
+  id_col = lifecycle::deprecated()
 )
 }
 \arguments{
-\item{df}{Data frame containing the variables to be used in SOM and
+\item{data}{Data frame containing the variables to be used in SOM and
 clustering.}
 
 \item{variables}{Optional character vector of variable names. If NULL,
@@ -104,7 +106,7 @@ when \code{ZScoreType = "PreZScored"}. If NULL, the function attempts to
 infer them from \code{variables} or by detecting columns starting with
 \code{ZScorePrefix}.}
 
-\item{id_col}{Optional character scalar. If provided and present in \code{df},
+\item{id_var}{Optional character scalar. If provided and present in \code{df},
 this column is carried into \code{ProbFit$individual} for convenience.}
 
 \item{lpa_progress}{Logical; if TRUE, print short progress messages while
@@ -139,6 +141,10 @@ is \code{0.95}.}
 
 \item{low_prob_threshold}{Numeric posterior probability threshold used to
 flag uncertain phenotype membership. Default is \code{0.70}.}
+
+\item{df}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
+
+\item{id_col}{\strong{Deprecated} (since 19.15.0). Use \code{id_var} instead.}
 }
 \value{
 A list of class \code{"Pipeline_SOMClust"} with components:

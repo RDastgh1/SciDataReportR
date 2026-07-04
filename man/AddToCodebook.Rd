@@ -5,7 +5,7 @@
 \title{Add a new variable to a codebook}
 \usage{
 AddToCodebook(
-  CB,
+  codebook,
   VariableName,
   VariableLabel = NA,
   VariableType = NA,
@@ -13,11 +13,12 @@ AddToCodebook(
   VariableRecode = NA,
   VariableCode = NA,
   VariableExclude = NA,
-  VariableNotes = NA
+  VariableNotes = NA,
+  CB = lifecycle::deprecated()
 )
 }
 \arguments{
-\item{CB}{A data frame representing the codebook.}
+\item{codebook}{A data frame representing the codebook.}
 
 \item{VariableName}{The name of the variable.}
 
@@ -34,6 +35,8 @@ AddToCodebook(
 \item{VariableExclude}{A flag indicating whether the variable should be excluded.}
 
 \item{VariableNotes}{Any additional notes or comments about the variable.}
+
+\item{CB}{\strong{Deprecated} (since 19.15.0). Use \code{codebook} instead.}
 }
 \value{
 A data frame representing the updated codebook with the new variable added.

@@ -25,7 +25,7 @@
 #'
 #' @param OldData A data frame representing the earlier dataset version.
 #' @param NewData A data frame representing the newer dataset version.
-#' @param Keys Character vector of key variables used to align records across
+#' @param keys Character vector of key variables used to align records across
 #'   the two datasets. Multiple keys are supported, such as
 #'   `c("study_id", "TimePoint")`.
 #'
@@ -52,12 +52,19 @@
 #'   \item{SuspiciousChanges}{Tibble of high-change-rate or class-change variables.}
 #' }
 #'
+#' @param Keys \strong{Deprecated} (since 19.15.0). Use \code{keys} instead.
 #' @export
-CompareDatasets <- function(
-    OldData,
+CompareDatasets <- function(OldData,
     NewData,
-    Keys
-) {
+    keys,
+    Keys = lifecycle::deprecated()) {
+  # Deprecated argument shims (SciDataReportR 19.15.0)
+  if (lifecycle::is_present(Keys)) {
+    lifecycle::deprecate_warn("19.15.0", "CompareDatasets(Keys)", "CompareDatasets(keys)")
+    keys <- Keys
+  }
+  if (!missing(keys)) Keys <- keys
+
 
   # Validate inputs
 

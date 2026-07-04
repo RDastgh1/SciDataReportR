@@ -4,15 +4,22 @@
 \alias{createBinaryMapping}
 \title{Create a Mapping Table for Binary Variables}
 \usage{
-createBinaryMapping(Data, CatVars, prefer = NULL)
+createBinaryMapping(
+  data,
+  CatVars,
+  prefer = NULL,
+  Data = lifecycle::deprecated()
+)
 }
 \arguments{
-\item{Data}{A dataframe.}
+\item{data}{A dataframe.}
 
 \item{CatVars}{Character vector of candidate binary variables.}
 
 \item{prefer}{Optional named character vector of explicit positive levels,
 e.g., c(STATUS = "PWH", Smoker = "Yes"). This overrides other rules.}
+
+\item{Data}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
 }
 \value{
 A data.frame with columns: Variable, Label, PositiveLevel, NegativeLevel.

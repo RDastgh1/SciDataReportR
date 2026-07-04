@@ -9,15 +9,56 @@
 #' Constant variables (no variation in the current data) are
 #' automatically excluded before computing any tiles.
 #'
-#' @param Data A dataframe.
-#' @param xVars Character vector of variables for x-axis (subset of Data cols).
-#'              If NULL, uses all detected continuous + binary vars.
-#' @param yVars Character vector for y-axis (defaults to xVars if NULL).
+#' @param data A dataframe.
+#' @param variables Character vector of variables to include (subset of `data`
+#'   columns). The analysis is symmetric: every variable is related to every
+#'   other, so a single variable set defines both axes. If NULL, uses all
+#'   detected continuous + binary vars.
 #' @param Relabel Logical; use sjlabelled variable labels if present.
 #' @param Ordinal Logical; reserved for future use.
 #' @return list(Unadjusted, FDRCorrected, Relabel, BinaryMapping, Excluded)
+#' @param fdr_scope Either `"matrix"` (default) or `"per_outcome"`, threaded
+#'   through to the three sub-analyses ([PlotCorrelationsHeatmap()],
+#'   [PlotPhiHeatmap()], [PlotPointCorrelationsHeatmap()]). Correction is
+#'   applied within each sub-analysis block (continuous~continuous,
+#'   binary~binary, binary~continuous), matching historical behavior; each
+#'   sub-function's documented outcome orientation applies within its block.
+#' @param Data \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
+#' @param xVars \strong{Deprecated} (since 19.15.0). Use \code{variables}
+#'   instead.
+#' @param yVars \strong{Deprecated} (since 19.15.0). Use \code{variables}
+#'   instead. If supplied, the old rectangular x-by-y display is still honored.
 #' @export
-PlotDirectionalHeatmaps <- function (Data, xVars = NULL, yVars = NULL, Relabel = TRUE, Ordinal = TRUE) {
+PlotDirectionalHeatmaps <- function(data,
+    variables = NULL,
+    yVars = lifecycle::deprecated(),
+    Relabel = TRUE,
+    Ordinal = TRUE,
+    fdr_scope = c("matrix", "per_outcome"),
+    Data = lifecycle::deprecated(),
+    xVars = lifecycle::deprecated()) {
+  # Deprecated argument shims (SciDataReportR 19.15.0)
+  if (lifecycle::is_present(Data)) {
+    lifecycle::deprecate_warn("19.15.0", "PlotDirectionalHeatmaps(Data)", "PlotDirectionalHeatmaps(data)")
+    data <- Data
+  }
+  if (!missing(data)) Data <- data
+  if (lifecycle::is_present(xVars)) {
+    lifecycle::deprecate_warn("19.15.0", "PlotDirectionalHeatmaps(xVars)", "PlotDirectionalHeatmaps(variables)")
+  } else {
+    xVars <- NULL
+  }
+  if (lifecycle::is_present(yVars)) {
+    lifecycle::deprecate_warn("19.15.0", "PlotDirectionalHeatmaps(yVars)", "PlotDirectionalHeatmaps(variables)")
+  } else {
+    yVars <- NULL
+  }
+  if (!is.null(variables)) {
+    if (is.null(xVars)) xVars <- variables
+    if (is.null(yVars)) yVars <- variables
+  }
+  fdr_scope <- match.arg(fdr_scope)
+
 
   # ---- Validate inputs ----------------------------------------------------
   if (!is.data.frame(Data)) {
@@ -156,7 +197,8 @@ PlotDirectionalHeatmaps <- function (Data, xVars = NULL, yVars = NULL, Relabel =
 
   # Continuous ~ Continuous
   if (length(ContVars_safe) > 0) {
-    O_ContCont <- PlotCorrelationsHeatmap(Data_safe, ContVars_safe, Relabel = Relabel)
+    O_ContCont <- PlotCorrelationsHeatmap(Data_safe, ContVars_safe, Relabel = Relabel,
+                                          fdr_scope = fdr_scope)
     df_ContCont <- O_ContCont$Unadjusted$plot$data %>%
       dplyr::mutate(correlation = R, test = O_ContCont$method)
 
@@ -165,7 +207,8 @@ PlotDirectionalHeatmaps <- function (Data, xVars = NULL, yVars = NULL, Relabel =
 
   # Binary ~ Binary (Phi)
   if (length(CatVars_safe) > 1) {
-    O_CatCat <- PlotPhiHeatmap(Data_safe, CatVars_safe, Relabel = Relabel, binary_map = BinaryMapping)
+    O_CatCat <- PlotPhiHeatmap(Data_safe, CatVars_safe, Relabel = Relabel,
+                               binary_map = BinaryMapping, fdr_scope = fdr_scope)
     df_CatCat <- O_CatCat$Unadjusted$plot$data %>%
       dplyr::mutate(correlation = Phi, test = "Phi")
 
@@ -176,7 +219,8 @@ PlotDirectionalHeatmaps <- function (Data, xVars = NULL, yVars = NULL, Relabel =
   if (length(CatVars_safe) > 0 && length(ContVars_safe) > 0) {
     O_CatCont <- PlotPointCorrelationsHeatmap(
       Data_safe, CatVars_safe, ContVars_safe,
-      Relabel = Relabel, Ordinal = Ordinal, binary_map = BinaryMapping
+      Relabel = Relabel, Ordinal = Ordinal, binary_map = BinaryMapping,
+      fdr_scope = fdr_scope
     )
 
     df_CatCont <- O_CatCont$Unadjusted$plot$data %>%
@@ -231,12 +275,12 @@ PlotDirectionalHeatmaps <- function (Data, xVars = NULL, yVars = NULL, Relabel =
 
   # Lock label order using the original variable order
   ordered_xlabels <- vapply(xVars_orig, function(var) {
-    df_Combined_plot$XLabel[df_Combined_plot$XVar == var][1]
+    as.character(df_Combined_plot$XLabel[df_Combined_plot$XVar == var][1])
   }, character(1))
   ordered_xlabels <- unique(ordered_xlabels[!is.na(ordered_xlabels)])
 
   ordered_ylabels <- vapply(yVars_orig, function(var) {
-    df_Combined_plot$YLabel[df_Combined_plot$YVar == var][1]
+    as.character(df_Combined_plot$YLabel[df_Combined_plot$YVar == var][1])
   }, character(1))
   ordered_ylabels <- unique(ordered_ylabels[!is.na(ordered_ylabels)])
 
@@ -334,11 +378,15 @@ PlotDirectionalHeatmaps <- function (Data, xVars = NULL, yVars = NULL, Relabel =
   Unadjusted   <- list(Relabel = Relabel, data = df_Combined_plot, plot = p_raw)
   FDRCorrected <- list(Relabel = Relabel, data = df_Combined_plot, plot = p_FDR)
 
-  list(
+  out <- list(
     Unadjusted    = Unadjusted,
     FDRCorrected  = FDRCorrected,
     Relabel       = Relabel,
     BinaryMapping = BinaryMapping,
     Excluded      = Excluded
   )
+  # Standardized p-value element aliases (old names kept)
+  out$p <- out$Unadjusted
+  out$p_fdr <- out$FDRCorrected
+  out
 }

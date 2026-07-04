@@ -1,0 +1,169 @@
+---
+title: "Forest Plots from Univariate Regression Tables"
+description: "Visualize estimates from UnivariateRegressionTable() with plotForestFromTable()."
+format:
+  html:
+    toc: true
+    number-sections: true
+execute:
+  warning: false
+  message: false
+vignette: >
+  %\VignetteIndexEntry{Forest Plots from Univariate Regression Tables}
+  %\VignetteEngine{quarto::html}
+  %\VignetteEncoding{UTF-8}
+---
+
+## Overview
+
+`plotForestFromTable()` visualizes the estimates and confidence intervals from a `UnivariateRegressionTable()` object.
+
+The default layout is:
+
+* facets = outcomes
+* rows = predictors or predictor levels
+* x-axis = regression estimate
+
+Use `Flip = TRUE` when it is easier to read outcomes as rows and predictors as facets.
+
+## Load packages
+
+```{r}
+#| label: LoadPackages
+library(SciDataReportR)
+library(dplyr)
+```
+
+## Load example data
+
+The examples use `SampleData` and `SampleVariableTypes`, then apply labels and recoding with `RevalueData()`.
+
+```{r}
+#| label: LoadData
+data("SampleData")
+data("SampleVariableTypes")
+
+RevaluedObj <- RevalueData(
+  SampleData,
+  SampleVariableTypes
+)
+
+df_Revalued <- RevaluedObj$RevaluedData
+```
+
+## Many outcomes and predictors
+
+This is a common screening pattern: several outcomes tested against several predictors.
+
+```{r}
+#| label: FitOutcomeScreen
+vars_Outcomes <- c(
+  "Calbindin",
+  "Ferritin",
+  "MMP7",
+  "Sortilin"
+)
+
+vars_Predictors <- c(
+  "Diagnosis",
+  "age"
+)
+
+Reg_Obj_Outcomes <- UnivariateRegressionTable(
+  Data = df_Revalued,
+  OutcomeVars = vars_Outcomes,
+  PredictorVars = vars_Predictors,
+  Standardize = TRUE
+)
+```
+
+## Default forest plot
+
+The default plot keeps outcomes as facets and terms as rows.
+
+```{r}
+#| label: PlotDefaultForest
+plotForestFromTable(Reg_Obj_Outcomes)
+```
+
+Black points indicate `p < 0.05`; grey points are not significant. The dashed vertical line is the null value for linear estimates.
+
+## Flip outcomes and predictors
+
+When there are many outcomes and a small predictor set, `Flip = TRUE` is often easier to read.
+
+```{r}
+#| label: PlotFlippedForest
+plotForestFromTable(
+  Reg_Obj_Outcomes,
+  Flip = TRUE
+)
+```
+
+With `Flip = TRUE`, predictors or predictor levels become facets, and outcomes become rows.
+
+## Many predictors, one outcome
+
+For one outcome and many predictors, the default layout is usually already compact.
+
+```{r}
+#| label: FitPredictorScreen
+Reg_Obj_Predictors <- UnivariateRegressionTable(
+  Data = df_Revalued,
+  OutcomeVars = "Sortilin",
+  PredictorVars = c("Diagnosis", "age", "Calbindin", "Ferritin", "MMP7"),
+  Standardize = TRUE
+)
+```
+
+```{r}
+#| label: PlotManyPredictors
+plotForestFromTable(Reg_Obj_Predictors)
+```
+
+## Labels
+
+Forest plot facets and rows use labels inherited from `SampleVariableTypes` through `RevalueData()`. If labels are missing, the plot falls back to the variable names.
+
+```{r}
+#| label: InspectPlotLabels
+Reg_Obj_Outcomes$Metadata$Outcomes
+```
+
+Categorical and dichotomous predictors are shown with the modeled level, for example `Diagnosis : Impaired`.
+
+## Logistic models
+
+`UnivariateRegressionTable()` uses logistic regression automatically for two-level outcomes and reports odds ratios by default.
+
+```{r}
+#| label: FitLogisticScreen
+Reg_Obj_Logistic <- UnivariateRegressionTable(
+  Data = df_Revalued,
+  OutcomeVars = "Diagnosis",
+  PredictorVars = c("age", "Calbindin", "Ferritin", "MMP7"),
+  Standardize = TRUE
+)
+
+Reg_Obj_Logistic$FormattedTable
+```
+
+```{r}
+#| label: InspectLogisticMetadata
+Reg_Obj_Logistic$Metadata$Outcomes
+```
+
+```{r}
+#| label: PlotLogisticForest
+plotForestFromTable(Reg_Obj_Logistic)
+```
+
+For logistic models, check the event level in `Metadata$Outcomes` before interpreting odds ratios. Mixed linear and logistic forest plots can be visually convenient, but they combine different effect scales.
+
+## Reproducibility
+
+```{r}
+#| label: Reproducibility
+# save.image("plotForestFromTable_workspace.RData")
+print(sessionInfo())
+```

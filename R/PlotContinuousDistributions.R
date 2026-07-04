@@ -3,8 +3,8 @@
 #' Creates rain-cloud plots (half-violin + box/median + scatter) for one or
 #' more continuous variables, with optional group-wise colouring.
 #'
-#' @param DataFrame A data frame containing the variables to be plotted.
-#' @param Variables Character vector of column names to plot.
+#' @param data A data frame containing the variables to be plotted.
+#' @param variables Character vector of column names to plot.
 #' @param Fill Optional column name for grouping.
 #' @param Relabel Logical; use variable labels when available.
 #' @param FacetLabelStyle One of "both", "label_only", "variable_only", "auto".
@@ -12,16 +12,30 @@
 #' @param Ordinal Logical; include labelled-ordinal variables as numeric.
 #'
 #' @return A ggplot object.
+#' @param DataFrame \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
+#' @param Variables \strong{Deprecated} (since 19.15.0). Use \code{variables} instead.
 #' @export
-PlotContinuousDistributions <- function(
-    DataFrame,
-    Variables = NULL,
-    Fill      = NULL,
-    Relabel   = TRUE,
+PlotContinuousDistributions <- function(data,
+    variables = NULL,
+    Fill = NULL,
+    Relabel = TRUE,
     FacetLabelStyle = c("both", "label_only", "variable_only", "auto"),
-    ncol      = 3,
-    Ordinal   = TRUE
-) {
+    ncol = 3,
+    Ordinal = TRUE,
+    DataFrame = lifecycle::deprecated(),
+    Variables = lifecycle::deprecated()) {
+  # Deprecated argument shims (SciDataReportR 19.15.0)
+  if (lifecycle::is_present(DataFrame)) {
+    lifecycle::deprecate_warn("19.15.0", "PlotContinuousDistributions(DataFrame)", "PlotContinuousDistributions(data)")
+    data <- DataFrame
+  }
+  if (!missing(data)) DataFrame <- data
+  if (lifecycle::is_present(Variables)) {
+    lifecycle::deprecate_warn("19.15.0", "PlotContinuousDistributions(Variables)", "PlotContinuousDistributions(variables)")
+    variables <- Variables
+  }
+  Variables <- variables
+
 
   FacetLabelStyle <- match.arg(FacetLabelStyle)
 

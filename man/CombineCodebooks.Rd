@@ -4,14 +4,21 @@
 \alias{CombineCodebooks}
 \title{Combine Two Codebooks with Conflict Detection}
 \usage{
-CombineCodebooks(OldCodebook, NewCodebook, key = "Variable")
+CombineCodebooks(
+  OldCodebook,
+  NewCodebook,
+  keys = "Variable",
+  key = lifecycle::deprecated()
+)
 }
 \arguments{
 \item{OldCodebook}{A data.frame or tibble representing the old codebook.  Each row must correspond to a single variable entry.}
 
 \item{NewCodebook}{A data.frame or tibble representing the new codebook.  Must have the same structure (column names) as \code{OldCodebook}, though extra or missing columns will be handled.}
 
-\item{key}{A string giving the name of the key column to identify variables (e.g. "Variable").  Defaults to "Variable".}
+\item{keys}{A string giving the name of the key column to identify variables (e.g. "Variable").  Defaults to "Variable".}
+
+\item{key}{\strong{Deprecated} (since 19.15.0). Use \code{keys} instead.}
 }
 \value{
 A list with elements:

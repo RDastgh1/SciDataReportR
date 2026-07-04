@@ -39,7 +39,7 @@
 #' @examples
 #' \dontrun{
 #' pca_obj <- CreatePCAObject(
-#'   Data = mtcars,
+#'   data = mtcars,
 #'   VarsToReduce = colnames(mtcars)
 #' )
 #'

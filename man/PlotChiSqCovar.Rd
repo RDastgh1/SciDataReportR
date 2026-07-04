@@ -5,29 +5,47 @@
 \title{Plot Chi-Square Tests for Categorical Associations (optionally stratified by covariates)}
 \usage{
 PlotChiSqCovar(
-  Data,
-  xVars,
-  yVars,
-  covars = NULL,
+  data,
+  predictor_vars,
+  outcome_vars,
+  covariates = NULL,
   Relabel = TRUE,
   Ordinal = TRUE,
-  min_n = 4
+  min_n = 4,
+  Data = lifecycle::deprecated(),
+  xVars = lifecycle::deprecated(),
+  yVars = lifecycle::deprecated(),
+  fdr_scope = c("matrix", "per_outcome"),
+  covars = lifecycle::deprecated()
 )
 }
 \arguments{
-\item{Data}{A data.frame containing the dataset.}
+\item{data}{A data.frame containing the dataset.}
 
-\item{xVars}{Character vector of x-axis categorical variables.}
+\item{predictor_vars}{Character vector of x-axis categorical variables.}
 
-\item{yVars}{Character vector of y-axis categorical variables. If NULL, uses xVars.}
+\item{outcome_vars}{Character vector of y-axis categorical variables. If NULL, uses xVars.}
 
-\item{covars}{Optional character vector of covariate variables used for stratification (not adjustment).}
+\item{covariates}{Optional character vector of covariate variables used for stratification (not adjustment).}
 
 \item{Relabel}{Logical; whether to use variable labels (sjlabelled) in the plot.}
 
 \item{Ordinal}{Logical; included for backward compatibility (currently unused here).}
 
 \item{min_n}{Minimum number of complete observations required for a tested association.}
+
+\item{Data}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
+
+\item{xVars}{\strong{Deprecated} (since 19.15.0). Use \code{predictor_vars} instead.}
+
+\item{yVars}{\strong{Deprecated} (since 19.15.0). Use \code{outcome_vars} instead.}
+
+\item{fdr_scope}{Either \code{"matrix"} (default) or \code{"per_outcome"}, passed to
+\code{\link[=ApplyFDRCorrection]{ApplyFDRCorrection()}}. \code{"matrix"} corrects across all p-values at once
+(historical behavior). \code{"per_outcome"} corrects separately within each
+outcome: outcomes are the y-axis variables (\code{outcome_vars}).}
+
+\item{covars}{\strong{Deprecated} (since 19.15.0). Use \code{covariates} instead.}
 }
 \value{
 A list with:

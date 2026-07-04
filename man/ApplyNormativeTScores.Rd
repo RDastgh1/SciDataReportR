@@ -4,16 +4,23 @@
 \alias{ApplyNormativeTScores}
 \title{Apply a normative T-score model to new data}
 \usage{
-ApplyNormativeTScores(df, normative_obj, score_prefix = "Norm")
+ApplyNormativeTScores(
+  data,
+  normative_obj,
+  score_prefix = "Norm",
+  df = lifecycle::deprecated()
+)
 }
 \arguments{
-\item{df}{A data frame containing the test variable, count variable, and
+\item{data}{A data frame containing the test variable, count variable, and
 all predictors required by the normative model.}
 
 \item{normative_obj}{A list returned by \code{CreateNormativeTScoreModel()}.}
 
 \item{score_prefix}{A character string prefix used when naming output
 columns. Defaults to \code{"Norm"}.}
+
+\item{df}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
 }
 \value{
 A tibble containing the original data plus scored columns:
@@ -55,7 +62,7 @@ df <- tibble::tibble(
 )
 
 norm_obj <- CreateNormativeTScoreModel(
-  df = df,
+  data = df,
   test_var = "TrailsA",
   count_var = "Visit",
   covariates = c("Age", "Education", "Sex"),
@@ -69,7 +76,7 @@ norm_obj <- CreateNormativeTScoreModel(
 )
 
 scored_df <- ApplyNormativeTScores(
-  df = df,
+  data = df,
   normative_obj = norm_obj
 )
 

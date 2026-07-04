@@ -3,8 +3,8 @@
 #' This function creates plots to visualize the distributions of categorical
 #' variables in a dataframe.
 #'
-#' @param DataFrame The dataframe containing the variables to be plotted.
-#' @param Variables Optional. A character vector specifying the names of the
+#' @param data The dataframe containing the variables to be plotted.
+#' @param variables Optional. A character vector specifying the names of the
 #'   categorical variables to be plotted. If NULL, categorical variables are
 #'   automatically detected.
 #' @param Relabel Logical. If TRUE, missing labels in the dataframe are replaced
@@ -17,13 +17,29 @@
 #' @return A ggplot object visualizing the distributions of categorical variables.
 #' @importFrom sjlabelled get_label
 #' @importFrom magrittr %>%
+#' @param DataFrame \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
+#' @param Variables \strong{Deprecated} (since 19.15.0). Use \code{variables} instead.
 #' @export
-PlotCategoricalDistributions <- function(DataFrame,
-                                         Variables = NULL,
-                                         Relabel = TRUE,
-                                         Ordinal = TRUE,
-                                         LabelType = "percent",
-                                         MissingLabel = "Missing") {
+PlotCategoricalDistributions <- function(data,
+    variables = NULL,
+    Relabel = TRUE,
+    Ordinal = TRUE,
+    LabelType = "percent",
+    MissingLabel = "Missing",
+    DataFrame = lifecycle::deprecated(),
+    Variables = lifecycle::deprecated()) {
+  # Deprecated argument shims (SciDataReportR 19.15.0)
+  if (lifecycle::is_present(DataFrame)) {
+    lifecycle::deprecate_warn("19.15.0", "PlotCategoricalDistributions(DataFrame)", "PlotCategoricalDistributions(data)")
+    data <- DataFrame
+  }
+  if (!missing(data)) DataFrame <- data
+  if (lifecycle::is_present(Variables)) {
+    lifecycle::deprecate_warn("19.15.0", "PlotCategoricalDistributions(Variables)", "PlotCategoricalDistributions(variables)")
+    variables <- Variables
+  }
+  Variables <- variables
+
 
   # Validate inputs
 

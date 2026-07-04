@@ -2,7 +2,7 @@
 #'
 #' Generate scatterplots for significant correlations based on a previously generated correlation heatmap.
 #'
-#' @param DataFrame The dataset used to generate the scatterplots.
+#' @param data The dataset used to generate the scatterplots.
 #' @param CorrelationHeatmapObject The output of the PlotCorrelationsHeatmap function.
 #' @param PVar The name of the column used to filter for significance (default is "P").
 #' @param Pthresh The significance threshold (default is 0.05).
@@ -10,8 +10,20 @@
 #' @importFrom ggstatsplot ggscatterstats
 #' @importFrom dplyr filter
 #' @importFrom sjlabelled get_label
+#' @param DataFrame \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
 #' @export
-plotSigCorrelations <- function(DataFrame, CorrelationHeatmapObject, PVar = "P", Pthresh = 0.05) {
+plotSigCorrelations <- function(data,
+    CorrelationHeatmapObject,
+    PVar = "P",
+    Pthresh = 0.05,
+    DataFrame = lifecycle::deprecated()) {
+  # Deprecated argument shims (SciDataReportR 19.15.0)
+  if (lifecycle::is_present(DataFrame)) {
+    lifecycle::deprecate_warn("19.15.0", "plotSigCorrelations(DataFrame)", "plotSigCorrelations(data)")
+    data <- DataFrame
+  }
+  if (!missing(data)) DataFrame <- data
+
 
   Plot <- CorrelationHeatmapObject
 

@@ -3,7 +3,7 @@
 #' Use an existing PCA solution (either a PCA object from CreatePCAObject or
 #' a loading table) to compute principal component scores on a new dataset.
 #'
-#' @param Data Data frame on which to project PCA scores.
+#' @param data Data frame on which to project PCA scores.
 #' @param VarsToReduce Optional character vector of variable names to use.
 #'   If NULL, uses all variables that appear in both Data and the PCA solution.
 #' @param PCAInput Either:
@@ -25,13 +25,22 @@
 #'   \item{VarsUsed}{Variables used from Data for projection.}
 #'   \item{Center}{Logical flag indicating whether centering was applied for projection.}
 #'   \item{Scale}{Logical flag indicating whether scaling was applied for projection.}
+#' @param Data \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
 #' @export
-ProjectPCA <- function(Data,
-                       VarsToReduce = NULL,
-                       PCAInput,
-                       InputType = c("PCAObj", "LoadingTable"),
-                       center = TRUE,
-                       scale  = TRUE) {
+ProjectPCA <- function(data,
+    VarsToReduce = NULL,
+    PCAInput,
+    InputType = c("PCAObj", "LoadingTable"),
+    center = TRUE,
+    scale = TRUE,
+    Data = lifecycle::deprecated()) {
+  # Deprecated argument shims (SciDataReportR 19.15.0)
+  if (lifecycle::is_present(Data)) {
+    lifecycle::deprecate_warn("19.15.0", "ProjectPCA(Data)", "ProjectPCA(data)")
+    data <- Data
+  }
+  if (!missing(data)) Data <- data
+
 
   InputType <- match.arg(InputType)
 

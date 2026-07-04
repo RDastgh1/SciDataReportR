@@ -2,10 +2,10 @@
 #'
 #' Creates a list of univariate regression tables with variable labels and standardized coefficients (if specified).
 #'
-#' @param Data Dataframe containing the variables
-#' @param OutcomeVars Character vector of outcome variable names
-#' @param PredictorVars Character vector of predictor variable names
-#' @param Covars Character vector of covariate variable names (default: NULL)
+#' @param data Dataframe containing the variables
+#' @param outcome_vars Character vector of outcome variable names
+#' @param predictor_vars Character vector of predictor variable names
+#' @param covariates Character vector of covariate variable names (default: NULL)
 #' @param Standardize Logical indicating whether to standardize numeric variables (default: FALSE)
 #' @param Method Character. Regression method to use. `"auto"` detects linear
 #'   regression for numeric outcomes and logistic regression for two-level
@@ -18,18 +18,45 @@
 #'   - LargeTable: A merged table with unformatted regression results
 #'   - ModelSummaries: A list of fitted model objects
 #'   - Metadata: Outcome families and analysis settings
+#' @param Data \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
+#' @param OutcomeVars \strong{Deprecated} (since 19.15.0). Use \code{outcome_vars} instead.
+#' @param PredictorVars \strong{Deprecated} (since 19.15.0). Use \code{predictor_vars} instead.
+#' @param Covars \strong{Deprecated} (since 19.15.0). Use \code{covariates} instead.
 #' @export
 #'
-UnivariateRegressionTable <- function (
-    Data,
-    OutcomeVars,
-    PredictorVars,
-    Covars = NULL,
+UnivariateRegressionTable <- function(data,
+    outcome_vars,
+    predictor_vars,
+    covariates = NULL,
     Standardize = FALSE,
     Method = c("auto", "lm", "logistic"),
-    LogisticExponentiate = TRUE
-)
-{
+    LogisticExponentiate = TRUE,
+    Data = lifecycle::deprecated(),
+    OutcomeVars = lifecycle::deprecated(),
+    PredictorVars = lifecycle::deprecated(),
+    Covars = lifecycle::deprecated()) {
+  # Deprecated argument shims (SciDataReportR 19.15.0)
+  if (lifecycle::is_present(Data)) {
+    lifecycle::deprecate_warn("19.15.0", "UnivariateRegressionTable(Data)", "UnivariateRegressionTable(data)")
+    data <- Data
+  }
+  if (!missing(data)) Data <- data
+  if (lifecycle::is_present(OutcomeVars)) {
+    lifecycle::deprecate_warn("19.15.0", "UnivariateRegressionTable(OutcomeVars)", "UnivariateRegressionTable(outcome_vars)")
+    outcome_vars <- OutcomeVars
+  }
+  if (!missing(outcome_vars)) OutcomeVars <- outcome_vars
+  if (lifecycle::is_present(PredictorVars)) {
+    lifecycle::deprecate_warn("19.15.0", "UnivariateRegressionTable(PredictorVars)", "UnivariateRegressionTable(predictor_vars)")
+    predictor_vars <- PredictorVars
+  }
+  if (!missing(predictor_vars)) PredictorVars <- predictor_vars
+  if (lifecycle::is_present(Covars)) {
+    lifecycle::deprecate_warn("19.15.0", "UnivariateRegressionTable(Covars)", "UnivariateRegressionTable(covariates)")
+    covariates <- Covars
+  }
+  Covars <- covariates
+
   Method <- match.arg(Method)
 
   if (!is.data.frame(Data)) {

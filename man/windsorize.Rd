@@ -4,16 +4,24 @@
 \alias{windsorize}
 \title{Winsorize a numeric vector using SD or IQR thresholds}
 \usage{
-windsorize(Data, sdlim = 2.5, iqrlim = 1.5, method = "sd")
+windsorize(
+  data,
+  sdlim = 2.5,
+  iqrlim = 1.5,
+  method = "sd",
+  Data = lifecycle::deprecated()
+)
 }
 \arguments{
-\item{Data}{A numeric vector to be winsorized.}
+\item{data}{A numeric vector to be winsorized.}
 
 \item{sdlim}{Numeric. Number of standard deviations for the "sd" method.}
 
 \item{iqrlim}{Numeric. Multiplier for the IQR when method = "iqr" (default 1.5).}
 
 \item{method}{Character string specifying the method: "sd" (default) or "iqr".}
+
+\item{Data}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
 }
 \value{
 A numeric vector with values winsorized to the specified thresholds.

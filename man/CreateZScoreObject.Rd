@@ -5,17 +5,18 @@
 \title{Calculate Z-scores (or standardized scores) and return data + parameters}
 \usage{
 CreateZScoreObject(
-  df,
+  data,
   variables = NULL,
   names_prefix = "Z_",
   RetainLabels = TRUE,
   RenameLabels = TRUE,
   center = TRUE,
-  scale = TRUE
+  scale = TRUE,
+  df = lifecycle::deprecated()
 )
 }
 \arguments{
-\item{df}{Data frame with variables to standardize.}
+\item{data}{Data frame with variables to standardize.}
 
 \item{variables}{Character vector of variable names. If NULL, uses
 SciDataReportR::getNumVars(df).}
@@ -29,6 +30,8 @@ SciDataReportR::getNumVars(df).}
 \item{center}{Logical; if TRUE, subtract the mean.}
 
 \item{scale}{Logical; if TRUE, divide by the SD.}
+
+\item{df}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
 }
 \value{
 An object of class "ZScoreObj", a list with:

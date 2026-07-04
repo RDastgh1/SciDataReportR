@@ -15,6 +15,8 @@
   !('%in%'(x, y))
 }
 
+#' @rdname not_in_operator
+#' @export
 `%notin%` <- function(x, y) {
   # Return the negation of the result of the %in% operator
   !('%in%'(x, y))

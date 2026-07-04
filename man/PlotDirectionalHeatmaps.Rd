@@ -5,24 +5,42 @@
 \title{Create directional heatmaps across continuous & binary variables}
 \usage{
 PlotDirectionalHeatmaps(
-  Data,
-  xVars = NULL,
-  yVars = NULL,
+  data,
+  variables = NULL,
+  yVars = lifecycle::deprecated(),
   Relabel = TRUE,
-  Ordinal = TRUE
+  Ordinal = TRUE,
+  fdr_scope = c("matrix", "per_outcome"),
+  Data = lifecycle::deprecated(),
+  xVars = lifecycle::deprecated()
 )
 }
 \arguments{
-\item{Data}{A dataframe.}
+\item{data}{A dataframe.}
 
-\item{xVars}{Character vector of variables for x-axis (subset of Data cols).
-If NULL, uses all detected continuous + binary vars.}
+\item{variables}{Character vector of variables to include (subset of \code{data}
+columns). The analysis is symmetric: every variable is related to every
+other, so a single variable set defines both axes. If NULL, uses all
+detected continuous + binary vars.}
 
-\item{yVars}{Character vector for y-axis (defaults to xVars if NULL).}
+\item{yVars}{\strong{Deprecated} (since 19.15.0). Use \code{variables}
+instead. If supplied, the old rectangular x-by-y display is still honored.}
 
 \item{Relabel}{Logical; use sjlabelled variable labels if present.}
 
 \item{Ordinal}{Logical; reserved for future use.}
+
+\item{fdr_scope}{Either \code{"matrix"} (default) or \code{"per_outcome"}, threaded
+through to the three sub-analyses (\code{\link[=PlotCorrelationsHeatmap]{PlotCorrelationsHeatmap()}},
+\code{\link[=PlotPhiHeatmap]{PlotPhiHeatmap()}}, \code{\link[=PlotPointCorrelationsHeatmap]{PlotPointCorrelationsHeatmap()}}). Correction is
+applied within each sub-analysis block (continuous~continuous,
+binary~binary, binary~continuous), matching historical behavior; each
+sub-function's documented outcome orientation applies within its block.}
+
+\item{Data}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
+
+\item{xVars}{\strong{Deprecated} (since 19.15.0). Use \code{variables}
+instead.}
 }
 \value{
 list(Unadjusted, FDRCorrected, Relabel, BinaryMapping, Excluded)

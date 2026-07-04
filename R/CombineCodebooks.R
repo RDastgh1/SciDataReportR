@@ -5,7 +5,7 @@
 #'
 #' @param OldCodebook A data.frame or tibble representing the old codebook.  Each row must correspond to a single variable entry.
 #' @param NewCodebook A data.frame or tibble representing the new codebook.  Must have the same structure (column names) as `OldCodebook`, though extra or missing columns will be handled.
-#' @param key A string giving the name of the key column to identify variables (e.g. "Variable").  Defaults to "Variable".
+#' @param keys A string giving the name of the key column to identify variables (e.g. "Variable").  Defaults to "Variable".
 #'
 #' @details
 #' This function:
@@ -23,8 +23,19 @@
 #' * `combined_df`: tibble containing the merged codebook with versions and conflict flag.
 #' @import dplyr
 #' @import tidyr
+#' @param key \strong{Deprecated} (since 19.15.0). Use \code{keys} instead.
 #' @export
-CombineCodebooks <- function(OldCodebook, NewCodebook, key = "Variable") {
+CombineCodebooks <- function(OldCodebook,
+    NewCodebook,
+    keys = "Variable",
+    key = lifecycle::deprecated()) {
+  # Deprecated argument shims (SciDataReportR 19.15.0)
+  if (lifecycle::is_present(key)) {
+    lifecycle::deprecate_warn("19.15.0", "CombineCodebooks(key)", "CombineCodebooks(keys)")
+    keys <- key
+  }
+  key <- keys
+
   # Internal implementation as provided...
   # 1) Tag rows so we can merge 1:1 even if 'key' repeats
   df_old <- dplyr::mutate(OldCodebook, RowID = seq_len(nrow(OldCodebook)))

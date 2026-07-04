@@ -5,8 +5,8 @@
 #' omits type-specific summary columns, such as numeric summaries for data
 #' frames without numeric variables.
 #'
-#' @param DataFrame A data frame.
-#' @param numdecimals Number of decimals to display for numeric variables.
+#' @param data A data frame.
+#' @param digits Number of decimals to display for numeric variables.
 #'
 #' @return A data frame with one row per variable and stable summary columns.
 #' @examples
@@ -17,8 +17,25 @@
 #' if (requireNamespace("codebook", quietly = TRUE)) {
 #'   MakeDataDictionary(df)
 #' }
+#' @param DataFrame \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
+#' @param numdecimals \strong{Deprecated} (since 19.15.0). Use \code{digits} instead.
 #' @export
-MakeDataDictionary <- function(DataFrame, numdecimals = 2) {
+MakeDataDictionary <- function(data,
+    digits = 2,
+    DataFrame = lifecycle::deprecated(),
+    numdecimals = lifecycle::deprecated()) {
+  # Deprecated argument shims (SciDataReportR 19.15.0)
+  if (lifecycle::is_present(DataFrame)) {
+    lifecycle::deprecate_warn("19.15.0", "MakeDataDictionary(DataFrame)", "MakeDataDictionary(data)")
+    data <- DataFrame
+  }
+  if (!missing(data)) DataFrame <- data
+  if (lifecycle::is_present(numdecimals)) {
+    lifecycle::deprecate_warn("19.15.0", "MakeDataDictionary(numdecimals)", "MakeDataDictionary(digits)")
+    digits <- numdecimals
+  }
+  numdecimals <- digits
+
 
   # Validate inputs
 

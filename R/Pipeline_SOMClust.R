@@ -45,7 +45,7 @@
 #' - \code{ZScoreType = "PreZScored"} uses existing Z-score columns in \code{df}
 #'   as-is and does not re-zscore.
 #'
-#' @param df Data frame containing the variables to be used in SOM and
+#' @param data Data frame containing the variables to be used in SOM and
 #'   clustering.
 #' @param variables Optional character vector of variable names. If NULL,
 #'   numeric variables are auto-detected using
@@ -92,7 +92,7 @@
 #'   when \code{ZScoreType = "PreZScored"}. If NULL, the function attempts to
 #'   infer them from \code{variables} or by detecting columns starting with
 #'   \code{ZScorePrefix}.
-#' @param id_col Optional character scalar. If provided and present in \code{df},
+#' @param id_var Optional character scalar. If provided and present in \code{df},
 #'   this column is carried into \code{ProbFit$individual} for convenience.
 #' @param lpa_progress Logical; if TRUE, print short progress messages while
 #'   fitting model/profile combinations.
@@ -155,40 +155,54 @@
 #' @references
 #' Saaty TL. \emph{The Analytic Hierarchy Process}. McGraw-Hill, 1980.
 #'
+#' @param df \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
+#' @param id_col \strong{Deprecated} (since 19.15.0). Use \code{id_var} instead.
 #' @export
-CreateSOMClusterModel <- function(
-    df,
-    variables       = NULL,
-    method          = c("exploratory", "finalize"),
-    k_range         = 2:15,
-    models          = c(1, 2, 3),
-    final_k         = NULL,
-    final_model     = NULL,
-    ClusterName     = "Cluster",
-    ZScoreType      = c("Center and Scale", "Center Only", "Scale Only", "ZScoreObj", "PreZScored"),
-    ZScoreObject    = NULL,
-    som_xdim        = NULL,
-    som_ydim        = NULL,
-    som_topo        = "hexagonal",
-    som_neigh       = "gaussian",
-    seed_som        = 934521L,
-    seed_lpa        = 93421L,
-    Relabel         = TRUE,
-    ZScorePrefix    = "Z_",
-    ZScoreVars      = NULL,
-    id_col          = NULL,
-    lpa_progress     = FALSE,
-    lpa_em_itmax     = 100L,
-    lpa_em_tol       = 1e-5,
+CreateSOMClusterModel <- function(data,
+    variables = NULL,
+    method = c("exploratory", "finalize"),
+    k_range = 2:15,
+    models = c(1, 2, 3),
+    final_k = NULL,
+    final_model = NULL,
+    ClusterName = "Cluster",
+    ZScoreType = c("Center and Scale", "Center Only", "Scale Only", "ZScoreObj", "PreZScored"),
+    ZScoreObject = NULL,
+    som_xdim = NULL,
+    som_ydim = NULL,
+    som_topo = "hexagonal",
+    som_neigh = "gaussian",
+    seed_som = 934521L,
+    seed_lpa = 93421L,
+    Relabel = TRUE,
+    ZScorePrefix = "Z_",
+    ZScoreVars = NULL,
+    id_var = NULL,
+    lpa_progress = FALSE,
+    lpa_em_itmax = 100L,
+    lpa_em_tol = 1e-05,
     lpa_timeout_seconds = 120,
     lpa_drop_zero_sd = TRUE,
-    lpa_zero_sd_tol  = 1e-8,
+    lpa_zero_sd_tol = 1e-08,
     skip_model_after_n_failures = 2L,
     slow_fit_seconds = 120,
     min_nodes_per_cluster = 5,
     high_dist_quantile = 0.95,
-    low_prob_threshold = 0.70
-) {
+    low_prob_threshold = 0.7,
+    df = lifecycle::deprecated(),
+    id_col = lifecycle::deprecated()) {
+  # Deprecated argument shims (SciDataReportR 19.15.0)
+  if (lifecycle::is_present(df)) {
+    lifecycle::deprecate_warn("19.15.0", "CreateSOMClusterModel(df)", "CreateSOMClusterModel(data)")
+    data <- df
+  }
+  if (!missing(data)) df <- data
+  if (lifecycle::is_present(id_col)) {
+    lifecycle::deprecate_warn("19.15.0", "CreateSOMClusterModel(id_col)", "CreateSOMClusterModel(id_var)")
+    id_var <- id_col
+  }
+  id_col <- id_var
+
 
   method     <- match.arg(method)
   ZScoreType <- match.arg(ZScoreType)
@@ -410,7 +424,7 @@ CreateSOMClusterModel <- function(
     }
 
     z_res <- SciDataReportR::ProjectZScore(
-      df                 = df_scidr,
+      data                 = df_scidr,
       variables          = vars_used,
       parameters         = ZScoreObject,
       ParameterInputType = "ZScoreObj",
@@ -434,7 +448,7 @@ CreateSOMClusterModel <- function(
     scale_flag  <- ZScoreType %in% c("Center and Scale", "Scale Only")
 
     ZScoreObject_used <- SciDataReportR::CreateZScoreObject(
-      df           = df_scidr,
+      data           = df_scidr,
       variables    = vars_used,
       names_prefix = "Z_",
       center       = center_flag,

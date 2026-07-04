@@ -1,0 +1,177 @@
+---
+title: "Screening Outcomes and Predictors with UnivariateRegressionTable()"
+description: "Create label-aware univariate regression tables across multiple outcomes and predictors."
+format:
+  html:
+    toc: true
+    number-sections: true
+execute:
+  warning: false
+  message: false
+vignette: >
+  %\VignetteIndexEntry{Screening Outcomes and Predictors with UnivariateRegressionTable()}
+  %\VignetteEngine{quarto::html}
+  %\VignetteEncoding{UTF-8}
+---
+
+## Overview
+
+`UnivariateRegressionTable()` screens outcome-predictor relationships and returns a report-facing table, a detail table, fitted models, and metadata.
+
+Use it when you want to quickly ask:
+
+* Which predictors are associated with one or more outcomes?
+* Do associations persist after covariate adjustment?
+* Are the displayed labels and logistic event levels what I think they are?
+
+The function now chooses the model family automatically:
+
+* Numeric outcomes use linear regression.
+* Two-level factor, character, or logical outcomes use logistic regression.
+* Logistic estimates are exponentiated by default and reported as odds ratios.
+
+## Load packages
+
+```{r}
+#| label: LoadPackages
+library(SciDataReportR)
+library(dplyr)
+```
+
+## Load example data
+
+The examples use `SampleData` and `SampleVariableTypes`, then apply labels and recoding with `RevalueData()`.
+
+```{r}
+#| label: LoadData
+data("SampleData")
+data("SampleVariableTypes")
+
+RevaluedObj <- RevalueData(
+  SampleData,
+  SampleVariableTypes
+)
+
+df_Revalued <- RevaluedObj$RevaluedData
+```
+
+## Basic linear screening
+
+This example screens several labelled biomarkers against two predictors.
+
+```{r}
+#| label: DefineLinearVariables
+vars_Outcomes <- c(
+  "Calbindin",
+  "Ferritin",
+  "MMP7",
+  "Sortilin"
+)
+
+vars_Predictors <- c(
+  "Diagnosis",
+  "age"
+)
+```
+
+```{r}
+#| label: FitLinearScreen
+Reg_Obj_Un <- UnivariateRegressionTable(
+  Data = df_Revalued,
+  OutcomeVars = vars_Outcomes,
+  PredictorVars = vars_Predictors,
+  Standardize = TRUE
+)
+```
+
+## Formatted and detailed tables
+
+`FormattedTable` is the report-facing table.
+
+```{r}
+#| label: DisplayFormattedTable
+Reg_Obj_Un$FormattedTable
+```
+
+`LargeTable` keeps more of the model detail and is useful for QC.
+
+```{r}
+#| label: DisplayLargeTable
+Reg_Obj_Un$LargeTable
+```
+
+## Covariate adjustment
+
+Use `Covars` when each screen should adjust for the same covariates.
+
+```{r}
+#| label: FitCovariateScreen
+Reg_Obj_Un_Covar <- UnivariateRegressionTable(
+  Data = df_Revalued,
+  OutcomeVars = vars_Outcomes,
+  PredictorVars = vars_Predictors,
+  Covars = "sex",
+  Standardize = TRUE
+)
+
+Reg_Obj_Un_Covar$FormattedTable
+```
+
+## Many predictors for one outcome
+
+The same function also works when the question is one outcome against many candidate predictors.
+
+```{r}
+#| label: FitManyPredictors
+Reg_Obj_ManyPredictors <- UnivariateRegressionTable(
+  Data = df_Revalued,
+  OutcomeVars = "Sortilin",
+  PredictorVars = c("Diagnosis", "age", "Calbindin", "Ferritin", "MMP7"),
+  Standardize = TRUE
+)
+
+Reg_Obj_ManyPredictors$FormattedTable
+```
+
+## Logistic outcomes
+
+Binary outcomes use logistic regression automatically. By default, estimates are exponentiated and shown as odds ratios.
+
+```{r}
+#| label: FitLogisticScreen
+Reg_Obj_Logistic <- UnivariateRegressionTable(
+  Data = df_Revalued,
+  OutcomeVars = "Diagnosis",
+  PredictorVars = c("age", "Calbindin", "Ferritin", "MMP7"),
+  Standardize = TRUE
+)
+
+Reg_Obj_Logistic$FormattedTable
+```
+
+Always check the metadata for logistic models. It records the reference level and event level.
+
+```{r}
+#| label: InspectLogisticMetadata
+Reg_Obj_Logistic$Metadata$Outcomes
+```
+
+## Access fitted models
+
+Fitted models are returned by outcome, then predictor.
+
+```{r}
+#| label: InspectModelObjects
+names(Reg_Obj_Un$ModelSummaries)
+names(Reg_Obj_ManyPredictors$ModelSummaries$Sortilin)
+
+summary(Reg_Obj_ManyPredictors$ModelSummaries$Sortilin$Ferritin)
+```
+
+## Reproducibility
+
+```{r}
+#| label: Reproducibility
+# save.image("UnivariateRegressionTable_workspace.RData")
+print(sessionInfo())
+```

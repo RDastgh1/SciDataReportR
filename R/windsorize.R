@@ -5,7 +5,7 @@
 #' either standard deviation (assuming approximate normality) or interquartile
 #' range (robust to skewed distributions).
 #'
-#' @param Data A numeric vector to be winsorized.
+#' @param data A numeric vector to be winsorized.
 #' @param method Character string specifying the method: "sd" (default) or "iqr".
 #' @param sdlim Numeric. Number of standard deviations for the "sd" method.
 #' @param iqrlim Numeric. Multiplier for the IQR when method = "iqr" (default 1.5).
@@ -21,11 +21,20 @@
 #' # IQR-based winsorization
 #' windsorize(x, method = "iqr", iqrlim = 1.5)
 #'
+#' @param Data \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
 #' @export
-windsorize <- function(Data,
-                       sdlim = 2.5,
-                       iqrlim = 1.5,
-                       method = "sd") {
+windsorize <- function(data,
+    sdlim = 2.5,
+    iqrlim = 1.5,
+    method = "sd",
+    Data = lifecycle::deprecated()) {
+  # Deprecated argument shims (SciDataReportR 19.15.0)
+  if (lifecycle::is_present(Data)) {
+    lifecycle::deprecate_warn("19.15.0", "windsorize(Data)", "windsorize(data)")
+    data <- Data
+  }
+  if (!missing(data)) Data <- data
+
 
   # Validate inputs
   if (!is.numeric(Data)) {

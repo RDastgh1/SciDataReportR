@@ -1,6 +1,6 @@
 Package: SciDataReportR
 Title: Workflow Infrastructure for Reproducible Scientific Data Reporting
-Version: 19.14.0
+Version: 19.15.0
 Authors@R: 
     person("Raha", "Dastgheyb", , "raha@jhmi.edu", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0002-4992-711X"))
@@ -10,10 +10,11 @@ Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 URL: https://github.com/RDastgh1/SciDataReportR, https://rdastgh1.github.io/SciDataReportR/
 BugReports: https://github.com/RDastgh1/SciDataReportR/issues
-Imports: 
+Imports:
     dplyr,
     ggplot2,
     labelled,
+    lifecycle,
     magrittr,
     sjlabelled,
     stats,
@@ -22,6 +23,7 @@ Imports:
     rstatix,
     ggstatsplot,
     gt,
+    knitr,
     plotly,
     tibble,
     kableExtra,
@@ -82,8 +84,10 @@ Suggests:
     arsenal,
     data.table,
     fastDummies,
-    knitr,
-    rmarkdown
+    htmltools,
+    reactable,
+    rmarkdown,
+    survival
 Depends: 
     R (>= 2.10)
 LazyData: true

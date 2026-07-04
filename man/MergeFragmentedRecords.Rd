@@ -5,7 +5,7 @@
 \title{Merge fragmented records into a single observation}
 \usage{
 MergeFragmentedRecords(
-  df,
+  data,
   id_var = "subject",
   date_var = "date",
   session_var = "session",
@@ -13,11 +13,12 @@ MergeFragmentedRecords(
   session_name = "first_session",
   n_rows_name = "n_rows_collapsed",
   arrange_desc_session = FALSE,
-  empty_strings_to_na = TRUE
+  empty_strings_to_na = TRUE,
+  df = lifecycle::deprecated()
 )
 }
 \arguments{
-\item{df}{A data frame containing fragmented records.}
+\item{data}{A data frame containing fragmented records.}
 
 \item{id_var}{Character string specifying the participant identifier
 variable. Default is \code{"subject"}.}
@@ -43,6 +44,8 @@ by descending session number before merging. Default is \code{FALSE}.}
 
 \item{empty_strings_to_na}{Logical. If \code{TRUE}, empty character strings
 are converted to missing values prior to merging. Default is \code{TRUE}.}
+
+\item{df}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
 }
 \value{
 A data frame containing one row per unique combination of

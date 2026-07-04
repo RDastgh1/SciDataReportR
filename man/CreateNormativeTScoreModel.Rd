@@ -5,7 +5,7 @@
 \title{Create normative T-scores from a regression model}
 \usage{
 CreateNormativeTScoreModel(
-  df,
+  data,
   test_var,
   count_var,
   covariates,
@@ -18,11 +18,12 @@ CreateNormativeTScoreModel(
   seconds_divisor = 1000,
   log_transform = TRUE,
   codebook = NULL,
-  return_plots = TRUE
+  return_plots = TRUE,
+  df = lifecycle::deprecated()
 )
 }
 \arguments{
-\item{df}{A data frame containing the test variable, count variable,
+\item{data}{A data frame containing the test variable, count variable,
 reference group variable, and covariates.}
 
 \item{test_var}{A character string naming the raw test score variable.}
@@ -63,6 +64,8 @@ score after optional unit conversion and before optional reverse scoring.}
 If supplied, plot labels use variable labels when available.}
 
 \item{return_plots}{Logical. If \code{TRUE}, returns a list of diagnostic plots.}
+
+\item{df}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
 }
 \value{
 A list with the following elements:
@@ -112,7 +115,7 @@ df <- tibble::tibble(
 )
 
 out <- CreateNormativeTScoreModel(
-  df = df,
+  data = df,
   test_var = "TrailsA",
   count_var = "Visit",
   covariates = c("Age", "Education", "Sex"),

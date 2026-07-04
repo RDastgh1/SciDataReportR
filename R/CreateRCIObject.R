@@ -8,10 +8,10 @@
 #'
 #' Long format is recommended for datasets with more than two visits.
 #'
-#' @param Data A data frame.
-#' @param Variables Character vector of canonical variable names.
+#' @param data A data frame.
+#' @param variables Character vector of canonical variable names.
 #' @param DataFormat Either "wide" or "long".
-#' @param ID ID column.
+#' @param id_var ID column.
 #' @param Method Currently only "regression" is supported.
 #'
 #' @param BaselineSpecifier Baseline visit identifier for wide data.
@@ -50,25 +50,43 @@
 #'
 #' @return A SciDataReportR_RCI object.
 #'
+#' @param Data \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
+#' @param Variables \strong{Deprecated} (since 19.15.0). Use \code{variables} instead.
+#' @param ID \strong{Deprecated} (since 19.15.0). Use \code{id_var} instead.
 #' @export
-CreateRCIObject <- function(
-    Data,
-    Variables,
+CreateRCIObject <- function(data,
+    variables,
     DataFormat = c("wide", "long"),
-    ID,
+    id_var,
     Method = "regression",
-
     BaselineSpecifier = NULL,
     FollowupSpecifier = NULL,
     SpecifierPosition = c("suffix", "prefix"),
-
     VisitColumn = NULL,
     VisitOrder = NULL,
     BaselineVisit = NULL,
-
     Confidence = 0.95,
-    Relabel = TRUE
-) {
+    Relabel = TRUE,
+    Data = lifecycle::deprecated(),
+    Variables = lifecycle::deprecated(),
+    ID = lifecycle::deprecated()) {
+  # Deprecated argument shims (SciDataReportR 19.15.0)
+  if (lifecycle::is_present(Data)) {
+    lifecycle::deprecate_warn("19.15.0", "CreateRCIObject(Data)", "CreateRCIObject(data)")
+    data <- Data
+  }
+  if (!missing(data)) Data <- data
+  if (lifecycle::is_present(Variables)) {
+    lifecycle::deprecate_warn("19.15.0", "CreateRCIObject(Variables)", "CreateRCIObject(variables)")
+    variables <- Variables
+  }
+  if (!missing(variables)) Variables <- variables
+  if (lifecycle::is_present(ID)) {
+    lifecycle::deprecate_warn("19.15.0", "CreateRCIObject(ID)", "CreateRCIObject(id_var)")
+    id_var <- ID
+  }
+  if (!missing(id_var)) ID <- id_var
+
 
   DataFormat <- match.arg(DataFormat)
   SpecifierPosition <- match.arg(SpecifierPosition)

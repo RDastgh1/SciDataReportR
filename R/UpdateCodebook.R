@@ -5,8 +5,8 @@
 #' that no longer exist in the dataframe (if specified), and optionally replacing
 #' outdated labels.
 #'
-#' @param Dataframe A dataframe for which the codebook needs to be updated.
-#' @param Codebook A dataframe representing the existing codebook with at least a 'Variable' column.
+#' @param data A dataframe for which the codebook needs to be updated.
+#' @param codebook A dataframe representing the existing codebook with at least a 'Variable' column.
 #' @param RemoveMissing Logical; if TRUE, removes variables from the codebook that are not in the dataframe.
 #' @param ReplaceLabels Logical; if TRUE, replaces outdated labels in the codebook with new ones from the dataframe.
 #'
@@ -16,8 +16,27 @@
 #'   - `NotExistingVariables`: Variables in the codebook that are not present in the dataframe.
 #'   - `MismatchedLabels`: A dataframe of variables with mismatched labels between the codebook and the dataframe.
 
+#' @param Dataframe \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
+#' @param Codebook \strong{Deprecated} (since 19.15.0). Use \code{codebook} instead.
 #' @export
-UpdateCodebook <- function(Dataframe, Codebook, RemoveMissing = TRUE, ReplaceLabels = FALSE) {
+UpdateCodebook <- function(data,
+    codebook,
+    RemoveMissing = TRUE,
+    ReplaceLabels = FALSE,
+    Dataframe = lifecycle::deprecated(),
+    Codebook = lifecycle::deprecated()) {
+  # Deprecated argument shims (SciDataReportR 19.15.0)
+  if (lifecycle::is_present(Dataframe)) {
+    lifecycle::deprecate_warn("19.15.0", "UpdateCodebook(Dataframe)", "UpdateCodebook(data)")
+    data <- Dataframe
+  }
+  if (!missing(data)) Dataframe <- data
+  if (lifecycle::is_present(Codebook)) {
+    lifecycle::deprecate_warn("19.15.0", "UpdateCodebook(Codebook)", "UpdateCodebook(codebook)")
+    codebook <- Codebook
+  }
+  if (!missing(codebook)) Codebook <- codebook
+
 
   # Ensure the 'MissingCode' column is character type
   Codebook$MissingCode <- as.character(Codebook$MissingCode)

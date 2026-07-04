@@ -7,7 +7,7 @@
 #' imputation and `FactoMineR` for MCA calculation. These packages are listed
 #' in `DESCRIPTION` and should be installed for MCA workflows.
 #'
-#' @param Data A dataframe containing the data to be analyzed.
+#' @param data A dataframe containing the data to be analyzed.
 #' @param VarsToReduce A vector of column names in `Data` to be included in the MCA.
 #' @param VariableCategories An optional vector to assign specific categories to the variables in `VarsToReduce`. These will be used to color the loadings plot.
 #' @param minThresh A numeric value representing the minimum cumulative variance threshold to determine the number of components. Default is 75%.
@@ -29,12 +29,27 @@
 #' \item{CombinedData}{The original data combined with the MCA scores.}
 #' \item{Lollipop}{A `ggplot` object showing a lollipop plot of variable loadings across components.}
 #'
+#' @param Data \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
 #' @export
 #'
-CreateMCAObject <- function(Data, VarsToReduce, VariableCategories = NULL,
-                           minThresh = 75, scale = TRUE, center = TRUE,
-                           Relabel = TRUE, Ordinal = FALSE,
-                           numComponents = NULL, ImputeMissing = FALSE) {
+CreateMCAObject <- function(data,
+    VarsToReduce,
+    VariableCategories = NULL,
+    minThresh = 75,
+    scale = TRUE,
+    center = TRUE,
+    Relabel = TRUE,
+    Ordinal = FALSE,
+    numComponents = NULL,
+    ImputeMissing = FALSE,
+    Data = lifecycle::deprecated()) {
+  # Deprecated argument shims (SciDataReportR 19.15.0)
+  if (lifecycle::is_present(Data)) {
+    lifecycle::deprecate_warn("19.15.0", "CreateMCAObject(Data)", "CreateMCAObject(data)")
+    data <- Data
+  }
+  if (!missing(data)) Data <- data
+
   # Define custom colors for different classes
   classcolors <- c(paletteer::paletteer_d("calecopal::superbloom2"),
                    paletteer::paletteer_d("calecopal::vermillion"),

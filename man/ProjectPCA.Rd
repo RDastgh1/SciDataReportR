@@ -5,16 +5,17 @@
 \title{Project PCA scores onto new data}
 \usage{
 ProjectPCA(
-  Data,
+  data,
   VarsToReduce = NULL,
   PCAInput,
   InputType = c("PCAObj", "LoadingTable"),
   center = TRUE,
-  scale = TRUE
+  scale = TRUE,
+  Data = lifecycle::deprecated()
 )
 }
 \arguments{
-\item{Data}{Data frame on which to project PCA scores.}
+\item{data}{Data frame on which to project PCA scores.}
 
 \item{VarsToReduce}{Optional character vector of variable names to use.
 If NULL, uses all variables that appear in both Data and the PCA solution.}
@@ -34,6 +35,8 @@ and this argument is ignored (with a warning if it conflicts).}
 \item{scale}{Logical; only used when InputType is "LoadingTable".
 For "PCAObj", the scaling choice is taken from PCAInput$ScaleParams$scale
 and this argument is ignored (with a warning if it conflicts).}
+
+\item{Data}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
 }
 \value{
 A list with:

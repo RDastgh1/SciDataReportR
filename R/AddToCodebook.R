@@ -2,7 +2,7 @@
 #'
 #' This function adds a new variable entry to an existing codebook.
 #'
-#' @param CB A data frame representing the codebook.
+#' @param codebook A data frame representing the codebook.
 #' @param VariableName The name of the variable.
 #' @param VariableLabel The label of the variable (default: same as VariableName).
 #' @param VariableType The type of the variable (e.g., numeric, categorical).
@@ -24,8 +24,25 @@
 #' # Add a new variable to the codebook
 #' codebook <- AddToCodebook(codebook, "Age", "Age of participants", "numeric", "Demographics")
 #'
+#' @param CB \strong{Deprecated} (since 19.15.0). Use \code{codebook} instead.
 #' @export
-AddToCodebook <- function(CB, VariableName, VariableLabel = NA, VariableType = NA, VariableCategory = NA, VariableRecode = NA, VariableCode = NA, VariableExclude = NA, VariableNotes = NA) {
+AddToCodebook <- function(codebook,
+    VariableName,
+    VariableLabel = NA,
+    VariableType = NA,
+    VariableCategory = NA,
+    VariableRecode = NA,
+    VariableCode = NA,
+    VariableExclude = NA,
+    VariableNotes = NA,
+    CB = lifecycle::deprecated()) {
+  # Deprecated argument shims (SciDataReportR 19.15.0)
+  if (lifecycle::is_present(CB)) {
+    lifecycle::deprecate_warn("19.15.0", "AddToCodebook(CB)", "AddToCodebook(codebook)")
+    codebook <- CB
+  }
+  if (!missing(codebook)) CB <- codebook
+
 
   # Set default variable label if NA
   if (is.na(VariableLabel)) {

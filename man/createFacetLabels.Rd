@@ -4,10 +4,12 @@
 \alias{createFacetLabels}
 \title{Create facet labels for ggplot2 based on variable labels in a data frame}
 \usage{
-createFacetLabels(DataFrame)
+createFacetLabels(data, DataFrame = lifecycle::deprecated())
 }
 \arguments{
-\item{DataFrame}{A data frame containing variable labels.}
+\item{data}{A data frame containing variable labels.}
+
+\item{DataFrame}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
 }
 \value{
 A character vector containing facet labels.

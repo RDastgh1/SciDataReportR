@@ -4,12 +4,18 @@
 \alias{PlotTimeDistribution}
 \title{Plot Time Distribution}
 \usage{
-PlotTimeDistribution(Data, DateVariable = "Date")
+PlotTimeDistribution(
+  data,
+  DateVariable = "Date",
+  Data = lifecycle::deprecated()
+)
 }
 \arguments{
-\item{Data}{The data frame containing the time-based data.}
+\item{data}{The data frame containing the time-based data.}
 
 \item{DateVariable}{The name of the column in the data frame containing the date information. Default is "Date".}
+
+\item{Data}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
 }
 \value{
 A ggplot object displaying the distribution of time-based data.

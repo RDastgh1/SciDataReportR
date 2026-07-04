@@ -4,20 +4,31 @@
 \alias{IQROutliers}
 \title{Detect outliers using the Tukey IQR rule and visualize results}
 \usage{
-IQROutliers(df, Variable, id = NULL, group = NULL)
+IQROutliers(
+  data,
+  Variable,
+  id_var = NULL,
+  group = NULL,
+  df = lifecycle::deprecated(),
+  id = lifecycle::deprecated()
+)
 }
 \arguments{
-\item{df}{A data frame or tibble containing the variable to evaluate.}
+\item{data}{A data frame or tibble containing the variable to evaluate.}
 
 \item{Variable}{A string specifying the name of the numeric variable to test.}
 
-\item{id}{A string specifying the identifier column to include in the returned
+\item{id_var}{A string specifying the identifier column to include in the returned
 outlier table. If \code{NULL}, no ID column is included in the returned table.
 Defaults to \code{NULL}.}
 
 \item{group}{A string specifying the grouping or batch column to use on the
 x-axis of the diagnostic plot. If \code{NULL}, the function will produce a
 single combined boxplot across all rows. Defaults to \code{NULL}.}
+
+\item{df}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
+
+\item{id}{\strong{Deprecated} (since 19.15.0). Use \code{id_var} instead.}
 }
 \value{
 A list with two elements:

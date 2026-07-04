@@ -77,6 +77,11 @@ plotForestFromTable <- function(UnivariateRegressionTables, pSize = 2, Flip = FA
       ),
       OutcomeLabel = HeaderLabel
     )
+  df_Combined$ReferenceLine <- ifelse(
+    "effect_type" %in% names(df_Combined) & df_Combined$effect_type == "Odds ratio",
+    1,
+    0
+  )
 
   # Reverse the row label order for plotting
   if (Flip) {
@@ -100,6 +105,17 @@ plotForestFromTable <- function(UnivariateRegressionTables, pSize = 2, Flip = FA
     )
     y_label <- "Variable"
   }
+  df_ReferenceLines <- df_Combined %>%
+    select(PlotFacet, ReferenceLine) %>%
+    distinct()
+
+  x_label <- if (all(df_Combined$ReferenceLine == 1)) {
+    "Odds ratio"
+  } else if (all(df_Combined$ReferenceLine == 0)) {
+    "Estimate"
+  } else {
+    "Estimate / odds ratio"
+  }
 
   # Create the forest plot
   p <- df_Combined %>%
@@ -107,9 +123,14 @@ plotForestFromTable <- function(UnivariateRegressionTables, pSize = 2, Flip = FA
     geom_point(size = pSize) +  # Plot the point for the estimate
     geom_errorbar(aes(xmin = conf.low, xmax = conf.high), orientation = "y", width = 0.2) +  # Add the error bars
     facet_wrap(~PlotFacet, nrow = 1) +  # Facet by outcome or term
-    geom_vline(xintercept = 0, linetype = "dashed") +  # Add a dashed line at 0
+    geom_vline(
+      data = df_ReferenceLines,
+      aes(xintercept = ReferenceLine),
+      linetype = "dashed",
+      inherit.aes = FALSE
+    ) +
     labs(
-      x = "Estimate",
+      x = x_label,
       y = y_label
     ) +
     theme_minimal() +

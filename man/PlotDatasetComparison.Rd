@@ -8,8 +8,9 @@ PlotDatasetComparison(
   CompareObj,
   Plot = c("All", "Checks", "SummaryMetrics", "StructureChanges", "VariableChanges",
     "TopChangedVariables"),
-  Interactive = TRUE,
-  TopN = 10
+  interactive = TRUE,
+  TopN = 10,
+  Interactive = lifecycle::deprecated()
 )
 }
 \arguments{
@@ -19,11 +20,13 @@ PlotDatasetComparison(
 \code{"All"}, \code{"Checks"}, \code{"SummaryMetrics"}, \code{"StructureChanges"},
 \code{"VariableChanges"}, and \code{"TopChangedVariables"}. Default is \code{"All"}.}
 
-\item{Interactive}{Logical; if \code{TRUE}, plots are converted to interactive
+\item{interactive}{Logical; if \code{TRUE}, plots are converted to interactive
 \code{plotly} objects using \code{plotly::ggplotly()}. Default is \code{TRUE}.}
 
 \item{TopN}{Integer number of variables or records to preview in plots and
 hover text. Default is \code{10}.}
+
+\item{Interactive}{\strong{Deprecated} (since 19.15.0). Use \code{interactive} instead.}
 }
 \value{
 If \code{Plot = "All"}, a named list of plots. Otherwise, a single plot

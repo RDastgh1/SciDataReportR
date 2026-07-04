@@ -13,10 +13,10 @@
 #' Variable labels are used by default when available from a codebook or from
 #' variable label attributes.
 #'
-#' @param Data A data frame.
+#' @param data A data frame.
 #' @param ClusterVar Character string naming the cluster/grouping variable.
-#' @param Variables Character vector of variable names to plot.
-#' @param Codebook Optional codebook data frame with columns `Variable` and
+#' @param variables Character vector of variable names to plot.
+#' @param codebook Optional codebook data frame with columns `Variable` and
 #'   `Label`.
 #' @param Scale Logical. If `TRUE`, variables are z-scored across all
 #'   participants before plotting. Default is `FALSE`.
@@ -60,26 +60,28 @@
 #'
 #' @examples
 #' PlotClusterBoxplot(
-#'   Data = mtcars,
+#'   data = mtcars,
 #'   ClusterVar = "cyl",
-#'   Variables = c("mpg", "disp", "hp"),
+#'   variables = c("mpg", "disp", "hp"),
 #'   Scale = TRUE,
 #'   ReferenceLines = "z"
 #' )
 #'
 #' PlotClusterBoxplot(
-#'   Data = mtcars,
+#'   data = mtcars,
 #'   ClusterVar = "cyl",
-#'   Variables = c("mpg", "disp", "hp"),
+#'   variables = c("mpg", "disp", "hp"),
 #'   ClusterLabel = "n"
 #' )
 #'
+#' @param Data \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
+#' @param Variables \strong{Deprecated} (since 19.15.0). Use \code{variables} instead.
+#' @param Codebook \strong{Deprecated} (since 19.15.0). Use \code{codebook} instead.
 #' @export
-PlotClusterBoxplot <- function(
-    Data,
+PlotClusterBoxplot <- function(data,
     ClusterVar,
-    Variables,
-    Codebook = NULL,
+    variables,
+    codebook = NULL,
     Scale = FALSE,
     ScoreType = c("auto", "z", "t", "raw"),
     ReferenceLines = c("auto", "z", "t", "none"),
@@ -90,8 +92,27 @@ PlotClusterBoxplot <- function(
     YLabel = NULL,
     BoxplotWidth = 0.75,
     OutlierSize = 0.8,
-    BaseSize = 14
-) {
+    BaseSize = 14,
+    Data = lifecycle::deprecated(),
+    Variables = lifecycle::deprecated(),
+    Codebook = lifecycle::deprecated()) {
+  # Deprecated argument shims (SciDataReportR 19.15.0)
+  if (lifecycle::is_present(Data)) {
+    lifecycle::deprecate_warn("19.15.0", "PlotClusterBoxplot(Data)", "PlotClusterBoxplot(data)")
+    data <- Data
+  }
+  if (!missing(data)) Data <- data
+  if (lifecycle::is_present(Variables)) {
+    lifecycle::deprecate_warn("19.15.0", "PlotClusterBoxplot(Variables)", "PlotClusterBoxplot(variables)")
+    variables <- Variables
+  }
+  if (!missing(variables)) Variables <- variables
+  if (lifecycle::is_present(Codebook)) {
+    lifecycle::deprecate_warn("19.15.0", "PlotClusterBoxplot(Codebook)", "PlotClusterBoxplot(codebook)")
+    codebook <- Codebook
+  }
+  Codebook <- codebook
+
 
   ScoreType <- match.arg(ScoreType)
   ReferenceLines <- match.arg(ReferenceLines)

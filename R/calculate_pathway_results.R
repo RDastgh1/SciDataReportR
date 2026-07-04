@@ -1,6 +1,6 @@
 #' Calculate Pathway Results for Metabolite Comparisons
 #'
-#' @param df Data frame containing metabolite and comparison data
+#' @param data Data frame containing metabolite and comparison data
 #' @param comparison_var Character string specifying the comparison variable name
 #' @param covariates Character vector of covariate names (optional)
 #' @param metabolites Character vector of metabolite names to analyze
@@ -8,24 +8,33 @@
 #' @param use_point_correlation Logical, if TRUE uses point correlation for binary comparisons
 #'
 #' @return Data frame with metabolite results including fold change or correlation values
+#' @param df \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
 #' @export
 #'
 #' @examples
 #' \dontrun{
 #' results <- calculate_pathway_results(
-#'   df = my_data,
+#'   data = my_data,
 #'   comparison_var = "poorSleep",
 #'   covariates = c("Age", "BMI"),
 #'   metabolites = c("Tryptophan", "Kynurenine"),
 #'   comparison_type = "binary"
 #' )
 #' }
-calculate_pathway_results <- function(df,
-                                      comparison_var,
-                                      covariates = NULL,
-                                      metabolites,
-                                      comparison_type = "auto",
-                                      use_point_correlation = FALSE) {
+calculate_pathway_results <- function(data,
+    comparison_var,
+    covariates = NULL,
+    metabolites,
+    comparison_type = "auto",
+    use_point_correlation = FALSE,
+    df = lifecycle::deprecated()) {
+  # Deprecated argument shims (SciDataReportR 19.15.0)
+  if (lifecycle::is_present(df)) {
+    lifecycle::deprecate_warn("19.15.0", "calculate_pathway_results(df)", "calculate_pathway_results(data)")
+    data <- df
+  }
+  if (!missing(data)) df <- data
+
 
   # Auto-detect comparison type if needed
   if (comparison_type == "auto") {

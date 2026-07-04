@@ -2,23 +2,58 @@
 #'
 #' Generate a matrix of statistical relationships between variables.
 #'
-#' @param Data A data frame.
-#' @param OutcomeVars Outcome variables.
-#' @param PredictorVars Predictor variables. If NULL, uses OutcomeVars.
-#' @param Covariates Optional covariates (reserved for future use).
+#' @param data A data frame.
+#' @param outcome_vars Outcome variables.
+#' @param predictor_vars Predictor variables. If NULL, uses OutcomeVars.
+#' @param covariates Optional covariates (reserved for future use).
 #' @param Relabel Use labels instead of names.
 #' @param Parametric Use parametric tests.
 #'
 #' @return List with tables and plots.
+#' @param fdr_scope Either `"matrix"` (default) or `"per_outcome"`, passed to
+#'   [ApplyFDRCorrection()]. `"matrix"` corrects across all pairwise p-values
+#'   at once (historical behavior, computed on the symmetrized pair table).
+#'   `"per_outcome"` corrects separately within each x-axis variable (`XVar`,
+#'   ordered by `outcome_vars`).
+#' @param Data \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
+#' @param OutcomeVars \strong{Deprecated} (since 19.15.0). Use \code{outcome_vars} instead.
+#' @param PredictorVars \strong{Deprecated} (since 19.15.0). Use \code{predictor_vars} instead.
+#' @param Covariates \strong{Deprecated} (since 19.15.0). Use \code{covariates} instead.
 #' @export
-PlotMiningMatrix <- function(
-    Data,
-    OutcomeVars,
-    PredictorVars = NULL,
-    Covariates = NULL,
+PlotMiningMatrix <- function(data,
+    outcome_vars,
+    predictor_vars = NULL,
+    covariates = NULL,
     Relabel = TRUE,
-    Parametric = TRUE
-) {
+    Parametric = TRUE,
+    Data = lifecycle::deprecated(),
+    OutcomeVars = lifecycle::deprecated(),
+    PredictorVars = lifecycle::deprecated(),
+    fdr_scope = c("matrix", "per_outcome"),
+    Covariates = lifecycle::deprecated()) {
+  # Deprecated argument shims (SciDataReportR 19.15.0)
+  if (lifecycle::is_present(Data)) {
+    lifecycle::deprecate_warn("19.15.0", "PlotMiningMatrix(Data)", "PlotMiningMatrix(data)")
+    data <- Data
+  }
+  if (!missing(data)) Data <- data
+  if (lifecycle::is_present(OutcomeVars)) {
+    lifecycle::deprecate_warn("19.15.0", "PlotMiningMatrix(OutcomeVars)", "PlotMiningMatrix(outcome_vars)")
+    outcome_vars <- OutcomeVars
+  }
+  if (!missing(outcome_vars)) OutcomeVars <- outcome_vars
+  if (lifecycle::is_present(PredictorVars)) {
+    lifecycle::deprecate_warn("19.15.0", "PlotMiningMatrix(PredictorVars)", "PlotMiningMatrix(predictor_vars)")
+    predictor_vars <- PredictorVars
+  }
+  PredictorVars <- predictor_vars
+  if (lifecycle::is_present(Covariates)) {
+    lifecycle::deprecate_warn("19.15.0", "PlotMiningMatrix(Covariates)", "PlotMiningMatrix(covariates)")
+    covariates <- Covariates
+  }
+  Covariates <- covariates
+  fdr_scope <- match.arg(fdr_scope)
+
 
   method <- ifelse(Parametric, "pearson", "spearman")
 
@@ -96,9 +131,9 @@ PlotMiningMatrix <- function(
     cor_res <- tryCatch(
       SciDataReportR::PlotCorrelationsHeatmap(
         Data,
-        xVars = num_Predictors,
-        yVars = num_Outcomes,
-        covars = Covariates,
+        predictor_vars = num_Predictors,
+        outcome_vars = num_Outcomes,
+        covariates = Covariates,
         method = method,
         Relabel = FALSE
       ),
@@ -128,7 +163,7 @@ PlotMiningMatrix <- function(
         Data,
         CatVars = cat_Predictors,
         ContVars = num_Outcomes,
-        Covariates = Covariates,
+        covariates = Covariates,
         Relabel = FALSE,
         Parametric = Parametric
       ),
@@ -158,9 +193,9 @@ PlotMiningMatrix <- function(
     chi_res <- tryCatch(
       SciDataReportR::PlotChiSqCovar(
         Data,
-        xVars = cat_Predictors,
-        yVars = cat_Outcomes,
-        covars = Covariates,
+        predictor_vars = cat_Predictors,
+        outcome_vars = cat_Outcomes,
+        covariates = Covariates,
         Relabel = FALSE
       ),
       error = function(e) NULL
@@ -211,7 +246,15 @@ PlotMiningMatrix <- function(
     results %>% dplyr::transmute(XVar = VarB, YVar = VarA, p, EffectSize, Test)
   )
 
-  results$p_adj <- stats::p.adjust(results$p, method = "fdr")
+  # The pair table is symmetrized (each pair appears in both orientations)
+  # before correction; "matrix" scope reproduces the historical behavior on
+  # that duplicated table. For "per_outcome", p-values are grouped by XVar,
+  # the x-axis of the final plot, which is ordered by outcome_vars.
+  results$p_adj <- ApplyFDRCorrection(
+    results$p,
+    fdr_scope = fdr_scope,
+    outcome_ids = results$XVar
+  )
 
   results <- results %>%
     rstatix::add_significance(p.col = "p", output.col = "stars")
@@ -263,7 +306,10 @@ PlotMiningMatrix <- function(
       axis.title = ggplot2::element_blank()
     )
 
-  list(
+  out <- list(
     Unadjusted = list(PvalTable = results, plot = p)
   )
+  # Standardized p-value element alias (old name kept)
+  out$p <- out$Unadjusted
+  out
 }

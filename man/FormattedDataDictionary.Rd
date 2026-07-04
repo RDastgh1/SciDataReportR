@@ -4,12 +4,21 @@
 \alias{FormattedDataDictionary}
 \title{Create a formatted data dictionary table}
 \usage{
-FormattedDataDictionary(DataFrame, numdecimals = 2)
+FormattedDataDictionary(
+  data,
+  digits = 2,
+  DataFrame = lifecycle::deprecated(),
+  numdecimals = lifecycle::deprecated()
+)
 }
 \arguments{
-\item{DataFrame}{The data frame for which the data dictionary is to be created.}
+\item{data}{The data frame for which the data dictionary is to be created.}
 
-\item{numdecimals}{Number of decimals to display for numeric variables (default: 2).}
+\item{digits}{Number of decimals to display for numeric variables (default: 2).}
+
+\item{DataFrame}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
+
+\item{numdecimals}{\strong{Deprecated} (since 19.15.0). Use \code{digits} instead.}
 }
 \value{
 A formatted data dictionary table (gt object).

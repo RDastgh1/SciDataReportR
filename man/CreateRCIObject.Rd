@@ -5,10 +5,10 @@
 \title{Create a Reliable Change Index (RCI) object}
 \usage{
 CreateRCIObject(
-  Data,
-  Variables,
+  data,
+  variables,
   DataFormat = c("wide", "long"),
-  ID,
+  id_var,
   Method = "regression",
   BaselineSpecifier = NULL,
   FollowupSpecifier = NULL,
@@ -17,17 +17,20 @@ CreateRCIObject(
   VisitOrder = NULL,
   BaselineVisit = NULL,
   Confidence = 0.95,
-  Relabel = TRUE
+  Relabel = TRUE,
+  Data = lifecycle::deprecated(),
+  Variables = lifecycle::deprecated(),
+  ID = lifecycle::deprecated()
 )
 }
 \arguments{
-\item{Data}{A data frame.}
+\item{data}{A data frame.}
 
-\item{Variables}{Character vector of canonical variable names.}
+\item{variables}{Character vector of canonical variable names.}
 
 \item{DataFormat}{Either "wide" or "long".}
 
-\item{ID}{ID column.}
+\item{id_var}{ID column.}
 
 \item{Method}{Currently only "regression" is supported.}
 
@@ -63,6 +66,12 @@ egression-based RCI values are interpreted similarly to z-scores.\tabular{ll}{
 Traditional Jacobson-Truax RCI thresholds typically use +/-1.96,
 corresponding to approximately 95\% confidence.
 }}
+
+\item{Data}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
+
+\item{Variables}{\strong{Deprecated} (since 19.15.0). Use \code{variables} instead.}
+
+\item{ID}{\strong{Deprecated} (since 19.15.0). Use \code{id_var} instead.}
 }
 \value{
 A SciDataReportR_RCI object.

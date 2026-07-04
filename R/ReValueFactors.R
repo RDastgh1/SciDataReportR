@@ -2,13 +2,30 @@
 #'
 #' This function revalues factor variables in a dataset according to the specifications provided in a codebook.
 #'
-#' @param DatatoRevalue The dataset to be revalued.
-#' @param VarTypes A data frame containing information about the variables and how they should be revalued.
+#' @param data The dataset to be revalued.
+#' @param codebook A data frame containing information about the variables and how they should be revalued.
 #'                 It should have columns: Variable (variable names), Recode (yes/no for recoding),
 #'                 and Code (the revalue codes separated by "=" and ","). DO NOT USE COMMAS ANYWHERE ELSE IN THIS COLUMN.
 #' @return The revalued dataset.
+#' @param DatatoRevalue \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
+#' @param VarTypes \strong{Deprecated} (since 19.15.0). Use \code{codebook} instead.
 #' @export
-ReValueFactors <- function(DatatoRevalue, VarTypes) {
+ReValueFactors <- function(data,
+    codebook,
+    DatatoRevalue = lifecycle::deprecated(),
+    VarTypes = lifecycle::deprecated()) {
+  # Deprecated argument shims (SciDataReportR 19.15.0)
+  if (lifecycle::is_present(DatatoRevalue)) {
+    lifecycle::deprecate_warn("19.15.0", "ReValueFactors(DatatoRevalue)", "ReValueFactors(data)")
+    data <- DatatoRevalue
+  }
+  if (!missing(data)) DatatoRevalue <- data
+  if (lifecycle::is_present(VarTypes)) {
+    lifecycle::deprecate_warn("19.15.0", "ReValueFactors(VarTypes)", "ReValueFactors(codebook)")
+    codebook <- VarTypes
+  }
+  if (!missing(codebook)) VarTypes <- codebook
+
   # Initialize the revalued data with the original data
   RevaluedData <- DatatoRevalue
 

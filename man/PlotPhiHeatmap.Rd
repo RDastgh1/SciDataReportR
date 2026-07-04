@@ -4,10 +4,17 @@
 \alias{PlotPhiHeatmap}
 \title{Plot Phi Correlations Between Binary Variables}
 \usage{
-PlotPhiHeatmap(Data, CatVars, Relabel = TRUE, binary_map = NULL)
+PlotPhiHeatmap(
+  data,
+  CatVars,
+  Relabel = TRUE,
+  binary_map = NULL,
+  fdr_scope = c("matrix", "per_outcome"),
+  Data = lifecycle::deprecated()
+)
 }
 \arguments{
-\item{Data}{A dataframe.}
+\item{data}{A dataframe.}
 
 \item{CatVars}{Character vector of binary categorical variable names.}
 
@@ -15,6 +22,14 @@ PlotPhiHeatmap(Data, CatVars, Relabel = TRUE, binary_map = NULL)
 
 \item{binary_map}{Optional mapping as returned by \code{createBinaryMapping()}.
 If NULL, a mapping is created internally for \code{CatVars}.}
+
+\item{fdr_scope}{Either \code{"matrix"} (default) or \code{"per_outcome"}, passed to
+\code{\link[=ApplyFDRCorrection]{ApplyFDRCorrection()}}. \code{"matrix"} corrects across all p-values at once
+(historical behavior). \code{"per_outcome"} corrects separately within
+each y-axis variable (\code{YVar}); the Phi matrix is symmetric, so this
+treats each variable's row of tiles as one family.}
+
+\item{Data}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
 }
 \value{
 A list with:

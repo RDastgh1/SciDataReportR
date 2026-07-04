@@ -5,7 +5,7 @@
 \title{Project standardized scores onto new data using external parameters}
 \usage{
 ProjectZScore(
-  df,
+  data,
   variables = NULL,
   parameters,
   ParameterInputType = c("df_parameter", "ZScoreObj", "ExternalDataframe"),
@@ -13,11 +13,12 @@ ProjectZScore(
   RetainLabels = TRUE,
   RenameLabels = TRUE,
   center = TRUE,
-  scale = TRUE
+  scale = TRUE,
+  df = lifecycle::deprecated()
 )
 }
 \arguments{
-\item{df}{Data frame on which to project scores.}
+\item{data}{Data frame on which to project scores.}
 
 \item{variables}{Character vector; if NULL, project onto all variables
 for which parameters exist and that are present in df.}
@@ -44,6 +45,8 @@ from df to new variables.}
 or "ExternalDataframe". Ignored for "ZScoreObj" (it uses stored flags).}
 
 \item{scale}{Logical; same logic as \code{center}.}
+
+\item{df}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
 }
 \value{
 List with same structure as CreateZScoreObject():

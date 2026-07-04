@@ -5,18 +5,20 @@
 \title{Plot categorical distributions}
 \usage{
 PlotCategoricalDistributions(
-  DataFrame,
-  Variables = NULL,
+  data,
+  variables = NULL,
   Relabel = TRUE,
   Ordinal = TRUE,
   LabelType = "percent",
-  MissingLabel = "Missing"
+  MissingLabel = "Missing",
+  DataFrame = lifecycle::deprecated(),
+  Variables = lifecycle::deprecated()
 )
 }
 \arguments{
-\item{DataFrame}{The dataframe containing the variables to be plotted.}
+\item{data}{The dataframe containing the variables to be plotted.}
 
-\item{Variables}{Optional. A character vector specifying the names of the
+\item{variables}{Optional. A character vector specifying the names of the
 categorical variables to be plotted. If NULL, categorical variables are
 automatically detected.}
 
@@ -29,6 +31,10 @@ with column names as labels for plotting.}
 should be shown on the x-axis and inside the bars.}
 
 \item{MissingLabel}{Character label to use for missing values.}
+
+\item{DataFrame}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
+
+\item{Variables}{\strong{Deprecated} (since 19.15.0). Use \code{variables} instead.}
 }
 \value{
 A ggplot object visualizing the distributions of categorical variables.

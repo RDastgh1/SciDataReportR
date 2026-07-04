@@ -5,10 +5,10 @@
 #' the correlation method, whether relabeling was used, the covariates, R-squared, p-value, and sample size
 #' are returned.
 #'
-#' @param DataFrame The dataset to use.
+#' @param data The dataset to use.
 #' @param IndepVar A string specifying the independent variable.
 #' @param DepVar A string specifying the dependent variable.
-#' @param Covariates A character vector of covariate names for adjustment. Defaults to NULL.
+#' @param covariates A character vector of covariate names for adjustment. Defaults to NULL.
 #' @param Relabel Logical indicating whether to use labelled names from the data (using sjlabelled::get_label). Defaults to TRUE.
 #'
 #' @return A list containing:
@@ -23,10 +23,30 @@
 #'
 #' @import ggplot2
 #' @importFrom sjlabelled get_label
+#' @param DataFrame \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
+#' @param Covariates \strong{Deprecated} (since 19.15.0). Use \code{covariates} instead.
 #' @export
 #'
 #'
-PlotPartialRegressionScatter <- function(DataFrame, IndepVar, DepVar, Covariates = NULL, Relabel = TRUE) {
+PlotPartialRegressionScatter <- function(data,
+    IndepVar,
+    DepVar,
+    covariates = NULL,
+    Relabel = TRUE,
+    DataFrame = lifecycle::deprecated(),
+    Covariates = lifecycle::deprecated()) {
+  # Deprecated argument shims (SciDataReportR 19.15.0)
+  if (lifecycle::is_present(DataFrame)) {
+    lifecycle::deprecate_warn("19.15.0", "PlotPartialRegressionScatter(DataFrame)", "PlotPartialRegressionScatter(data)")
+    data <- DataFrame
+  }
+  if (!missing(data)) DataFrame <- data
+  if (lifecycle::is_present(Covariates)) {
+    lifecycle::deprecate_warn("19.15.0", "PlotPartialRegressionScatter(Covariates)", "PlotPartialRegressionScatter(covariates)")
+    covariates <- Covariates
+  }
+  Covariates <- covariates
+
 
   # Subset complete cases for the relevant variables.
   allVars <- c(IndepVar, DepVar, Covariates)

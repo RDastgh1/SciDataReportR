@@ -1,6 +1,6 @@
 #' Project standardized scores onto new data using external parameters
 #'
-#' @param df Data frame on which to project scores.
+#' @param data Data frame on which to project scores.
 #' @param variables Character vector; if NULL, project onto all variables
 #'   for which parameters exist and that are present in df.
 #' @param parameters Source of parameters, interpreted by ParameterInputType:
@@ -23,18 +23,25 @@
 #'   - DataWithZ: df with projected scores appended
 #'   - Parameters: parameter data frame actually used for projection
 #'   - Center, Scale: flags used
+#' @param df \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
 #' @export
-ProjectZScore <- function(df,
-                          variables = NULL,
-                          parameters,
-                          ParameterInputType = c("df_parameter",
-                                                 "ZScoreObj",
-                                                 "ExternalDataframe"),
-                          names_prefix = "Z_",
-                          RetainLabels = TRUE,
-                          RenameLabels = TRUE,
-                          center = TRUE,
-                          scale  = TRUE) {
+ProjectZScore <- function(data,
+    variables = NULL,
+    parameters,
+    ParameterInputType = c("df_parameter", "ZScoreObj", "ExternalDataframe"),
+    names_prefix = "Z_",
+    RetainLabels = TRUE,
+    RenameLabels = TRUE,
+    center = TRUE,
+    scale = TRUE,
+    df = lifecycle::deprecated()) {
+  # Deprecated argument shims (SciDataReportR 19.15.0)
+  if (lifecycle::is_present(df)) {
+    lifecycle::deprecate_warn("19.15.0", "ProjectZScore(df)", "ProjectZScore(data)")
+    data <- df
+  }
+  if (!missing(data)) df <- data
+
 
   ParameterInputType <- match.arg(ParameterInputType)
 
@@ -69,7 +76,7 @@ ProjectZScore <- function(df,
 
     ref_df <- parameters
     cs <- CreateZScoreObject(
-      df            = ref_df,
+      data            = ref_df,
       variables     = variables,
       names_prefix  = names_prefix,
       RetainLabels  = FALSE,

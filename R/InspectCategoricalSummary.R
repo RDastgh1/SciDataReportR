@@ -4,11 +4,11 @@
 #' inspired by `inspectdf::inspect_cat()`, created because inspectdf is archived
 #' and no longer available on CRAN.
 #'
-#' @param Data A data frame.
-#' @param Variables Optional character vector of categorical variables to
+#' @param data A data frame.
+#' @param variables Optional character vector of categorical variables to
 #'   summarize. If `NULL`, character, factor, logical, labelled, and
 #'   haven-labelled columns are detected automatically.
-#' @param Codebook Optional data frame with `Variable` and `Label` columns.
+#' @param codebook Optional data frame with `Variable` and `Label` columns.
 #' @param IncludeMissing Logical. If `TRUE`, missing values are included as a
 #'   level and in percentages.
 #' @param MissingLabel Character label to display for missing values.
@@ -47,27 +47,50 @@
 #' result <- InspectCategoricalSummary(df, Plot = FALSE)
 #' result$Summary
 #'
-#' plot_result <- InspectCategoricalSummary(df, Variables = "group", Plot = TRUE)
+#' plot_result <- InspectCategoricalSummary(df, variables = "group", Plot = TRUE)
 #' plot_result$Plot
 #' @importFrom magrittr %>%
+#' @param Data \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
+#' @param Variables \strong{Deprecated} (since 19.15.0). Use \code{variables} instead.
+#' @param Codebook \strong{Deprecated} (since 19.15.0). Use \code{codebook} instead.
 #' @export
-InspectCategoricalSummary <- function(Data,
-                                      Variables = NULL,
-                                      Codebook = NULL,
-                                      IncludeMissing = TRUE,
-                                      MissingLabel = "(Missing)",
-                                      RetainLabels = TRUE,
-                                      SortLevelsBy = c("Frequency", "Value", "None"),
-                                      SortVariablesBy = c("Input", "Label", "MissingPercent", "UniqueLevels", "TotalN"),
-                                      Descending = TRUE,
-                                      MaxLevels = 30,
-                                      Plot = TRUE,
-                                      PlotType = c("bar", "lollipop"),
-                                      FacetScales = c("free_y", "fixed"),
-                                      UsePercent = TRUE,
-                                      LabelBars = TRUE,
-                                      WrapLabels = 35,
-                                      BaseSize = 11) {
+InspectCategoricalSummary <- function(data,
+    variables = NULL,
+    codebook = NULL,
+    IncludeMissing = TRUE,
+    MissingLabel = "(Missing)",
+    RetainLabels = TRUE,
+    SortLevelsBy = c("Frequency", "Value", "None"),
+    SortVariablesBy = c("Input", "Label", "MissingPercent", "UniqueLevels", "TotalN"),
+    Descending = TRUE,
+    MaxLevels = 30,
+    Plot = TRUE,
+    PlotType = c("bar", "lollipop"),
+    FacetScales = c("free_y", "fixed"),
+    UsePercent = TRUE,
+    LabelBars = TRUE,
+    WrapLabels = 35,
+    BaseSize = 11,
+    Data = lifecycle::deprecated(),
+    Variables = lifecycle::deprecated(),
+    Codebook = lifecycle::deprecated()) {
+  # Deprecated argument shims (SciDataReportR 19.15.0)
+  if (lifecycle::is_present(Data)) {
+    lifecycle::deprecate_warn("19.15.0", "InspectCategoricalSummary(Data)", "InspectCategoricalSummary(data)")
+    data <- Data
+  }
+  if (!missing(data)) Data <- data
+  if (lifecycle::is_present(Variables)) {
+    lifecycle::deprecate_warn("19.15.0", "InspectCategoricalSummary(Variables)", "InspectCategoricalSummary(variables)")
+    variables <- Variables
+  }
+  Variables <- variables
+  if (lifecycle::is_present(Codebook)) {
+    lifecycle::deprecate_warn("19.15.0", "InspectCategoricalSummary(Codebook)", "InspectCategoricalSummary(codebook)")
+    codebook <- Codebook
+  }
+  Codebook <- codebook
+
 
   if (!is.data.frame(Data)) {
     stop("`Data` must be a data frame.", call. = FALSE)

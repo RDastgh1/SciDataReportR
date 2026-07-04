@@ -5,8 +5,8 @@
 \title{Plot longitudinal swimmer timelines}
 \usage{
 PlotTimeSwimmer(
-  Data,
-  ID,
+  data,
+  id_var,
   Time,
   State = NULL,
   Event = NULL,
@@ -18,17 +18,20 @@ PlotTimeSwimmer(
   SortBy = c("duration", "last_time", "first_time", "state", "id"),
   TimeUnit = c("auto", "days", "weeks", "months", "years", "visits"),
   Relabel = TRUE,
-  Codebook = NULL,
+  codebook = NULL,
   LineWidth = 5,
   PointSize = 2.5,
   Alpha = 0.9,
-  BaseSize = 13
+  BaseSize = 13,
+  Data = lifecycle::deprecated(),
+  ID = lifecycle::deprecated(),
+  Codebook = lifecycle::deprecated()
 )
 }
 \arguments{
-\item{Data}{A data frame in long format with one row per visit or observation.}
+\item{data}{A data frame in long format with one row per visit or observation.}
 
-\item{ID}{Character string naming the participant ID column.}
+\item{id_var}{Character string naming the participant ID column.}
 
 \item{Time}{Character string naming the time variable.}
 
@@ -73,7 +76,7 @@ timepoint.
 \item{Relabel}{Logical. If \code{TRUE}, use labels from \code{Codebook} or variable
 attributes when available.}
 
-\item{Codebook}{Optional codebook data frame with columns \code{Variable} and
+\item{codebook}{Optional codebook data frame with columns \code{Variable} and
 \code{Label}.}
 
 \item{LineWidth}{Numeric line width for swimmer segments. Default is \code{5}.}
@@ -84,6 +87,12 @@ attributes when available.}
 \code{0.9}.}
 
 \item{BaseSize}{Base font size for the plot theme. Default is \code{13}.}
+
+\item{Data}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
+
+\item{ID}{\strong{Deprecated} (since 19.15.0). Use \code{id_var} instead.}
+
+\item{Codebook}{\strong{Deprecated} (since 19.15.0). Use \code{codebook} instead.}
 }
 \value{
 A \code{ggplot} object.
@@ -111,8 +120,8 @@ df <- tibble::tibble(
 )
 
 PlotTimeSwimmer(
-  Data = df,
-  ID = "ID",
+  data = df,
+  id_var = "ID",
   Time = "Visit",
   State = "Cluster"
 )

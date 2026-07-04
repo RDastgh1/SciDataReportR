@@ -2,7 +2,7 @@
 #'
 #' Generates a Bland-Altman plot to visualize the agreement between two variables.
 #'
-#' @param DataFrame A data frame containing the variables to compare.
+#' @param data A data frame containing the variables to compare.
 #' @param Variable1 The name of the first variable (as a string) to compare.
 #' @param Variable2 The name of the second variable (as a string) to compare.
 #'
@@ -15,10 +15,21 @@
 #' @importFrom tibble rownames_to_column
 #'
 #'
+#' @param DataFrame \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
 #' @export
 #'
 #' @note This function is adapted from code written by Eran Shorer.
-PlotBlandAltman <- function(DataFrame, Variable1, Variable2) {
+PlotBlandAltman <- function(data,
+    Variable1,
+    Variable2,
+    DataFrame = lifecycle::deprecated()) {
+  # Deprecated argument shims (SciDataReportR 19.15.0)
+  if (lifecycle::is_present(DataFrame)) {
+    lifecycle::deprecate_warn("19.15.0", "PlotBlandAltman(DataFrame)", "PlotBlandAltman(data)")
+    data <- DataFrame
+  }
+  if (!missing(data)) DataFrame <- data
+
 
   # Check if BlandAltmanLeh package is available
   if (!requireNamespace("BlandAltmanLeh", quietly = TRUE)) {

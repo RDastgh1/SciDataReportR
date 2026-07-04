@@ -5,20 +5,26 @@
 \title{Update an existing codebook based on a given dataframe}
 \usage{
 UpdateCodebook(
-  Dataframe,
-  Codebook,
+  data,
+  codebook,
   RemoveMissing = TRUE,
-  ReplaceLabels = FALSE
+  ReplaceLabels = FALSE,
+  Dataframe = lifecycle::deprecated(),
+  Codebook = lifecycle::deprecated()
 )
 }
 \arguments{
-\item{Dataframe}{A dataframe for which the codebook needs to be updated.}
+\item{data}{A dataframe for which the codebook needs to be updated.}
 
-\item{Codebook}{A dataframe representing the existing codebook with at least a 'Variable' column.}
+\item{codebook}{A dataframe representing the existing codebook with at least a 'Variable' column.}
 
 \item{RemoveMissing}{Logical; if TRUE, removes variables from the codebook that are not in the dataframe.}
 
 \item{ReplaceLabels}{Logical; if TRUE, replaces outdated labels in the codebook with new ones from the dataframe.}
+
+\item{Dataframe}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
+
+\item{Codebook}{\strong{Deprecated} (since 19.15.0). Use \code{codebook} instead.}
 }
 \value{
 A list containing:

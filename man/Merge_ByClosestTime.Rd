@@ -9,8 +9,9 @@ Merge_ByClosestTime(
   DataFrame2,
   TimeVar1,
   TimeVar2,
-  MergeBy = NULL,
-  is_date = FALSE
+  keys = NULL,
+  is_date = FALSE,
+  MergeBy = lifecycle::deprecated()
 )
 }
 \arguments{
@@ -22,10 +23,12 @@ Merge_ByClosestTime(
 
 \item{TimeVar2}{The name of the time variable in DataFrame2 (as a string).}
 
-\item{MergeBy}{Optional. Character vector of variable(s) to merge by.
+\item{keys}{Optional. Character vector of variable(s) to merge by.
 Must exist in BOTH data frames and be in the same order.}
 
 \item{is_date}{Logical. Indicates whether the time variables are dates (TRUE) or POSIXct (FALSE).}
+
+\item{MergeBy}{\strong{Deprecated} (since 19.15.0). Use \code{keys} instead.}
 }
 \value{
 A list with:

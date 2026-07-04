@@ -7,7 +7,8 @@
 PlotMergeValidation(
   MergeObj,
   Plot = c("All", "Checks", "Coverage", "JoinAudit", "Agreement", "Conflicts"),
-  Interactive = TRUE
+  interactive = TRUE,
+  Interactive = lifecycle::deprecated()
 )
 }
 \arguments{
@@ -17,8 +18,10 @@ PlotMergeValidation(
 \code{"All"}, \code{"Checks"}, \code{"Coverage"}, \code{"JoinAudit"}, \code{"Agreement"}, and
 \code{"Conflicts"}. Default is \code{"All"}.}
 
-\item{Interactive}{Logical; if \code{TRUE}, plots are converted to interactive
+\item{interactive}{Logical; if \code{TRUE}, plots are converted to interactive
 \code{plotly} objects using \code{plotly::ggplotly()}. Default is \code{TRUE}.}
+
+\item{Interactive}{\strong{Deprecated} (since 19.15.0). Use \code{interactive} instead.}
 }
 \value{
 If \code{Plot = "All"}, a named list of plots. Otherwise, a single plot

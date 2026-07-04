@@ -5,7 +5,7 @@
 \title{Create a reusable PCA object and visualizations}
 \usage{
 CreatePCAObject(
-  Data,
+  data,
   VarsToReduce,
   VariableCategories = NULL,
   Relabel = TRUE,
@@ -27,12 +27,13 @@ CreatePCAObject(
   ImputeMethod = c("missRanger", "median"),
   MaxMissingForImputation = 0.2,
   ImputeRowsWithAllMissing = FALSE,
-  imputeMethod = NULL,
-  SuppressWarnings = FALSE
+  SuppressWarnings = FALSE,
+  imputeMethod = lifecycle::deprecated(),
+  Data = lifecycle::deprecated()
 )
 }
 \arguments{
-\item{Data}{A data frame containing the variables for PCA.}
+\item{data}{A data frame containing the variables for PCA.}
 
 \item{VarsToReduce}{Character vector of raw variable names to include in PCA.}
 
@@ -109,12 +110,15 @@ imputed if at least 80 percent of PCA variables are observed.}
 missingness across PCA variables are not imputed even if
 \code{MaxMissingForImputation = 1}. Default is \code{FALSE}.}
 
-\item{imputeMethod}{Deprecated compatibility alias for \code{ImputeMethod}. If
-supplied, it sets \code{ImputeMethod} and uses \code{MissingDataStrategy = "impute"}
-unless \code{MissingDataStrategy} was explicitly set.}
-
 \item{SuppressWarnings}{Logical. If \code{TRUE}, suppresses PCA-specific warning
 messages from this function. Default is \code{FALSE}.}
+
+\item{imputeMethod}{\strong{Deprecated} (since 19.15.0). Use \code{ImputeMethod}
+instead. If supplied, it sets \code{ImputeMethod} and uses
+\code{MissingDataStrategy = "impute"} unless \code{MissingDataStrategy} was
+explicitly set.}
+
+\item{Data}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
 }
 \value{
 A list with the following elements:
@@ -170,13 +174,13 @@ automatically with a warning so PCA can continue without manual preprocessing.
 }
 \examples{
 PCA <- CreatePCAObject(
-  Data = mtcars,
+  data = mtcars,
   VarsToReduce = names(mtcars),
   numComponents = 3
 )
 
 PCA_imputed <- CreatePCAObject(
-  Data = mtcars,
+  data = mtcars,
   VarsToReduce = names(mtcars),
   numComponents = 3,
   MissingDataStrategy = "impute",
@@ -185,14 +189,14 @@ PCA_imputed <- CreatePCAObject(
 )
 
 PCA_raw_names <- CreatePCAObject(
-  Data = mtcars,
+  data = mtcars,
   VarsToReduce = names(mtcars),
   Relabel = FALSE,
   numComponents = 3
 )
 
 PCA_omics <- CreatePCAObject(
-  Data = mtcars,
+  data = mtcars,
   VarsToReduce = names(mtcars),
   Mode = "omics",
   backend = "prcomp",

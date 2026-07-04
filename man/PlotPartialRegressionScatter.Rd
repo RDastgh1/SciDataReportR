@@ -5,23 +5,29 @@
 \title{Partial Regression Plot}
 \usage{
 PlotPartialRegressionScatter(
-  DataFrame,
+  data,
   IndepVar,
   DepVar,
-  Covariates = NULL,
-  Relabel = TRUE
+  covariates = NULL,
+  Relabel = TRUE,
+  DataFrame = lifecycle::deprecated(),
+  Covariates = lifecycle::deprecated()
 )
 }
 \arguments{
-\item{DataFrame}{The dataset to use.}
+\item{data}{The dataset to use.}
 
 \item{IndepVar}{A string specifying the independent variable.}
 
 \item{DepVar}{A string specifying the dependent variable.}
 
-\item{Covariates}{A character vector of covariate names for adjustment. Defaults to NULL.}
+\item{covariates}{A character vector of covariate names for adjustment. Defaults to NULL.}
 
 \item{Relabel}{Logical indicating whether to use labelled names from the data (using sjlabelled::get_label). Defaults to TRUE.}
+
+\item{DataFrame}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
+
+\item{Covariates}{\strong{Deprecated} (since 19.15.0). Use \code{covariates} instead.}
 }
 \value{
 A list containing:

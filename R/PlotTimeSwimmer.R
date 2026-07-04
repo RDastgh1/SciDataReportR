@@ -13,8 +13,8 @@
 #' until the next visit (`StateInterval = "forward"`) or shown only as visit
 #' points (`StateInterval = "point"`).
 #'
-#' @param Data A data frame in long format with one row per visit or observation.
-#' @param ID Character string naming the participant ID column.
+#' @param data A data frame in long format with one row per visit or observation.
+#' @param id_var Character string naming the participant ID column.
 #' @param Time Character string naming the time variable.
 #' @param State Optional character string naming a state/group variable used for
 #'   coloring timelines or visit points.
@@ -47,7 +47,7 @@
 #'   `"months"`, `"years"`, or `"visits"`.
 #' @param Relabel Logical. If `TRUE`, use labels from `Codebook` or variable
 #'   attributes when available.
-#' @param Codebook Optional codebook data frame with columns `Variable` and
+#' @param codebook Optional codebook data frame with columns `Variable` and
 #'   `Label`.
 #' @param LineWidth Numeric line width for swimmer segments. Default is `5`.
 #' @param PointSize Numeric point size for visit/event points. Default is `2.5`.
@@ -65,16 +65,18 @@
 #' )
 #'
 #' PlotTimeSwimmer(
-#'   Data = df,
-#'   ID = "ID",
+#'   data = df,
+#'   id_var = "ID",
 #'   Time = "Visit",
 #'   State = "Cluster"
 #' )
 #'
+#' @param Data \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
+#' @param ID \strong{Deprecated} (since 19.15.0). Use \code{id_var} instead.
+#' @param Codebook \strong{Deprecated} (since 19.15.0). Use \code{codebook} instead.
 #' @export
-PlotTimeSwimmer <- function(
-    Data,
-    ID,
+PlotTimeSwimmer <- function(data,
+    id_var,
     Time,
     State = NULL,
     Event = NULL,
@@ -82,34 +84,35 @@ PlotTimeSwimmer <- function(
     TimeScale = c("from_first", "observed", "from_event"),
     EventReference = NULL,
     StateInterval = c("forward", "point"),
-    Format = c(
-      "state_path",
-      "visit_points",
-      "event_rug",
-      "minimal"
-    ),
-    SortBy = c(
-      "duration",
-      "last_time",
-      "first_time",
-      "state",
-      "id"
-    ),
-    TimeUnit = c(
-      "auto",
-      "days",
-      "weeks",
-      "months",
-      "years",
-      "visits"
-    ),
+    Format = c("state_path", "visit_points", "event_rug", "minimal"),
+    SortBy = c("duration", "last_time", "first_time", "state", "id"),
+    TimeUnit = c("auto", "days", "weeks", "months", "years", "visits"),
     Relabel = TRUE,
-    Codebook = NULL,
+    codebook = NULL,
     LineWidth = 5,
     PointSize = 2.5,
     Alpha = 0.9,
-    BaseSize = 13
-) {
+    BaseSize = 13,
+    Data = lifecycle::deprecated(),
+    ID = lifecycle::deprecated(),
+    Codebook = lifecycle::deprecated()) {
+  # Deprecated argument shims (SciDataReportR 19.15.0)
+  if (lifecycle::is_present(Data)) {
+    lifecycle::deprecate_warn("19.15.0", "PlotTimeSwimmer(Data)", "PlotTimeSwimmer(data)")
+    data <- Data
+  }
+  if (!missing(data)) Data <- data
+  if (lifecycle::is_present(ID)) {
+    lifecycle::deprecate_warn("19.15.0", "PlotTimeSwimmer(ID)", "PlotTimeSwimmer(id_var)")
+    id_var <- ID
+  }
+  if (!missing(id_var)) ID <- id_var
+  if (lifecycle::is_present(Codebook)) {
+    lifecycle::deprecate_warn("19.15.0", "PlotTimeSwimmer(Codebook)", "PlotTimeSwimmer(codebook)")
+    codebook <- Codebook
+  }
+  Codebook <- codebook
+
 
   TimeScale <- match.arg(TimeScale)
   StateInterval <- match.arg(StateInterval)

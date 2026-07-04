@@ -5,9 +5,9 @@
 \title{Inspect categorical variables}
 \usage{
 InspectCategoricalSummary(
-  Data,
-  Variables = NULL,
-  Codebook = NULL,
+  data,
+  variables = NULL,
+  codebook = NULL,
   IncludeMissing = TRUE,
   MissingLabel = "(Missing)",
   RetainLabels = TRUE,
@@ -21,17 +21,20 @@ InspectCategoricalSummary(
   UsePercent = TRUE,
   LabelBars = TRUE,
   WrapLabels = 35,
-  BaseSize = 11
+  BaseSize = 11,
+  Data = lifecycle::deprecated(),
+  Variables = lifecycle::deprecated(),
+  Codebook = lifecycle::deprecated()
 )
 }
 \arguments{
-\item{Data}{A data frame.}
+\item{data}{A data frame.}
 
-\item{Variables}{Optional character vector of categorical variables to
+\item{variables}{Optional character vector of categorical variables to
 summarize. If \code{NULL}, character, factor, logical, labelled, and
 haven-labelled columns are detected automatically.}
 
-\item{Codebook}{Optional data frame with \code{Variable} and \code{Label} columns.}
+\item{codebook}{Optional data frame with \code{Variable} and \code{Label} columns.}
 
 \item{IncludeMissing}{Logical. If \code{TRUE}, missing values are included as a
 level and in percentages.}
@@ -68,6 +71,12 @@ counts.}
 and facet labels.}
 
 \item{BaseSize}{Base font size passed to \code{theme_minimal()}.}
+
+\item{Data}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
+
+\item{Variables}{\strong{Deprecated} (since 19.15.0). Use \code{variables} instead.}
+
+\item{Codebook}{\strong{Deprecated} (since 19.15.0). Use \code{codebook} instead.}
 }
 \value{
 A named list with \code{Summary}, a tibble containing categorical counts
@@ -89,7 +98,7 @@ df <- data.frame(
 result <- InspectCategoricalSummary(df, Plot = FALSE)
 result$Summary
 
-plot_result <- InspectCategoricalSummary(df, Variables = "group", Plot = TRUE)
+plot_result <- InspectCategoricalSummary(df, variables = "group", Plot = TRUE)
 plot_result$Plot
 }
 \references{

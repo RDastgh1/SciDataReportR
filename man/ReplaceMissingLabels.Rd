@@ -4,10 +4,12 @@
 \alias{ReplaceMissingLabels}
 \title{Replace Missing Labels in Dataframe Columns}
 \usage{
-ReplaceMissingLabels(df)
+ReplaceMissingLabels(data, df = lifecycle::deprecated())
 }
 \arguments{
-\item{df}{A dataframe.}
+\item{data}{A dataframe.}
+
+\item{df}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
 }
 \value{
 The input dataframe with missing labels replaced.

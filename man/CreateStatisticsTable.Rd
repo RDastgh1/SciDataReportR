@@ -4,12 +4,14 @@
 \alias{CreateStatisticsTable}
 \title{Create Statistics Table}
 \usage{
-CreateStatisticsTable(Data, TargetVar)
+CreateStatisticsTable(data, TargetVar, Data = lifecycle::deprecated())
 }
 \arguments{
-\item{Data}{The data frame containing the variables of interest.}
+\item{data}{The data frame containing the variables of interest.}
 
 \item{TargetVar}{The target variable for which statistics will be calculated.}
+
+\item{Data}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
 }
 \value{
 A formatted HTML table displaying statistics.

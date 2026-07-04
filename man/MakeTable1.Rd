@@ -5,23 +5,29 @@
 \title{Create Summary Table using gtsummary}
 \usage{
 MakeTable1(
-  DataFrame,
-  Variables = NULL,
+  data,
+  variables = NULL,
   TreatOrdinalAs = "Continuous",
   AutoDetectDistribution = FALSE,
-  IncludeMissing = "ifany"
+  IncludeMissing = "ifany",
+  DataFrame = lifecycle::deprecated(),
+  Variables = lifecycle::deprecated()
 )
 }
 \arguments{
-\item{DataFrame}{The dataframe to create the summary table from.}
+\item{data}{The dataframe to create the summary table from.}
 
-\item{Variables}{Optional. A character vector specifying the names of variables to include in the summary table. If NULL, all variables are included.}
+\item{variables}{Optional. A character vector specifying the names of variables to include in the summary table. If NULL, all variables are included.}
 
 \item{TreatOrdinalAs}{Character. Specifies how ordinal variables should be treated. Can be "Continuous", "Categorical", or "Both".}
 
 \item{AutoDetectDistribution}{Logical. If TRUE, the function will attempt to automatically detect the distribution of variables. Default is FALSE.}
 
 \item{IncludeMissing}{Character matching gtsummary criteria. Can be "no", "ifany", or "always". Default is "ifany"}
+
+\item{DataFrame}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
+
+\item{Variables}{\strong{Deprecated} (since 19.15.0). Use \code{variables} instead.}
 }
 \value{
 A summary table created using gtsummary.

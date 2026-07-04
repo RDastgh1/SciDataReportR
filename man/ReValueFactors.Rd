@@ -4,14 +4,23 @@
 \alias{ReValueFactors}
 \title{Revalue Factors}
 \usage{
-ReValueFactors(DatatoRevalue, VarTypes)
+ReValueFactors(
+  data,
+  codebook,
+  DatatoRevalue = lifecycle::deprecated(),
+  VarTypes = lifecycle::deprecated()
+)
 }
 \arguments{
-\item{DatatoRevalue}{The dataset to be revalued.}
+\item{data}{The dataset to be revalued.}
 
-\item{VarTypes}{A data frame containing information about the variables and how they should be revalued.
+\item{codebook}{A data frame containing information about the variables and how they should be revalued.
 It should have columns: Variable (variable names), Recode (yes/no for recoding),
 and Code (the revalue codes separated by "=" and ","). DO NOT USE COMMAS ANYWHERE ELSE IN THIS COLUMN.}
+
+\item{DatatoRevalue}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
+
+\item{VarTypes}{\strong{Deprecated} (since 19.15.0). Use \code{codebook} instead.}
 }
 \value{
 The revalued dataset.

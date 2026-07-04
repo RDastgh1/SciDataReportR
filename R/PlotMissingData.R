@@ -4,8 +4,8 @@
 #' columns. Optional hover variables can be included to facilitate quality
 #' control workflows when converting the plot to an interactive Plotly figure.
 #'
-#' @param DataFrame A data frame.
-#' @param Variables Character vector of variables to visualize. If NULL,
+#' @param data A data frame.
+#' @param variables Character vector of variables to visualize. If NULL,
 #'   all columns except HoverVars are used.
 #' @param HoverVars Optional character vector of columns to include in hover
 #'   text. Useful for participant IDs, visit names, dates, sites, etc.
@@ -25,16 +25,30 @@
 #'   HoverVars = "cyl"
 #' )
 #'
+#' @param DataFrame \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
+#' @param Variables \strong{Deprecated} (since 19.15.0). Use \code{variables} instead.
 #' @export
-PlotMissingData <- function(
-    DataFrame,
-    Variables = NULL,
+PlotMissingData <- function(data,
+    variables = NULL,
     HoverVars = NULL,
     Relabel = TRUE,
     show_perc = TRUE,
     show_perc_var = TRUE,
-    cluster = FALSE
-) {
+    cluster = FALSE,
+    DataFrame = lifecycle::deprecated(),
+    Variables = lifecycle::deprecated()) {
+  # Deprecated argument shims (SciDataReportR 19.15.0)
+  if (lifecycle::is_present(DataFrame)) {
+    lifecycle::deprecate_warn("19.15.0", "PlotMissingData(DataFrame)", "PlotMissingData(data)")
+    data <- DataFrame
+  }
+  if (!missing(data)) DataFrame <- data
+  if (lifecycle::is_present(Variables)) {
+    lifecycle::deprecate_warn("19.15.0", "PlotMissingData(Variables)", "PlotMissingData(variables)")
+    variables <- Variables
+  }
+  Variables <- variables
+
 
   # Validate inputs
 

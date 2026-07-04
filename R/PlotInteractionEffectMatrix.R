@@ -3,11 +3,11 @@
 #' Creates a heatmap visualization of interaction effects between continuous variables,
 #' showing whether interactions result in slope reversals or maintain the same direction.
 #'
-#' @param Data A data frame containing the variables to be analyzed
+#' @param data A data frame containing the variables to be analyzed
 #' @param interVar Character string specifying the interaction variable (moderator). Can be categorical or continuous.
-#' @param outcomeVars Character vector of outcome variable names (displayed on rows)
-#' @param predictorVars Character vector of predictor variable names (displayed on columns)
-#' @param covars Character vector of covariate names to include in the models
+#' @param outcome_vars Character vector of outcome variable names (displayed on rows)
+#' @param predictor_vars Character vector of predictor variable names (displayed on columns)
+#' @param covariates Character vector of covariate names to include in the models
 #' @param Relabel Logical indicating whether to use variable labels if available (default: TRUE)
 #' @param Ordinal Logical indicating whether to treat ordered factors as numeric (default: FALSE)
 #'
@@ -61,7 +61,7 @@
 #' \dontrun{
 #' # With categorical interaction variable
 #' results <- PlotInteractionEffectsMatrix(
-#'   Data = mydata,
+#'   data = mydata,
 #'   interVar = "HIV_status",
 #'   outcomeVars = sleep_vars,
 #'   predictorVars = metabolites,
@@ -70,7 +70,7 @@
 #'
 #' # With continuous interaction variable
 #' results <- PlotInteractionEffectsMatrix(
-#'   Data = mydata,
+#'   data = mydata,
 #'   interVar = "age",
 #'   outcomeVars = sleep_vars,
 #'   predictorVars = metabolites,
@@ -81,6 +81,14 @@
 #' print(results$Unadjusted$plot)
 #' }
 #'
+#' @param fdr_scope Either `"matrix"` (default) or `"per_outcome"`, passed to
+#'   [ApplyFDRCorrection()]. `"matrix"` corrects across all interaction
+#'   p-values at once (historical behavior). `"per_outcome"` corrects
+#'   separately within each outcome variable (`outcome_vars`).
+#' @param Data \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
+#' @param outcomeVars \strong{Deprecated} (since 19.15.0). Use \code{outcome_vars} instead.
+#' @param predictorVars \strong{Deprecated} (since 19.15.0). Use \code{predictor_vars} instead.
+#' @param covars \strong{Deprecated} (since 19.15.0). Use \code{covariates} instead.
 #' @export
 #' @importFrom dplyr %>% left_join mutate select rename filter
 #' @importFrom tidyr pivot_longer pivot_wider
@@ -88,9 +96,41 @@
 #' @importFrom tibble rownames_to_column column_to_rownames
 #' @importFrom stats lm coef p.adjust as.formula sd
 
-PlotInteractionEffectsMatrix <- function(Data, interVar = NULL,
-                                         outcomeVars = NULL, predictorVars = NULL, covars = NULL,
-                                         Relabel = TRUE, Ordinal = FALSE) {
+PlotInteractionEffectsMatrix <- function(data,
+    interVar = NULL,
+    outcome_vars = NULL,
+    predictor_vars = NULL,
+    covariates = NULL,
+    Relabel = TRUE,
+    Ordinal = FALSE,
+    Data = lifecycle::deprecated(),
+    outcomeVars = lifecycle::deprecated(),
+    predictorVars = lifecycle::deprecated(),
+    fdr_scope = c("matrix", "per_outcome"),
+    covars = lifecycle::deprecated()) {
+  # Deprecated argument shims (SciDataReportR 19.15.0)
+  if (lifecycle::is_present(Data)) {
+    lifecycle::deprecate_warn("19.15.0", "PlotInteractionEffectsMatrix(Data)", "PlotInteractionEffectsMatrix(data)")
+    data <- Data
+  }
+  if (!missing(data)) Data <- data
+  if (lifecycle::is_present(outcomeVars)) {
+    lifecycle::deprecate_warn("19.15.0", "PlotInteractionEffectsMatrix(outcomeVars)", "PlotInteractionEffectsMatrix(outcome_vars)")
+    outcome_vars <- outcomeVars
+  }
+  outcomeVars <- outcome_vars
+  if (lifecycle::is_present(predictorVars)) {
+    lifecycle::deprecate_warn("19.15.0", "PlotInteractionEffectsMatrix(predictorVars)", "PlotInteractionEffectsMatrix(predictor_vars)")
+    predictor_vars <- predictorVars
+  }
+  predictorVars <- predictor_vars
+  if (lifecycle::is_present(covars)) {
+    lifecycle::deprecate_warn("19.15.0", "PlotInteractionEffectsMatrix(covars)", "PlotInteractionEffectsMatrix(covariates)")
+    covariates <- covars
+  }
+  covars <- covariates
+  fdr_scope <- match.arg(fdr_scope)
+
 
   # Check for required packages
   required_packages <- c("dplyr", "tidyr", "ggplot2", "tibble")
@@ -406,11 +446,13 @@ PlotInteractionEffectsMatrix <- function(Data, interVar = NULL,
   m_G$sigsign <- trimws(m_G$sigsign)
 
   ## FDR correction for r_P
-  p_values_for_adjustment <- m_G$P[!is.na(m_G$P)]
-  if (length(p_values_for_adjustment) > 0) {
-    adjusted_p_values <- p.adjust(p_values_for_adjustment, method = "fdr")
-    m_G$P_FDR <- NA
-    m_G$P_FDR[!is.na(m_G$P)] <- adjusted_p_values
+  # Outcomes are the outcome variables (Outcome column) for "per_outcome".
+  if (any(!is.na(m_G$P))) {
+    m_G$P_FDR <- ApplyFDRCorrection(
+      m_G$P,
+      fdr_scope = fdr_scope,
+      outcome_ids = m_G$Outcome
+    )
   } else {
     m_G$P_FDR <- NA
   }
@@ -602,7 +644,7 @@ PlotInteractionEffectsMatrix <- function(Data, interVar = NULL,
   M_FDR$pvaltable <- pvaltable_FDR
 
   # Return output list
-  return(list(
+  out <- list(
     Unadjusted = M,
     FDRCorrected = M_FDR,
     Relabel = Relabel,
@@ -610,5 +652,9 @@ PlotInteractionEffectsMatrix <- function(Data, interVar = NULL,
     interVar = interVar,
     interVar_type = ifelse(interVar_is_continuous, "continuous", "categorical"),
     raw_data = m_G
-  ))
+  )
+  # Standardized p-value element aliases (old names kept)
+  out$p <- out$Unadjusted
+  out$p_fdr <- out$FDRCorrected
+  return(out)
 }

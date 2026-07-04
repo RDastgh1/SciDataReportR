@@ -1,10 +1,10 @@
 #' Explore merge validation results interactively
 #'
 #' Create an interactive HTML dashboard from a `ValidateMerge()` result object.
-#' This function is designed for merge quality-control workflows. It displays
-#' dataset fingerprints, high-level summary cards, a traffic-light checks table,
-#' coverage diagnostics, join-variable auditing, and an expandable
-#' duplicate-variable conflict explorer.
+#' This function is designed for merge quality-control workflows. It displays a
+#' traffic-light checks table (with rows/columns/unique-key context folded in
+#' as informational rows), a coverage explorer, an expandable
+#' duplicate-variable conflict explorer, and suggested actions.
 #'
 #' This function is intended for interactive review rather than publication
 #' tables. It returns an HTML object that can be rendered in the RStudio Viewer,
@@ -18,6 +18,12 @@
 #'   previews and expanded sections. Default is `10`.
 #' @param TableHeight Height in pixels for scrollable reactable tables.
 #'   Default is `350`.
+#' @param Detail Either `"Compact"` (default) or `"Full"`. In `"Compact"`
+#'   mode, the coverage explorer and conflicts explorer render as collapsed
+#'   click-to-expand accordion sections labeled with their item counts. In
+#'   `"Full"` mode, the same sections are expanded by default. In both modes,
+#'   sections with nothing to show (no unmatched keys, no duplicated
+#'   variables, no suggested actions) are omitted entirely.
 #'
 #' @return An `htmltools::tagList()` object containing an interactive dashboard.
 #'
@@ -26,10 +32,13 @@ ExploreMergeValidation <- function(
     MergeObj,
     Title = "Merge validation explorer",
     TopN = 10,
-    TableHeight = 350
+    TableHeight = 350,
+    Detail = c("Compact", "Full")
 ) {
 
   # Validate inputs
+
+  Detail <- match.arg(Detail)
 
   if (!is.list(MergeObj)) {
     stop("MergeObj must be a list returned by ValidateMerge().")
@@ -92,6 +101,8 @@ ExploreMergeValidation <- function(
     )
   }
 
+  expanded <- Detail == "Full"
+
   # Prepare shared values
 
   summary_row <- MergeObj$Summary[1, ]
@@ -99,19 +110,22 @@ ExploreMergeValidation <- function(
   status_colors <- c(
     "PASS" = "#2E7D32",
     "WARNING" = "#F9A825",
-    "FAIL" = "#C62828"
+    "FAIL" = "#C62828",
+    "INFO" = "#1565C0"
   )
 
   status_backgrounds <- c(
     "PASS" = "#E8F5E9",
     "WARNING" = "#FFF8E1",
-    "FAIL" = "#FFEBEE"
+    "FAIL" = "#FFEBEE",
+    "INFO" = "#E3F2FD"
   )
 
   status_icons <- c(
-    "PASS" = "\u25cf",
-    "WARNING" = "\u25cf",
-    "FAIL" = "\u25cf"
+    "PASS" = "●",
+    "WARNING" = "●",
+    "FAIL" = "●",
+    "INFO" = "●"
   )
 
   key_columns <- names(MergeObj$IDCoverage$Matching)
@@ -128,7 +142,7 @@ ExploreMergeValidation <- function(
     known_conflict_cols
   )
 
-  # Prepare fingerprint values
+  # Prepare dataset context values (folded into the checks table)
 
   left_rows <- if ("LeftRows" %in% names(summary_row)) summary_row$LeftRows else NA_integer_
   right_rows <- if ("RightRows" %in% names(summary_row)) summary_row$RightRows else NA_integer_
@@ -368,252 +382,42 @@ ExploreMergeValidation <- function(
     "Major merge-integrity blockers detected. Review duplicate keys, unresolved duplicate variables, and other warnings."
   }
 
-  suggested_actions_preview <- if ("SuggestedActions" %in% names(MergeObj) && nrow(MergeObj$SuggestedActions) > 0) {
-    MergeObj$SuggestedActions %>%
-      dplyr::slice_head(n = TopN) %>%
-      dplyr::mutate(
-        Text = paste0(
-          Priority,
-          ": ",
-          Action
-        )
-      ) %>%
-      dplyr::pull(Text) %>%
-      paste(collapse = "<br>")
-  } else {
-    "None"
-  }
-
-  # Prepare summary card values
-
-  duplicate_key_total <- if ("DuplicateKeyGroups_Left" %in% names(summary_row)) {
-    summary_row$DuplicateKeyGroups_Left +
-      summary_row$DuplicateKeyGroups_Right +
-      summary_row$DuplicateKeyGroups_Merged
-  } else {
-    nrow(MergeObj$DuplicateKeys$Left) +
-      nrow(MergeObj$DuplicateKeys$Right) +
-      nrow(MergeObj$DuplicateKeys$Merged)
-  }
-
-  coverage_issue_count <- if ("LeftOnlyKeys" %in% names(summary_row)) {
-    summary_row$LeftOnlyKeys + summary_row$RightOnlyKeys
-  } else {
-    nrow(MergeObj$IDCoverage$LeftOnly) +
-      nrow(MergeObj$IDCoverage$RightOnly)
-  }
-
-  overlapping_variable_count <- if ("OverlappingVariables" %in% names(summary_row)) {
-    summary_row$OverlappingVariables
-  } else {
-    nrow(MergeObj$OverlappingVariables)
-  }
-
-  unresolved_duplicate_count <- if ("UnresolvedDuplicateVariables" %in% names(summary_row)) {
-    summary_row$UnresolvedDuplicateVariables
-  } else {
-    nrow(MergeObj$DuplicateVariables)
-  }
-
-  conflict_count <- if ("VariableConflictCount" %in% names(summary_row)) {
-    summary_row$VariableConflictCount
-  } else {
-    nrow(MergeObj$VariableConflicts)
-  }
-
-  suspicious_count <- if ("SuspiciousConflictCount" %in% names(summary_row)) {
-    summary_row$SuspiciousConflictCount
-  } else {
-    nrow(MergeObj$SuspiciousConflicts)
-  }
-
-  row_inflation_value <- if ("RowInflationFactor" %in% names(summary_row)) {
-    summary_row$RowInflationFactor
-  } else {
-    NA_real_
-  }
-
-  row_inflation_status <- dplyr::case_when(
-    is.na(row_inflation_value) ~ "PASS",
-    row_inflation_value > 2 ~ "FAIL",
-    row_inflation_value > 1.05 ~ "WARNING",
-    TRUE ~ "PASS"
-  )
-
-  # Build merge fingerprint cards
-
-  fingerprint_cards <- tibble::tibble(
-    Dataset = c(
-      "Left dataset",
-      "Right dataset",
-      "Merged dataset"
-    ),
-    Rows = c(
-      left_rows,
-      right_rows,
-      merged_rows
-    ),
-    Variables = c(
-      left_columns,
-      right_columns,
-      merged_columns
-    ),
-    UniqueKeys = c(
-      left_unique_keys,
-      right_unique_keys,
-      merged_unique_keys
-    )
-  ) %>%
-    dplyr::mutate(
-      Preview = paste0(
-        "Rows: ",
-        Rows,
-        "\nVariables: ",
-        Variables,
-        "\nUnique key combinations: ",
-        UniqueKeys
-      )
-    )
-
-  fingerprint_card_tags <- purrr::pmap(
-    fingerprint_cards,
-    function(Dataset, Rows, Variables, UniqueKeys, Preview) {
-      htmltools::tags$div(
-        class = "sdr-fingerprint-card",
-        title = Preview,
-        htmltools::tags$div(
-          class = "sdr-fingerprint-title",
-          Dataset
-        ),
-        htmltools::tags$div(
-          class = "sdr-fingerprint-grid-inner",
-          htmltools::tags$div(
-            class = "sdr-fingerprint-metric",
-            htmltools::tags$div(
-              class = "sdr-fingerprint-value",
-              Rows
-            ),
-            htmltools::tags$div(
-              class = "sdr-fingerprint-label",
-              "Rows"
-            )
-          ),
-          htmltools::tags$div(
-            class = "sdr-fingerprint-metric",
-            htmltools::tags$div(
-              class = "sdr-fingerprint-value",
-              Variables
-            ),
-            htmltools::tags$div(
-              class = "sdr-fingerprint-label",
-              "Variables"
-            )
-          ),
-          htmltools::tags$div(
-            class = "sdr-fingerprint-metric",
-            htmltools::tags$div(
-              class = "sdr-fingerprint-value",
-              UniqueKeys
-            ),
-            htmltools::tags$div(
-              class = "sdr-fingerprint-label",
-              "Unique keys"
-            )
-          )
-        )
-      )
-    }
-  )
-
-  # Build merge quality cards
-
-  summary_cards <- tibble::tibble(
-    Metric = c(
-      "Ready for analysis",
-      "Duplicate keys",
-      "Coverage issues",
-      "Overlapping variables",
-      "Unresolved duplicates",
-      "Variable conflicts",
-      "Suspicious conflicts",
-      "Row inflation"
-    ),
-    Value = c(
-      ifelse(isTRUE(MergeObj$ReadyForAnalysis), "Yes", "No"),
-      as.character(duplicate_key_total),
-      as.character(coverage_issue_count),
-      as.character(overlapping_variable_count),
-      as.character(unresolved_duplicate_count),
-      as.character(conflict_count),
-      as.character(suspicious_count),
-      as.character(row_inflation_value)
-    ),
-    Status = c(
-      ifelse(isTRUE(MergeObj$ReadyForAnalysis), "PASS", "FAIL"),
-      ifelse(duplicate_key_total > 0, "FAIL", "PASS"),
-      ifelse(coverage_issue_count > 0, "WARNING", "PASS"),
-      ifelse(overlapping_variable_count > 0, "WARNING", "PASS"),
-      ifelse(unresolved_duplicate_count > 0, "FAIL", "PASS"),
-      ifelse(conflict_count > 0, "WARNING", "PASS"),
-      ifelse(suspicious_count > 0, "WARNING", "PASS"),
-      row_inflation_status
-    ),
-    Preview = c(
-      ready_preview,
-      duplicate_key_preview,
-      coverage_preview,
-      overlap_preview,
-      unresolved_duplicate_preview,
-      conflict_preview,
-      suspicious_preview,
-      row_inflation_preview
-    )
-  ) %>%
-    dplyr::mutate(
-      Color = dplyr::case_when(
-        Status == "PASS" ~ status_colors[["PASS"]],
-        Status == "WARNING" ~ status_colors[["WARNING"]],
-        Status == "FAIL" ~ status_colors[["FAIL"]],
-        TRUE ~ "#546E7A"
-      ),
-      Background = dplyr::case_when(
-        Status == "PASS" ~ status_backgrounds[["PASS"]],
-        Status == "WARNING" ~ status_backgrounds[["WARNING"]],
-        Status == "FAIL" ~ status_backgrounds[["FAIL"]],
-        TRUE ~ "#ECEFF1"
-      )
-    )
-
-  summary_card_tags <- purrr::pmap(
-    summary_cards,
-    function(Metric, Value, Status, Preview, Color, Background) {
-      htmltools::tags$div(
-        class = "sdr-card",
-        style = paste0(
-          "border-left: 6px solid ",
-          Color,
-          "; background: ",
-          Background,
-          ";"
-        ),
-        title = gsub("<br>", "\n", Preview, fixed = TRUE),
-        htmltools::tags$div(
-          class = "sdr-card-label",
-          Metric
-        ),
-        htmltools::tags$div(
-          class = "sdr-card-value",
-          Value
-        ),
-        htmltools::tags$div(
-          class = "sdr-card-status",
-          Status
-        )
-      )
-    }
-  )
-
   # Prepare checks table
+  #
+  # Dataset context (rows, columns, unique keys) is folded in as informational
+  # rows rather than shown as separate fingerprint/summary cards.
+
+  context_rows_df <- tibble::tibble(
+    Status = "INFO",
+    Check = c(
+      "Rows",
+      "Columns",
+      "Unique keys"
+    ),
+    Count = c(
+      as.numeric(merged_rows),
+      as.numeric(merged_columns),
+      as.numeric(merged_unique_keys)
+    ),
+    Details = c(
+      paste0(
+        "Left: ", left_rows,
+        "; Right: ", right_rows,
+        "; Merged: ", merged_rows, "."
+      ),
+      paste0(
+        "Left: ", left_columns,
+        "; Right: ", right_columns,
+        "; Merged: ", merged_columns, "."
+      ),
+      paste0(
+        "Unique key combinations - Left: ", left_unique_keys,
+        "; Right: ", right_unique_keys,
+        "; Merged: ", merged_unique_keys, "."
+      )
+    ),
+    Examples = "None"
+  )
 
   checks_table_df <- MergeObj$Checks %>%
     dplyr::mutate(
@@ -645,6 +449,11 @@ ExploreMergeValidation <- function(
       Details,
       Examples
     )
+
+  checks_table_df <- dplyr::bind_rows(
+    context_rows_df,
+    checks_table_df
+  )
 
   checks_table <- reactable::reactable(
     checks_table_df,
@@ -699,6 +508,10 @@ ExploreMergeValidation <- function(
     details = function(index) {
       row <- checks_table_df[index, ]
 
+      if (row$Status == "INFO") {
+        return(NULL)
+      }
+
       htmltools::tags$div(
         class = "sdr-detail-box",
         htmltools::tags$div(
@@ -720,334 +533,301 @@ ExploreMergeValidation <- function(
     }
   )
 
-  # Prepare coverage table
+  # Prepare coverage table (omitted entirely when there are no unmatched keys)
 
-  coverage_table_df <- dplyr::bind_rows(
-    MergeObj$IDCoverage$Matching %>%
-      dplyr::mutate(CoverageStatus = "Matching"),
-    MergeObj$IDCoverage$LeftOnly %>%
-      dplyr::mutate(CoverageStatus = "Left only"),
-    MergeObj$IDCoverage$RightOnly %>%
-      dplyr::mutate(CoverageStatus = "Right only")
-  ) %>%
-    dplyr::select(
-      CoverageStatus,
-      dplyr::all_of(key_columns)
-    )
+  unmatched_key_count <- nrow(MergeObj$IDCoverage$LeftOnly) +
+    nrow(MergeObj$IDCoverage$RightOnly)
 
-  coverage_table <- reactable::reactable(
-    coverage_table_df,
-     width = "100%",
-    searchable = TRUE,
-    filterable = TRUE,
-    highlight = TRUE,
-    bordered = TRUE,
-    striped = TRUE,
-    compact = TRUE,
-    pagination = FALSE,
-    height = TableHeight,
-    columns = list(
-      CoverageStatus = reactable::colDef(
-        name = "Coverage",
-        width = 130,
-        cell = function(value) {
-          color <- dplyr::case_when(
-            value == "Matching" ~ "#2E7D32",
-            value == "Left only" ~ "#F9A825",
-            value == "Right only" ~ "#EF6C00",
-            TRUE ~ "#546E7A"
-          )
+  coverage_section <- NULL
 
-          background <- dplyr::case_when(
-            value == "Matching" ~ "#E8F5E9",
-            value == "Left only" ~ "#FFF8E1",
-            value == "Right only" ~ "#FFF3E0",
-            TRUE ~ "#ECEFF1"
-          )
+  if (unmatched_key_count > 0) {
 
-          htmltools::tags$span(
-            style = paste0(
-              "display:inline-block;",
-              "padding:4px 9px;",
-              "border-radius:999px;",
-              "font-weight:700;",
-              "color:",
-              color,
-              ";background:",
-              background,
-              ";"
-            ),
-            value
-          )
-        }
+    coverage_table_df <- dplyr::bind_rows(
+      MergeObj$IDCoverage$Matching %>%
+        dplyr::mutate(CoverageStatus = "Matching"),
+      MergeObj$IDCoverage$LeftOnly %>%
+        dplyr::mutate(CoverageStatus = "Left only"),
+      MergeObj$IDCoverage$RightOnly %>%
+        dplyr::mutate(CoverageStatus = "Right only")
+    ) %>%
+      dplyr::select(
+        CoverageStatus,
+        dplyr::all_of(key_columns)
       )
-    )
-  )
 
-  # Prepare join audit table
-
-  join_audit_table_df <- MergeObj$JoinAudit %>%
-    dplyr::mutate(
-      IsKeyLabel = ifelse(IsKey, "Yes", "No")
-    )
-
-  join_audit_table <- reactable::reactable(
-    join_audit_table_df,
-     width = "100%",
-    searchable = TRUE,
-    filterable = TRUE,
-    highlight = TRUE,
-    bordered = TRUE,
-    striped = TRUE,
-    compact = TRUE,
-    pagination = FALSE,
-    height = min(TableHeight, 250),
-    columns = list(
-      Variable = reactable::colDef(
-        minWidth = 220
-      ),
-      InBoth = reactable::colDef(
-        show = FALSE
-      ),
-      IsKey = reactable::colDef(
-        show = FALSE
-      ),
-      IsKeyLabel = reactable::colDef(
-        name = "Specified key",
-        width = 140,
-        cell = function(value) {
-          if (value == "Yes") {
-            htmltools::tags$span(
-              style = paste0(
-                "display:inline-block;",
-                "padding:4px 9px;",
-                "border-radius:999px;",
-                "font-weight:700;",
-                "color:#2E7D32;",
-                "background:#E8F5E9;"
-              ),
-              value
+    coverage_table <- reactable::reactable(
+      coverage_table_df,
+      width = "100%",
+      searchable = TRUE,
+      filterable = TRUE,
+      highlight = TRUE,
+      bordered = TRUE,
+      striped = TRUE,
+      compact = TRUE,
+      pagination = FALSE,
+      height = TableHeight,
+      columns = list(
+        CoverageStatus = reactable::colDef(
+          name = "Coverage",
+          width = 130,
+          cell = function(value) {
+            color <- dplyr::case_when(
+              value == "Matching" ~ "#2E7D32",
+              value == "Left only" ~ "#F9A825",
+              value == "Right only" ~ "#EF6C00",
+              TRUE ~ "#546E7A"
             )
-          } else {
+
+            background <- dplyr::case_when(
+              value == "Matching" ~ "#E8F5E9",
+              value == "Left only" ~ "#FFF8E1",
+              value == "Right only" ~ "#FFF3E0",
+              TRUE ~ "#ECEFF1"
+            )
+
             htmltools::tags$span(
               style = paste0(
                 "display:inline-block;",
                 "padding:4px 9px;",
                 "border-radius:999px;",
                 "font-weight:700;",
-                "color:#F9A825;",
-                "background:#FFF8E1;"
+                "color:",
+                color,
+                ";background:",
+                background,
+                ";"
               ),
               value
             )
           }
-        }
-      ),
-      JoinRole = reactable::colDef(
-        name = "Join role",
-        minWidth = 180
+        )
       )
     )
-  )
 
-  # Prepare duplicate-variable conflict table
+    coverage_section <- htmltools::tags$details(
+      class = "sdr-accordion",
+      open = if (expanded) NA else NULL,
+      htmltools::tags$summary(
+        class = "sdr-accordion-summary",
+        paste0(
+          "Coverage explorer (",
+          unmatched_key_count,
+          " unmatched)"
+        )
+      ),
+      htmltools::tags$div(
+        class = "sdr-section-subtitle",
+        "Review matching, left-only, and right-only key combinations."
+      ),
+      coverage_table
+    )
+  }
 
-  duplicate_variables_df <- MergeObj$DuplicateVariables
+  # Prepare duplicate-variable conflict table (omitted when no .x/.y pairs)
 
-  if (nrow(duplicate_variables_df) > 0) {
-    duplicate_variables_df <- duplicate_variables_df %>%
+  duplicate_variable_count <- nrow(MergeObj$DuplicateVariables)
+
+  conflicts_section <- NULL
+
+  if (duplicate_variable_count > 0) {
+
+    duplicate_variables_df <- MergeObj$DuplicateVariables %>%
       dplyr::mutate(
         AgreementLabel = paste0(Agreement, "%"),
         ClassComparison = paste0(LeftClass, " vs ", RightClass)
       )
-  } else {
-    duplicate_variables_df <- tibble::tibble(
-      Variable = character(),
-      XVariable = character(),
-      YVariable = character(),
-      LeftClass = character(),
-      RightClass = character(),
-      Agreement = numeric(),
-      AgreementLabel = character(),
-      Conflicts = integer(),
-      MissingnessConflicts = integer(),
-      BothMissing = integer(),
-      TotalRows = integer(),
-      ClassComparison = character()
+
+    conflicts_table <- reactable::reactable(
+      duplicate_variables_df,
+      width = "100%",
+      searchable = TRUE,
+      filterable = TRUE,
+      highlight = TRUE,
+      bordered = TRUE,
+      striped = TRUE,
+      compact = TRUE,
+      pagination = FALSE,
+      height = min(TableHeight, 300),
+      defaultSorted = "Conflicts",
+      defaultSortOrder = "desc",
+      columns = list(
+        Variable = reactable::colDef(
+          minWidth = 220
+        ),
+        XVariable = reactable::colDef(
+          name = ".x variable",
+          minWidth = 180
+        ),
+        YVariable = reactable::colDef(
+          name = ".y variable",
+          minWidth = 180
+        ),
+        LeftClass = reactable::colDef(
+          show = FALSE
+        ),
+        RightClass = reactable::colDef(
+          show = FALSE
+        ),
+        ClassComparison = reactable::colDef(
+          name = "Classes",
+          minWidth = 160
+        ),
+        Agreement = reactable::colDef(
+          name = "Agreement",
+          align = "center",
+          width = 110,
+          cell = function(value) {
+            paste0(value, "%")
+          },
+          style = function(value) {
+            if (is.na(value)) {
+              list()
+            } else if (value < 75) {
+              list(
+                fontWeight = "700",
+                color = "#C62828",
+                background = "#FFEBEE"
+              )
+            } else if (value < 100) {
+              list(
+                fontWeight = "700",
+                color = "#F9A825",
+                background = "#FFF8E1"
+              )
+            } else {
+              list(
+                color = "#2E7D32",
+                background = "#E8F5E9"
+              )
+            }
+          }
+        ),
+        AgreementLabel = reactable::colDef(
+          show = FALSE
+        ),
+        Conflicts = reactable::colDef(
+          align = "center",
+          width = 100,
+          style = function(value) {
+            if (is.na(value) || value == 0) {
+              list()
+            } else {
+              list(
+                fontWeight = "700",
+                color = "#C62828"
+              )
+            }
+          }
+        ),
+        MissingnessConflicts = reactable::colDef(
+          name = "Missingness conflicts",
+          align = "center",
+          minWidth = 170
+        ),
+        BothMissing = reactable::colDef(
+          name = "Both missing",
+          align = "center",
+          width = 120
+        ),
+        TotalRows = reactable::colDef(
+          name = "Rows",
+          align = "center",
+          width = 90
+        )
+      ),
+      details = function(index) {
+        selected_variable <- as.character(duplicate_variables_df$Variable[index])
+
+        detail_df <- MergeObj$VariableConflicts %>%
+          dplyr::filter(
+            Variable == selected_variable
+          ) %>%
+          dplyr::slice_head(n = TopN)
+
+        if (nrow(detail_df) == 0) {
+          return(
+            htmltools::tags$div(
+              class = "sdr-detail-box",
+              "No conflict examples available for this variable."
+            )
+          )
+        }
+
+        detail_df <- detail_df %>%
+          dplyr::mutate(
+            LeftValueEscaped = htmltools::htmlEscape(LeftValue),
+            RightValueEscaped = htmltools::htmlEscape(RightValue),
+            Conflict = paste0(
+              "<span class='sdr-left-value'>",
+              LeftValueEscaped,
+              "</span>",
+              " &rarr; ",
+              "<span class='sdr-right-value'>",
+              RightValueEscaped,
+              "</span>"
+            )
+          )
+
+        detail_display <- detail_df %>%
+          dplyr::select(
+            dplyr::all_of(conflict_key_columns),
+            ConflictType,
+            Conflict
+          )
+
+        reactable::reactable(
+          detail_display,
+          width = "100%",
+          searchable = TRUE,
+          filterable = TRUE,
+          highlight = TRUE,
+          bordered = TRUE,
+          striped = TRUE,
+          compact = TRUE,
+          pagination = FALSE,
+          height = min(TableHeight, 260),
+          columns = list(
+            Conflict = reactable::colDef(
+              html = TRUE,
+              minWidth = 260
+            ),
+            ConflictType = reactable::colDef(
+              name = "Conflict type",
+              minWidth = 210
+            )
+          )
+        )
+      }
+    )
+
+    conflicts_section <- htmltools::tags$details(
+      class = "sdr-accordion",
+      open = if (expanded) NA else NULL,
+      htmltools::tags$summary(
+        class = "sdr-accordion-summary",
+        paste0(
+          "Duplicate-variable conflicts (",
+          duplicate_variable_count,
+          " variable",
+          ifelse(duplicate_variable_count == 1, "", "s"),
+          ")"
+        )
+      ),
+      htmltools::tags$div(
+        class = "sdr-section-subtitle",
+        "Expand a variable to review conflicting .x and .y values side by side."
+      ),
+      conflicts_table
     )
   }
 
-  conflicts_table <- reactable::reactable(
-    duplicate_variables_df,
-    width = "100%",
-    searchable = TRUE,
-    filterable = TRUE,
-    highlight = TRUE,
-    bordered = TRUE,
-    striped = TRUE,
-    compact = TRUE,
-    pagination = FALSE,
-    height = min(TableHeight, 300),
-    defaultSorted = "Conflicts",
-    defaultSortOrder = "desc",
-    columns = list(
-      Variable = reactable::colDef(
-        minWidth = 220
-      ),
-      XVariable = reactable::colDef(
-        name = ".x variable",
-        minWidth = 180
-      ),
-      YVariable = reactable::colDef(
-        name = ".y variable",
-        minWidth = 180
-      ),
-      LeftClass = reactable::colDef(
-        show = FALSE
-      ),
-      RightClass = reactable::colDef(
-        show = FALSE
-      ),
-      ClassComparison = reactable::colDef(
-        name = "Classes",
-        minWidth = 160
-      ),
-      Agreement = reactable::colDef(
-        name = "Agreement",
-        align = "center",
-        width = 110,
-        cell = function(value) {
-          paste0(value, "%")
-        },
-        style = function(value) {
-          if (is.na(value)) {
-            list()
-          } else if (value < 75) {
-            list(
-              fontWeight = "700",
-              color = "#C62828",
-              background = "#FFEBEE"
-            )
-          } else if (value < 100) {
-            list(
-              fontWeight = "700",
-              color = "#F9A825",
-              background = "#FFF8E1"
-            )
-          } else {
-            list(
-              color = "#2E7D32",
-              background = "#E8F5E9"
-            )
-          }
-        }
-      ),
-      AgreementLabel = reactable::colDef(
-        show = FALSE
-      ),
-      Conflicts = reactable::colDef(
-        align = "center",
-        width = 100,
-        style = function(value) {
-          if (is.na(value) || value == 0) {
-            list()
-          } else {
-            list(
-              fontWeight = "700",
-              color = "#C62828"
-            )
-          }
-        }
-      ),
-      MissingnessConflicts = reactable::colDef(
-        name = "Missingness conflicts",
-        align = "center",
-        minWidth = 170
-      ),
-      BothMissing = reactable::colDef(
-        name = "Both missing",
-        align = "center",
-        width = 120
-      ),
-      TotalRows = reactable::colDef(
-        name = "Rows",
-        align = "center",
-        width = 90
-      )
-    ),
-    details = function(index) {
-      if (nrow(duplicate_variables_df) == 0) {
-        return(NULL)
-      }
+  # Prepare suggested actions table (omitted when empty)
 
-      selected_variable <- as.character(duplicate_variables_df$Variable[index])
+  actions_section <- NULL
 
-      detail_df <- MergeObj$VariableConflicts %>%
-        dplyr::filter(
-          Variable == selected_variable
-        ) %>%
-        dplyr::slice_head(n = TopN)
+  if ("SuggestedActions" %in% names(MergeObj) && nrow(MergeObj$SuggestedActions) > 0) {
 
-      if (nrow(detail_df) == 0) {
-        return(
-          htmltools::tags$div(
-            class = "sdr-detail-box",
-            "No conflict examples available for this variable."
-          )
-        )
-      }
-
-      detail_df <- detail_df %>%
-        dplyr::mutate(
-          LeftValueEscaped = htmltools::htmlEscape(LeftValue),
-          RightValueEscaped = htmltools::htmlEscape(RightValue),
-          Conflict = paste0(
-            "<span class='sdr-left-value'>",
-            LeftValueEscaped,
-            "</span>",
-            " &rarr; ",
-            "<span class='sdr-right-value'>",
-            RightValueEscaped,
-            "</span>"
-          )
-        )
-
-      detail_display <- detail_df %>%
-        dplyr::select(
-          dplyr::all_of(conflict_key_columns),
-          ConflictType,
-          Conflict
-        )
-
-      reactable::reactable(
-        detail_display,
-        width = "100%",
-        searchable = TRUE,
-        filterable = TRUE,
-        highlight = TRUE,
-        bordered = TRUE,
-        striped = TRUE,
-        compact = TRUE,
-        pagination = FALSE,
-        height = min(TableHeight, 260),
-        columns = list(
-          Conflict = reactable::colDef(
-            html = TRUE,
-            minWidth = 260
-          ),
-          ConflictType = reactable::colDef(
-            name = "Conflict type",
-            minWidth = 210
-          )
-        )
-      )
-    }
-  )
-
-  # Prepare suggested actions table
-
-  actions_table <- if ("SuggestedActions" %in% names(MergeObj) && nrow(MergeObj$SuggestedActions) > 0) {
-    reactable::reactable(
+    actions_table <- reactable::reactable(
       MergeObj$SuggestedActions,
       width = "100%",
       searchable = TRUE,
@@ -1095,15 +875,18 @@ ExploreMergeValidation <- function(
         )
       )
     )
-  } else {
-    reactable::reactable(
-      tibble::tibble(
-        Message = "No suggested actions available."
+
+    actions_section <- htmltools::tags$div(
+      class = "sdr-section",
+      htmltools::tags$div(
+        class = "sdr-section-title",
+        "Suggested actions"
       ),
-      bordered = TRUE,
-      compact = TRUE,
-      pagination = FALSE,
-      height = min(TableHeight, 200)
+      htmltools::tags$div(
+        class = "sdr-section-subtitle",
+        "Recommended next steps generated from the merge audit."
+      ),
+      actions_table
     )
   }
 
@@ -1133,92 +916,6 @@ ExploreMergeValidation <- function(
           font-size: 14px;
         }
 
-        .sdr-fingerprint-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-          gap: 12px;
-          margin-bottom: 22px;
-        }
-
-        .sdr-fingerprint-card {
-          background: #F8FAFC;
-          border: 1px solid #E0E6ED;
-          border-left: 6px solid #1565C0;
-          border-radius: 14px;
-          padding: 14px 16px;
-          box-shadow: 0 1px 4px rgba(0,0,0,0.06);
-        }
-
-        .sdr-fingerprint-title {
-          font-size: 14px;
-          font-weight: 750;
-          color: #37474F;
-          margin-bottom: 10px;
-        }
-
-        .sdr-fingerprint-grid-inner {
-          display: grid;
-          grid-template-columns: repeat(3, 1fr);
-          gap: 8px;
-        }
-
-        .sdr-fingerprint-metric {
-          background: #FFFFFF;
-          border-radius: 10px;
-          padding: 10px 8px;
-          text-align: center;
-          border: 1px solid #EEF2F5;
-        }
-
-        .sdr-fingerprint-value {
-          font-size: 24px;
-          font-weight: 800;
-          line-height: 1;
-          color: #1565C0;
-        }
-
-        .sdr-fingerprint-label {
-          margin-top: 6px;
-          font-size: 11px;
-          color: #607D8B;
-          text-transform: uppercase;
-          letter-spacing: 0.04em;
-        }
-
-        .sdr-card-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-          gap: 12px;
-          margin-bottom: 24px;
-        }
-
-        .sdr-card {
-          border-radius: 14px;
-          padding: 14px 16px;
-          box-shadow: 0 1px 4px rgba(0,0,0,0.08);
-        }
-
-        .sdr-card-label {
-          font-size: 13px;
-          color: #546E7A;
-          margin-bottom: 6px;
-        }
-
-        .sdr-card-value {
-          font-size: 30px;
-          font-weight: 800;
-          line-height: 1;
-        }
-
-        .sdr-card-status {
-          margin-top: 8px;
-          font-size: 12px;
-          font-weight: 700;
-          text-transform: uppercase;
-          letter-spacing: 0.04em;
-          color: #455A64;
-        }
-
         .sdr-section {
           margin-top: 28px;
           margin-bottom: 10px;
@@ -1234,6 +931,30 @@ ExploreMergeValidation <- function(
           font-size: 13px;
           color: #607D8B;
           margin-bottom: 12px;
+        }
+
+        .sdr-accordion {
+          margin-top: 28px;
+          margin-bottom: 10px;
+          border: 1px solid #E0E6ED;
+          border-radius: 14px;
+          padding: 10px 16px;
+          background: #F8FAFC;
+        }
+
+        .sdr-accordion[open] {
+          background: #FFFFFF;
+        }
+
+        .sdr-accordion-summary {
+          font-size: 21px;
+          font-weight: 750;
+          cursor: pointer;
+          padding: 4px 0;
+        }
+
+        .sdr-accordion-summary:hover {
+          color: #1565C0;
         }
 
         .sdr-detail-box {
@@ -1292,30 +1013,6 @@ ExploreMergeValidation <- function(
         "Interactive review of merge integrity from ValidateMerge()."
       ),
       htmltools::tags$div(
-        class = "sdr-section-title",
-        "Merge fingerprint"
-      ),
-      htmltools::tags$div(
-        class = "sdr-section-subtitle",
-        "Rows, variables, and unique key combinations before and after the merge."
-      ),
-      htmltools::tags$div(
-        class = "sdr-fingerprint-grid",
-        fingerprint_card_tags
-      ),
-      htmltools::tags$div(
-        class = "sdr-section-title",
-        "Merge quality summary"
-      ),
-      htmltools::tags$div(
-        class = "sdr-section-subtitle",
-        "High-level merge integrity indicators."
-      ),
-      htmltools::tags$div(
-        class = "sdr-card-grid",
-        summary_card_tags
-      ),
-      htmltools::tags$div(
         class = "sdr-section",
         htmltools::tags$div(
           class = "sdr-section-title",
@@ -1323,58 +1020,13 @@ ExploreMergeValidation <- function(
         ),
         htmltools::tags$div(
           class = "sdr-section-subtitle",
-          "Search, filter, sort, and expand rows to inspect merge-integrity examples."
+          "Search, filter, sort, and expand rows to inspect merge-integrity examples. INFO rows summarize rows, columns, and unique keys across the source and merged datasets."
         ),
         checks_table
       ),
-      htmltools::tags$div(
-        class = "sdr-section",
-        htmltools::tags$div(
-          class = "sdr-section-title",
-          "Coverage explorer"
-        ),
-        htmltools::tags$div(
-          class = "sdr-section-subtitle",
-          "Review matching, left-only, and right-only key combinations."
-        ),
-        coverage_table
-      ),
-      htmltools::tags$div(
-        class = "sdr-section",
-        htmltools::tags$div(
-          class = "sdr-section-title",
-          "Join audit"
-        ),
-        htmltools::tags$div(
-          class = "sdr-section-subtitle",
-          "Review variables present in both source datasets and whether they were specified as keys."
-        ),
-        join_audit_table
-      ),
-      htmltools::tags$div(
-        class = "sdr-section",
-        htmltools::tags$div(
-          class = "sdr-section-title",
-          "Duplicate-variable conflicts"
-        ),
-        htmltools::tags$div(
-          class = "sdr-section-subtitle",
-          "Expand a variable to review conflicting .x and .y values side by side."
-        ),
-        conflicts_table
-      ),
-      htmltools::tags$div(
-        class = "sdr-section",
-        htmltools::tags$div(
-          class = "sdr-section-title",
-          "Suggested actions"
-        ),
-        htmltools::tags$div(
-          class = "sdr-section-subtitle",
-          "Recommended next steps generated from the merge audit."
-        ),
-        actions_table
-      )
+      coverage_section,
+      conflicts_section,
+      actions_section
     )
   )
 

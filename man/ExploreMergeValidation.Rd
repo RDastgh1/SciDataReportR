@@ -8,7 +8,8 @@ ExploreMergeValidation(
   MergeObj,
   Title = "Merge validation explorer",
   TopN = 10,
-  TableHeight = 350
+  TableHeight = 350,
+  Detail = c("Compact", "Full")
 )
 }
 \arguments{
@@ -22,16 +23,23 @@ previews and expanded sections. Default is \code{10}.}
 
 \item{TableHeight}{Height in pixels for scrollable reactable tables.
 Default is \code{350}.}
+
+\item{Detail}{Either \code{"Compact"} (default) or \code{"Full"}. In \code{"Compact"}
+mode, the coverage explorer and conflicts explorer render as collapsed
+click-to-expand accordion sections labeled with their item counts. In
+\code{"Full"} mode, the same sections are expanded by default. In both modes,
+sections with nothing to show (no unmatched keys, no duplicated
+variables, no suggested actions) are omitted entirely.}
 }
 \value{
 An \code{htmltools::tagList()} object containing an interactive dashboard.
 }
 \description{
 Create an interactive HTML dashboard from a \code{ValidateMerge()} result object.
-This function is designed for merge quality-control workflows. It displays
-dataset fingerprints, high-level summary cards, a traffic-light checks table,
-coverage diagnostics, join-variable auditing, and an expandable
-duplicate-variable conflict explorer.
+This function is designed for merge quality-control workflows. It displays a
+traffic-light checks table (with rows/columns/unique-key context folded in
+as informational rows), a coverage explorer, an expandable
+duplicate-variable conflict explorer, and suggested actions.
 }
 \details{
 This function is intended for interactive review rather than publication

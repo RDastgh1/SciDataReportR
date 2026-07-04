@@ -12,7 +12,7 @@
 #' @param LeftData A data frame used as one source for the merge.
 #' @param RightData A data frame used as the other source for the merge.
 #' @param MergedData The merged data frame to audit.
-#' @param Keys Character vector of key variables intended to define the merge.
+#' @param keys Character vector of key variables intended to define the merge.
 #'   Multiple keys are supported, such as `c("study_id", "TimePoint")`.
 #'
 #' @return A list with merge validation results, including:
@@ -37,13 +37,20 @@
 #'   \item{VariableConflicts}{Long-format tibble of record-level value conflicts.}
 #' }
 #'
+#' @param Keys \strong{Deprecated} (since 19.15.0). Use \code{keys} instead.
 #' @export
-ValidateMerge <- function(
-    LeftData,
+ValidateMerge <- function(LeftData,
     RightData,
     MergedData,
-    Keys
-) {
+    keys,
+    Keys = lifecycle::deprecated()) {
+  # Deprecated argument shims (SciDataReportR 19.15.0)
+  if (lifecycle::is_present(Keys)) {
+    lifecycle::deprecate_warn("19.15.0", "ValidateMerge(Keys)", "ValidateMerge(keys)")
+    keys <- Keys
+  }
+  if (!missing(keys)) Keys <- keys
+
 
   # Validate inputs
 

@@ -5,25 +5,28 @@
 \title{Plot ANOVA Relationships Matrix}
 \usage{
 PlotAnovaRelationshipsMatrix(
-  Data,
+  data,
   CatVars,
   ContVars,
-  Covariates = NULL,
+  covariates = NULL,
   Relabel = TRUE,
   Parametric = TRUE,
   Ordinal = FALSE,
   min_n = 4,
-  eps = 1e-08
+  eps = 1e-08,
+  Data = lifecycle::deprecated(),
+  fdr_scope = c("matrix", "per_outcome"),
+  Covariates = lifecycle::deprecated()
 )
 }
 \arguments{
-\item{Data}{The data frame containing the variables of interest.}
+\item{data}{The data frame containing the variables of interest.}
 
 \item{CatVars}{Character vector of categorical variable names.}
 
 \item{ContVars}{Character vector of continuous variable names.}
 
-\item{Covariates}{Optional character vector of covariate names for ANCOVA analysis.}
+\item{covariates}{Optional character vector of covariate names for ANCOVA analysis.}
 
 \item{Relabel}{Logical indicating whether to relabel variables with their labels (default is TRUE).}
 
@@ -34,6 +37,15 @@ PlotAnovaRelationshipsMatrix(
 \item{min_n}{Minimum number of complete observations required for a tested relationship.}
 
 \item{eps}{Small positive value used to avoid zero-size plotting artifacts.}
+
+\item{Data}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
+
+\item{fdr_scope}{Either \code{"matrix"} (default) or \code{"per_outcome"}, passed to
+\code{\link[=ApplyFDRCorrection]{ApplyFDRCorrection()}}. \code{"matrix"} corrects across all p-values at once
+(historical behavior). \code{"per_outcome"} corrects separately within each
+outcome: outcomes are the continuous variables (\code{ContVars}).}
+
+\item{Covariates}{\strong{Deprecated} (since 19.15.0). Use \code{covariates} instead.}
 }
 \value{
 A list containing three ggplot objects: p (scatter plot without multiple comparison correction), p_FDR (scatter plot with FDR correction), and pvaltable (data frame of p-values and significance).

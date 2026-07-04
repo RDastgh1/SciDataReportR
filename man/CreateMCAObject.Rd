@@ -5,7 +5,7 @@
 \title{Create a reusable MCA object and visualizations}
 \usage{
 CreateMCAObject(
-  Data,
+  data,
   VarsToReduce,
   VariableCategories = NULL,
   minThresh = 75,
@@ -14,11 +14,12 @@ CreateMCAObject(
   Relabel = TRUE,
   Ordinal = FALSE,
   numComponents = NULL,
-  ImputeMissing = FALSE
+  ImputeMissing = FALSE,
+  Data = lifecycle::deprecated()
 )
 }
 \arguments{
-\item{Data}{A dataframe containing the data to be analyzed.}
+\item{data}{A dataframe containing the data to be analyzed.}
 
 \item{VarsToReduce}{A vector of column names in \code{Data} to be included in the MCA.}
 
@@ -37,6 +38,8 @@ CreateMCAObject(
 \item{numComponents}{An optional integer specifying the number of components to retain. If NULL, the number of components will be determined based on \code{minThresh}.}
 
 \item{ImputeMissing}{Logical, if TRUE, missing values will be imputed using \code{missRanger}. Default is FALSE.}
+
+\item{Data}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
 }
 \value{
 A list with the following elements:

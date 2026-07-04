@@ -4,13 +4,15 @@
 \alias{PrepNumericData}
 \title{Prepare numeric data safely for analysis}
 \usage{
-PrepNumericData(df, variables = names(df))
+PrepNumericData(data, variables = names(data), df = lifecycle::deprecated())
 }
 \arguments{
-\item{df}{A data frame.}
+\item{data}{A data frame.}
 
 \item{variables}{Character vector of variable names to process.
 Defaults to all columns.}
+
+\item{df}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
 }
 \value{
 A data frame with selected variables converted to numeric and

@@ -8,7 +8,7 @@
 #' @param DataFrame2 A data frame containing the second set of data.
 #' @param TimeVar1 The name of the time variable in DataFrame1 (as a string).
 #' @param TimeVar2 The name of the time variable in DataFrame2 (as a string).
-#' @param MergeBy Optional. Character vector of variable(s) to merge by.
+#' @param keys Optional. Character vector of variable(s) to merge by.
 #'                Must exist in BOTH data frames and be in the same order.
 #' @param is_date Logical. Indicates whether the time variables are dates (TRUE) or POSIXct (FALSE).
 #'
@@ -19,14 +19,23 @@
 #' @import dplyr
 #' @import tidyr
 #' @import lubridate
+#' @param MergeBy \strong{Deprecated} (since 19.15.0). Use \code{keys} instead.
 #' @export
 
 Merge_ByClosestTime <- function(DataFrame1,
-                                DataFrame2,
-                                TimeVar1,
-                                TimeVar2,
-                                MergeBy = NULL,
-                                is_date = FALSE) {
+    DataFrame2,
+    TimeVar1,
+    TimeVar2,
+    keys = NULL,
+    is_date = FALSE,
+    MergeBy = lifecycle::deprecated()) {
+  # Deprecated argument shims (SciDataReportR 19.15.0)
+  if (lifecycle::is_present(MergeBy)) {
+    lifecycle::deprecate_warn("19.15.0", "Merge_ByClosestTime(MergeBy)", "Merge_ByClosestTime(keys)")
+    keys <- MergeBy
+  }
+  MergeBy <- keys
+
 
 
 

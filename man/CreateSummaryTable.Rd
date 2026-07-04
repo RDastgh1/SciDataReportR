@@ -5,26 +5,35 @@
 \title{Create Summary Table}
 \usage{
 CreateSummaryTable(
-  Data,
-  Variables = NULL,
-  numdecimals = 2,
+  data,
+  variables = NULL,
+  digits = 2,
   Relabel = TRUE,
   Ordinal = FALSE,
-  ScrollBoxHeight = "700px"
+  ScrollBoxHeight = "700px",
+  Data = lifecycle::deprecated(),
+  Variables = lifecycle::deprecated(),
+  numdecimals = lifecycle::deprecated()
 )
 }
 \arguments{
-\item{Data}{The dataset containing the variables of interest.}
+\item{data}{The dataset containing the variables of interest.}
 
-\item{Variables}{A character vector specifying the variables for which summary statistics will be calculated.}
+\item{variables}{A character vector specifying the variables for which summary statistics will be calculated.}
 
-\item{numdecimals}{Number of decimal places to round the summary statistics.}
+\item{digits}{Number of decimal places to round the summary statistics.}
 
 \item{Relabel}{Logical, indicating whether to use variable labels as column headers.}
 
 \item{Ordinal}{Logical, indicating whether ordinal variables should be included in the summary.}
 
 \item{ScrollBoxHeight}{Height of the scroll box for displaying the table.}
+
+\item{Data}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
+
+\item{Variables}{\strong{Deprecated} (since 19.15.0). Use \code{variables} instead.}
+
+\item{numdecimals}{\strong{Deprecated} (since 19.15.0). Use \code{digits} instead.}
 }
 \value{
 A formatted HTML table displaying summary statistics.

@@ -10,10 +10,10 @@
 #' all complete observations available for that predictor, the outcome, and any
 #' covariates. Invalid predictor variables are removed with a warning.
 #'
-#' @param Data A data frame.
-#' @param xVars Character vector of predictor variable names to screen.
-#' @param yVar Character string naming the outcome variable.
-#' @param Covariates Optional character vector of covariate variable names.
+#' @param data A data frame.
+#' @param predictor_vars Character vector of predictor variable names to screen.
+#' @param outcome_var Character string naming the outcome variable.
+#' @param covariates Optional character vector of covariate variable names.
 #' @param OutcomeType Outcome type. One of `"auto"`, `"continuous"`, or
 #'   `"categorical"`. If `"auto"`, numeric outcomes are treated as continuous
 #'   and nonnumeric two-level outcomes are treated as categorical.
@@ -34,7 +34,7 @@
 #' @param Relabel Logical. If `TRUE`, variable labels are used when available.
 #'   Labels are pulled first from `Codebook` if supplied, then from variable
 #'   label attributes. Default is `TRUE`.
-#' @param Codebook Optional codebook data frame with columns `Variable` and
+#' @param codebook Optional codebook data frame with columns `Variable` and
 #'   `Label`.
 #' @param InteractiveLabels Logical. If `TRUE`, a `text` aesthetic is added for
 #'   compatibility with `plotly::ggplotly(tooltip = "text")`. Default is `TRUE`.
@@ -44,55 +44,76 @@
 #'   analyzed predictor.
 #' @examples
 #' PlotVolcanoEffects(
-#'   Data = mtcars,
-#'   xVars = c("disp", "hp", "drat", "wt", "qsec"),
-#'   yVar = "mpg",
-#'   Covariates = "cyl",
+#'   data = mtcars,
+#'   predictor_vars = c("disp", "hp", "drat", "wt", "qsec"),
+#'   outcome_var = "mpg",
+#'   covariates = "cyl",
 #'   OutcomeType = "continuous",
 #'   LabelMode = "top_n",
 #'   TopN = 3
 #' )
 #'
 #' PlotVolcanoEffects(
-#'   Data = mtcars,
-#'   xVars = c("mpg", "disp", "hp", "drat", "wt", "qsec"),
-#'   yVar = "am",
+#'   data = mtcars,
+#'   predictor_vars = c("mpg", "disp", "hp", "drat", "wt", "qsec"),
+#'   outcome_var = "am",
 #'   OutcomeType = "categorical",
 #'   EffectMetric = "cohens_d",
 #'   LabelMode = "top_n",
 #'   TopN = 3
 #' )
+#' @param Data \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
+#' @param xVars \strong{Deprecated} (since 19.15.0). Use \code{predictor_vars} instead.
+#' @param yVar \strong{Deprecated} (since 19.15.0). Use \code{outcome_var} instead.
+#' @param Covariates \strong{Deprecated} (since 19.15.0). Use \code{covariates} instead.
+#' @param Codebook \strong{Deprecated} (since 19.15.0). Use \code{codebook} instead.
 #' @export
-PlotVolcanoEffects <- function(
-    Data,
-    xVars,
-    yVar,
-    Covariates = NULL,
+PlotVolcanoEffects <- function(data,
+    predictor_vars,
+    outcome_var,
+    covariates = NULL,
     OutcomeType = c("auto", "continuous", "categorical"),
     EffectMetric = c("auto", "cohens_d", "log2fc"),
     AdjustMethod = "fdr",
     Alpha = 0.05,
-    Format = c(
-      "tiered",
-      "classic",
-      "fdr_only",
-      "directional",
-      "effect_gradient",
-      "minimal",
-      "neon"
-    ),
-    LabelMode = c(
-      "none",
-      "top_n",
-      "significant",
-      "fdr",
-      "extreme"
-    ),
+    Format = c("tiered", "classic", "fdr_only", "directional", "effect_gradient", "minimal", "neon"),
+    LabelMode = c("none", "top_n", "significant", "fdr", "extreme"),
     TopN = 10,
     Relabel = TRUE,
-    Codebook = NULL,
-    InteractiveLabels = TRUE
-) {
+    codebook = NULL,
+    InteractiveLabels = TRUE,
+    Data = lifecycle::deprecated(),
+    xVars = lifecycle::deprecated(),
+    yVar = lifecycle::deprecated(),
+    Covariates = lifecycle::deprecated(),
+    Codebook = lifecycle::deprecated()) {
+  # Deprecated argument shims (SciDataReportR 19.15.0)
+  if (lifecycle::is_present(Data)) {
+    lifecycle::deprecate_warn("19.15.0", "PlotVolcanoEffects(Data)", "PlotVolcanoEffects(data)")
+    data <- Data
+  }
+  if (!missing(data)) Data <- data
+  if (lifecycle::is_present(xVars)) {
+    lifecycle::deprecate_warn("19.15.0", "PlotVolcanoEffects(xVars)", "PlotVolcanoEffects(predictor_vars)")
+    predictor_vars <- xVars
+  }
+  if (!missing(predictor_vars)) xVars <- predictor_vars
+  if (lifecycle::is_present(yVar)) {
+    lifecycle::deprecate_warn("19.15.0", "PlotVolcanoEffects(yVar)", "PlotVolcanoEffects(outcome_var)")
+    outcome_var <- yVar
+  }
+  if (!missing(outcome_var)) yVar <- outcome_var
+  if (lifecycle::is_present(Covariates)) {
+    lifecycle::deprecate_warn("19.15.0", "PlotVolcanoEffects(Covariates)", "PlotVolcanoEffects(covariates)")
+    covariates <- Covariates
+  }
+  Covariates <- covariates
+  if (lifecycle::is_present(Codebook)) {
+    lifecycle::deprecate_warn("19.15.0", "PlotVolcanoEffects(Codebook)", "PlotVolcanoEffects(codebook)")
+    codebook <- Codebook
+  }
+  Codebook <- codebook
+
 
   OutcomeType <- match.arg(OutcomeType)
   EffectMetric <- match.arg(EffectMetric)

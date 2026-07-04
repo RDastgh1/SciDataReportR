@@ -6,9 +6,9 @@
 #' FDR-adjusted p-values are highlighted on the plot.
 #'
 #'
-#' @param Data A dataframe containing the data to be analyzed.
+#' @param data A dataframe containing the data to be analyzed.
 #' @param TargetVar A string specifying the column name of the grouping variable.
-#' @param Variables A vector of strings specifying the column names of the variables to be analyzed.
+#' @param variables A vector of strings specifying the column names of the variables to be analyzed.
 #' @param VariableCategories An optional vector categorizing the variables.
 #' @param Relabel Logical; if TRUE, variables will be relabeled using their labels from the dataframe.
 #' @param sort Logical; if TRUE, variables will be sorted by category and p-value.
@@ -21,10 +21,34 @@
 #' @importFrom ggplot2 ggplot aes geom_line geom_point theme_minimal labs
 #' @importFrom dplyr filter mutate group_by summarise
 #' @importFrom tidyr pivot_longer
+#' @param Data \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
+#' @param Variables \strong{Deprecated} (since 19.15.0). Use \code{variables} instead.
 #' @export
-PlotZScore <- function (Data, TargetVar, Variables, VariableCategories = NULL,
-                              Relabel = TRUE, sort = TRUE, RemoveXAxisLabels = TRUE, Ordinal = TRUE,
-                              Parametric = TRUE, SigP_YCoord = 1.5, SigFDR_YCoord = 1.6){
+PlotZScore <- function(data,
+    TargetVar,
+    variables,
+    VariableCategories = NULL,
+    Relabel = TRUE,
+    sort = TRUE,
+    RemoveXAxisLabels = TRUE,
+    Ordinal = TRUE,
+    Parametric = TRUE,
+    SigP_YCoord = 1.5,
+    SigFDR_YCoord = 1.6,
+    Data = lifecycle::deprecated(),
+    Variables = lifecycle::deprecated()) {
+  # Deprecated argument shims (SciDataReportR 19.15.0)
+  if (lifecycle::is_present(Data)) {
+    lifecycle::deprecate_warn("19.15.0", "PlotZScore(Data)", "PlotZScore(data)")
+    data <- Data
+  }
+  if (!missing(data)) Data <- data
+  if (lifecycle::is_present(Variables)) {
+    lifecycle::deprecate_warn("19.15.0", "PlotZScore(Variables)", "PlotZScore(variables)")
+    variables <- Variables
+  }
+  if (!missing(variables)) Variables <- variables
+
   if (Ordinal) {
     Data <- ConvertOrdinalToNumeric(Data, Variables)
   }

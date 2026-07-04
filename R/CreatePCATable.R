@@ -22,7 +22,7 @@
 #' zero or undefined standard deviation after preprocessing are dropped
 #' automatically with a warning so PCA can continue without manual preprocessing.
 #'
-#' @param Data A data frame containing the variables for PCA.
+#' @param data A data frame containing the variables for PCA.
 #' @param VarsToReduce Character vector of raw variable names to include in PCA.
 #' @param VariableCategories Optional vector used to color variables in the
 #'   lollipop loading plot. If supplied, it should be the same length and order
@@ -77,9 +77,10 @@
 #' @param ImputeRowsWithAllMissing Logical. If `FALSE`, rows with 100 percent
 #'   missingness across PCA variables are not imputed even if
 #'   `MaxMissingForImputation = 1`. Default is `FALSE`.
-#' @param imputeMethod Deprecated compatibility alias for `ImputeMethod`. If
-#'   supplied, it sets `ImputeMethod` and uses `MissingDataStrategy = "impute"`
-#'   unless `MissingDataStrategy` was explicitly set.
+#' @param imputeMethod \strong{Deprecated} (since 19.15.0). Use `ImputeMethod`
+#'   instead. If supplied, it sets `ImputeMethod` and uses
+#'   `MissingDataStrategy = "impute"` unless `MissingDataStrategy` was
+#'   explicitly set.
 #' @param SuppressWarnings Logical. If `TRUE`, suppresses PCA-specific warning
 #'   messages from this function. Default is `FALSE`.
 #'
@@ -112,13 +113,13 @@
 #'
 #' @examples
 #' PCA <- CreatePCAObject(
-#'   Data = mtcars,
+#'   data = mtcars,
 #'   VarsToReduce = names(mtcars),
 #'   numComponents = 3
 #' )
 #'
 #' PCA_imputed <- CreatePCAObject(
-#'   Data = mtcars,
+#'   data = mtcars,
 #'   VarsToReduce = names(mtcars),
 #'   numComponents = 3,
 #'   MissingDataStrategy = "impute",
@@ -127,14 +128,14 @@
 #' )
 #'
 #' PCA_raw_names <- CreatePCAObject(
-#'   Data = mtcars,
+#'   data = mtcars,
 #'   VarsToReduce = names(mtcars),
 #'   Relabel = FALSE,
 #'   numComponents = 3
 #' )
 #'
 #' PCA_omics <- CreatePCAObject(
-#'   Data = mtcars,
+#'   data = mtcars,
 #'   VarsToReduce = names(mtcars),
 #'   Mode = "omics",
 #'   backend = "prcomp",
@@ -142,31 +143,40 @@
 #'   maxScreeComponents = 5
 #' )
 #'
+#' @param Data \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
 #' @export
-CreatePCAObject <- function(Data,
-                            VarsToReduce,
-                            VariableCategories = NULL,
-                            Relabel = TRUE,
-                            minThresh = 0.85,
-                            scale = TRUE,
-                            center = TRUE,
-                            Ordinal = FALSE,
-                            numComponents = NULL,
-                            Mode = c("classic", "omics"),
-                            backend = c("psych", "prcomp", "irlba"),
-                            rotate = c("varimax", "none"),
-                            maxComponents = 20,
-                            maxScreeComponents = 20,
-                            VarianceFilter = NULL,
-                            VarianceFilterMethod = c("top_n", "variance_quantile"),
-                            MissingnessWarningThreshold = 0.20,
-                            ParticipantMissingnessWarningThreshold = 0.20,
-                            MissingDataStrategy = c("complete_cases", "impute", "stop"),
-                            ImputeMethod = c("missRanger", "median"),
-                            MaxMissingForImputation = 0.20,
-                            ImputeRowsWithAllMissing = FALSE,
-                            imputeMethod = NULL,
-                            SuppressWarnings = FALSE) {
+CreatePCAObject <- function(data,
+    VarsToReduce,
+    VariableCategories = NULL,
+    Relabel = TRUE,
+    minThresh = 0.85,
+    scale = TRUE,
+    center = TRUE,
+    Ordinal = FALSE,
+    numComponents = NULL,
+    Mode = c("classic", "omics"),
+    backend = c("psych", "prcomp", "irlba"),
+    rotate = c("varimax", "none"),
+    maxComponents = 20,
+    maxScreeComponents = 20,
+    VarianceFilter = NULL,
+    VarianceFilterMethod = c("top_n", "variance_quantile"),
+    MissingnessWarningThreshold = 0.2,
+    ParticipantMissingnessWarningThreshold = 0.2,
+    MissingDataStrategy = c("complete_cases", "impute", "stop"),
+    ImputeMethod = c("missRanger", "median"),
+    MaxMissingForImputation = 0.2,
+    ImputeRowsWithAllMissing = FALSE,
+    SuppressWarnings = FALSE,
+    imputeMethod = lifecycle::deprecated(),
+    Data = lifecycle::deprecated()) {
+  # Deprecated argument shims (SciDataReportR 19.15.0)
+  if (lifecycle::is_present(Data)) {
+    lifecycle::deprecate_warn("19.15.0", "CreatePCAObject(Data)", "CreatePCAObject(data)")
+    data <- Data
+  }
+  if (!missing(data)) Data <- data
+
 
   missing_data_strategy_missing <- missing(MissingDataStrategy)
 
@@ -176,23 +186,24 @@ CreatePCAObject <- function(Data,
   VarianceFilterMethod <- match.arg(VarianceFilterMethod)
   MissingDataStrategy <- match.arg(MissingDataStrategy)
 
-  if (!is.null(imputeMethod)) {
-    if (!is.character(imputeMethod) || length(imputeMethod) != 1) {
-      stop("imputeMethod must be NULL or a single character value.")
-    }
-
-    ImputeMethod <- imputeMethod
-
-    if (missing_data_strategy_missing) {
-      MissingDataStrategy <- "impute"
-    }
-
-    if (!SuppressWarnings) {
-      warning(
-        "imputeMethod is deprecated. Please use ImputeMethod instead. ",
-        "Because imputeMethod was supplied, MissingDataStrategy was set to 'impute' ",
-        "unless MissingDataStrategy was explicitly provided."
+  if (lifecycle::is_present(imputeMethod)) {
+    lifecycle::deprecate_warn(
+      "19.15.0", "CreatePCAObject(imputeMethod)", "CreatePCAObject(ImputeMethod)",
+      details = paste0(
+        "Because imputeMethod was supplied, MissingDataStrategy is set to ",
+        "'impute' unless MissingDataStrategy was explicitly provided."
       )
+    )
+    if (!is.null(imputeMethod)) {
+      if (!is.character(imputeMethod) || length(imputeMethod) != 1) {
+        stop("imputeMethod must be NULL or a single character value.")
+      }
+
+      ImputeMethod <- imputeMethod
+
+      if (missing_data_strategy_missing) {
+        MissingDataStrategy <- "impute"
+      }
     }
   }
 
@@ -1157,7 +1168,7 @@ CreatePCAObject <- function(Data,
 #'
 #' @examples
 #' PCA <- CreatePCATable(
-#'   Data = mtcars,
+#'   data = mtcars,
 #'   VarsToReduce = names(mtcars),
 #'   numComponents = 3
 #' )

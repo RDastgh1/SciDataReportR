@@ -4,12 +4,21 @@
 \alias{ConvertOrdinalToNumeric}
 \title{ConvertOrdinalToNumeric}
 \usage{
-ConvertOrdinalToNumeric(Data, Variables = NULL)
+ConvertOrdinalToNumeric(
+  data,
+  variables = NULL,
+  Data = lifecycle::deprecated(),
+  Variables = lifecycle::deprecated()
+)
 }
 \arguments{
-\item{Data}{The dataframe containing the variables.}
+\item{data}{The dataframe containing the variables.}
 
-\item{Variables}{A character vector specifying the names of variables to consider. If NULL, all columns of the dataframe will be considered.}
+\item{variables}{A character vector specifying the names of variables to consider. If NULL, all columns of the dataframe will be considered.}
+
+\item{Data}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
+
+\item{Variables}{\strong{Deprecated} (since 19.15.0). Use \code{variables} instead.}
 }
 \value{
 The dataframe with ordinal variables potentially converted to numeric.

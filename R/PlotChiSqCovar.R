@@ -6,10 +6,10 @@
 #' and combine p-values across strata (Fisher's method) for a single summary p-value per pair.
 #' If you need true covariate adjustment, use regression-based models (logistic/multinomial).
 #'
-#' @param Data A data.frame containing the dataset.
-#' @param xVars Character vector of x-axis categorical variables.
-#' @param yVars Character vector of y-axis categorical variables. If NULL, uses xVars.
-#' @param covars Optional character vector of covariate variables used for stratification (not adjustment).
+#' @param data A data.frame containing the dataset.
+#' @param predictor_vars Character vector of x-axis categorical variables.
+#' @param outcome_vars Character vector of y-axis categorical variables. If NULL, uses xVars.
+#' @param covariates Optional character vector of covariate variables used for stratification (not adjustment).
 #' @param Relabel Logical; whether to use variable labels (sjlabelled) in the plot.
 #' @param Ordinal Logical; included for backward compatibility (currently unused here).
 #' @param min_n Minimum number of complete observations required for a tested association.
@@ -20,16 +20,50 @@
 #' \item{p_FDR}{ggplot for FDR-adjusted p-values}
 #' \item{pvaltable_FDR}{wide table of FDR-adjusted p-values}
 #' \item{details}{long table with diagnostics (n, warnings, strata info)}
+#' @param fdr_scope Either `"matrix"` (default) or `"per_outcome"`, passed to
+#'   [ApplyFDRCorrection()]. `"matrix"` corrects across all p-values at once
+#'   (historical behavior). `"per_outcome"` corrects separately within each
+#'   outcome: outcomes are the y-axis variables (`outcome_vars`).
+#' @param Data \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
+#' @param xVars \strong{Deprecated} (since 19.15.0). Use \code{predictor_vars} instead.
+#' @param yVars \strong{Deprecated} (since 19.15.0). Use \code{outcome_vars} instead.
+#' @param covars \strong{Deprecated} (since 19.15.0). Use \code{covariates} instead.
 #' @export
-PlotChiSqCovar <- function(
-    Data,
-    xVars,
-    yVars,
-    covars = NULL,
+PlotChiSqCovar <- function(data,
+    predictor_vars,
+    outcome_vars,
+    covariates = NULL,
     Relabel = TRUE,
     Ordinal = TRUE,
-    min_n = 4
-) {
+    min_n = 4,
+    Data = lifecycle::deprecated(),
+    xVars = lifecycle::deprecated(),
+    yVars = lifecycle::deprecated(),
+    fdr_scope = c("matrix", "per_outcome"),
+    covars = lifecycle::deprecated()) {
+  # Deprecated argument shims (SciDataReportR 19.15.0)
+  if (lifecycle::is_present(Data)) {
+    lifecycle::deprecate_warn("19.15.0", "PlotChiSqCovar(Data)", "PlotChiSqCovar(data)")
+    data <- Data
+  }
+  if (!missing(data)) Data <- data
+  if (lifecycle::is_present(xVars)) {
+    lifecycle::deprecate_warn("19.15.0", "PlotChiSqCovar(xVars)", "PlotChiSqCovar(predictor_vars)")
+    predictor_vars <- xVars
+  }
+  if (!missing(predictor_vars)) xVars <- predictor_vars
+  if (lifecycle::is_present(yVars)) {
+    lifecycle::deprecate_warn("19.15.0", "PlotChiSqCovar(yVars)", "PlotChiSqCovar(outcome_vars)")
+    outcome_vars <- yVars
+  }
+  if (!missing(outcome_vars)) yVars <- outcome_vars
+  if (lifecycle::is_present(covars)) {
+    lifecycle::deprecate_warn("19.15.0", "PlotChiSqCovar(covars)", "PlotChiSqCovar(covariates)")
+    covariates <- covars
+  }
+  covars <- covariates
+  fdr_scope <- match.arg(fdr_scope)
+
 
   if (is.null(yVars)) yVars <- xVars
 
@@ -41,7 +75,8 @@ PlotChiSqCovar <- function(
     empty <- data.frame()
     p0 <- ggplot2::ggplot(data.frame(x = 1, y = 1), ggplot2::aes(x, y)) +
       ggplot2::geom_blank() + ggplot2::theme_void()
-    list(p = p0, pvaltable = empty, p_FDR = p0, pvaltable_FDR = empty)
+    list(p = p0, pvaltable = empty, p_FDR = p0, pvaltable_FDR = empty,
+         p_fdr = p0, pvaltable_fdr = empty)
   }
 
   if (length(xVars) == 0 || length(yVars) == 0) return(empty_return())
@@ -120,7 +155,12 @@ PlotChiSqCovar <- function(
     dplyr::ungroup() %>%
     dplyr::filter(!is.na(pval)) %>%
     rstatix::add_significance(p.col = "pval", output.col = "pval.signif") %>%
-    rstatix::adjust_pvalue(p.col = "pval", output.col = "pval.adj", method = "fdr") %>%
+    # Outcomes are the y-axis variables (outcome_vars / YVar) for "per_outcome".
+    dplyr::mutate(pval.adj = ApplyFDRCorrection(
+      .data$pval,
+      fdr_scope = fdr_scope,
+      outcome_ids = .data$YVar
+    )) %>%
     rstatix::add_significance(p.col = "pval.adj", output.col = "pval.adj.signif") %>%
     dplyr::mutate(
       Test = "Chi Squared",
@@ -193,5 +233,7 @@ PlotChiSqCovar <- function(
     dplyr::select(YVar, XVar, pval.adj) %>%
     tidyr::pivot_wider(names_from = YVar, values_from = pval.adj)
 
-  list(p = p_g, pvaltable = pvaltable, p_FDR = p_g_FDR, pvaltable_FDR = pvaltable_FDR)
+  # Standardized p-value element aliases (old names kept)
+  list(p = p_g, pvaltable = pvaltable, p_FDR = p_g_FDR, pvaltable_FDR = pvaltable_FDR,
+       p_fdr = p_g_FDR, pvaltable_fdr = pvaltable_FDR)
 }

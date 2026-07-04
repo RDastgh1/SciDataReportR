@@ -5,32 +5,44 @@
 \title{Plot Single Interaction Effect}
 \usage{
 PlotInteractionEffectsContinuous(
-  Data,
+  data,
   interVar = NULL,
-  outcomeVar = NULL,
-  predictorVar = NULL,
-  covars = NULL,
+  outcome_var = NULL,
+  predictor_var = NULL,
+  covariates = NULL,
   n_lines = 3,
   alpha = 0.6,
-  point_size = 2
+  point_size = 2,
+  Data = lifecycle::deprecated(),
+  outcomeVar = lifecycle::deprecated(),
+  predictorVar = lifecycle::deprecated(),
+  covars = lifecycle::deprecated()
 )
 }
 \arguments{
-\item{Data}{A data frame containing the variables to be analyzed}
+\item{data}{A data frame containing the variables to be analyzed}
 
 \item{interVar}{Character string specifying the interaction variable (moderator)}
 
-\item{outcomeVar}{Character string specifying the outcome variable}
+\item{outcome_var}{Character string specifying the outcome variable}
 
-\item{predictorVar}{Character string specifying the predictor variable}
+\item{predictor_var}{Character string specifying the predictor variable}
 
-\item{covars}{Character vector of covariate names to include in the model}
+\item{covariates}{Character vector of covariate names to include in the model}
 
 \item{n_lines}{For continuous moderators, number of lines to plot (default: 3 for low/med/high)}
 
 \item{alpha}{Transparency level for points (default: 0.6)}
 
 \item{point_size}{Size of points (default: 2)}
+
+\item{Data}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
+
+\item{outcomeVar}{\strong{Deprecated} (since 19.15.0). Use \code{outcome_var} instead.}
+
+\item{predictorVar}{\strong{Deprecated} (since 19.15.0). Use \code{predictor_var} instead.}
+
+\item{covars}{\strong{Deprecated} (since 19.15.0). Use \code{covariates} instead.}
 }
 \value{
 A ggplot object showing the interaction effect

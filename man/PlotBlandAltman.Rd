@@ -4,14 +4,21 @@
 \alias{PlotBlandAltman}
 \title{Plot Bland-Altman Agreement Plot}
 \usage{
-PlotBlandAltman(DataFrame, Variable1, Variable2)
+PlotBlandAltman(
+  data,
+  Variable1,
+  Variable2,
+  DataFrame = lifecycle::deprecated()
+)
 }
 \arguments{
-\item{DataFrame}{A data frame containing the variables to compare.}
+\item{data}{A data frame containing the variables to compare.}
 
 \item{Variable1}{The name of the first variable (as a string) to compare.}
 
 \item{Variable2}{The name of the second variable (as a string) to compare.}
+
+\item{DataFrame}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
 }
 \value{
 A list containing:

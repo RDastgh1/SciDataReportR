@@ -13,26 +13,26 @@
 #' @param Plot Character value specifying which plot to return. Options are
 #'   `"All"`, `"Checks"`, `"Coverage"`, `"JoinAudit"`, `"Agreement"`, and
 #'   `"Conflicts"`. Default is `"All"`.
-#' @param Interactive Logical; if `TRUE`, plots are converted to interactive
+#' @param interactive Logical; if `TRUE`, plots are converted to interactive
 #'   `plotly` objects using `plotly::ggplotly()`. Default is `TRUE`.
 #'
 #' @return If `Plot = "All"`, a named list of plots. Otherwise, a single plot
 #' object. Plot objects are either `ggplot` objects or `plotly` htmlwidgets,
 #' depending on `Interactive`.
 #'
+#' @param Interactive \strong{Deprecated} (since 19.15.0). Use \code{interactive} instead.
 #' @export
-PlotMergeValidation <- function(
-    MergeObj,
-    Plot = c(
-      "All",
-      "Checks",
-      "Coverage",
-      "JoinAudit",
-      "Agreement",
-      "Conflicts"
-    ),
-    Interactive = TRUE
-) {
+PlotMergeValidation <- function(MergeObj,
+    Plot = c("All", "Checks", "Coverage", "JoinAudit", "Agreement", "Conflicts"),
+    interactive = TRUE,
+    Interactive = lifecycle::deprecated()) {
+  # Deprecated argument shims (SciDataReportR 19.15.0)
+  if (lifecycle::is_present(Interactive)) {
+    lifecycle::deprecate_warn("19.15.0", "PlotMergeValidation(Interactive)", "PlotMergeValidation(interactive)")
+    interactive <- Interactive
+  }
+  Interactive <- interactive
+
 
   # Validate inputs
 
@@ -85,8 +85,8 @@ PlotMergeValidation <- function(
 
   if (Interactive && !requireNamespace("plotly", quietly = TRUE)) {
     stop(
-      "The plotly package is required when Interactive = TRUE. ",
-      "Install it with install.packages('plotly') or set Interactive = FALSE."
+      "The plotly package is required when interactive = TRUE. ",
+      "Install it with install.packages('plotly') or set interactive = FALSE."
     )
   }
 

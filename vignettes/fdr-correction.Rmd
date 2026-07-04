@@ -1,0 +1,135 @@
+---
+title: "FDR correction scope: matrix-wide vs per-outcome"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{FDR correction scope: matrix-wide vs per-outcome}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 7,
+  fig.height = 4.5
+)
+```
+
+```{r setup, message = FALSE}
+library(SciDataReportR)
+```
+
+The heatmap/matrix family in SciDataReportR (`PlotCorrelationsHeatmap()`,
+`PlotPhiHeatmap()`, `PlotChiSqCovar()`, `PlotAnovaRelationshipsMatrix()`,
+`PlotMiningMatrix()`, the interaction-effect matrices, and
+`PlotDirectionalHeatmaps()`) tests many hypotheses at once, so every one of
+these functions applies a false discovery rate (FDR) correction. As of
+version 19.15.0 all of that correction runs through one exported helper,
+`ApplyFDRCorrection()`, and every function in the family takes an
+`fdr_scope` argument that controls *which family of tests* the correction
+is computed over:
+
+* `fdr_scope = "matrix"` (the default, and the historical behavior):
+  all p-values in the matrix are corrected together as one family.
+* `fdr_scope = "per_outcome"`: each outcome's p-values are corrected
+  separately. Each function documents which axis is the "outcome" axis in
+  its `fdr_scope` parameter documentation.
+
+## `ApplyFDRCorrection()` directly
+
+`ApplyFDRCorrection()` works on a matrix (or data frame) of p-values.
+Here is a small made-up example, with predictors as rows and outcomes as
+columns:
+
+```{r}
+pm <- matrix(
+  c(0.005, 0.04, 0.03, 0.01, NA, 0.002),
+  nrow = 2,
+  dimnames = list(c("pred1", "pred2"), c("out1", "out2", "out3"))
+)
+pm
+```
+
+Matrix-wide correction treats all five finite p-values as one family
+(`NA` cells are left untouched):
+
+```{r}
+ApplyFDRCorrection(pm, fdr_scope = "matrix")
+```
+
+Per-outcome correction adjusts each column on its own. Note how `out3`'s
+single test is barely penalized at all, while under matrix-wide correction
+it shared the burden of all five tests:
+
+```{r}
+ApplyFDRCorrection(pm, fdr_scope = "per_outcome", outcome_margin = 2)
+```
+
+## The two scopes in a real analysis
+
+Using `mtcars`, we relate three engine/design predictors to two performance
+outcomes with `PlotCorrelationsHeatmap()`. In this function the p-value
+matrix has predictors as rows and outcomes as columns, so
+`"per_outcome"` corrects within each column (each variable in
+`outcome_vars`).
+
+```{r}
+res_matrix <- PlotCorrelationsHeatmap(
+  mtcars,
+  predictor_vars = c("disp", "hp", "drat", "wt"),
+  outcome_vars   = c("mpg", "qsec"),
+  fdr_scope      = "matrix"
+)
+
+res_per_outcome <- PlotCorrelationsHeatmap(
+  mtcars,
+  predictor_vars = c("disp", "hp", "drat", "wt"),
+  outcome_vars   = c("mpg", "qsec"),
+  fdr_scope      = "per_outcome"
+)
+```
+
+The unadjusted p-values are identical by construction:
+
+```{r}
+round(res_matrix$p$p, 5)          # res$p is an alias for res$Unadjusted
+all.equal(res_matrix$p$p, res_per_outcome$p$p)
+```
+
+The FDR-adjusted p-values differ (`res$p_fdr` is an alias for
+`res$FDRCorrected`):
+
+```{r}
+round(res_matrix$p_fdr$p, 5)       # one family of 8 tests
+round(res_per_outcome$p_fdr$p, 5)  # two families of 4 tests each
+```
+
+Why do they differ? The Benjamini-Hochberg adjustment scales each p-value
+by (number of tests in the family) / (rank within the family). Under
+`"matrix"` scope, `mpg` and `qsec` tests compete in one ranking of 8
+tests. Under `"per_outcome"` scope, the 4 `mpg` tests are ranked only
+against each other, and likewise for `qsec` - so a strong predictor of a
+"mostly null" outcome is no longer penalized for significant tests that
+belong to a different outcome, and vice versa.
+
+The FDR-starred heatmaps reflect the same difference:
+
+```{r, fig.show = "hold"}
+res_matrix$p_fdr$plot
+res_per_outcome$p_fdr$plot
+```
+
+## Choosing a scope
+
+* Use `"matrix"` (the default) when you view the whole screen as one
+  discovery exercise - "which of all these relationships are real?" This
+  is the more conservative choice for the individual outcome and is what
+  every SciDataReportR version before 19.15.0 did.
+* Use `"per_outcome"` when each outcome is a separate scientific question
+  and you want the error rate controlled within each outcome's own set of
+  tests - a common convention when outcomes will be reported in separate
+  results sections or figures.
+
+Whichever you choose, report it: the two scopes answer different
+questions, and the choice should be made before looking at the results.

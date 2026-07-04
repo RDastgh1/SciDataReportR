@@ -5,20 +5,24 @@
 \title{Plot Categorical Interaction Effects Matrix}
 \usage{
 PlotCatInteractionEffectsMatrix(
-  Data,
-  xVars,
-  yVars = NULL,
+  data,
+  predictor_vars,
+  outcome_vars = NULL,
   xVarLabels = NULL,
   yVarLabels = NULL,
-  interVar
+  interVar,
+  Data = lifecycle::deprecated(),
+  xVars = lifecycle::deprecated(),
+  fdr_scope = c("matrix", "per_outcome"),
+  yVars = lifecycle::deprecated()
 )
 }
 \arguments{
-\item{Data}{The dataset containing the variables.}
+\item{data}{The dataset containing the variables.}
 
-\item{xVars}{A character vector of the names of the x-axis categorical variables.}
+\item{predictor_vars}{A character vector of the names of the x-axis categorical variables.}
 
-\item{yVars}{A character vector of the names of the y-axis categorical variables. Defaults to NULL,
+\item{outcome_vars}{A character vector of the names of the y-axis categorical variables. Defaults to NULL,
 in which case it takes the same values as xVars.}
 
 \item{xVarLabels}{A character vector of labels for the x-axis variables. Defaults to NULL,
@@ -28,6 +32,17 @@ in which case it takes the same values as xVars.}
 in which case it takes the same values as yVars.}
 
 \item{interVar}{The name of the interaction variable.}
+
+\item{Data}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
+
+\item{xVars}{\strong{Deprecated} (since 19.15.0). Use \code{predictor_vars} instead.}
+
+\item{fdr_scope}{Either \code{"matrix"} (default) or \code{"per_outcome"}, passed to
+\code{\link[=ApplyFDRCorrection]{ApplyFDRCorrection()}}. \code{"matrix"} corrects across all interaction
+p-values at once (historical behavior). \code{"per_outcome"} corrects
+separately within each y-axis variable (\code{outcome_vars}).}
+
+\item{yVars}{\strong{Deprecated} (since 19.15.0). Use \code{outcome_vars} instead.}
 }
 \value{
 A list containing matrices of interaction coefficients, p-values, ggplot objects for visualizations,

@@ -5,9 +5,9 @@
 \title{Plot Z-score group differences with statistical significance}
 \usage{
 PlotZScore(
-  Data,
+  data,
   TargetVar,
-  Variables,
+  variables,
   VariableCategories = NULL,
   Relabel = TRUE,
   sort = TRUE,
@@ -15,15 +15,17 @@ PlotZScore(
   Ordinal = TRUE,
   Parametric = TRUE,
   SigP_YCoord = 1.5,
-  SigFDR_YCoord = 1.6
+  SigFDR_YCoord = 1.6,
+  Data = lifecycle::deprecated(),
+  Variables = lifecycle::deprecated()
 )
 }
 \arguments{
-\item{Data}{A dataframe containing the data to be analyzed.}
+\item{data}{A dataframe containing the data to be analyzed.}
 
 \item{TargetVar}{A string specifying the column name of the grouping variable.}
 
-\item{Variables}{A vector of strings specifying the column names of the variables to be analyzed.}
+\item{variables}{A vector of strings specifying the column names of the variables to be analyzed.}
 
 \item{VariableCategories}{An optional vector categorizing the variables.}
 
@@ -40,6 +42,10 @@ PlotZScore(
 \item{SigP_YCoord}{Numeric; the y-coordinate for marking significant p-values.}
 
 \item{SigFDR_YCoord}{Numeric; the y-coordinate for marking significant FDR-adjusted p-values.}
+
+\item{Data}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
+
+\item{Variables}{\strong{Deprecated} (since 19.15.0). Use \code{variables} instead.}
 }
 \value{
 A ggplot object representing the Z-score plot.

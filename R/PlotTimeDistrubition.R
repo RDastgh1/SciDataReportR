@@ -2,13 +2,23 @@
 #'
 #' This function plots the distribution of time-based data.
 #'
-#' @param Data The data frame containing the time-based data.
+#' @param data The data frame containing the time-based data.
 #' @param DateVariable The name of the column in the data frame containing the date information. Default is "Date".
 #' @return A ggplot object displaying the distribution of time-based data.
 #' @importFrom ggplot2 ggplot geom_boxplot scale_y_reverse theme_linedraw
 #' @importFrom dplyr %>%
+#' @param Data \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
 #' @export
-PlotTimeDistribution <- function(Data, DateVariable = "Date") {
+PlotTimeDistribution <- function(data,
+    DateVariable = "Date",
+    Data = lifecycle::deprecated()) {
+  # Deprecated argument shims (SciDataReportR 19.15.0)
+  if (lifecycle::is_present(Data)) {
+    lifecycle::deprecate_warn("19.15.0", "PlotTimeDistribution(Data)", "PlotTimeDistribution(data)")
+    data <- Data
+  }
+  if (!missing(data)) Data <- data
+
 
   # Convert date variable to numeric year
   Data$Year <- lubridate::decimal_date(Data[[DateVariable]])

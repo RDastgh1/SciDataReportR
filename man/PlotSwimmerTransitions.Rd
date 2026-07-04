@@ -19,11 +19,12 @@ PlotSwimmerTransitions(
   show_transition_points = TRUE,
   show_lines = TRUE,
   show_y_axis_labels = FALSE,
-  make_interactive = FALSE,
+  interactive = FALSE,
   plot_title = NULL,
   x_label = NULL,
   y_label = NULL,
-  return_data = FALSE
+  return_data = FALSE,
+  make_interactive = lifecycle::deprecated()
 )
 }
 \arguments{
@@ -66,7 +67,7 @@ within each participant.}
 \item{show_y_axis_labels}{Logical. If \code{TRUE}, show participant labels on the
 y-axis. Defaults to \code{FALSE}.}
 
-\item{make_interactive}{Logical. If \code{TRUE}, return an interactive plotly object.
+\item{interactive}{Logical. If \code{TRUE}, return an interactive plotly object.
 Defaults to \code{FALSE}.}
 
 \item{plot_title}{Optional custom plot title.}
@@ -76,11 +77,13 @@ Defaults to \code{FALSE}.}
 \item{y_label}{Optional y-axis label. Defaults to \code{NULL}.}
 
 \item{return_data}{Logical. If \code{TRUE}, return both the plot and the processed data.}
+
+\item{make_interactive}{\strong{Deprecated} (since 19.15.0). Use \code{interactive} instead.}
 }
 \value{
 A \code{ggplot} object by default.
 
-If \code{make_interactive = TRUE}, returns a \code{plotly} object.
+If \code{interactive = TRUE}, returns a \code{plotly} object.
 
 If \code{return_data = TRUE}, returns a list with:
 \itemize{
@@ -131,7 +134,7 @@ not need to align across participants.
 When \code{x_axis_type = "time_from_baseline"}, each participant starts at time 0
 based on their earliest observed date.
 
-When \code{make_interactive = TRUE}, the function returns a \code{plotly} object and
+When \code{interactive = TRUE}, the function returns a \code{plotly} object and
 uses the internally prepared tooltip text for hover labels.
 }
 \examples{

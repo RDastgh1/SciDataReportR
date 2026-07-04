@@ -5,23 +5,27 @@
 \title{Univariate Regression Table}
 \usage{
 UnivariateRegressionTable(
-  Data,
-  OutcomeVars,
-  PredictorVars,
-  Covars = NULL,
+  data,
+  outcome_vars,
+  predictor_vars,
+  covariates = NULL,
   Standardize = FALSE,
   Method = c("auto", "lm", "logistic"),
-  LogisticExponentiate = TRUE
+  LogisticExponentiate = TRUE,
+  Data = lifecycle::deprecated(),
+  OutcomeVars = lifecycle::deprecated(),
+  PredictorVars = lifecycle::deprecated(),
+  Covars = lifecycle::deprecated()
 )
 }
 \arguments{
-\item{Data}{Dataframe containing the variables}
+\item{data}{Dataframe containing the variables}
 
-\item{OutcomeVars}{Character vector of outcome variable names}
+\item{outcome_vars}{Character vector of outcome variable names}
 
-\item{PredictorVars}{Character vector of predictor variable names}
+\item{predictor_vars}{Character vector of predictor variable names}
 
-\item{Covars}{Character vector of covariate variable names (default: NULL)}
+\item{covariates}{Character vector of covariate variable names (default: NULL)}
 
 \item{Standardize}{Logical indicating whether to standardize numeric variables (default: FALSE)}
 
@@ -31,6 +35,14 @@ outcomes. \code{"lm"} and \code{"logistic"} force one model family for all outco
 
 \item{LogisticExponentiate}{Logical. If \code{TRUE}, logistic regression estimates
 are exponentiated and reported as odds ratios.}
+
+\item{Data}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
+
+\item{OutcomeVars}{\strong{Deprecated} (since 19.15.0). Use \code{outcome_vars} instead.}
+
+\item{PredictorVars}{\strong{Deprecated} (since 19.15.0). Use \code{predictor_vars} instead.}
+
+\item{Covars}{\strong{Deprecated} (since 19.15.0). Use \code{covariates} instead.}
 }
 \value{
 A list containing:

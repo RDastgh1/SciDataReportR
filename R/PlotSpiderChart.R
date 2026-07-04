@@ -8,9 +8,9 @@
 #' variables to visually emphasize between-group differences, and optionally
 #' return an interactive radar chart using plotly.
 #'
-#' @param Data A data frame.
-#' @param Variables Character vector of variable names to plot.
-#' @param GroupVariable Optional grouping variable name. If NULL, one overall
+#' @param data A data frame.
+#' @param variables Character vector of variable names to plot.
+#' @param group_var Optional grouping variable name. If NULL, one overall
 #'   summary profile is plotted.
 #' @param Relabel Logical; if TRUE, use variable labels when available.
 #' @param ContinuousSummary Character; one of `"mean"` or `"median"`.
@@ -20,7 +20,7 @@
 #' @param FillAlpha Numeric transparency for fills.
 #' @param Facet Logical; if TRUE and `GroupVariable` is supplied, facet by group
 #'   instead of overlaying all groups on one spider chart. Ignored when
-#'   `MakeInteractive = TRUE`.
+#'   `interactive = TRUE`.
 #' @param VariableOrder Character; one of `"input"`, `"discrimination"`,
 #'   `"hierarchical"`, `"greedy"`, or `"category_discrimination"`.
 #' @param VariableCategories Optional character vector of categories for
@@ -52,8 +52,8 @@
 #' @param PlotMarginRight Numeric right plot margin for the static ggplot version.
 #' @param PlotMarginBottom Numeric bottom plot margin for the static ggplot version.
 #' @param PlotMarginLeft Numeric left plot margin for the static ggplot version.
-#' @param MakeInteractive Logical; if TRUE, return an interactive plotly radar
-#'   chart instead of a static ggplot.
+#' @param interactive Logical; if TRUE, return an interactive plotly radar
+#'   chart instead of a static ggplot. Default is `FALSE`.
 #' @param InteractiveHeight Numeric height in pixels for the interactive widget.
 #' @param InteractiveWidth Optional width passed to plotly layout. Defaults to
 #'   NULL.
@@ -61,47 +61,84 @@
 #'   axis. If NULL, auto-detected from the summarized values.
 #' @param InteractiveAxisMax Optional numeric maximum for the interactive radial
 #'   axis. If NULL, auto-detected from the summarized values.
-#' @param TooltipDigits Integer number of digits to show in interactive tooltips.
+#' @param tooltip_digits Integer number of digits to show in interactive tooltips.
 #'
-#' @return A ggplot object when `MakeInteractive = FALSE`, otherwise a plotly
+#' @return A ggplot object when `interactive = FALSE`, otherwise a plotly
 #'   htmlwidget.
+#' @param Data \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
+#' @param Variables \strong{Deprecated} (since 19.15.0). Use \code{variables} instead.
+#' @param GroupVariable \strong{Deprecated} (since 19.15.0). Use \code{group_var} instead.
+#' @param TooltipDigits \strong{Deprecated} (since 19.15.0). Use \code{tooltip_digits} instead.
+#' @param MakeInteractive \strong{Deprecated} (since 19.15.0). Use \code{interactive} instead.
 #' @export
-PlotSpiderChart <- function(Data,
-                            Variables,
-                            GroupVariable = NULL,
-                            Relabel = TRUE,
-                            ContinuousSummary = "mean",
-                            ContinuousScaling = "zscore",
-                            Fill = FALSE,
-                            FillAlpha = 0.2,
-                            Facet = FALSE,
-                            VariableOrder = "input",
-                            VariableCategories = NULL,
-                            BinaryPositiveValue = 1,
-                            Palette = "Dark 3",
-                            LineSize = 1,
-                            PointSize = 2,
-                            ShowPoints = FALSE,
-                            LegendTitle = NULL,
-                            PlotTitle = NULL,
-                            Subtitle = NULL,
-                            Caption = NULL,
-                            AxisLabelSize = 12,
-                            AxisTextSize = 10,
-                            StripTextSize = 11,
-                            WrapLabels = TRUE,
-                            LabelWrapWidth = 22,
-                            LabelRadiusMultiplier = 1.22,
-                            PlotMarginTop = 40,
-                            PlotMarginRight = 120,
-                            PlotMarginBottom = 40,
-                            PlotMarginLeft = 120,
-                            MakeInteractive = FALSE,
-                            InteractiveHeight = 700,
-                            InteractiveWidth = NULL,
-                            InteractiveAxisMin = NULL,
-                            InteractiveAxisMax = NULL,
-                            TooltipDigits = 2) {
+PlotSpiderChart <- function(data,
+    variables,
+    group_var = NULL,
+    Relabel = TRUE,
+    ContinuousSummary = "mean",
+    ContinuousScaling = "zscore",
+    Fill = FALSE,
+    FillAlpha = 0.2,
+    Facet = FALSE,
+    VariableOrder = "input",
+    VariableCategories = NULL,
+    BinaryPositiveValue = 1,
+    Palette = "Dark 3",
+    LineSize = 1,
+    PointSize = 2,
+    ShowPoints = FALSE,
+    LegendTitle = NULL,
+    PlotTitle = NULL,
+    Subtitle = NULL,
+    Caption = NULL,
+    AxisLabelSize = 12,
+    AxisTextSize = 10,
+    StripTextSize = 11,
+    WrapLabels = TRUE,
+    LabelWrapWidth = 22,
+    LabelRadiusMultiplier = 1.22,
+    PlotMarginTop = 40,
+    PlotMarginRight = 120,
+    PlotMarginBottom = 40,
+    PlotMarginLeft = 120,
+    interactive = FALSE,
+    InteractiveHeight = 700,
+    InteractiveWidth = NULL,
+    InteractiveAxisMin = NULL,
+    InteractiveAxisMax = NULL,
+    tooltip_digits = 2,
+    Data = lifecycle::deprecated(),
+    Variables = lifecycle::deprecated(),
+    GroupVariable = lifecycle::deprecated(),
+    TooltipDigits = lifecycle::deprecated(),
+    MakeInteractive = lifecycle::deprecated()) {
+  # Deprecated argument shims (SciDataReportR 19.15.0)
+  if (lifecycle::is_present(Data)) {
+    lifecycle::deprecate_warn("19.15.0", "PlotSpiderChart(Data)", "PlotSpiderChart(data)")
+    data <- Data
+  }
+  if (!missing(data)) Data <- data
+  if (lifecycle::is_present(Variables)) {
+    lifecycle::deprecate_warn("19.15.0", "PlotSpiderChart(Variables)", "PlotSpiderChart(variables)")
+    variables <- Variables
+  }
+  if (!missing(variables)) Variables <- variables
+  if (lifecycle::is_present(GroupVariable)) {
+    lifecycle::deprecate_warn("19.15.0", "PlotSpiderChart(GroupVariable)", "PlotSpiderChart(group_var)")
+    group_var <- GroupVariable
+  }
+  GroupVariable <- group_var
+  if (lifecycle::is_present(TooltipDigits)) {
+    lifecycle::deprecate_warn("19.15.0", "PlotSpiderChart(TooltipDigits)", "PlotSpiderChart(tooltip_digits)")
+    tooltip_digits <- TooltipDigits
+  }
+  TooltipDigits <- tooltip_digits
+  if (lifecycle::is_present(MakeInteractive)) {
+    lifecycle::deprecate_warn("19.15.0", "PlotSpiderChart(MakeInteractive)", "PlotSpiderChart(interactive)")
+    interactive <- MakeInteractive
+  }
+  MakeInteractive <- interactive
+
 
   # Validate inputs
 
@@ -210,11 +247,11 @@ PlotSpiderChart <- function(Data,
   }
 
   if (MakeInteractive && !requireNamespace("plotly", quietly = TRUE)) {
-    stop("MakeInteractive = TRUE requires the plotly package to be installed.")
+    stop("interactive = TRUE requires the plotly package to be installed.")
   }
 
   if (MakeInteractive && Facet) {
-    warning("Facet is ignored when MakeInteractive = TRUE.")
+    warning("Facet is ignored when interactive = TRUE.")
   }
 
   # Prepare data
@@ -317,7 +354,7 @@ PlotSpiderChart <- function(Data,
   if (length(ContinuousVars) > 0 && ContinuousScaling == "zscore") {
     ZResult <- tryCatch(
       CreateZScoreObject(
-        df = PlotData,
+        data = PlotData,
         variables = ContinuousVars,
         names_prefix = "Z_",
         RetainLabels = FALSE,

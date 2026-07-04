@@ -4,16 +4,24 @@
 \alias{plotSigAssociations}
 \title{Plot Significant Associations}
 \usage{
-plotSigAssociations(DataFrame, AnovaMatrixObject, PVar = "p", Pthresh = 0.05)
+plotSigAssociations(
+  data,
+  AnovaMatrixObject,
+  PVar = "p",
+  Pthresh = 0.05,
+  DataFrame = lifecycle::deprecated()
+)
 }
 \arguments{
-\item{DataFrame}{The dataset used to generate the scatterplots.}
+\item{data}{The dataset used to generate the scatterplots.}
 
 \item{AnovaMatrixObject}{The output of the PlotAnovaRelationshipsMatrix function.}
 
 \item{PVar}{The name of the column used to filter for significance (default is "P").}
 
 \item{Pthresh}{The significance threshold (default is 0.05).}
+
+\item{DataFrame}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
 }
 \value{
 A list of scatterplot objects for significant correlations.

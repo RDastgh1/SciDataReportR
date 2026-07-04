@@ -5,25 +5,30 @@
 \title{Plot correlations heatmap}
 \usage{
 PlotCorrelationsHeatmap(
-  Data,
-  xVars = NULL,
-  yVars = NULL,
-  covars = NULL,
+  data,
+  predictor_vars = NULL,
+  outcome_vars = NULL,
+  covariates = NULL,
   method = "pearson",
   Relabel = TRUE,
   Ordinal = FALSE,
   min_n = 3,
-  eps = 1e-12
+  eps = 1e-12,
+  fdr_scope = c("matrix", "per_outcome"),
+  Data = lifecycle::deprecated(),
+  xVars = lifecycle::deprecated(),
+  yVars = lifecycle::deprecated(),
+  covars = lifecycle::deprecated()
 )
 }
 \arguments{
-\item{Data}{data.frame}
+\item{data}{data.frame}
 
-\item{xVars}{character vector}
+\item{predictor_vars}{character vector}
 
-\item{yVars}{character vector}
+\item{outcome_vars}{character vector}
 
-\item{covars}{optional covariates}
+\item{covariates}{optional covariates}
 
 \item{method}{pearson/spearman/kendall}
 
@@ -34,9 +39,26 @@ PlotCorrelationsHeatmap(
 \item{min_n}{minimum complete rows}
 
 \item{eps}{variance tolerance}
+
+\item{fdr_scope}{Either \code{"matrix"} (default) or \code{"per_outcome"}, passed to
+\code{\link[=ApplyFDRCorrection]{ApplyFDRCorrection()}}. With \code{"matrix"}, FDR correction is applied across
+the whole p-value matrix at once (historical behavior). With
+\code{"per_outcome"}, correction is applied separately within each outcome:
+in this function outcomes are the columns of the p-value matrix, i.e.
+\code{outcome_vars} (\code{outcome_margin = 2}).}
+
+\item{Data}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
+
+\item{xVars}{\strong{Deprecated} (since 19.15.0). Use \code{predictor_vars} instead.}
+
+\item{yVars}{\strong{Deprecated} (since 19.15.0). Use \code{outcome_vars} instead.}
+
+\item{covars}{\strong{Deprecated} (since 19.15.0). Use \code{covariates} instead.}
 }
 \value{
-list
+A list. \code{Unadjusted} and \code{FDRCorrected} each contain \code{r}, \code{p},
+\code{npairs}, and \code{plot}. The standardized aliases \code{p} (same as \code{Unadjusted})
+and \code{p_fdr} (same as \code{FDRCorrected}) are also included.
 }
 \description{
 Computes correlations or partial correlations and plots a heatmap.

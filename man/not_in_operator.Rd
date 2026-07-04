@@ -7,6 +7,8 @@
 \title{Negated "in" Operator}
 \usage{
 x \%!in\% y
+
+x \%notin\% y
 }
 \arguments{
 \item{x}{The element to be tested for absence in the vector.}

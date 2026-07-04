@@ -2,8 +2,8 @@
 #'
 #' Revalues variables in a dataset using a VarTypes codebook.
 #'
-#' @param DatatoRevalue A data.frame or tibble to be revalued.
-#' @param VarTypes A data.frame with columns:
+#' @param data A data.frame or tibble to be revalued.
+#' @param codebook A data.frame with columns:
 #'   Variable, Recode, Code, Type, Label, MissingCode. Only Variable is required.
 #'   (Backward compatible: if MissingCode is absent/NA, will fall back to Missing.)
 #' @param missingVal Default value to treat as missing when VarTypes$MissingCode is absent or NA.
@@ -12,8 +12,27 @@
 #' @return A list with:
 #'   RevaluedData (data), warninglist (character), recodedvars (character),
 #'   not_in_data (character).
+#' @param DatatoRevalue \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
+#' @param VarTypes \strong{Deprecated} (since 19.15.0). Use \code{codebook} instead.
 #' @export
-RevalueData <- function(DatatoRevalue, VarTypes, missingVal = -999, splitchar = ";") {
+RevalueData <- function(data,
+    codebook,
+    missingVal = -999,
+    splitchar = ";",
+    DatatoRevalue = lifecycle::deprecated(),
+    VarTypes = lifecycle::deprecated()) {
+  # Deprecated argument shims (SciDataReportR 19.15.0)
+  if (lifecycle::is_present(DatatoRevalue)) {
+    lifecycle::deprecate_warn("19.15.0", "RevalueData(DatatoRevalue)", "RevalueData(data)")
+    data <- DatatoRevalue
+  }
+  if (!missing(data)) DatatoRevalue <- data
+  if (lifecycle::is_present(VarTypes)) {
+    lifecycle::deprecate_warn("19.15.0", "RevalueData(VarTypes)", "RevalueData(codebook)")
+    codebook <- VarTypes
+  }
+  if (!missing(codebook)) VarTypes <- codebook
+
   if (!requireNamespace("sjlabelled", quietly = TRUE))
     stop("Package 'sjlabelled' is required.")
 

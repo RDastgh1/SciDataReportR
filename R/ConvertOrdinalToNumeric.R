@@ -2,13 +2,30 @@
 #'
 #' Convert ordinal variables in a dataframe to numeric if they contain numeric values in their character representation.
 #'
-#' @param Data The dataframe containing the variables.
-#' @param Variables A character vector specifying the names of variables to consider. If NULL, all columns of the dataframe will be considered.
+#' @param data The dataframe containing the variables.
+#' @param variables A character vector specifying the names of variables to consider. If NULL, all columns of the dataframe will be considered.
 #' @importFrom sjlabelled get_label set_label
 #' @return The dataframe with ordinal variables potentially converted to numeric.
 #'
+#' @param Data \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
+#' @param Variables \strong{Deprecated} (since 19.15.0). Use \code{variables} instead.
 #' @export
-ConvertOrdinalToNumeric <- function(Data, Variables = NULL) {
+ConvertOrdinalToNumeric <- function(data,
+    variables = NULL,
+    Data = lifecycle::deprecated(),
+    Variables = lifecycle::deprecated()) {
+  # Deprecated argument shims (SciDataReportR 19.15.0)
+  if (lifecycle::is_present(Data)) {
+    lifecycle::deprecate_warn("19.15.0", "ConvertOrdinalToNumeric(Data)", "ConvertOrdinalToNumeric(data)")
+    data <- Data
+  }
+  if (!missing(data)) Data <- data
+  if (lifecycle::is_present(Variables)) {
+    lifecycle::deprecate_warn("19.15.0", "ConvertOrdinalToNumeric(Variables)", "ConvertOrdinalToNumeric(variables)")
+    variables <- Variables
+  }
+  Variables <- variables
+
 
   # If Variables argument is NULL, consider all columns of the dataframe
   if(is.null(Variables)){

@@ -3,9 +3,9 @@
 #'
 #' Generate a descriptive summary table for specified variables in a dataset.
 #'
-#' @param Data The dataset containing the variables of interest.
-#' @param Variables A character vector specifying the variables for which summary statistics will be calculated.
-#' @param numdecimals Number of decimal places to round the summary statistics.
+#' @param data The dataset containing the variables of interest.
+#' @param variables A character vector specifying the variables for which summary statistics will be calculated.
+#' @param digits Number of decimal places to round the summary statistics.
 #' @param Relabel Logical, indicating whether to use variable labels as column headers.
 #' @param Ordinal Logical, indicating whether ordinal variables should be included in the summary.
 #' @param ScrollBoxHeight Height of the scroll box for displaying the table.
@@ -16,10 +16,38 @@
 #' @importFrom sjlabelled get_label set_label
 #' @importFrom summarytools descr
 #' @importFrom kableExtra cell_spec kable kable_styling scroll_box
+#' @param Data \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
+#' @param Variables \strong{Deprecated} (since 19.15.0). Use \code{variables} instead.
+#' @param numdecimals \strong{Deprecated} (since 19.15.0). Use \code{digits} instead.
 #' @export
 
 
-CreateSummaryTable <- function(Data, Variables = NULL, numdecimals = 2, Relabel = TRUE, Ordinal = FALSE, ScrollBoxHeight = "700px") {
+CreateSummaryTable <- function(data,
+    variables = NULL,
+    digits = 2,
+    Relabel = TRUE,
+    Ordinal = FALSE,
+    ScrollBoxHeight = "700px",
+    Data = lifecycle::deprecated(),
+    Variables = lifecycle::deprecated(),
+    numdecimals = lifecycle::deprecated()) {
+  # Deprecated argument shims (SciDataReportR 19.15.0)
+  if (lifecycle::is_present(Data)) {
+    lifecycle::deprecate_warn("19.15.0", "CreateSummaryTable(Data)", "CreateSummaryTable(data)")
+    data <- Data
+  }
+  if (!missing(data)) Data <- data
+  if (lifecycle::is_present(Variables)) {
+    lifecycle::deprecate_warn("19.15.0", "CreateSummaryTable(Variables)", "CreateSummaryTable(variables)")
+    variables <- Variables
+  }
+  Variables <- variables
+  if (lifecycle::is_present(numdecimals)) {
+    lifecycle::deprecate_warn("19.15.0", "CreateSummaryTable(numdecimals)", "CreateSummaryTable(digits)")
+    digits <- numdecimals
+  }
+  numdecimals <- digits
+
 
   if (is.null(Variables)) {
     Variables <- colnames(Data)

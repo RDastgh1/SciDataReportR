@@ -3,7 +3,7 @@
 #' This function generates a data frame that summarizes the types and labels of the variables in a given data frame.
 #' It optionally saves this summary to a CSV file.
 #'
-#' @param DataFrame A data frame containing the variables to be summarized.
+#' @param data A data frame containing the variables to be summarized.
 #' @param CSVFileName A string specifying the path and name of the CSV file to save the summary.
 #'                    If NULL (the default), the CSV file will not be created.
 #' @param GuessCategorical A logical variable specifying if the function should guess what variables are categorical based on having <= 5 unique values
@@ -33,8 +33,19 @@
 #'
 #' @importFrom sjlabelled get_label
 #' @importFrom utils write.csv
+#' @param DataFrame \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
 #' @export
-CreateVariableTypesTemplate <- function(DataFrame, CSVFileName = NULL, GuessCategorical = TRUE) {
+CreateVariableTypesTemplate <- function(data,
+    CSVFileName = NULL,
+    GuessCategorical = TRUE,
+    DataFrame = lifecycle::deprecated()) {
+  # Deprecated argument shims (SciDataReportR 19.15.0)
+  if (lifecycle::is_present(DataFrame)) {
+    lifecycle::deprecate_warn("19.15.0", "CreateVariableTypesTemplate(DataFrame)", "CreateVariableTypesTemplate(data)")
+    data <- DataFrame
+  }
+  if (!missing(data)) DataFrame <- data
+
 
   # Get the classes of the variables in the DataFrame
   Types <- sapply(DataFrame, class)

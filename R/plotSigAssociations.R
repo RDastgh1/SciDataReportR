@@ -2,7 +2,7 @@
 #'
 #' Generate ggbetweenstats for significant correlations based on a previously generated anova matrix
 #'
-#' @param DataFrame The dataset used to generate the scatterplots.
+#' @param data The dataset used to generate the scatterplots.
 #' @param AnovaMatrixObject The output of the PlotAnovaRelationshipsMatrix function.
 #' @param PVar The name of the column used to filter for significance (default is "P").
 #' @param Pthresh The significance threshold (default is 0.05).
@@ -10,8 +10,20 @@
 #' @importFrom ggstatsplot ggscatterstats
 #' @importFrom dplyr filter
 #' @importFrom sjlabelled get_label
+#' @param DataFrame \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
 #' @export
-plotSigAssociations <- function(DataFrame, AnovaMatrixObject, PVar = "p", Pthresh = 0.05) {
+plotSigAssociations <- function(data,
+    AnovaMatrixObject,
+    PVar = "p",
+    Pthresh = 0.05,
+    DataFrame = lifecycle::deprecated()) {
+  # Deprecated argument shims (SciDataReportR 19.15.0)
+  if (lifecycle::is_present(DataFrame)) {
+    lifecycle::deprecate_warn("19.15.0", "plotSigAssociations(DataFrame)", "plotSigAssociations(data)")
+    data <- DataFrame
+  }
+  if (!missing(data)) DataFrame <- data
+
   DataFrame <- as.data.frame(DataFrame)
   Plot <- AnovaMatrixObject
 

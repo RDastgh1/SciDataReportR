@@ -6,12 +6,12 @@
 (BH q from p; SHAPE by p; COLOR by Category (vector or data frame); stable point size; palette via paletteer)}
 \usage{
 Plot2GroupStats(
-  Data,
-  Variables,
+  data,
+  variables,
   VariableCategories = NULL,
   impClust,
   normalClust,
-  GroupVar,
+  group_var,
   missing_threshold = 0.8,
   max_levels = 10,
   label_q = 0.05,
@@ -19,13 +19,16 @@ Plot2GroupStats(
   sort_by = c("q", "p", "effect", "signed_logp", "signed_effect", "none"),
   mct_args = list(),
   palette = "pals::alphabet",
-  point_size = 3.5
+  point_size = 3.5,
+  Data = lifecycle::deprecated(),
+  Variables = lifecycle::deprecated(),
+  GroupVar = lifecycle::deprecated()
 )
 }
 \arguments{
-\item{Data}{data.frame}
+\item{data}{data.frame}
 
-\item{Variables}{character vector of variables to analyze}
+\item{variables}{character vector of variables to analyze}
 
 \item{VariableCategories}{optional:
 \itemize{
@@ -35,7 +38,7 @@ Plot2GroupStats(
 
 \item{impClust, normalClust}{labels for the two groups (impClust plotted to the RIGHT for signed axes)}
 
-\item{GroupVar}{column name in \code{Data} holding the group labels}
+\item{group_var}{column name in \code{Data} holding the group labels}
 
 \item{missing_threshold}{drop vars with > this fraction missing (default 0.80)}
 
@@ -52,6 +55,12 @@ Plot2GroupStats(
 \item{palette}{paletteer palette string for category colors (default "pals::alphabet")}
 
 \item{point_size}{numeric constant for point size (default 3.5)}
+
+\item{Data}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
+
+\item{Variables}{\strong{Deprecated} (since 19.15.0). Use \code{variables} instead.}
+
+\item{GroupVar}{\strong{Deprecated} (since 19.15.0). Use \code{group_var} instead.}
 }
 \value{
 list(plot=ggplot, table=gtsummary, pvaltable=data.frame, data_used=tibble)

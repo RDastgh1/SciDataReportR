@@ -19,15 +19,15 @@
 #'
 #' Pairwise comparisons preserve non-standard group labels and variable names.
 #'
-#' @param DataFrame A data frame.
-#' @param CompVariable Character scalar naming the grouping variable.
-#' @param Variables Character vector of variables to summarize.
+#' @param data A data frame.
+#' @param group_var Character scalar naming the grouping variable.
+#' @param variables Character vector of variables to summarize.
 #' @param ... Optional additional variable names supplied individually.
-#' @param Covariates Optional character vector of covariates for adjusted models.
-#' @param ValueDigits Number of digits for descriptive statistics.
-#' @param pDigits Number of digits for p-values.
+#' @param covariates Optional character vector of covariates for adjusted models.
+#' @param value_digits Number of digits for descriptive statistics.
+#' @param p_digits Number of digits for p-values.
 #' @param AddEffectSize Logical; add effect-size columns.
-#' @param EffectSizeDigits Number of digits for effect sizes.
+#' @param effect_size_digits Number of digits for effect sizes.
 #' @param AddPairwise Logical; add pairwise comparison columns.
 #' @param PairwiseMethod P-value adjustment method. Use `"none"` for no adjustment.
 #' @param Parametric Logical; use parametric tests for continuous outcomes.
@@ -53,25 +53,31 @@
 #' @examples
 #' \dontrun{
 #' MakeComparisonTable(
-#'   DataFrame = mtcars,
+#'   data = mtcars,
 #'   CompVariable = "am",
-#'   Variables = c("mpg", "hp", "wt"),
+#'   variables = c("mpg", "hp", "wt"),
 #'   AddEffectSize = TRUE,
 #'   AddPairwise = TRUE
 #' )
 #' }
 #'
+#' @param DataFrame \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
+#' @param CompVariable \strong{Deprecated} (since 19.15.0). Use \code{group_var} instead.
+#' @param Variables \strong{Deprecated} (since 19.15.0). Use \code{variables} instead.
+#' @param Covariates \strong{Deprecated} (since 19.15.0). Use \code{covariates} instead.
+#' @param ValueDigits \strong{Deprecated} (since 19.15.0). Use \code{value_digits} instead.
+#' @param pDigits \strong{Deprecated} (since 19.15.0). Use \code{p_digits} instead.
+#' @param EffectSizeDigits \strong{Deprecated} (since 19.15.0). Use \code{effect_size_digits} instead.
 #' @export
-MakeComparisonTable <- function(
-    DataFrame,
-    CompVariable = NULL,
-    Variables,
+MakeComparisonTable <- function(data,
+    group_var = NULL,
+    variables,
     ...,
-    Covariates = NULL,
-    ValueDigits = 2,
-    pDigits = 3,
+    covariates = NULL,
+    value_digits = 2,
+    p_digits = 3,
     AddEffectSize = FALSE,
-    EffectSizeDigits = 2,
+    effect_size_digits = 2,
     AddPairwise = FALSE,
     PairwiseMethod = "bonferroni",
     Parametric = TRUE,
@@ -85,8 +91,51 @@ MakeComparisonTable <- function(
     CatMethod = c("auto", "chisq", "fisher"),
     MultiCatAdjusted = c("multinomial_LR", "none"),
     ShowNotes = c("auto", "always", "never"),
-    NotesPosition = c("last", "after_test", "before_pairwise")
-) {
+    NotesPosition = c("last", "after_test", "before_pairwise"),
+    DataFrame = lifecycle::deprecated(),
+    CompVariable = lifecycle::deprecated(),
+    Variables = lifecycle::deprecated(),
+    Covariates = lifecycle::deprecated(),
+    ValueDigits = lifecycle::deprecated(),
+    pDigits = lifecycle::deprecated(),
+    EffectSizeDigits = lifecycle::deprecated()) {
+  # Deprecated argument shims (SciDataReportR 19.15.0)
+  if (lifecycle::is_present(DataFrame)) {
+    lifecycle::deprecate_warn("19.15.0", "MakeComparisonTable(DataFrame)", "MakeComparisonTable(data)")
+    data <- DataFrame
+  }
+  if (!missing(data)) DataFrame <- data
+  if (lifecycle::is_present(CompVariable)) {
+    lifecycle::deprecate_warn("19.15.0", "MakeComparisonTable(CompVariable)", "MakeComparisonTable(group_var)")
+    group_var <- CompVariable
+  }
+  CompVariable <- group_var
+  if (lifecycle::is_present(Variables)) {
+    lifecycle::deprecate_warn("19.15.0", "MakeComparisonTable(Variables)", "MakeComparisonTable(variables)")
+    variables <- Variables
+  }
+  if (!missing(variables)) Variables <- variables
+  if (lifecycle::is_present(Covariates)) {
+    lifecycle::deprecate_warn("19.15.0", "MakeComparisonTable(Covariates)", "MakeComparisonTable(covariates)")
+    covariates <- Covariates
+  }
+  Covariates <- covariates
+  if (lifecycle::is_present(ValueDigits)) {
+    lifecycle::deprecate_warn("19.15.0", "MakeComparisonTable(ValueDigits)", "MakeComparisonTable(value_digits)")
+    value_digits <- ValueDigits
+  }
+  ValueDigits <- value_digits
+  if (lifecycle::is_present(pDigits)) {
+    lifecycle::deprecate_warn("19.15.0", "MakeComparisonTable(pDigits)", "MakeComparisonTable(p_digits)")
+    p_digits <- pDigits
+  }
+  pDigits <- p_digits
+  if (lifecycle::is_present(EffectSizeDigits)) {
+    lifecycle::deprecate_warn("19.15.0", "MakeComparisonTable(EffectSizeDigits)", "MakeComparisonTable(effect_size_digits)")
+    effect_size_digits <- EffectSizeDigits
+  }
+  EffectSizeDigits <- effect_size_digits
+
 
   if (is.null(ParametricDisplay)) {
     ParametricDisplay <- Parametric

@@ -5,26 +5,45 @@
 \title{PlotMiningMatrix}
 \usage{
 PlotMiningMatrix(
-  Data,
-  OutcomeVars,
-  PredictorVars = NULL,
-  Covariates = NULL,
+  data,
+  outcome_vars,
+  predictor_vars = NULL,
+  covariates = NULL,
   Relabel = TRUE,
-  Parametric = TRUE
+  Parametric = TRUE,
+  Data = lifecycle::deprecated(),
+  OutcomeVars = lifecycle::deprecated(),
+  PredictorVars = lifecycle::deprecated(),
+  fdr_scope = c("matrix", "per_outcome"),
+  Covariates = lifecycle::deprecated()
 )
 }
 \arguments{
-\item{Data}{A data frame.}
+\item{data}{A data frame.}
 
-\item{OutcomeVars}{Outcome variables.}
+\item{outcome_vars}{Outcome variables.}
 
-\item{PredictorVars}{Predictor variables. If NULL, uses OutcomeVars.}
+\item{predictor_vars}{Predictor variables. If NULL, uses OutcomeVars.}
 
-\item{Covariates}{Optional covariates (reserved for future use).}
+\item{covariates}{Optional covariates (reserved for future use).}
 
 \item{Relabel}{Use labels instead of names.}
 
 \item{Parametric}{Use parametric tests.}
+
+\item{Data}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
+
+\item{OutcomeVars}{\strong{Deprecated} (since 19.15.0). Use \code{outcome_vars} instead.}
+
+\item{PredictorVars}{\strong{Deprecated} (since 19.15.0). Use \code{predictor_vars} instead.}
+
+\item{fdr_scope}{Either \code{"matrix"} (default) or \code{"per_outcome"}, passed to
+\code{\link[=ApplyFDRCorrection]{ApplyFDRCorrection()}}. \code{"matrix"} corrects across all pairwise p-values
+at once (historical behavior, computed on the symmetrized pair table).
+\code{"per_outcome"} corrects separately within each x-axis variable (\code{XVar},
+ordered by \code{outcome_vars}).}
+
+\item{Covariates}{\strong{Deprecated} (since 19.15.0). Use \code{covariates} instead.}
 }
 \value{
 List with tables and plots.

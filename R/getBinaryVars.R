@@ -4,14 +4,25 @@
 #' or levels. The function supports options for handling ordinal factors and
 #' revalued data.
 #'
-#' @param DataFrame A dataframe to analyze for binary variables.
+#' @param data A dataframe to analyze for binary variables.
 #' @param Ordinal Logical. If TRUE, ordinal factors are included in the search
 #' for binary variables. Default is TRUE.
 #' @param Revalued Logical. If TRUE, the function checks factors and their levels;
 #' otherwise, it checks for variables with two unique values.
 #' @return A character vector containing the names of binary variables.
+#' @param DataFrame \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
 #' @export
-getBinaryVars <- function(DataFrame, Ordinal = TRUE, Revalued = TRUE) {
+getBinaryVars <- function(data,
+    Ordinal = TRUE,
+    Revalued = TRUE,
+    DataFrame = lifecycle::deprecated()) {
+  # Deprecated argument shims (SciDataReportR 19.15.0)
+  if (lifecycle::is_present(DataFrame)) {
+    lifecycle::deprecate_warn("19.15.0", "getBinaryVars(DataFrame)", "getBinaryVars(data)")
+    data <- DataFrame
+  }
+  if (!missing(data)) DataFrame <- data
+
   if (Revalued) {
     # For revalued data, focus on factors with exactly 2 levels
     if (Ordinal) {

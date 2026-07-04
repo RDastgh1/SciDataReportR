@@ -5,9 +5,9 @@
 \title{Plot a spider chart across continuous and binary variables}
 \usage{
 PlotSpiderChart(
-  Data,
-  Variables,
-  GroupVariable = NULL,
+  data,
+  variables,
+  group_var = NULL,
   Relabel = TRUE,
   ContinuousSummary = "mean",
   ContinuousScaling = "zscore",
@@ -35,20 +35,25 @@ PlotSpiderChart(
   PlotMarginRight = 120,
   PlotMarginBottom = 40,
   PlotMarginLeft = 120,
-  MakeInteractive = FALSE,
+  interactive = FALSE,
   InteractiveHeight = 700,
   InteractiveWidth = NULL,
   InteractiveAxisMin = NULL,
   InteractiveAxisMax = NULL,
-  TooltipDigits = 2
+  tooltip_digits = 2,
+  Data = lifecycle::deprecated(),
+  Variables = lifecycle::deprecated(),
+  GroupVariable = lifecycle::deprecated(),
+  TooltipDigits = lifecycle::deprecated(),
+  MakeInteractive = lifecycle::deprecated()
 )
 }
 \arguments{
-\item{Data}{A data frame.}
+\item{data}{A data frame.}
 
-\item{Variables}{Character vector of variable names to plot.}
+\item{variables}{Character vector of variable names to plot.}
 
-\item{GroupVariable}{Optional grouping variable name. If NULL, one overall
+\item{group_var}{Optional grouping variable name. If NULL, one overall
 summary profile is plotted.}
 
 \item{Relabel}{Logical; if TRUE, use variable labels when available.}
@@ -64,7 +69,7 @@ ggplot version and filled polygons in the interactive version.}
 
 \item{Facet}{Logical; if TRUE and \code{GroupVariable} is supplied, facet by group
 instead of overlaying all groups on one spider chart. Ignored when
-\code{MakeInteractive = TRUE}.}
+\code{interactive = TRUE}.}
 
 \item{VariableOrder}{Character; one of \code{"input"}, \code{"discrimination"},
 \code{"hierarchical"}, \code{"greedy"}, or \code{"category_discrimination"}.}
@@ -118,8 +123,8 @@ sit outside the spider in the static ggplot version.}
 
 \item{PlotMarginLeft}{Numeric left plot margin for the static ggplot version.}
 
-\item{MakeInteractive}{Logical; if TRUE, return an interactive plotly radar
-chart instead of a static ggplot.}
+\item{interactive}{Logical; if TRUE, return an interactive plotly radar
+chart instead of a static ggplot. Default is \code{FALSE}.}
 
 \item{InteractiveHeight}{Numeric height in pixels for the interactive widget.}
 
@@ -132,10 +137,20 @@ axis. If NULL, auto-detected from the summarized values.}
 \item{InteractiveAxisMax}{Optional numeric maximum for the interactive radial
 axis. If NULL, auto-detected from the summarized values.}
 
-\item{TooltipDigits}{Integer number of digits to show in interactive tooltips.}
+\item{tooltip_digits}{Integer number of digits to show in interactive tooltips.}
+
+\item{Data}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
+
+\item{Variables}{\strong{Deprecated} (since 19.15.0). Use \code{variables} instead.}
+
+\item{GroupVariable}{\strong{Deprecated} (since 19.15.0). Use \code{group_var} instead.}
+
+\item{TooltipDigits}{\strong{Deprecated} (since 19.15.0). Use \code{tooltip_digits} instead.}
+
+\item{MakeInteractive}{\strong{Deprecated} (since 19.15.0). Use \code{interactive} instead.}
 }
 \value{
-A ggplot object when \code{MakeInteractive = FALSE}, otherwise a plotly
+A ggplot object when \code{interactive = FALSE}, otherwise a plotly
 htmlwidget.
 }
 \description{

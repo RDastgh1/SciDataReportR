@@ -9,19 +9,33 @@
 #' - original data merged with projected RCI outputs
 #' - publication-ready plots
 #'
-#' @param Data A data frame.
+#' @param data A data frame.
 #' @param Object A SciDataReportR_RCI object created with
 #'   `CreateRCIObject()`.
-#' @param ID Optional ID column override.
+#' @param id_var Optional ID column override.
 #'
 #' @return A projected SciDataReportR_RCI object.
 #'
+#' @param Data \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
+#' @param ID \strong{Deprecated} (since 19.15.0). Use \code{id_var} instead.
 #' @export
-ProjectRCI <- function(
-    Data,
+ProjectRCI <- function(data,
     Object,
-    ID = NULL
-) {
+    id_var = NULL,
+    Data = lifecycle::deprecated(),
+    ID = lifecycle::deprecated()) {
+  # Deprecated argument shims (SciDataReportR 19.15.0)
+  if (lifecycle::is_present(Data)) {
+    lifecycle::deprecate_warn("19.15.0", "ProjectRCI(Data)", "ProjectRCI(data)")
+    data <- Data
+  }
+  if (!missing(data)) Data <- data
+  if (lifecycle::is_present(ID)) {
+    lifecycle::deprecate_warn("19.15.0", "ProjectRCI(ID)", "ProjectRCI(id_var)")
+    id_var <- ID
+  }
+  ID <- id_var
+
 
   # ============================================================================
   # Extract metadata

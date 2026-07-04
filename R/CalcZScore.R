@@ -1,6 +1,6 @@
 #' Calculate Z-scores (or standardized scores) and return data + parameters
 #'
-#' @param df Data frame with variables to standardize.
+#' @param data Data frame with variables to standardize.
 #' @param variables Character vector of variable names. If NULL, uses
 #'   SciDataReportR::getNumVars(df).
 #' @param names_prefix Prefix to prepend to variable names (default "Z_").
@@ -15,14 +15,23 @@
 #'   - Parameters: data frame with Variable, N, Mean, SD
 #'   - Center: logical flag used
 #'   - Scale: logical flag used
+#' @param df \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
 #' @export
-CreateZScoreObject <- function(df,
-                       variables = NULL,
-                       names_prefix = "Z_",
-                       RetainLabels = TRUE,
-                       RenameLabels = TRUE,
-                       center = TRUE,
-                       scale = TRUE) {
+CreateZScoreObject <- function(data,
+    variables = NULL,
+    names_prefix = "Z_",
+    RetainLabels = TRUE,
+    RenameLabels = TRUE,
+    center = TRUE,
+    scale = TRUE,
+    df = lifecycle::deprecated()) {
+  # Deprecated argument shims (SciDataReportR 19.15.0)
+  if (lifecycle::is_present(df)) {
+    lifecycle::deprecate_warn("19.15.0", "CreateZScoreObject(df)", "CreateZScoreObject(data)")
+    data <- df
+  }
+  if (!missing(data)) df <- data
+
   # 1. Determine variables -------------------------------------------------
   if (is.null(variables)) {
     if (!requireNamespace("SciDataReportR", quietly = TRUE)) {

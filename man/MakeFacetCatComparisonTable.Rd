@@ -5,14 +5,14 @@
 \title{Create a merged gtsummary table by faceting comparisons across multiple categorical variables}
 \usage{
 MakeFacetCatComparisonTable(
-  DataFrame,
+  data,
   FacetVariables,
-  Variables,
-  Covariates = NULL,
-  ValueDigits = 2,
-  pDigits = 3,
+  variables,
+  covariates = NULL,
+  value_digits = 2,
+  p_digits = 3,
   AddEffectSize = FALSE,
-  EffectSizeDigits = 2,
+  effect_size_digits = 2,
   AddPairwise = FALSE,
   PairwiseMethod = "bonferroni",
   Parametric = TRUE,
@@ -24,26 +24,32 @@ MakeFacetCatComparisonTable(
   IncludeOverallStats = FALSE,
   ShowPositiveBinaryOnLabel = TRUE,
   CompFun = MakeComparisonTable,
-  ...
+  ...,
+  DataFrame = lifecycle::deprecated(),
+  Variables = lifecycle::deprecated(),
+  Covariates = lifecycle::deprecated(),
+  ValueDigits = lifecycle::deprecated(),
+  pDigits = lifecycle::deprecated(),
+  EffectSizeDigits = lifecycle::deprecated()
 )
 }
 \arguments{
-\item{DataFrame}{A data frame containing all variables to be analyzed.}
+\item{data}{A data frame containing all variables to be analyzed.}
 
 \item{FacetVariables}{A character vector of variable names to facet by.
 The function automatically selects those that are categorical (\code{factor} or \code{character}).}
 
-\item{Variables}{A character string naming the variable(s) being compared (e.g., "Cluster").}
+\item{variables}{A character string naming the variable(s) being compared (e.g., "Cluster").}
 
-\item{Covariates}{Optional character vector of covariate names to adjust for.}
+\item{covariates}{Optional character vector of covariate names to adjust for.}
 
-\item{ValueDigits}{Number of decimal digits to display for numeric values (default = 2).}
+\item{value_digits}{Number of decimal digits to display for numeric values (default = 2).}
 
-\item{pDigits}{Number of decimal digits to display for p-values (default = 3).}
+\item{p_digits}{Number of decimal digits to display for p-values (default = 3).}
 
 \item{AddEffectSize}{Logical; if TRUE, include effect sizes (default = FALSE).}
 
-\item{EffectSizeDigits}{Decimal digits for effect size values (default = 2).}
+\item{effect_size_digits}{Decimal digits for effect size values (default = 2).}
 
 \item{AddPairwise}{Logical; if TRUE, include pairwise comparisons (default = FALSE).}
 
@@ -68,6 +74,18 @@ The function automatically selects those that are categorical (\code{factor} or 
 \item{CompFun}{Comparison function to apply; defaults to \code{MakeComparisonTable}.}
 
 \item{...}{Additional arguments passed to the comparison function.}
+
+\item{DataFrame}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
+
+\item{Variables}{\strong{Deprecated} (since 19.15.0). Use \code{variables} instead.}
+
+\item{Covariates}{\strong{Deprecated} (since 19.15.0). Use \code{covariates} instead.}
+
+\item{ValueDigits}{\strong{Deprecated} (since 19.15.0). Use \code{value_digits} instead.}
+
+\item{pDigits}{\strong{Deprecated} (since 19.15.0). Use \code{p_digits} instead.}
+
+\item{EffectSizeDigits}{\strong{Deprecated} (since 19.15.0). Use \code{effect_size_digits} instead.}
 }
 \value{
 A \code{gtsummary} table created by merging each facet's \code{MakeComparisonTable()} output

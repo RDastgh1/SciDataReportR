@@ -4,7 +4,7 @@
 #' both the transformed data and the parameters needed to review or reuse the
 #' transformation.
 #'
-#' @param df A data frame.
+#' @param data A data frame.
 #' @param variables Character vector of numeric variables to transform. If
 #'   `NULL`, numeric variables are detected with [getNumVars()].
 #' @param names_prefix Prefix for generated M-score columns.
@@ -22,15 +22,24 @@
 #'   - `Scale`: logical flag used
 #'   - `Constant`: MAD scaling constant used
 #'
+#' @param df \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
 #' @export
-CreateMScoreObject <- function(df,
-                       variables = NULL,
-                       names_prefix = "M_",
-                       RetainLabels = TRUE,
-                       RenameLabels = TRUE,
-                       center = TRUE,
-                       scale = TRUE,
-                       constant = 1.4826) {
+CreateMScoreObject <- function(data,
+    variables = NULL,
+    names_prefix = "M_",
+    RetainLabels = TRUE,
+    RenameLabels = TRUE,
+    center = TRUE,
+    scale = TRUE,
+    constant = 1.4826,
+    df = lifecycle::deprecated()) {
+  # Deprecated argument shims (SciDataReportR 19.15.0)
+  if (lifecycle::is_present(df)) {
+    lifecycle::deprecate_warn("19.15.0", "CreateMScoreObject(df)", "CreateMScoreObject(data)")
+    data <- df
+  }
+  if (!missing(data)) df <- data
+
 
   # Validate inputs
 

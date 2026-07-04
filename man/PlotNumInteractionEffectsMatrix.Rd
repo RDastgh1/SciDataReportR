@@ -5,21 +5,26 @@
 \title{Plot Numerical Interaction Effects Matrix}
 \usage{
 PlotNumInteractionEffectsMatrix(
-  Data,
-  xVars,
-  yVars = NULL,
+  data,
+  predictor_vars,
+  outcome_vars = NULL,
   xVarLabels = NULL,
   yVarLabels = NULL,
   interVar = NULL,
-  covars = NULL
+  covariates = NULL,
+  Data = lifecycle::deprecated(),
+  xVars = lifecycle::deprecated(),
+  yVars = lifecycle::deprecated(),
+  fdr_scope = c("matrix", "per_outcome"),
+  covars = lifecycle::deprecated()
 )
 }
 \arguments{
-\item{Data}{The dataset containing the variables.}
+\item{data}{The dataset containing the variables.}
 
-\item{xVars}{A character vector of the names of the x-axis numerical variables.}
+\item{predictor_vars}{A character vector of the names of the x-axis numerical variables.}
 
-\item{yVars}{A character vector of the names of the y-axis numerical variables. Defaults to NULL.}
+\item{outcome_vars}{A character vector of the names of the y-axis numerical variables. Defaults to NULL.}
 
 \item{xVarLabels}{A character vector of labels for the x-axis variables. Defaults to NULL.}
 
@@ -27,7 +32,20 @@ PlotNumInteractionEffectsMatrix(
 
 \item{interVar}{The interaction variable. Defaults to NULL.}
 
-\item{covars}{A character vector of the names of covariate variables. Defaults to NULL.}
+\item{covariates}{A character vector of the names of covariate variables. Defaults to NULL.}
+
+\item{Data}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
+
+\item{xVars}{\strong{Deprecated} (since 19.15.0). Use \code{predictor_vars} instead.}
+
+\item{yVars}{\strong{Deprecated} (since 19.15.0). Use \code{outcome_vars} instead.}
+
+\item{fdr_scope}{Either \code{"matrix"} (default) or \code{"per_outcome"}, passed to
+\code{\link[=ApplyFDRCorrection]{ApplyFDRCorrection()}}. \code{"matrix"} corrects across all interaction
+p-values at once (historical behavior). \code{"per_outcome"} corrects
+separately within each y-axis variable (\code{outcome_vars}).}
+
+\item{covars}{\strong{Deprecated} (since 19.15.0). Use \code{covariates} instead.}
 }
 \value{
 A list containing matrices, ggplot objects for visualizations, and tables of p-values.

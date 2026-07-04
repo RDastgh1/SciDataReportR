@@ -5,19 +5,21 @@
 \title{Plot Missing Data}
 \usage{
 PlotMissingData(
-  DataFrame,
-  Variables = NULL,
+  data,
+  variables = NULL,
   HoverVars = NULL,
   Relabel = TRUE,
   show_perc = TRUE,
   show_perc_var = TRUE,
-  cluster = FALSE
+  cluster = FALSE,
+  DataFrame = lifecycle::deprecated(),
+  Variables = lifecycle::deprecated()
 )
 }
 \arguments{
-\item{DataFrame}{A data frame.}
+\item{data}{A data frame.}
 
-\item{Variables}{Character vector of variables to visualize. If NULL,
+\item{variables}{Character vector of variables to visualize. If NULL,
 all columns except HoverVars are used.}
 
 \item{HoverVars}{Optional character vector of columns to include in hover
@@ -33,6 +35,10 @@ percentages are appended to y-axis labels.}
 
 \item{cluster}{Logical. If TRUE, variables are clustered by missingness
 pattern.}
+
+\item{DataFrame}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
+
+\item{Variables}{\strong{Deprecated} (since 19.15.0). Use \code{variables} instead.}
 }
 \value{
 A ggplot object.

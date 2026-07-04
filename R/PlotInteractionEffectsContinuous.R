@@ -3,11 +3,11 @@
 #' Creates a scatter plot with regression lines showing the interaction between a predictor
 #' and outcome variable, moderated by either a continuous or categorical variable.
 #'
-#' @param Data A data frame containing the variables to be analyzed
+#' @param data A data frame containing the variables to be analyzed
 #' @param interVar Character string specifying the interaction variable (moderator)
-#' @param outcomeVar Character string specifying the outcome variable
-#' @param predictorVar Character string specifying the predictor variable
-#' @param covars Character vector of covariate names to include in the model
+#' @param outcome_var Character string specifying the outcome variable
+#' @param predictor_var Character string specifying the predictor variable
+#' @param covariates Character vector of covariate names to include in the model
 #' @param n_lines For continuous moderators, number of lines to plot (default: 3 for low/med/high)
 #' @param alpha Transparency level for points (default: 0.6)
 #' @param point_size Size of points (default: 2)
@@ -23,6 +23,10 @@
 #'
 #' Variable labels are used if available in the data frame.
 #'
+#' @param Data \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
+#' @param outcomeVar \strong{Deprecated} (since 19.15.0). Use \code{outcome_var} instead.
+#' @param predictorVar \strong{Deprecated} (since 19.15.0). Use \code{predictor_var} instead.
+#' @param covars \strong{Deprecated} (since 19.15.0). Use \code{covariates} instead.
 #' @export
 #' @importFrom ggplot2 ggplot aes geom_point geom_smooth scale_color_manual scale_fill_manual scale_color_brewer scale_fill_brewer
 #' @importFrom ggplot2 labs theme_minimal theme element_text element_blank
@@ -30,14 +34,40 @@
 #' @importFrom stats lm coef sd quantile
 #' @importFrom paletteer paletteer_d paletteer_c
 
-PlotInteractionEffectsContinuous <- function(Data,
-                                  interVar = NULL,
-                                  outcomeVar = NULL,
-                                  predictorVar = NULL,
-                                  covars = NULL,
-                                  n_lines = 3,
-                                  alpha = 0.6,
-                                  point_size = 2) {
+PlotInteractionEffectsContinuous <- function(data,
+    interVar = NULL,
+    outcome_var = NULL,
+    predictor_var = NULL,
+    covariates = NULL,
+    n_lines = 3,
+    alpha = 0.6,
+    point_size = 2,
+    Data = lifecycle::deprecated(),
+    outcomeVar = lifecycle::deprecated(),
+    predictorVar = lifecycle::deprecated(),
+    covars = lifecycle::deprecated()) {
+  # Deprecated argument shims (SciDataReportR 19.15.0)
+  if (lifecycle::is_present(Data)) {
+    lifecycle::deprecate_warn("19.15.0", "PlotInteractionEffectsContinuous(Data)", "PlotInteractionEffectsContinuous(data)")
+    data <- Data
+  }
+  if (!missing(data)) Data <- data
+  if (lifecycle::is_present(outcomeVar)) {
+    lifecycle::deprecate_warn("19.15.0", "PlotInteractionEffectsContinuous(outcomeVar)", "PlotInteractionEffectsContinuous(outcome_var)")
+    outcome_var <- outcomeVar
+  }
+  outcomeVar <- outcome_var
+  if (lifecycle::is_present(predictorVar)) {
+    lifecycle::deprecate_warn("19.15.0", "PlotInteractionEffectsContinuous(predictorVar)", "PlotInteractionEffectsContinuous(predictor_var)")
+    predictor_var <- predictorVar
+  }
+  predictorVar <- predictor_var
+  if (lifecycle::is_present(covars)) {
+    lifecycle::deprecate_warn("19.15.0", "PlotInteractionEffectsContinuous(covars)", "PlotInteractionEffectsContinuous(covariates)")
+    covariates <- covars
+  }
+  covars <- covariates
+
 
   # Input validation
   if (is.null(Data) || !is.data.frame(Data)) {

@@ -4,12 +4,14 @@
 \alias{getNumVars}
 \title{Get Numeric Variables}
 \usage{
-getNumVars(DataFrame, Ordinal = FALSE)
+getNumVars(data, Ordinal = FALSE, DataFrame = lifecycle::deprecated())
 }
 \arguments{
-\item{DataFrame}{The data frame from which to extract numeric variables.}
+\item{data}{The data frame from which to extract numeric variables.}
 
 \item{Ordinal}{Logical, indicating whether to include ordinal variables.}
+
+\item{DataFrame}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
 }
 \value{
 A character vector containing the names of numeric variables.

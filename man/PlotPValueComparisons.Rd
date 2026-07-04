@@ -5,20 +5,23 @@
 \title{Plot P-Value Comparisons}
 \usage{
 PlotPValueComparisons(
-  Data,
-  GroupVariable,
-  Variables = NULL,
+  data,
+  group_var,
+  variables = NULL,
   VariableCategories = NULL,
-  Relabel = TRUE
+  Relabel = TRUE,
+  Data = lifecycle::deprecated(),
+  GroupVariable = lifecycle::deprecated(),
+  Variables = lifecycle::deprecated()
 )
 }
 \arguments{
-\item{Data}{Data frame containing the variables to compare.}
+\item{data}{Data frame containing the variables to compare.}
 
-\item{GroupVariable}{Character string specifying the name of the column in
+\item{group_var}{Character string specifying the name of the column in
 \code{Data} that contains the group labels.}
 
-\item{Variables}{Character vector specifying the names of the columns in
+\item{variables}{Character vector specifying the names of the columns in
 \code{Data} to include in the comparison. If \code{NULL}, all columns except
 \code{GroupVariable} are included.}
 
@@ -27,6 +30,12 @@ each variable. If \code{NULL}, no categories are used.}
 
 \item{Relabel}{Logical indicating whether to replace missing labels with
 the column names.}
+
+\item{Data}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
+
+\item{GroupVariable}{\strong{Deprecated} (since 19.15.0). Use \code{group_var} instead.}
+
+\item{Variables}{\strong{Deprecated} (since 19.15.0). Use \code{variables} instead.}
 }
 \value{
 A ggplot object displaying the p-value comparisons.

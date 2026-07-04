@@ -5,18 +5,19 @@
 \title{Calculate robust M-scores for numeric variables}
 \usage{
 CreateMScoreObject(
-  df,
+  data,
   variables = NULL,
   names_prefix = "M_",
   RetainLabels = TRUE,
   RenameLabels = TRUE,
   center = TRUE,
   scale = TRUE,
-  constant = 1.4826
+  constant = 1.4826,
+  df = lifecycle::deprecated()
 )
 }
 \arguments{
-\item{df}{A data frame.}
+\item{data}{A data frame.}
 
 \item{variables}{Character vector of numeric variables to transform. If
 \code{NULL}, numeric variables are detected with \code{\link[=getNumVars]{getNumVars()}}.}
@@ -32,6 +33,8 @@ CreateMScoreObject(
 \item{scale}{Logical; divide by the median absolute deviation.}
 
 \item{constant}{Scaling constant passed to \code{\link[stats:mad]{stats::mad()}}.}
+
+\item{df}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
 }
 \value{
 An object of class \code{"MScoreObj"}, a list with:

@@ -4,15 +4,25 @@
 \alias{ProjectRCI}
 \title{Project a trained RCI object onto new data}
 \usage{
-ProjectRCI(Data, Object, ID = NULL)
+ProjectRCI(
+  data,
+  Object,
+  id_var = NULL,
+  Data = lifecycle::deprecated(),
+  ID = lifecycle::deprecated()
+)
 }
 \arguments{
-\item{Data}{A data frame.}
+\item{data}{A data frame.}
 
 \item{Object}{A SciDataReportR_RCI object created with
 \code{CreateRCIObject()}.}
 
-\item{ID}{Optional ID column override.}
+\item{id_var}{Optional ID column override.}
+
+\item{Data}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
+
+\item{ID}{\strong{Deprecated} (since 19.15.0). Use \code{id_var} instead.}
 }
 \value{
 A projected SciDataReportR_RCI object.

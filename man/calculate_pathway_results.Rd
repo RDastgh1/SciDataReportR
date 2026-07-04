@@ -5,16 +5,17 @@
 \title{Calculate Pathway Results for Metabolite Comparisons}
 \usage{
 calculate_pathway_results(
-  df,
+  data,
   comparison_var,
   covariates = NULL,
   metabolites,
   comparison_type = "auto",
-  use_point_correlation = FALSE
+  use_point_correlation = FALSE,
+  df = lifecycle::deprecated()
 )
 }
 \arguments{
-\item{df}{Data frame containing metabolite and comparison data}
+\item{data}{Data frame containing metabolite and comparison data}
 
 \item{comparison_var}{Character string specifying the comparison variable name}
 
@@ -25,6 +26,8 @@ calculate_pathway_results(
 \item{comparison_type}{Character string: "auto", "binary", or "continuous"}
 
 \item{use_point_correlation}{Logical, if TRUE uses point correlation for binary comparisons}
+
+\item{df}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
 }
 \value{
 Data frame with metabolite results including fold change or correlation values
@@ -35,7 +38,7 @@ Calculate Pathway Results for Metabolite Comparisons
 \examples{
 \dontrun{
 results <- calculate_pathway_results(
-  df = my_data,
+  data = my_data,
   comparison_var = "poorSleep",
   covariates = c("Age", "BMI"),
   metabolites = c("Tryptophan", "Kynurenine"),

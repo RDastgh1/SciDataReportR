@@ -2,14 +2,24 @@
 #'
 #' This function reverses the levels of specified categorical variables in a given dataframe.
 #'
-#' @param df A dataframe containing the categorical variables to be reversed.
+#' @param data A dataframe containing the categorical variables to be reversed.
 #' @param variables A character vector of column names in the dataframe to reverse levels.
 #'   These columns must be categorical factors.
 #'
 #' @return A dataframe with the levels of the specified factors reversed.
 #'   Columns not specified in `variables` remain unchanged.
+#' @param df \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
 #' @export
-reverseFactorLevels <- function(df, variables) {
+reverseFactorLevels <- function(data,
+    variables,
+    df = lifecycle::deprecated()) {
+  # Deprecated argument shims (SciDataReportR 19.15.0)
+  if (lifecycle::is_present(df)) {
+    lifecycle::deprecate_warn("19.15.0", "reverseFactorLevels(df)", "reverseFactorLevels(data)")
+    data <- df
+  }
+  if (!missing(data)) df <- data
+
   # Check if all specified variables are in the dataframe
   missing_vars <- setdiff(variables, colnames(df))
   if (length(missing_vars) > 0) {

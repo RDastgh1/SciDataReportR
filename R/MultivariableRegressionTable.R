@@ -3,10 +3,10 @@
 #' Fit one multivariable regression model per outcome and return a stable,
 #' label-aware regression object for downstream tables, diagnostics, and plots.
 #'
-#' @param Data Data frame containing outcomes, predictors, and covariates.
-#' @param OutcomeVars Character vector of outcome variable names.
-#' @param PredictorVars Character vector of predictor variable names.
-#' @param Covars Optional character vector of covariate variable names.
+#' @param data Data frame containing outcomes, predictors, and covariates.
+#' @param outcome_vars Character vector of outcome variable names.
+#' @param predictor_vars Character vector of predictor variable names.
+#' @param covariates Optional character vector of covariate variable names.
 #' @param Standardize Logical. If `TRUE`, ordinary models are fit on
 #'   standardized continuous variables for the primary estimate. Standardized
 #'   coefficients are always calculated separately regardless of this setting.
@@ -38,12 +38,15 @@
 #'   `Predictions`, `Diagnostics`, `ModelSummary`, `Multicollinearity`,
 #'   `Plots`, and `Metadata`. `Plots` contains ggplot objects built from the
 #'   stored result tables and predictions without refitting models.
+#' @param Data \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
+#' @param OutcomeVars \strong{Deprecated} (since 19.15.0). Use \code{outcome_vars} instead.
+#' @param PredictorVars \strong{Deprecated} (since 19.15.0). Use \code{predictor_vars} instead.
+#' @param Covars \strong{Deprecated} (since 19.15.0). Use \code{covariates} instead.
 #' @export
-MultivariableRegressionTable <- function(
-    Data,
-    OutcomeVars,
-    PredictorVars,
-    Covars = NULL,
+MultivariableRegressionTable <- function(data,
+    outcome_vars,
+    predictor_vars,
+    covariates = NULL,
     Standardize = TRUE,
     Relabel = TRUE,
     FDR = TRUE,
@@ -53,10 +56,35 @@ MultivariableRegressionTable <- function(
     Lambda = c("lambda.min", "lambda.1se"),
     Seed = 123,
     MissingDataStrategy = c("drop_sparse_impute", "impute", "complete_cases", "drop_sparse_complete_cases"),
-    MaxMissingPredictor = 0.30,
+    MaxMissingPredictor = 0.3,
     ImputeMethod = c("median_mode"),
-    MinCompleteCases = NULL
-) {
+    MinCompleteCases = NULL,
+    Data = lifecycle::deprecated(),
+    OutcomeVars = lifecycle::deprecated(),
+    PredictorVars = lifecycle::deprecated(),
+    Covars = lifecycle::deprecated()) {
+  # Deprecated argument shims (SciDataReportR 19.15.0)
+  if (lifecycle::is_present(Data)) {
+    lifecycle::deprecate_warn("19.15.0", "MultivariableRegressionTable(Data)", "MultivariableRegressionTable(data)")
+    data <- Data
+  }
+  if (!missing(data)) Data <- data
+  if (lifecycle::is_present(OutcomeVars)) {
+    lifecycle::deprecate_warn("19.15.0", "MultivariableRegressionTable(OutcomeVars)", "MultivariableRegressionTable(outcome_vars)")
+    outcome_vars <- OutcomeVars
+  }
+  if (!missing(outcome_vars)) OutcomeVars <- outcome_vars
+  if (lifecycle::is_present(PredictorVars)) {
+    lifecycle::deprecate_warn("19.15.0", "MultivariableRegressionTable(PredictorVars)", "MultivariableRegressionTable(predictor_vars)")
+    predictor_vars <- PredictorVars
+  }
+  if (!missing(predictor_vars)) PredictorVars <- predictor_vars
+  if (lifecycle::is_present(Covars)) {
+    lifecycle::deprecate_warn("19.15.0", "MultivariableRegressionTable(Covars)", "MultivariableRegressionTable(covariates)")
+    covariates <- Covars
+  }
+  Covars <- covariates
+
 
   Method <- match.arg(Method)
   Lambda <- match.arg(Lambda)

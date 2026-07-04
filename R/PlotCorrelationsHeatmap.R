@@ -10,30 +10,68 @@
 #' - ordinal variables
 #' - partial correlations via residualization
 #'
-#' @param Data data.frame
-#' @param xVars character vector
-#' @param yVars character vector
-#' @param covars optional covariates
+#' @param data data.frame
+#' @param predictor_vars character vector
+#' @param outcome_vars character vector
+#' @param covariates optional covariates
 #' @param method pearson/spearman/kendall
 #' @param Relabel use labels
 #' @param Ordinal include ordinal vars
 #' @param min_n minimum complete rows
 #' @param eps variance tolerance
+#' @param fdr_scope Either `"matrix"` (default) or `"per_outcome"`, passed to
+#'   [ApplyFDRCorrection()]. With `"matrix"`, FDR correction is applied across
+#'   the whole p-value matrix at once (historical behavior). With
+#'   `"per_outcome"`, correction is applied separately within each outcome:
+#'   in this function outcomes are the columns of the p-value matrix, i.e.
+#'   `outcome_vars` (`outcome_margin = 2`).
 #'
-#' @return list
+#' @return A list. `Unadjusted` and `FDRCorrected` each contain `r`, `p`,
+#'   `npairs`, and `plot`. The standardized aliases `p` (same as `Unadjusted`)
+#'   and `p_fdr` (same as `FDRCorrected`) are also included.
+#' @param Data \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
+#' @param xVars \strong{Deprecated} (since 19.15.0). Use \code{predictor_vars} instead.
+#' @param yVars \strong{Deprecated} (since 19.15.0). Use \code{outcome_vars} instead.
+#' @param covars \strong{Deprecated} (since 19.15.0). Use \code{covariates} instead.
 #' @export
 
-PlotCorrelationsHeatmap <- function(
-    Data,
-    xVars = NULL,
-    yVars = NULL,
-    covars = NULL,
+PlotCorrelationsHeatmap <- function(data,
+    predictor_vars = NULL,
+    outcome_vars = NULL,
+    covariates = NULL,
     method = "pearson",
     Relabel = TRUE,
     Ordinal = FALSE,
     min_n = 3,
-    eps = 1e-12
-) {
+    eps = 1e-12,
+    fdr_scope = c("matrix", "per_outcome"),
+    Data = lifecycle::deprecated(),
+    xVars = lifecycle::deprecated(),
+    yVars = lifecycle::deprecated(),
+    covars = lifecycle::deprecated()) {
+  # Deprecated argument shims (SciDataReportR 19.15.0)
+  if (lifecycle::is_present(Data)) {
+    lifecycle::deprecate_warn("19.15.0", "PlotCorrelationsHeatmap(Data)", "PlotCorrelationsHeatmap(data)")
+    data <- Data
+  }
+  if (!missing(data)) Data <- data
+  if (lifecycle::is_present(xVars)) {
+    lifecycle::deprecate_warn("19.15.0", "PlotCorrelationsHeatmap(xVars)", "PlotCorrelationsHeatmap(predictor_vars)")
+    predictor_vars <- xVars
+  }
+  xVars <- predictor_vars
+  if (lifecycle::is_present(yVars)) {
+    lifecycle::deprecate_warn("19.15.0", "PlotCorrelationsHeatmap(yVars)", "PlotCorrelationsHeatmap(outcome_vars)")
+    outcome_vars <- yVars
+  }
+  yVars <- outcome_vars
+  if (lifecycle::is_present(covars)) {
+    lifecycle::deprecate_warn("19.15.0", "PlotCorrelationsHeatmap(covars)", "PlotCorrelationsHeatmap(covariates)")
+    covariates <- covars
+  }
+  covars <- covariates
+
+  fdr_scope <- match.arg(fdr_scope)
 
   `%||%` <- function(x, y) {
     if (is.null(x)) y else x
@@ -125,7 +163,7 @@ PlotCorrelationsHeatmap <- function(
       0
     )
 
-    return(list(
+    out <- list(
       Unadjusted = list(
         r = z,
         p = z,
@@ -142,7 +180,10 @@ PlotCorrelationsHeatmap <- function(
       Relabel = Relabel,
       Covariates = covars,
       CovariatesMissing = covars_missing
-    ))
+    )
+    out$p <- out$Unadjusted
+    out$p_fdr <- out$FDRCorrected
+    return(out)
   }
 
   # =========================================================
@@ -504,28 +545,12 @@ PlotCorrelationsHeatmap <- function(
   # FDR correction
   # =========================================================
 
-  pvec <- as.vector(MP)
-
-  padj <- rep(
-    NA_real_,
-    length(pvec)
-  )
-
-  ok <- is.finite(pvec)
-
-  if (any(ok)) {
-
-    padj[ok] <- stats::p.adjust(
-      pvec[ok],
-      method = "fdr"
-    )
-  }
-
-  M_FDR <- matrix(
-    padj,
-    nrow = nrow(MP),
-    ncol = ncol(MP),
-    dimnames = dimnames(MP)
+  # Outcomes are the columns (outcome_vars); see ApplyFDRCorrection().
+  M_FDR <- ApplyFDRCorrection(
+    MP,
+    fdr_scope = fdr_scope,
+    outcome_margin = 2,
+    method = "fdr"
   )
 
   # =========================================================
@@ -685,7 +710,7 @@ PlotCorrelationsHeatmap <- function(
   # Return
   # =========================================================
 
-  list(
+  out <- list(
 
     Unadjusted = list(
       r = MC,
@@ -706,5 +731,10 @@ PlotCorrelationsHeatmap <- function(
     Covariates = covars,
     CovariatesMissing = covars_missing
   )
+
+  # Standardized p-value element aliases (old names kept)
+  out$p <- out$Unadjusted
+  out$p_fdr <- out$FDRCorrected
+  out
 }
 

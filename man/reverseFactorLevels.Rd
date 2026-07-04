@@ -4,13 +4,15 @@
 \alias{reverseFactorLevels}
 \title{Reverse Levels of Categorical Factors}
 \usage{
-reverseFactorLevels(df, variables)
+reverseFactorLevels(data, variables, df = lifecycle::deprecated())
 }
 \arguments{
-\item{df}{A dataframe containing the categorical variables to be reversed.}
+\item{data}{A dataframe containing the categorical variables to be reversed.}
 
 \item{variables}{A character vector of column names in the dataframe to reverse levels.
 These columns must be categorical factors.}
+
+\item{df}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
 }
 \value{
 A dataframe with the levels of the specified factors reversed.

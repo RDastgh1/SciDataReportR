@@ -4,16 +4,18 @@
 \alias{CompareDatasets}
 \title{Compare two versions of a dataset}
 \usage{
-CompareDatasets(OldData, NewData, Keys)
+CompareDatasets(OldData, NewData, keys, Keys = lifecycle::deprecated())
 }
 \arguments{
 \item{OldData}{A data frame representing the earlier dataset version.}
 
 \item{NewData}{A data frame representing the newer dataset version.}
 
-\item{Keys}{Character vector of key variables used to align records across
+\item{keys}{Character vector of key variables used to align records across
 the two datasets. Multiple keys are supported, such as
 \code{c("study_id", "TimePoint")}.}
+
+\item{Keys}{\strong{Deprecated} (since 19.15.0). Use \code{keys} instead.}
 }
 \value{
 A list with dataset comparison results, including:
