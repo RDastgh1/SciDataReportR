@@ -72,3 +72,15 @@ Handles:
 \item partial correlations via residualization
 }
 }
+\examples{
+data(SampleData)
+
+result <- PlotCorrelationsHeatmap(
+  SampleData,
+  predictor_vars = c("age", "AXL", "Adiponectin"),
+  outcome_vars = c("Alpha_1_Antitrypsin", "Alpha_2_Macroglobulin")
+)
+
+# Display the unadjusted correlation heatmap
+result$Unadjusted$plot
+}

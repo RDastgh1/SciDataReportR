@@ -21,6 +21,14 @@
 #' @param Data \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
 #' @param GroupVariable \strong{Deprecated} (since 19.15.0). Use \code{group_var} instead.
 #' @param Variables \strong{Deprecated} (since 19.15.0). Use \code{variables} instead.
+#' @examples
+#' data(SampleData)
+#'
+#' PlotPValueComparisons(
+#'   SampleData,
+#'   group_var = "Diagnosis",
+#'   variables = c("age", "AXL", "Adiponectin")
+#' )
 #' @export
 PlotPValueComparisons <- function(data,
     group_var,

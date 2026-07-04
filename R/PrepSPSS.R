@@ -1,20 +1,22 @@
 #' Prepare a data frame for SPSS export
 #'
 #' `PrepSPSS()` converts column names to SPSS-safe variable names while
-#' preserving the original column names as variable labels. It also returns a
-#' name map so users can track the original and exported names.
-#'
-#' This is useful before writing data to `.sav` using `haven::write_sav()`.
+#' preserving the original column names as variable labels. It also returns and
+#' optionally writes a name map so users can track original and exported names.
 #'
 #' @param data A data frame or tibble.
 #' @param path Optional file path ending in `.sav`. If supplied, the prepared
 #'   data are written using `haven::write_sav()`.
 #' @param name_map_path Optional file path for saving the name map as a CSV.
 #' @param return One of `"list"`, `"data"`, or `"map"`.
-#' @param quiet Logical. If `FALSE`, prints a short summary of renamed columns.
-#' @param max_length Maximum variable-name length. Defaults to 64.
+#' @param quiet Logical. If `FALSE`, prints a compact summary.
+#' @param show_map Logical. If `TRUE`, prints the full original-to-SPSS name map.
+#'   The default is `FALSE` because large scientific datasets can have thousands
+#'   of renamed variables.
+#' @param max_length Maximum SPSS variable-name length. Defaults to 64.
 #' @param compress Compression type passed to `haven::write_sav()`.
-#' @param ... Additional arguments passed to `haven::write_sav()` if `path` is supplied.
+#' @param ... Additional arguments passed to `haven::write_sav()` if `path` is
+#'   supplied.
 #'
 #' @return Depending on `return`, either a list, data frame, or name map.
 #' @export
@@ -24,6 +26,7 @@ PrepSPSS <- function(
   name_map_path = NULL,
   return = c("list", "data", "map"),
   quiet = FALSE,
+  show_map = FALSE,
   max_length = 64,
   compress = "byte",
   ...
@@ -63,40 +66,7 @@ PrepSPSS <- function(
   spss_names <- gsub("^_|_$", "", spss_names)
   spss_names <- ifelse(spss_names == "", "var", spss_names)
   spss_names <- ifelse(grepl("^[0-9]", spss_names), paste0("v", spss_names), spss_names)
-
-  make_unique_with_limit <- function(x, max_length = 64) {
-    out <- character(length(x))
-    used <- character()
-
-    for (i in seq_along(x)) {
-      base <- substr(x[[i]], 1, max_length)
-
-      if (!base %in% used) {
-        out[[i]] <- base
-        used <- c(used, base)
-      } else {
-        counter <- 1
-
-        repeat {
-          suffix <- paste0("_", counter)
-          base_length <- max_length - nchar(suffix)
-          candidate <- paste0(substr(base, 1, base_length), suffix)
-
-          if (!candidate %in% used) {
-            out[[i]] <- candidate
-            used <- c(used, candidate)
-            break
-          }
-
-          counter <- counter + 1
-        }
-      }
-    }
-
-    out
-  }
-
-  spss_names <- make_unique_with_limit(spss_names, max_length = max_length)
+  spss_names <- .MakeUniqueWithLimit(spss_names, max_length = max_length)
 
   name_map <- tibble::tibble(
     original_name = original_names,
@@ -109,35 +79,6 @@ PrepSPSS <- function(
 
   for (i in seq_along(data_spss)) {
     attr(data_spss[[i]], "label") <- original_names[[i]]
-  }
-
-  if (!quiet) {
-    n_changed <- sum(name_map$changed)
-
-    cat("SPSS preparation\n")
-    cat("----------------\n")
-    cat("Columns checked: ", nrow(name_map), "\n", sep = "")
-    cat("Columns renamed: ", n_changed, "\n", sep = "")
-
-    if (n_changed > 0) {
-      cat("\nRenamed columns:\n")
-
-      changed_rows <- name_map[name_map$changed, , drop = FALSE]
-
-      for (i in seq_len(nrow(changed_rows))) {
-        cat(
-          i,
-          ". ",
-          changed_rows$original_name[[i]],
-          " -> ",
-          changed_rows$spss_name[[i]],
-          "\n",
-          sep = ""
-        )
-      }
-    }
-
-    cat("\nOriginal names were saved as variable labels.\n")
   }
 
   if (!is.null(name_map_path)) {
@@ -153,6 +94,41 @@ PrepSPSS <- function(
     )
   }
 
+  if (!quiet) {
+    n_changed <- sum(name_map$changed)
+
+    cat("SPSS preparation\n")
+    cat("----------------\n")
+    cat("Columns checked: ", nrow(name_map), "\n", sep = "")
+    cat("Columns renamed: ", n_changed, "\n", sep = "")
+    cat("Original names saved as variable labels.\n")
+
+    if (!is.null(path)) {
+      cat("SPSS file written: ", path, "\n", sep = "")
+    }
+
+    if (!is.null(name_map_path)) {
+      cat("Name map written: ", name_map_path, "\n", sep = "")
+    }
+
+    if (isTRUE(show_map) && n_changed > 0) {
+      cat("\nRenamed columns:\n")
+      changed_rows <- name_map[name_map$changed, , drop = FALSE]
+
+      for (i in seq_len(nrow(changed_rows))) {
+        cat(
+          i,
+          ". ",
+          changed_rows$original_name[[i]],
+          " -> ",
+          changed_rows$spss_name[[i]],
+          "\n",
+          sep = ""
+        )
+      }
+    }
+  }
+
   out <- list(
     data = data_spss,
     name_map = name_map
@@ -164,6 +140,38 @@ PrepSPSS <- function(
 
   if (return == "map") {
     return(name_map)
+  }
+
+  out
+}
+
+.MakeUniqueWithLimit <- function(x, max_length = 64) {
+  out <- character(length(x))
+  used <- character()
+
+  for (i in seq_along(x)) {
+    base <- substr(x[[i]], 1, max_length)
+
+    if (!base %in% used) {
+      out[[i]] <- base
+      used <- c(used, base)
+    } else {
+      counter <- 1
+
+      repeat {
+        suffix <- paste0("_", counter)
+        base_length <- max_length - nchar(suffix)
+        candidate <- paste0(substr(base, 1, base_length), suffix)
+
+        if (!candidate %in% used) {
+          out[[i]] <- candidate
+          used <- c(used, candidate)
+          break
+        }
+
+        counter <- counter + 1
+      }
+    }
   }
 
   out

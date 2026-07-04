@@ -21,6 +21,18 @@
 #' depending on `Interactive`.
 #'
 #' @param Interactive \strong{Deprecated} (since 19.15.0). Use \code{interactive} instead.
+#' @examples
+#' data(SampleData)
+#'
+#' # Build two versions of a keyed dataset to compare
+#' old_data <- cbind(id = seq_len(nrow(SampleData)), SampleData)
+#' new_data <- old_data
+#' new_data$age[1:5] <- new_data$age[1:5] + 1
+#'
+#' comparison <- CompareDatasets(old_data, new_data, keys = "id")
+#'
+#' # Display a single diagnostic plot
+#' PlotDatasetComparison(comparison, Plot = "Checks")
 #' @export
 PlotDatasetComparison <- function(CompareObj,
     Plot = c("All", "Checks", "SummaryMetrics", "StructureChanges", "VariableChanges", "TopChangedVariables"),

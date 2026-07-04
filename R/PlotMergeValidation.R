@@ -21,6 +21,16 @@
 #' depending on `Interactive`.
 #'
 #' @param Interactive \strong{Deprecated} (since 19.15.0). Use \code{interactive} instead.
+#' @examples
+#' set.seed(1)
+#' left  <- data.frame(id = 1:50, x = rnorm(50))
+#' right <- data.frame(id = 1:50, y = rnorm(50))
+#' merged <- merge(left, right, by = "id")
+#'
+#' validation <- ValidateMerge(left, right, merged, keys = "id")
+#'
+#' # Display a single diagnostic plot
+#' PlotMergeValidation(validation, Plot = "Checks")
 #' @export
 PlotMergeValidation <- function(MergeObj,
     Plot = c("All", "Checks", "Coverage", "JoinAudit", "Agreement", "Conflicts"),

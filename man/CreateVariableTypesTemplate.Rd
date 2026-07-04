@@ -47,6 +47,6 @@ df <- data.frame(
   date = as.Date(c("2021-01-01", "2021-01-02"))
 )
 CreateVariableTypesTemplate(df)
-CreateVariableTypesTemplate(df, "variable_types.csv")
+CreateVariableTypesTemplate(df, file.path(tempdir(), "variable_types.csv"))
 
 }

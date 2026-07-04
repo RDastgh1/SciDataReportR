@@ -23,3 +23,11 @@ A ggplot object displaying the distribution of time-based data.
 \description{
 This function plots the distribution of time-based data.
 }
+\examples{
+set.seed(1)
+df <- data.frame(
+  Date = as.Date("2024-01-01") + sample(0:364, 200, replace = TRUE)
+)
+
+PlotTimeDistribution(df, DateVariable = "Date")
+}

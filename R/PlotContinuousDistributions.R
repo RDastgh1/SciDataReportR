@@ -14,6 +14,13 @@
 #' @return A ggplot object.
 #' @param DataFrame \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
 #' @param Variables \strong{Deprecated} (since 19.15.0). Use \code{variables} instead.
+#' @examples
+#' data(SampleData)
+#'
+#' PlotContinuousDistributions(
+#'   SampleData,
+#'   variables = c("age", "AXL", "Adiponectin")
+#' )
 #' @export
 PlotContinuousDistributions <- function(data,
     variables = NULL,

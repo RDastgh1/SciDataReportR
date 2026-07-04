@@ -25,6 +25,16 @@ A ggplot object representing the forest plot.
 This function generates a forest plot from a list of formatted univariate regression tables.
 }
 \examples{
-# Example usage:
-# plotForestFromTable(UnivariateRegressionTables)
+\donttest{
+data(SampleData)
+
+# Build univariate regression tables to plot
+urt <- UnivariateRegressionTable(
+  data = SampleData,
+  outcome_vars = "AXL",
+  predictor_vars = c("age", "Adiponectin", "Alpha_1_Antitrypsin")
+)
+
+plotForestFromTable(urt)
+}
 }

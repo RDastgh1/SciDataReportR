@@ -125,9 +125,12 @@ out <- CreateNormativeTScoreModel(
   reverse_score = TRUE,
   convert_seconds = TRUE,
   log_transform = TRUE,
-  return_plots = FALSE
+  return_plots = TRUE
 )
 
 out$data
 out$model
+
+# Display the fitted T-score plot from the returned object
+out$plots$tscore
 }

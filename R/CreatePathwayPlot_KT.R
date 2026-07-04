@@ -19,21 +19,24 @@
 #' @export
 #'
 #' @examples
-#' \dontrun{
+#' # A results table keyed by kynurenine-pathway metabolite. Real workflows
+#' # build this with calculate_pathway_results(); here it is entered directly.
+#' results <- data.frame(
+#'   Metabolite = c(
+#'     "Tryptophan", "Serotonin", "N-Formylkynurenine", "Kynurenine",
+#'     "Kynurenic Acid", "3-Hydroxykynurenine", "Anthranilic Acid",
+#'     "Xanthurenic Acid", "3-Hydroxyanthranilic acid", "Quinolinic Acid"
+#'   ),
+#'   correlation = c(0.30, -0.20, 0.50, 0.10, -0.40, 0.60, 0.20, -0.10, 0.30, 0.45),
+#'   p_value = c(0.01, 0.20, 0.03, 0.50, 0.04, 0.001, 0.30, 0.60, 0.02, 0.008),
+#'   p_adj = c(0.05, 0.40, 0.10, 0.70, 0.10, 0.01, 0.50, 0.80, 0.08, 0.03)
+#' )
+#'
 #' # Basic usage with raw p-values
-#' plot <- PlotPathway_KT(results, "My Pathway")
+#' PlotPathway_KT(results, "Kynurenine pathway")
 #'
 #' # Use FDR-adjusted p-values for significance
-#' plot <- PlotPathway_KT(results, "My Pathway", use_fdr = TRUE)
-#'
-#' # With custom metabolite name mapping
-#' name_map <- c(
-#'   "N'-Formylkynurenine" = "N-Formylkynurenine",
-#'   "Quinolinic Acid(log10)" = "Quinolinic Acid",
-#'   "3-OH-kynurenine" = "3-Hydroxykynurenine"
-#' )
-#' plot <- PlotPathway_KT(results, "My Pathway", metabolite_mapping = name_map)
-#' }
+#' PlotPathway_KT(results, "Kynurenine pathway", use_fdr = TRUE)
 PlotPathway_KT <- function(results_table,
                                  title = "",
                                  value_type = "auto",
@@ -225,6 +228,16 @@ PlotPathway_KT <- function(results_table,
 #'
 #' @param ... Arguments passed to [PlotPathway_KT()].
 #' @return A ggplot2 object returned by [PlotPathway_KT()].
+#' @seealso [PlotPathway_KT()] for the canonical function and full examples.
+#' @examples
+#' results <- data.frame(
+#'   Metabolite = c("Tryptophan", "Kynurenine", "Quinolinic Acid"),
+#'   correlation = c(0.3, 0.1, 0.45),
+#'   p_value = c(0.01, 0.5, 0.008),
+#'   p_adj = c(0.05, 0.7, 0.03)
+#' )
+#'
+#' CreatePathwayPlot_KT(results, "Kynurenine pathway")
 #' @export
 CreatePathwayPlot_KT <- function(...) {
   PlotPathway_KT(...)

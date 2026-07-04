@@ -18,3 +18,26 @@ Compatibility alias for \code{\link[=CreateNormativeTScoreModel]{CreateNormative
 \code{CreateNormativeTScoreModel()} in new code because this function fits a
 reusable normative T-score model.
 }
+\examples{
+df <- tibble::tibble(
+  Group = c(rep("Reference", 8), rep("Clinical", 2)),
+  Age = c(30, 34, 38, 42, 46, 50, 54, 58, 40, 52),
+  Visit = c(1, 1, 1, 1, 2, 2, 2, 2, 1, 2),
+  TrailsA = c(35, 38, 40, 43, 36, 39, 41, 44, 47, 49)
+)
+
+out <- CreateNormativeTScores(
+  data = df,
+  test_var = "TrailsA",
+  count_var = "Visit",
+  covariates = "Age",
+  reference_var = "Group",
+  reference_value = "Reference",
+  return_plots = TRUE
+)
+out$plots$tscore
+}
+\seealso{
+\code{\link[=CreateNormativeTScoreModel]{CreateNormativeTScoreModel()}} for the canonical function and full
+examples.
+}

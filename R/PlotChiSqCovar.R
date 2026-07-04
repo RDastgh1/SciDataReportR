@@ -28,6 +28,16 @@
 #' @param xVars \strong{Deprecated} (since 19.15.0). Use \code{predictor_vars} instead.
 #' @param yVars \strong{Deprecated} (since 19.15.0). Use \code{outcome_vars} instead.
 #' @param covars \strong{Deprecated} (since 19.15.0). Use \code{covariates} instead.
+#' @examples
+#' data(SampleData)
+#'
+#' result <- PlotChiSqCovar(
+#'   SampleData,
+#'   predictor_vars = c("Diagnosis", "Genotype"),
+#'   outcome_vars = c("Diagnosis", "Genotype")
+#' )
+#'
+#' result$p
 #' @export
 PlotChiSqCovar <- function(data,
     predictor_vars,

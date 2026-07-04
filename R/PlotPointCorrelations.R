@@ -18,6 +18,17 @@
 #'   continuous variable: outcomes are the continuous variables (`ContVars`).
 #' @param Data \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
 #' @param Covariates \strong{Deprecated} (since 19.15.0). Use \code{covariates} instead.
+#' @examples
+#' data(SampleData)
+#'
+#' # CatVars must be binary (exactly two unique non-NA values)
+#' result <- PlotPointCorrelationsHeatmap(
+#'   SampleData,
+#'   CatVars = c("Diagnosis", "sex"),
+#'   ContVars = c("age", "AXL", "Adiponectin")
+#' )
+#'
+#' result$Unadjusted$plot
 #' @export
 PlotPointCorrelationsHeatmap <- function(data,
     CatVars,

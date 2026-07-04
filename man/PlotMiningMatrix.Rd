@@ -51,3 +51,14 @@ List with tables and plots.
 \description{
 Generate a matrix of statistical relationships between variables.
 }
+\examples{
+data(SampleData)
+
+result <- PlotMiningMatrix(
+  SampleData,
+  outcome_vars = c("age", "AXL"),
+  predictor_vars = c("Adiponectin", "Alpha_1_Antitrypsin")
+)
+
+result$Unadjusted$plot
+}

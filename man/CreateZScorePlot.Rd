@@ -16,3 +16,15 @@ A ggplot object returned by \code{\link[=PlotZScore]{PlotZScore()}}.
 Compatibility alias for \code{\link[=PlotZScore]{PlotZScore()}}. Prefer \code{PlotZScore()} in new code
 because this function creates a scientific visualization.
 }
+\examples{
+data(SampleData)
+
+CreateZScorePlot(
+  SampleData,
+  TargetVar = "Diagnosis",
+  variables = c("age", "AXL", "Adiponectin")
+)
+}
+\seealso{
+\code{\link[=PlotZScore]{PlotZScore()}} for the canonical function and full examples.
+}

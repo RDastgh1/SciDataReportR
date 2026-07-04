@@ -21,6 +21,13 @@
 #'   each y-axis variable (`YVar`); the Phi matrix is symmetric, so this
 #'   treats each variable's row of tiles as one family.
 #' @param Data \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
+#' @examples
+#' data(SampleData)
+#'
+#' # CatVars must be binary (exactly two unique non-NA values)
+#' result <- PlotPhiHeatmap(SampleData, CatVars = c("Diagnosis", "sex"))
+#'
+#' result$Unadjusted$plot
 #' @export
 PlotPhiHeatmap <- function(data,
     CatVars,
@@ -193,7 +200,7 @@ PlotPhiHeatmap <- function(data,
     ggplot2::geom_text(ggplot2::aes(label = `p<.05`), color = "black") +
     ggplot2::scale_fill_gradient2(
       limits = c(-1, 1),
-      name = "\u03A6",                       # Phi
+      name = expression(Phi),                # Phi (plotmath: portable under C locale)
       low  = scales::muted("purple"),
       high = scales::muted("green")
     ) +
@@ -213,7 +220,7 @@ PlotPhiHeatmap <- function(data,
     ggplot2::geom_text(ggplot2::aes(label = p.adj.signif), color = "black") +
     ggplot2::scale_fill_gradient2(
       limits = c(-1, 1),
-      name = "\u03A6",
+      name = expression(Phi),                # Phi (plotmath: portable under C locale)
       low  = scales::muted("purple"),
       high = scales::muted("green")
     ) +

@@ -42,6 +42,20 @@
 #' @param OutcomeVars \strong{Deprecated} (since 19.15.0). Use \code{outcome_vars} instead.
 #' @param PredictorVars \strong{Deprecated} (since 19.15.0). Use \code{predictor_vars} instead.
 #' @param Covars \strong{Deprecated} (since 19.15.0). Use \code{covariates} instead.
+#' @examples
+#' \donttest{
+#' data(SampleData)
+#'
+#' result <- MultivariableRegressionTable(
+#'   SampleData,
+#'   outcome_vars = "AXL",
+#'   predictor_vars = c("Adiponectin", "Alpha_1_Antitrypsin", "Alpha_2_Macroglobulin"),
+#'   covariates = "age"
+#' )
+#'
+#' # Display the regression coefficient matrix plot
+#' result$Plots$RegressionMatrix
+#' }
 #' @export
 MultivariableRegressionTable <- function(data,
     outcome_vars,

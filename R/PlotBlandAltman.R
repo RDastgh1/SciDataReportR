@@ -16,6 +16,12 @@
 #'
 #'
 #' @param DataFrame \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
+#' @examples
+#' data(SampleData)
+#'
+#' result <- PlotBlandAltman(SampleData, "AXL", "Adiponectin")
+#'
+#' result$plot
 #' @export
 #'
 #' @note This function is adapted from code written by Eran Shorer.

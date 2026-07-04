@@ -11,10 +11,12 @@ ReadSciData(
   col_names = TRUE,
   range = NULL,
   inspect = TRUE,
-  print_inspection = TRUE,
+  print_inspection = interactive(),
   strict = FALSE,
   guess_max = 10000,
   delim = NULL,
+  repair_names = TRUE,
+  inspect_styles = FALSE,
   ...
 )
 }
@@ -33,14 +35,21 @@ use \code{TRUE}, \code{FALSE}, or a character vector.}
 
 \item{inspect}{Logical. If \code{TRUE}, inspect the file before importing.}
 
-\item{print_inspection}{Logical. If \code{TRUE}, print inspection results when
-issues are detected.}
+\item{print_inspection}{Logical. If \code{TRUE}, print compact inspection results
+when issues are detected. Defaults to \code{interactive()}.}
 
-\item{strict}{Logical. If \code{TRUE}, stop when inspection detects potential issues.}
+\item{strict}{Logical. If \code{TRUE}, stop when inspection detects potential
+issues.}
 
 \item{guess_max}{Maximum rows used for type guessing where supported.}
 
 \item{delim}{Delimiter for \code{.txt} files. Defaults to tab.}
+
+\item{repair_names}{Logical. If \code{TRUE}, repair blank and duplicate column
+names after import.}
+
+\item{inspect_styles}{Logical. If \code{TRUE}, inspect Excel workbook formatting.
+This can be slower and noisier for large workbooks.}
 
 \item{...}{Additional arguments passed to the underlying reader.}
 }
@@ -50,7 +59,13 @@ Imported data object. Inspection metadata is attached as the
 }
 \description{
 \code{ReadSciData()} imports common scientific data file formats while preserving
-original column names and labels. For Excel files, it can call \code{InspectFile()}
-before import to flag common issues such as multiple sheets, metadata rows,
-and color-coded formatting.
+original column names and labels as much as possible. It optionally calls
+\code{InspectFile()} before import to flag common issues such as multiple sheets,
+metadata rows, unnamed columns, duplicate column names, and formatting.
+}
+\details{
+After import, \code{ReadSciData()} repairs only names that make the data frame
+difficult or impossible to use in tidyverse workflows. Blank or \code{NA} names are
+renamed to \code{...unnamed_POSITION}, and duplicate names are made unique only when
+needed. Existing valid names are preserved.
 }

@@ -58,14 +58,17 @@ values are ignored when computing quartiles. If \code{id} or \code{group} are
 provided they must be present in the input data frame.
 }
 \examples{
-\dontrun{
-  IQROutliers(df_Revalued_Data, "PS",
-              id = "record_id",
-              group = "Cohort")
+data(SampleData)
 
-  # Without id or group
-  IQROutliers(df_Revalued_Data, "PS", id = NULL, group = NULL)
-}
+# Flag outliers within diagnostic groups
+result <- IQROutliers(SampleData, "AXL", group = "Diagnosis")
+result$outlierdf
+
+# Without a grouping variable
+result_all <- IQROutliers(SampleData, "AXL", id_var = NULL, group = NULL)
+
+# Display the diagnostic plot
+result$p
 
 }
 \references{

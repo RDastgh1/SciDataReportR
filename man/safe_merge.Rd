@@ -12,73 +12,53 @@ safe_merge(
   method = c("exact", "closest_time"),
   time_var_before = NULL,
   time_var_add = NULL,
+  min_match_rate = 0.95,
+  harmonize_keys = TRUE,
+  key_parser = NULL,
+  stop_on_failed_numeric = TRUE,
   ...
 )
 }
 \arguments{
-\item{df_before}{A data frame. The "left" dataset that rows are added to.}
+\item{df_before}{A data frame. The left dataset that rows are added to.}
 
-\item{df_add}{A data frame. The "right" dataset being merged in.}
+\item{df_add}{A data frame. The right dataset being merged in.}
 
-\item{by}{Character vector of merge keys. Multiple keys are supported,
-such as \code{c("subject_id", "visit")} for longitudinal data.}
+\item{by}{Character vector of merge keys. Multiple keys are supported.}
 
-\item{name}{Required. A short character label for this merge, used in the
-log tibble and as the caption of the returned summary table.}
+\item{name}{Required. A short label for this merge.}
 
-\item{method}{Either \code{"exact"} (default) or \code{"closest_time"}.
-\code{"exact"} performs \code{dplyr::left_join(df_before, df_add, by = by)}.
-\code{"closest_time"} calls \code{\link[=Merge_ByClosestTime]{Merge_ByClosestTime()}} using \code{by} as the
-exact-match key and matches each \code{df_before} row to the \code{df_add} row with
-the nearest time.}
+\item{method}{Either \code{"exact"} or \code{"closest_time"}.}
 
-\item{time_var_before}{For \code{method = "closest_time"}, the name of the time
-variable in \code{df_before} (as a string).}
+\item{time_var_before}{For \code{method = "closest_time"}, the time variable in
+\code{df_before}.}
 
-\item{time_var_add}{For \code{method = "closest_time"}, the name of the time
-variable in \code{df_add} (as a string).}
+\item{time_var_add}{For \code{method = "closest_time"}, the time variable in
+\code{df_add}.}
+
+\item{min_match_rate}{Minimum acceptable key match rate before a merge is
+marked as \code{"WARNING"}.}
+
+\item{harmonize_keys}{Logical. If \code{TRUE}, harmonize merge key types before
+joining.}
+
+\item{key_parser}{Optional named list of parser functions for specific merge
+keys. Names should match values in \code{by}.}
+
+\item{stop_on_failed_numeric}{Logical. If \code{TRUE}, stop when one key is
+numeric-like and the other contains values that cannot be converted to
+numeric.}
 
 \item{...}{Additional arguments passed to \code{\link[=Merge_ByClosestTime]{Merge_ByClosestTime()}} when
-\code{method = "closest_time"} (for example \code{is_date = TRUE}). Ignored for
-\code{method = "exact"}.}
+\code{method = "closest_time"}.}
 }
 \value{
-A list with four elements (nothing is auto-printed):
-\describe{
-\item{data}{The merged data frame.}
-\item{validation}{The full \code{\link[=ValidateMerge]{ValidateMerge()}} result.}
-\item{log}{A one-row tibble with columns \code{Merge}, \code{Status} (worst of
-\code{validation$Checks$Status}, ordered FAIL > WARNING > PASS),
-\code{ReadyForAnalysis}, \code{RowsBefore}, \code{RowsAfter}, \code{ColsBefore},
-\code{ColsAfter}, \code{MatchedKeys}, \code{DuplicateKeyGroups}, and
-\code{UnresolvedDupVars}.}
-\item{summary}{A \code{knitr::kable()} table (returned, not printed) in
-metric/value layout captioned with \code{name}.}
-}
+A list with merged data, validation results, a log row, and a compact
+formatted summary table.
 }
 \description{
-Perform a left join (exact-key or closest-time) and immediately audit the
-result with \code{\link[=ValidateMerge]{ValidateMerge()}}. The returned object bundles the merged data,
-the full validation object, a one-row log tibble suitable for stacking
-across a pipeline with \code{\link[=merge_summary_table]{merge_summary_table()}}, and a compact
-\code{knitr::kable()} summary. Nothing is printed automatically.
-}
-\details{
-For \code{method = "closest_time"}, \code{\link[=ValidateMerge]{ValidateMerge()}} is still run with \code{by} as
-the keys. In longitudinal data where \code{df_before} legitimately contains
-repeated visits per key, the Duplicate Keys check will report those repeats
-as failures even though they are expected. The validation output is left
-untouched (it is not suppressed or reinterpreted); review the duplicate-key
-results with that caveat in mind.
-}
-\examples{
-baseline <- data.frame(id = 1:4, age = c(50, 61, 45, 58))
-labs <- data.frame(id = c(1, 2, 4), glucose = c(90, 110, 100))
-m <- safe_merge(baseline, labs, by = "id", name = "Baseline + labs")
-m$log
-
-}
-\seealso{
-\code{\link[=ValidateMerge]{ValidateMerge()}}, \code{\link[=merge_summary_table]{merge_summary_table()}}, \code{\link[=merge_detail]{merge_detail()}},
-\code{\link[=ExploreMergeValidation]{ExploreMergeValidation()}}
+Perform a left join or closest-time merge and immediately audit the result
+with \code{\link[=ValidateMerge]{ValidateMerge()}}. \code{safe_merge()} also harmonizes merge key types before
+joining, so common numeric-vs-character key mismatches do not break an
+otherwise valid merge.
 }

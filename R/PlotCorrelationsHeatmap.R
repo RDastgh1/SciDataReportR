@@ -33,6 +33,17 @@
 #' @param xVars \strong{Deprecated} (since 19.15.0). Use \code{predictor_vars} instead.
 #' @param yVars \strong{Deprecated} (since 19.15.0). Use \code{outcome_vars} instead.
 #' @param covars \strong{Deprecated} (since 19.15.0). Use \code{covariates} instead.
+#' @examples
+#' data(SampleData)
+#'
+#' result <- PlotCorrelationsHeatmap(
+#'   SampleData,
+#'   predictor_vars = c("age", "AXL", "Adiponectin"),
+#'   outcome_vars = c("Alpha_1_Antitrypsin", "Alpha_2_Macroglobulin")
+#' )
+#'
+#' # Display the unadjusted correlation heatmap
+#' result$Unadjusted$plot
 #' @export
 
 PlotCorrelationsHeatmap <- function(data,

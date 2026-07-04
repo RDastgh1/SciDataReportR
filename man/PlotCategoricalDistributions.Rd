@@ -43,3 +43,11 @@ A ggplot object visualizing the distributions of categorical variables.
 This function creates plots to visualize the distributions of categorical
 variables in a dataframe.
 }
+\examples{
+data(SampleData)
+
+PlotCategoricalDistributions(
+  SampleData,
+  variables = c("Diagnosis", "Genotype")
+)
+}

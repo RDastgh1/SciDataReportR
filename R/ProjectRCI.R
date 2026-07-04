@@ -18,6 +18,29 @@
 #'
 #' @param Data \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
 #' @param ID \strong{Deprecated} (since 19.15.0). Use \code{id_var} instead.
+#' @examples
+#' \dontrun{
+#' # NOTE: This example is not run because ProjectRCI() currently errors with
+#' # "object 'VariableTable' not found" - VariableTable is used but never
+#' # defined in the function body (tracked bug, to be fixed separately).
+#' rci_data <- data.frame(
+#'   id = rep(1:30, each = 2),
+#'   visit = rep(c("Baseline", "Followup"), 30),
+#'   Score = round(rnorm(60, mean = 50, sd = 10), 1)
+#' )
+#'
+#' rci <- CreateRCIObject(
+#'   data = rci_data,
+#'   variables = "Score",
+#'   DataFormat = "long",
+#'   id_var = "id",
+#'   VisitColumn = "visit",
+#'   BaselineVisit = "Baseline"
+#' )
+#'
+#' projected <- ProjectRCI(data = rci_data, Object = rci, id_var = "id")
+#' projected$Plots$Spaghetti$Score
+#' }
 #' @export
 ProjectRCI <- function(data,
     Object,

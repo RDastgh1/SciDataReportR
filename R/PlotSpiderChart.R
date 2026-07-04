@@ -70,6 +70,14 @@
 #' @param GroupVariable \strong{Deprecated} (since 19.15.0). Use \code{group_var} instead.
 #' @param TooltipDigits \strong{Deprecated} (since 19.15.0). Use \code{tooltip_digits} instead.
 #' @param MakeInteractive \strong{Deprecated} (since 19.15.0). Use \code{interactive} instead.
+#' @examples
+#' data(SampleData)
+#'
+#' PlotSpiderChart(
+#'   SampleData,
+#'   variables = c("age", "AXL", "Adiponectin", "Alpha_1_Antitrypsin"),
+#'   group_var = "Diagnosis"
+#' )
 #' @export
 PlotSpiderChart <- function(data,
     variables,

@@ -67,6 +67,23 @@
 #'           original model objects for convenience.
 #'   }
 #'
+#' @examples
+#' \dontrun{
+#' # NOTE: Not run - projection requires a trained SOM model, and
+#' # CreateSOMClusterModel() currently errors on the tracked get_data() bug
+#' # (see CreateSOMClusterModel() for details).
+#' data(SampleData)
+#'
+#' model <- CreateSOMClusterModel(
+#'   data = SampleData,
+#'   variables = c("age", "AXL", "Adiponectin", "Alpha_1_Antitrypsin"),
+#'   method = "finalize",
+#'   final_k = 3,
+#'   final_model = 1
+#' )
+#'
+#' projected <- ProjectSOMCluster(object = model, new_df = SampleData)
+#' }
 #' @export
 ProjectSOMCluster <- function(
     object,
@@ -764,6 +781,13 @@ ProjectSOMCluster <- function(
 #'
 #' @param ... Arguments passed to [ProjectSOMCluster()].
 #' @return The same projection object returned by [ProjectSOMCluster()].
+#' @seealso [ProjectSOMCluster()] for the canonical function and full examples.
+#' @examples
+#' \dontrun{
+#' # NOTE: Not run - see ProjectSOMCluster() and CreateSOMClusterModel() for the
+#' # tracked get_data() bug that blocks the SOM workflow.
+#' Project_SOMClust(object = model, new_df = SampleData)
+#' }
 #' @export
 Project_SOMClust <- function(...) {
   ProjectSOMCluster(...)

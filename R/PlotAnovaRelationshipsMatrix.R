@@ -26,6 +26,16 @@
 #'   outcome: outcomes are the continuous variables (`ContVars`).
 #' @param Data \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
 #' @param Covariates \strong{Deprecated} (since 19.15.0). Use \code{covariates} instead.
+#' @examples
+#' data(SampleData)
+#'
+#' result <- PlotAnovaRelationshipsMatrix(
+#'   SampleData,
+#'   CatVars = c("Diagnosis", "Genotype"),
+#'   ContVars = c("age", "AXL", "Adiponectin")
+#' )
+#'
+#' result$Unadjusted$plot
 #' @export
 PlotAnovaRelationshipsMatrix <- function(data,
     CatVars,

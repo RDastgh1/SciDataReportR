@@ -69,3 +69,19 @@ list(plot=ggplot, table=gtsummary, pvaltable=data.frame, data_used=tibble)
 Plot & Summarize Group Stats via MakeComparisonTable
 (BH q from p; SHAPE by p; COLOR by Category (vector or data frame); stable point size; palette via paletteer)
 }
+\examples{
+\donttest{
+data(SampleData)
+
+result <- Plot2GroupStats(
+  SampleData,
+  variables = c("age", "AXL", "Adiponectin", "Alpha_1_Antitrypsin"),
+  group_var = "Diagnosis",
+  impClust = "Impaired",
+  normalClust = "Control"
+)
+
+# Display the group-comparison plot
+result$plot
+}
+}

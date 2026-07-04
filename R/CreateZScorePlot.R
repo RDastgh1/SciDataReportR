@@ -23,6 +23,14 @@
 #' @importFrom tidyr pivot_longer
 #' @param Data \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
 #' @param Variables \strong{Deprecated} (since 19.15.0). Use \code{variables} instead.
+#' @examples
+#' data(SampleData)
+#'
+#' PlotZScore(
+#'   SampleData,
+#'   TargetVar = "Diagnosis",
+#'   variables = c("age", "AXL", "Adiponectin")
+#' )
 #' @export
 PlotZScore <- function(data,
     TargetVar,
@@ -177,6 +185,15 @@ PlotZScore <- function(data,
 #'
 #' @param ... Arguments passed to [PlotZScore()].
 #' @return A ggplot object returned by [PlotZScore()].
+#' @seealso [PlotZScore()] for the canonical function and full examples.
+#' @examples
+#' data(SampleData)
+#'
+#' CreateZScorePlot(
+#'   SampleData,
+#'   TargetVar = "Diagnosis",
+#'   variables = c("age", "AXL", "Adiponectin")
+#' )
 #' @export
 CreateZScorePlot <- function(...) {
   PlotZScore(...)

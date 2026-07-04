@@ -14,3 +14,4 @@ conflicted copy
 ^vignettes/\.quarto$
 ^doc$
 ^Meta$
+^audit$

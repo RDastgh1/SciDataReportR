@@ -19,6 +19,13 @@
 #' @importFrom magrittr %>%
 #' @param DataFrame \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
 #' @param Variables \strong{Deprecated} (since 19.15.0). Use \code{variables} instead.
+#' @examples
+#' data(SampleData)
+#'
+#' PlotCategoricalDistributions(
+#'   SampleData,
+#'   variables = c("Diagnosis", "Genotype")
+#' )
 #' @export
 PlotCategoricalDistributions <- function(data,
     variables = NULL,

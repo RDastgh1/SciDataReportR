@@ -60,3 +60,13 @@ The caption lists any covariates included in the model.
 
 Variable labels are used if available in the data frame.
 }
+\examples{
+data(SampleData)
+
+PlotInteractionEffectsContinuous(
+  SampleData,
+  interVar = "Diagnosis",
+  outcome_var = "AXL",
+  predictor_var = "age"
+)
+}

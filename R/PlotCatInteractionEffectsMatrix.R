@@ -23,6 +23,17 @@
 #' @param Data \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
 #' @param xVars \strong{Deprecated} (since 19.15.0). Use \code{predictor_vars} instead.
 #' @param yVars \strong{Deprecated} (since 19.15.0). Use \code{outcome_vars} instead.
+#' @examples
+#' data(SampleData)
+#'
+#' result <- PlotCatInteractionEffectsMatrix(
+#'   SampleData,
+#'   predictor_vars = c("Adiponectin", "Alpha_1_Antitrypsin", "Alpha_2_Macroglobulin"),
+#'   outcome_vars = c("age", "AXL"),
+#'   interVar = "Diagnosis"
+#' )
+#'
+#' result$p
 #' @export
 PlotCatInteractionEffectsMatrix <- function(data,
     predictor_vars,

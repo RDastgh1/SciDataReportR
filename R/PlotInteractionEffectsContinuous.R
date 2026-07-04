@@ -27,6 +27,15 @@
 #' @param outcomeVar \strong{Deprecated} (since 19.15.0). Use \code{outcome_var} instead.
 #' @param predictorVar \strong{Deprecated} (since 19.15.0). Use \code{predictor_var} instead.
 #' @param covars \strong{Deprecated} (since 19.15.0). Use \code{covariates} instead.
+#' @examples
+#' data(SampleData)
+#'
+#' PlotInteractionEffectsContinuous(
+#'   SampleData,
+#'   interVar = "Diagnosis",
+#'   outcome_var = "AXL",
+#'   predictor_var = "age"
+#' )
 #' @export
 #' @importFrom ggplot2 ggplot aes geom_point geom_smooth scale_color_manual scale_fill_manual scale_color_brewer scale_fill_brewer
 #' @importFrom ggplot2 labs theme_minimal theme element_text element_blank

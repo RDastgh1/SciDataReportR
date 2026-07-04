@@ -11,6 +11,20 @@
 #' @importFrom dplyr filter
 #' @importFrom sjlabelled get_label
 #' @param DataFrame \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
+#' @examples
+#' \donttest{
+#' # Build an ANOVA relationships matrix, then plot the significant pairs
+#' av <- PlotAnovaRelationshipsMatrix(
+#'   mtcars,
+#'   CatVars = c("cyl", "gear"),
+#'   ContVars = c("mpg", "wt", "hp")
+#' )
+#'
+#' plots <- plotSigAssociations(mtcars, av)
+#'
+#' # Display the first significant-association plot
+#' plots[[1]]
+#' }
 #' @export
 plotSigAssociations <- function(data,
     AnovaMatrixObject,

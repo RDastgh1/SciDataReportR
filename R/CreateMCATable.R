@@ -30,6 +30,16 @@
 #' \item{Lollipop}{A `ggplot` object showing a lollipop plot of variable loadings across components.}
 #'
 #' @param Data \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
+#' @examples
+#' data(SampleData)
+#'
+#' mca <- CreateMCAObject(
+#'   SampleData,
+#'   VarsToReduce = c("Diagnosis", "Genotype")
+#' )
+#'
+#' # Display the scree plot from the returned object
+#' mca$p_scree
 #' @export
 #'
 CreateMCAObject <- function(data,
@@ -161,6 +171,12 @@ CreateMCAObject <- function(data,
 #'
 #' @param ... Arguments passed to [CreateMCAObject()].
 #' @return The same object returned by [CreateMCAObject()].
+#' @seealso [CreateMCAObject()] for the canonical function and full examples.
+#' @examples
+#' data(SampleData)
+#'
+#' mca <- CreateMCATable(SampleData, VarsToReduce = c("Diagnosis", "Genotype"))
+#' mca$p_scree
 #' @export
 CreateMCATable <- function(...) {
   CreateMCAObject(...)

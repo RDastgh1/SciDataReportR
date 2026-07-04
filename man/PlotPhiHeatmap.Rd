@@ -46,3 +46,11 @@ Computes pairwise phi coefficients between binary categorical variables
 with explicit 0/1 coding (1 == PositiveLevel from \code{createBinaryMapping()}),
 then renders heatmap-style plots with raw and FDR-adjusted significance.
 }
+\examples{
+data(SampleData)
+
+# CatVars must be binary (exactly two unique non-NA values)
+result <- PlotPhiHeatmap(SampleData, CatVars = c("Diagnosis", "sex"))
+
+result$Unadjusted$plot
+}

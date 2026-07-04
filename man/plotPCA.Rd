@@ -78,33 +78,32 @@ When \code{Relabel = TRUE}, labels attached to hover variables are used in the
 hover display when available.
 }
 \examples{
-\dontrun{
+\donttest{
+# Build a PCA object to plot
+PCAObj <- CreatePCAObject(
+  data = mtcars,
+  VarsToReduce = names(mtcars),
+  numComponents = 3
+)
+
+# Default 3D scatter of the first three components
 plotPCA(PCAObj)
 
+# 2D scatter colored by a variable in the data
 plotPCA(
   PCAObj,
   Components = c("RC1", "RC2"),
-  Var = "SITE",
+  Mode = "2D",
+  Var = "cyl",
   ColorType = "factor"
 )
 
-plotPCA(
-  PCAObj,
-  Components = c("RC2", "RC1", "RC4"),
-  Mode = "3D"
-)
-
+# Add hover information
 plotPCA(
   PCAObj,
   Components = c("RC1", "RC2"),
-  HoverVars = c("SubjectID", "SITE", "Visit")
-)
-
-plotPCA(
-  PCAObj,
-  Components = c("RC1", "RC2"),
-  HoverVars = c("SubjectID", "SITE", "Visit"),
-  Relabel = FALSE
+  Mode = "2D",
+  HoverVars = c("mpg", "hp")
 )
 }
 

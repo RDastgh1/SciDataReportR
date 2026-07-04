@@ -23,3 +23,11 @@ ggplot with \code{+}, typically a plot returned inside the list created by
 \code{\link[=PlotCorrelationsHeatmap]{PlotCorrelationsHeatmap()}} or a plot returned by \code{\link[=add_r_and_stars]{add_r_and_stars()}}.
 }
 
+\examples{
+library(ggplot2)
+
+# Compose the caption onto any ggplot with `+`
+ggplot(mtcars, aes(mpg, wt)) +
+  geom_point() +
+  geom_starcaption()
+}

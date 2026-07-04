@@ -49,3 +49,15 @@ A list with Unadjusted, FDRCorrected, method ("R_pb"), Relabel, Covariates, Bina
 Calculates point-biserial correlations (binary vs continuous) with explicit 0/1 coding
 where 1 == PositiveLevel from \code{createBinaryMapping()}, and renders heatmap-style tiles.
 }
+\examples{
+data(SampleData)
+
+# CatVars must be binary (exactly two unique non-NA values)
+result <- PlotPointCorrelationsHeatmap(
+  SampleData,
+  CatVars = c("Diagnosis", "sex"),
+  ContVars = c("age", "AXL", "Adiponectin")
+)
+
+result$Unadjusted$plot
+}

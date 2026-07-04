@@ -204,4 +204,7 @@ PCA_omics <- CreatePCAObject(
   maxScreeComponents = 5
 )
 
+# Display the scree plot from the returned object
+PCA$p_scree
+
 }

@@ -46,3 +46,15 @@ while adjusting for covariates. In addition to the figure, key parameters such a
 the correlation method, whether relabeling was used, the covariates, R-squared, p-value, and sample size
 are returned.
 }
+\examples{
+data(SampleData)
+
+result <- PlotPartialRegressionScatter(
+  SampleData,
+  IndepVar = "age",
+  DepVar = "AXL",
+  covariates = "Adiponectin"
+)
+
+result$plot
+}

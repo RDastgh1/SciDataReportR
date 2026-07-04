@@ -143,6 +143,9 @@
 #'   maxScreeComponents = 5
 #' )
 #'
+#' # Display the scree plot from the returned object
+#' PCA$p_scree
+#'
 #' @param Data \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
 #' @export
 CreatePCAObject <- function(data,
@@ -1166,12 +1169,17 @@ CreatePCAObject <- function(data,
 #'
 #' @return The same object returned by [CreatePCAObject()].
 #'
+#' @seealso [CreatePCAObject()] for the canonical function and full examples.
+#'
 #' @examples
 #' PCA <- CreatePCATable(
 #'   data = mtcars,
 #'   VarsToReduce = names(mtcars),
 #'   numComponents = 3
 #' )
+#'
+#' # Display the scree plot from the returned object
+#' PCA$p_scree
 #'
 #' @export
 CreatePCATable <- function(...) {

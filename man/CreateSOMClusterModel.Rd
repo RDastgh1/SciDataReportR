@@ -235,6 +235,25 @@ warning-producing solutions are captured in diagnostics instead of blocking
 the entire pipeline. Successful fits are retained and failed fits are listed
 in \code{ModelInfo_MClust$diagnostics}.
 }
+\examples{
+\dontrun{
+# NOTE: This example is kept in \dontrun{} because the function currently
+# errors with "could not find function 'get_data'": tidyLPA::get_data()
+# fails to dispatch under this call path (tracked bug, possibly a tidyLPA
+# version pin issue). The reduced settings below (k_range = 2:4, models = 1)
+# are otherwise fast enough to run once the bug is resolved.
+data(SampleData)
+
+model <- CreateSOMClusterModel(
+  data = SampleData,
+  variables = c("age", "AXL", "Adiponectin", "Alpha_1_Antitrypsin"),
+  method = "exploratory",
+  k_range = 2:4,
+  models = 1
+)
+model$plots$cluster_fit_summary_plot
+}
+}
 \references{
 Saaty TL. \emph{The Analytic Hierarchy Process}. McGraw-Hill, 1980.
 }

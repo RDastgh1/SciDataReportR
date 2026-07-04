@@ -19,6 +19,16 @@
 #' @param OutcomeVars \strong{Deprecated} (since 19.15.0). Use \code{outcome_vars} instead.
 #' @param PredictorVars \strong{Deprecated} (since 19.15.0). Use \code{predictor_vars} instead.
 #' @param Covariates \strong{Deprecated} (since 19.15.0). Use \code{covariates} instead.
+#' @examples
+#' data(SampleData)
+#'
+#' result <- PlotMiningMatrix(
+#'   SampleData,
+#'   outcome_vars = c("age", "AXL"),
+#'   predictor_vars = c("Adiponectin", "Alpha_1_Antitrypsin")
+#' )
+#'
+#' result$Unadjusted$plot
 #' @export
 PlotMiningMatrix <- function(data,
     outcome_vars,

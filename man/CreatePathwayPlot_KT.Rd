@@ -18,3 +18,16 @@ code. This KT pathway visualization is expected to move to a future
 metabolomics-focused package; this compatibility alias will remain during the
 transition.
 }
+\examples{
+results <- data.frame(
+  Metabolite = c("Tryptophan", "Kynurenine", "Quinolinic Acid"),
+  correlation = c(0.3, 0.1, 0.45),
+  p_value = c(0.01, 0.5, 0.008),
+  p_adj = c(0.05, 0.7, 0.03)
+)
+
+CreatePathwayPlot_KT(results, "Kynurenine pathway")
+}
+\seealso{
+\code{\link[=PlotPathway_KT]{PlotPathway_KT()}} for the canonical function and full examples.
+}

@@ -17,3 +17,12 @@ Compatibility alias for \code{\link[=CreateMCAObject]{CreateMCAObject()}}. Prefe
 new code because this workflow returns a reusable MCA object, not only a
 static table.
 }
+\examples{
+data(SampleData)
+
+mca <- CreateMCATable(SampleData, VarsToReduce = c("Diagnosis", "Genotype"))
+mca$p_scree
+}
+\seealso{
+\code{\link[=CreateMCAObject]{CreateMCAObject()}} for the canonical function and full examples.
+}

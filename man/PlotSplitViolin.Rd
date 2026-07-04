@@ -87,3 +87,8 @@ overlays per-group boxplots aligned with each half, and optionally annotates
 the plot with a p-value significance label. Supports displaying sample sizes (n)
 and automatically using variable labels for axis and title when available.
 }
+\examples{
+data(SampleData)
+
+PlotSplitViolin(SampleData, Var = "AXL", group_var = "Diagnosis")
+}

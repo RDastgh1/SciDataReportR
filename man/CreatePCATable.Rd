@@ -24,4 +24,10 @@ PCA <- CreatePCATable(
   numComponents = 3
 )
 
+# Display the scree plot from the returned object
+PCA$p_scree
+
+}
+\seealso{
+\code{\link[=CreatePCAObject]{CreatePCAObject()}} for the canonical function and full examples.
 }

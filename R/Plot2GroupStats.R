@@ -21,6 +21,21 @@
 #' @param Data \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
 #' @param Variables \strong{Deprecated} (since 19.15.0). Use \code{variables} instead.
 #' @param GroupVar \strong{Deprecated} (since 19.15.0). Use \code{group_var} instead.
+#' @examples
+#' \donttest{
+#' data(SampleData)
+#'
+#' result <- Plot2GroupStats(
+#'   SampleData,
+#'   variables = c("age", "AXL", "Adiponectin", "Alpha_1_Antitrypsin"),
+#'   group_var = "Diagnosis",
+#'   impClust = "Impaired",
+#'   normalClust = "Control"
+#' )
+#'
+#' # Display the group-comparison plot
+#' result$plot
+#' }
 #' @export
 #' @import dplyr ggplot2 gtsummary
 Plot2GroupStats <- function(data,

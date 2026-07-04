@@ -53,6 +53,25 @@
 #' @param Data \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
 #' @param Variables \strong{Deprecated} (since 19.15.0). Use \code{variables} instead.
 #' @param ID \strong{Deprecated} (since 19.15.0). Use \code{id_var} instead.
+#' @examples
+#' set.seed(1)
+#' rci_data <- data.frame(
+#'   id = rep(1:30, each = 2),
+#'   visit = rep(c("Baseline", "Followup"), 30),
+#'   Score = round(rnorm(60, mean = 50, sd = 10), 1)
+#' )
+#'
+#' rci <- CreateRCIObject(
+#'   data = rci_data,
+#'   variables = "Score",
+#'   DataFormat = "long",
+#'   id_var = "id",
+#'   VisitColumn = "visit",
+#'   BaselineVisit = "Baseline"
+#' )
+#'
+#' # Display a spaghetti plot from the returned object
+#' rci$Plots$Spaghetti$Score
 #' @export
 CreateRCIObject <- function(data,
     variables,

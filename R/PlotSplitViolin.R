@@ -32,6 +32,10 @@
 #'
 #' @param Group \strong{Deprecated} (since 19.15.0). Use \code{group_var} instead.
 #' @param covars \strong{Deprecated} (since 19.15.0). Use \code{covariates} instead.
+#' @examples
+#' data(SampleData)
+#'
+#' PlotSplitViolin(SampleData, Var = "AXL", group_var = "Diagnosis")
 #' @export
 PlotSplitViolin <- function(data,
     Var,

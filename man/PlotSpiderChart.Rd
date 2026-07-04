@@ -162,3 +162,12 @@ polygons, relabel spokes using variable labels, wrap long labels, reorder
 variables to visually emphasize between-group differences, and optionally
 return an interactive radar chart using plotly.
 }
+\examples{
+data(SampleData)
+
+PlotSpiderChart(
+  SampleData,
+  variables = c("age", "AXL", "Adiponectin", "Alpha_1_Antitrypsin"),
+  group_var = "Diagnosis"
+)
+}

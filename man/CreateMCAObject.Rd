@@ -58,3 +58,14 @@ Optional dependencies used by this workflow include \code{missRanger} for
 imputation and \code{FactoMineR} for MCA calculation. These packages are listed
 in \code{DESCRIPTION} and should be installed for MCA workflows.
 }
+\examples{
+data(SampleData)
+
+mca <- CreateMCAObject(
+  SampleData,
+  VarsToReduce = c("Diagnosis", "Genotype")
+)
+
+# Display the scree plot from the returned object
+mca$p_scree
+}

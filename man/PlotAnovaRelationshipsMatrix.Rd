@@ -55,3 +55,14 @@ This function plots the relationship between continuous and categorical variable
 using ANOVA or Kruskal-Wallis tests. It generates a "heatmap" with points
 colored and shaped based on statistical significance and effect size.
 }
+\examples{
+data(SampleData)
+
+result <- PlotAnovaRelationshipsMatrix(
+  SampleData,
+  CatVars = c("Diagnosis", "Genotype"),
+  ContVars = c("age", "AXL", "Adiponectin")
+)
+
+result$Unadjusted$plot
+}

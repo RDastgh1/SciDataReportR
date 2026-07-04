@@ -39,3 +39,14 @@ to quickly inspect whether a merged dataset appears trustworthy.
 The function expects the object returned by \code{ValidateMerge()}. It does not
 re-run any merge validation checks.
 }
+\examples{
+set.seed(1)
+left  <- data.frame(id = 1:50, x = rnorm(50))
+right <- data.frame(id = 1:50, y = rnorm(50))
+merged <- merge(left, right, by = "id")
+
+validation <- ValidateMerge(left, right, merged, keys = "id")
+
+# Display a single diagnostic plot
+PlotMergeValidation(validation, Plot = "Checks")
+}

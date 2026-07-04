@@ -51,3 +51,15 @@ and tables of FDR-corrected p-values.
 \description{
 This function calculates and visualizes the interaction effects between categorical variables.
 }
+\examples{
+data(SampleData)
+
+result <- PlotCatInteractionEffectsMatrix(
+  SampleData,
+  predictor_vars = c("Adiponectin", "Alpha_1_Antitrypsin", "Alpha_2_Macroglobulin"),
+  outcome_vars = c("age", "AXL"),
+  interVar = "Diagnosis"
+)
+
+result$p
+}

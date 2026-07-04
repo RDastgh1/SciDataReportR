@@ -16,3 +16,13 @@ The same projection object returned by \code{\link[=ProjectSOMCluster]{ProjectSO
 Compatibility alias for \code{\link[=ProjectSOMCluster]{ProjectSOMCluster()}}. Prefer \code{ProjectSOMCluster()}
 in new code.
 }
+\examples{
+\dontrun{
+# NOTE: Not run - see ProjectSOMCluster() and CreateSOMClusterModel() for the
+# tracked get_data() bug that blocks the SOM workflow.
+Project_SOMClust(object = model, new_df = SampleData)
+}
+}
+\seealso{
+\code{\link[=ProjectSOMCluster]{ProjectSOMCluster()}} for the canonical function and full examples.
+}

@@ -1,25 +1,25 @@
 #' Inspect a scientific data file before import
 #'
-#' `InspectFile()` checks for common file import issues before reading a file
-#' into an analysis workflow. It is especially useful for Excel workbooks where
-#' multiple sheets, metadata rows, blank column names, duplicate column names,
-#' and cell formatting can affect interpretation.
+#' `InspectFile()` checks common import risks before a file is read into an
+#' analysis workflow. It is especially useful for Excel workbooks, where
+#' multiple sheets, metadata rows, unnamed columns, duplicate column names, and
+#' workbook formatting can change how the data should be interpreted.
 #'
-#' This function does not modify the file or imported data. It only reports
+#' This function does not modify the file or the imported data. It only reports
 #' what it finds.
 #'
 #' @param path Path to the file.
 #' @param sheet Sheet name or index for Excel files. If `NULL`, the first sheet
 #'   is inspected.
-#' @param preview_rows Number of rows to preview when checking for header and
-#'   column-name issues.
-#' @param check_styles Logical. For `.xlsx` files, check whether custom workbook
-#'   styles or formatting exist.
+#' @param preview_rows Number of rows to preview when checking header and column
+#'   name issues.
+#' @param check_styles Logical. For `.xlsx` files, check whether workbook styles
+#'   or formatting exist. This can be slower for large workbooks.
 #' @param check_sheets Logical. For Excel files, check whether the workbook has
 #'   multiple sheets.
 #' @param check_header Logical. For Excel files, attempt to detect whether the
 #'   header row is not row 1.
-#' @param quiet Logical. If `FALSE`, print the inspection summary.
+#' @param quiet Logical. If `FALSE`, print a compact inspection summary.
 #'
 #' @return Invisibly returns a list containing file inspection metadata.
 #' @export
@@ -59,29 +59,21 @@ InspectFile <- function(
   selected_sheet <- NULL
   probable_header_row <- NULL
   first_nonempty_row <- NULL
-
   preview <- NULL
   preview_names <- NULL
   blank_columns <- integer()
   duplicate_column_names <- character()
-
   styles_detected <- NA
 
   if (!ext %in% supported_extensions) {
-    issues <- c(
-      issues,
-      paste0("Unsupported or unrecognized file extension: .", ext)
-    )
+    issues <- c(issues, paste0("Unsupported or unrecognized file extension: .", ext))
   }
 
   if (ext %in% c("xlsx", "xls")) {
     sheets <- tryCatch(
       readxl::excel_sheets(path),
       error = function(e) {
-        issues <<- c(
-          issues,
-          paste0("Could not read Excel sheet names: ", conditionMessage(e))
-        )
+        issues <<- c(issues, paste0("Could not read Excel sheet names: ", conditionMessage(e)))
         NULL
       }
     )
@@ -91,19 +83,12 @@ InspectFile <- function(
         selected_sheet <- sheets[[1]]
       } else if (is.numeric(sheet)) {
         if (length(sheet) != 1 || is.na(sheet)) {
-          issues <- c(
-            issues,
-            "`sheet` must be a single sheet name or sheet index."
-          )
+          issues <- c(issues, "`sheet` must be a single sheet name or sheet index.")
           selected_sheet <- sheets[[1]]
         } else if (sheet < 1 || sheet > length(sheets)) {
           issues <- c(
             issues,
-            paste0(
-              "`sheet = ", sheet,
-              "` is outside the available sheet range 1-",
-              length(sheets), "."
-            )
+            paste0("`sheet = ", sheet, "` is outside the available sheet range 1-", length(sheets), ".")
           )
           selected_sheet <- sheets[[1]]
         } else {
@@ -111,25 +96,27 @@ InspectFile <- function(
         }
       } else {
         selected_sheet <- as.character(sheet)
-
         if (!selected_sheet %in% sheets) {
-          issues <- c(
-            issues,
-            paste0(
-              "Requested sheet `", selected_sheet,
-              "` was not found in the workbook."
-            )
-          )
+          issues <- c(issues, paste0("Requested sheet `", selected_sheet, "` was not found in the workbook."))
         }
       }
 
-      if (isTRUE(check_sheets) && length(sheets) > 1) {
+      if (isTRUE(check_sheets) && length(sheets) > 1 && is.null(sheet)) {
         issues <- c(
           issues,
           paste0(
-            "Workbook has multiple sheets: ",
+            "Workbook has multiple sheets and no `sheet =` was supplied: ",
             paste(sheets, collapse = ", "),
-            ". Specify `sheet =` to avoid importing the wrong sheet."
+            "."
+          )
+        )
+      } else if (isTRUE(check_sheets) && length(sheets) > 1 && !is.null(sheet)) {
+        notes <- c(
+          notes,
+          paste0(
+            "Workbook has multiple sheets, and `sheet = ",
+            selected_sheet,
+            "` was selected."
           )
         )
       }
@@ -146,10 +133,7 @@ InspectFile <- function(
           .name_repair = "minimal"
         ),
         error = function(e) {
-          issues <<- c(
-            issues,
-            paste0("Could not preview Excel sheet: ", conditionMessage(e))
-          )
+          issues <<- c(issues, paste0("Could not preview Excel sheet: ", conditionMessage(e)))
           NULL
         }
       )
@@ -185,7 +169,7 @@ InspectFile <- function(
             paste0(
               "Probable header row appears to be row ",
               probable_header_row,
-              ", not row 1. There may be metadata above the column names."
+              ", not row 1."
             )
           )
         }
@@ -193,57 +177,30 @@ InspectFile <- function(
         if (first_nonempty_row > 1) {
           issues <- c(
             issues,
-            paste0(
-              "The first non-empty row appears to be row ",
-              first_nonempty_row,
-              ". The sheet may contain leading blank rows."
-            )
+            paste0("First non-empty row appears to be row ", first_nonempty_row, ".")
           )
         }
 
-        if (
-          probable_header_row >= 1 &&
-            probable_header_row <= nrow(preview)
-        ) {
-          preview_names <- unlist(
-            preview[probable_header_row, , drop = FALSE],
-            use.names = FALSE
+        preview_names <- unlist(preview[probable_header_row, , drop = FALSE], use.names = FALSE)
+        preview_names <- trimws(as.character(preview_names))
+
+        blank_columns <- which(is.na(preview_names) | preview_names == "")
+
+        nonblank_names <- preview_names[!is.na(preview_names) & preview_names != ""]
+        duplicate_column_names <- unique(nonblank_names[duplicated(nonblank_names)])
+
+        if (length(blank_columns) > 0) {
+          issues <- c(
+            issues,
+            paste0("Unnamed columns detected in probable header row: ", paste(blank_columns, collapse = ", "), ".")
           )
+        }
 
-          preview_names <- as.character(preview_names)
-          preview_names <- trimws(preview_names)
-
-          blank_columns <- which(is.na(preview_names) | preview_names == "")
-
-          nonblank_names <- preview_names[
-            !is.na(preview_names) & preview_names != ""
-          ]
-
-          duplicate_column_names <- unique(
-            nonblank_names[duplicated(nonblank_names)]
+        if (length(duplicate_column_names) > 0) {
+          issues <- c(
+            issues,
+            paste0("Duplicate column names detected in probable header row: ", paste(duplicate_column_names, collapse = ", "), ".")
           )
-
-          if (length(blank_columns) > 0) {
-            issues <- c(
-              issues,
-              paste0(
-                "Unnamed columns detected in probable header row: column ",
-                paste(blank_columns, collapse = ", column "),
-                "."
-              )
-            )
-          }
-
-          if (length(duplicate_column_names) > 0) {
-            issues <- c(
-              issues,
-              paste0(
-                "Duplicate column names detected in probable header row: ",
-                paste(duplicate_column_names, collapse = ", "),
-                "."
-              )
-            )
-          }
         }
       }
     }
@@ -255,30 +212,22 @@ InspectFile <- function(
           length(openxlsx::getStyles(wb)) > 0
         },
         error = function(e) {
-          notes <<- c(
-            notes,
-            paste0("Could not inspect workbook styles: ", conditionMessage(e))
-          )
+          notes <<- c(notes, paste0("Could not inspect workbook styles: ", conditionMessage(e)))
           NA
         }
       )
 
       if (isTRUE(styles_detected)) {
-        issues <- c(
-          issues,
-          "Workbook contains custom styles or formatting. Color coding may contain information that will not be captured by a standard data import."
+        notes <- c(
+          notes,
+          "Workbook contains custom formatting. If colors or styles encode meaning, verify manually."
         )
       }
     }
   }
 
   if (ext %in% c("csv", "tsv", "txt")) {
-    delim <- switch(
-      ext,
-      csv = ",",
-      tsv = "\t",
-      txt = "\t"
-    )
+    delim <- switch(ext, csv = ",", tsv = "\t", txt = "\t")
 
     preview <- tryCatch(
       readr::read_delim(
@@ -289,46 +238,26 @@ InspectFile <- function(
         name_repair = "minimal"
       ),
       error = function(e) {
-        issues <<- c(
-          issues,
-          paste0("Could not preview delimited file: ", conditionMessage(e))
-        )
+        issues <<- c(issues, paste0("Could not preview delimited file: ", conditionMessage(e)))
         NULL
       }
     )
 
     if (!is.null(preview)) {
       preview_names <- names(preview)
-
       blank_columns <- which(is.na(preview_names) | preview_names == "")
 
-      nonblank_names <- preview_names[
-        !is.na(preview_names) & preview_names != ""
-      ]
-
-      duplicate_column_names <- unique(
-        nonblank_names[duplicated(nonblank_names)]
-      )
+      nonblank_names <- preview_names[!is.na(preview_names) & preview_names != ""]
+      duplicate_column_names <- unique(nonblank_names[duplicated(nonblank_names)])
 
       if (length(blank_columns) > 0) {
-        issues <- c(
-          issues,
-          paste0(
-            "Unnamed columns detected: column ",
-            paste(blank_columns, collapse = ", column "),
-            "."
-          )
-        )
+        issues <- c(issues, paste0("Unnamed columns detected: ", paste(blank_columns, collapse = ", "), "."))
       }
 
       if (length(duplicate_column_names) > 0) {
         issues <- c(
           issues,
-          paste0(
-            "Duplicate column names detected: ",
-            paste(duplicate_column_names, collapse = ", "),
-            "."
-          )
+          paste0("Duplicate column names detected: ", paste(duplicate_column_names, collapse = ", "), ".")
         )
       }
     }
@@ -339,12 +268,6 @@ InspectFile <- function(
       notes,
       "Labelled data format detected. Variable and value labels will be preserved by ReadSciData()."
     )
-  }
-
-  recommendation <- if (length(issues) == 0) {
-    "No obvious import issues detected."
-  } else {
-    "Review the issues before trusting an automated import."
   }
 
   out <- list(
@@ -364,77 +287,58 @@ InspectFile <- function(
     preview = preview,
     preview_names = preview_names,
     issues = issues,
-    notes = notes,
-    recommendation = recommendation
+    notes = notes
   )
 
   if (!quiet) {
-    cat("File inspection\n")
-    cat("---------------\n")
-    cat("File: ", out$file_name, "\n", sep = "")
-    cat("Type: .", out$extension, "\n", sep = "")
-    cat("Size: ", out$file_size_mb, " MB\n", sep = "")
-
-    if (!is.null(out$sheets)) {
-      cat("Sheets: ", paste(out$sheets, collapse = ", "), "\n", sep = "")
-    }
-
-    if (!is.null(out$selected_sheet)) {
-      cat("Selected sheet: ", out$selected_sheet, "\n", sep = "")
-    }
-
-    if (!is.null(out$probable_header_row)) {
-      cat("Probable header row: ", out$probable_header_row, "\n", sep = "")
-    }
-
-    if (!is.null(out$first_nonempty_row)) {
-      cat("First non-empty row: ", out$first_nonempty_row, "\n", sep = "")
-    }
-
-    if (length(out$blank_columns) > 0) {
-      cat("Unnamed columns: ", paste(out$blank_columns, collapse = ", "), "\n", sep = "")
-    }
-
-    if (length(out$duplicate_column_names) > 0) {
-      cat(
-        "Duplicate column names: ",
-        paste(out$duplicate_column_names, collapse = ", "),
-        "\n",
-        sep = ""
-      )
-    }
-
-    if (!is.na(out$styles_detected)) {
-      cat(
-        "Styles detected: ",
-        ifelse(isTRUE(out$styles_detected), "yes", "no"),
-        "\n",
-        sep = ""
-      )
-    }
-
-    cat("\n")
-
-    if (length(out$issues) == 0) {
-      cat("No obvious import issues detected.\n")
-    } else {
-      cat("Potential issues:\n")
-
-      for (i in seq_along(out$issues)) {
-        cat(i, ". ", out$issues[[i]], "\n", sep = "")
-      }
-    }
-
-    if (length(out$notes) > 0) {
-      cat("\nNotes:\n")
-
-      for (i in seq_along(out$notes)) {
-        cat(i, ". ", out$notes[[i]], "\n", sep = "")
-      }
-    }
-
-    cat("\nRecommendation: ", out$recommendation, "\n", sep = "")
+    .PrintSciDataInspection(out)
   }
 
   invisible(out)
+}
+
+.PrintSciDataInspection <- function(x) {
+  cat("File inspection: ", x$file_name, "\n", sep = "")
+  cat("Type: .", x$extension, " | Size: ", x$file_size_mb, " MB\n", sep = "")
+
+  if (!is.null(x$sheets)) {
+    cat("Sheets: ", paste(x$sheets, collapse = ", "), "\n", sep = "")
+  }
+
+  if (!is.null(x$selected_sheet)) {
+    cat("Selected sheet: ", x$selected_sheet, "\n", sep = "")
+  }
+
+  if (!is.null(x$probable_header_row)) {
+    cat("Header row: ", x$probable_header_row, "\n", sep = "")
+  }
+
+  if (length(x$blank_columns) > 0) {
+    cat("Unnamed columns: ", paste(x$blank_columns, collapse = ", "), "\n", sep = "")
+  }
+
+  if (length(x$duplicate_column_names) > 0) {
+    cat("Duplicate names: ", paste(x$duplicate_column_names, collapse = ", "), "\n", sep = "")
+  }
+
+  if (length(x$issues) == 0 && length(x$notes) == 0) {
+    cat("No obvious import issues detected.\n")
+    return(invisible(x))
+  }
+
+  if (length(x$issues) > 0) {
+    cat("\nWarnings:\n")
+    for (i in seq_along(x$issues)) {
+      cat("  - ", x$issues[[i]], "\n", sep = "")
+    }
+  }
+
+  if (length(x$notes) > 0) {
+    cat("\nNotes:\n")
+    for (i in seq_along(x$notes)) {
+      cat("  - ", x$notes[[i]], "\n", sep = "")
+    }
+  }
+
+  invisible(x)
 }

@@ -99,27 +99,27 @@ Darker colors indicate higher significance:
 }
 }
 \examples{
-\dontrun{
-# With categorical interaction variable
+\donttest{
+data(SampleData)
+
+# With a categorical interaction variable
 results <- PlotInteractionEffectsMatrix(
-  data = mydata,
-  interVar = "HIV_status",
-  outcomeVars = sleep_vars,
-  predictorVars = metabolites,
-  covars = c("age", "sex")
+  data = SampleData,
+  interVar = "Diagnosis",
+  outcome_vars = c("age", "AXL"),
+  predictor_vars = c("Adiponectin", "Alpha_1_Antitrypsin", "Alpha_2_Macroglobulin")
 )
 
-# With continuous interaction variable
-results <- PlotInteractionEffectsMatrix(
-  data = mydata,
+# With a continuous interaction variable
+results_cont <- PlotInteractionEffectsMatrix(
+  data = SampleData,
   interVar = "age",
-  outcomeVars = sleep_vars,
-  predictorVars = metabolites,
-  covars = c("sex", "BMI")
+  outcome_vars = c("AXL", "Adiponectin"),
+  predictor_vars = c("Alpha_1_Antitrypsin", "Alpha_2_Macroglobulin")
 )
 
 # Display the plot
-print(results$Unadjusted$plot)
+results$Unadjusted$plot
 }
 
 }

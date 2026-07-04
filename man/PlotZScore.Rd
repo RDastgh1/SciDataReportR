@@ -56,3 +56,12 @@ different groups. It offers options for parametric or non-parametric tests,
 ordinal variable conversion, and custom labeling. Significant p-values and
 FDR-adjusted p-values are highlighted on the plot.
 }
+\examples{
+data(SampleData)
+
+PlotZScore(
+  SampleData,
+  TargetVar = "Diagnosis",
+  variables = c("age", "AXL", "Adiponectin")
+)
+}

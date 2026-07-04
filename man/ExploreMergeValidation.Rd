@@ -47,3 +47,14 @@ tables. It returns an HTML object that can be rendered in the RStudio Viewer,
 Quarto, R Markdown, Shiny, or saved as HTML. If needed in an interactive
 console, wrap the result with \code{htmltools::browsable()}.
 }
+\examples{
+set.seed(1)
+left  <- data.frame(id = 1:50, x = rnorm(50))
+right <- data.frame(id = 1:50, y = rnorm(50))
+merged <- merge(left, right, by = "id")
+
+validation <- ValidateMerge(left, right, merged, keys = "id")
+
+# Produce the interactive merge-validation dashboard
+ExploreMergeValidation(validation)
+}

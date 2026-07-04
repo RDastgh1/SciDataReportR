@@ -58,3 +58,13 @@ into a single square heatmap with raw and FDR-star overlays.
 Constant variables (no variation in the current data) are
 automatically excluded before computing any tiles.
 }
+\examples{
+data(SampleData)
+
+result <- PlotDirectionalHeatmaps(
+  SampleData,
+  variables = c("age", "AXL", "Adiponectin", "Alpha_1_Antitrypsin")
+)
+
+result$Unadjusted$plot
+}

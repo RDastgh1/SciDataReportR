@@ -62,3 +62,14 @@ this function can (optionally) run tests \emph{within strata} (each combination 
 and combine p-values across strata (Fisher's method) for a single summary p-value per pair.
 If you need true covariate adjustment, use regression-based models (logistic/multinomial).
 }
+\examples{
+data(SampleData)
+
+result <- PlotChiSqCovar(
+  SampleData,
+  predictor_vars = c("Diagnosis", "Genotype"),
+  outcome_vars = c("Diagnosis", "Genotype")
+)
+
+result$p
+}

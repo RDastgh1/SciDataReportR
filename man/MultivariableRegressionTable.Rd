@@ -93,3 +93,18 @@ stored result tables and predictions without refitting models.
 Fit one multivariable regression model per outcome and return a stable,
 label-aware regression object for downstream tables, diagnostics, and plots.
 }
+\examples{
+\donttest{
+data(SampleData)
+
+result <- MultivariableRegressionTable(
+  SampleData,
+  outcome_vars = "AXL",
+  predictor_vars = c("Adiponectin", "Alpha_1_Antitrypsin", "Alpha_2_Macroglobulin"),
+  covariates = "age"
+)
+
+# Display the regression coefficient matrix plot
+result$Plots$RegressionMatrix
+}
+}

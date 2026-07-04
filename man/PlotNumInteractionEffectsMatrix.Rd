@@ -53,3 +53,15 @@ A list containing matrices, ggplot objects for visualizations, and tables of p-v
 \description{
 This function calculates interaction effects between numerical variables and plots them as matrices.
 }
+\examples{
+data(SampleData)
+
+result <- PlotNumInteractionEffectsMatrix(
+  SampleData,
+  predictor_vars = c("Alpha_1_Antitrypsin", "Alpha_2_Macroglobulin"),
+  outcome_vars = c("AXL", "Adiponectin"),
+  interVar = "age"
+)
+
+result$p
+}

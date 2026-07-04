@@ -10,8 +10,18 @@
 #'   are rows. If `TRUE`, predictors/terms are facets and outcomes are rows.
 #' @return A ggplot object representing the forest plot.
 #' @examples
-#' # Example usage:
-#' # plotForestFromTable(UnivariateRegressionTables)
+#' \donttest{
+#' data(SampleData)
+#'
+#' # Build univariate regression tables to plot
+#' urt <- UnivariateRegressionTable(
+#'   data = SampleData,
+#'   outcome_vars = "AXL",
+#'   predictor_vars = c("age", "Adiponectin", "Alpha_1_Antitrypsin")
+#' )
+#'
+#' plotForestFromTable(urt)
+#' }
 #' @export
 plotForestFromTable <- function(UnivariateRegressionTables, pSize = 2, Flip = FALSE) {
 

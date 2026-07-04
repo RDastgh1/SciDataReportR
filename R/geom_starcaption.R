@@ -12,6 +12,14 @@
 #' `geom_starcaption()` does not take an input object directly. Add it to a
 #' ggplot with `+`, typically a plot returned inside the list created by
 #' [PlotCorrelationsHeatmap()] or a plot returned by [add_r_and_stars()].
+#'
+#' @examples
+#' library(ggplot2)
+#'
+#' # Compose the caption onto any ggplot with `+`
+#' ggplot(mtcars, aes(mpg, wt)) +
+#'   geom_point() +
+#'   geom_starcaption()
 #' @export
 geom_starcaption <- function() {
   # Create a caption with the desired text

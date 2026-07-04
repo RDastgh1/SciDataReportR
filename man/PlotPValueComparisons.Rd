@@ -44,3 +44,12 @@ A ggplot object displaying the p-value comparisons.
 This function generates a plot comparing p-values for different variables
 across two or more groups.
 }
+\examples{
+data(SampleData)
+
+PlotPValueComparisons(
+  SampleData,
+  group_var = "Diagnosis",
+  variables = c("age", "AXL", "Adiponectin")
+)
+}

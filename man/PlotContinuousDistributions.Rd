@@ -42,3 +42,11 @@ A ggplot object.
 Creates rain-cloud plots (half-violin + box/median + scatter) for one or
 more continuous variables, with optional group-wise colouring.
 }
+\examples{
+data(SampleData)
+
+PlotContinuousDistributions(
+  SampleData,
+  variables = c("age", "AXL", "Adiponectin")
+)
+}

@@ -29,3 +29,18 @@ A list of scatterplot objects for significant correlations.
 \description{
 Generate scatterplots for significant correlations based on a previously generated correlation heatmap.
 }
+\examples{
+\donttest{
+# Build a correlation heatmap, then plot the significant pairs
+ch <- PlotCorrelationsHeatmap(
+  mtcars,
+  predictor_vars = c("mpg", "wt", "hp"),
+  outcome_vars = c("mpg", "wt", "hp")
+)
+
+plots <- plotSigCorrelations(mtcars, ch)
+
+# Display the first significant-correlation scatterplot
+plots[[1]]
+}
+}

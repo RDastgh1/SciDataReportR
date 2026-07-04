@@ -3,13 +3,12 @@
 #' `ReadSciData()` imports common scientific data file formats while preserving
 #' original column names and labels as much as possible. It optionally calls
 #' `InspectFile()` before import to flag common issues such as multiple sheets,
-#' metadata rows, unnamed columns, duplicate column names, and color-coded
-#' formatting.
+#' metadata rows, unnamed columns, duplicate column names, and formatting.
 #'
-#' After import, `ReadSciData()` repairs only column names that make the data
-#' frame difficult or impossible to use in tidyverse workflows. Specifically,
-#' blank or `NA` names are renamed to `...unnamed_POSITION`, and duplicate names
-#' are made unique only when needed. Existing valid names are preserved.
+#' After import, `ReadSciData()` repairs only names that make the data frame
+#' difficult or impossible to use in tidyverse workflows. Blank or `NA` names are
+#' renamed to `...unnamed_POSITION`, and duplicate names are made unique only when
+#' needed. Existing valid names are preserved.
 #'
 #' @param path Path to the file.
 #' @param sheet Sheet name or index for Excel files.
@@ -19,14 +18,16 @@
 #'   use `TRUE`, `FALSE`, or a character vector.
 #' @param range Optional Excel range passed to `readxl::read_excel()`.
 #' @param inspect Logical. If `TRUE`, inspect the file before importing.
-#' @param print_inspection Logical. If `TRUE`, print inspection results when
-#'   issues are detected.
+#' @param print_inspection Logical. If `TRUE`, print compact inspection results
+#'   when issues are detected. Defaults to `interactive()`.
 #' @param strict Logical. If `TRUE`, stop when inspection detects potential
 #'   issues.
 #' @param guess_max Maximum rows used for type guessing where supported.
 #' @param delim Delimiter for `.txt` files. Defaults to tab.
 #' @param repair_names Logical. If `TRUE`, repair blank and duplicate column
-#'   names after import so the result works with tidyverse verbs.
+#'   names after import.
+#' @param inspect_styles Logical. If `TRUE`, inspect Excel workbook formatting.
+#'   This can be slower and noisier for large workbooks.
 #' @param ... Additional arguments passed to the underlying reader.
 #'
 #' @return Imported data object. Inspection metadata is attached as the
@@ -39,11 +40,12 @@ ReadSciData <- function(
   col_names = TRUE,
   range = NULL,
   inspect = TRUE,
-  print_inspection = TRUE,
+  print_inspection = interactive(),
   strict = FALSE,
   guess_max = 10000,
   delim = NULL,
   repair_names = TRUE,
+  inspect_styles = FALSE,
   ...
 ) {
   if (length(path) != 1) {
@@ -61,74 +63,12 @@ ReadSciData <- function(
     inspection <- InspectFile(
       path = path,
       sheet = sheet,
+      check_styles = inspect_styles,
       quiet = TRUE
     )
 
     if (isTRUE(print_inspection) && length(inspection$issues) > 0) {
-      cat("File inspection\n")
-      cat("---------------\n")
-      cat("File: ", inspection$file_name, "\n", sep = "")
-      cat("Type: .", inspection$extension, "\n", sep = "")
-      cat("Size: ", inspection$file_size_mb, " MB\n", sep = "")
-
-      if (!is.null(inspection$sheets)) {
-        cat("Sheets: ", paste(inspection$sheets, collapse = ", "), "\n", sep = "")
-      }
-
-      if (!is.null(inspection$selected_sheet)) {
-        cat("Selected sheet: ", inspection$selected_sheet, "\n", sep = "")
-      }
-
-      if (!is.null(inspection$probable_header_row)) {
-        cat("Probable header row: ", inspection$probable_header_row, "\n", sep = "")
-      }
-
-      if (!is.null(inspection$first_nonempty_row)) {
-        cat("First non-empty row: ", inspection$first_nonempty_row, "\n", sep = "")
-      }
-
-      if (length(inspection$blank_columns) > 0) {
-        cat(
-          "Unnamed columns: ",
-          paste(inspection$blank_columns, collapse = ", "),
-          "\n",
-          sep = ""
-        )
-      }
-
-      if (length(inspection$duplicate_column_names) > 0) {
-        cat(
-          "Duplicate column names: ",
-          paste(inspection$duplicate_column_names, collapse = ", "),
-          "\n",
-          sep = ""
-        )
-      }
-
-      if (!is.na(inspection$styles_detected)) {
-        cat(
-          "Styles detected: ",
-          ifelse(isTRUE(inspection$styles_detected), "yes", "no"),
-          "\n",
-          sep = ""
-        )
-      }
-
-      cat("\nPotential issues:\n")
-
-      for (i in seq_along(inspection$issues)) {
-        cat(i, ". ", inspection$issues[[i]], "\n", sep = "")
-      }
-
-      if (length(inspection$notes) > 0) {
-        cat("\nNotes:\n")
-
-        for (i in seq_along(inspection$notes)) {
-          cat(i, ". ", inspection$notes[[i]], "\n", sep = "")
-        }
-      }
-
-      cat("\nRecommendation: ", inspection$recommendation, "\n\n", sep = "")
+      .PrintSciDataInspection(inspection)
     }
 
     if (isTRUE(strict) && length(inspection$issues) > 0) {
@@ -256,25 +196,13 @@ ReadSciData <- function(
       env[[object_names]]
     },
 
-    sav = haven::read_sav(
-      file = path,
-      ...
-    ),
+    sav = haven::read_sav(file = path, ...),
 
-    dta = haven::read_dta(
-      file = path,
-      ...
-    ),
+    dta = haven::read_dta(file = path, ...),
 
-    sas7bdat = haven::read_sas(
-      data_file = path,
-      ...
-    ),
+    sas7bdat = haven::read_sas(data_file = path, ...),
 
-    xpt = haven::read_xpt(
-      file = path,
-      ...
-    ),
+    xpt = haven::read_xpt(file = path, ...),
 
     parquet = {
       if (!requireNamespace("arrow", quietly = TRUE)) {
@@ -285,11 +213,7 @@ ReadSciData <- function(
         )
       }
 
-      arrow::read_parquet(
-        file = path,
-        as_data_frame = TRUE,
-        ...
-      )
+      arrow::read_parquet(file = path, as_data_frame = TRUE, ...)
     },
 
     feather = {
@@ -301,78 +225,39 @@ ReadSciData <- function(
         )
       }
 
-      arrow::read_feather(
-        file = path,
-        as_data_frame = TRUE,
-        ...
-      )
+      arrow::read_feather(file = path, as_data_frame = TRUE, ...)
     },
 
-    json = jsonlite::read_json(
-      path = path,
-      simplifyVector = TRUE,
-      ...
-    ),
+    json = jsonlite::read_json(path = path, simplifyVector = TRUE, ...),
 
     stop("Unsupported file type: .", ext, " for file ", path, call. = FALSE)
   )
 
   if (is.data.frame(out) && isTRUE(repair_names)) {
-    original_names <- names(out)
-    repaired_names <- original_names
+    name_repair <- .RepairSciDataNames(names(out))
+    names(out) <- name_repair$repaired_names
 
-    blank_positions <- which(is.na(repaired_names) | repaired_names == "")
+    if (!is.null(inspection)) {
+      inspection$import_name_repair <- name_repair
+    }
 
-    if (length(blank_positions) > 0) {
-      replacement_names <- paste0("...unnamed_", blank_positions)
-
-      repaired_names[blank_positions] <- replacement_names
-
+    if (length(name_repair$blank_positions) > 0) {
       message(
         "ReadSciData(): ",
-        length(blank_positions),
+        length(name_repair$blank_positions),
         " unnamed column",
-        ifelse(length(blank_positions) == 1, "", "s"),
-        " detected and renamed:\n",
-        paste0(
-          "  Column ",
-          blank_positions,
-          " -> ",
-          replacement_names,
-          collapse = "\n"
-        )
+        ifelse(length(name_repair$blank_positions) == 1, "", "s"),
+        " renamed to ",
+        paste(name_repair$repaired_names[name_repair$blank_positions], collapse = ", "),
+        "."
       )
     }
 
-    if (any(duplicated(repaired_names))) {
-      before_unique <- repaired_names
-      repaired_names <- make.unique(repaired_names, sep = "_")
-      changed_positions <- which(before_unique != repaired_names)
-
-      if (length(changed_positions) > 0) {
-        message(
-          "ReadSciData(): duplicate column names detected and repaired:\n",
-          paste0(
-            "  Column ",
-            changed_positions,
-            ": ",
-            before_unique[changed_positions],
-            " -> ",
-            repaired_names[changed_positions],
-            collapse = "\n"
-          )
-        )
-      }
-    }
-
-    names(out) <- repaired_names
-
-    if (!is.null(inspection)) {
-      inspection$import_name_repair <- list(
-        original_names = original_names,
-        repaired_names = repaired_names,
-        blank_positions = blank_positions,
-        changed_positions = which(original_names != repaired_names)
+    if (length(name_repair$duplicate_changed_positions) > 0) {
+      message(
+        "ReadSciData(): duplicate column names repaired at column(s) ",
+        paste(name_repair$duplicate_changed_positions, collapse = ", "),
+        "."
       )
     }
   }
@@ -381,4 +266,29 @@ ReadSciData <- function(
   attr(out, "scidata_inspection") <- inspection
 
   out
+}
+
+.RepairSciDataNames <- function(x) {
+  original_names <- x
+  repaired_names <- x
+
+  blank_positions <- which(is.na(repaired_names) | repaired_names == "")
+
+  if (length(blank_positions) > 0) {
+    repaired_names[blank_positions] <- paste0("...unnamed_", blank_positions)
+  }
+
+  before_unique <- repaired_names
+
+  if (any(duplicated(repaired_names))) {
+    repaired_names <- make.unique(repaired_names, sep = "_")
+  }
+
+  list(
+    original_names = original_names,
+    repaired_names = repaired_names,
+    blank_positions = blank_positions,
+    duplicate_changed_positions = which(before_unique != repaired_names),
+    changed_positions = which(original_names != repaired_names)
+  )
 }

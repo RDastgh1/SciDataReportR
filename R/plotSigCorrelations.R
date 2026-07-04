@@ -11,6 +11,20 @@
 #' @importFrom dplyr filter
 #' @importFrom sjlabelled get_label
 #' @param DataFrame \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
+#' @examples
+#' \donttest{
+#' # Build a correlation heatmap, then plot the significant pairs
+#' ch <- PlotCorrelationsHeatmap(
+#'   mtcars,
+#'   predictor_vars = c("mpg", "wt", "hp"),
+#'   outcome_vars = c("mpg", "wt", "hp")
+#' )
+#'
+#' plots <- plotSigCorrelations(mtcars, ch)
+#'
+#' # Display the first significant-correlation scatterplot
+#' plots[[1]]
+#' }
 #' @export
 plotSigCorrelations <- function(data,
     CorrelationHeatmapObject,

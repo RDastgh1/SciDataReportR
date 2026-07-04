@@ -18,3 +18,21 @@ Compatibility alias for \code{\link[=CreateSOMClusterModel]{CreateSOMClusterMode
 \code{CreateSOMClusterModel()} in new code because this function fits a reusable
 SOM clustering model.
 }
+\examples{
+\dontrun{
+# NOTE: Not run - see CreateSOMClusterModel() for the tracked get_data() bug.
+data(SampleData)
+
+Pipeline_SOMClust(
+  data = SampleData,
+  variables = c("age", "AXL", "Adiponectin", "Alpha_1_Antitrypsin"),
+  method = "exploratory",
+  k_range = 2:4,
+  models = 1
+)
+}
+}
+\seealso{
+\code{\link[=CreateSOMClusterModel]{CreateSOMClusterModel()}} for the canonical function and full
+examples.
+}

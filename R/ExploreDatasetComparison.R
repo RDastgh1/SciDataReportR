@@ -18,6 +18,17 @@
 #'
 #' @return An `htmltools::tagList()` object containing an interactive dashboard.
 #'
+#' @examples
+#' data(SampleData)
+#'
+#' old_data <- cbind(id = seq_len(nrow(SampleData)), SampleData)
+#' new_data <- old_data
+#' new_data$age[1:5] <- new_data$age[1:5] + 1
+#'
+#' comparison <- CompareDatasets(old_data, new_data, keys = "id")
+#'
+#' # Produce the interactive comparison dashboard
+#' ExploreDatasetComparison(comparison)
 #' @export
 ExploreDatasetComparison <- function(
     CompareObj,

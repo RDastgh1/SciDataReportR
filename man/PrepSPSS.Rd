@@ -10,6 +10,7 @@ PrepSPSS(
   name_map_path = NULL,
   return = c("list", "data", "map"),
   quiet = FALSE,
+  show_map = FALSE,
   max_length = 64,
   compress = "byte",
   ...
@@ -25,22 +26,24 @@ data are written using \code{haven::write_sav()}.}
 
 \item{return}{One of \code{"list"}, \code{"data"}, or \code{"map"}.}
 
-\item{quiet}{Logical. If \code{FALSE}, prints a short summary of renamed columns.}
+\item{quiet}{Logical. If \code{FALSE}, prints a compact summary.}
 
-\item{max_length}{Maximum variable-name length. Defaults to 64.}
+\item{show_map}{Logical. If \code{TRUE}, prints the full original-to-SPSS name map.
+The default is \code{FALSE} because large scientific datasets can have thousands
+of renamed variables.}
+
+\item{max_length}{Maximum SPSS variable-name length. Defaults to 64.}
 
 \item{compress}{Compression type passed to \code{haven::write_sav()}.}
 
-\item{...}{Additional arguments passed to \code{haven::write_sav()} if \code{path} is supplied.}
+\item{...}{Additional arguments passed to \code{haven::write_sav()} if \code{path} is
+supplied.}
 }
 \value{
 Depending on \code{return}, either a list, data frame, or name map.
 }
 \description{
 \code{PrepSPSS()} converts column names to SPSS-safe variable names while
-preserving the original column names as variable labels. It also returns a
-name map so users can track the original and exported names.
-}
-\details{
-This is useful before writing data to \code{.sav} using \code{haven::write_sav()}.
+preserving the original column names as variable labels. It also returns and
+optionally writes a name map so users can track original and exported names.
 }

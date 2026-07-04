@@ -157,6 +157,24 @@
 #'
 #' @param df \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
 #' @param id_col \strong{Deprecated} (since 19.15.0). Use \code{id_var} instead.
+#' @examples
+#' \dontrun{
+#' # NOTE: This example is kept in \dontrun{} because the function currently
+#' # errors with "could not find function 'get_data'": tidyLPA::get_data()
+#' # fails to dispatch under this call path (tracked bug, possibly a tidyLPA
+#' # version pin issue). The reduced settings below (k_range = 2:4, models = 1)
+#' # are otherwise fast enough to run once the bug is resolved.
+#' data(SampleData)
+#'
+#' model <- CreateSOMClusterModel(
+#'   data = SampleData,
+#'   variables = c("age", "AXL", "Adiponectin", "Alpha_1_Antitrypsin"),
+#'   method = "exploratory",
+#'   k_range = 2:4,
+#'   models = 1
+#' )
+#' model$plots$cluster_fit_summary_plot
+#' }
 #' @export
 CreateSOMClusterModel <- function(data,
     variables = NULL,
@@ -1451,6 +1469,21 @@ CreateSOMClusterModel <- function(data,
 #' @param ... Arguments passed to [CreateSOMClusterModel()].
 #' @return The same `Pipeline_SOMClust` object returned by
 #'   [CreateSOMClusterModel()].
+#' @seealso [CreateSOMClusterModel()] for the canonical function and full
+#'   examples.
+#' @examples
+#' \dontrun{
+#' # NOTE: Not run - see CreateSOMClusterModel() for the tracked get_data() bug.
+#' data(SampleData)
+#'
+#' Pipeline_SOMClust(
+#'   data = SampleData,
+#'   variables = c("age", "AXL", "Adiponectin", "Alpha_1_Antitrypsin"),
+#'   method = "exploratory",
+#'   k_range = 2:4,
+#'   models = 1
+#' )
+#' }
 #' @export
 Pipeline_SOMClust <- function(...) {
   CreateSOMClusterModel(...)

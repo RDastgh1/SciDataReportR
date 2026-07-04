@@ -9,6 +9,10 @@
 #' @return A ggplot object representing the relationship between the variables.
 #' @import ggplot2 ggstatsplot dplyr
 #' @param DataFrame \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
+#' @examples
+#' data(SampleData)
+#'
+#' PlotAssociations(SampleData, "Diagnosis", "Genotype")
 #' @export
 PlotAssociations <- function(data,
     Var1,

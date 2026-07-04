@@ -20,6 +20,17 @@
 #' @param xVars \strong{Deprecated} (since 19.15.0). Use \code{predictor_vars} instead.
 #' @param yVars \strong{Deprecated} (since 19.15.0). Use \code{outcome_vars} instead.
 #' @param covars \strong{Deprecated} (since 19.15.0). Use \code{covariates} instead.
+#' @examples
+#' data(SampleData)
+#'
+#' result <- PlotNumInteractionEffectsMatrix(
+#'   SampleData,
+#'   predictor_vars = c("Alpha_1_Antitrypsin", "Alpha_2_Macroglobulin"),
+#'   outcome_vars = c("AXL", "Adiponectin"),
+#'   interVar = "age"
+#' )
+#'
+#' result$p
 #' @export
 PlotNumInteractionEffectsMatrix <- function(data,
     predictor_vars,

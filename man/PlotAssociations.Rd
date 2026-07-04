@@ -29,3 +29,8 @@ A ggplot object representing the relationship between the variables.
 \description{
 This function generates scatter plots or box plots to visualize the relationship between two variables.
 }
+\examples{
+data(SampleData)
+
+PlotAssociations(SampleData, "Diagnosis", "Genotype")
+}

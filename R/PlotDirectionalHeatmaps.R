@@ -28,6 +28,15 @@
 #'   instead.
 #' @param yVars \strong{Deprecated} (since 19.15.0). Use \code{variables}
 #'   instead. If supplied, the old rectangular x-by-y display is still honored.
+#' @examples
+#' data(SampleData)
+#'
+#' result <- PlotDirectionalHeatmaps(
+#'   SampleData,
+#'   variables = c("age", "AXL", "Adiponectin", "Alpha_1_Antitrypsin")
+#' )
+#'
+#' result$Unadjusted$plot
 #' @export
 PlotDirectionalHeatmaps <- function(data,
     variables = NULL,

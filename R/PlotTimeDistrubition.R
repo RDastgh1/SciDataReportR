@@ -8,6 +8,13 @@
 #' @importFrom ggplot2 ggplot geom_boxplot scale_y_reverse theme_linedraw
 #' @importFrom dplyr %>%
 #' @param Data \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
+#' @examples
+#' set.seed(1)
+#' df <- data.frame(
+#'   Date = as.Date("2024-01-01") + sample(0:364, 200, replace = TRUE)
+#' )
+#'
+#' PlotTimeDistribution(df, DateVariable = "Date")
 #' @export
 PlotTimeDistribution <- function(data,
     DateVariable = "Date",

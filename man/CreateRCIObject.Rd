@@ -85,3 +85,23 @@ Supports both wide and long longitudinal data structures.
 
 Long format is recommended for datasets with more than two visits.
 }
+\examples{
+set.seed(1)
+rci_data <- data.frame(
+  id = rep(1:30, each = 2),
+  visit = rep(c("Baseline", "Followup"), 30),
+  Score = round(rnorm(60, mean = 50, sd = 10), 1)
+)
+
+rci <- CreateRCIObject(
+  data = rci_data,
+  variables = "Score",
+  DataFormat = "long",
+  id_var = "id",
+  VisitColumn = "visit",
+  BaselineVisit = "Baseline"
+)
+
+# Display a spaghetti plot from the returned object
+rci$Plots$Spaghetti$Score
+}

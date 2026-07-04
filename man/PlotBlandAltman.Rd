@@ -31,3 +31,10 @@ Generates a Bland-Altman plot to visualize the agreement between two variables.
 \note{
 This function is adapted from code written by Eran Shorer.
 }
+\examples{
+data(SampleData)
+
+result <- PlotBlandAltman(SampleData, "AXL", "Adiponectin")
+
+result$plot
+}

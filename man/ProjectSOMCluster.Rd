@@ -86,3 +86,21 @@ Missing data:
 and the cluster label.
 }
 }
+\examples{
+\dontrun{
+# NOTE: Not run - projection requires a trained SOM model, and
+# CreateSOMClusterModel() currently errors on the tracked get_data() bug
+# (see CreateSOMClusterModel() for details).
+data(SampleData)
+
+model <- CreateSOMClusterModel(
+  data = SampleData,
+  variables = c("age", "AXL", "Adiponectin", "Alpha_1_Antitrypsin"),
+  method = "finalize",
+  final_k = 3,
+  final_model = 1
+)
+
+projected <- ProjectSOMCluster(object = model, new_df = SampleData)
+}
+}
