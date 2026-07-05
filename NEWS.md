@@ -1,3 +1,5 @@
+# SciDataReportR 20.6.0
+
 # SciDataReportR 20.5.0
 
 * `UnivariateRegressionTable()` was renamed to `MakeUnivariateRegressionTable()` and `plotForestFromTable()` was renamed to `PlotForestFromTable()` to match the package's naming conventions. The old names remain available as backwards-compatible synonyms (soft-deprecated).
