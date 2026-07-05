@@ -1,0 +1,209 @@
+---
+title: "Getting started with SciDataReportR"
+vignette: >
+  %\VignetteIndexEntry{Getting started with SciDataReportR}
+  %\VignetteEngine{quarto::html}
+  %\VignetteEncoding{UTF-8}
+format:
+  html:
+    toc: true
+    toc-depth: 2
+execute:
+  eval: false
+  echo: true
+  warning: false
+  message: false
+---
+
+SciDataReportR helps researchers turn labelled scientific and clinical data into reproducible exploratory analyses, statistical comparisons, scientific visualizations, and report-ready outputs.
+
+This article is adapted from the SciDataReportR R/Medicine workflow narrative. It follows the common path from a raw researcher-native data frame to metadata-aware reporting and reusable analysis outputs.
+
+The examples use the current workflow-oriented function names. Older names such as `CreatePCATable()`, `CreateZScorePlot()`, and `Make_DataDictionary()` remain available as compatibility aliases.
+
+## Why this workflow matters
+
+Scientific and clinical datasets often contain many variables, labels, recoding rules, caveats, missing values, and potential relationships. Before formal statistical modeling, researchers need to understand the structure of the data, identify quality issues, inspect distributions, screen associations, and decide whether covariates or dimensionality reduction are needed.
+
+SciDataReportR organizes that work into repeatable steps:
+
+1. Import data and create metadata.
+2. Recode and relabel variables.
+3. Profile missingness and distributions.
+4. Create summary and comparison tables.
+5. Screen associations across variable families.
+6. Build dimensionality reduction or projection workflows.
+7. Save reproducible, report-ready outputs.
+
+## Load data
+
+Most SciDataReportR workflows start with a data frame and, when available, a variable-type table or codebook.
+
+```{r}
+library(SciDataReportR)
+
+data("SampleData")
+data("SampleVariableTypes")
+```
+
+For a project dataset, the starting point might look like this:
+
+```{r}
+library(readr)
+
+clinical_data <- read_csv("path/to/data.csv")
+variable_types <- read_csv("path/to/variable_types.csv")
+```
+
+## Create variable metadata
+
+Variable type templates make the analysis plan explicit. They help distinguish continuous, categorical, binary, ordinal, outcome, covariate, and feature variables before plotting or testing.
+
+```{r}
+variable_types <- CreateVariableTypesTemplate(SampleData)
+```
+
+Data dictionaries summarize the available variables and make the dataset easier to review with collaborators.
+
+```{r}
+data_dictionary <- MakeDataDictionary(SampleData)
+FormattedDataDictionary(SampleData)
+```
+
+## Recode and relabel data
+
+When a variable-type table contains recoding or label information, use it to produce an analysis-ready data frame while preserving scientific meaning.
+
+```{r}
+revalued <- RevalueData(SampleData, variable_types)
+analysis_data <- revalued$RevaluedData
+```
+
+## Inspect missingness
+
+Missing data patterns are one of the first bottlenecks in scientific analysis. They affect which variables are interpretable, which models are feasible, and whether downstream comparisons are biased.
+
+```{r}
+PlotMissingData(analysis_data, Relabel = TRUE)
+```
+
+## Create report-ready summaries
+
+Table 1 style summaries help reviewers and collaborators understand the cohort before detailed analyses.
+
+```{r}
+MakeTable1(analysis_data, TreatOrdinalAs = "Continuous")
+```
+
+Continuous and categorical profiling functions help researchers inspect variable distributions without hand-building repeated plots.
+
+```{r}
+continuous_vars <- getNumVars(analysis_data, Ordinal = FALSE)
+categorical_vars <- getCatVars(analysis_data)
+
+CreateSummaryTable(analysis_data, continuous_vars, Relabel = TRUE)
+PlotContinuousDistributions(analysis_data, continuous_vars[1:12], ncol = 3)
+PlotCategoricalDistributions(analysis_data, categorical_vars)
+```
+
+## Screen associations
+
+SciDataReportR supports both focused plots and matrix-style screening. This helps researchers identify relationships, candidate covariates, and patterns that may need dimensionality reduction.
+
+```{r}
+PlotAssociations(analysis_data, "age", "Adiponectin")
+PlotAssociations(analysis_data, "Diagnosis", "Ab_42")
+```
+
+Correlation heatmaps return structured objects that can be reused downstream.
+
+```{r}
+correlation_result <- PlotCorrelationsHeatmap(
+  analysis_data,
+  xVars = continuous_vars[1:5],
+  yVars = continuous_vars[20:40],
+  method = "pearson",
+  covars = NULL,
+  Relabel = TRUE,
+  Ordinal = FALSE
+)
+
+correlation_result$Unadjusted$plot
+```
+
+The output of `PlotCorrelationsHeatmap()` can be passed to `add_r_and_stars()`, and the returned plot can use `geom_starcaption()` to explain significance stars.
+
+```{r}
+add_r_and_stars(correlation_result) + geom_starcaption()
+```
+
+## Compare groups
+
+Group comparisons are a central part of clinical and life science reporting. `MakeComparisonTable()` provides report-ready summaries with optional covariates, effect sizes, and pairwise contrasts.
+
+```{r}
+MakeComparisonTable(
+  DataFrame = analysis_data,
+  CompVariable = "Diagnosis",
+  Variables = c("age", "tau", "p_tau"),
+  AddEffectSize = TRUE
+)
+```
+
+For high-dimensional group signals, z-score plots provide a compact visual summary across many variables.
+
+```{r}
+lab_measures <- continuous_vars[10:60]
+
+PlotZScore(
+  analysis_data,
+  TargetVar = "Diagnosis",
+  Variables = lab_measures,
+  sort = FALSE
+)
+```
+
+## Build reusable dimensionality reduction workflows
+
+PCA workflows can produce scree plots, loading summaries, and reusable projection objects. This is useful when a cohort-level transformation should be applied to future datasets.
+
+```{r}
+pca_object <- CreatePCAObject(
+  analysis_data,
+  lab_measures,
+  minThresh = 0.75,
+  scale = TRUE,
+  center = TRUE
+)
+
+pca_object$p_scree
+pca_object$Lollipop
+```
+
+Projection functions make the fit/apply split explicit:
+
+```{r}
+projected_scores <- ProjectPCA(new_data, pca_object)
+```
+
+## Reproducibility
+
+SciDataReportR workflows are designed to make repeated analysis steps visible and reusable. For reports, include session information and preserve the variable-type table, codebook, and any fit objects used for projections.
+
+```{r}
+sessionInfo()
+```
+
+## Next steps
+
+Use the reference index by workflow family:
+
+- Data setup, metadata, and codebooks.
+- Preprocessing and data quality.
+- Statistical comparison workflows.
+- Association, regression, and interaction workflows.
+- Visualization functions.
+- Dimensionality reduction, projection, and clustering.
+- Longitudinal and temporal workflows.
+
+Future article additions should expand this starter flow into focused workflows for codebook harmonization, visualization galleries, PCA/projection, SOM projection, normative T-scores, and longitudinal transitions.

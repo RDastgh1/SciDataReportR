@@ -1,0 +1,24 @@
+#' Use the EDATemplate Quarto Template
+#'
+#' Copies the EDATemplate template to the working directory.
+#' @param filename The name to save the Quarto file as (default:
+#'   "Reports/EDA_Report.qmd").
+#' @return Invisibly returns `filename` after copying the template. Called
+#'   for its side effect of creating the report file.
+#' @export
+use_EDATemplate <- function(filename = "Reports/EDA_Report.qmd") {
+  template_path <- system.file("rmarkdown/templates/quarto/skeleton/EDATemplate.qmd", package = "SciDataReportR")
+  if (template_path == "") {
+    stop("Template not found. Please reinstall the package.", call. = FALSE)
+  }
+  file.copy(template_path, filename, overwrite = FALSE)
+  message("Template copied to ", filename)
+
+  # Open the file in RStudio if available
+  if (interactive() && requireNamespace("rstudioapi", quietly = TRUE)) {
+    rstudioapi::navigateToFile(filename)
+  } else {
+    message("Open the file manually: ", filename)
+  }
+  invisible(filename)
+}

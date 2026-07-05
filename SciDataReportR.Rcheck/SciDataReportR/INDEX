@@ -1,0 +1,190 @@
+AddToCodebook           Add a new variable to a codebook
+ApplyFDRCorrection      Apply multiple-comparison correction across a
+                        p-value matrix
+ApplyNormativeTScores   Apply a normative T-score model to new data
+AssemblePlots           Assemble ggplot objects into a unified
+                        multi-panel figure
+CalcMScore              Calculate robust M-scores for numeric variables
+CalcZScore              Calculate Z-scores (or standardized scores) and
+                        return data + parameters
+CodebookMergeApp        Interactive codebook harmonization dashboard
+CombineCodebooks        Combine Two Codebooks with Conflict Detection
+CompareDatasets         Compare two versions of a dataset
+ConvertOrdinalToNumeric
+                        Convert ordinal variables to numeric
+CreateMCAObject         Create a reusable MCA object and visualizations
+CreateMCATable          Create MCA table and visualization
+CreateMScoreObject      Calculate robust M-scores for numeric variables
+CreateNormativeTScoreModel
+                        Create normative T-scores from a regression
+                        model
+CreateNormativeTScores
+                        Create normative T-scores from a regression
+                        model
+CreatePCAObject         Create a reusable PCA object and visualizations
+CreatePCATable          Create PCA table and visualization
+CreatePathwayPlot_KT    Create Kynurenine-Tryptophan Pathway Plot
+CreateProjectFolders    Create Project Folder Structure
+CreateRCIObject         Create a Reliable Change Index (RCI) object
+CreateSOMClusterModel   SOM + latent profile clustering pipeline (with
+                        AHP and distance baselines)
+CreateStatisticsTable   Create Statistics Table
+CreateSummaryTable      Create Summary Table
+CreateVariableTypesTemplate
+                        Create a Template for Variable Types
+CreateZScoreObject      Calculate Z-scores (or standardized scores) and
+                        return data + parameters
+CreateZScorePlot        Create a Z-score plot with statistical
+                        significance
+ExploreDatasetComparison
+                        Explore dataset comparison results
+                        interactively
+ExploreMergeValidation
+                        Explore merge validation results interactively
+ExtractPCAComponentSummary
+                        Extract PCA component summaries
+FormattedDataDictionary
+                        Create a formatted data dictionary table
+IQROutliers             Detect outliers using the Tukey IQR rule and
+                        visualize results
+InsertValues            Insert Values into a String Array
+InspectCategoricalSummary
+                        Inspect categorical variables
+InspectFile             Inspect a scientific data file before import
+KeepEnv                 Keep selected objects in an environment and
+                        remove everything else
+MakeComparisonTable     Make comparison table with covariate
+                        adjustment, effect sizes, and pairwise
+                        contrasts
+MakeDataDictionary      Create a data dictionary for a data frame
+MakeFacetCatComparisonTable
+                        Create a merged gtsummary table by faceting
+                        comparisons across multiple categorical
+                        variables
+MakeTable1              Create Summary Table using gtsummary
+MakeUnivariateRegressionTable
+                        Univariate Regression Table
+Make_DataDictionary     Create a data dictionary for a data frame
+MergeCodebooks          Merge multiple codebooks using harmonization
+                        rules
+MergeFragmentedRecords
+                        Merge fragmented records into a single
+                        observation
+Merge_ByClosestTime     Merge Two Data Frames by Closest Time
+MultivariableRegressionTable
+                        Multivariable regression table
+Pipeline_SOMClust       SOM + latent profile clustering pipeline (with
+                        AHP and distance baselines)
+Plot2GroupStats         Plot & Summarize Group Stats via
+                        MakeComparisonTable (BH q from p; SHAPE by p;
+                        COLOR by Category (vector or data frame);
+                        stable point size; palette via paletteer)
+PlotAnovaRelationshipsMatrix
+                        Plot ANOVA Relationships Matrix
+PlotAssociations        Plot Associations
+PlotBlandAltman         Plot Bland-Altman Agreement Plot
+PlotCatInteractionEffectsMatrix
+                        Plot Categorical Interaction Effects Matrix
+PlotCategoricalDistributions
+                        Plot categorical distributions
+PlotChiSqCovar          Plot Chi-Square Tests for Categorical
+                        Associations (optionally stratified by
+                        covariates)
+PlotClusterBoxplot      Plot cluster boxplots by variable
+PlotContinuousDistributions
+                        Plot Continuous Distributions
+PlotCorrelationsHeatmap
+                        Plot correlations heatmap
+PlotDatasetComparison   Plot dataset comparison diagnostics
+PlotDirectionalHeatmaps
+                        Create directional heatmaps across continuous &
+                        binary variables
+PlotForestFromTable     Create a Forest Plot from Univariate Regression
+                        Tables
+PlotInteractionEffectsContinuous
+                        Plot Single Interaction Effect
+PlotInteractionEffectsMatrix
+                        Plot Interaction Effects Matrix
+PlotMergeValidation     Plot merge validation diagnostics
+PlotMiningMatrix        PlotMiningMatrix
+PlotMissingData         Plot Missing Data
+PlotNumInteractionEffectsMatrix
+                        Plot Numerical Interaction Effects Matrix
+PlotPValueComparisons   Plot P-Value Comparisons
+PlotPartialRegressionScatter
+                        Partial Regression Plot
+PlotPathway_KT          Plot the kynurenine-tryptophan pathway
+PlotPhiHeatmap          Plot Phi Correlations Between Binary Variables
+PlotPointCorrelationsHeatmap
+                        Plot Point-Biserial Correlations Between Binary
+                        and Continuous Variables
+PlotSpiderChart         Plot a spider chart across continuous and
+                        binary variables
+PlotSplitViolin         Split violin with aligned half-boxplots,
+                        significance label, sample sizes, and
+                        label-aware title
+PlotSwimmerTransitions
+                        Plot swimmer-style transitions for a binary
+                        condition over repeated visits
+PlotTimeDistribution    Plot Time Distribution
+PlotTimeSwimmer         Plot longitudinal swimmer timelines
+PlotVolcanoEffects      Plot volcano-style association effects
+PlotZScore              Plot Z-score group differences with statistical
+                        significance
+PrepNumericData         Prepare numeric data safely for analysis
+PrepSPSS                Prepare a data frame for SPSS export
+ProjectPCA              Project PCA scores onto new data
+ProjectRCI              Project a trained RCI object onto new data
+ProjectSOMCluster       Project new data onto an existing SOM clinical
+                        phenotype space
+ProjectZScore           Project standardized scores onto new data using
+                        external parameters
+Project_SOMClust        Project new data onto an existing SOM clinical
+                        phenotype space
+Project_ZScore          Project standardized scores onto new data using
+                        external parameters
+ReValueFactors          Revalue Factors
+ReadSciData             Read a scientific data file with optional
+                        inspection
+ReplaceMissingCode      Replace Missing Codes with NA
+ReplaceMissingLabels    Replace Missing Labels in Dataframe Columns
+RevalueData             Revalue Data
+SampleData              SampleData for practicing SciDataReportR
+                        functions
+SampleVariableTypes     Example Dataset: SampleVariableTypes
+SummarizeTransitions    Summarize participant transitions for a binary
+                        longitudinal condition
+UpdateCodebook          Update an existing codebook based on a given
+                        dataframe
+UpdateDataDictionary    Update an existing data dictionary with new
+                        variables and types
+ValidateMerge           Validate a merged dataset against its source
+                        datasets
+add_r_and_stars         Add r-values and significance stars to a
+                        correlations heatmap
+calculate_pathway_results
+                        Calculate Pathway Results for Metabolite
+                        Comparisons
+createBinaryMapping     Create a Mapping Table for Binary Variables
+createFacetLabels       Create facet labels for ggplot2 based on
+                        variable labels in a data frame
+geom_starcaption        Add a Caption Explaining Star Annotations
+getBinaryVars           Identify Binary Variables
+getCatVars              Get Categorical Variables
+getNumVars              Get Numeric Variables
+merge_detail            Print a plain-text detail report for one
+                        safe_merge result
+merge_summary_table     Combine safe_merge logs into a single summary
+                        table
+not_in_operator         Negated "in" Operator
+plotPCA                 Plot PCA scores
+plotSigAssociations     Plot Significant Associations
+plotSigCorrelations     Plot Significant Correlations
+removeString            Remove Strings from a Vector
+reverseFactorLevels     Reverse Levels of Categorical Factors
+safe_merge              Merge two data frames and validate the result
+                        in one step
+use_EDATemplate         Use the EDATemplate Quarto Template
+use_GetStartedScript    Use the Get Started Script Template
+windsorize              Winsorize a numeric vector using SD or IQR
+                        thresholds

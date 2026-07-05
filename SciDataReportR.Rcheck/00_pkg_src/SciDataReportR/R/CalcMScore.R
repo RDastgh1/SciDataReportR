@@ -1,0 +1,229 @@
+#' Calculate robust M-scores for numeric variables
+#'
+#' Calculate median/MAD-based M-scores for selected numeric variables and return
+#' both the transformed data and the parameters needed to review or reuse the
+#' transformation.
+#'
+#' @param data A data frame.
+#' @param variables Character vector of numeric variables to transform. If
+#'   `NULL`, numeric variables are detected with [getNumVars()].
+#' @param names_prefix Prefix for generated M-score columns.
+#' @param RetainLabels Logical; keep variable labels when possible.
+#' @param RenameLabels Logical; rename generated labels when labels are retained.
+#' @param center Logical; subtract the median before scaling.
+#' @param scale Logical; divide by the median absolute deviation.
+#' @param constant Scaling constant passed to [stats::mad()].
+#'
+#' @return An object of class `"MScoreObj"`, a list with:
+#'   - `MScores`: data frame of M-score variables only
+#'   - `DataWithM`: original `df` plus M-score variables
+#'   - `Parameters`: data frame with `Variable`, `N`, `Median`, and `MAD`
+#'   - `Center`: logical flag used
+#'   - `Scale`: logical flag used
+#'   - `Constant`: MAD scaling constant used
+#'
+#' @param df \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
+#' @export
+CreateMScoreObject <- function(data,
+    variables = NULL,
+    names_prefix = "M_",
+    RetainLabels = TRUE,
+    RenameLabels = TRUE,
+    center = TRUE,
+    scale = TRUE,
+    constant = 1.4826,
+    df = lifecycle::deprecated()) {
+  # Deprecated argument shims (SciDataReportR 19.15.0)
+  if (lifecycle::is_present(df)) {
+    lifecycle::deprecate_warn("19.15.0", "CreateMScoreObject(df)", "CreateMScoreObject(data)")
+    data <- df
+  }
+  if (!missing(data)) df <- data
+
+
+  # Validate inputs
+
+  if (!is.data.frame(df)) {
+    stop("df must be a data frame.")
+  }
+
+  if (is.null(variables)) {
+    if (!requireNamespace("SciDataReportR", quietly = TRUE)) {
+      stop("SciDataReportR is required to auto-detect numeric variables via getNumVars().")
+    }
+
+    variables <- SciDataReportR::getNumVars(df, Ordinal = FALSE)
+  }
+
+  if (!is.character(variables)) {
+    stop("variables must be a character vector of variable names.")
+  }
+
+  missing_vars <- setdiff(variables, names(df))
+
+  if (length(missing_vars) > 0) {
+    stop(
+      "The following variables are not in df: ",
+      paste(missing_vars, collapse = ", ")
+    )
+  }
+
+  is_num <- vapply(df[variables], is.numeric, logical(1))
+
+  if (!all(is_num)) {
+    warning(
+      "Dropping non-numeric variables from M-score calculation: ",
+      paste(variables[!is_num], collapse = ", ")
+    )
+
+    variables <- variables[is_num]
+  }
+
+  if (length(variables) == 0) {
+    stop("No numeric variables available to calculate M-scores.")
+  }
+
+  if (!is.character(names_prefix) || length(names_prefix) != 1 || is.na(names_prefix)) {
+    stop("names_prefix must be a single character string.")
+  }
+
+  if (!is.logical(RetainLabels) || length(RetainLabels) != 1 || is.na(RetainLabels)) {
+    stop("RetainLabels must be TRUE or FALSE.")
+  }
+
+  if (!is.logical(RenameLabels) || length(RenameLabels) != 1 || is.na(RenameLabels)) {
+    stop("RenameLabels must be TRUE or FALSE.")
+  }
+
+  if (!is.logical(center) || length(center) != 1 || is.na(center)) {
+    stop("center must be TRUE or FALSE.")
+  }
+
+  if (!is.logical(scale) || length(scale) != 1 || is.na(scale)) {
+    stop("scale must be TRUE or FALSE.")
+  }
+
+  if (!is.numeric(constant) || length(constant) != 1 || is.na(constant) || constant <= 0) {
+    stop("constant must be a single positive numeric value.")
+  }
+
+  # Compute parameters
+
+  medians <- vapply(
+    df[variables],
+    function(x) stats::median(x, na.rm = TRUE),
+    numeric(1)
+  )
+
+  mads <- vapply(
+    df[variables],
+    function(x) {
+      med <- stats::median(x, na.rm = TRUE)
+
+      stats::mad(
+        x,
+        center = med,
+        constant = constant,
+        na.rm = TRUE
+      )
+    },
+    numeric(1)
+  )
+
+  ns <- vapply(
+    df[variables],
+    function(x) sum(!is.na(x)),
+    integer(1)
+  )
+
+  params <- data.frame(
+    Variable = variables,
+    N = ns,
+    Median = medians,
+    MAD = mads,
+    stringsAsFactors = FALSE
+  )
+
+  # Compute M-scores
+
+  transform_fun <- function(x, med, mad_value) {
+    if (is.na(mad_value) || mad_value == 0) {
+      mad_value <- NA_real_
+    }
+
+    out <- x
+
+    if (center) {
+      out <- out - med
+    }
+
+    if (scale) {
+      if (is.na(mad_value)) {
+        out[] <- NA_real_
+      } else {
+        out <- out / mad_value
+      }
+    }
+
+    out
+  }
+
+  mscore_list <- mapply(
+    FUN = transform_fun,
+    df[variables],
+    medians,
+    mads,
+    SIMPLIFY = FALSE
+  )
+
+  mscore_df <- as.data.frame(mscore_list, stringsAsFactors = FALSE)
+  names(mscore_df) <- paste0(names_prefix, variables)
+
+  # Handle labels
+
+  if (RetainLabels && requireNamespace("Hmisc", quietly = TRUE)) {
+    for (v in variables) {
+      original_label <- Hmisc::label(df[[v]])
+
+      if (!is.null(original_label) && nzchar(original_label)) {
+        new_name <- paste0(names_prefix, v)
+
+        if (RenameLabels) {
+          Hmisc::label(mscore_df[[new_name]]) <- paste0(names_prefix, original_label)
+        } else {
+          Hmisc::label(mscore_df[[new_name]]) <- original_label
+        }
+      }
+    }
+  }
+
+  # Return result
+
+  combined <- cbind(df, mscore_df)
+
+  out <- list(
+    MScores = mscore_df,
+    DataWithM = combined,
+    Parameters = params,
+    Center = center,
+    Scale = scale,
+    Constant = constant
+  )
+
+  class(out) <- c("MScoreObj", class(out))
+
+  out
+}
+
+#' Calculate robust M-scores for numeric variables
+#'
+#' Compatibility alias for [CreateMScoreObject()]. Prefer
+#' `CreateMScoreObject()` in new code because this function returns reusable
+#' M-score parameters.
+#'
+#' @param ... Arguments passed to [CreateMScoreObject()].
+#' @return The same `MScoreObj` returned by [CreateMScoreObject()].
+#' @export
+CalcMScore <- function(...) {
+  CreateMScoreObject(...)
+}

@@ -1,0 +1,301 @@
+---
+title: "Exploratory discovery with PlotMiningMatrix()"
+description: "Rapidly identify patterns, anomalies, covariates, and candidate hypotheses across an entire dataset."
+format:
+  html:
+    toc: true
+    number-sections: true
+execute:
+  warning: false
+  message: false
+vignette: >
+  %\VignetteIndexEntry{Exploratory discovery with PlotMiningMatrix()}
+  %\VignetteEngine{quarto::html}
+  %\VignetteEncoding{UTF-8}
+---
+
+## Overview
+
+`PlotMiningMatrix()` is designed for exploratory data mining and hypothesis generation.
+
+Rather than requiring separate correlation analyses, ANOVA models, and chi-square tests, the function automatically identifies appropriate statistical relationships based on variable type and summarizes the results in a single visualization.
+
+This function is particularly useful for:
+
+* Identifying unexpected relationships
+* Detecting potential confounders and covariates
+* Discovering clusters of related variables
+* Generating hypotheses for future analyses
+* Performing exploratory quality control
+* Prioritizing variables for downstream modeling
+
+Unlike a traditional correlation matrix, `PlotMiningMatrix()` can simultaneously evaluate:
+
+* Continuous vs continuous relationships
+* Categorical vs continuous relationships
+* Categorical vs categorical relationships
+
+using appropriate statistical methods for each comparison.
+
+## Load packages
+
+```{r}
+library(SciDataReportR)
+library(dplyr)
+library(plotly)
+```
+
+## Load example data
+
+```{r}
+data("SampleData")
+data("SampleVariableTypes")
+
+RevaluedObj <- RevalueData(
+  SampleData,
+  SampleVariableTypes
+)
+
+df_Revalued <- RevaluedObj$RevaluedData
+```
+
+## Create a mining matrix
+
+For exploratory mining it is often useful to evaluate nearly the entire dataset simultaneously.
+
+```{r}
+vars_mining <- names(df_Revalued)
+
+length(vars_mining)
+```
+
+```{r}
+#| column: screen
+#| fig-height: 12
+#| fig-width: 18
+MiningObj <- PlotMiningMatrix(
+  Data = df_Revalued,
+  OutcomeVars = vars_mining
+)
+
+MiningObj$Unadjusted$plot
+```
+
+The resulting visualization summarizes hundreds or thousands of statistical relationships simultaneously.
+
+Color intensity represents effect size magnitude, while symbol size and shape represent statistical significance.
+
+## Understanding the statistical tests
+
+`PlotMiningMatrix()` automatically selects appropriate analyses based on variable type.
+
+| Variable Types | Statistical Test |
+|---------------|------------------|
+| Continuous vs Continuous | Correlation |
+| Categorical vs Continuous | ANOVA |
+| Categorical vs Categorical | Chi-square |
+
+This allows mixed datasets to be explored without manually specifying separate analyses.
+
+## Interpreting the mining matrix
+
+The mining matrix is best viewed as a discovery tool rather than a confirmatory analysis.
+
+Questions it can help answer include:
+
+* Which biomarkers appear related to diagnosis?
+* Which demographic variables may act as covariates?
+* Which variables tend to cluster together?
+* Are there unexpected associations worth investigating?
+* Are there patterns suggesting data quality issues?
+
+Large effect sizes combined with strong significance often represent promising targets for follow-up analyses.
+
+## Parametric analyses
+
+By default, parametric analyses are used.
+
+```{r}
+#| column: screen
+#| fig-height: 12
+#| fig-width: 18
+#| 
+MiningParametric <- PlotMiningMatrix(
+  Data = df_Revalued,
+  OutcomeVars = vars_mining,
+  Parametric = TRUE
+)
+
+MiningParametric$Unadjusted$plot
+```
+
+For continuous variables this uses Pearson correlations and parametric group comparisons.
+
+## Nonparametric analyses
+
+For skewed variables or datasets containing substantial outliers, nonparametric methods may be preferable.
+
+```{r}
+#| column: screen
+#| fig-height: 12
+#| fig-width: 18
+
+
+MiningNonParametric <- PlotMiningMatrix(
+  Data = df_Revalued,
+  OutcomeVars = vars_mining,
+  Parametric = FALSE
+)
+
+MiningNonParametric$Unadjusted$plot
+```
+
+This switches continuous-variable analyses to Spearman correlations and uses nonparametric group comparisons where applicable.
+
+## Unadjusted significance
+
+The default plot displays significance based on unadjusted p-values.
+
+```{r}
+#| column: screen
+#| fig-height: 12
+#| fig-width: 18
+MiningObj$Unadjusted$plot
+```
+
+This view is useful for exploratory analyses and hypothesis generation.
+
+## FDR-corrected significance
+
+Because large mining matrices may involve hundreds or thousands of statistical tests, multiple-testing correction is often recommended.
+
+```{r}
+#| column: screen
+#| fig-height: 12
+#| fig-width: 18
+MiningObj$FDRCorrected$plot
+```
+
+The FDR-corrected visualization highlights relationships that remain significant after accounting for multiple comparisons.
+
+In exploratory studies, investigators often review both unadjusted and FDR-corrected results.
+
+## Examining the underlying results
+
+The statistical results are stored in the returned object.
+
+```{r}
+head(
+  MiningObj$Unadjusted$PvalTable
+)
+```
+
+The table includes:
+
+* Variables involved in the association
+* Effect size estimates
+* Raw p-values
+* FDR-adjusted p-values
+* Statistical test type
+
+## Interactive exploration
+
+Large mining matrices can be easier to interpret interactively.
+
+```{r}
+#| column: screen
+#| fig-height: 12
+#| fig-width: 18
+#| 
+ggplotly(
+  MiningObj$Unadjusted$plot
+)
+```
+
+Interactive plots allow users to:
+
+* Hover over relationships
+* Zoom into regions of interest
+* Explore large datasets more efficiently
+
+Interactive exploration is particularly useful for large omics and clinical datasets.
+
+## Identifying potential covariates
+
+One common use of `PlotMiningMatrix()` is identifying variables that may need to be included as covariates in downstream analyses.
+
+For example:
+
+* Age may be associated with multiple biomarkers.
+* Education may be associated with cognitive outcomes.
+* Site may be associated with assay measurements.
+
+Variables showing broad associations throughout the mining matrix often deserve consideration as potential confounders.
+
+
+## Targeted mining
+
+Although `PlotMiningMatrix()` can evaluate nearly an entire dataset, it can also be restricted to a subset of variables.
+
+```{r}
+selected_vars <- c(
+  "Diagnosis",
+  "age",
+  "sex",
+  "AXL",
+  "Calbindin",
+  "Ferritin",
+  "MMP7"
+)
+
+MiningSubset <- PlotMiningMatrix(
+  Data = df_Revalued,
+  OutcomeVars = selected_vars
+)
+
+MiningSubset$Unadjusted$plot
+```
+
+This approach is useful when focusing on a particular biological pathway or clinical domain.
+
+## Recommended workflow
+
+A common SciDataReportR workflow is:
+
+1. Use `PlotMiningMatrix()` to identify potentially interesting relationships.
+2. Review FDR-corrected results.
+3. Identify potential covariates.
+4. Visualize significant findings using `plotSigAssociations()`.
+5. Perform targeted follow-up analyses using:
+   * `MakeComparisonTable()`
+   * `PlotCorrelationsHeatmap()`
+   * Regression models
+   * Longitudinal analyses
+
+## Summary
+
+`PlotMiningMatrix()` provides a rapid overview of relationships within a dataset and is particularly useful for exploratory analyses and hypothesis generation.
+
+Key features include:
+
+* Automatic test selection
+* Mixed continuous and categorical variables
+* Effect size visualization
+* FDR correction
+* Identification of candidate covariates
+* Interactive exploration
+* Follow-up visualization workflows
+
+## Related functions
+
+* `PlotCorrelationsHeatmap()`
+* `PlotAnovaRelationshipsMatrix()`
+* `PlotChiSqCovar()`
+* `plotSigAssociations()`
+* `MakeComparisonTable()`
+
+## Session information
+
+```{r}
+sessionInfo()
+```

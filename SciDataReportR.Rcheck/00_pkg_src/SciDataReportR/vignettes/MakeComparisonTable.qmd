@@ -1,0 +1,239 @@
+---
+title: "Creating comparison tables with MakeComparisonTable()"
+description: "Generate publication-ready comparison tables with effect sizes, covariate adjustment, and pairwise comparisons."
+format:
+  html:
+    toc: true
+    number-sections: true
+execute:
+  warning: false
+  message: false
+vignette: >
+  %\VignetteIndexEntry{Creating comparison tables with MakeComparisonTable()}
+  %\VignetteEngine{quarto::html}
+  %\VignetteEncoding{UTF-8}
+---
+
+## Overview
+
+`MakeComparisonTable()` creates publication-ready summary tables for comparing groups across continuous and categorical variables.
+
+This vignette demonstrates:
+
+* Basic group comparisons
+* Adding effect sizes
+* Parametric versus nonparametric testing
+* Covariate adjustment
+* Pairwise comparisons
+* Reference-group comparisons
+* Automatic use of variable labels
+
+## Load packages
+
+```{r}
+library(SciDataReportR)
+library(dplyr)
+```
+
+## Load example data
+
+SciDataReportR includes an example dataset and codebook.
+
+```{r}
+data("SampleData")
+data("SampleVariableTypes")
+
+RevaluedObj <- RevalueData(
+  SampleData,
+  SampleVariableTypes
+) 
+df_Revalued <- RevaluedObj$RevaluedData
+```
+
+
+## Basic comparison table
+
+The most common use case is comparing groups across a set of variables.
+
+Here we compare diagnostic groups.
+
+```{r}
+tbl_basic <- MakeComparisonTable(
+  df_Revalued,
+  CompVariable = "Diagnosis",
+  Variables = c(
+    "age",
+    "sex",
+    "Genotype",
+    "AXL",
+    "Calbindin",
+    "Ferritin",
+    "MMP7"
+  )
+)
+
+tbl_basic
+```
+
+The resulting table contains:
+
+* Descriptive statistics
+* Group comparison tests
+* P-values
+* Automatically applied variable labels
+
+## Adding effect sizes
+
+Effect sizes provide information about the magnitude of group differences.
+
+```{r}
+tbl_effectsize <- MakeComparisonTable(
+  df_Revalued,
+  CompVariable = "Diagnosis",
+  Variables = c(
+    "age",
+    "sex",
+    "Genotype",
+    "AXL",
+    "Calbindin",
+    "Ferritin",
+    "MMP7"
+  ),
+  AddEffectSize = TRUE
+)
+
+tbl_effectsize
+```
+
+When reporting group differences, effect sizes should generally be interpreted alongside p-values.
+
+
+
+## Nonparametric analyses
+
+Nonparametric testing uses rank-based methods that are more robust to non-normal distributions.
+
+```{r}
+tbl_nonparametric <- MakeComparisonTable(
+  df_Revalued,
+  CompVariable = "Diagnosis",
+  Variables = c(
+    "age",
+    "sex",
+    "Genotype",
+    "AXL",
+    "Calbindin",
+    "Ferritin",
+    "MMP7"
+  ),
+  Parametric = FALSE,
+  AddEffectSize = TRUE
+)
+
+tbl_nonparametric
+```
+
+
+## Including Covariates
+
+Age is frequently included as a covariate in biomedical analyses.
+
+The example below evaluates group differences after accounting for age.
+
+```{r}
+tbl_covariate <- MakeComparisonTable(
+  df_Revalued,
+  CompVariable = "Diagnosis",
+  Variables = c(
+    "sex",
+    "Genotype",
+    "AXL",
+    "Calbindin",
+    "Ferritin",
+    "MMP7"
+  ),
+  Covariates = "age",
+  AddEffectSize = TRUE
+)
+
+tbl_covariate
+```
+
+Covariate adjustment can help determine whether observed group differences persist after controlling for potential confounding factors.
+
+## Pairwise comparisons
+
+When comparing more than two groups, pairwise comparisons can identify which groups differ from one another.
+
+
+```{r}
+#| column: screen
+tbl_pairwise <- MakeComparisonTable(
+  df_Revalued,
+  CompVariable = "Genotype",
+  Variables = c(
+    "Diagnosis",
+    "age",
+    "sex",
+    "AXL",
+    "Calbindin",
+    "Ferritin",
+    "MMP7"
+  ),
+  AddPairwise = TRUE,
+  AddEffectSize = TRUE
+)
+
+tbl_pairwise
+```
+
+You can also choose a referent and compare only to that
+
+```{r}
+tbl_pairwise_referent <- MakeComparisonTable(
+  df_Revalued,
+  CompVariable = "Genotype",
+  Variables = c(
+    "Diagnosis",
+    "age",
+    "sex",
+    "AXL",
+    "Calbindin",
+    "Ferritin",
+    "MMP7"
+  ),
+  AddPairwise = TRUE,
+  AddEffectSize = TRUE,
+  Referent = "E3E3"
+)
+
+tbl_pairwise_referent
+```
+
+
+## Summary
+
+`MakeComparisonTable()` supports:
+
+* Descriptive statistics
+* Parametric analyses
+* Nonparametric analyses
+* Effect sizes
+* Covariate adjustment
+* Pairwise testing
+* Reference-group comparisons
+* Automatic variable labeling
+
+## Related functions
+
+* `RevalueData()`
+* `CreateCodebook()`
+* `PlotBoxPlot()`
+* `PlotVolcanoEffects()`
+* `CompareDatasets()`
+
+## Session information
+
+```{r}
+sessionInfo()
+```
