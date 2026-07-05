@@ -1,5 +1,5 @@
 ---
-title: "Screening predictors with UnivariateRegressionTable()"
+title: "Screening predictors with MakeUnivariateRegressionTable()"
 description: "Generate publication-ready regression tables and forest plots across multiple outcomes and predictors."
 format:
   html:
@@ -9,14 +9,14 @@ execute:
   warning: false
   message: false
 vignette: >
-  %\VignetteIndexEntry{Screening predictors with UnivariateRegressionTable()}
+  %\VignetteIndexEntry{Screening predictors with MakeUnivariateRegressionTable()}
   %\VignetteEngine{quarto::html}
   %\VignetteEncoding{UTF-8}
 ---
 
 ## Overview
 
-`UnivariateRegressionTable()` performs large numbers of regression analyses simultaneously and returns publication-ready summary tables.
+`MakeUnivariateRegressionTable()` performs large numbers of regression analyses simultaneously and returns publication-ready summary tables.
 
 This approach is particularly useful for:
 
@@ -80,10 +80,10 @@ PredictorVars <- c(
 ## Create regression tables
 
 ```{r}
-UniObj <- UnivariateRegressionTable(
-  Data = df_Revalued,
-  OutcomeVars = OutcomeVars,
-  PredictorVars = PredictorVars
+UniObj <- MakeUnivariateRegressionTable(
+  data = df_Revalued,
+  outcome_vars = OutcomeVars,
+  predictor_vars = PredictorVars
 )
 ```
 
@@ -114,11 +114,11 @@ Covariates can be included in every regression model.
 For example, age is commonly included when evaluating biomarker associations.
 
 ```{r}
-UniObj_Covar <- UnivariateRegressionTable(
-  Data = df_Revalued,
-  OutcomeVars = OutcomeVars,
-  PredictorVars = PredictorVars,
-  Covars = "age"
+UniObj_Covar <- MakeUnivariateRegressionTable(
+  data = df_Revalued,
+  outcome_vars = OutcomeVars,
+  predictor_vars = PredictorVars,
+  covariates = "age"
 )
 ```
 
@@ -133,10 +133,10 @@ This allows investigators to determine whether associations remain significant a
 When predictors are measured on different scales, standardized coefficients can simplify interpretation.
 
 ```{r}
-UniObj_Std <- UnivariateRegressionTable(
-  Data = df_Revalued,
-  OutcomeVars = OutcomeVars,
-  PredictorVars = PredictorVars,
+UniObj_Std <- MakeUnivariateRegressionTable(
+  data = df_Revalued,
+  outcome_vars = OutcomeVars,
+  predictor_vars = PredictorVars,
   Standardize = TRUE
 )
 ```
@@ -161,7 +161,7 @@ For example:
 
 ```{r}
 summary(
-  UniObj$ModelSummaries$MMSE$AXL
+  UniObj$ModelSummaries$Diagnosis$Ferritin
 )
 ```
 
@@ -172,7 +172,7 @@ This allows additional diagnostics and custom analyses.
 A forest plot provides a compact visual summary of regression results.
 
 ```{r}
-ForestPlot <- plotForestFromTable(
+ForestPlot <- PlotForestFromTable(
   UniObj
 )
 
@@ -191,7 +191,7 @@ Forest plots make it easy to identify:
 The same visualization can be generated using adjusted models.
 
 ```{r}
-plotForestFromTable(
+PlotForestFromTable(
   UniObj_Covar
 )
 ```
@@ -202,16 +202,16 @@ Comparing adjusted and unadjusted models can help identify associations that may
 
 A common workflow is:
 
-1. Use `UnivariateRegressionTable()` to screen large numbers of predictors.
+1. Use `MakeUnivariateRegressionTable()` to screen large numbers of predictors.
 2. Review the formatted table.
 3. Compare standardized and unstandardized results.
 4. Add important covariates.
-5. Visualize findings using `plotForestFromTable()`.
+5. Visualize findings using `PlotForestFromTable()`.
 6. Follow up significant findings using multivariable models.
 
 ## Summary
 
-`UnivariateRegressionTable()` provides a rapid screening framework for evaluating many predictors across multiple outcomes.
+`MakeUnivariateRegressionTable()` provides a rapid screening framework for evaluating many predictors across multiple outcomes.
 
 Key features include:
 
@@ -225,7 +225,7 @@ Key features include:
 
 ## Related functions
 
-* `plotForestFromTable()`
+* `PlotForestFromTable()`
 * `MakeComparisonTable()`
 * `PlotMiningMatrix()`
 * `PlotCorrelationsHeatmap()`

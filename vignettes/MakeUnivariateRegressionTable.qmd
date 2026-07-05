@@ -1,5 +1,5 @@
 ---
-title: "Screening Outcomes and Predictors with UnivariateRegressionTable()"
+title: "Screening Outcomes and Predictors with MakeUnivariateRegressionTable()"
 description: "Create label-aware univariate regression tables across multiple outcomes and predictors."
 format:
   html:
@@ -9,14 +9,14 @@ execute:
   warning: false
   message: false
 vignette: >
-  %\VignetteIndexEntry{Screening Outcomes and Predictors with UnivariateRegressionTable()}
+  %\VignetteIndexEntry{Screening Outcomes and Predictors with MakeUnivariateRegressionTable()}
   %\VignetteEngine{quarto::html}
   %\VignetteEncoding{UTF-8}
 ---
 
 ## Overview
 
-`UnivariateRegressionTable()` screens outcome-predictor relationships and returns a report-facing table, a detail table, fitted models, and metadata.
+`MakeUnivariateRegressionTable()` screens outcome-predictor relationships and returns a report-facing table, a detail table, a tidy results dataframe, fitted models, and metadata.
 
 Use it when you want to quickly ask:
 
@@ -24,11 +24,15 @@ Use it when you want to quickly ask:
 * Do associations persist after covariate adjustment?
 * Are the displayed labels and logistic event levels what I think they are?
 
-The function now chooses the model family automatically:
+The function chooses the model family automatically:
 
 * Numeric outcomes use linear regression.
 * Two-level factor, character, or logical outcomes use logistic regression.
 * Logistic estimates are exponentiated by default and reported as odds ratios.
+
+::: {.callout-note}
+`MakeUnivariateRegressionTable()` was previously named `UnivariateRegressionTable()`. The old name still works as a backwards-compatible synonym, so existing scripts continue to run.
+:::
 
 ## Load packages
 
@@ -76,10 +80,10 @@ vars_Predictors <- c(
 
 ```{r}
 #| label: FitLinearScreen
-Reg_Obj_Un <- UnivariateRegressionTable(
-  Data = df_Revalued,
-  OutcomeVars = vars_Outcomes,
-  PredictorVars = vars_Predictors,
+Reg_Obj_Un <- MakeUnivariateRegressionTable(
+  data = df_Revalued,
+  outcome_vars = vars_Outcomes,
+  predictor_vars = vars_Predictors,
   Standardize = TRUE
 )
 ```
@@ -100,17 +104,35 @@ Reg_Obj_Un$FormattedTable
 Reg_Obj_Un$LargeTable
 ```
 
+## Tidy results dataframe
+
+`Results` holds the underlying numbers as a plain dataframe: one row per estimated term, with the estimate, standard error, confidence interval, p-value, and the labels used in the tables.
+
+```{r}
+#| label: DisplayResults
+Reg_Obj_Un$Results
+```
+
+Because it is an ordinary dataframe, you can filter, sort, or export it directly, and pass it (or a subset of it) straight to `PlotForestFromTable()`.
+
+```{r}
+#| label: FilterResults
+Reg_Obj_Un$Results %>%
+  filter(Significant) %>%
+  arrange(PValue)
+```
+
 ## Covariate adjustment
 
-Use `Covars` when each screen should adjust for the same covariates.
+Use `covariates` when each screen should adjust for the same covariates.
 
 ```{r}
 #| label: FitCovariateScreen
-Reg_Obj_Un_Covar <- UnivariateRegressionTable(
-  Data = df_Revalued,
-  OutcomeVars = vars_Outcomes,
-  PredictorVars = vars_Predictors,
-  Covars = "sex",
+Reg_Obj_Un_Covar <- MakeUnivariateRegressionTable(
+  data = df_Revalued,
+  outcome_vars = vars_Outcomes,
+  predictor_vars = vars_Predictors,
+  covariates = "sex",
   Standardize = TRUE
 )
 
@@ -123,10 +145,10 @@ The same function also works when the question is one outcome against many candi
 
 ```{r}
 #| label: FitManyPredictors
-Reg_Obj_ManyPredictors <- UnivariateRegressionTable(
-  Data = df_Revalued,
-  OutcomeVars = "Sortilin",
-  PredictorVars = c("Diagnosis", "age", "Calbindin", "Ferritin", "MMP7"),
+Reg_Obj_ManyPredictors <- MakeUnivariateRegressionTable(
+  data = df_Revalued,
+  outcome_vars = "Sortilin",
+  predictor_vars = c("Diagnosis", "age", "Calbindin", "Ferritin", "MMP7"),
   Standardize = TRUE
 )
 
@@ -139,10 +161,10 @@ Binary outcomes use logistic regression automatically. By default, estimates are
 
 ```{r}
 #| label: FitLogisticScreen
-Reg_Obj_Logistic <- UnivariateRegressionTable(
-  Data = df_Revalued,
-  OutcomeVars = "Diagnosis",
-  PredictorVars = c("age", "Calbindin", "Ferritin", "MMP7"),
+Reg_Obj_Logistic <- MakeUnivariateRegressionTable(
+  data = df_Revalued,
+  outcome_vars = "Diagnosis",
+  predictor_vars = c("age", "Calbindin", "Ferritin", "MMP7"),
   Standardize = TRUE
 )
 
@@ -172,6 +194,6 @@ summary(Reg_Obj_ManyPredictors$ModelSummaries$Sortilin$Ferritin)
 
 ```{r}
 #| label: Reproducibility
-# save.image("UnivariateRegressionTable_workspace.RData")
+# save.image("MakeUnivariateRegressionTable_workspace.RData")
 print(sessionInfo())
 ```

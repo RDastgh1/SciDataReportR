@@ -20,49 +20,21 @@ ValidateMerge(
 \item{MergedData}{The merged data frame to audit.}
 
 \item{keys}{Character vector of key variables intended to define the merge.
-Multiple keys are supported, such as \code{c("study_id", "TimePoint")}.}
+Multiple keys are supported, such as \code{c("study_id", "visit")}.}
 
 \item{Keys}{Deprecated. Use \code{keys} instead.}
 }
 \value{
-A list with merge validation results, including:
-\describe{
-\item{SummaryText}{A plain-text summary of the merge audit.}
-\item{ReadyForAnalysis}{Logical value indicating whether major merge-integrity issues were absent.}
-\item{Summary}{One-row tibble with core merge metrics.}
-\item{SummaryTable}{Metric/value summary table with Status as the first row.}
-\item{SummaryDisplay}{Formatted kable table with color-coded status.}
-\item{Fingerprint}{Tibble comparing rows, columns, and unique key combinations across datasets.}
-\item{KeyTypes}{Tibble showing key variable classes before coercion.}
-\item{Checks}{Tibble summarizing validation checks and pass/warning/fail status.}
-\item{SuggestedActions}{Tibble with suggested review steps.}
-\item{Relationship}{Tibble describing key uniqueness in LeftData, RightData, and MergedData.}
-\item{IDCoverage}{List containing Matching, LeftOnly, and RightOnly complete key combinations.}
-\item{DuplicateKeys}{List containing duplicated complete-key rows from Left, Right, and Merged datasets.}
-\item{OverlappingVariables}{Tibble of variables present in both source datasets but not listed as keys.}
-\item{PotentialMergeRisk}{Tibble of overlap variables that could have affected an unspecified dplyr join.}
-\item{JoinAudit}{Tibble showing variables present in both source datasets and whether they were specified as merge keys.}
-\item{OverlapAudit}{Tibble auditing all source variables by source presence and key status.}
-\item{UnresolvedDuplicateVariables}{Tibble of \code{.x} / \code{.y} duplicate variable pairs still present in MergedData.}
-\item{DuplicateVariables}{Tibble with agreement, conflict counts, and classes for duplicated variables.}
-\item{SuspiciousConflicts}{Subset of duplicated variables with low agreement or mismatched classes.}
-\item{VariableConflicts}{Long-format tibble of record-level value conflicts.}
-\item{CoverageSummary}{Tibble summarizing complete-key coverage.}
-}
+A list with merge validation results.
 }
 \description{
 Audit a merged dataset against the two source datasets used to create it.
 This function is designed to catch common merge problems before analysis,
-including incompatible key types, duplicate key combinations, unexpected
-overlapping variables, unresolved \code{.x} / \code{.y} variables, row inflation, and
-value conflicts between duplicated variables.
+including incompatible key types, duplicate key combinations, incomplete
+key coverage, unexpected overlapping variables, unresolved \code{.x} / \code{.y}
+variables, and value conflicts between duplicated variables.
 }
 \details{
 This function does not perform a merge. It assumes the user has already
 created a merged dataset and wants to check whether the merge can be trusted.
-
-Important behavior: duplicate-key and coverage checks are calculated using
-complete key combinations only. Rows with missing merge keys are counted and
-reported, but they are not treated as duplicate key groups. This avoids
-false failures when a source file has many records with missing optional IDs.
 }

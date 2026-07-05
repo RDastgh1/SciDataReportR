@@ -66,7 +66,7 @@ rather than alphabetical utilities.
 | Cleaning and preprocessing | `ReplaceMissingCode()`, `ReplaceMissingLabels()`, `RevalueData()`, `ReValueFactors()`, `ConvertOrdinalToNumeric()`, `windsorize()`, `IQROutliers()` |
 | Exploratory profiling | `PlotMissingData()`, `PlotContinuousDistributions()`, `PlotCategoricalDistributions()`, `PlotTimeDistribution()`, `PlotMiningMatrix()` |
 | Statistical comparisons | `MakeTable1()`, `MakeComparisonTable()`, `MakeFacetCatComparisonTable()`, `PlotZScore()`, `Plot2GroupStats()` |
-| Association and regression mining | `PlotAssociations()`, `PlotCorrelationsHeatmap()`, `PlotDirectionalHeatmaps()`, `UnivariateRegressionTable()`, `plotForestFromTable()` |
+| Association and regression mining | `PlotAssociations()`, `PlotCorrelationsHeatmap()`, `PlotDirectionalHeatmaps()`, `MakeUnivariateRegressionTable()`, `PlotForestFromTable()` |
 | Dimensionality reduction and projection | `CreatePCAObject()`, `plotPCA()`, `ExtractPCAComponentSummary()`, `ProjectPCA()`, `CreateZScoreObject()`, `ProjectZScore()` |
 | Normative modeling | `CreateNormativeTScoreModel()`, `ApplyNormativeTScores()` |
 | Clustering and cohort projection | `CreateSOMClusterModel()`, `ProjectSOMCluster()` |
@@ -85,7 +85,7 @@ they need.
 | Data quality | `PlotMissingData()`, `PlotContinuousDistributions()`, `PlotCategoricalDistributions()`, `IQROutliers()` |
 | Group comparison | `PlotZScore()`, `Plot2GroupStats()`, `PlotPValueComparisons()`, `PlotSplitViolin()` |
 | Association and correlation | `PlotCorrelationsHeatmap()`, `PlotPhiHeatmap()`, `PlotPointCorrelationsHeatmap()`, `PlotDirectionalHeatmaps()`, `PlotAssociations()`, `plotSigCorrelations()`, `plotSigAssociations()` |
-| Regression and interaction | `PlotPartialRegressionScatter()`, `plotForestFromTable()`, `PlotInteractionEffectsContinuous()`, `PlotInteractionEffectsMatrix()`, `PlotCatInteractionEffectsMatrix()`, `PlotNumInteractionEffectsMatrix()` |
+| Regression and interaction | `PlotPartialRegressionScatter()`, `PlotForestFromTable()`, `PlotInteractionEffectsContinuous()`, `PlotInteractionEffectsMatrix()`, `PlotCatInteractionEffectsMatrix()`, `PlotNumInteractionEffectsMatrix()` |
 | Dimensionality reduction and clustering | `plotPCA()`, plots produced from `CreateSOMClusterModel()` workflows |
 | Longitudinal and temporal | `PlotTimeDistribution()`, `PlotSwimmerTransitions()` |
 | Specialized scientific plots | `PlotBlandAltman()`, `PlotSpiderChart()`, `PlotPathway_KT()` |

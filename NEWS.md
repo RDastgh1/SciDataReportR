@@ -1,3 +1,9 @@
+# SciDataReportR 20.5.0
+
+* `UnivariateRegressionTable()` was renamed to `MakeUnivariateRegressionTable()` and `plotForestFromTable()` was renamed to `PlotForestFromTable()` to match the package's naming conventions. The old names remain available as backwards-compatible synonyms (soft-deprecated).
+* `MakeUnivariateRegressionTable()` now returns a `Results` element: a tidy dataframe of estimates, confidence intervals, and p-values, one row per term.
+* `PlotForestFromTable()` now plots from the `Results` dataframe, and also accepts a (filtered) `Results` dataframe directly. Objects created by older package versions still plot via a fallback extraction.
+
 # SciDataReportR 20.4.0
 
 # SciDataReportR 20.3.0

@@ -46,19 +46,25 @@ joining.}
 keys. Names should match values in \code{by}.}
 
 \item{stop_on_failed_numeric}{Logical. If \code{TRUE}, stop when one key is
-numeric-like and the other contains values that cannot be converted to
-numeric.}
+numeric-like and the other contains values that cannot be safely converted
+to numeric.}
 
 \item{...}{Additional arguments passed to \code{\link[=Merge_ByClosestTime]{Merge_ByClosestTime()}} when
 \code{method = "closest_time"}.}
 }
 \value{
-A list with merged data, validation results, a log row, and a compact
-formatted summary table.
+A list with four elements:
+\describe{
+\item{data}{The merged data frame.}
+\item{validation}{The full \code{\link[=ValidateMerge]{ValidateMerge()}} result, including
+\code{KeyHarmonization} and \code{SummaryTable}.}
+\item{log}{A one-row tibble with merge-level status and metrics.}
+\item{summary}{A compact formatted summary table.}
+}
 }
 \description{
 Perform a left join or closest-time merge and immediately audit the result
-with \code{\link[=ValidateMerge]{ValidateMerge()}}. \code{safe_merge()} also harmonizes merge key types before
-joining, so common numeric-vs-character key mismatches do not break an
-otherwise valid merge.
+with \code{\link[=ValidateMerge]{ValidateMerge()}}. \code{safe_merge()} can also harmonize merge key types
+before joining, so common numeric-vs-character key mismatches do not break
+an otherwise valid merge.
 }

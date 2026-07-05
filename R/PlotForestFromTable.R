@@ -1,10 +1,16 @@
 #' Create a Forest Plot from Univariate Regression Tables
 #'
-#' This function generates a forest plot from a list of formatted univariate regression tables.
+#' This function generates a forest plot from the results of
+#' [MakeUnivariateRegressionTable()].
 #'
-#' @param UnivariateRegressionTables A list containing formatted regression tables and styling information. Expected structure:
-#'   - `FormattedTable$tbls`: A list of tables, each containing a `table_body` dataframe.
-#'   - `LargeTable$table_styling$header`: A dataframe with a `label` and `spanning_header` column for headers.
+#' @param UnivariateRegressionTables Either the full list returned by
+#'   [MakeUnivariateRegressionTable()] (its `Results` dataframe is used
+#'   directly), or a dataframe with the `Results` columns. Passing a dataframe
+#'   lets you filter, reorder, or relabel `Results` before plotting; required
+#'   columns are `OutcomeLabel`, `TermLabel`, `Estimate`, `ConfLow`,
+#'   `ConfHigh`, and `PValue` (`Significant` and `ReferenceValue` are
+#'   recomputed if absent). Lists created by older package versions (without a
+#'   `Results` element) are still supported.
 #' @param pSize Numeric. Size of the points in the plot. Default is 2.
 #' @param Flip Logical. If `FALSE`, outcomes are facets and predictors/terms
 #'   are rows. If `TRUE`, predictors/terms are facets and outcomes are rows.
@@ -14,22 +20,146 @@
 #' data(SampleData)
 #'
 #' # Build univariate regression tables to plot
-#' urt <- UnivariateRegressionTable(
+#' urt <- MakeUnivariateRegressionTable(
 #'   data = SampleData,
 #'   outcome_vars = "AXL",
 #'   predictor_vars = c("age", "Adiponectin", "Alpha_1_Antitrypsin")
 #' )
 #'
-#' plotForestFromTable(urt)
+#' PlotForestFromTable(urt)
+#'
+#' # Or plot a filtered subset of the results
+#' PlotForestFromTable(subset(urt$Results, Predictor != "age"))
 #' }
 #' @export
-plotForestFromTable <- function(UnivariateRegressionTables, pSize = 2, Flip = FALSE) {
+PlotForestFromTable <- function(UnivariateRegressionTables, pSize = 2, Flip = FALSE) {
 
   if (!is.logical(Flip) || length(Flip) != 1 || is.na(Flip)) {
     stop("Flip must be TRUE or FALSE.")
   }
 
-  # Extract tables and headers
+  df_Combined <- ScidrForestPlotResolveResults(UnivariateRegressionTables)
+  df_Combined <- df_Combined %>% filter(!is.na(Estimate))
+  if (nrow(df_Combined) == 0) {
+    stop("No estimates available to plot.")
+  }
+  if (!"Significant" %in% names(df_Combined)) {
+    df_Combined$Significant <- df_Combined$PValue < 0.05
+  }
+  if (!"ReferenceValue" %in% names(df_Combined)) {
+    df_Combined$ReferenceValue <- if ("EffectType" %in% names(df_Combined)) {
+      ifelse(df_Combined$EffectType == "Odds ratio", 1, 0)
+    } else {
+      0
+    }
+  }
+
+  outcome_levels <- unique(df_Combined$OutcomeLabel)
+  term_levels <- unique(df_Combined$TermLabel)
+
+  if (Flip) {
+    df_Combined$PlotRow <- factor(
+      df_Combined$OutcomeLabel,
+      levels = rev(outcome_levels)
+    )
+    df_Combined$PlotFacet <- factor(
+      df_Combined$TermLabel,
+      levels = term_levels
+    )
+    y_label <- "Outcome"
+  } else {
+    df_Combined$PlotRow <- factor(
+      df_Combined$TermLabel,
+      levels = rev(term_levels)
+    )
+    df_Combined$PlotFacet <- factor(
+      df_Combined$OutcomeLabel,
+      levels = outcome_levels
+    )
+    y_label <- "Variable"
+  }
+  df_ReferenceLines <- df_Combined %>%
+    select(PlotFacet, ReferenceValue) %>%
+    distinct()
+
+  x_label <- if (all(df_Combined$ReferenceValue == 1)) {
+    "Odds ratio"
+  } else if (all(df_Combined$ReferenceValue == 0)) {
+    "Estimate"
+  } else {
+    "Estimate / odds ratio"
+  }
+
+  # Create the forest plot
+  p <- df_Combined %>%
+    ggplot(aes(x = Estimate, y = PlotRow, color = Significant)) +
+    geom_point(size = pSize) +  # Plot the point for the estimate
+    geom_errorbar(aes(xmin = ConfLow, xmax = ConfHigh), orientation = "y", width = 0.2) +  # Add the error bars
+    facet_wrap(~PlotFacet, nrow = 1) +  # Facet by outcome or term
+    geom_vline(
+      data = df_ReferenceLines,
+      aes(xintercept = ReferenceValue),
+      linetype = "dashed",
+      inherit.aes = FALSE
+    ) +
+    labs(
+      x = x_label,
+      y = y_label
+    ) +
+    theme_minimal() +
+    theme(
+      axis.text.y = element_text(size = 10),
+      axis.title.y = element_blank()
+    ) +
+    scale_color_manual(values = c("FALSE" = "darkgrey", "TRUE" = "black")) +
+    theme(legend.position = "none")
+
+  return(p)
+}
+
+#' @description `plotForestFromTable()` was renamed to `PlotForestFromTable()`
+#'   in SciDataReportR 20.5.0 to match the package's `Plot*` naming
+#'   convention. It remains available as a backwards-compatible synonym.
+#' @rdname PlotForestFromTable
+#' @export
+plotForestFromTable <- function(UnivariateRegressionTables, pSize = 2, Flip = FALSE) {
+  lifecycle::deprecate_soft("20.5.0", "plotForestFromTable()", "PlotForestFromTable()")
+  PlotForestFromTable(UnivariateRegressionTables, pSize = pSize, Flip = Flip)
+}
+
+ScidrForestPlotResolveResults <- function(x) {
+  required_cols <- c("OutcomeLabel", "TermLabel", "Estimate", "ConfLow", "ConfHigh", "PValue")
+
+  if (is.data.frame(x)) {
+    missing_cols <- setdiff(required_cols, names(x))
+    if (length(missing_cols) > 0) {
+      stop(
+        "The results dataframe is missing required columns: ",
+        paste(missing_cols, collapse = ", "),
+        ". Pass the Results dataframe from MakeUnivariateRegressionTable()."
+      )
+    }
+    return(x)
+  }
+
+  if (is.list(x)) {
+    if (is.data.frame(x$Results)) {
+      return(x$Results)
+    }
+    if (!is.null(x$FormattedTable)) {
+      # Objects saved by versions before 20.5.0 have no Results element;
+      # rebuild it from the gtsummary tables.
+      return(ScidrForestPlotLegacyResults(x))
+    }
+  }
+
+  stop(
+    "UnivariateRegressionTables must be the output of MakeUnivariateRegressionTable() ",
+    "or a dataframe with its Results columns."
+  )
+}
+
+ScidrForestPlotLegacyResults <- function(UnivariateRegressionTables) {
   list_Tables <- UnivariateRegressionTables$FormattedTable$tbls
   title_Tables <- names(list_Tables)
   if (is.null(title_Tables) || any(is.na(title_Tables)) || any(title_Tables == "")) {
@@ -73,10 +203,6 @@ plotForestFromTable <- function(UnivariateRegressionTables, pSize = 2, Flip = FA
     }
   }
 
-  # Mark significant results
-  df_Combined$sig <- df_Combined$p.value < 0.05
-
-  # Update labels for categorical variables
   df_Combined <- df_Combined %>%
     filter(!is.na(estimate)) %>%
     mutate(
@@ -87,70 +213,25 @@ plotForestFromTable <- function(UnivariateRegressionTables, pSize = 2, Flip = FA
       ),
       OutcomeLabel = HeaderLabel
     )
-  df_Combined$ReferenceLine <- ifelse(
+  reference_value <- ifelse(
     "effect_type" %in% names(df_Combined) & df_Combined$effect_type == "Odds ratio",
     1,
     0
   )
 
-  # Reverse the row label order for plotting
-  if (Flip) {
-    df_Combined$PlotRow <- factor(
-      df_Combined$OutcomeLabel,
-      levels = rev(label_Tables)
-    )
-    df_Combined$PlotFacet <- factor(
-      df_Combined$TermLabel,
-      levels = unique(df_Combined$TermLabel)
-    )
-    y_label <- "Outcome"
-  } else {
-    df_Combined$PlotRow <- factor(
-      df_Combined$TermLabel,
-      levels = rev(unique(df_Combined$TermLabel))
-    )
-    df_Combined$PlotFacet <- factor(
-      df_Combined$OutcomeLabel,
-      levels = label_Tables
-    )
-    y_label <- "Variable"
-  }
-  df_ReferenceLines <- df_Combined %>%
-    select(PlotFacet, ReferenceLine) %>%
-    distinct()
-
-  x_label <- if (all(df_Combined$ReferenceLine == 1)) {
-    "Odds ratio"
-  } else if (all(df_Combined$ReferenceLine == 0)) {
-    "Estimate"
-  } else {
-    "Estimate / odds ratio"
-  }
-
-  # Create the forest plot
-  p <- df_Combined %>%
-    ggplot(aes(x = estimate, y = PlotRow, color = sig)) +
-    geom_point(size = pSize) +  # Plot the point for the estimate
-    geom_errorbar(aes(xmin = conf.low, xmax = conf.high), orientation = "y", width = 0.2) +  # Add the error bars
-    facet_wrap(~PlotFacet, nrow = 1) +  # Facet by outcome or term
-    geom_vline(
-      data = df_ReferenceLines,
-      aes(xintercept = ReferenceLine),
-      linetype = "dashed",
-      inherit.aes = FALSE
-    ) +
-    labs(
-      x = x_label,
-      y = y_label
-    ) +
-    theme_minimal() +
-    theme(
-      axis.text.y = element_text(size = 10),
-      axis.title.y = element_blank()
-    ) +
-    scale_color_manual(values = c("darkgrey", "black"))+ theme(legend.position="none")
-
-  return(p)
+  data.frame(
+    Outcome = df_Combined$Header,
+    OutcomeLabel = df_Combined$OutcomeLabel,
+    TermLabel = df_Combined$TermLabel,
+    Estimate = df_Combined$estimate,
+    ConfLow = df_Combined$conf.low,
+    ConfHigh = df_Combined$conf.high,
+    PValue = df_Combined$p.value,
+    Significant = df_Combined$p.value < 0.05,
+    ReferenceValue = reference_value,
+    stringsAsFactors = FALSE,
+    row.names = NULL
+  )
 }
 
 ScidrForestPlotSpannerLabels <- function(gtsummary_table, n_tables) {

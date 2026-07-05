@@ -1,4 +1,4 @@
-test_that("UnivariateRegressionTable fits linear and logistic outcomes", {
+test_that("MakeUnivariateRegressionTable fits linear and logistic outcomes", {
   set.seed(909)
   df <- data.frame(
     y = rnorm(90),
@@ -11,13 +11,13 @@ test_that("UnivariateRegressionTable fits linear and logistic outcomes", {
   )
   attr(df$x1, "label") <- "Marker one"
 
-  res <- UnivariateRegressionTable(
-    Data = df,
-    OutcomeVars = c("y", "ybin"),
-    PredictorVars = c("x1", "x2")
+  res <- MakeUnivariateRegressionTable(
+    data = df,
+    outcome_vars = c("y", "ybin"),
+    predictor_vars = c("x1", "x2")
   )
 
-  expect_named(res, c("FormattedTable", "LargeTable", "ModelSummaries", "Metadata"))
+  expect_named(res, c("FormattedTable", "LargeTable", "Results", "ModelSummaries", "Metadata"))
   expect_s3_class(res$ModelSummaries$y$x1, "lm")
   expect_s3_class(res$ModelSummaries$ybin$x1, "glm")
   expect_equal(res$Metadata$Outcomes$OutcomeFamily, c("linear", "logistic"))
@@ -30,17 +30,98 @@ test_that("UnivariateRegressionTable fits linear and logistic outcomes", {
   expect_true(all(logistic_body$estimate > 0, na.rm = TRUE))
 })
 
-test_that("UnivariateRegressionTable handles binary character outcomes", {
+test_that("MakeUnivariateRegressionTable returns a tidy Results dataframe", {
+  set.seed(917)
+  df <- data.frame(
+    y = rnorm(90),
+    ybin = factor(
+      sample(c("Control", "Case"), 90, replace = TRUE),
+      levels = c("Control", "Case")
+    ),
+    x1 = rnorm(90),
+    x2 = rnorm(90)
+  )
+  attr(df$x1, "label") <- "Marker one"
+  attr(df$y, "label") <- "Outcome one"
+
+  res <- MakeUnivariateRegressionTable(
+    data = df,
+    outcome_vars = c("y", "ybin"),
+    predictor_vars = c("x1", "x2")
+  )
+
+  results <- res$Results
+  expect_s3_class(results, "data.frame")
+  expect_true(all(
+    c(
+      "Outcome", "OutcomeLabel", "OutcomeFamily", "EffectType", "Predictor",
+      "PredictorLabel", "Term", "Level", "TermLabel", "N", "Estimate",
+      "StdError", "ConfLow", "ConfHigh", "PValue", "Significant",
+      "ReferenceValue"
+    ) %in% names(results)
+  ))
+  # one row per outcome-predictor pair for continuous predictors
+  expect_equal(nrow(results), 4)
+  expect_equal(results$OutcomeLabel[results$Outcome == "y"][1], "Outcome one")
+  expect_equal(results$TermLabel[results$Outcome == "y"], c("Marker one", "x2"))
+
+  # linear estimates match the fitted models
+  expect_equal(
+    results$Estimate[results$Outcome == "y" & results$Predictor == "x1"],
+    unname(stats::coef(res$ModelSummaries$y$x1)[["x1"]]),
+    tolerance = 1e-8
+  )
+  # logistic estimates are exponentiated odds ratios
+  expect_equal(
+    results$Estimate[results$Outcome == "ybin" & results$Predictor == "x1"],
+    exp(unname(stats::coef(res$ModelSummaries$ybin$x1)[["x1"]])),
+    tolerance = 1e-8
+  )
+  expect_true(all(results$ConfLow < results$ConfHigh))
+  expect_equal(results$ReferenceValue, c(0, 0, 1, 1))
+  expect_equal(results$EffectType, c("Estimate", "Estimate", "Odds ratio", "Odds ratio"))
+  expect_equal(results$Significant, results$PValue < 0.05)
+})
+
+test_that("UnivariateRegressionTable is a backwards-compatible synonym", {
+  set.seed(918)
+  df <- data.frame(
+    y = rnorm(60),
+    x1 = rnorm(60)
+  )
+
+  lifecycle::expect_deprecated(
+    res_old <- UnivariateRegressionTable(
+      data = df,
+      outcome_vars = "y",
+      predictor_vars = "x1"
+    )
+  )
+  res_new <- MakeUnivariateRegressionTable(
+    data = df,
+    outcome_vars = "y",
+    predictor_vars = "x1"
+  )
+
+  expect_named(res_old, names(res_new))
+  expect_equal(res_old$Results, res_new$Results)
+  expect_equal(
+    stats::coef(res_old$ModelSummaries$y$x1),
+    stats::coef(res_new$ModelSummaries$y$x1)
+  )
+})
+
+test_that("MakeUnivariateRegressionTable handles binary character outcomes", {
   set.seed(910)
   df <- data.frame(
     ychar = sample(c("No", "Yes"), 70, replace = TRUE),
     x1 = rnorm(70)
   )
 
-  res <- UnivariateRegressionTable(
-    Data = df,
-    OutcomeVars = "ychar",
-    PredictorVars = "x1"
+  res <- MakeUnivariateRegressionTable(
+    data = df,
+    outcome_vars = "ychar",
+    predictor_vars = "x1"
   )
 
   expect_s3_class(res$ModelSummaries$ychar$x1, "glm")
@@ -49,23 +130,23 @@ test_that("UnivariateRegressionTable handles binary character outcomes", {
   expect_equal(res$Metadata$Outcomes$EventLevel, "Yes")
 })
 
-test_that("UnivariateRegressionTable rejects unsupported categorical outcomes", {
+test_that("MakeUnivariateRegressionTable rejects unsupported categorical outcomes", {
   df <- data.frame(
     ymulti = factor(rep(c("A", "B", "C"), each = 10)),
     x1 = rnorm(30)
   )
 
   expect_error(
-    UnivariateRegressionTable(
-      Data = df,
-      OutcomeVars = "ymulti",
-      PredictorVars = "x1"
+    MakeUnivariateRegressionTable(
+      data = df,
+      outcome_vars = "ymulti",
+      predictor_vars = "x1"
     ),
     "Multinomial regression is not yet supported"
   )
 })
 
-test_that("UnivariateRegressionTable does not standardize binary logistic outcomes", {
+test_that("MakeUnivariateRegressionTable does not standardize binary logistic outcomes", {
   set.seed(911)
   x1 <- rnorm(80)
   probability <- stats::plogis(-0.3 + 0.8 * x1)
@@ -77,10 +158,10 @@ test_that("UnivariateRegressionTable does not standardize binary logistic outcom
     x1 = x1
   )
 
-  res <- UnivariateRegressionTable(
-    Data = df,
-    OutcomeVars = "ybin",
-    PredictorVars = "x1",
+  res <- MakeUnivariateRegressionTable(
+    data = df,
+    outcome_vars = "ybin",
+    predictor_vars = "x1",
     Standardize = TRUE
   )
 
@@ -89,7 +170,7 @@ test_that("UnivariateRegressionTable does not standardize binary logistic outcom
   expect_equal(levels(model_frame$ybin), c("Control", "Case"))
 })
 
-test_that("plotForestFromTable keeps outcome labels aligned with table order", {
+test_that("PlotForestFromTable keeps outcome labels aligned with table order", {
   set.seed(912)
   df <- data.frame(
     CBF = rnorm(80, mean = 0.1),
@@ -106,13 +187,13 @@ test_that("plotForestFromTable keeps outcome labels aligned with table order", {
   df$VTT[df$cohort == "Hiv_pos"] <- df$VTT[df$cohort == "Hiv_pos"] - 0.35
   df$PS[df$cohort == "Hiv_pos"] <- df$PS[df$cohort == "Hiv_pos"] + 0.50
 
-  res <- UnivariateRegressionTable(
-    Data = df,
-    OutcomeVars = c("CBF", "E", "VTT", "PS"),
-    PredictorVars = "cohort",
+  res <- MakeUnivariateRegressionTable(
+    data = df,
+    outcome_vars = c("CBF", "E", "VTT", "PS"),
+    predictor_vars = "cohort",
     Standardize = TRUE
   )
-  p <- plotForestFromTable(res)
+  p <- PlotForestFromTable(res)
   built_plot <- ggplot2::ggplot_build(p)
   facet_layout <- built_plot$layout$layout[, c("PANEL", "PlotFacet")]
   point_data <- built_plot$data[[1]][, c("PANEL", "x")]
@@ -132,7 +213,7 @@ test_that("plotForestFromTable keeps outcome labels aligned with table order", {
   expect_equal(unname(observed[names(expected)]), unname(expected), tolerance = 1e-8)
 })
 
-test_that("plotForestFromTable can flip outcomes and terms", {
+test_that("PlotForestFromTable can flip outcomes and terms", {
   set.seed(913)
   df <- data.frame(
     CBF = rnorm(80),
@@ -149,13 +230,13 @@ test_that("plotForestFromTable can flip outcomes and terms", {
   df$VTT[df$cohort == "Hiv_pos"] <- df$VTT[df$cohort == "Hiv_pos"] - 0.35
   df$PS[df$cohort == "Hiv_pos"] <- df$PS[df$cohort == "Hiv_pos"] + 0.50
 
-  res <- UnivariateRegressionTable(
-    Data = df,
-    OutcomeVars = c("CBF", "E", "VTT", "PS"),
-    PredictorVars = "cohort",
+  res <- MakeUnivariateRegressionTable(
+    data = df,
+    outcome_vars = c("CBF", "E", "VTT", "PS"),
+    predictor_vars = "cohort",
     Standardize = TRUE
   )
-  p <- plotForestFromTable(res, Flip = TRUE)
+  p <- PlotForestFromTable(res, Flip = TRUE)
   built_plot <- ggplot2::ggplot_build(p)
   facet_layout <- built_plot$layout$layout[, c("PANEL", "PlotFacet")]
   point_data <- built_plot$data[[1]][, c("PANEL", "x", "y")]
@@ -175,24 +256,104 @@ test_that("plotForestFromTable can flip outcomes and terms", {
   expect_equal(sort(point_data$x), sort(unname(expected)), tolerance = 1e-8)
 })
 
-test_that("plotForestFromTable validates Flip", {
+test_that("PlotForestFromTable validates Flip", {
   df <- data.frame(
     y = rnorm(30),
     x1 = rnorm(30)
   )
-  res <- UnivariateRegressionTable(
-    Data = df,
-    OutcomeVars = "y",
-    PredictorVars = "x1"
+  res <- MakeUnivariateRegressionTable(
+    data = df,
+    outcome_vars = "y",
+    predictor_vars = "x1"
   )
 
   expect_error(
-    plotForestFromTable(res, Flip = NA),
+    PlotForestFromTable(res, Flip = NA),
     "Flip must be TRUE or FALSE"
   )
 })
 
-test_that("plotForestFromTable uses outcome labels from metadata", {
+test_that("PlotForestFromTable accepts a filtered Results dataframe", {
+  set.seed(919)
+  df <- data.frame(
+    y1 = rnorm(80),
+    y2 = rnorm(80),
+    x1 = rnorm(80),
+    x2 = rnorm(80)
+  )
+  df$y1 <- df$y1 + 0.9 * df$x1
+
+  res <- MakeUnivariateRegressionTable(
+    data = df,
+    outcome_vars = c("y1", "y2"),
+    predictor_vars = c("x1", "x2")
+  )
+  filtered <- res$Results[res$Results$Outcome == "y1", ]
+
+  p <- PlotForestFromTable(filtered)
+  built_plot <- ggplot2::ggplot_build(p)
+  plot_layout <- built_plot$layout$layout
+  point_data <- built_plot$data[[1]]
+
+  expect_equal(as.character(plot_layout$PlotFacet), "y1")
+  expect_equal(
+    sort(point_data$x),
+    sort(filtered$Estimate),
+    tolerance = 1e-8
+  )
+})
+
+test_that("PlotForestFromTable rejects dataframes missing required columns", {
+  expect_error(
+    PlotForestFromTable(data.frame(Estimate = 1)),
+    "missing required columns"
+  )
+})
+
+test_that("PlotForestFromTable still plots objects without a Results element", {
+  set.seed(920)
+  df <- data.frame(
+    y = rnorm(60),
+    x1 = rnorm(60)
+  )
+  res <- MakeUnivariateRegressionTable(
+    data = df,
+    outcome_vars = "y",
+    predictor_vars = "x1"
+  )
+  expected <- res$Results
+
+  # simulate an object saved by a version before 20.5.0
+  res$Results <- NULL
+  p <- PlotForestFromTable(res)
+  point_data <- ggplot2::ggplot_build(p)$data[[1]]
+
+  expect_equal(point_data$x, expected$Estimate, tolerance = 1e-8)
+})
+
+test_that("plotForestFromTable is a backwards-compatible synonym", {
+  set.seed(921)
+  df <- data.frame(
+    y = rnorm(60),
+    x1 = rnorm(60)
+  )
+  res <- MakeUnivariateRegressionTable(
+    data = df,
+    outcome_vars = "y",
+    predictor_vars = "x1"
+  )
+
+  lifecycle::expect_deprecated(p_old <- plotForestFromTable(res))
+  p_new <- PlotForestFromTable(res)
+
+  expect_equal(
+    ggplot2::ggplot_build(p_old)$data[[1]]$x,
+    ggplot2::ggplot_build(p_new)$data[[1]]$x,
+    tolerance = 1e-8
+  )
+})
+
+test_that("PlotForestFromTable uses outcome labels from metadata", {
   set.seed(914)
   df <- data.frame(
     cbf_m_l_100_g_min = rnorm(60),
@@ -205,26 +366,26 @@ test_that("plotForestFromTable uses outcome labels from metadata", {
   attr(df$cbf_m_l_100_g_min, "label") <- "CBF"
   attr(df$e, "label") <- "Extraction fraction"
 
-  res <- UnivariateRegressionTable(
-    Data = df,
-    OutcomeVars = c("cbf_m_l_100_g_min", "e"),
-    PredictorVars = "cohort",
+  res <- MakeUnivariateRegressionTable(
+    data = df,
+    outcome_vars = c("cbf_m_l_100_g_min", "e"),
+    predictor_vars = "cohort",
     Standardize = TRUE
   )
 
-  p_default <- plotForestFromTable(res)
+  p_default <- PlotForestFromTable(res)
   default_layout <- ggplot2::ggplot_build(p_default)$layout$layout
   expect_equal(
     as.character(default_layout$PlotFacet),
     c("CBF", "Extraction fraction")
   )
 
-  p_flipped <- plotForestFromTable(res, Flip = TRUE)
+  p_flipped <- PlotForestFromTable(res, Flip = TRUE)
   flipped_data <- ggplot2::ggplot_build(p_flipped)$data[[1]]
   expect_equal(sort(unique(flipped_data$y)), c(1, 2))
 })
 
-test_that("plotForestFromTable preserves table spanner labels when metadata has raw names", {
+test_that("PlotForestFromTable preserves table spanner labels when metadata has raw names", {
   set.seed(915)
   df <- data.frame(
     cbf_m_l_100_g_min = rnorm(60),
@@ -237,15 +398,17 @@ test_that("plotForestFromTable preserves table spanner labels when metadata has 
   attr(df$cbf_m_l_100_g_min, "label") <- "CBF"
   attr(df$e, "label") <- "Extraction fraction"
 
-  res <- UnivariateRegressionTable(
-    Data = df,
-    OutcomeVars = c("cbf_m_l_100_g_min", "e"),
-    PredictorVars = "cohort",
+  res <- MakeUnivariateRegressionTable(
+    data = df,
+    outcome_vars = c("cbf_m_l_100_g_min", "e"),
+    predictor_vars = "cohort",
     Standardize = TRUE
   )
   res$Metadata$Outcomes$OutcomeLabel <- res$Metadata$Outcomes$Outcome
 
-  p <- plotForestFromTable(res)
+  # legacy path: objects without Results fall back to spanner labels
+  res$Results <- NULL
+  p <- PlotForestFromTable(res)
   plot_layout <- ggplot2::ggplot_build(p)$layout$layout
 
   expect_equal(
@@ -254,7 +417,7 @@ test_that("plotForestFromTable preserves table spanner labels when metadata has 
   )
 })
 
-test_that("plotForestFromTable uses odds ratio null line for logistic models", {
+test_that("PlotForestFromTable uses odds ratio null line for logistic models", {
   set.seed(916)
   df <- data.frame(
     ybin = factor(
@@ -265,16 +428,36 @@ test_that("plotForestFromTable uses odds ratio null line for logistic models", {
     x2 = rnorm(90)
   )
 
-  res <- UnivariateRegressionTable(
-    Data = df,
-    OutcomeVars = "ybin",
-    PredictorVars = c("x1", "x2"),
+  res <- MakeUnivariateRegressionTable(
+    data = df,
+    outcome_vars = "ybin",
+    predictor_vars = c("x1", "x2"),
     Standardize = TRUE
   )
-  p <- plotForestFromTable(res)
+  p <- PlotForestFromTable(res)
   built_plot <- ggplot2::ggplot_build(p)
   vline_data <- built_plot$data[[3]]
 
   expect_equal(unique(vline_data$xintercept), 1)
   expect_equal(p$labels$x, "Odds ratio")
+})
+
+test_that("MakeUnivariateRegressionTable still accepts deprecated argument names", {
+  set.seed(922)
+  df <- data.frame(
+    y = rnorm(50),
+    x1 = rnorm(50)
+  )
+
+  deprecation_warnings <- testthat::capture_warnings(
+    res <- MakeUnivariateRegressionTable(
+      Data = df,
+      OutcomeVars = "y",
+      PredictorVars = "x1"
+    )
+  )
+  expect_length(deprecation_warnings, 3)
+  expect_match(deprecation_warnings, "deprecated", all = TRUE)
+  expect_s3_class(res$ModelSummaries$y$x1, "lm")
+  expect_s3_class(res$Results, "data.frame")
 })

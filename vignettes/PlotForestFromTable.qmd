@@ -1,6 +1,6 @@
 ---
 title: "Forest Plots from Univariate Regression Tables"
-description: "Visualize estimates from UnivariateRegressionTable() with plotForestFromTable()."
+description: "Visualize estimates from MakeUnivariateRegressionTable() with PlotForestFromTable()."
 format:
   html:
     toc: true
@@ -16,7 +16,7 @@ vignette: >
 
 ## Overview
 
-`plotForestFromTable()` visualizes the estimates and confidence intervals from a `UnivariateRegressionTable()` object.
+`PlotForestFromTable()` visualizes the estimates and confidence intervals from a `MakeUnivariateRegressionTable()` object. It plots from the tidy `Results` dataframe that `MakeUnivariateRegressionTable()` returns, and it also accepts that dataframe directly, so you can filter or reorder results before plotting.
 
 The default layout is:
 
@@ -25,6 +25,10 @@ The default layout is:
 * x-axis = regression estimate
 
 Use `Flip = TRUE` when it is easier to read outcomes as rows and predictors as facets.
+
+::: {.callout-note}
+`PlotForestFromTable()` was previously named `plotForestFromTable()`. The old name still works as a backwards-compatible synonym, so existing scripts continue to run.
+:::
 
 ## Load packages
 
@@ -69,10 +73,10 @@ vars_Predictors <- c(
   "age"
 )
 
-Reg_Obj_Outcomes <- UnivariateRegressionTable(
-  Data = df_Revalued,
-  OutcomeVars = vars_Outcomes,
-  PredictorVars = vars_Predictors,
+Reg_Obj_Outcomes <- MakeUnivariateRegressionTable(
+  data = df_Revalued,
+  outcome_vars = vars_Outcomes,
+  predictor_vars = vars_Predictors,
   Standardize = TRUE
 )
 ```
@@ -83,10 +87,21 @@ The default plot keeps outcomes as facets and terms as rows.
 
 ```{r}
 #| label: PlotDefaultForest
-plotForestFromTable(Reg_Obj_Outcomes)
+PlotForestFromTable(Reg_Obj_Outcomes)
 ```
 
 Black points indicate `p < 0.05`; grey points are not significant. The dashed vertical line is the null value for linear estimates.
+
+## Plot from the Results dataframe
+
+The plot is drawn from `Reg_Obj_Outcomes$Results`, and you can pass that dataframe (or any subset of it) directly. This makes it easy to plot only the rows you care about.
+
+```{r}
+#| label: PlotFilteredResults
+Reg_Obj_Outcomes$Results %>%
+  filter(Predictor == "Diagnosis") %>%
+  PlotForestFromTable()
+```
 
 ## Flip outcomes and predictors
 
@@ -94,7 +109,7 @@ When there are many outcomes and a small predictor set, `Flip = TRUE` is often e
 
 ```{r}
 #| label: PlotFlippedForest
-plotForestFromTable(
+PlotForestFromTable(
   Reg_Obj_Outcomes,
   Flip = TRUE
 )
@@ -108,17 +123,17 @@ For one outcome and many predictors, the default layout is usually already compa
 
 ```{r}
 #| label: FitPredictorScreen
-Reg_Obj_Predictors <- UnivariateRegressionTable(
-  Data = df_Revalued,
-  OutcomeVars = "Sortilin",
-  PredictorVars = c("Diagnosis", "age", "Calbindin", "Ferritin", "MMP7"),
+Reg_Obj_Predictors <- MakeUnivariateRegressionTable(
+  data = df_Revalued,
+  outcome_vars = "Sortilin",
+  predictor_vars = c("Diagnosis", "age", "Calbindin", "Ferritin", "MMP7"),
   Standardize = TRUE
 )
 ```
 
 ```{r}
 #| label: PlotManyPredictors
-plotForestFromTable(Reg_Obj_Predictors)
+PlotForestFromTable(Reg_Obj_Predictors)
 ```
 
 ## Labels
@@ -134,14 +149,14 @@ Categorical and dichotomous predictors are shown with the modeled level, for exa
 
 ## Logistic models
 
-`UnivariateRegressionTable()` uses logistic regression automatically for two-level outcomes and reports odds ratios by default.
+`MakeUnivariateRegressionTable()` uses logistic regression automatically for two-level outcomes and reports odds ratios by default.
 
 ```{r}
 #| label: FitLogisticScreen
-Reg_Obj_Logistic <- UnivariateRegressionTable(
-  Data = df_Revalued,
-  OutcomeVars = "Diagnosis",
-  PredictorVars = c("age", "Calbindin", "Ferritin", "MMP7"),
+Reg_Obj_Logistic <- MakeUnivariateRegressionTable(
+  data = df_Revalued,
+  outcome_vars = "Diagnosis",
+  predictor_vars = c("age", "Calbindin", "Ferritin", "MMP7"),
   Standardize = TRUE
 )
 
@@ -155,7 +170,7 @@ Reg_Obj_Logistic$Metadata$Outcomes
 
 ```{r}
 #| label: PlotLogisticForest
-plotForestFromTable(Reg_Obj_Logistic)
+PlotForestFromTable(Reg_Obj_Logistic)
 ```
 
 For logistic models, check the event level in `Metadata$Outcomes` before interpreting odds ratios. Mixed linear and logistic forest plots can be visually convenient, but they combine different effect scales.
@@ -164,6 +179,6 @@ For logistic models, check the event level in `Metadata$Outcomes` before interpr
 
 ```{r}
 #| label: Reproducibility
-# save.image("plotForestFromTable_workspace.RData")
+# save.image("PlotForestFromTable_workspace.RData")
 print(sessionInfo())
 ```

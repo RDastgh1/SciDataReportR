@@ -16,6 +16,12 @@
 #' @return A list containing:
 #'   - FormattedTable: A merged table with formatted regression results
 #'   - LargeTable: A merged table with unformatted regression results
+#'   - Results: A tidy dataframe with one row per estimated term. Columns:
+#'     `Outcome`, `OutcomeLabel`, `OutcomeFamily`, `EffectType`, `Predictor`,
+#'     `PredictorLabel`, `Term`, `Level`, `TermLabel`, `N`, `Estimate`,
+#'     `StdError`, `ConfLow`, `ConfHigh`, `PValue`, `Significant`, and
+#'     `ReferenceValue`. This dataframe can be filtered and passed directly to
+#'     [PlotForestFromTable()].
 #'   - ModelSummaries: A list of fitted model objects
 #'   - Metadata: Outcome families and analysis settings
 #' @param Data \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
@@ -24,7 +30,7 @@
 #' @param Covars \strong{Deprecated} (since 19.15.0). Use \code{covariates} instead.
 #' @export
 #'
-UnivariateRegressionTable <- function(data,
+MakeUnivariateRegressionTable <- function(data,
     outcome_vars,
     predictor_vars,
     covariates = NULL,
@@ -37,22 +43,22 @@ UnivariateRegressionTable <- function(data,
     Covars = lifecycle::deprecated()) {
   # Deprecated argument shims (SciDataReportR 19.15.0)
   if (lifecycle::is_present(Data)) {
-    lifecycle::deprecate_warn("19.15.0", "UnivariateRegressionTable(Data)", "UnivariateRegressionTable(data)")
+    lifecycle::deprecate_warn("19.15.0", "MakeUnivariateRegressionTable(Data)", "MakeUnivariateRegressionTable(data)")
     data <- Data
   }
   if (!missing(data)) Data <- data
   if (lifecycle::is_present(OutcomeVars)) {
-    lifecycle::deprecate_warn("19.15.0", "UnivariateRegressionTable(OutcomeVars)", "UnivariateRegressionTable(outcome_vars)")
+    lifecycle::deprecate_warn("19.15.0", "MakeUnivariateRegressionTable(OutcomeVars)", "MakeUnivariateRegressionTable(outcome_vars)")
     outcome_vars <- OutcomeVars
   }
   if (!missing(outcome_vars)) OutcomeVars <- outcome_vars
   if (lifecycle::is_present(PredictorVars)) {
-    lifecycle::deprecate_warn("19.15.0", "UnivariateRegressionTable(PredictorVars)", "UnivariateRegressionTable(predictor_vars)")
+    lifecycle::deprecate_warn("19.15.0", "MakeUnivariateRegressionTable(PredictorVars)", "MakeUnivariateRegressionTable(predictor_vars)")
     predictor_vars <- PredictorVars
   }
   if (!missing(predictor_vars)) PredictorVars <- predictor_vars
   if (lifecycle::is_present(Covars)) {
-    lifecycle::deprecate_warn("19.15.0", "UnivariateRegressionTable(Covars)", "UnivariateRegressionTable(covariates)")
+    lifecycle::deprecate_warn("19.15.0", "MakeUnivariateRegressionTable(Covars)", "MakeUnivariateRegressionTable(covariates)")
     covariates <- Covars
   }
   Covars <- covariates
@@ -87,6 +93,7 @@ UnivariateRegressionTable <- function(data,
   Wide_tbl_list <- list()
   Wide_mod_list <- list()
   Wide_tblformatted_list <- list()
+  results_list <- list()
   outcome_metadata <- list()
 
   for (yVarIndex in seq_along(OutcomeVars)) {
@@ -153,9 +160,15 @@ UnivariateRegressionTable <- function(data,
     Wide_mod_list[[YVar]] <- mod_list
     Wide_tblformatted_list[[YVar]] <- tbl_stack(tblformatted_list) %>%
       remove_row_type(type = "reference")
+    outcome_label <- sjlabelled::get_label(Data[[YVar]], def.value = YVar) %>% as.character()
+    results_list[[YVar]] <- ScidrUnivariateResultsFromBody(
+      Wide_tbl_list[[YVar]]$table_body,
+      outcome = YVar,
+      outcome_label = outcome_label
+    )
     outcome_metadata[[YVar]] <- data.frame(
       Outcome = YVar,
-      OutcomeLabel = sjlabelled::get_label(Data[[YVar]], def.value = YVar) %>% as.character(),
+      OutcomeLabel = outcome_label,
       OutcomeFamily = outcome_family,
       ReferenceLevel = outcome_info$ReferenceLevel,
       EventLevel = outcome_info$EventLevel,
@@ -189,7 +202,61 @@ UnivariateRegressionTable <- function(data,
   )
 
   return(list(FormattedTable = FinalFormattedTable, LargeTable = FinalTable,
+              Results = dplyr::bind_rows(results_list),
               ModelSummaries = Wide_mod_list, Metadata = metadata))
+}
+
+#' @description `UnivariateRegressionTable()` was renamed to
+#'   `MakeUnivariateRegressionTable()` in SciDataReportR 20.5.0 to match the
+#'   package's `Make*` naming convention. It remains available as a
+#'   backwards-compatible synonym.
+#' @rdname MakeUnivariateRegressionTable
+#' @export
+UnivariateRegressionTable <- function(data,
+    outcome_vars,
+    predictor_vars,
+    covariates = NULL,
+    Standardize = FALSE,
+    Method = c("auto", "lm", "logistic"),
+    LogisticExponentiate = TRUE,
+    Data = lifecycle::deprecated(),
+    OutcomeVars = lifecycle::deprecated(),
+    PredictorVars = lifecycle::deprecated(),
+    Covars = lifecycle::deprecated()) {
+  lifecycle::deprecate_soft("20.5.0", "UnivariateRegressionTable()", "MakeUnivariateRegressionTable()")
+  call <- match.call()
+  call[[1L]] <- MakeUnivariateRegressionTable
+  eval.parent(call)
+}
+
+ScidrUnivariateResultsFromBody <- function(body, outcome, outcome_label) {
+  rows <- body[!is.na(body$estimate), , drop = FALSE]
+  n_col <- intersect(c("N_obs", "N"), names(rows))
+  data.frame(
+    Outcome = outcome,
+    OutcomeLabel = outcome_label,
+    OutcomeFamily = rows$outcome_family,
+    EffectType = rows$effect_type,
+    Predictor = rows$variable,
+    PredictorLabel = rows$var_label,
+    Term = if ("term" %in% names(rows)) rows$term else NA_character_,
+    Level = ifelse(rows$row_type == "level", rows$label, NA_character_),
+    TermLabel = ifelse(
+      !is.na(rows$label) & rows$label != rows$var_label,
+      paste0(rows$var_label, " : ", rows$label),
+      rows$var_label
+    ),
+    N = if (length(n_col) > 0) as.numeric(rows[[n_col[[1]]]]) else NA_real_,
+    Estimate = rows$estimate,
+    StdError = rows$std.error,
+    ConfLow = rows$conf.low,
+    ConfHigh = rows$conf.high,
+    PValue = rows$p.value,
+    Significant = rows$p.value < 0.05,
+    ReferenceValue = ifelse(rows$effect_type == "Odds ratio", 1, 0),
+    stringsAsFactors = FALSE,
+    row.names = NULL
+  )
 }
 
 ScidrUnivariateOutcomeFamily <- function(x, outcome, method) {
