@@ -1,0 +1,257 @@
+--- re-building ‘MakeComparisonTable.qmd’ using html
+[31m
+
+processing file: MakeComparisonTable.qmd
+[39m[31moutput file: MakeComparisonTable.knit.md
+
+[39m[1mpandoc [22m
+  to: html
+  output-file: MakeComparisonTable.html
+  standalone: true
+  embed-resources: true
+  wrap: none
+  default-image-extension: png
+  css:
+    - >-
+      /Library/Frameworks/R.framework/Versions/4.5-arm64/Resources/library/quarto/rmarkdown/template/quarto_vignette/resources/vignette.css
+  toc: true
+  number-sections: true
+  variables: {}
+  
+[1mmetadata[22m
+  document-css: false
+  lang: en
+  engines:
+    - path: /Applications/quarto/share/extension-subtrees/julia-engine/_extensions/julia-engine/julia-engine.js
+  minimal: true
+  theme: none
+  title: Creating comparison tables with MakeComparisonTable()
+  description: Generate publication-ready comparison tables with effect sizes, covariate adjustment, and pairwise comparisons.
+  vignette: |
+    %\VignetteIndexEntry{Creating comparison tables with MakeComparisonTable()} %\VignetteEngine{quarto::html} %\VignetteEncoding{UTF-8}
+  
+Output created: MakeComparisonTable.html
+
+--- finished re-building ‘MakeComparisonTable.qmd’
+
+--- re-building ‘MakeUnivariateRegressionTable.qmd’ using html
+[31m
+
+processing file: MakeUnivariateRegressionTable.qmd
+[39m[31moutput file: MakeUnivariateRegressionTable.knit.md
+
+[39m[1mpandoc [22m
+  to: html
+  output-file: MakeUnivariateRegressionTable.html
+  standalone: true
+  embed-resources: true
+  wrap: none
+  default-image-extension: png
+  css:
+    - >-
+      /Library/Frameworks/R.framework/Versions/4.5-arm64/Resources/library/quarto/rmarkdown/template/quarto_vignette/resources/vignette.css
+  toc: true
+  number-sections: true
+  variables: {}
+  
+[1mmetadata[22m
+  document-css: false
+  lang: en
+  engines:
+    - path: /Applications/quarto/share/extension-subtrees/julia-engine/_extensions/julia-engine/julia-engine.js
+  minimal: true
+  theme: none
+  title: Screening Outcomes and Predictors with MakeUnivariateRegressionTable()
+  description: Create label-aware univariate regression tables across multiple outcomes and predictors.
+  vignette: |
+    %\VignetteIndexEntry{Screening Outcomes and Predictors with MakeUnivariateRegressionTable()} %\VignetteEngine{quarto::html} %\VignetteEncoding{UTF-8}
+  
+Output created: MakeUnivariateRegressionTable.html
+
+--- finished re-building ‘MakeUnivariateRegressionTable.qmd’
+
+--- re-building ‘PlotCorrelationsHeatmap.qmd’ using html
+[31m
+
+processing file: PlotCorrelationsHeatmap.qmd
+[39m[31moutput file: PlotCorrelationsHeatmap.knit.md
+
+[39m[1mpandoc [22m
+  to: html
+  output-file: PlotCorrelationsHeatmap.html
+  standalone: true
+  embed-resources: true
+  wrap: none
+  default-image-extension: png
+  css:
+    - >-
+      /Library/Frameworks/R.framework/Versions/4.5-arm64/Resources/library/quarto/rmarkdown/template/quarto_vignette/resources/vignette.css
+  toc: true
+  number-sections: true
+  variables: {}
+  
+[1mmetadata[22m
+  document-css: false
+  lang: en
+  engines:
+    - path: /Applications/quarto/share/extension-subtrees/julia-engine/_extensions/julia-engine/julia-engine.js
+  minimal: true
+  theme: none
+  title: Exploring associations with PlotCorrelationsHeatmap()
+  description: Create correlation heatmaps, perform FDR correction, adjust for covariates, and investigate significant associations.
+  knitr:
+    opts_chunk:
+      fig.retina: 1
+  vignette: |
+    %\VignetteIndexEntry{Exploring associations with PlotCorrelationsHeatmap()} %\VignetteEngine{quarto::html} %\VignetteEncoding{UTF-8}
+  
+Output created: PlotCorrelationsHeatmap.html
+
+--- finished re-building ‘PlotCorrelationsHeatmap.qmd’
+
+--- re-building ‘PlotForestFromTable.qmd’ using html
+[31m
+
+processing file: PlotForestFromTable.qmd
+[39m[31moutput file: PlotForestFromTable.knit.md
+
+[39m[1mpandoc [22m
+  to: html
+  output-file: PlotForestFromTable.html
+  standalone: true
+  embed-resources: true
+  wrap: none
+  default-image-extension: png
+  css:
+    - >-
+      /Library/Frameworks/R.framework/Versions/4.5-arm64/Resources/library/quarto/rmarkdown/template/quarto_vignette/resources/vignette.css
+  toc: true
+  number-sections: true
+  variables: {}
+  
+[1mmetadata[22m
+  document-css: false
+  lang: en
+  engines:
+    - path: /Applications/quarto/share/extension-subtrees/julia-engine/_extensions/julia-engine/julia-engine.js
+  minimal: true
+  theme: none
+  title: Forest Plots from Univariate Regression Tables
+  description: Visualize estimates from MakeUnivariateRegressionTable() with PlotForestFromTable().
+  vignette: |
+    %\VignetteIndexEntry{Forest Plots from Univariate Regression Tables} %\VignetteEngine{quarto::html} %\VignetteEncoding{UTF-8}
+  
+Output created: PlotForestFromTable.html
+
+--- finished re-building ‘PlotForestFromTable.qmd’
+
+--- re-building ‘PlotMiningMatrix.qmd’ using html
+[31m
+
+processing file: PlotMiningMatrix.qmd
+[39m[31moutput file: PlotMiningMatrix.knit.md
+
+[39m[1mpandoc [22m
+  to: html
+  output-file: PlotMiningMatrix.html
+  standalone: true
+  embed-resources: true
+  wrap: none
+  default-image-extension: png
+  css:
+    - >-
+      /Library/Frameworks/R.framework/Versions/4.5-arm64/Resources/library/quarto/rmarkdown/template/quarto_vignette/resources/vignette.css
+  toc: true
+  number-sections: true
+  variables: {}
+  
+[1mmetadata[22m
+  document-css: false
+  lang: en
+  engines:
+    - path: /Applications/quarto/share/extension-subtrees/julia-engine/_extensions/julia-engine/julia-engine.js
+  minimal: true
+  theme: none
+  title: Exploratory discovery with PlotMiningMatrix()
+  description: Rapidly identify patterns, anomalies, covariates, and candidate hypotheses across an entire dataset.
+  knitr:
+    opts_chunk:
+      fig.retina: 1
+  vignette: |
+    %\VignetteIndexEntry{Exploratory discovery with PlotMiningMatrix()} %\VignetteEngine{quarto::html} %\VignetteEncoding{UTF-8}
+  
+Output created: PlotMiningMatrix.html
+
+--- finished re-building ‘PlotMiningMatrix.qmd’
+
+--- re-building ‘UnivariateRegressions.qmd’ using html
+[31m
+
+processing file: UnivariateRegressions.qmd
+[39m[31moutput file: UnivariateRegressions.knit.md
+
+[39m[1mpandoc [22m
+  to: html
+  output-file: UnivariateRegressions.html
+  standalone: true
+  embed-resources: true
+  wrap: none
+  default-image-extension: png
+  css:
+    - >-
+      /Library/Frameworks/R.framework/Versions/4.5-arm64/Resources/library/quarto/rmarkdown/template/quarto_vignette/resources/vignette.css
+  toc: true
+  number-sections: true
+  variables: {}
+  
+[1mmetadata[22m
+  document-css: false
+  lang: en
+  engines:
+    - path: /Applications/quarto/share/extension-subtrees/julia-engine/_extensions/julia-engine/julia-engine.js
+  minimal: true
+  theme: none
+  title: Screening predictors with MakeUnivariateRegressionTable()
+  description: Generate publication-ready regression tables and forest plots across multiple outcomes and predictors.
+  vignette: |
+    %\VignetteIndexEntry{Screening predictors with MakeUnivariateRegressionTable()} %\VignetteEngine{quarto::html} %\VignetteEncoding{UTF-8}
+  
+Output created: UnivariateRegressions.html
+
+--- finished re-building ‘UnivariateRegressions.qmd’
+
+--- re-building ‘getting-started.qmd’ using html
+[31m
+
+processing file: getting-started.qmd
+[39m[31moutput file: getting-started.knit.md
+
+[39m[1mpandoc [22m
+  to: html
+  output-file: getting-started.html
+  standalone: true
+  embed-resources: true
+  wrap: none
+  default-image-extension: png
+  css:
+    - >-
+      /Library/Frameworks/R.framework/Versions/4.5-arm64/Resources/library/quarto/rmarkdown/template/quarto_vignette/resources/vignette.css
+  toc: true
+  toc-depth: 2
+  variables: {}
+  
+[1mmetadata[22m
+  document-css: false
+  lang: en
+  engines:
+    - path: /Applications/quarto/share/extension-subtrees/julia-engine/_extensions/julia-engine/julia-engine.js
+  minimal: true
+  theme: none
+  title: Getting started with SciDataReportR
+  vignette: |
+    %\VignetteIndexEntry{Getting started with SciDataReportR} %\VignetteEngine{quarto::html} %\VignetteEncoding{UTF-8}
+  
+Output created: getting-started.html
+
+--- finished re-building ‘getting-started.qmd’
+

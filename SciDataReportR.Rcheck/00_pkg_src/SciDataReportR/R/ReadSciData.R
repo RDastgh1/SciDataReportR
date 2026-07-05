@@ -140,27 +140,47 @@ ReadSciData <- function(
       ...
     ),
 
-    xlsx = readxl::read_excel(
-      path = path,
-      sheet = excel_sheet,
-      skip = excel_skip,
-      col_names = col_names,
-      range = range,
-      guess_max = guess_max,
-      .name_repair = "minimal",
-      ...
-    ),
+    xlsx = {
+      if (!requireNamespace("readxl", quietly = TRUE)) {
+        stop(
+          "Package `readxl` is required to read Excel files. ",
+          "Install it with install.packages('readxl').",
+          call. = FALSE
+        )
+      }
 
-    xls = readxl::read_excel(
-      path = path,
-      sheet = excel_sheet,
-      skip = excel_skip,
-      col_names = col_names,
-      range = range,
-      guess_max = guess_max,
-      .name_repair = "minimal",
-      ...
-    ),
+      readxl::read_excel(
+        path = path,
+        sheet = excel_sheet,
+        skip = excel_skip,
+        col_names = col_names,
+        range = range,
+        guess_max = guess_max,
+        .name_repair = "minimal",
+        ...
+      )
+    },
+
+    xls = {
+      if (!requireNamespace("readxl", quietly = TRUE)) {
+        stop(
+          "Package `readxl` is required to read Excel files. ",
+          "Install it with install.packages('readxl').",
+          call. = FALSE
+        )
+      }
+
+      readxl::read_excel(
+        path = path,
+        sheet = excel_sheet,
+        skip = excel_skip,
+        col_names = col_names,
+        range = range,
+        guess_max = guess_max,
+        .name_repair = "minimal",
+        ...
+      )
+    },
 
     rds = readRDS(path),
 
@@ -228,7 +248,17 @@ ReadSciData <- function(
       arrow::read_feather(file = path, as_data_frame = TRUE, ...)
     },
 
-    json = jsonlite::read_json(path = path, simplifyVector = TRUE, ...),
+    json = {
+      if (!requireNamespace("jsonlite", quietly = TRUE)) {
+        stop(
+          "Package `jsonlite` is required to read JSON files. ",
+          "Install it with install.packages('jsonlite').",
+          call. = FALSE
+        )
+      }
+
+      jsonlite::read_json(path = path, simplifyVector = TRUE, ...)
+    },
 
     stop("Unsupported file type: .", ext, " for file ", path, call. = FALSE)
   )

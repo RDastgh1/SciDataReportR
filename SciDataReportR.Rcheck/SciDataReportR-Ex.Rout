@@ -1032,7 +1032,7 @@ Warning: Removed 3 rows containing missing values or values outside the scale ra
     <div class="sdr-section-title">Validation checks</div>
     <div class="sdr-section-subtitle">Search, filter, sort, and expand rows to inspect merge-integrity examples. INFO rows summarize rows, columns, and unique keys across the source and merged datasets.</div>
     <div id="htmlwidget-484ed42468d86de4a421" class="reactable html-widget" style="width:100%;height:350px;"></div>
-    <script type="application/json" data-for="htmlwidget-484ed42468d86de4a421">{"x":{"tag":{"name":"Reactable","attribs":{"data":{"Status":["INFO","INFO","INFO","PASS","PASS","PASS","PASS","PASS","PASS","PASS","PASS","PASS","PASS"],"Check":["Rows","Columns","Unique keys","Key Types","Missing Keys","Duplicate Keys","Coverage","Row Inflation","Overlapping variables","Unresolved duplicates","Variable conflicts","Suspicious conflicts","Merge readiness"],"Count":[50,3,50,0,0,0,0,1,0,0,0,0,0],"Details":["Left: 50; Right: 50; Merged: 50.","Left: 2; Right: 2; Merged: 3.","Unique key combinations - Left: 50; Right: 50; Merged: 50.","Key storage classes match across datasets.","No missing key rows detected.","No duplicate complete key combinations detected.","All complete source key combinations overlap.","No meaningful row inflation detected.","No non-key variables overlap across source datasets.","No unresolved duplicate variable pairs detected.","No duplicated-variable value conflicts detected.","No low-agreement or class-mismatched duplicated variables detected.","No major merge-integrity blockers detected."],"Examples":["None","None","None","None","None","None","<strong>Matching examples:<\/strong><br>1<br>2<br>3<br>4<br>5<br>6<br>7<br>8<br>9<br>10<br><br><strong>Left only examples:<\/strong><br>None<br><br><strong>Right only examples:<\/strong><br>None","Row inflation factor: 1","None","None","None","None","No major merge-integrity blockers detected."]},"columns":[{"id":".details","name":"","type":null,"sortable":false,"resizable":false,"filterable":false,"searchable":false,"width":45,"align":"center","details":[null,null,null,{"name":"div","attribs":{"className":"sdr-detail-box"},"children":[{"name":"div","attribs":{"className":"sdr-detail-title"},"children":["Key Types details"]},{"name":"p","attribs":{},"children":["Key storage classes match across datasets."]},{"name":"div","attribs":{"className":"sdr-detail-subtitle"},"children":["Examples"]},{"name":"div","attribs":{"className":"sdr-detail-examples"},"children":["None"]}]},{"name":"div","attribs":{"className":"sdr-detail-box"},"children":[{"name":"div","attribs":{"className":"sdr-detail-title"},"children":["Missing Keys details"]},{"name":"p","attribs":{},"children":["No missing key rows detected."]},{"name":"div","attribs":{"className":"sdr-detail-subtitle"},"children":["Examples"]},{"name":"div","attribs":{"className":"sdr-detail-examples"},"children":["None"]}]},{"name":"div","attribs":{"className":"sdr-detail-box"},"children":[{"name":"div","attribs":{"className":"sdr-detail-title"},"children":["Duplicate Keys details"]},{"name":"p","attribs":{},"children":["No duplicate complete key combinations detected."]},{"name":"div","attribs":{"className":"sdr-detail-subtitle"},"children":["Examples"]},{"name":"div","attribs":{"className":"sdr-detail-examples"},"children":["None"]}]},{"name":"div","attribs":{"className":"sdr-detail-box"},"children":[{"name":"div","attribs":{"className":"sdr-detail-title"},"children":["Coverage details"]},{"name":"p","attribs":{},"children":["All complete source key combinations overlap."]},{"name":"div","attribs":{"className":"sdr-detail-subtitle"},"children":["Examples"]},{"name":"div","attribs":{"className":"sdr-detail-examples"},"children":["<strong>Matching examples:<\/strong><br>1<br>2<br>3<br>4<br>5<br>6<br>7<br>8<br>9<br>10<br><br><strong>Left only examples:<\/strong><br>None<br><br><strong>Right only examples:<\/strong><br>None"]}]},{"name":"div","attribs":{"className":"sdr-detail-box"},"children":[{"name":"div","attribs":{"className":"sdr-detail-title"},"children":["Row Inflation details"]},{"name":"p","attribs":{},"children":["No meaningful row inflation detected."]},{"name":"div","attribs":{"className":"sdr-detail-subtitle"},"children":["Examples"]},{"name":"div","attribs":{"className":"sdr-detail-examples"},"children":["Row inflation factor: 1"]}]},{"name":"div","attribs":{"className":"sdr-detail-box"},"children":[{"name":"div","attribs":{"className":"sdr-detail-title"},"children":["Overlapping variables details"]},{"name":"p","attribs":{},"children":["No non-key variables overlap across source datasets."]},{"name":"div","attribs":{"className":"sdr-detail-subtitle"},"children":["Examples"]},{"name":"div","attribs":{"className":"sdr-detail-examples"},"children":["None"]}]},{"name":"div","attribs":{"className":"sdr-detail-box"},"children":[{"name":"div","attribs":{"className":"sdr-detail-title"},"children":["Unresolved duplicates details"]},{"name":"p","attribs":{},"children":["No unresolved duplicate variable pairs detected."]},{"name":"div","attribs":{"className":"sdr-detail-subtitle"},"children":["Examples"]},{"name":"div","attribs":{"className":"sdr-detail-examples"},"children":["None"]}]},{"name":"div","attribs":{"className":"sdr-detail-box"},"children":[{"name":"div","attribs":{"className":"sdr-detail-title"},"children":["Variable conflicts details"]},{"name":"p","attribs":{},"children":["No duplicated-variable value conflicts detected."]},{"name":"div","attribs":{"className":"sdr-detail-subtitle"},"children":["Examples"]},{"name":"div","attribs":{"className":"sdr-detail-examples"},"children":["None"]}]},{"name":"div","attribs":{"className":"sdr-detail-box"},"children":[{"name":"div","attribs":{"className":"sdr-detail-title"},"children":["Suspicious conflicts details"]},{"name":"p","attribs":{},"children":["No low-agreement or class-mismatched duplicated variables detected."]},{"name":"div","attribs":{"className":"sdr-detail-subtitle"},"children":["Examples"]},{"name":"div","attribs":{"className":"sdr-detail-examples"},"children":["None"]}]},{"name":"div","attribs":{"className":"sdr-detail-box"},"children":[{"name":"div","attribs":{"className":"sdr-detail-title"},"children":["Merge readiness details"]},{"name":"p","attribs":{},"children":["No major merge-integrity blockers detected."]},{"name":"div","attribs":{"className":"sdr-detail-subtitle"},"children":["Examples"]},{"name":"div","attribs":{"className":"sdr-detail-examples"},"children":["No major merge-integrity blockers detected."]}]}]},{"id":"Status","name":"Status","type":"character","cell":[{"name":"span","attribs":{"style":{"display":"inline-block","padding":"4px 9px","border-radius":"999px","font-weight":"700","color":"#1565C0","background":"#E3F2FD"}},"children":["● INFO"]},{"name":"span","attribs":{"style":{"display":"inline-block","padding":"4px 9px","border-radius":"999px","font-weight":"700","color":"#1565C0","background":"#E3F2FD"}},"children":["● INFO"]},{"name":"span","attribs":{"style":{"display":"inline-block","padding":"4px 9px","border-radius":"999px","font-weight":"700","color":"#1565C0","background":"#E3F2FD"}},"children":["● INFO"]},{"name":"span","attribs":{"style":{"display":"inline-block","padding":"4px 9px","border-radius":"999px","font-weight":"700","color":"#2E7D32","background":"#E8F5E9"}},"children":["● PASS"]},{"name":"span","attribs":{"style":{"display":"inline-block","padding":"4px 9px","border-radius":"999px","font-weight":"700","color":"#2E7D32","background":"#E8F5E9"}},"children":["● PASS"]},{"name":"span","attribs":{"style":{"display":"inline-block","padding":"4px 9px","border-radius":"999px","font-weight":"700","color":"#2E7D32","background":"#E8F5E9"}},"children":["● PASS"]},{"name":"span","attribs":{"style":{"display":"inline-block","padding":"4px 9px","border-radius":"999px","font-weight":"700","color":"#2E7D32","background":"#E8F5E9"}},"children":["● PASS"]},{"name":"span","attribs":{"style":{"display":"inline-block","padding":"4px 9px","border-radius":"999px","font-weight":"700","color":"#2E7D32","background":"#E8F5E9"}},"children":["● PASS"]},{"name":"span","attribs":{"style":{"display":"inline-block","padding":"4px 9px","border-radius":"999px","font-weight":"700","color":"#2E7D32","background":"#E8F5E9"}},"children":["● PASS"]},{"name":"span","attribs":{"style":{"display":"inline-block","padding":"4px 9px","border-radius":"999px","font-weight":"700","color":"#2E7D32","background":"#E8F5E9"}},"children":["● PASS"]},{"name":"span","attribs":{"style":{"display":"inline-block","padding":"4px 9px","border-radius":"999px","font-weight":"700","color":"#2E7D32","background":"#E8F5E9"}},"children":["● PASS"]},{"name":"span","attribs":{"style":{"display":"inline-block","padding":"4px 9px","border-radius":"999px","font-weight":"700","color":"#2E7D32","background":"#E8F5E9"}},"children":["● PASS"]},{"name":"span","attribs":{"style":{"display":"inline-block","padding":"4px 9px","border-radius":"999px","font-weight":"700","color":"#2E7D32","background":"#E8F5E9"}},"children":["● PASS"]}],"width":130},{"id":"Check","name":"Check","type":"character","minWidth":190},{"id":"Count","name":"Count","type":"numeric","width":90,"align":"center"},{"id":"Details","name":"Details","type":"character","minWidth":350},{"id":"Examples","name":"Examples","type":"character","show":false,"html":true}],"filterable":true,"searchable":true,"pagination":false,"highlight":true,"bordered":true,"striped":true,"compact":true,"width":"100%","height":"350px","dataKey":"7846d77993311c365685a8592d941036"},"children":[]},"class":"reactR_markup"},"evals":[],"jsHooks":[]}</script>
+    <script type="application/json" data-for="htmlwidget-484ed42468d86de4a421">{"x":{"tag":{"name":"Reactable","attribs":{"data":{"Status":["INFO","INFO","INFO","PASS","PASS","PASS","PASS","PASS","PASS","PASS","PASS","PASS","PASS"],"Check":["Rows","Columns","Unique keys","Key Types","Missing Keys","Duplicate Keys","Coverage","Row Inflation","Overlapping variables","Unresolved duplicates","Variable conflicts","Suspicious conflicts","Merge readiness"],"Count":[50,3,50,0,0,0,0,1,0,0,0,0,0],"Details":["Left: 50; Right: 50; Merged: 50.","Left: 2; Right: 2; Merged: 3.","Unique key combinations - Left: 50; Right: 50; Merged: 50.","Key storage classes match across datasets.","No missing key rows detected.","No duplicate complete key combinations detected.","All complete source key combinations overlap.","No meaningful row inflation detected.","No non-key variables overlap across source datasets.","No unresolved duplicate variable pairs detected.","No duplicated-variable value conflicts detected.","No low-agreement or class-mismatched duplicated variables detected.","No major merge-integrity blockers detected."],"Examples":["None","None","None","None","None","None","<strong>Matching examples:<\/strong><br>1<br>2<br>3<br>4<br>5<br>6<br>7<br>8<br>9<br>10<br><br><strong>Left only examples:<\/strong><br>None<br><br><strong>Right only examples:<\/strong><br>None","Row inflation factor: 1","None","None","None","None","No major merge-integrity blockers detected."]},"columns":[{"id":".details","name":"","type":null,"sortable":false,"resizable":false,"filterable":false,"searchable":false,"width":45,"align":"center","details":[null,null,null,{"name":"div","attribs":{"className":"sdr-detail-box"},"children":[{"name":"div","attribs":{"className":"sdr-detail-title"},"children":["Key Types details"]},{"name":"p","attribs":{},"children":["Key storage classes match across datasets."]},{"name":"div","attribs":{"className":"sdr-detail-subtitle"},"children":["Examples"]},{"name":"div","attribs":{"className":"sdr-detail-examples"},"children":["None"]}]},{"name":"div","attribs":{"className":"sdr-detail-box"},"children":[{"name":"div","attribs":{"className":"sdr-detail-title"},"children":["Missing Keys details"]},{"name":"p","attribs":{},"children":["No missing key rows detected."]},{"name":"div","attribs":{"className":"sdr-detail-subtitle"},"children":["Examples"]},{"name":"div","attribs":{"className":"sdr-detail-examples"},"children":["None"]}]},{"name":"div","attribs":{"className":"sdr-detail-box"},"children":[{"name":"div","attribs":{"className":"sdr-detail-title"},"children":["Duplicate Keys details"]},{"name":"p","attribs":{},"children":["No duplicate complete key combinations detected."]},{"name":"div","attribs":{"className":"sdr-detail-subtitle"},"children":["Examples"]},{"name":"div","attribs":{"className":"sdr-detail-examples"},"children":["None"]}]},{"name":"div","attribs":{"className":"sdr-detail-box"},"children":[{"name":"div","attribs":{"className":"sdr-detail-title"},"children":["Coverage details"]},{"name":"p","attribs":{},"children":["All complete source key combinations overlap."]},{"name":"div","attribs":{"className":"sdr-detail-subtitle"},"children":["Examples"]},{"name":"div","attribs":{"className":"sdr-detail-examples"},"children":["<strong>Matching examples:<\/strong><br>1<br>2<br>3<br>4<br>5<br>6<br>7<br>8<br>9<br>10<br><br><strong>Left only examples:<\/strong><br>None<br><br><strong>Right only examples:<\/strong><br>None"]}]},{"name":"div","attribs":{"className":"sdr-detail-box"},"children":[{"name":"div","attribs":{"className":"sdr-detail-title"},"children":["Row Inflation details"]},{"name":"p","attribs":{},"children":["No meaningful row inflation detected."]},{"name":"div","attribs":{"className":"sdr-detail-subtitle"},"children":["Examples"]},{"name":"div","attribs":{"className":"sdr-detail-examples"},"children":["Row inflation factor: 1"]}]},{"name":"div","attribs":{"className":"sdr-detail-box"},"children":[{"name":"div","attribs":{"className":"sdr-detail-title"},"children":["Overlapping variables details"]},{"name":"p","attribs":{},"children":["No non-key variables overlap across source datasets."]},{"name":"div","attribs":{"className":"sdr-detail-subtitle"},"children":["Examples"]},{"name":"div","attribs":{"className":"sdr-detail-examples"},"children":["None"]}]},{"name":"div","attribs":{"className":"sdr-detail-box"},"children":[{"name":"div","attribs":{"className":"sdr-detail-title"},"children":["Unresolved duplicates details"]},{"name":"p","attribs":{},"children":["No unresolved duplicate variable pairs detected."]},{"name":"div","attribs":{"className":"sdr-detail-subtitle"},"children":["Examples"]},{"name":"div","attribs":{"className":"sdr-detail-examples"},"children":["None"]}]},{"name":"div","attribs":{"className":"sdr-detail-box"},"children":[{"name":"div","attribs":{"className":"sdr-detail-title"},"children":["Variable conflicts details"]},{"name":"p","attribs":{},"children":["No duplicated-variable value conflicts detected."]},{"name":"div","attribs":{"className":"sdr-detail-subtitle"},"children":["Examples"]},{"name":"div","attribs":{"className":"sdr-detail-examples"},"children":["None"]}]},{"name":"div","attribs":{"className":"sdr-detail-box"},"children":[{"name":"div","attribs":{"className":"sdr-detail-title"},"children":["Suspicious conflicts details"]},{"name":"p","attribs":{},"children":["No low-agreement or class-mismatched duplicated variables detected."]},{"name":"div","attribs":{"className":"sdr-detail-subtitle"},"children":["Examples"]},{"name":"div","attribs":{"className":"sdr-detail-examples"},"children":["None"]}]},{"name":"div","attribs":{"className":"sdr-detail-box"},"children":[{"name":"div","attribs":{"className":"sdr-detail-title"},"children":["Merge readiness details"]},{"name":"p","attribs":{},"children":["No major merge-integrity blockers detected."]},{"name":"div","attribs":{"className":"sdr-detail-subtitle"},"children":["Examples"]},{"name":"div","attribs":{"className":"sdr-detail-examples"},"children":["No major merge-integrity blockers detected."]}]}]},{"id":"Status","name":"Status","type":"character","cell":[{"name":"span","attribs":{"style":{"display":"inline-block","padding":"4px 9px","border-radius":"999px","font-weight":"700","color":"#1565C0","background":"#E3F2FD"}},"children":["● INFO"]},{"name":"span","attribs":{"style":{"display":"inline-block","padding":"4px 9px","border-radius":"999px","font-weight":"700","color":"#1565C0","background":"#E3F2FD"}},"children":["● INFO"]},{"name":"span","attribs":{"style":{"display":"inline-block","padding":"4px 9px","border-radius":"999px","font-weight":"700","color":"#1565C0","background":"#E3F2FD"}},"children":["● INFO"]},{"name":"span","attribs":{"style":{"display":"inline-block","padding":"4px 9px","border-radius":"999px","font-weight":"700","color":"#2E7D32","background":"#E8F5E9"}},"children":["● PASS"]},{"name":"span","attribs":{"style":{"display":"inline-block","padding":"4px 9px","border-radius":"999px","font-weight":"700","color":"#2E7D32","background":"#E8F5E9"}},"children":["● PASS"]},{"name":"span","attribs":{"style":{"display":"inline-block","padding":"4px 9px","border-radius":"999px","font-weight":"700","color":"#2E7D32","background":"#E8F5E9"}},"children":["● PASS"]},{"name":"span","attribs":{"style":{"display":"inline-block","padding":"4px 9px","border-radius":"999px","font-weight":"700","color":"#2E7D32","background":"#E8F5E9"}},"children":["● PASS"]},{"name":"span","attribs":{"style":{"display":"inline-block","padding":"4px 9px","border-radius":"999px","font-weight":"700","color":"#2E7D32","background":"#E8F5E9"}},"children":["● PASS"]},{"name":"span","attribs":{"style":{"display":"inline-block","padding":"4px 9px","border-radius":"999px","font-weight":"700","color":"#2E7D32","background":"#E8F5E9"}},"children":["● PASS"]},{"name":"span","attribs":{"style":{"display":"inline-block","padding":"4px 9px","border-radius":"999px","font-weight":"700","color":"#2E7D32","background":"#E8F5E9"}},"children":["● PASS"]},{"name":"span","attribs":{"style":{"display":"inline-block","padding":"4px 9px","border-radius":"999px","font-weight":"700","color":"#2E7D32","background":"#E8F5E9"}},"children":["● PASS"]},{"name":"span","attribs":{"style":{"display":"inline-block","padding":"4px 9px","border-radius":"999px","font-weight":"700","color":"#2E7D32","background":"#E8F5E9"}},"children":["● PASS"]},{"name":"span","attribs":{"style":{"display":"inline-block","padding":"4px 9px","border-radius":"999px","font-weight":"700","color":"#2E7D32","background":"#E8F5E9"}},"children":["● PASS"]}],"width":130},{"id":"Check","name":"Check","type":"character","minWidth":190},{"id":"Count","name":"Count","type":"numeric","width":90,"align":"center"},{"id":"Details","name":"Details","type":"character","minWidth":350},{"id":"Examples","name":"Examples","type":"character","show":false,"html":true}],"filterable":true,"searchable":true,"pagination":false,"highlight":true,"bordered":true,"striped":true,"compact":true,"width":"100%","height":"350px","dataKey":"a6b278af005641643d0a462779c79fbb"},"children":[]},"class":"reactR_markup"},"evals":[],"jsHooks":[]}</script>
   </div>
 </div>
 > 
@@ -1053,18 +1053,487 @@ Warning: Removed 3 rows containing missing values or values outside the scale ra
 > 
 > ### ** Examples
 > 
-> ## Not run: 
-> ##D pca_obj <- CreatePCAObject(
-> ##D   data = mtcars,
-> ##D   VarsToReduce = colnames(mtcars)
-> ##D )
-> ##D 
-> ##D summary_obj <- ExtractPCAComponentSummary(pca_obj)
-> ##D 
-> ##D summary_obj$LongTable
-> ##D summary_obj$FormattedSummaryTable
-> ##D summary_obj$FormattedSummaryTableLines
-> ## End(Not run)
+> ## No test: 
+> if (requireNamespace("gt", quietly = TRUE)) {
++   pca_obj <- CreatePCAObject(
++     data = mtcars,
++     VarsToReduce = colnames(mtcars)
++   )
++ 
++   summary_obj <- ExtractPCAComponentSummary(pca_obj)
++ 
++   summary_obj$LongTable
++   summary_obj$FormattedSummaryTable
++   summary_obj$FormattedSummaryTableLines
++ }
+<div id="ydgabwknrs" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+  <style>#ydgabwknrs table {
+  font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#ydgabwknrs thead, #ydgabwknrs tbody, #ydgabwknrs tfoot, #ydgabwknrs tr, #ydgabwknrs td, #ydgabwknrs th {
+  border-style: none;
+}
+
+#ydgabwknrs p {
+  margin: 0;
+  padding: 0;
+}
+
+#ydgabwknrs .gt_table {
+  display: table;
+  border-collapse: collapse;
+  line-height: normal;
+  margin-left: auto;
+  margin-right: auto;
+  color: #333333;
+  font-size: 16px;
+  font-weight: normal;
+  font-style: normal;
+  background-color: #FFFFFF;
+  width: 100%;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #A8A8A8;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #A8A8A8;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+}
+
+#ydgabwknrs .gt_caption {
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
+#ydgabwknrs .gt_title {
+  color: #333333;
+  font-size: 125%;
+  font-weight: initial;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-color: #FFFFFF;
+  border-bottom-width: 0;
+}
+
+#ydgabwknrs .gt_subtitle {
+  color: #333333;
+  font-size: 85%;
+  font-weight: initial;
+  padding-top: 3px;
+  padding-bottom: 5px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-color: #FFFFFF;
+  border-top-width: 0;
+}
+
+#ydgabwknrs .gt_heading {
+  background-color: #FFFFFF;
+  text-align: center;
+  border-bottom-color: #FFFFFF;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#ydgabwknrs .gt_bottom_border {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#ydgabwknrs .gt_col_headings {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#ydgabwknrs .gt_col_heading {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 6px;
+  padding-left: 5px;
+  padding-right: 5px;
+  overflow-x: hidden;
+}
+
+#ydgabwknrs .gt_column_spanner_outer {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  padding-top: 0;
+  padding-bottom: 0;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
+#ydgabwknrs .gt_column_spanner_outer:first-child {
+  padding-left: 0;
+}
+
+#ydgabwknrs .gt_column_spanner_outer:last-child {
+  padding-right: 0;
+}
+
+#ydgabwknrs .gt_column_spanner {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  overflow-x: hidden;
+  display: inline-block;
+  width: 100%;
+}
+
+#ydgabwknrs .gt_spanner_row {
+  border-bottom-style: hidden;
+}
+
+#ydgabwknrs .gt_group_heading {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+  text-align: left;
+}
+
+#ydgabwknrs .gt_empty_group_heading {
+  padding: 0.5px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: middle;
+}
+
+#ydgabwknrs .gt_from_md > :first-child {
+  margin-top: 0;
+}
+
+#ydgabwknrs .gt_from_md > :last-child {
+  margin-bottom: 0;
+}
+
+#ydgabwknrs .gt_row {
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+  margin: 10px;
+  border-top-style: solid;
+  border-top-width: 1px;
+  border-top-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+  overflow-x: hidden;
+}
+
+#ydgabwknrs .gt_stub {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#ydgabwknrs .gt_stub_row_group {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 5px;
+  padding-right: 5px;
+  vertical-align: top;
+}
+
+#ydgabwknrs .gt_row_group_first td {
+  border-top-width: 2px;
+}
+
+#ydgabwknrs .gt_row_group_first th {
+  border-top-width: 2px;
+}
+
+#ydgabwknrs .gt_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#ydgabwknrs .gt_first_summary_row {
+  border-top-style: solid;
+  border-top-color: #D3D3D3;
+}
+
+#ydgabwknrs .gt_first_summary_row.thick {
+  border-top-width: 2px;
+}
+
+#ydgabwknrs .gt_last_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#ydgabwknrs .gt_grand_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#ydgabwknrs .gt_first_grand_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-style: double;
+  border-top-width: 6px;
+  border-top-color: #D3D3D3;
+}
+
+#ydgabwknrs .gt_last_grand_summary_row_top {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-style: double;
+  border-bottom-width: 6px;
+  border-bottom-color: #D3D3D3;
+}
+
+#ydgabwknrs .gt_striped {
+  background-color: rgba(128, 128, 128, 0.05);
+}
+
+#ydgabwknrs .gt_table_body {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#ydgabwknrs .gt_footnotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#ydgabwknrs .gt_footnote {
+  margin: 0px;
+  font-size: 90%;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#ydgabwknrs .gt_sourcenotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#ydgabwknrs .gt_sourcenote {
+  font-size: 90%;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#ydgabwknrs .gt_left {
+  text-align: left;
+}
+
+#ydgabwknrs .gt_center {
+  text-align: center;
+}
+
+#ydgabwknrs .gt_right {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+#ydgabwknrs .gt_font_normal {
+  font-weight: normal;
+}
+
+#ydgabwknrs .gt_font_bold {
+  font-weight: bold;
+}
+
+#ydgabwknrs .gt_font_italic {
+  font-style: italic;
+}
+
+#ydgabwknrs .gt_super {
+  font-size: 65%;
+}
+
+#ydgabwknrs .gt_footnote_marks {
+  font-size: 75%;
+  vertical-align: 0.4em;
+  position: initial;
+}
+
+#ydgabwknrs .gt_asterisk {
+  font-size: 100%;
+  vertical-align: 0;
+}
+
+#ydgabwknrs .gt_indent_1 {
+  text-indent: 5px;
+}
+
+#ydgabwknrs .gt_indent_2 {
+  text-indent: 10px;
+}
+
+#ydgabwknrs .gt_indent_3 {
+  text-indent: 15px;
+}
+
+#ydgabwknrs .gt_indent_4 {
+  text-indent: 20px;
+}
+
+#ydgabwknrs .gt_indent_5 {
+  text-indent: 25px;
+}
+
+#ydgabwknrs .katex-display {
+  display: inline-flex !important;
+  margin-bottom: 0.75em !important;
+}
+
+#ydgabwknrs div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
+  height: 0px !important;
+}
+</style>
+  <table class="gt_table" data-quarto-disable-processing="false" data-quarto-bootstrap="false">
+  <thead>
+    <tr class="gt_col_headings">
+      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1" scope="col" id="Component">Component</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1" scope="col" id="Contributors">Top Contributors</th>
+    </tr>
+  </thead>
+  <tbody class="gt_table_body">
+    <tr><td headers="Component" class="gt_row gt_left">RC1</td>
+<td headers="Contributors" class="gt_row gt_left"><span class='gt_from_md'>carb<br>hp<br><span style='color:red'>mpg</span><br>wt</span></td></tr>
+    <tr><td headers="Component" class="gt_row gt_left">RC2</td>
+<td headers="Contributors" class="gt_row gt_left"><span class='gt_from_md'>am<br>gear<br>drat<br><span style='color:red'>wt</span><br><span style='color:red'>disp</span><br>mpg<br><span style='color:red'>cyl</span></span></td></tr>
+    <tr><td headers="Component" class="gt_row gt_left">RC3</td>
+<td headers="Contributors" class="gt_row gt_left"><span class='gt_from_md'><span style='color:red'>qsec</span><br><span style='color:red'>vs</span><br>cyl<br>hp<br>disp<br>carb<br><span style='color:red'>mpg</span></span></td></tr>
+  </tbody>
+  
+</table>
+</div>
+> ## End(No test)
 > 
 > 
 > 
@@ -4924,7 +5393,7 @@ Table: Baseline + labs: keys only in left data (showing up to 10 of 1)
 > cleanEx()
 > options(digits = 7L)
 > base::cat("Time elapsed: ", proc.time() - base::get("ptime", pos = 'CheckExEnv'),"\n")
-Time elapsed:  36.804 5.798 43.032 0.002 0.003 
+Time elapsed:  25.534 0.434 26.464 0 0 
 > grDevices::dev.off()
 null device 
           1 

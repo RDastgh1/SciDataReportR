@@ -37,17 +37,19 @@
 #' }
 #'
 #' @examples
-#' \dontrun{
-#' pca_obj <- CreatePCAObject(
-#'   data = mtcars,
-#'   VarsToReduce = colnames(mtcars)
-#' )
+#' \donttest{
+#' if (requireNamespace("gt", quietly = TRUE)) {
+#'   pca_obj <- CreatePCAObject(
+#'     data = mtcars,
+#'     VarsToReduce = colnames(mtcars)
+#'   )
 #'
-#' summary_obj <- ExtractPCAComponentSummary(pca_obj)
+#'   summary_obj <- ExtractPCAComponentSummary(pca_obj)
 #'
-#' summary_obj$LongTable
-#' summary_obj$FormattedSummaryTable
-#' summary_obj$FormattedSummaryTableLines
+#'   summary_obj$LongTable
+#'   summary_obj$FormattedSummaryTable
+#'   summary_obj$FormattedSummaryTableLines
+#' }
 #' }
 #'
 #' @export
@@ -204,6 +206,13 @@ ExtractPCAComponentSummary <- function(
     )
 
   # Build formatted gt table (comma separated)
+
+  if (!requireNamespace("gt", quietly = TRUE)) {
+    stop(
+      "Package 'gt' is required by ExtractPCAComponentSummary(). ",
+      "Install it with install.packages('gt')."
+    )
+  }
 
   FormattedSummaryTable <- SummaryTable %>%
     gt::gt() %>%

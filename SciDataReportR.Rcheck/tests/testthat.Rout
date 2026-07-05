@@ -84,10 +84,10 @@ Waiting for profiling to be done...
 Waiting for profiling to be done...
 Waiting for profiling to be done...
 Waiting for profiling to be done...
-[ FAIL 0 | WARN 87 | SKIP 0 | PASS 264 ]
+[ FAIL 0 | WARN 86 | SKIP 0 | PASS 264 ]
 
-[ FAIL 0 | WARN 87 | SKIP 0 | PASS 264 ]
+[ FAIL 0 | WARN 86 | SKIP 0 | PASS 264 ]
 > 
 > proc.time()
    user  system elapsed 
- 26.054   3.992  30.127 
+ 16.886   0.318  17.411 

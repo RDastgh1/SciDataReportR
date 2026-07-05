@@ -132,10 +132,10 @@ ExploreMergeValidation <- function(
   )
 
   status_icons <- c(
-    "PASS" = "●",
-    "WARNING" = "●",
-    "FAIL" = "●",
-    "INFO" = "●"
+    "PASS" = "\u25cf",
+    "WARNING" = "\u25cf",
+    "FAIL" = "\u25cf",
+    "INFO" = "\u25cf"
   )
 
   key_columns <- names(MergeObj$IDCoverage$Matching)

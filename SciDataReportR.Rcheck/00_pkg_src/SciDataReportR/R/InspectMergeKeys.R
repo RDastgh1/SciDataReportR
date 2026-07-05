@@ -2,6 +2,9 @@
 #'
 #' Internal helper used by safe_merge().
 #'
+#' @return A list with elements `left` and `right` (the input data frames with
+#'   harmonized key columns) and `report` (a data frame describing the
+#'   harmonization applied to each key).
 #' @keywords internal
 HarmonizeMergeKeys <- function(
   df_before,

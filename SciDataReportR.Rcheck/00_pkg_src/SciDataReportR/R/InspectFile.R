@@ -70,6 +70,13 @@ InspectFile <- function(
   }
 
   if (ext %in% c("xlsx", "xls")) {
+    if (!requireNamespace("readxl", quietly = TRUE)) {
+      stop(
+        "Package `readxl` is required to inspect Excel files. ",
+        "Install it with install.packages('readxl').",
+        call. = FALSE
+      )
+    }
     sheets <- tryCatch(
       readxl::excel_sheets(path),
       error = function(e) {
@@ -208,6 +215,13 @@ InspectFile <- function(
     if (isTRUE(check_styles) && ext == "xlsx") {
       styles_detected <- tryCatch(
         {
+          if (!requireNamespace("openxlsx", quietly = TRUE)) {
+            stop(
+              "Package `openxlsx` is required to inspect workbook styles. ",
+              "Install it with install.packages('openxlsx').",
+              call. = FALSE
+            )
+          }
           wb <- openxlsx::loadWorkbook(path)
           length(openxlsx::getStyles(wb)) > 0
         },

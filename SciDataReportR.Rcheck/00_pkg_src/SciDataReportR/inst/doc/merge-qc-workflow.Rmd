@@ -1,0 +1,204 @@
+---
+title: "Merge QC workflow"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Merge QC workflow}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+has_survival <- requireNamespace("survival", quietly = TRUE)
+has_widgets <- requireNamespace("reactable", quietly = TRUE) &&
+  requireNamespace("htmltools", quietly = TRUE)
+knitr::opts_chunk$set(eval = has_survival)
+```
+
+Merging datasets is where many analysis errors are born: silently duplicated
+rows, IDs that never match, and `.x` / `.y` column pairs that nobody resolves.
+SciDataReportR wraps the merge-and-audit cycle into a small workflow:
+
+- `safe_merge()` performs a left join (exact-key or closest-time) and
+  immediately audits the result with `ValidateMerge()`.
+- `merge_detail()` prints plain-text diagnostic tables for one merge.
+- `ExploreMergeValidation()` renders an interactive dashboard for one merge.
+- `merge_summary_table()` stacks the one-row logs from many merges into a
+  pipeline-level rollup.
+
+```{r setup, message = FALSE}
+library(SciDataReportR)
+library(survival)
+```
+
+## Example 1: a real longitudinal merge (survival::pbc + pbcseq)
+
+The `survival` package ships two related datasets from the Mayo Clinic primary
+biliary cholangitis trial:
+
+- `pbc`: baseline data, one row per patient (418 patients, including 106 who
+  did not participate in the randomized trial),
+- `pbcseq`: longitudinal follow-up labs, multiple rows per patient (only the
+  312 trial participants).
+
+Merging them by patient `id` is a completely ordinary task — and it surfaces
+real coverage gaps and duplicate-key situations that were not staged for this
+vignette.
+
+```{r}
+pbc_baseline <- pbc[, c("id", "age", "sex", "trt", "stage")]
+pbc_labs <- pbcseq[, c("id", "day", "bili", "albumin", "platelet")]
+
+m_pbc <- safe_merge(
+  pbc_baseline,
+  pbc_labs,
+  by = "id",
+  name = "pbc baseline + follow-up labs"
+)
+```
+
+`safe_merge()` returns four elements and prints nothing on its own. The
+one-row `log` is the pipeline-friendly view:
+
+```{r}
+m_pbc$log
+```
+
+The `summary` element is a ready-made `knitr::kable()`:
+
+```{r}
+m_pbc$summary
+```
+
+The audit correctly reports this merge as `FAIL` — not because the code is
+wrong, but because the result needs a decision from you before analysis:
+
+- **Coverage**: 106 patients exist only in the baseline data (the
+  non-trial patients who have no follow-up labs).
+- **Duplicate keys**: `pbcseq` has many rows per patient, so `id` alone does
+  not uniquely identify a row after the merge. If you intended a one-row-per-
+  patient dataset, this is a genuine error; if you intended a longitudinal
+  dataset, you now have written confirmation of what happened.
+
+### Drilling in with merge_detail()
+
+`merge_detail()` prints plain kable tables for the checks, the unmatched keys
+on each side, overlapping variables, and suspicious conflicts, skipping any
+empty section. In R Markdown, use a chunk with `results = "asis"`:
+
+```{r, results = "asis"}
+merge_detail(m_pbc, TopN = 5)
+```
+
+### A closest-time variant
+
+Suppose instead you want a one-row-per-patient dataset containing the lab
+draw closest to enrollment. `safe_merge(method = "closest_time")` calls
+`Merge_ByClosestTime()` under the hood, matching on `id` exactly and picking
+the `pbc_labs` row whose `day` is nearest to each baseline row's time
+(enrollment is day 0 here).
+
+```{r}
+pbc_enroll <- pbc_baseline
+pbc_enroll$enroll_day <- 0
+
+m_closest <- safe_merge(
+  pbc_enroll,
+  pbc_labs,
+  by = "id",
+  name = "closest lab to enrollment",
+  method = "closest_time",
+  time_var_before = "enroll_day",
+  time_var_add = "day"
+)
+
+m_closest$log
+```
+
+Note the caveat: `ValidateMerge()` audits duplicate keys using `by` alone
+(here `id`), not the time variables. In longitudinal settings, repeated keys
+in the lab data are legitimate repeated visits, so a duplicate-key `FAIL` from
+a closest-time merge may reflect expected repetition rather than a merge
+error. The validation output is deliberately left as-is — read it with that
+caveat in mind (here, the merged data itself has one row per patient, which
+you can confirm from `RowsBefore` and `RowsAfter`).
+
+## Example 2: a synthetic merge that fails every check
+
+To demonstrate the remaining check types — key-type mismatches, unresolved
+`.x` / `.y` pairs, and value conflicts — here is a small synthetic pair of
+data frames constructed to go wrong in all the classic ways: a duplicated
+key, an ID stored as integer on one side and double on the other, IDs
+missing from each side, and a `sex` column present in both sources with
+disagreeing values.
+
+```{r}
+demographics <- data.frame(
+  id = 1:6, # integer
+  sex = c("F", "M", "F", "F", "M", "F"),
+  age = c(54, 61, 47, 66, 58, 50)
+)
+
+device_data <- data.frame(
+  id = c(1, 2, 2, 5, 7), # double, with id 2 duplicated
+  sex = c("F", "F", "M", "M", "F"), # disagrees with demographics for id 2/5
+  score = c(0.82, 0.75, 0.71, 0.64, 0.90)
+)
+
+m_synth <- safe_merge(
+  demographics,
+  device_data,
+  by = "id",
+  name = "demographics + device data"
+)
+
+m_synth$log
+```
+
+```{r}
+m_synth$summary
+```
+
+Every check type in `ValidateMerge()` now has something to say: the duplicate
+key and the unresolved `sex.x` / `sex.y` pair are integrity blockers
+(`FAIL`), while key-type coercion, coverage gaps, row inflation, overlapping
+variables, and value conflicts appear as warnings.
+
+```{r, results = "asis"}
+merge_detail(m_synth)
+```
+
+### Interactive review with ExploreMergeValidation()
+
+For interactive QC sessions, pass the `validation` element to
+`ExploreMergeValidation()`. The default `Detail = "Compact"` keeps the checks
+table front and center, with the coverage and conflict explorers as
+click-to-expand accordion sections labeled with their item counts. Use
+`Detail = "Full"` to render them expanded.
+
+```{r, eval = has_survival && has_widgets}
+ExploreMergeValidation(
+  m_synth$validation,
+  Title = "Demographics + device data",
+  Detail = "Compact"
+)
+```
+
+## Pipeline rollup with merge_summary_table()
+
+After a sequence of merges, stack the logs into a single table. With
+`flagged_only = TRUE`, only merges whose worst check status is not `PASS`
+remain — an end-of-pipeline QC gate:
+
+```{r}
+merge_summary_table(
+  list(m_pbc$log, m_closest$log, m_synth$log),
+  flagged_only = TRUE
+)
+```
+
+An empty table here would mean every merge in the pipeline passed cleanly;
+any row that appears is a merge that still needs review before analysis.

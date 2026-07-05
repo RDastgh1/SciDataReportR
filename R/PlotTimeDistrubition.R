@@ -28,6 +28,12 @@ PlotTimeDistribution <- function(data,
 
 
   # Convert date variable to numeric year
+  if (!requireNamespace("lubridate", quietly = TRUE)) {
+    stop(
+      "Package 'lubridate' is required by PlotTimeDistribution(). ",
+      "Install it with install.packages('lubridate')."
+    )
+  }
   Data$Year <- lubridate::decimal_date(Data[[DateVariable]])
 
   # Create ggplot object

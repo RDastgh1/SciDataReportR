@@ -53,6 +53,14 @@ PrepSPSS <- function(
     stop("`data` must have column names.", call. = FALSE)
   }
 
+  if (!requireNamespace("janitor", quietly = TRUE)) {
+    stop(
+      "Package `janitor` is required to clean variable names for SPSS. ",
+      "Install it with install.packages('janitor').",
+      call. = FALSE
+    )
+  }
+
   spss_names <- janitor::make_clean_names(
     original_names,
     case = "snake",

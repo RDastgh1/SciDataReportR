@@ -13,6 +13,11 @@ HarmonizeMergeKeys(
   n_examples = 5
 )
 }
+\value{
+A list with elements \code{left} and \code{right} (the input data frames with
+harmonized key columns) and \code{report} (a data frame describing the
+harmonization applied to each key).
+}
 \description{
 Internal helper used by safe_merge().
 }

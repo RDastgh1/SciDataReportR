@@ -681,18 +681,20 @@ base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 
 ### ** Examples
 
-## Not run: 
-##D pca_obj <- CreatePCAObject(
-##D   data = mtcars,
-##D   VarsToReduce = colnames(mtcars)
-##D )
-##D 
-##D summary_obj <- ExtractPCAComponentSummary(pca_obj)
-##D 
-##D summary_obj$LongTable
-##D summary_obj$FormattedSummaryTable
-##D summary_obj$FormattedSummaryTableLines
-## End(Not run)
+## No test: 
+if (requireNamespace("gt", quietly = TRUE)) {
+  pca_obj <- CreatePCAObject(
+    data = mtcars,
+    VarsToReduce = colnames(mtcars)
+  )
+
+  summary_obj <- ExtractPCAComponentSummary(pca_obj)
+
+  summary_obj$LongTable
+  summary_obj$FormattedSummaryTable
+  summary_obj$FormattedSummaryTableLines
+}
+## End(No test)
 
 
 

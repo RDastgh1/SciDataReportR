@@ -5,6 +5,10 @@ format:
   html:
     toc: true
     number-sections: true
+    fig-dpi: 72
+knitr:
+  opts_chunk:
+    fig.retina: 1
 execute:
   warning: false
   message: false
@@ -71,8 +75,8 @@ length(vars_mining)
 
 ```{r}
 #| column: screen
-#| fig-height: 12
-#| fig-width: 18
+#| fig-height: 8
+#| fig-width: 12
 MiningObj <- PlotMiningMatrix(
   Data = df_Revalued,
   OutcomeVars = vars_mining
@@ -117,8 +121,8 @@ By default, parametric analyses are used.
 
 ```{r}
 #| column: screen
-#| fig-height: 12
-#| fig-width: 18
+#| fig-height: 8
+#| fig-width: 12
 #| 
 MiningParametric <- PlotMiningMatrix(
   Data = df_Revalued,
@@ -137,8 +141,8 @@ For skewed variables or datasets containing substantial outliers, nonparametric 
 
 ```{r}
 #| column: screen
-#| fig-height: 12
-#| fig-width: 18
+#| fig-height: 8
+#| fig-width: 12
 
 
 MiningNonParametric <- PlotMiningMatrix(
@@ -158,8 +162,8 @@ The default plot displays significance based on unadjusted p-values.
 
 ```{r}
 #| column: screen
-#| fig-height: 12
-#| fig-width: 18
+#| fig-height: 8
+#| fig-width: 12
 MiningObj$Unadjusted$plot
 ```
 
@@ -171,8 +175,8 @@ Because large mining matrices may involve hundreds or thousands of statistical t
 
 ```{r}
 #| column: screen
-#| fig-height: 12
-#| fig-width: 18
+#| fig-height: 8
+#| fig-width: 12
 MiningObj$FDRCorrected$plot
 ```
 
@@ -203,10 +207,12 @@ The table includes:
 Large mining matrices can be easier to interpret interactively.
 
 ```{r}
+#| eval: false
 #| column: screen
-#| fig-height: 12
-#| fig-width: 18
-#| 
+#| fig-height: 8
+#| fig-width: 12
+
+# Not evaluated in the shipped vignette to keep it lightweight - run interactively
 ggplotly(
   MiningObj$Unadjusted$plot
 )

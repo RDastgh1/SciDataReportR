@@ -16,3 +16,7 @@ conflicted copy
 ^Meta$
 ^audit$
 ^data-raw$
+^cran-comments\.md$
+^man/figures/computerpipes\.png$
+^CRAN-SUBMISSION$
+\.tar\.gz$

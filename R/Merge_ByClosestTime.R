@@ -18,7 +18,6 @@
 #'
 #' @import dplyr
 #' @import tidyr
-#' @import lubridate
 #' @examples
 #' # Clinic visits with blood pressure
 #' visits <- data.frame(
@@ -69,6 +68,12 @@ Merge_ByClosestTime <- function(DataFrame1,
 
   # ---- Convert time variables
   if (is_date) {
+    if (!requireNamespace("lubridate", quietly = TRUE)) {
+      stop(
+        "Package 'lubridate' is required when is_date = TRUE. ",
+        "Install it with install.packages('lubridate')."
+      )
+    }
     DataFrame1[[TimeVar1]] <- lubridate::as_date(DataFrame1[[TimeVar1]])
     DataFrame2[[TimeVar2]] <- lubridate::as_date(DataFrame2[[TimeVar2]])
   }

@@ -365,6 +365,13 @@ plotPCA <- function(PCAObj,
 
   # Build plot
 
+  if (!requireNamespace("plotly", quietly = TRUE)) {
+    stop(
+      "Package 'plotly' is required for interactive PCA plots. ",
+      "Install it with install.packages('plotly')."
+    )
+  }
+
   if (Mode == "3D") {
     p <- plotly::plot_ly(
       data = PlotData,

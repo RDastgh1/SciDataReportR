@@ -14,8 +14,6 @@
 #' @importFrom dplyr select mutate if_else
 #' @importFrom tibble rownames_to_column
 #' @importFrom sjlabelled get_label set_label
-#' @importFrom summarytools descr
-#' @importFrom kableExtra cell_spec kable kable_styling scroll_box
 #' @param Data \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
 #' @param Variables \strong{Deprecated} (since 19.15.0). Use \code{variables} instead.
 #' @param numdecimals \strong{Deprecated} (since 19.15.0). Use \code{digits} instead.
@@ -48,6 +46,14 @@ CreateSummaryTable <- function(data,
   }
   numdecimals <- digits
 
+  for (pkg in c("summarytools", "kableExtra")) {
+    if (!requireNamespace(pkg, quietly = TRUE)) {
+      stop(
+        "Package '", pkg, "' is required by CreateSummaryTable(). ",
+        "Install it with install.packages('", pkg, "')."
+      )
+    }
+  }
 
   if (is.null(Variables)) {
     Variables <- colnames(Data)
