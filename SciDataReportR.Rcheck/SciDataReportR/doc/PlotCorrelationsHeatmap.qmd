@@ -243,21 +243,25 @@ Interactive plots allow users to:
 Significant correlations can be examined individually using `plotSigCorrelations()`.
 
 ```{r}
+#| eval: false
 SigPlots <- plotSigCorrelations(
   DataFrame = df_Revalued,
   CorrelationHeatmapObject = CorrObj
 )
 ```
 
-The resulting object contains a list of scatterplots for significant associations.
+The resulting object contains a list of scatterplots for significant associations,
+one per significant heatmap cell.
 
 ```{r}
+#| eval: false
 length(SigPlots)
 ```
 
 These plots can be combined into a single figure.
 
 ```{r}
+#| eval: false
 #| column: screen
 #| fig-height: 9
 #| fig-width: 9
@@ -267,6 +271,11 @@ AssemblePlots(
   ncol = 3
 )
 ```
+
+> These `plotSigCorrelations()` / `AssemblePlots()` chunks are shown but not
+> executed when the vignette is built, because the underlying `ggstatsplot`
+> scatterplots require graphics fonts that are not available on all systems.
+> Run them interactively to reproduce the figures.
 
 This workflow provides a convenient way to visually inspect the relationships underlying significant heatmap cells.
 

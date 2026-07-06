@@ -5385,7 +5385,7 @@ Table: Baseline + labs: keys only in left data (showing up to 10 of 1)
 > cleanEx()
 > options(digits = 7L)
 > base::cat("Time elapsed: ", proc.time() - base::get("ptime", pos = 'CheckExEnv'),"\n")
-Time elapsed:  23.662 0.451 24.357 0 0 
+Time elapsed:  34.056 0.648 35.607 0 0 
 > grDevices::dev.off()
 null device 
           1 

@@ -8,9 +8,9 @@
 * using session charset: UTF-8
 * using options ‘--no-manual --as-cran’
 * checking for file ‘SciDataReportR/DESCRIPTION’ ... OK
-* this is package ‘SciDataReportR’ version ‘20.8.0’
+* this is package ‘SciDataReportR’ version ‘20.9.0’
 * package encoding: UTF-8
-* checking CRAN incoming feasibility ... [3s/20s] NOTE
+* checking CRAN incoming feasibility ... [3s/23s] NOTE
 Maintainer: ‘Raha Dastgheyb <raha@jhmi.edu>’
 
 New submission
@@ -22,14 +22,14 @@ New submission
 * checking for hidden files and directories ... OK
 * checking for portable file names ... OK
 * checking for sufficient/correct file permissions ... OK
-* checking whether package ‘SciDataReportR’ can be installed ... OK
+* checking whether package ‘SciDataReportR’ can be installed ... [10s/10s] OK
 * checking installed package size ... INFO
-  installed size is  7.3Mb
+  installed size is  6.8Mb
   sub-directories of 1Mb or more:
-    R     1.0Mb
-    doc   5.3Mb
+    doc   4.9Mb
 * checking package directory ... OK
-* checking for future file timestamps ... OK
+* checking for future file timestamps ... NOTE
+unable to verify current time
 * checking ‘build’ directory ... OK
 * checking DESCRIPTION meta-information ... OK
 * checking top-level files ... OK
@@ -48,7 +48,7 @@ New submission
 * checking S3 generic/method consistency ... OK
 * checking replacement functions ... OK
 * checking foreign function calls ... OK
-* checking R code for possible problems ... [11s/11s] OK
+* checking R code for possible problems ... [16s/16s] OK
 * checking Rd files ... OK
 * checking Rd metadata ... OK
 * checking Rd line widths ... OK
@@ -64,15 +64,15 @@ New submission
 * checking data for ASCII and uncompressed saves ... OK
 * checking installed files from ‘inst/doc’ ... OK
 * checking files in ‘vignettes’ ... OK
-* checking examples ... [19s/19s] OK
-* checking examples with --run-donttest ... [24s/24s] OK
+* checking examples ... [26s/26s] OK
+* checking examples with --run-donttest ... [35s/36s] OK
 * checking for unstated dependencies in ‘tests’ ... OK
-* checking tests ... [17s/17s] OK
-  Running ‘testthat.R’ [17s/17s]
+* checking tests ... [22s/23s] OK
+  Running ‘testthat.R’ [22s/23s]
 * checking for unstated dependencies in vignettes ... OK
 * checking package vignettes ... OK
-* checking re-building of vignette outputs ... [73s/74s] OK
+* checking re-building of vignette outputs ... [97s/98s] OK
 * checking for non-standard things in the check directory ... OK
 * checking for detritus in the temp directory ... OK
 * DONE
-Status: 1 NOTE
+Status: 2 NOTEs

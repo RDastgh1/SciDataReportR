@@ -1,14 +1,13 @@
 # cran-comments
 
-## Submission: SciDataReportR 20.8.0
+## Submission: SciDataReportR 20.9.0
 
 This is a new submission (first release of this package on CRAN).
 
 ## Test environments
 
 * local: macOS (Apple Silicon), R 4.5.3, and R-devel (2026-04-24 build) via Docker
-* win-builder: R-devel (checked 2026-07-05; failures found and fixed, see below)
-* win-builder: R-release  <!-- update after running -->
+* win-builder: R-devel and R-release (checked 2026-07-05 / 07-06; issues found and fixed, see below)
 * R-hub: Windows / Ubuntu / macOS      <!-- update after running -->
 
 ## Round-trip notes (for CRAN reviewer context; safe to ignore)
@@ -36,6 +35,13 @@ and fixes:
 
 All 236 package tests pass under R-devel (verified via a local Docker
 `rocker/r-devel` container) and under R 4.5.3 release.
+
+A subsequent win-builder round (R-devel and R-release) then failed only in
+vignette re-building: the `PlotCorrelationsHeatmap` vignette rendered
+`ggstatsplot` scatterplots that require graphics fonts unavailable on the
+Windows check machines ("unable to set or substitute a suitable font"). Those
+illustrative chunks are now shown but not evaluated at build time; the code
+remains visible for users to run interactively.
 
 ## R CMD check results
 

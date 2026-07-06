@@ -1,7 +1,7 @@
 Package: SciDataReportR
 Title: Workflow Infrastructure for Reproducible Scientific Data
         Reporting
-Version: 20.8.0
+Version: 20.9.0
 Authors@R: 
     person("Raha", "Dastgheyb", , "raha@jhmi.edu", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0002-4992-711X"))
@@ -32,7 +32,7 @@ VignetteBuilder: quarto, knitr
 Config/roxygen2/version: 8.0.0
 Config/testthat/edition: 3
 NeedsCompilation: no
-Packaged: 2026-07-06 00:29:31 UTC; rahad
+Packaged: 2026-07-06 14:06:23 UTC; rahad
 Author: Raha Dastgheyb [aut, cre] (ORCID:
     <https://orcid.org/0000-0002-4992-711X>)
 Maintainer: Raha Dastgheyb <raha@jhmi.edu>
