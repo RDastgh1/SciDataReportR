@@ -286,14 +286,12 @@ SigPlots <- plotSigCorrelations(
 ```
 
 The resulting object contains a list of scatterplots for significant
-associations.
+associations, one per significant heatmap cell.
 
 ``` r
 
 length(SigPlots)
 ```
-
-    [1] 18
 
 These plots can be combined into a single figure.
 
@@ -306,7 +304,14 @@ AssemblePlots(
 )
 ```
 
-![](PlotCorrelationsHeatmap_files/figure-html/unnamed-chunk-17-1.png)
+> These
+> [`plotSigCorrelations()`](https://rdastgh1.github.io/SciDataReportR/reference/plotSigCorrelations.md)
+> /
+> [`AssemblePlots()`](https://rdastgh1.github.io/SciDataReportR/reference/AssemblePlots.md)
+> chunks are shown but not executed when the vignette is built, because
+> the underlying `ggstatsplot` scatterplots require graphics fonts that
+> are not available on all systems. Run them interactively to reproduce
+> the figures.
 
 This workflow provides a convenient way to visually inspect the
 relationships underlying significant heatmap cells.
@@ -404,32 +409,28 @@ sessionInfo()
     [4] SciDataReportR_20.9.0
 
     loaded via a namespace (and not attached):
-     [1] ggstatsplot_1.0.0      sjlabelled_1.2.0       tidyselect_1.2.1
-     [4] viridisLite_0.4.3      farver_2.1.2           statsExpressions_2.0.0
-     [7] S7_0.2.2               fastmap_1.2.0          lazyeval_0.2.3
-    [10] bayestestR_0.18.1      broom.helpers_1.22.0   labelled_2.16.0
-    [13] digest_0.6.39          estimability_2.0.0     lifecycle_1.0.5
-    [16] magrittr_2.0.5         compiler_4.6.1         rlang_1.2.0
-    [19] tools_4.6.1            yaml_2.3.12            data.table_1.18.4
-    [22] knitr_1.51             labeling_0.4.3         htmlwidgets_1.6.4
-    [25] RColorBrewer_1.1-3     abind_1.4-8            withr_3.0.3
-    [28] purrr_1.2.2            grid_4.6.1             datawizard_1.3.1
-    [31] xtable_1.8-8           gtsummary_2.5.1        paletteer_1.7.0
-    [34] emmeans_2.0.3          scales_1.4.0           dichromat_2.0-0.1
-    [37] insight_1.5.2          cli_3.6.6              mvtnorm_1.4-1
-    [40] rmarkdown_2.31         generics_0.1.4         otel_0.2.0
-    [43] RcppParallel_5.1.11-2  httr_1.4.8             parameters_0.29.2
-    [46] pbapply_1.7-4          stringr_1.6.0          splines_4.6.1
-    [49] parallel_4.6.1         effectsize_1.0.2       BayesFactor_0.9.12-4.8
-    [52] vctrs_0.7.3            Matrix_1.7-5           jsonlite_2.0.0
-    [55] carData_3.0-6          car_3.1-5              hms_1.1.4
-    [58] patchwork_1.3.2        rstatix_1.0.0          Formula_1.2-5
-    [61] correlation_0.8.8      tidyr_1.3.2            glue_1.8.1
-    [64] ggside_0.4.1           rematch2_2.1.2         cowplot_1.2.0
-    [67] stringi_1.8.7          gtable_0.3.6           tibble_3.3.1
-    [70] pillar_1.11.1          htmltools_0.5.9        R6_2.6.1
-    [73] evaluate_1.0.5         lattice_0.22-9         haven_2.5.5
-    [76] backports_1.5.1        broom_1.0.13           snakecase_0.11.1
-    [79] rstantools_2.6.0       MatrixModels_0.5-4     Rcpp_1.1.1-1.1
-    [82] nlme_3.1-169           coda_0.19-4.1          mgcv_1.9-4
-    [85] xfun_0.59              forcats_1.0.1          pkgconfig_2.0.3       
+     [1] gtable_0.3.6           xfun_0.59              bayestestR_0.18.1
+     [4] htmlwidgets_1.6.4      insight_1.5.2          rstatix_1.0.0
+     [7] lattice_0.22-9         paletteer_1.7.0        vctrs_0.7.3
+    [10] tools_4.6.1            generics_0.1.4         datawizard_1.3.1
+    [13] tibble_3.3.1           pkgconfig_2.0.3        data.table_1.18.4
+    [16] RColorBrewer_1.1-3     correlation_0.8.8      S7_0.2.2
+    [19] RcppParallel_5.1.11-2  lifecycle_1.0.5        compiler_4.6.1
+    [22] farver_2.1.2           snakecase_0.11.1       carData_3.0-6
+    [25] htmltools_0.5.9        lazyeval_0.2.3         yaml_2.3.12
+    [28] Formula_1.2-5          pillar_1.11.1          car_3.1-5
+    [31] tidyr_1.3.2            broom.helpers_1.22.0   statsExpressions_2.0.0
+    [34] abind_1.4-8            tidyselect_1.2.1       sjlabelled_1.2.0
+    [37] digest_0.6.39          mvtnorm_1.4-1          gtsummary_2.5.1
+    [40] purrr_1.2.2            rematch2_2.1.2         labeling_0.4.3
+    [43] forcats_1.0.1          ggstatsplot_1.0.0      labelled_2.16.0
+    [46] fastmap_1.2.0          grid_4.6.1             cli_3.6.6
+    [49] magrittr_2.0.5         patchwork_1.3.2        dichromat_2.0-0.1
+    [52] broom_1.0.13           withr_3.0.3            scales_1.4.0
+    [55] backports_1.5.1        estimability_2.0.0     httr_1.4.8
+    [58] rmarkdown_2.31         emmeans_2.0.3          otel_0.2.0
+    [61] hms_1.1.4              coda_0.19-4.1          evaluate_1.0.5
+    [64] knitr_1.51             haven_2.5.5            parameters_0.29.2
+    [67] viridisLite_0.4.3      rstantools_2.6.0       rlang_1.2.0
+    [70] xtable_1.8-8           glue_1.8.1             jsonlite_2.0.0
+    [73] effectsize_1.0.2       R6_2.6.1              
