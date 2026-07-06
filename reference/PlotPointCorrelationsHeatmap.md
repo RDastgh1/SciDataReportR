@@ -9,19 +9,22 @@ and renders heatmap-style tiles.
 
 ``` r
 PlotPointCorrelationsHeatmap(
-  Data,
+  data,
   CatVars,
   ContVars,
-  Covariates = NULL,
+  covariates = NULL,
   Relabel = TRUE,
   Ordinal = TRUE,
-  binary_map = NULL
+  binary_map = NULL,
+  fdr_scope = c("matrix", "per_outcome"),
+  Data = lifecycle::deprecated(),
+  Covariates = lifecycle::deprecated()
 )
 ```
 
 ## Arguments
 
-- Data:
+- data:
 
   A dataframe.
 
@@ -33,7 +36,7 @@ PlotPointCorrelationsHeatmap(
 
   Character vector of continuous variables.
 
-- Covariates:
+- covariates:
 
   Optional covariates (reserved).
 
@@ -51,7 +54,40 @@ PlotPointCorrelationsHeatmap(
   [`createBinaryMapping()`](https://rdastgh1.github.io/SciDataReportR/reference/createBinaryMapping.md).
   If NULL, a mapping is created internally for `CatVars`.
 
+- fdr_scope:
+
+  Either `"matrix"` (default) or `"per_outcome"`, passed to
+  [`ApplyFDRCorrection()`](https://rdastgh1.github.io/SciDataReportR/reference/ApplyFDRCorrection.md).
+  `"matrix"` corrects across all p-values at once (historical behavior).
+  `"per_outcome"` corrects separately within each continuous variable:
+  outcomes are the continuous variables (`ContVars`).
+
+- Data:
+
+  **Deprecated** (since 19.15.0). Use `data` instead.
+
+- Covariates:
+
+  **Deprecated** (since 19.15.0). Use `covariates` instead.
+
 ## Value
 
 A list with Unadjusted, FDRCorrected, method ("R_pb"), Relabel,
 Covariates, BinaryMapping.
+
+## Examples
+
+``` r
+data(SampleData)
+
+# CatVars must be binary (exactly two unique non-NA values)
+result <- PlotPointCorrelationsHeatmap(
+  SampleData,
+  CatVars = c("Diagnosis", "sex"),
+  ContVars = c("age", "AXL", "Adiponectin")
+)
+
+result$Unadjusted$plot
+#> Warning: Removed 5 rows containing missing values or values outside the scale range
+#> (`geom_text()`).
+```

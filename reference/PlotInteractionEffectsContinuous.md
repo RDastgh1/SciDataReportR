@@ -8,20 +8,24 @@ continuous or categorical variable.
 
 ``` r
 PlotInteractionEffectsContinuous(
-  Data,
+  data,
   interVar = NULL,
-  outcomeVar = NULL,
-  predictorVar = NULL,
-  covars = NULL,
+  outcome_var = NULL,
+  predictor_var = NULL,
+  covariates = NULL,
   n_lines = 3,
   alpha = 0.6,
-  point_size = 2
+  point_size = 2,
+  Data = lifecycle::deprecated(),
+  outcomeVar = lifecycle::deprecated(),
+  predictorVar = lifecycle::deprecated(),
+  covars = lifecycle::deprecated()
 )
 ```
 
 ## Arguments
 
-- Data:
+- data:
 
   A data frame containing the variables to be analyzed
 
@@ -29,15 +33,15 @@ PlotInteractionEffectsContinuous(
 
   Character string specifying the interaction variable (moderator)
 
-- outcomeVar:
+- outcome_var:
 
   Character string specifying the outcome variable
 
-- predictorVar:
+- predictor_var:
 
   Character string specifying the predictor variable
 
-- covars:
+- covariates:
 
   Character vector of covariate names to include in the model
 
@@ -54,6 +58,22 @@ PlotInteractionEffectsContinuous(
 
   Size of points (default: 2)
 
+- Data:
+
+  **Deprecated** (since 19.15.0). Use `data` instead.
+
+- outcomeVar:
+
+  **Deprecated** (since 19.15.0). Use `outcome_var` instead.
+
+- predictorVar:
+
+  **Deprecated** (since 19.15.0). Use `predictor_var` instead.
+
+- covars:
+
+  **Deprecated** (since 19.15.0). Use `covariates` instead.
+
 ## Value
 
 A ggplot object showing the interaction effect
@@ -68,3 +88,32 @@ The subtitle shows the p-value for the interaction term. The caption
 lists any covariates included in the model.
 
 Variable labels are used if available in the data frame.
+
+## Examples
+
+``` r
+data(SampleData)
+data(SampleVariableTypes)
+
+# Attach labels and factor levels for readable axis titles and legend
+Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
+
+# Categorical moderator: one regression line per Diagnosis group
+PlotInteractionEffectsContinuous(
+  Labelled,
+  interVar = "Diagnosis",
+  outcome_var = "AXL",
+  predictor_var = "age"
+)
+#> `geom_smooth()` using formula = 'y ~ x'
+
+
+# Continuous moderator: lines at mean and +/- 1 SD of the moderator
+PlotInteractionEffectsContinuous(
+  Labelled,
+  interVar = "Adiponectin",
+  outcome_var = "AXL",
+  predictor_var = "age"
+)
+#> `geom_smooth()` using formula = 'y ~ x'
+```

@@ -1,52 +1,85 @@
 # Plot Missing Data
 
-A custom function to plot missing data with variables as rows and
-observations as columns.
+Visualize missing data patterns with variables as rows and observations
+as columns. Optional hover variables can be included to facilitate
+quality control workflows when converting the plot to an interactive
+Plotly figure.
 
 ## Usage
 
 ``` r
 PlotMissingData(
-  DataFrame,
-  Variables = NULL,
+  data,
+  variables = NULL,
+  HoverVars = NULL,
   Relabel = TRUE,
   show_perc = TRUE,
   show_perc_var = TRUE,
-  cluster = FALSE
+  cluster = FALSE,
+  DataFrame = lifecycle::deprecated(),
+  Variables = lifecycle::deprecated()
 )
 ```
 
 ## Arguments
 
-- DataFrame:
+- data:
 
-  The dataframe containing missing data.
+  A data frame.
 
-- Variables:
+- variables:
 
-  A character vector specifying the variables to be included in the
-  plot. If NULL (default), all variables in the dataframe will be used.
+  Character vector of variables to visualize. If NULL, all columns
+  except HoverVars are used.
+
+- HoverVars:
+
+  Optional character vector of columns to include in hover text. Useful
+  for participant IDs, visit names, dates, sites, etc.
 
 - Relabel:
 
-  Logical indicating whether to relabel the columns based on their
-  labels. Default is TRUE.
+  Logical. If TRUE, variable labels are used when available.
 
 - show_perc:
 
-  Logical indicating whether to show percentage labels in legend.
-  Default is TRUE.
+  Logical. If TRUE, overall missingness percentages are shown in the
+  legend.
 
 - show_perc_var:
 
-  Logical indicating whether to show percentage of missing for each
-  variable. Default is TRUE.
+  Logical. If TRUE, variable-specific missingness percentages are
+  appended to y-axis labels.
 
 - cluster:
 
-  Logical indicating whether to cluster rows by missingness pattern.
-  Default is FALSE.
+  Logical. If TRUE, variables are clustered by missingness pattern.
+
+- DataFrame:
+
+  **Deprecated** (since 19.15.0). Use `data` instead.
+
+- Variables:
+
+  **Deprecated** (since 19.15.0). Use `variables` instead.
 
 ## Value
 
-A ggplot object visualizing missing data with variables as rows.
+A ggplot object.
+
+## Examples
+
+``` r
+data(SampleData)
+
+# SampleData has real missingness in several assays
+vars <- c("age", "AXL", "Angiotensinogen", "BMP_6", "IL_6",
+          "Fetuin_A", "NT_proBNP", "ENA_78")
+
+PlotMissingData(
+  SampleData,
+  variables = vars,
+  HoverVars = "Diagnosis"
+)
+
+```

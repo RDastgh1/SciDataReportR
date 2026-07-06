@@ -9,18 +9,31 @@ variables.
 ## Usage
 
 ``` r
-MakeDataDictionary(DataFrame, numdecimals = 2)
+MakeDataDictionary(
+  data,
+  digits = 2,
+  DataFrame = lifecycle::deprecated(),
+  numdecimals = lifecycle::deprecated()
+)
 ```
 
 ## Arguments
 
-- DataFrame:
+- data:
 
   A data frame.
 
-- numdecimals:
+- digits:
 
   Number of decimals to display for numeric variables.
+
+- DataFrame:
+
+  **Deprecated** (since 19.15.0). Use `data` instead.
+
+- numdecimals:
+
+  **Deprecated** (since 19.15.0). Use `digits` instead.
 
 ## Value
 

@@ -7,27 +7,30 @@ dataset.
 
 ``` r
 CreateSummaryTable(
-  Data,
-  Variables = NULL,
-  numdecimals = 2,
+  data,
+  variables = NULL,
+  digits = 2,
   Relabel = TRUE,
   Ordinal = FALSE,
-  ScrollBoxHeight = "700px"
+  ScrollBoxHeight = "700px",
+  Data = lifecycle::deprecated(),
+  Variables = lifecycle::deprecated(),
+  numdecimals = lifecycle::deprecated()
 )
 ```
 
 ## Arguments
 
-- Data:
+- data:
 
   The dataset containing the variables of interest.
 
-- Variables:
+- variables:
 
   A character vector specifying the variables for which summary
   statistics will be calculated.
 
-- numdecimals:
+- digits:
 
   Number of decimal places to round the summary statistics.
 
@@ -43,6 +46,18 @@ CreateSummaryTable(
 - ScrollBoxHeight:
 
   Height of the scroll box for displaying the table.
+
+- Data:
+
+  **Deprecated** (since 19.15.0). Use `data` instead.
+
+- Variables:
+
+  **Deprecated** (since 19.15.0). Use `variables` instead.
+
+- numdecimals:
+
+  **Deprecated** (since 19.15.0). Use `digits` instead.
 
 ## Value
 

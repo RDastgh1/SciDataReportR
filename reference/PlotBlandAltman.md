@@ -6,12 +6,17 @@ variables.
 ## Usage
 
 ``` r
-PlotBlandAltman(DataFrame, Variable1, Variable2)
+PlotBlandAltman(
+  data,
+  Variable1,
+  Variable2,
+  DataFrame = lifecycle::deprecated()
+)
 ```
 
 ## Arguments
 
-- DataFrame:
+- data:
 
   A data frame containing the variables to compare.
 
@@ -22,6 +27,10 @@ PlotBlandAltman(DataFrame, Variable1, Variable2)
 - Variable2:
 
   The name of the second variable (as a string) to compare.
+
+- DataFrame:
+
+  **Deprecated** (since 19.15.0). Use `data` instead.
 
 ## Value
 
@@ -38,3 +47,34 @@ A list containing:
 ## Note
 
 This function is adapted from code written by Eran Shorer.
+
+## Examples
+
+``` r
+# Bland-Altman compares two measurements of the SAME quantity on the same
+# scale. Here two devices measure the same underlying value, with device B
+# carrying a small constant bias plus noise.
+set.seed(101)
+n <- 80
+truth <- rnorm(n, mean = 100, sd = 15)
+method_data <- data.frame(
+  SampleID = paste0("S", 1:n),
+  DeviceA  = truth + rnorm(n, 0, 3),
+  DeviceB  = truth + 2 + rnorm(n, 0, 3)
+)
+
+result <- PlotBlandAltman(method_data, "DeviceA", "DeviceB")
+#> Warning: Using `size` aesthetic for lines was deprecated in ggplot2 3.4.0.
+#> ℹ Please use `linewidth` instead.
+#> ℹ The deprecated feature was likely used in the SciDataReportR package.
+#>   Please report the issue at
+#>   <https://github.com/RDastgh1/SciDataReportR/issues>.
+
+# Agreement plot: mean difference (bias) and 95% limits of agreement
+result$plot
+
+
+# Underlying statistics
+result$stats$mean.diffs
+#> [1] -2.400073
+```

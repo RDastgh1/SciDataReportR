@@ -10,17 +10,19 @@ are returned.
 
 ``` r
 PlotPartialRegressionScatter(
-  DataFrame,
+  data,
   IndepVar,
   DepVar,
-  Covariates = NULL,
-  Relabel = TRUE
+  covariates = NULL,
+  Relabel = TRUE,
+  DataFrame = lifecycle::deprecated(),
+  Covariates = lifecycle::deprecated()
 )
 ```
 
 ## Arguments
 
-- DataFrame:
+- data:
 
   The dataset to use.
 
@@ -32,7 +34,7 @@ PlotPartialRegressionScatter(
 
   A string specifying the dependent variable.
 
-- Covariates:
+- covariates:
 
   A character vector of covariate names for adjustment. Defaults to
   NULL.
@@ -41,6 +43,14 @@ PlotPartialRegressionScatter(
 
   Logical indicating whether to use labelled names from the data (using
   sjlabelled::get_label). Defaults to TRUE.
+
+- DataFrame:
+
+  **Deprecated** (since 19.15.0). Use `data` instead.
+
+- Covariates:
+
+  **Deprecated** (since 19.15.0). Use `covariates` instead.
 
 ## Value
 
@@ -77,3 +87,25 @@ A list containing:
 - equation:
 
   The regression equation string.
+
+## Examples
+
+``` r
+data(SampleData)
+
+result <- PlotPartialRegressionScatter(
+  SampleData,
+  IndepVar = "age",
+  DepVar = "AXL",
+  covariates = "Adiponectin"
+)
+#> Warning: `aes_string()` was deprecated in ggplot2 3.0.0.
+#> ℹ Please use tidy evaluation idioms with `aes()`.
+#> ℹ See also `vignette("ggplot2-in-packages")` for more information.
+#> ℹ The deprecated feature was likely used in the SciDataReportR package.
+#>   Please report the issue at
+#>   <https://github.com/RDastgh1/SciDataReportR/issues>.
+
+result$plot
+#> `geom_smooth()` using formula = 'y ~ x'
+```

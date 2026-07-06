@@ -9,7 +9,7 @@ versions, or vendor-delivered dataset updates.
 ## Usage
 
 ``` r
-CompareDatasets(OldData, NewData, Keys)
+CompareDatasets(OldData, NewData, keys, Keys = lifecycle::deprecated())
 ```
 
 ## Arguments
@@ -22,11 +22,15 @@ CompareDatasets(OldData, NewData, Keys)
 
   A data frame representing the newer dataset version.
 
-- Keys:
+- keys:
 
   Character vector of key variables used to align records across the two
   datasets. Multiple keys are supported, such as
   `c("study_id", "TimePoint")`.
+
+- Keys:
+
+  **Deprecated** (since 19.15.0). Use `keys` instead.
 
 ## Value
 

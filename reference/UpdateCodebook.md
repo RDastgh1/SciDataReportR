@@ -8,20 +8,22 @@ optionally replacing outdated labels.
 
 ``` r
 UpdateCodebook(
-  Dataframe,
-  Codebook,
+  data,
+  codebook,
   RemoveMissing = TRUE,
-  ReplaceLabels = FALSE
+  ReplaceLabels = FALSE,
+  Dataframe = lifecycle::deprecated(),
+  Codebook = lifecycle::deprecated()
 )
 ```
 
 ## Arguments
 
-- Dataframe:
+- data:
 
   A dataframe for which the codebook needs to be updated.
 
-- Codebook:
+- codebook:
 
   A dataframe representing the existing codebook with at least a
   'Variable' column.
@@ -35,6 +37,14 @@ UpdateCodebook(
 
   Logical; if TRUE, replaces outdated labels in the codebook with new
   ones from the dataframe.
+
+- Dataframe:
+
+  **Deprecated** (since 19.15.0). Use `data` instead.
+
+- Codebook:
+
+  **Deprecated** (since 19.15.0). Use `codebook` instead.
 
 ## Value
 

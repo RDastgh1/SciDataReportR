@@ -1,6 +1,9 @@
-# Project new data onto an existing SOM + cluster solution
+# Project new data onto an existing SOM clinical phenotype space
 
-Given a fitted
+Train once, project many: a reusable unsupervised clinical phenotyping
+framework that learns phenotype structure in a training cohort and
+projects new participants into the fixed phenotype space while
+quantifying membership uncertainty and projection fit. Given a fitted
 [`CreateSOMClusterModel()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateSOMClusterModel.md)
 object, project a new data frame onto:
 
@@ -46,7 +49,13 @@ Missing data:
 ## Usage
 
 ``` r
-ProjectSOMCluster(object, new_df, ClusterName = NULL)
+ProjectSOMCluster(
+  object,
+  new_df,
+  ClusterName = NULL,
+  high_dist_quantile = 0.95,
+  low_prob_threshold = 0.7
+)
 ```
 
 ## Arguments
@@ -66,6 +75,16 @@ ProjectSOMCluster(object, new_df, ClusterName = NULL)
   `object$ClusterName`. If that column already exists in `new_df` it is
   overwritten (with a message).
 
+- high_dist_quantile:
+
+  Numeric value between 0 and 1 used to define high SOM-distance flags
+  from the training distance distribution. Default is `0.95`.
+
+- low_prob_threshold:
+
+  Numeric posterior probability threshold used to flag uncertain
+  phenotype membership. Default is `0.70`.
+
 ## Value
 
 A list of class `"Project_SOMClust"` with components:
@@ -84,3 +103,24 @@ A list of class `"Project_SOMClust"` with components:
 
 - `ModelInfo_SOM`, `ModelInfo_MClust`: references to the original model
   objects for convenience.
+
+## Examples
+
+``` r
+if (FALSE) { # \dontrun{
+# NOTE: Not run - projection requires a trained SOM model, and
+# CreateSOMClusterModel() currently errors on the tracked get_data() bug
+# (see CreateSOMClusterModel() for details).
+data(SampleData)
+
+model <- CreateSOMClusterModel(
+  data = SampleData,
+  variables = c("age", "AXL", "Adiponectin", "Alpha_1_Antitrypsin"),
+  method = "finalize",
+  final_k = 3,
+  final_model = 1
+)
+
+projected <- ProjectSOMCluster(object = model, new_df = SampleData)
+} # }
+```

@@ -1,0 +1,103 @@
+# Migration note: argument renaming in 19.15.0
+
+``` r
+
+library(SciDataReportR)
+```
+
+SciDataReportR 19.15.0 standardized argument names across the whole
+package to snake_case. **Function names did not change** (still
+PascalCase), **argument positions did not change**, and **every old
+argument name still works** - it just emits one deprecation warning per
+call pointing to the new name.
+
+## What was renamed
+
+The same concept used to go by several names in different functions.
+Each cluster now has one name everywhere:
+
+| Concept | Old names (varied by function) | New name |
+|----|----|----|
+| Primary data frame | `Data`, `DataFrame`, `df`, `Dataframe`, `DatatoRevalue` | `data` |
+| Variable selection | `Variables`, `variables` | `variables` |
+| Covariates | `Covariates`, `Covars`, `covars`, `covariates` | `covariates` |
+| Merge keys | `Keys`, `MergeBy`, `key` | `keys` ([`safe_merge()`](https://rdastgh1.github.io/SciDataReportR/reference/safe_merge.md) keeps `by` to mirror [`dplyr::left_join()`](https://dplyr.tidyverse.org/reference/mutate-joins.html)) |
+| Participant ID column | `ID`, `id`, `id_col` | `id_var` |
+| Grouping variable | `GroupVariable`, `GroupVar`, `Group`, `CompVariable` | `group_var` |
+| Codebook | `Codebook`, `CB`, `VariableCodebook`, `VarTypes` | `codebook` |
+| Digits | `numdecimals` | `digits` |
+| Digits (multi-knob tables) | `ValueDigits`, `pDigits`, `EffectSizeDigits`, `TooltipDigits` | `value_digits`, `p_digits`, `effect_size_digits`, `tooltip_digits` |
+| Interactive output | `Interactive`, `MakeInteractive`, `make_interactive` | `interactive` (each function keeps its original default) |
+| Predictors (directional analyses) | `xVars`, `PredictorVars`, `predictorVars`, `predictorVar` | `predictor_vars` / `predictor_var` |
+| Outcomes (directional analyses) | `yVars`, `yVar`, `OutcomeVars`, `outcomeVars`, `outcomeVar` | `outcome_vars` / `outcome_var` |
+| Symmetric variable set | `xVars`/`yVars` in [`PlotDirectionalHeatmaps()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotDirectionalHeatmaps.md) | `variables` |
+
+Also new in 19.15.0:
+[`CreatePCAObject()`](https://rdastgh1.github.io/SciDataReportR/reference/CreatePCAObject.md)’s
+duplicate `imputeMethod` argument is deprecated in favor of
+`ImputeMethod`, and the heatmap/matrix family gained an `fdr_scope`
+argument (see the *FDR correction scope* vignette).
+
+## What you will see
+
+Old code keeps working. The first thing you’ll notice is a one-line
+warning per deprecated argument, telling you the replacement:
+
+``` r
+
+old_style <- MakeDataDictionary(DataFrame = mtcars, numdecimals = 2)
+#> Warning: The `DataFrame` argument of `MakeDataDictionary()` is deprecated as of
+#> SciDataReportR 19.15.0.
+#> ℹ Please use the `data` argument instead.
+#> Call `lifecycle::last_lifecycle_warnings()` to see where this warning was
+#> generated.
+#> Warning: The `numdecimals` argument of `MakeDataDictionary()` is deprecated as of
+#> SciDataReportR 19.15.0.
+#> ℹ Please use the `digits` argument instead.
+#> Call `lifecycle::last_lifecycle_warnings()` to see where this warning was
+#> generated.
+```
+
+The new-style call is silent and returns the identical result:
+
+``` r
+
+new_style <- MakeDataDictionary(mtcars, digits = 2)
+identical(old_style, new_style)
+#> [1] TRUE
+```
+
+Positional calls never changed, because every argument kept its position
+(the deprecated names were appended at the end of each signature):
+
+``` r
+
+identical(MakeDataDictionary(mtcars, 2), new_style)
+#> [1] TRUE
+```
+
+``` r
+
+# a directional example: xVars/yVars became predictor_vars/outcome_vars
+res <- PlotCorrelationsHeatmap(
+  mtcars,
+  predictor_vars = c("hp", "wt"),
+  outcome_vars   = "mpg"
+)
+round(res$Unadjusted$p, 4)
+#>    mpg
+#> hp   0
+#> wt   0
+```
+
+## Migrating
+
+There is no urgency - deprecated arguments will keep working throughout
+the 19.x series. To migrate a script, rename arguments per the table
+above; nothing else changes. If you want deprecation warnings to be
+errors while you migrate (to catch every old usage), set:
+
+``` r
+
+options(lifecycle_verbosity = "error")
+```

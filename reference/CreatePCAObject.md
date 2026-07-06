@@ -8,7 +8,7 @@ plots.
 
 ``` r
 CreatePCAObject(
-  Data,
+  data,
   VarsToReduce,
   VariableCategories = NULL,
   Relabel = TRUE,
@@ -26,14 +26,19 @@ CreatePCAObject(
   VarianceFilterMethod = c("top_n", "variance_quantile"),
   MissingnessWarningThreshold = 0.2,
   ParticipantMissingnessWarningThreshold = 0.2,
-  imputeMethod = c("missRanger", "median"),
-  SuppressWarnings = FALSE
+  MissingDataStrategy = c("complete_cases", "impute", "stop"),
+  ImputeMethod = c("missRanger", "median"),
+  MaxMissingForImputation = 0.2,
+  ImputeRowsWithAllMissing = FALSE,
+  SuppressWarnings = FALSE,
+  imputeMethod = lifecycle::deprecated(),
+  Data = lifecycle::deprecated()
 )
 ```
 
 ## Arguments
 
-- Data:
+- data:
 
   A data frame containing the variables for PCA.
 
@@ -127,15 +132,48 @@ CreatePCAObject(
   Numeric threshold for warning about participant-level missingness.
   Default is `0.20`.
 
-- imputeMethod:
+- MissingDataStrategy:
 
-  Character. Missing-data imputation method. Options are `"missRanger"`
-  and `"median"`. Default is `"missRanger"`.
+  Character. Missing-data handling strategy. Options are
+  `"complete_cases"`, `"impute"`, and `"stop"`. Default is
+  `"complete_cases"`, which fits PCA only on rows complete across the
+  final PCA variables and returns `NA` PCA scores for incomplete rows.
+
+- ImputeMethod:
+
+  Character. Missing-data imputation method used only when
+  `MissingDataStrategy = "impute"`. Options are `"missRanger"` and
+  `"median"`. Default is `"missRanger"`.
+
+- MaxMissingForImputation:
+
+  Numeric value between 0 and 1. When `MissingDataStrategy = "impute"`,
+  rows with missingness greater than this value across the final PCA
+  variables are excluded from PCA scoring and receive `NA` component
+  scores. Default is `0.20`, meaning rows can be imputed if at least 80
+  percent of PCA variables are observed.
+
+- ImputeRowsWithAllMissing:
+
+  Logical. If `FALSE`, rows with 100 percent missingness across PCA
+  variables are not imputed even if `MaxMissingForImputation = 1`.
+  Default is `FALSE`.
 
 - SuppressWarnings:
 
   Logical. If `TRUE`, suppresses PCA-specific warning messages from this
   function. Default is `FALSE`.
+
+- imputeMethod:
+
+  **Deprecated** (since 19.15.0). Use `ImputeMethod` instead. If
+  supplied, it sets `ImputeMethod` and uses
+  `MissingDataStrategy = "impute"` unless `MissingDataStrategy` was
+  explicitly set.
+
+- Data:
+
+  **Deprecated** (since 19.15.0). Use `data` instead.
 
 ## Value
 
@@ -162,7 +200,8 @@ A list with the following elements:
 
 - Scores:
 
-  A data frame of component scores.
+  A data frame of component scores aligned to the original row order of
+  `Data`. Rows not used for PCA scoring receive `NA` scores.
 
 - CombinedData:
 
@@ -188,8 +227,9 @@ A list with the following elements:
 
 - Preprocessing:
 
-  A list documenting variables dropped during preprocessing and
-  missingness summaries.
+  A list documenting variables dropped during preprocessing, missingness
+  summaries, rows used for PCA, rows excluded from PCA, and rows
+  imputed.
 
 - Mode:
 
@@ -217,6 +257,13 @@ proteomics, metabolomics, flow cytometry, FACS, transcriptomics, and
 other settings where the number of variables may be large relative to
 the number of participants.
 
+Missing data are not imputed by default. With the default
+`MissingDataStrategy = "complete_cases"`, PCA is fit using only rows
+that are complete across the final PCA variables, and rows with missing
+PCA inputs receive `NA` component scores in `Scores` and `CombinedData`.
+To impute missing values, set `MissingDataStrategy = "impute"`
+explicitly and choose an imputation method with `ImputeMethod`.
+
 The function uses raw variable names internally, but by default uses
 variable labels in human-facing outputs when labels are available.
 Variables with zero or undefined standard deviation after preprocessing
@@ -227,28 +274,56 @@ manual preprocessing.
 
 ``` r
 PCA <- CreatePCAObject(
-  Data = mtcars,
+  data = mtcars,
+  VarsToReduce = names(mtcars),
+  numComponents = 3
+)
+
+PCA_imputed <- CreatePCAObject(
+  data = mtcars,
   VarsToReduce = names(mtcars),
   numComponents = 3,
-  imputeMethod = "median"
+  MissingDataStrategy = "impute",
+  ImputeMethod = "median",
+  MaxMissingForImputation = 0.20
 )
 
 PCA_raw_names <- CreatePCAObject(
-  Data = mtcars,
+  data = mtcars,
   VarsToReduce = names(mtcars),
   Relabel = FALSE,
-  numComponents = 3,
-  imputeMethod = "median"
+  numComponents = 3
 )
 
 PCA_omics <- CreatePCAObject(
-  Data = mtcars,
+  data = mtcars,
   VarsToReduce = names(mtcars),
   Mode = "omics",
   backend = "prcomp",
   maxComponents = 5,
-  maxScreeComponents = 5,
-  imputeMethod = "median"
+  maxScreeComponents = 5
 )
 #> Warning: STATS is longer than the extent of 'dim(x)[MARGIN]'
+
+# Display the scree plot from the returned object
+PCA$p_scree
+
+
+# Lollipop-style loading plot of the component loadings
+PCA$Lollipop
+#> Warning: Using alpha for a discrete variable is not advised.
+
+
+# Color the lollipop loadings by a variable grouping
+PCA_grouped <- CreatePCAObject(
+  data = mtcars,
+  VarsToReduce = names(mtcars),
+  VariableCategories = c("Performance", "Performance", "Size", "Performance",
+                         "Drivetrain", "Size", "Performance", "Config",
+                         "Config", "Drivetrain", "Config"),
+  numComponents = 3
+)
+PCA_grouped$Lollipop
+#> Warning: Using alpha for a discrete variable is not advised.
+
 ```

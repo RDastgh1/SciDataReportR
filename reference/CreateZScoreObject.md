@@ -6,19 +6,20 @@ Calculate Z-scores (or standardized scores) and return data + parameters
 
 ``` r
 CreateZScoreObject(
-  df,
+  data,
   variables = NULL,
   names_prefix = "Z_",
   RetainLabels = TRUE,
   RenameLabels = TRUE,
   center = TRUE,
-  scale = TRUE
+  scale = TRUE,
+  df = lifecycle::deprecated()
 )
 ```
 
 ## Arguments
 
-- df:
+- data:
 
   Data frame with variables to standardize.
 
@@ -46,6 +47,10 @@ CreateZScoreObject(
 - scale:
 
   Logical; if TRUE, divide by the SD.
+
+- df:
+
+  **Deprecated** (since 19.15.0). Use `data` instead.
 
 ## Value
 

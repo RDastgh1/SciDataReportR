@@ -1,5 +1,56 @@
 # Changelog
 
+## SciDataReportR 20.8.0
+
+## SciDataReportR 20.7.0
+
+## SciDataReportR 20.6.0
+
+## SciDataReportR 20.5.0
+
+- [`UnivariateRegressionTable()`](https://rdastgh1.github.io/SciDataReportR/reference/MakeUnivariateRegressionTable.md)
+  was renamed to
+  [`MakeUnivariateRegressionTable()`](https://rdastgh1.github.io/SciDataReportR/reference/MakeUnivariateRegressionTable.md)
+  and
+  [`plotForestFromTable()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotForestFromTable.md)
+  was renamed to
+  [`PlotForestFromTable()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotForestFromTable.md)
+  to match the package’s naming conventions. The old names remain
+  available as backwards-compatible synonyms (soft-deprecated).
+- [`MakeUnivariateRegressionTable()`](https://rdastgh1.github.io/SciDataReportR/reference/MakeUnivariateRegressionTable.md)
+  now returns a `Results` element: a tidy dataframe of estimates,
+  confidence intervals, and p-values, one row per term.
+- [`PlotForestFromTable()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotForestFromTable.md)
+  now plots from the `Results` dataframe, and also accepts a (filtered)
+  `Results` dataframe directly. Objects created by older package
+  versions still plot via a fallback extraction.
+
+## SciDataReportR 20.4.0
+
+## SciDataReportR 20.3.0
+
+## SciDataReportR 20.2.0
+
+## SciDataReportR 20.1.0
+
+## SciDataReportR 20.0.0
+
+## SciDataReportR 19.14.0
+
+## SciDataReportR 19.13.0
+
+## SciDataReportR 19.12.0
+
+## SciDataReportR 19.11.0
+
+## SciDataReportR 19.10.0
+
+## SciDataReportR 19.9.0
+
+## SciDataReportR 19.8.0
+
+## SciDataReportR 19.7.0
+
 ## SciDataReportR 19.6.0
 
 ## SciDataReportR 19.5.0

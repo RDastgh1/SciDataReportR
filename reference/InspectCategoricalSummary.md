@@ -8,9 +8,9 @@ archived and no longer available on CRAN.
 
 ``` r
 InspectCategoricalSummary(
-  Data,
-  Variables = NULL,
-  Codebook = NULL,
+  data,
+  variables = NULL,
+  codebook = NULL,
   IncludeMissing = TRUE,
   MissingLabel = "(Missing)",
   RetainLabels = TRUE,
@@ -24,23 +24,26 @@ InspectCategoricalSummary(
   UsePercent = TRUE,
   LabelBars = TRUE,
   WrapLabels = 35,
-  BaseSize = 11
+  BaseSize = 11,
+  Data = lifecycle::deprecated(),
+  Variables = lifecycle::deprecated(),
+  Codebook = lifecycle::deprecated()
 )
 ```
 
 ## Arguments
 
-- Data:
+- data:
 
   A data frame.
 
-- Variables:
+- variables:
 
   Optional character vector of categorical variables to summarize. If
   `NULL`, character, factor, logical, labelled, and haven-labelled
   columns are detected automatically.
 
-- Codebook:
+- codebook:
 
   Optional data frame with `Variable` and `Label` columns.
 
@@ -107,6 +110,18 @@ InspectCategoricalSummary(
   Base font size passed to
   [`theme_minimal()`](https://ggplot2.tidyverse.org/reference/ggtheme.html).
 
+- Data:
+
+  **Deprecated** (since 19.15.0). Use `data` instead.
+
+- Variables:
+
+  **Deprecated** (since 19.15.0). Use `variables` instead.
+
+- Codebook:
+
+  **Deprecated** (since 19.15.0). Use `codebook` instead.
+
 ## Value
 
 A named list with `Summary`, a tibble containing categorical counts and
@@ -144,6 +159,6 @@ result$Summary
 #> # ℹ 4 more variables: MissingN <int>, MissingPercent <dbl>, UniqueLevels <int>,
 #> #   VariableClass <chr>
 
-plot_result <- InspectCategoricalSummary(df, Variables = "group", Plot = TRUE)
+plot_result <- InspectCategoricalSummary(df, variables = "group", Plot = TRUE)
 plot_result$Plot
 ```

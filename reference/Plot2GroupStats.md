@@ -8,12 +8,12 @@ palette via paletteer)
 
 ``` r
 Plot2GroupStats(
-  Data,
-  Variables,
+  data,
+  variables,
   VariableCategories = NULL,
   impClust,
   normalClust,
-  GroupVar,
+  group_var,
   missing_threshold = 0.8,
   max_levels = 10,
   label_q = 0.05,
@@ -21,17 +21,20 @@ Plot2GroupStats(
   sort_by = c("q", "p", "effect", "signed_logp", "signed_effect", "none"),
   mct_args = list(),
   palette = "pals::alphabet",
-  point_size = 3.5
+  point_size = 3.5,
+  Data = lifecycle::deprecated(),
+  Variables = lifecycle::deprecated(),
+  GroupVar = lifecycle::deprecated()
 )
 ```
 
 ## Arguments
 
-- Data:
+- data:
 
   data.frame
 
-- Variables:
+- variables:
 
   character vector of variables to analyze
 
@@ -49,7 +52,7 @@ Plot2GroupStats(
   labels for the two groups (impClust plotted to the RIGHT for signed
   axes)
 
-- GroupVar:
+- group_var:
 
   column name in `Data` holding the group labels
 
@@ -87,7 +90,56 @@ Plot2GroupStats(
 
   numeric constant for point size (default 3.5)
 
+- Data:
+
+  **Deprecated** (since 19.15.0). Use `data` instead.
+
+- Variables:
+
+  **Deprecated** (since 19.15.0). Use `variables` instead.
+
+- GroupVar:
+
+  **Deprecated** (since 19.15.0). Use `group_var` instead.
+
 ## Value
 
 list(plot=ggplot, table=gtsummary, pvaltable=data.frame,
 data_used=tibble)
+
+## Examples
+
+``` r
+# \donttest{
+data(SampleData)
+data(SampleVariableTypes)
+
+# Attach labels and factor levels for readable output
+Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
+
+# Compare 30 analytes between Diagnosis groups
+vars <- c(
+  "age", "ACE_CD143_Angiotensin_Converti", "ACTH_Adrenocorticotropic_Hormon",
+  "AXL", "Adiponectin", "Alpha_1_Antichymotrypsin", "Alpha_1_Antitrypsin",
+  "Alpha_1_Microglobulin", "Alpha_2_Macroglobulin", "Angiopoietin_2_ANG_2",
+  "Angiotensinogen", "Apolipoprotein_A_IV", "Apolipoprotein_A1",
+  "Apolipoprotein_A2", "Apolipoprotein_B", "Apolipoprotein_CI",
+  "Apolipoprotein_CIII", "Apolipoprotein_D", "Apolipoprotein_E",
+  "Apolipoprotein_H", "B_Lymphocyte_Chemoattractant_BL", "BMP_6",
+  "Beta_2_Microglobulin", "Betacellulin", "C_Reactive_Protein", "CD40",
+  "CD5L", "Calbindin", "Calcitonin", "CgA"
+)
+
+result <- Plot2GroupStats(
+  Labelled,
+  variables = vars,
+  group_var = "Diagnosis",
+  impClust = "Impaired",
+  normalClust = "Control"
+)
+
+# Display the group-comparison plot
+result$plot
+
+# }
+```

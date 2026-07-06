@@ -23,3 +23,25 @@ Pipeline_SOMClust(...)
 
 The same `Pipeline_SOMClust` object returned by
 [`CreateSOMClusterModel()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateSOMClusterModel.md).
+
+## See also
+
+[`CreateSOMClusterModel()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateSOMClusterModel.md)
+for the canonical function and full examples.
+
+## Examples
+
+``` r
+if (FALSE) { # \dontrun{
+# NOTE: Not run - see CreateSOMClusterModel() for the tracked get_data() bug.
+data(SampleData)
+
+Pipeline_SOMClust(
+  data = SampleData,
+  variables = c("age", "AXL", "Adiponectin", "Alpha_1_Antitrypsin"),
+  method = "exploratory",
+  k_range = 2:4,
+  models = 1
+)
+} # }
+```

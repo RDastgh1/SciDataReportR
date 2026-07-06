@@ -10,7 +10,12 @@ flagged as conflicts.
 ## Usage
 
 ``` r
-CombineCodebooks(OldCodebook, NewCodebook, key = "Variable")
+CombineCodebooks(
+  OldCodebook,
+  NewCodebook,
+  keys = "Variable",
+  key = lifecycle::deprecated()
+)
 ```
 
 ## Arguments
@@ -26,10 +31,14 @@ CombineCodebooks(OldCodebook, NewCodebook, key = "Variable")
   same structure (column names) as `OldCodebook`, though extra or
   missing columns will be handled.
 
-- key:
+- keys:
 
   A string giving the name of the key column to identify variables (e.g.
   "Variable"). Defaults to "Variable".
+
+- key:
+
+  **Deprecated** (since 19.15.0). Use `keys` instead.
 
 ## Value
 

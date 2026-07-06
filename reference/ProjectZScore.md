@@ -6,7 +6,7 @@ Project standardized scores onto new data using external parameters
 
 ``` r
 ProjectZScore(
-  df,
+  data,
   variables = NULL,
   parameters,
   ParameterInputType = c("df_parameter", "ZScoreObj", "ExternalDataframe"),
@@ -14,13 +14,14 @@ ProjectZScore(
   RetainLabels = TRUE,
   RenameLabels = TRUE,
   center = TRUE,
-  scale = TRUE
+  scale = TRUE,
+  df = lifecycle::deprecated()
 )
 ```
 
 ## Arguments
 
-- df:
+- data:
 
   Data frame on which to project scores.
 
@@ -65,6 +66,10 @@ ProjectZScore(
 - scale:
 
   Logical; same logic as `center`.
+
+- df:
+
+  **Deprecated** (since 19.15.0). Use `data` instead.
 
 ## Value
 

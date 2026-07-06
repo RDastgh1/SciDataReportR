@@ -6,18 +6,22 @@ counts, and p-values.
 ## Usage
 
 ``` r
-CreateStatisticsTable(Data, TargetVar)
+CreateStatisticsTable(data, TargetVar, Data = lifecycle::deprecated())
 ```
 
 ## Arguments
 
-- Data:
+- data:
 
   The data frame containing the variables of interest.
 
 - TargetVar:
 
   The target variable for which statistics will be calculated.
+
+- Data:
+
+  **Deprecated** (since 19.15.0). Use `data` instead.
 
 ## Value
 

@@ -7,12 +7,18 @@ models.
 ## Usage
 
 ``` r
-ProjectRCI(Data, Object, ID = NULL)
+ProjectRCI(
+  data,
+  Object,
+  id_var = NULL,
+  Data = lifecycle::deprecated(),
+  ID = lifecycle::deprecated()
+)
 ```
 
 ## Arguments
 
-- Data:
+- data:
 
   A data frame.
 
@@ -21,9 +27,17 @@ ProjectRCI(Data, Object, ID = NULL)
   A SciDataReportR_RCI object created with
   [`CreateRCIObject()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateRCIObject.md).
 
-- ID:
+- id_var:
 
   Optional ID column override.
+
+- Data:
+
+  **Deprecated** (since 19.15.0). Use `data` instead.
+
+- ID:
+
+  **Deprecated** (since 19.15.0). Use `id_var` instead.
 
 ## Value
 
@@ -38,3 +52,30 @@ Supports both wide and long data structures and returns:
 - original data merged with projected RCI outputs
 
 - publication-ready plots
+
+## Examples
+
+``` r
+if (FALSE) { # \dontrun{
+# NOTE: This example is not run because ProjectRCI() currently errors with
+# "object 'VariableTable' not found" - VariableTable is used but never
+# defined in the function body (tracked bug, to be fixed separately).
+rci_data <- data.frame(
+  id = rep(1:30, each = 2),
+  visit = rep(c("Baseline", "Followup"), 30),
+  Score = round(rnorm(60, mean = 50, sd = 10), 1)
+)
+
+rci <- CreateRCIObject(
+  data = rci_data,
+  variables = "Score",
+  DataFormat = "long",
+  id_var = "id",
+  VisitColumn = "visit",
+  BaselineVisit = "Baseline"
+)
+
+projected <- ProjectRCI(data = rci_data, Object = rci, id_var = "id")
+projected$Plots$Spaghetti$Score
+} # }
+```

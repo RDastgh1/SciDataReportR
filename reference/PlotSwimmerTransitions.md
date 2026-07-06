@@ -24,11 +24,12 @@ PlotSwimmerTransitions(
   show_transition_points = TRUE,
   show_lines = TRUE,
   show_y_axis_labels = FALSE,
-  make_interactive = FALSE,
+  interactive = FALSE,
   plot_title = NULL,
   x_label = NULL,
   y_label = NULL,
-  return_data = FALSE
+  return_data = FALSE,
+  make_interactive = lifecycle::deprecated()
 )
 ```
 
@@ -101,7 +102,7 @@ PlotSwimmerTransitions(
   Logical. If `TRUE`, show participant labels on the y-axis. Defaults to
   `FALSE`.
 
-- make_interactive:
+- interactive:
 
   Logical. If `TRUE`, return an interactive plotly object. Defaults to
   `FALSE`.
@@ -122,11 +123,15 @@ PlotSwimmerTransitions(
 
   Logical. If `TRUE`, return both the plot and the processed data.
 
+- make_interactive:
+
+  **Deprecated** (since 19.15.0). Use `interactive` instead.
+
 ## Value
 
 A `ggplot` object by default.
 
-If `make_interactive = TRUE`, returns a `plotly` object.
+If `interactive = TRUE`, returns a `plotly` object.
 
 If `return_data = TRUE`, returns a list with:
 
@@ -177,39 +182,61 @@ and do not need to align across participants. When
 `x_axis_type = "time_from_baseline"`, each participant starts at time 0
 based on their earliest observed date.
 
-When `make_interactive = TRUE`, the function returns a `plotly` object
-and uses the internally prepared tooltip text for hover labels.
+When `interactive = TRUE`, the function returns a `plotly` object and
+uses the internally prepared tooltip text for hover labels.
 
 ## Examples
 
 ``` r
-toy_df <- tibble::tibble(
-  ParticipantID = rep(paste0("P", 1:4), each = 4),
-  VisitOrder = rep(1:4, times = 4),
-  VisitDate = rep(seq.Date(as.Date("2024-01-01"), by = "month", length.out = 4), times = 4),
-  MetSBinary = c(
-    0, 0, 1, 1,
-    1, 1, 0, 0,
-    0, 0, 0, 0,
-    "No", "Yes", "Yes", "Yes"
+# \donttest{
+# Build a swimmer-shaped dataset from the survival::colon data: each subject
+# contributes a variable number of follow-up visits and a binary condition
+# (recurrence) that can develop over time.
+if (requireNamespace("survival", quietly = TRUE)) {
+  set.seed(2024)
+
+  subjects <- survival::colon |>
+    dplyr::filter(etype == 1) |>
+    dplyr::distinct(id, .keep_all = TRUE) |>
+    dplyr::slice_sample(n = 40) |>
+    dplyr::transmute(
+      SubjectID = paste0("P", id),
+      n_visits  = pmin(pmax(round(time / 400) + 2, 2), 6),
+      onset     = purrr::map_int(n_visits, ~ sample(0:.x, 1))
+    )
+
+  swimmer_df <- subjects |>
+    dplyr::mutate(Visit = purrr::map(n_visits, seq_len)) |>
+    tidyr::unnest(Visit) |>
+    dplyr::group_by(SubjectID) |>
+    dplyr::mutate(
+      VisitDate  = as.Date("2020-01-01") +
+        cumsum(c(0, sample(60:200, dplyr::n() - 1, TRUE))),
+      Recurrence = as.integer(onset > 0 & Visit >= onset)
+    ) |>
+    dplyr::ungroup() |>
+    dplyr::select(SubjectID, Visit, VisitDate, Recurrence)
+
+  # Aligned by visit number, ordered by when the condition first develops
+  PlotSwimmerTransitions(
+    data = swimmer_df,
+    id_var = SubjectID,
+    time_var = Visit,
+    status_var = Recurrence,
+    order_participants_by = "first_transition"
   )
-)
 
-PlotSwimmerTransitions(
-  data = toy_df,
-  id_var = ParticipantID,
-  time_var = VisitOrder,
-  status_var = MetSBinary
-)
+  # Positioned by elapsed time from each participant's baseline visit
+  PlotSwimmerTransitions(
+    data = swimmer_df,
+    id_var = SubjectID,
+    time_var = Visit,
+    status_var = Recurrence,
+    date_var = VisitDate,
+    x_axis_type = "time_from_baseline",
+    time_from_baseline_unit = "months"
+  )
+}
 
-
-PlotSwimmerTransitions(
-  data = toy_df,
-  id_var = ParticipantID,
-  time_var = VisitOrder,
-  status_var = MetSBinary,
-  date_var = VisitDate,
-  x_axis_type = "time_from_baseline",
-  time_from_baseline_unit = "months"
-)
+# }
 ```

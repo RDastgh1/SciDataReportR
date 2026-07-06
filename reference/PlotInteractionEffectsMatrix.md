@@ -8,19 +8,24 @@ reversals or maintain the same direction.
 
 ``` r
 PlotInteractionEffectsMatrix(
-  Data,
+  data,
   interVar = NULL,
-  outcomeVars = NULL,
-  predictorVars = NULL,
-  covars = NULL,
+  outcome_vars = NULL,
+  predictor_vars = NULL,
+  covariates = NULL,
   Relabel = TRUE,
-  Ordinal = FALSE
+  Ordinal = FALSE,
+  Data = lifecycle::deprecated(),
+  outcomeVars = lifecycle::deprecated(),
+  predictorVars = lifecycle::deprecated(),
+  fdr_scope = c("matrix", "per_outcome"),
+  covars = lifecycle::deprecated()
 )
 ```
 
 ## Arguments
 
-- Data:
+- data:
 
   A data frame containing the variables to be analyzed
 
@@ -29,15 +34,15 @@ PlotInteractionEffectsMatrix(
   Character string specifying the interaction variable (moderator). Can
   be categorical or continuous.
 
-- outcomeVars:
+- outcome_vars:
 
   Character vector of outcome variable names (displayed on rows)
 
-- predictorVars:
+- predictor_vars:
 
   Character vector of predictor variable names (displayed on columns)
 
-- covars:
+- covariates:
 
   Character vector of covariate names to include in the models
 
@@ -50,6 +55,30 @@ PlotInteractionEffectsMatrix(
 
   Logical indicating whether to treat ordered factors as numeric
   (default: FALSE)
+
+- Data:
+
+  **Deprecated** (since 19.15.0). Use `data` instead.
+
+- outcomeVars:
+
+  **Deprecated** (since 19.15.0). Use `outcome_vars` instead.
+
+- predictorVars:
+
+  **Deprecated** (since 19.15.0). Use `predictor_vars` instead.
+
+- fdr_scope:
+
+  Either `"matrix"` (default) or `"per_outcome"`, passed to
+  [`ApplyFDRCorrection()`](https://rdastgh1.github.io/SciDataReportR/reference/ApplyFDRCorrection.md).
+  `"matrix"` corrects across all interaction p-values at once
+  (historical behavior). `"per_outcome"` corrects separately within each
+  outcome variable (`outcome_vars`).
+
+- covars:
+
+  **Deprecated** (since 19.15.0). Use `covariates` instead.
 
 ## Value
 
@@ -133,26 +162,42 @@ Darker colors indicate higher significance:
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
-# With categorical interaction variable
-results <- PlotInteractionEffectsMatrix(
-  Data = mydata,
-  interVar = "HIV_status",
-  outcomeVars = sleep_vars,
-  predictorVars = metabolites,
-  covars = c("age", "sex")
-)
+# \donttest{
+data(SampleData)
+data(SampleVariableTypes)
 
-# With continuous interaction variable
+# Attach labels and factor levels for readable axes
+Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
+
+outcomes <- c("age", "ACE_CD143_Angiotensin_Converti",
+              "ACTH_Adrenocorticotropic_Hormon", "AXL", "Adiponectin",
+              "Alpha_1_Antichymotrypsin", "Alpha_1_Antitrypsin",
+              "Alpha_1_Microglobulin")
+predictors <- c("Alpha_2_Macroglobulin", "Angiopoietin_2_ANG_2",
+                "Apolipoprotein_A_IV", "Apolipoprotein_A1",
+                "Apolipoprotein_A2", "Apolipoprotein_B", "Apolipoprotein_CI",
+                "Apolipoprotein_CIII", "Apolipoprotein_D", "Apolipoprotein_E")
+
+# With a categorical interaction variable (Diagnosis)
 results <- PlotInteractionEffectsMatrix(
-  Data = mydata,
+  data = Labelled,
+  interVar = "Diagnosis",
+  outcome_vars = outcomes,
+  predictor_vars = predictors
+)
+#> Warning: Ignoring unknown aesthetics: text
+
+# With a continuous interaction variable (age)
+results_cont <- PlotInteractionEffectsMatrix(
+  data = Labelled,
   interVar = "age",
-  outcomeVars = sleep_vars,
-  predictorVars = metabolites,
-  covars = c("sex", "BMI")
+  outcome_vars = setdiff(outcomes, "age"),
+  predictor_vars = predictors
 )
+#> Warning: Ignoring unknown aesthetics: text
 
-# Display the plot
-print(results$Unadjusted$plot)
-} # }
+# Display the plot (colored tiles mark significant interactions)
+results$Unadjusted$plot
+
+# }
 ```

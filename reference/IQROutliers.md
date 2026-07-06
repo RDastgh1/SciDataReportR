@@ -8,12 +8,19 @@ the variable across groups with outlier points highlighted.
 ## Usage
 
 ``` r
-IQROutliers(df, Variable, id = NULL, group = NULL)
+IQROutliers(
+  data,
+  Variable,
+  id_var = NULL,
+  group = NULL,
+  df = lifecycle::deprecated(),
+  id = lifecycle::deprecated()
+)
 ```
 
 ## Arguments
 
-- df:
+- data:
 
   A data frame or tibble containing the variable to evaluate.
 
@@ -21,7 +28,7 @@ IQROutliers(df, Variable, id = NULL, group = NULL)
 
   A string specifying the name of the numeric variable to test.
 
-- id:
+- id_var:
 
   A string specifying the identifier column to include in the returned
   outlier table. If `NULL`, no ID column is included in the returned
@@ -32,6 +39,14 @@ IQROutliers(df, Variable, id = NULL, group = NULL)
   A string specifying the grouping or batch column to use on the x-axis
   of the diagnostic plot. If `NULL`, the function will produce a single
   combined boxplot across all rows. Defaults to `NULL`.
+
+- df:
+
+  **Deprecated** (since 19.15.0). Use `data` instead.
+
+- id:
+
+  **Deprecated** (since 19.15.0). Use `id_var` instead.
 
 ## Value
 
@@ -67,12 +82,39 @@ Tukey, J. W. (1977). *Exploratory Data Analysis*. Addison-Wesley.
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
-  IQROutliers(df_Revalued_Data, "PS",
-              id = "record_id",
-              group = "Cohort")
+# Synthetic assay data with a few extreme values injected into each batch
+set.seed(2024)
+lab_data <- data.frame(
+  SampleID      = paste0("S", 1:60),
+  Batch         = rep(c("Batch1", "Batch2", "Batch3"), each = 20),
+  Concentration = c(
+    rnorm(19, 100, 10), 180,   # Batch1: one high outlier
+    rnorm(19, 105, 10), 15,    # Batch2: one low outlier
+    rnorm(18, 98, 10), 175, 190 # Batch3: two high outliers
+  )
+)
 
-  # Without id or group
-  IQROutliers(df_Revalued_Data, "PS", id = NULL, group = NULL)
-} # }
+# Flag outliers within each batch
+result <- IQROutliers(lab_data, "Concentration",
+                      id_var = "SampleID", group = "Batch")
+result$outlierdf
+#>   SampleID Concentration  Batch outlier
+#> 1      S20           180 Batch1    TRUE
+#> 2      S40            15 Batch2    TRUE
+#> 3      S59           175 Batch3    TRUE
+#> 4      S60           190 Batch3    TRUE
+
+# Display the diagnostic plot (flagged outliers shown in red)
+result$p
+
+
+# Without a grouping variable (single combined boxplot)
+result_all <- IQROutliers(lab_data, "Concentration",
+                          id_var = "SampleID", group = NULL)
+result_all$outlierdf
+#>   SampleID Concentration outlier
+#> 1      S20           180    TRUE
+#> 2      S40            15    TRUE
+#> 3      S59           175    TRUE
+#> 4      S60           190    TRUE
 ```

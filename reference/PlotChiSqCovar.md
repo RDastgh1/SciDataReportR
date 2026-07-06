@@ -12,31 +12,36 @@ regression-based models (logistic/multinomial).
 
 ``` r
 PlotChiSqCovar(
-  Data,
-  xVars,
-  yVars,
-  covars = NULL,
+  data,
+  predictor_vars,
+  outcome_vars,
+  covariates = NULL,
   Relabel = TRUE,
   Ordinal = TRUE,
-  min_n = 4
+  min_n = 4,
+  Data = lifecycle::deprecated(),
+  xVars = lifecycle::deprecated(),
+  yVars = lifecycle::deprecated(),
+  fdr_scope = c("matrix", "per_outcome"),
+  covars = lifecycle::deprecated()
 )
 ```
 
 ## Arguments
 
-- Data:
+- data:
 
   A data.frame containing the dataset.
 
-- xVars:
+- predictor_vars:
 
   Character vector of x-axis categorical variables.
 
-- yVars:
+- outcome_vars:
 
   Character vector of y-axis categorical variables. If NULL, uses xVars.
 
-- covars:
+- covariates:
 
   Optional character vector of covariate variables used for
   stratification (not adjustment).
@@ -53,6 +58,30 @@ PlotChiSqCovar(
 
   Minimum number of complete observations required for a tested
   association.
+
+- Data:
+
+  **Deprecated** (since 19.15.0). Use `data` instead.
+
+- xVars:
+
+  **Deprecated** (since 19.15.0). Use `predictor_vars` instead.
+
+- yVars:
+
+  **Deprecated** (since 19.15.0). Use `outcome_vars` instead.
+
+- fdr_scope:
+
+  Either `"matrix"` (default) or `"per_outcome"`, passed to
+  [`ApplyFDRCorrection()`](https://rdastgh1.github.io/SciDataReportR/reference/ApplyFDRCorrection.md).
+  `"matrix"` corrects across all p-values at once (historical behavior).
+  `"per_outcome"` corrects separately within each outcome: outcomes are
+  the y-axis variables (`outcome_vars`).
+
+- covars:
+
+  **Deprecated** (since 19.15.0). Use `covariates` instead.
 
 ## Value
 
@@ -77,3 +106,25 @@ A list with:
 - details:
 
   long table with diagnostics (n, warnings, strata info)
+
+## Examples
+
+``` r
+data(SampleData)
+
+result <- PlotChiSqCovar(
+  SampleData,
+  predictor_vars = c("Diagnosis", "Genotype"),
+  outcome_vars = c("Diagnosis", "Genotype")
+)
+#> Warning: There were 3 warnings in `dplyr::summarise()`.
+#> The first warning was:
+#> ℹ In argument: `test = list(tryCatch(stats::chisq.test(XVal, YVal), error =
+#>   function(e) NULL))`.
+#> ℹ In group 2: `XVar = "Diagnosis"`, `YVar = "Genotype"`.
+#> Caused by warning in `stats::chisq.test()`:
+#> ! Chi-squared approximation may be incorrect
+#> ℹ Run `dplyr::last_dplyr_warnings()` to see the 2 remaining warnings.
+
+result$p
+```

@@ -8,18 +8,19 @@ dataset.
 
 ``` r
 ProjectPCA(
-  Data,
+  data,
   VarsToReduce = NULL,
   PCAInput,
   InputType = c("PCAObj", "LoadingTable"),
   center = TRUE,
-  scale = TRUE
+  scale = TRUE,
+  Data = lifecycle::deprecated()
 )
 ```
 
 ## Arguments
 
-- Data:
+- data:
 
   Data frame on which to project PCA scores.
 
@@ -53,6 +54,10 @@ ProjectPCA(
   Logical; only used when InputType is "LoadingTable". For "PCAObj", the
   scaling choice is taken from PCAInput\$ScaleParams\$scale and this
   argument is ignored (with a warning if it conflicts).
+
+- Data:
+
+  **Deprecated** (since 19.15.0). Use `data` instead.
 
 ## Value
 

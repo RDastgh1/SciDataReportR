@@ -8,12 +8,17 @@ factors and revalued data.
 ## Usage
 
 ``` r
-getBinaryVars(DataFrame, Ordinal = TRUE, Revalued = TRUE)
+getBinaryVars(
+  data,
+  Ordinal = TRUE,
+  Revalued = TRUE,
+  DataFrame = lifecycle::deprecated()
+)
 ```
 
 ## Arguments
 
-- DataFrame:
+- data:
 
   A dataframe to analyze for binary variables.
 
@@ -26,6 +31,10 @@ getBinaryVars(DataFrame, Ordinal = TRUE, Revalued = TRUE)
 
   Logical. If TRUE, the function checks factors and their levels;
   otherwise, it checks for variables with two unique values.
+
+- DataFrame:
+
+  **Deprecated** (since 19.15.0). Use `data` instead.
 
 ## Value
 

@@ -12,8 +12,8 @@ labels for axis and title when available.
 PlotSplitViolin(
   data,
   Var,
-  Group,
-  covars = NULL,
+  group_var,
+  covariates = NULL,
   nonparametric = FALSE,
   annotation_text = NULL,
   show_ns = FALSE,
@@ -30,7 +30,9 @@ PlotSplitViolin(
   star_quantile = 0.995,
   star_pad = 0.05,
   star_size = 6,
-  ...
+  ...,
+  Group = lifecycle::deprecated(),
+  covars = lifecycle::deprecated()
 )
 ```
 
@@ -44,11 +46,11 @@ PlotSplitViolin(
 
   Numeric outcome variable (tidy-eval).
 
-- Group:
+- group_var:
 
   Grouping variable (\<= 2 unique values).
 
-- covars:
+- covariates:
 
   Character vector of covariates (default `NULL`).
 
@@ -121,6 +123,22 @@ PlotSplitViolin(
 
   Additional arguments reserved for future extensions.
 
+- Group:
+
+  **Deprecated** (since 19.15.0). Use `group_var` instead.
+
+- covars:
+
+  **Deprecated** (since 19.15.0). Use `covariates` instead.
+
 ## Value
 
 A ggplot2 object.
+
+## Examples
+
+``` r
+data(SampleData)
+
+PlotSplitViolin(SampleData, Var = "AXL", group_var = "Diagnosis")
+```

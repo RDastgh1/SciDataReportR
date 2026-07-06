@@ -9,26 +9,30 @@ profiles across discovered clusters or subgroup solutions.
 
 ``` r
 PlotClusterBoxplot(
-  Data,
+  data,
   ClusterVar,
-  Variables,
-  Codebook = NULL,
+  variables,
+  codebook = NULL,
   Scale = FALSE,
   ScoreType = c("auto", "z", "t", "raw"),
   ReferenceLines = c("auto", "z", "t", "none"),
   ClusterLabel = c("n_percent", "n", "none"),
   Relabel = TRUE,
   FillTitle = "Test",
+  Palette = NULL,
   YLabel = NULL,
   BoxplotWidth = 0.75,
   OutlierSize = 0.8,
-  BaseSize = 14
+  BaseSize = 14,
+  Data = lifecycle::deprecated(),
+  Variables = lifecycle::deprecated(),
+  Codebook = lifecycle::deprecated()
 )
 ```
 
 ## Arguments
 
-- Data:
+- data:
 
   A data frame.
 
@@ -36,11 +40,11 @@ PlotClusterBoxplot(
 
   Character string naming the cluster/grouping variable.
 
-- Variables:
+- variables:
 
   Character vector of variable names to plot.
 
-- Codebook:
+- codebook:
 
   Optional codebook data frame with columns `Variable` and `Label`.
 
@@ -57,6 +61,9 @@ PlotClusterBoxplot(
 - ReferenceLines:
 
   Character. One of `"auto"`, `"z"`, `"t"`, or `"none"`.
+
+  If `"auto"`, z-score reference lines are added only when
+  `Scale = TRUE`.
 
   If `"z"`, lines are added at `-1`, `-0.5`, `0`, `0.5`, and `1`.
 
@@ -86,6 +93,13 @@ PlotClusterBoxplot(
 
   Character string used as the fill legend title. Default is `"Test"`.
 
+- Palette:
+
+  Optional character vector of colors used for the fill scale. If
+  `NULL`, a stable 20-color default palette is used. If more than 20
+  variables are plotted, colors are interpolated from the default
+  palette so the function does not fail.
+
 - YLabel:
 
   Optional y-axis label. If `NULL`, an appropriate label is chosen
@@ -105,6 +119,18 @@ PlotClusterBoxplot(
 
   Base font size for the plot theme. Default is `14`.
 
+- Data:
+
+  **Deprecated** (since 19.15.0). Use `data` instead.
+
+- Variables:
+
+  **Deprecated** (since 19.15.0). Use `variables` instead.
+
+- Codebook:
+
+  **Deprecated** (since 19.15.0). Use `codebook` instead.
+
 ## Value
 
 A `ggplot` object.
@@ -114,6 +140,8 @@ A `ggplot` object.
 Variables can optionally be z-scored across all participants before
 plotting. Reference lines can be automatically added for z-score or
 T-score style interpretation, or omitted entirely for custom overlays.
+By default, reference lines are only added automatically when
+`Scale = TRUE`.
 
 Variable labels are used by default when available from a codebook or
 from variable label attributes.
@@ -122,18 +150,18 @@ from variable label attributes.
 
 ``` r
 PlotClusterBoxplot(
-  Data = mtcars,
+  data = mtcars,
   ClusterVar = "cyl",
-  Variables = c("mpg", "disp", "hp"),
+  variables = c("mpg", "disp", "hp"),
   Scale = TRUE,
   ReferenceLines = "z"
 )
 
 
 PlotClusterBoxplot(
-  Data = mtcars,
+  data = mtcars,
   ClusterVar = "cyl",
-  Variables = c("mpg", "disp", "hp"),
+  variables = c("mpg", "disp", "hp"),
   ClusterLabel = "n"
 )
 

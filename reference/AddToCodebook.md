@@ -6,7 +6,7 @@ This function adds a new variable entry to an existing codebook.
 
 ``` r
 AddToCodebook(
-  CB,
+  codebook,
   VariableName,
   VariableLabel = NA,
   VariableType = NA,
@@ -14,13 +14,14 @@ AddToCodebook(
   VariableRecode = NA,
   VariableCode = NA,
   VariableExclude = NA,
-  VariableNotes = NA
+  VariableNotes = NA,
+  CB = lifecycle::deprecated()
 )
 ```
 
 ## Arguments
 
-- CB:
+- codebook:
 
   A data frame representing the codebook.
 
@@ -55,6 +56,10 @@ AddToCodebook(
 - VariableNotes:
 
   Any additional notes or comments about the variable.
+
+- CB:
+
+  **Deprecated** (since 19.15.0). Use `codebook` instead.
 
 ## Value
 

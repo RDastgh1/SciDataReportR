@@ -24,3 +24,18 @@ CreateMCATable(...)
 
 The same object returned by
 [`CreateMCAObject()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateMCAObject.md).
+
+## See also
+
+[`CreateMCAObject()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateMCAObject.md)
+for the canonical function and full examples.
+
+## Examples
+
+``` r
+data(SampleData)
+
+mca <- CreateMCATable(SampleData, VarsToReduce = c("Diagnosis", "Genotype"))
+#> Warning: no non-missing arguments to min; returning Inf
+mca$p_scree
+```

@@ -8,20 +8,21 @@ reuse the transformation.
 
 ``` r
 CreateMScoreObject(
-  df,
+  data,
   variables = NULL,
   names_prefix = "M_",
   RetainLabels = TRUE,
   RenameLabels = TRUE,
   center = TRUE,
   scale = TRUE,
-  constant = 1.4826
+  constant = 1.4826,
+  df = lifecycle::deprecated()
 )
 ```
 
 ## Arguments
 
-- df:
+- data:
 
   A data frame.
 
@@ -55,6 +56,10 @@ CreateMScoreObject(
 
   Scaling constant passed to
   [`stats::mad()`](https://rdrr.io/r/stats/mad.html).
+
+- df:
+
+  **Deprecated** (since 19.15.0). Use `data` instead.
 
 ## Value
 

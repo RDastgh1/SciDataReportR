@@ -9,21 +9,24 @@ effect size.
 
 ``` r
 PlotAnovaRelationshipsMatrix(
-  Data,
+  data,
   CatVars,
   ContVars,
-  Covariates = NULL,
+  covariates = NULL,
   Relabel = TRUE,
   Parametric = TRUE,
   Ordinal = FALSE,
   min_n = 4,
-  eps = 1e-08
+  eps = 1e-08,
+  Data = lifecycle::deprecated(),
+  fdr_scope = c("matrix", "per_outcome"),
+  Covariates = lifecycle::deprecated()
 )
 ```
 
 ## Arguments
 
-- Data:
+- data:
 
   The data frame containing the variables of interest.
 
@@ -35,7 +38,7 @@ PlotAnovaRelationshipsMatrix(
 
   Character vector of continuous variable names.
 
-- Covariates:
+- covariates:
 
   Optional character vector of covariate names for ANCOVA analysis.
 
@@ -62,8 +65,47 @@ PlotAnovaRelationshipsMatrix(
 
   Small positive value used to avoid zero-size plotting artifacts.
 
+- Data:
+
+  **Deprecated** (since 19.15.0). Use `data` instead.
+
+- fdr_scope:
+
+  Either `"matrix"` (default) or `"per_outcome"`, passed to
+  [`ApplyFDRCorrection()`](https://rdastgh1.github.io/SciDataReportR/reference/ApplyFDRCorrection.md).
+  `"matrix"` corrects across all p-values at once (historical behavior).
+  `"per_outcome"` corrects separately within each outcome: outcomes are
+  the continuous variables (`ContVars`).
+
+- Covariates:
+
+  **Deprecated** (since 19.15.0). Use `covariates` instead.
+
 ## Value
 
 A list containing three ggplot objects: p (scatter plot without multiple
 comparison correction), p_FDR (scatter plot with FDR correction), and
 pvaltable (data frame of p-values and significance).
+
+## Examples
+
+``` r
+data(SampleData)
+data(SampleVariableTypes)
+
+# Attach labels and factor levels for readable axes
+Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
+
+result <- PlotAnovaRelationshipsMatrix(
+  Labelled,
+  CatVars = c("Diagnosis", "sex", "Genotype"),
+  ContVars = c("age", "ACE_CD143_Angiotensin_Converti",
+               "ACTH_Adrenocorticotropic_Hormon", "AXL", "Adiponectin",
+               "Alpha_1_Antichymotrypsin", "Alpha_1_Antitrypsin",
+               "Alpha_1_Microglobulin", "Alpha_2_Macroglobulin",
+               "Apolipoprotein_A1")
+)
+
+result$Unadjusted$plot
+#> Warning: Using size for a discrete variable is not advised.
+```

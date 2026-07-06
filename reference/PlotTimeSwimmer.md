@@ -9,8 +9,8 @@ visit timing, and events over time.
 
 ``` r
 PlotTimeSwimmer(
-  Data,
-  ID,
+  data,
+  id_var,
   Time,
   State = NULL,
   Event = NULL,
@@ -22,21 +22,24 @@ PlotTimeSwimmer(
   SortBy = c("duration", "last_time", "first_time", "state", "id"),
   TimeUnit = c("auto", "days", "weeks", "months", "years", "visits"),
   Relabel = TRUE,
-  Codebook = NULL,
+  codebook = NULL,
   LineWidth = 5,
   PointSize = 2.5,
   Alpha = 0.9,
-  BaseSize = 13
+  BaseSize = 13,
+  Data = lifecycle::deprecated(),
+  ID = lifecycle::deprecated(),
+  Codebook = lifecycle::deprecated()
 )
 ```
 
 ## Arguments
 
-- Data:
+- data:
 
   A data frame in long format with one row per visit or observation.
 
-- ID:
+- id_var:
 
   Character string naming the participant ID column.
 
@@ -103,7 +106,7 @@ PlotTimeSwimmer(
   Logical. If `TRUE`, use labels from `Codebook` or variable attributes
   when available.
 
-- Codebook:
+- codebook:
 
   Optional codebook data frame with columns `Variable` and `Label`.
 
@@ -122,6 +125,18 @@ PlotTimeSwimmer(
 - BaseSize:
 
   Base font size for the plot theme. Default is `13`.
+
+- Data:
+
+  **Deprecated** (since 19.15.0). Use `data` instead.
+
+- ID:
+
+  **Deprecated** (since 19.15.0). Use `id_var` instead.
+
+- Codebook:
+
+  **Deprecated** (since 19.15.0). Use `codebook` instead.
 
 ## Value
 
@@ -147,8 +162,8 @@ df <- tibble::tibble(
 )
 
 PlotTimeSwimmer(
-  Data = df,
-  ID = "ID",
+  data = df,
+  id_var = "ID",
   Time = "Visit",
   State = "Cluster"
 )

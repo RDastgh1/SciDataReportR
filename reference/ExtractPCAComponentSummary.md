@@ -75,16 +75,22 @@ improved readability in HTML tables.
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
-pca_obj <- CreatePCAObject(
-  Data = mtcars,
-  VarsToReduce = colnames(mtcars)
-)
+# \donttest{
+if (requireNamespace("gt", quietly = TRUE)) {
+  pca_obj <- CreatePCAObject(
+    data = mtcars,
+    VarsToReduce = colnames(mtcars)
+  )
 
-summary_obj <- ExtractPCAComponentSummary(pca_obj)
+  summary_obj <- ExtractPCAComponentSummary(pca_obj)
 
-summary_obj$LongTable
-summary_obj$FormattedSummaryTable
-summary_obj$FormattedSummaryTableLines
-} # }
+  summary_obj$LongTable
+  summary_obj$FormattedSummaryTable
+  summary_obj$FormattedSummaryTableLines
+}
+
+
+  
+
+Component
 ```

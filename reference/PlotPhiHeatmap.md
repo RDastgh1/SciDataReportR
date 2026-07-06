@@ -8,12 +8,19 @@ then renders heatmap-style plots with raw and FDR-adjusted significance.
 ## Usage
 
 ``` r
-PlotPhiHeatmap(Data, CatVars, Relabel = TRUE, binary_map = NULL)
+PlotPhiHeatmap(
+  data,
+  CatVars,
+  Relabel = TRUE,
+  binary_map = NULL,
+  fdr_scope = c("matrix", "per_outcome"),
+  Data = lifecycle::deprecated()
+)
 ```
 
 ## Arguments
 
-- Data:
+- data:
 
   A dataframe.
 
@@ -31,6 +38,19 @@ PlotPhiHeatmap(Data, CatVars, Relabel = TRUE, binary_map = NULL)
   [`createBinaryMapping()`](https://rdastgh1.github.io/SciDataReportR/reference/createBinaryMapping.md).
   If NULL, a mapping is created internally for `CatVars`.
 
+- fdr_scope:
+
+  Either `"matrix"` (default) or `"per_outcome"`, passed to
+  [`ApplyFDRCorrection()`](https://rdastgh1.github.io/SciDataReportR/reference/ApplyFDRCorrection.md).
+  `"matrix"` corrects across all p-values at once (historical behavior).
+  `"per_outcome"` corrects separately within each y-axis variable
+  (`YVar`); the Phi matrix is symmetric, so this treats each variable's
+  row of tiles as one family.
+
+- Data:
+
+  **Deprecated** (since 19.15.0). Use `data` instead.
+
 ## Value
 
 A list with:
@@ -44,3 +64,14 @@ A list with:
 - `Relabel`
 
 - `BinaryMapping` (used)
+
+## Examples
+
+``` r
+data(SampleData)
+
+# CatVars must be binary (exactly two unique non-NA values)
+result <- PlotPhiHeatmap(SampleData, CatVars = c("Diagnosis", "sex"))
+
+result$Unadjusted$plot
+```

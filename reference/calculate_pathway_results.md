@@ -6,18 +6,19 @@ Calculate Pathway Results for Metabolite Comparisons
 
 ``` r
 calculate_pathway_results(
-  df,
+  data,
   comparison_var,
   covariates = NULL,
   metabolites,
   comparison_type = "auto",
-  use_point_correlation = FALSE
+  use_point_correlation = FALSE,
+  df = lifecycle::deprecated()
 )
 ```
 
 ## Arguments
 
-- df:
+- data:
 
   Data frame containing metabolite and comparison data
 
@@ -41,6 +42,10 @@ calculate_pathway_results(
 
   Logical, if TRUE uses point correlation for binary comparisons
 
+- df:
+
+  **Deprecated** (since 19.15.0). Use `data` instead.
+
 ## Value
 
 Data frame with metabolite results including fold change or correlation
@@ -51,7 +56,7 @@ values
 ``` r
 if (FALSE) { # \dontrun{
 results <- calculate_pathway_results(
-  df = my_data,
+  data = my_data,
   comparison_var = "poorSleep",
   covariates = c("Age", "BMI"),
   metabolites = c("Tryptophan", "Kynurenine"),

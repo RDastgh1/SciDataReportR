@@ -23,3 +23,24 @@ CreateZScorePlot(...)
 
 A ggplot object returned by
 [`PlotZScore()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotZScore.md).
+
+## See also
+
+[`PlotZScore()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotZScore.md)
+for the canonical function and full examples.
+
+## Examples
+
+``` r
+data(SampleData)
+
+CreateZScorePlot(
+  SampleData,
+  TargetVar = "Diagnosis",
+  variables = c("age", "AXL", "Adiponectin")
+)
+#> Warning: Removed 2 rows containing missing values or values outside the scale range
+#> (`geom_point()`).
+#> Warning: Removed 3 rows containing missing values or values outside the scale range
+#> (`geom_point()`).
+```

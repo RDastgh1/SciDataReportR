@@ -8,6 +8,8 @@ using the %in% operator. Otherwise, it returns FALSE.
 
 ``` r
 x %!in% y
+
+x %notin% y
 ```
 
 ## Arguments

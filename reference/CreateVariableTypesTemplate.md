@@ -8,15 +8,16 @@ summary to a CSV file.
 
 ``` r
 CreateVariableTypesTemplate(
-  DataFrame,
+  data,
   CSVFileName = NULL,
-  GuessCategorical = TRUE
+  GuessCategorical = TRUE,
+  DataFrame = lifecycle::deprecated()
 )
 ```
 
 ## Arguments
 
-- DataFrame:
+- data:
 
   A data frame containing the variables to be summarized.
 
@@ -29,6 +30,10 @@ CreateVariableTypesTemplate(
 
   A logical variable specifying if the function should guess what
   variables are categorical based on having \<= 5 unique values
+
+- DataFrame:
+
+  **Deprecated** (since 19.15.0). Use `data` instead.
 
 ## Value
 
@@ -86,7 +91,7 @@ CreateVariableTypesTemplate(df)
 #> fact     fact  fact Categorical       NA     NA   NA            NA            
 #> char     char  char Categorical       NA     NA   NA            NA            
 #> date     date  date Categorical       NA     NA   NA            NA            
-CreateVariableTypesTemplate(df, "variable_types.csv")
+CreateVariableTypesTemplate(df, file.path(tempdir(), "variable_types.csv"))
 #>      Variable Label        Type Category Recode Code Notes Exclude MissingCode
 #> num       num   num Categorical       NA     NA   NA            NA            
 #> int       int   int Categorical       NA     NA   NA            NA            

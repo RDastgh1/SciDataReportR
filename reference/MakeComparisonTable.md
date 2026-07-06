@@ -9,15 +9,15 @@ sizes, and pairwise comparisons.
 
 ``` r
 MakeComparisonTable(
-  DataFrame,
-  CompVariable = NULL,
-  Variables,
+  data,
+  group_var = NULL,
+  variables,
   ...,
-  Covariates = NULL,
-  ValueDigits = 2,
-  pDigits = 3,
+  covariates = NULL,
+  value_digits = 2,
+  p_digits = 3,
   AddEffectSize = FALSE,
-  EffectSizeDigits = 2,
+  effect_size_digits = 2,
   AddPairwise = FALSE,
   PairwiseMethod = "bonferroni",
   Parametric = TRUE,
@@ -31,21 +31,28 @@ MakeComparisonTable(
   CatMethod = c("auto", "chisq", "fisher"),
   MultiCatAdjusted = c("multinomial_LR", "none"),
   ShowNotes = c("auto", "always", "never"),
-  NotesPosition = c("last", "after_test", "before_pairwise")
+  NotesPosition = c("last", "after_test", "before_pairwise"),
+  DataFrame = lifecycle::deprecated(),
+  CompVariable = lifecycle::deprecated(),
+  Variables = lifecycle::deprecated(),
+  Covariates = lifecycle::deprecated(),
+  ValueDigits = lifecycle::deprecated(),
+  pDigits = lifecycle::deprecated(),
+  EffectSizeDigits = lifecycle::deprecated()
 )
 ```
 
 ## Arguments
 
-- DataFrame:
+- data:
 
   A data frame.
 
-- CompVariable:
+- group_var:
 
   Character scalar naming the grouping variable.
 
-- Variables:
+- variables:
 
   Character vector of variables to summarize.
 
@@ -53,15 +60,15 @@ MakeComparisonTable(
 
   Optional additional variable names supplied individually.
 
-- Covariates:
+- covariates:
 
   Optional character vector of covariates for adjusted models.
 
-- ValueDigits:
+- value_digits:
 
   Number of digits for descriptive statistics.
 
-- pDigits:
+- p_digits:
 
   Number of digits for p-values.
 
@@ -69,7 +76,7 @@ MakeComparisonTable(
 
   Logical; add effect-size columns.
 
-- EffectSizeDigits:
+- effect_size_digits:
 
   Number of digits for effect sizes.
 
@@ -135,6 +142,34 @@ MakeComparisonTable(
   Notes column position. One of `"last"`, `"after_test"`, or
   `"before_pairwise"`.
 
+- DataFrame:
+
+  **Deprecated** (since 19.15.0). Use `data` instead.
+
+- CompVariable:
+
+  **Deprecated** (since 19.15.0). Use `group_var` instead.
+
+- Variables:
+
+  **Deprecated** (since 19.15.0). Use `variables` instead.
+
+- Covariates:
+
+  **Deprecated** (since 19.15.0). Use `covariates` instead.
+
+- ValueDigits:
+
+  **Deprecated** (since 19.15.0). Use `value_digits` instead.
+
+- pDigits:
+
+  **Deprecated** (since 19.15.0). Use `p_digits` instead.
+
+- EffectSizeDigits:
+
+  **Deprecated** (since 19.15.0). Use `effect_size_digits` instead.
+
 ## Value
 
 A `gtsummary` object.
@@ -157,16 +192,38 @@ with covariates are tested using multinomial likelihood-ratio tests.
 Pairwise comparisons preserve non-standard group labels and variable
 names.
 
+## References
+
+This function wraps gtsummary. Please cite:
+
+Sjoberg, D. D., Whiting, K., Curry, M., Lavery, J. A., & Larmarange, J.
+(2021). Reproducible summary tables with the gtsummary package. *The R
+Journal*, 13(1), 570-580.
+[doi:10.32614/RJ-2021-053](https://doi.org/10.32614/RJ-2021-053)
+
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
+data(SampleData)
+data(SampleVariableTypes)
+
+# Attach labels and factor levels so the table shows readable output
+Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
+
+# Compare variables across Diagnosis groups with effect sizes and
+# pairwise contrasts
 MakeComparisonTable(
-  DataFrame = mtcars,
-  CompVariable = "am",
-  Variables = c("mpg", "hp", "wt"),
+  data = Labelled,
+  group_var = "Diagnosis",
+  variables = c("age", "sex", "AXL", "Adiponectin"),
   AddEffectSize = TRUE,
   AddPairwise = TRUE
 )
-} # }
+
+
+  
+Comparison table (display: mean (SD)). Global p-values: unadjusted (no covariates). Categorical global test: auto; adjusted multi-category: multinomial_LR. Pairwise: included (p-adjust: bonferroni).
+
+  
+Characteristic
 ```

@@ -25,13 +25,21 @@ CreatePCATable(...)
 The same object returned by
 [`CreatePCAObject()`](https://rdastgh1.github.io/SciDataReportR/reference/CreatePCAObject.md).
 
+## See also
+
+[`CreatePCAObject()`](https://rdastgh1.github.io/SciDataReportR/reference/CreatePCAObject.md)
+for the canonical function and full examples.
+
 ## Examples
 
 ``` r
 PCA <- CreatePCATable(
-  Data = mtcars,
+  data = mtcars,
   VarsToReduce = names(mtcars),
-  numComponents = 3,
-  imputeMethod = "median"
+  numComponents = 3
 )
+
+# Display the scree plot from the returned object
+PCA$p_scree
+
 ```

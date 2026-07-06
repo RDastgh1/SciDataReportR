@@ -4,6 +4,8 @@
 
 - [`AddToCodebook()`](https://rdastgh1.github.io/SciDataReportR/reference/AddToCodebook.md)
   : Add a new variable to a codebook
+- [`ApplyFDRCorrection()`](https://rdastgh1.github.io/SciDataReportR/reference/ApplyFDRCorrection.md)
+  : Apply multiple-comparison correction across a p-value matrix
 - [`ApplyNormativeTScores()`](https://rdastgh1.github.io/SciDataReportR/reference/ApplyNormativeTScores.md)
   : Apply a normative T-score model to new data
 - [`AssemblePlots()`](https://rdastgh1.github.io/SciDataReportR/reference/AssemblePlots.md)
@@ -20,7 +22,7 @@
 - [`CompareDatasets()`](https://rdastgh1.github.io/SciDataReportR/reference/CompareDatasets.md)
   : Compare two versions of a dataset
 - [`ConvertOrdinalToNumeric()`](https://rdastgh1.github.io/SciDataReportR/reference/ConvertOrdinalToNumeric.md)
-  : ConvertOrdinalToNumeric
+  : Convert ordinal variables to numeric
 - [`CreateMCAObject()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateMCAObject.md)
   : Create a reusable MCA object and visualizations
 - [`CreateMCATable()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateMCATable.md)
@@ -69,6 +71,8 @@
   : Insert Values into a String Array
 - [`InspectCategoricalSummary()`](https://rdastgh1.github.io/SciDataReportR/reference/InspectCategoricalSummary.md)
   : Inspect categorical variables
+- [`InspectFile()`](https://rdastgh1.github.io/SciDataReportR/reference/InspectFile.md)
+  : Inspect a scientific data file before import
 - [`KeepEnv()`](https://rdastgh1.github.io/SciDataReportR/reference/KeepEnv.md)
   : Keep selected objects in an environment and remove everything else
 - [`MakeComparisonTable()`](https://rdastgh1.github.io/SciDataReportR/reference/MakeComparisonTable.md)
@@ -81,12 +85,19 @@
   multiple categorical variables
 - [`MakeTable1()`](https://rdastgh1.github.io/SciDataReportR/reference/MakeTable1.md)
   : Create Summary Table using gtsummary
+- [`MakeUnivariateRegressionTable()`](https://rdastgh1.github.io/SciDataReportR/reference/MakeUnivariateRegressionTable.md)
+  [`UnivariateRegressionTable()`](https://rdastgh1.github.io/SciDataReportR/reference/MakeUnivariateRegressionTable.md)
+  : Univariate Regression Table
 - [`Make_DataDictionary()`](https://rdastgh1.github.io/SciDataReportR/reference/Make_DataDictionary.md)
   : Create a data dictionary for a data frame
 - [`MergeCodebooks()`](https://rdastgh1.github.io/SciDataReportR/reference/MergeCodebooks.md)
   : Merge multiple codebooks using harmonization rules
+- [`MergeFragmentedRecords()`](https://rdastgh1.github.io/SciDataReportR/reference/MergeFragmentedRecords.md)
+  : Merge fragmented records into a single observation
 - [`Merge_ByClosestTime()`](https://rdastgh1.github.io/SciDataReportR/reference/Merge_ByClosestTime.md)
   : Merge Two Data Frames by Closest Time
+- [`MultivariableRegressionTable()`](https://rdastgh1.github.io/SciDataReportR/reference/MultivariableRegressionTable.md)
+  : Multivariable regression table
 - [`Pipeline_SOMClust()`](https://rdastgh1.github.io/SciDataReportR/reference/Pipeline_SOMClust.md)
   : SOM + latent profile clustering pipeline (with AHP and distance
   baselines)
@@ -117,6 +128,9 @@
   : Plot dataset comparison diagnostics
 - [`PlotDirectionalHeatmaps()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotDirectionalHeatmaps.md)
   : Create directional heatmaps across continuous & binary variables
+- [`PlotForestFromTable()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotForestFromTable.md)
+  [`plotForestFromTable()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotForestFromTable.md)
+  : Create a Forest Plot from Univariate Regression Tables
 - [`PlotInteractionEffectsContinuous()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotInteractionEffectsContinuous.md)
   : Plot Single Interaction Effect
 - [`PlotInteractionEffectsMatrix()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotInteractionEffectsMatrix.md)
@@ -158,20 +172,24 @@
   : Plot Z-score group differences with statistical significance
 - [`PrepNumericData()`](https://rdastgh1.github.io/SciDataReportR/reference/PrepNumericData.md)
   : Prepare numeric data safely for analysis
+- [`PrepSPSS()`](https://rdastgh1.github.io/SciDataReportR/reference/PrepSPSS.md)
+  : Prepare a data frame for SPSS export
 - [`ProjectPCA()`](https://rdastgh1.github.io/SciDataReportR/reference/ProjectPCA.md)
   : Project PCA scores onto new data
 - [`ProjectRCI()`](https://rdastgh1.github.io/SciDataReportR/reference/ProjectRCI.md)
   : Project a trained RCI object onto new data
 - [`ProjectSOMCluster()`](https://rdastgh1.github.io/SciDataReportR/reference/ProjectSOMCluster.md)
-  : Project new data onto an existing SOM + cluster solution
+  : Project new data onto an existing SOM clinical phenotype space
 - [`ProjectZScore()`](https://rdastgh1.github.io/SciDataReportR/reference/ProjectZScore.md)
   : Project standardized scores onto new data using external parameters
 - [`Project_SOMClust()`](https://rdastgh1.github.io/SciDataReportR/reference/Project_SOMClust.md)
-  : Project new data onto an existing SOM + cluster solution
+  : Project new data onto an existing SOM clinical phenotype space
 - [`Project_ZScore()`](https://rdastgh1.github.io/SciDataReportR/reference/Project_ZScore.md)
   : Project standardized scores onto new data using external parameters
 - [`ReValueFactors()`](https://rdastgh1.github.io/SciDataReportR/reference/ReValueFactors.md)
   : Revalue Factors
+- [`ReadSciData()`](https://rdastgh1.github.io/SciDataReportR/reference/ReadSciData.md)
+  : Read a scientific data file with optional inspection
 - [`ReplaceMissingCode()`](https://rdastgh1.github.io/SciDataReportR/reference/ReplaceMissingCode.md)
   : Replace Missing Codes with NA
 - [`ReplaceMissingLabels()`](https://rdastgh1.github.io/SciDataReportR/reference/ReplaceMissingLabels.md)
@@ -185,8 +203,6 @@
 - [`SummarizeTransitions()`](https://rdastgh1.github.io/SciDataReportR/reference/SummarizeTransitions.md)
   : Summarize participant transitions for a binary longitudinal
   condition
-- [`UnivariateRegressionTable()`](https://rdastgh1.github.io/SciDataReportR/reference/UnivariateRegressionTable.md)
-  : Univariate Regression Table
 - [`UpdateCodebook()`](https://rdastgh1.github.io/SciDataReportR/reference/UpdateCodebook.md)
   : Update an existing codebook based on a given dataframe
 - [`UpdateDataDictionary()`](https://rdastgh1.github.io/SciDataReportR/reference/UpdateDataDictionary.md)
@@ -210,10 +226,13 @@
   : Get Categorical Variables
 - [`getNumVars()`](https://rdastgh1.github.io/SciDataReportR/reference/getNumVars.md)
   : Get Numeric Variables
+- [`merge_detail()`](https://rdastgh1.github.io/SciDataReportR/reference/merge_detail.md)
+  : Print a plain-text detail report for one safe_merge result
+- [`merge_summary_table()`](https://rdastgh1.github.io/SciDataReportR/reference/merge_summary_table.md)
+  : Combine safe_merge logs into a single summary table
 - [`` `%!in%` ``](https://rdastgh1.github.io/SciDataReportR/reference/not_in_operator.md)
+  [`` `%notin%` ``](https://rdastgh1.github.io/SciDataReportR/reference/not_in_operator.md)
   : Negated "in" Operator
-- [`plotForestFromTable()`](https://rdastgh1.github.io/SciDataReportR/reference/plotForestFromTable.md)
-  : Create a Forest Plot from Univariate Regression Tables
 - [`plotPCA()`](https://rdastgh1.github.io/SciDataReportR/reference/plotPCA.md)
   : Plot PCA scores
 - [`plotSigAssociations()`](https://rdastgh1.github.io/SciDataReportR/reference/plotSigAssociations.md)
@@ -224,7 +243,11 @@
   : Remove Strings from a Vector
 - [`reverseFactorLevels()`](https://rdastgh1.github.io/SciDataReportR/reference/reverseFactorLevels.md)
   : Reverse Levels of Categorical Factors
+- [`safe_merge()`](https://rdastgh1.github.io/SciDataReportR/reference/safe_merge.md)
+  : Merge two data frames and validate the result in one step
 - [`use_EDATemplate()`](https://rdastgh1.github.io/SciDataReportR/reference/use_EDATemplate.md)
   : Use the EDATemplate Quarto Template
+- [`use_GetStartedScript()`](https://rdastgh1.github.io/SciDataReportR/reference/use_GetStartedScript.md)
+  : Use the Get Started Script Template
 - [`windsorize()`](https://rdastgh1.github.io/SciDataReportR/reference/windsorize.md)
   : Winsorize a numeric vector using SD or IQR thresholds

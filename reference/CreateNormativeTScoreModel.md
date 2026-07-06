@@ -11,7 +11,7 @@ transformation, and reverse scoring.
 
 ``` r
 CreateNormativeTScoreModel(
-  df,
+  data,
   test_var,
   count_var,
   covariates,
@@ -24,13 +24,14 @@ CreateNormativeTScoreModel(
   seconds_divisor = 1000,
   log_transform = TRUE,
   codebook = NULL,
-  return_plots = TRUE
+  return_plots = TRUE,
+  df = lifecycle::deprecated()
 )
 ```
 
 ## Arguments
 
-- df:
+- data:
 
   A data frame containing the test variable, count variable, reference
   group variable, and covariates.
@@ -100,6 +101,10 @@ CreateNormativeTScoreModel(
 
   Logical. If `TRUE`, returns a list of diagnostic plots.
 
+- df:
+
+  **Deprecated** (since 19.15.0). Use `data` instead.
+
 ## Value
 
 A list with the following elements:
@@ -163,7 +168,7 @@ df <- tibble::tibble(
 )
 
 out <- CreateNormativeTScoreModel(
-  df = df,
+  data = df,
   test_var = "TrailsA",
   count_var = "Visit",
   covariates = c("Age", "Education", "Sex"),
@@ -173,7 +178,7 @@ out <- CreateNormativeTScoreModel(
   reverse_score = TRUE,
   convert_seconds = TRUE,
   log_transform = TRUE,
-  return_plots = FALSE
+  return_plots = TRUE
 )
 
 out$data
@@ -202,4 +207,8 @@ out$model
 #>             Visit  
 #>         0.0989387  
 #> 
+
+# Display the fitted T-score plot from the returned object
+out$plots$tscore
+#> `stat_bin()` using `bins = 30`. Pick better value `binwidth`.
 ```

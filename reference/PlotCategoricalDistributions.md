@@ -7,22 +7,24 @@ categorical variables in a dataframe.
 
 ``` r
 PlotCategoricalDistributions(
-  DataFrame,
-  Variables = NULL,
+  data,
+  variables = NULL,
   Relabel = TRUE,
   Ordinal = TRUE,
   LabelType = "percent",
-  MissingLabel = "Missing"
+  MissingLabel = "Missing",
+  DataFrame = lifecycle::deprecated(),
+  Variables = lifecycle::deprecated()
 )
 ```
 
 ## Arguments
 
-- DataFrame:
+- data:
 
   The dataframe containing the variables to be plotted.
 
-- Variables:
+- variables:
 
   Optional. A character vector specifying the names of the categorical
   variables to be plotted. If NULL, categorical variables are
@@ -46,6 +48,25 @@ PlotCategoricalDistributions(
 
   Character label to use for missing values.
 
+- DataFrame:
+
+  **Deprecated** (since 19.15.0). Use `data` instead.
+
+- Variables:
+
+  **Deprecated** (since 19.15.0). Use `variables` instead.
+
 ## Value
 
 A ggplot object visualizing the distributions of categorical variables.
+
+## Examples
+
+``` r
+data(SampleData)
+
+PlotCategoricalDistributions(
+  SampleData,
+  variables = c("Diagnosis", "Genotype")
+)
+```

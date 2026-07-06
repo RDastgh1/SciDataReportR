@@ -7,12 +7,12 @@ while preserving column names and replacing non-finite values (`Inf`,
 ## Usage
 
 ``` r
-PrepNumericData(df, variables = names(df))
+PrepNumericData(data, variables = names(data), df = lifecycle::deprecated())
 ```
 
 ## Arguments
 
-- df:
+- data:
 
   A data frame.
 
@@ -20,6 +20,10 @@ PrepNumericData(df, variables = names(df))
 
   Character vector of variable names to process. Defaults to all
   columns.
+
+- df:
+
+  **Deprecated** (since 19.15.0). Use `data` instead.
 
 ## Value
 

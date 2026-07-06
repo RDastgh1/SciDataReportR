@@ -8,7 +8,7 @@ a set of visualizations and tables to interpret the results.
 
 ``` r
 CreateMCAObject(
-  Data,
+  data,
   VarsToReduce,
   VariableCategories = NULL,
   minThresh = 75,
@@ -17,13 +17,14 @@ CreateMCAObject(
   Relabel = TRUE,
   Ordinal = FALSE,
   numComponents = NULL,
-  ImputeMissing = FALSE
+  ImputeMissing = FALSE,
+  Data = lifecycle::deprecated()
 )
 ```
 
 ## Arguments
 
-- Data:
+- data:
 
   A dataframe containing the data to be analyzed.
 
@@ -71,6 +72,10 @@ CreateMCAObject(
   Logical, if TRUE, missing values will be imputed using `missRanger`.
   Default is FALSE.
 
+- Data:
+
+  **Deprecated** (since 19.15.0). Use `data` instead.
+
 ## Value
 
 A list with the following elements:
@@ -107,3 +112,18 @@ A list with the following elements:
 Optional dependencies used by this workflow include `missRanger` for
 imputation and `FactoMineR` for MCA calculation. These packages are
 listed in `DESCRIPTION` and should be installed for MCA workflows.
+
+## Examples
+
+``` r
+data(SampleData)
+
+mca <- CreateMCAObject(
+  SampleData,
+  VarsToReduce = c("Diagnosis", "Genotype")
+)
+#> Warning: no non-missing arguments to min; returning Inf
+
+# Display the scree plot from the returned object
+mca$p_scree
+```

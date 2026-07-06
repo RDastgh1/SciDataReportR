@@ -23,6 +23,13 @@ End-to-end pipeline to:
 - Map node-level clusters and posterior probabilities back to
   individuals.
 
+- Store training variable summaries used later to quantify whether
+  projected cohorts fall outside the original training range.
+
+This supports a train once, project many clinical phenotyping workflow:
+learn phenotype structure in a training cohort, then project new cohorts
+into the fixed phenotype space without reclustering.
+
 Missing data:
 
 - SOM and clustering are fit only on rows with complete Z-scores.
@@ -60,7 +67,7 @@ Z-score behavior:
 
 ``` r
 CreateSOMClusterModel(
-  df,
+  data,
   variables = NULL,
   method = c("exploratory", "finalize"),
   k_range = 2:15,
@@ -80,7 +87,7 @@ CreateSOMClusterModel(
   Relabel = TRUE,
   ZScorePrefix = "Z_",
   ZScoreVars = NULL,
-  id_col = NULL,
+  id_var = NULL,
   lpa_progress = FALSE,
   lpa_em_itmax = 100L,
   lpa_em_tol = 1e-05,
@@ -89,13 +96,17 @@ CreateSOMClusterModel(
   lpa_zero_sd_tol = 1e-08,
   skip_model_after_n_failures = 2L,
   slow_fit_seconds = 120,
-  min_nodes_per_cluster = 5
+  min_nodes_per_cluster = 5,
+  high_dist_quantile = 0.95,
+  low_prob_threshold = 0.7,
+  df = lifecycle::deprecated(),
+  id_col = lifecycle::deprecated()
 )
 ```
 
 ## Arguments
 
-- df:
+- data:
 
   Data frame containing the variables to be used in SOM and clustering.
 
@@ -197,7 +208,7 @@ CreateSOMClusterModel(
   them from `variables` or by detecting columns starting with
   `ZScorePrefix`.
 
-- id_col:
+- id_var:
 
   Optional character scalar. If provided and present in `df`, this
   column is carried into `ProbFit$individual` for convenience.
@@ -246,6 +257,24 @@ CreateSOMClusterModel(
   Optional minimum average SOM nodes per cluster considered before
   attempting a candidate profile count.
 
+- high_dist_quantile:
+
+  Numeric value between 0 and 1 used to define high SOM-distance flags
+  from the training distance distribution. Default is `0.95`.
+
+- low_prob_threshold:
+
+  Numeric posterior probability threshold used to flag uncertain
+  phenotype membership. Default is `0.70`.
+
+- df:
+
+  **Deprecated** (since 19.15.0). Use `data` instead.
+
+- id_col:
+
+  **Deprecated** (since 19.15.0). Use `id_var` instead.
+
 ## Value
 
 A list of class `"Pipeline_SOMClust"` with components:
@@ -261,8 +290,8 @@ A list of class `"Pipeline_SOMClust"` with components:
 - `fit_plot`: ggplot of AIC/BIC/Entropy vs k and model
 
 - `ModelInfo_SOM`: list with `som_model`, `som_codes`, `som_grid`,
-  `SOMFit` (distance diagnostics, baselines, and per-cluster flags),
-  `plots` (aweSOM plots)
+  `training_variable_summary`, `SOMFit` (distance diagnostics,
+  baselines, and per-cluster flags), `plots` (aweSOM plots)
 
 - `ModelInfo_MClust`: list with `lpa_models`, `fit_table`, `AHP`
   information, and `diagnostics` for LPA warnings, failures, runtimes,
@@ -291,3 +320,25 @@ fits are listed in `ModelInfo_MClust$diagnostics`.
 ## References
 
 Saaty TL. *The Analytic Hierarchy Process*. McGraw-Hill, 1980.
+
+## Examples
+
+``` r
+if (FALSE) { # \dontrun{
+# NOTE: This example is kept in \dontrun{} because the function currently
+# errors with "could not find function 'get_data'": tidyLPA::get_data()
+# fails to dispatch under this call path (tracked bug, possibly a tidyLPA
+# version pin issue). The reduced settings below (k_range = 2:4, models = 1)
+# are otherwise fast enough to run once the bug is resolved.
+data(SampleData)
+
+model <- CreateSOMClusterModel(
+  data = SampleData,
+  variables = c("age", "AXL", "Adiponectin", "Alpha_1_Antitrypsin"),
+  method = "exploratory",
+  k_range = 2:4,
+  models = 1
+)
+model$plots$cluster_fit_summary_plot
+} # }
+```

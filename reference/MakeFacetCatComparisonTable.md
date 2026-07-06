@@ -16,14 +16,14 @@ categorical dimensions such as Race, Sex, or HIV status.
 
 ``` r
 MakeFacetCatComparisonTable(
-  DataFrame,
+  data,
   FacetVariables,
-  Variables,
-  Covariates = NULL,
-  ValueDigits = 2,
-  pDigits = 3,
+  variables,
+  covariates = NULL,
+  value_digits = 2,
+  p_digits = 3,
   AddEffectSize = FALSE,
-  EffectSizeDigits = 2,
+  effect_size_digits = 2,
   AddPairwise = FALSE,
   PairwiseMethod = "bonferroni",
   Parametric = TRUE,
@@ -35,13 +35,19 @@ MakeFacetCatComparisonTable(
   IncludeOverallStats = FALSE,
   ShowPositiveBinaryOnLabel = TRUE,
   CompFun = MakeComparisonTable,
-  ...
+  ...,
+  DataFrame = lifecycle::deprecated(),
+  Variables = lifecycle::deprecated(),
+  Covariates = lifecycle::deprecated(),
+  ValueDigits = lifecycle::deprecated(),
+  pDigits = lifecycle::deprecated(),
+  EffectSizeDigits = lifecycle::deprecated()
 )
 ```
 
 ## Arguments
 
-- DataFrame:
+- data:
 
   A data frame containing all variables to be analyzed.
 
@@ -51,20 +57,20 @@ MakeFacetCatComparisonTable(
   automatically selects those that are categorical (`factor` or
   `character`).
 
-- Variables:
+- variables:
 
   A character string naming the variable(s) being compared (e.g.,
   "Cluster").
 
-- Covariates:
+- covariates:
 
   Optional character vector of covariate names to adjust for.
 
-- ValueDigits:
+- value_digits:
 
   Number of decimal digits to display for numeric values (default = 2).
 
-- pDigits:
+- p_digits:
 
   Number of decimal digits to display for p-values (default = 3).
 
@@ -72,7 +78,7 @@ MakeFacetCatComparisonTable(
 
   Logical; if TRUE, include effect sizes (default = FALSE).
 
-- EffectSizeDigits:
+- effect_size_digits:
 
   Decimal digits for effect size values (default = 2).
 
@@ -128,6 +134,30 @@ MakeFacetCatComparisonTable(
 - ...:
 
   Additional arguments passed to the comparison function.
+
+- DataFrame:
+
+  **Deprecated** (since 19.15.0). Use `data` instead.
+
+- Variables:
+
+  **Deprecated** (since 19.15.0). Use `variables` instead.
+
+- Covariates:
+
+  **Deprecated** (since 19.15.0). Use `covariates` instead.
+
+- ValueDigits:
+
+  **Deprecated** (since 19.15.0). Use `value_digits` instead.
+
+- pDigits:
+
+  **Deprecated** (since 19.15.0). Use `p_digits` instead.
+
+- EffectSizeDigits:
+
+  **Deprecated** (since 19.15.0). Use `effect_size_digits` instead.
 
 ## Value
 

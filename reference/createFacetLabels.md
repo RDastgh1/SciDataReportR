@@ -6,14 +6,18 @@ facet labels suitable for use with ggplot2 facet functions.
 ## Usage
 
 ``` r
-createFacetLabels(DataFrame)
+createFacetLabels(data, DataFrame = lifecycle::deprecated())
 ```
 
 ## Arguments
 
-- DataFrame:
+- data:
 
   A data frame containing variable labels.
+
+- DataFrame:
+
+  **Deprecated** (since 19.15.0). Use `data` instead.
 
 ## Value
 

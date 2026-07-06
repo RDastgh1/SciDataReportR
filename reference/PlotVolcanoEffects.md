@@ -11,10 +11,10 @@ for each predictor.
 
 ``` r
 PlotVolcanoEffects(
-  Data,
-  xVars,
-  yVar,
-  Covariates = NULL,
+  data,
+  predictor_vars,
+  outcome_var,
+  covariates = NULL,
   OutcomeType = c("auto", "continuous", "categorical"),
   EffectMetric = c("auto", "cohens_d", "log2fc"),
   AdjustMethod = "fdr",
@@ -24,26 +24,31 @@ PlotVolcanoEffects(
   LabelMode = c("none", "top_n", "significant", "fdr", "extreme"),
   TopN = 10,
   Relabel = TRUE,
-  Codebook = NULL,
-  InteractiveLabels = TRUE
+  codebook = NULL,
+  InteractiveLabels = TRUE,
+  Data = lifecycle::deprecated(),
+  xVars = lifecycle::deprecated(),
+  yVar = lifecycle::deprecated(),
+  Covariates = lifecycle::deprecated(),
+  Codebook = lifecycle::deprecated()
 )
 ```
 
 ## Arguments
 
-- Data:
+- data:
 
   A data frame.
 
-- xVars:
+- predictor_vars:
 
   Character vector of predictor variable names to screen.
 
-- yVar:
+- outcome_var:
 
   Character string naming the outcome variable.
 
-- Covariates:
+- covariates:
 
   Optional character vector of covariate variable names.
 
@@ -92,7 +97,7 @@ PlotVolcanoEffects(
   are pulled first from `Codebook` if supplied, then from variable label
   attributes. Default is `TRUE`.
 
-- Codebook:
+- codebook:
 
   Optional codebook data frame with columns `Variable` and `Label`.
 
@@ -100,6 +105,26 @@ PlotVolcanoEffects(
 
   Logical. If `TRUE`, a `text` aesthetic is added for compatibility with
   `plotly::ggplotly(tooltip = "text")`. Default is `TRUE`.
+
+- Data:
+
+  **Deprecated** (since 19.15.0). Use `data` instead.
+
+- xVars:
+
+  **Deprecated** (since 19.15.0). Use `predictor_vars` instead.
+
+- yVar:
+
+  **Deprecated** (since 19.15.0). Use `outcome_var` instead.
+
+- Covariates:
+
+  **Deprecated** (since 19.15.0). Use `covariates` instead.
+
+- Codebook:
+
+  **Deprecated** (since 19.15.0). Use `codebook` instead.
 
 ## Value
 
@@ -117,66 +142,38 @@ with a warning.
 ## Examples
 
 ``` r
-PlotVolcanoEffects(
-  Data = mtcars,
-  xVars = c("disp", "hp", "drat", "wt", "qsec"),
-  yVar = "mpg",
-  Covariates = "cyl",
+data(SampleData)
+data(SampleVariableTypes)
+
+# Attach labels and factor levels for readable point labels
+Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
+
+predictors <- c("Alpha_1_Antitrypsin", "Alpha_2_Macroglobulin",
+                "Apolipoprotein_A1", "Apolipoprotein_B", "C_Reactive_Protein",
+                "Cortisol", "Insulin", "Leptin")
+
+# Continuous outcome, adjusted for age
+cont <- PlotVolcanoEffects(
+  data = Labelled,
+  predictor_vars = predictors,
+  outcome_var = "AXL",
+  covariates = "age",
   OutcomeType = "continuous",
   LabelMode = "top_n",
   TopN = 3
 )
-#> Warning: Ignoring unknown aesthetics: text
-#> Warning: Ignoring unknown aesthetics: text
-#> $RawPPlot
+cont$RawPPlot
 
-#> 
-#> $FDRPlot
 
-#> 
-#> $ResultsTable
-#> # A tibble: 5 × 18
-#>   Variable Label Outcome OutcomeType Effect EffectType        PValue     N Note 
-#>   <chr>    <chr> <chr>   <chr>        <dbl> <chr>              <dbl> <int> <chr>
-#> 1 disp     disp  mpg     continuous  -0.423 Standardized be… 5.42e-2    32 NA   
-#> 2 hp       hp    mpg     continuous  -0.218 Standardized be… 2.13e-1    32 NA   
-#> 3 drat     drat  mpg     continuous   0.166 Standardized be… 2.20e-1    32 NA   
-#> 4 wt       wt    mpg     continuous  -0.518 Standardized be… 2.22e-4    32 NA   
-#> 5 qsec     qsec  mpg     continuous  -0.131 Standardized be… 2.76e-1    32 NA   
-#> # ℹ 9 more variables: FDR <dbl>, NegLog10P <dbl>, NegLog10FDR <dbl>,
-#> #   Significant <lgl>, FDRSignificant <lgl>, Direction <chr>,
-#> #   SignificanceTier <chr>, Tooltip <chr>, PlotLabel <chr>
-#> 
-
-PlotVolcanoEffects(
-  Data = mtcars,
-  xVars = c("mpg", "disp", "hp", "drat", "wt", "qsec"),
-  yVar = "am",
+# Categorical outcome (Diagnosis), Cohen's d effect metric
+cat_res <- PlotVolcanoEffects(
+  data = Labelled,
+  predictor_vars = predictors,
+  outcome_var = "Diagnosis",
   OutcomeType = "categorical",
   EffectMetric = "cohens_d",
   LabelMode = "top_n",
   TopN = 3
 )
-#> Warning: Ignoring unknown aesthetics: text
-#> Warning: Ignoring unknown aesthetics: text
-#> $RawPPlot
-
-#> 
-#> $FDRPlot
-
-#> 
-#> $ResultsTable
-#> # A tibble: 6 × 18
-#>   Variable Label Outcome OutcomeType Effect EffectType        PValue     N Note 
-#>   <chr>    <chr> <chr>   <chr>        <dbl> <chr>              <dbl> <int> <chr>
-#> 1 mpg      mpg   am      categorical  1.20  Cohen-style d 0.000285      32 NA   
-#> 2 disp     disp  am      categorical -1.18  Cohen-style d 0.000366      32 NA   
-#> 3 hp       hp    am      categorical -0.487 Cohen-style d 0.180         32 NA   
-#> 4 drat     drat  am      categorical  1.43  Cohen-style d 0.00000473    32 NA   
-#> 5 wt       wt    am      categorical -1.39  Cohen-style d 0.0000113     32 NA   
-#> 6 qsec     qsec  am      categorical -0.461 Cohen-style d 0.206         32 NA   
-#> # ℹ 9 more variables: FDR <dbl>, NegLog10P <dbl>, NegLog10FDR <dbl>,
-#> #   Significant <lgl>, FDRSignificant <lgl>, Direction <chr>,
-#> #   SignificanceTier <chr>, Tooltip <chr>, PlotLabel <chr>
-#> 
+cat_res$RawPPlot
 ```

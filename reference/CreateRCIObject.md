@@ -7,10 +7,10 @@ user-defined reference visit and calculate projected RCI values.
 
 ``` r
 CreateRCIObject(
-  Data,
-  Variables,
+  data,
+  variables,
   DataFormat = c("wide", "long"),
-  ID,
+  id_var,
   Method = "regression",
   BaselineSpecifier = NULL,
   FollowupSpecifier = NULL,
@@ -19,17 +19,20 @@ CreateRCIObject(
   VisitOrder = NULL,
   BaselineVisit = NULL,
   Confidence = 0.95,
-  Relabel = TRUE
+  Relabel = TRUE,
+  Data = lifecycle::deprecated(),
+  Variables = lifecycle::deprecated(),
+  ID = lifecycle::deprecated()
 )
 ```
 
 ## Arguments
 
-- Data:
+- data:
 
   A data frame.
 
-- Variables:
+- variables:
 
   Character vector of canonical variable names.
 
@@ -37,7 +40,7 @@ CreateRCIObject(
 
   Either "wide" or "long".
 
-- ID:
+- id_var:
 
   ID column.
 
@@ -95,6 +98,18 @@ CreateRCIObject(
   Traditional Jacobson-Truax RCI thresholds typically use +/-1.96,
   corresponding to approximately 95% confidence.
 
+- Data:
+
+  **Deprecated** (since 19.15.0). Use `data` instead.
+
+- Variables:
+
+  **Deprecated** (since 19.15.0). Use `variables` instead.
+
+- ID:
+
+  **Deprecated** (since 19.15.0). Use `id_var` instead.
+
 ## Value
 
 A SciDataReportR_RCI object.
@@ -104,3 +119,26 @@ A SciDataReportR_RCI object.
 Supports both wide and long longitudinal data structures.
 
 Long format is recommended for datasets with more than two visits.
+
+## Examples
+
+``` r
+set.seed(1)
+rci_data <- data.frame(
+  id = rep(1:30, each = 2),
+  visit = rep(c("Baseline", "Followup"), 30),
+  Score = round(rnorm(60, mean = 50, sd = 10), 1)
+)
+
+rci <- CreateRCIObject(
+  data = rci_data,
+  variables = "Score",
+  DataFormat = "long",
+  id_var = "id",
+  VisitColumn = "visit",
+  BaselineVisit = "Baseline"
+)
+
+# Display a spaghetti plot from the returned object
+rci$Plots$Spaghetti$Score
+```

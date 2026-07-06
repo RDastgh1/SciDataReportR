@@ -7,12 +7,17 @@ preprocessing settings used during model development.
 ## Usage
 
 ``` r
-ApplyNormativeTScores(df, normative_obj, score_prefix = "Norm")
+ApplyNormativeTScores(
+  data,
+  normative_obj,
+  score_prefix = "Norm",
+  df = lifecycle::deprecated()
+)
 ```
 
 ## Arguments
 
-- df:
+- data:
 
   A data frame containing the test variable, count variable, and all
   predictors required by the normative model.
@@ -27,27 +32,32 @@ ApplyNormativeTScores(df, normative_obj, score_prefix = "Norm")
   A character string prefix used when naming output columns. Defaults to
   `"Norm"`.
 
+- df:
+
+  **Deprecated** (since 19.15.0). Use `data` instead.
+
 ## Value
 
-A tibble containing the original data plus scored columns:
+A tibble containing the original data plus scored columns, each named
+using the `score_prefix` string as a prefix:
 
-- Raw:
+- `{score_prefix}Raw`:
 
   The raw input score.
 
-- Scaled:
+- `{score_prefix}Scaled`:
 
   The transformed analysis-scale score.
 
-- Predicted:
+- `{score_prefix}Predicted`:
 
   The predicted score from the normative model.
 
-- Z:
+- `{score_prefix}Z`:
 
   The z-score.
 
-- T:
+- `{score_prefix}T`:
 
   The T-score.
 
@@ -80,7 +90,7 @@ df <- tibble::tibble(
 )
 
 norm_obj <- CreateNormativeTScoreModel(
-  df = df,
+  data = df,
   test_var = "TrailsA",
   count_var = "Visit",
   covariates = c("Age", "Education", "Sex"),
@@ -94,7 +104,7 @@ norm_obj <- CreateNormativeTScoreModel(
 )
 
 scored_df <- ApplyNormativeTScores(
-  df = df,
+  data = df,
   normative_obj = norm_obj
 )
 ```

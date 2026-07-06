@@ -6,12 +6,12 @@ a given dataframe.
 ## Usage
 
 ``` r
-reverseFactorLevels(df, variables)
+reverseFactorLevels(data, variables, df = lifecycle::deprecated())
 ```
 
 ## Arguments
 
-- df:
+- data:
 
   A dataframe containing the categorical variables to be reversed.
 
@@ -19,6 +19,10 @@ reverseFactorLevels(df, variables)
 
   A character vector of column names in the dataframe to reverse levels.
   These columns must be categorical factors.
+
+- df:
+
+  **Deprecated** (since 19.15.0). Use `data` instead.
 
 ## Value
 

@@ -17,12 +17,17 @@ coding.
 ## Usage
 
 ``` r
-createBinaryMapping(Data, CatVars, prefer = NULL)
+createBinaryMapping(
+  data,
+  CatVars,
+  prefer = NULL,
+  Data = lifecycle::deprecated()
+)
 ```
 
 ## Arguments
 
-- Data:
+- data:
 
   A dataframe.
 
@@ -34,6 +39,10 @@ createBinaryMapping(Data, CatVars, prefer = NULL)
 
   Optional named character vector of explicit positive levels, e.g.,
   c(STATUS = "PWH", Smoker = "Yes"). This overrides other rules.
+
+- Data:
+
+  **Deprecated** (since 19.15.0). Use `data` instead.
 
 ## Value
 

@@ -7,16 +7,17 @@ generated correlation heatmap.
 
 ``` r
 plotSigCorrelations(
-  DataFrame,
+  data,
   CorrelationHeatmapObject,
   PVar = "P",
-  Pthresh = 0.05
+  Pthresh = 0.05,
+  DataFrame = lifecycle::deprecated()
 )
 ```
 
 ## Arguments
 
-- DataFrame:
+- data:
 
   The dataset used to generate the scatterplots.
 
@@ -33,6 +34,29 @@ plotSigCorrelations(
 
   The significance threshold (default is 0.05).
 
+- DataFrame:
+
+  **Deprecated** (since 19.15.0). Use `data` instead.
+
 ## Value
 
 A list of scatterplot objects for significant correlations.
+
+## Examples
+
+``` r
+# \donttest{
+# Build a correlation heatmap, then plot the significant pairs
+ch <- PlotCorrelationsHeatmap(
+  mtcars,
+  predictor_vars = c("mpg", "wt", "hp"),
+  outcome_vars = c("mpg", "wt", "hp")
+)
+
+plots <- plotSigCorrelations(mtcars, ch)
+
+# Display the first significant-correlation scatterplot
+plots[[1]]
+
+# }
+```

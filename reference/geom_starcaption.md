@@ -26,3 +26,14 @@ ggplot with `+`, typically a plot returned inside the list created by
 [`PlotCorrelationsHeatmap()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotCorrelationsHeatmap.md)
 or a plot returned by
 [`add_r_and_stars()`](https://rdastgh1.github.io/SciDataReportR/reference/add_r_and_stars.md).
+
+## Examples
+
+``` r
+library(ggplot2)
+
+# Compose the caption onto any ggplot with `+`
+ggplot(mtcars, aes(mpg, wt)) +
+  geom_point() +
+  geom_starcaption()
+```
