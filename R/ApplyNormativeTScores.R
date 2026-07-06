@@ -14,13 +14,14 @@
 #' @param score_prefix A character string prefix used when naming output
 #'   columns. Defaults to `"Norm"`.
 #'
-#' @return A tibble containing the original data plus scored columns:
+#' @return A tibble containing the original data plus scored columns, each
+#'   named using the `score_prefix` string as a prefix:
 #' \describe{
-#'   \item{<prefix>Raw}{The raw input score.}
-#'   \item{<prefix>Scaled}{The transformed analysis-scale score.}
-#'   \item{<prefix>Predicted}{The predicted score from the normative model.}
-#'   \item{<prefix>Z}{The z-score.}
-#'   \item{<prefix>T}{The T-score.}
+#'   \item{`{score_prefix}Raw`}{The raw input score.}
+#'   \item{`{score_prefix}Scaled`}{The transformed analysis-scale score.}
+#'   \item{`{score_prefix}Predicted`}{The predicted score from the normative model.}
+#'   \item{`{score_prefix}Z`}{The z-score.}
+#'   \item{`{score_prefix}T`}{The T-score.}
 #' }
 #'
 #' @examples

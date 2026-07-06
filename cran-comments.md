@@ -1,14 +1,41 @@
 # cran-comments
 
-## Submission: SciDataReportR 20.7.0
+## Submission: SciDataReportR 20.8.0
 
 This is a new submission (first release of this package on CRAN).
 
 ## Test environments
 
-* local: macOS (Apple Silicon), R 4.x
-* win-builder: R-devel and R-release  <!-- update after running -->
+* local: macOS (Apple Silicon), R 4.5.3, and R-devel (2026-04-24 build) via Docker
+* win-builder: R-devel (checked 2026-07-05; failures found and fixed, see below)
+* win-builder: R-release  <!-- update after running -->
 * R-hub: Windows / Ubuntu / macOS      <!-- update after running -->
+
+## Round-trip notes (for CRAN reviewer context; safe to ignore)
+
+An initial win-builder R-devel check surfaced 2 ERRORs / 3 NOTEs. Root causes
+and fixes:
+
+* `MakeUnivariateRegressionTable()` calls `gtsummary::tbl_regression()`, which
+  requires `broom.helpers` (>= 1.20.0) for lm/glm models. `broom.helpers` was
+  only a transitive Suggests (via gtsummary), so it was never installed on a
+  fresh check machine. Added `broom.helpers` to Imports with a
+  `requireNamespace()` guard.
+* `MultivariableRegressionTable()` checked for the optional `pROC` package
+  before validating outcome factor levels post missing-data handling; reordered
+  so data validation happens first.
+* Fixed an internal `stop(paste(..., e$message))` that silently dropped the
+  real error text when `e$message` was `NULL`/`character(0)` (a common
+  rlang/cli condition shape) — now uses `conditionMessage(e)`. This is what
+  let the two bugs above hide behind an uninformative "Error processing X and
+  Y :" message.
+* Fixed a `<prefix>` placeholder in `ApplyNormativeTScores.Rd` that rendered as
+  invalid raw HTML; fixed `CodebookMergeApp.Rd` figure width to pixels; fixed
+  an invalid file URI in README (linked to `LICENSE.md`, which is
+  `.Rbuildignore`'d).
+
+All 236 package tests pass under R-devel (verified via a local Docker
+`rocker/r-devel` container) and under R 4.5.3 release.
 
 ## R CMD check results
 

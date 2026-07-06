@@ -11,6 +11,7 @@ Roxygen: list(markdown = TRUE)
 URL: https://github.com/RDastgh1/SciDataReportR, https://rdastgh1.github.io/SciDataReportR/
 BugReports: https://github.com/RDastgh1/SciDataReportR/issues
 Imports:
+    broom.helpers (>= 1.20.0),
     dplyr,
     ggplot2,
     labelled,

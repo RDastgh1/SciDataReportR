@@ -5,6 +5,7 @@
 conflicted copy
 ^LICENSE\.md$
 ^README\.Rmd$
+^README\.html$
 ^_pkgdown\.yml$
 ^docs$
 ^pkgdown$

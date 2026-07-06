@@ -4627,10 +4627,6 @@ Adding markers to the mode...
 +   LabelMode = "top_n",
 +   TopN = 3
 + )
-Warning in ggplot2::geom_point(ggplot2::aes(text = if (InteractiveLabels) .data$Tooltip else NULL),  :
-  Ignoring unknown aesthetics: text
-Warning in ggplot2::geom_point(ggplot2::aes(text = if (InteractiveLabels) .data$Tooltip else NULL),  :
-  Ignoring unknown aesthetics: text
 > cont$RawPPlot
 > 
 > # Categorical outcome (Diagnosis), Cohen's d effect metric
@@ -4643,10 +4639,6 @@ Warning in ggplot2::geom_point(ggplot2::aes(text = if (InteractiveLabels) .data$
 +   LabelMode = "top_n",
 +   TopN = 3
 + )
-Warning in ggplot2::geom_point(ggplot2::aes(text = if (InteractiveLabels) .data$Tooltip else NULL),  :
-  Ignoring unknown aesthetics: text
-Warning in ggplot2::geom_point(ggplot2::aes(text = if (InteractiveLabels) .data$Tooltip else NULL),  :
-  Ignoring unknown aesthetics: text
 > cat_res$RawPPlot
 > 
 > 
@@ -5393,7 +5385,7 @@ Table: Baseline + labs: keys only in left data (showing up to 10 of 1)
 > cleanEx()
 > options(digits = 7L)
 > base::cat("Time elapsed: ", proc.time() - base::get("ptime", pos = 'CheckExEnv'),"\n")
-Time elapsed:  25.534 0.434 26.464 0 0 
+Time elapsed:  23.662 0.451 24.357 0 0 
 > grDevices::dev.off()
 null device 
           1 

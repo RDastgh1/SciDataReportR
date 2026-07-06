@@ -23,13 +23,14 @@ columns. Defaults to \code{"Norm"}.}
 \item{df}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
 }
 \value{
-A tibble containing the original data plus scored columns:
+A tibble containing the original data plus scored columns, each
+named using the \code{score_prefix} string as a prefix:
 \describe{
-\item{\if{html}{\out{<prefix>}}Raw}{The raw input score.}
-\item{\if{html}{\out{<prefix>}}Scaled}{The transformed analysis-scale score.}
-\item{\if{html}{\out{<prefix>}}Predicted}{The predicted score from the normative model.}
-\item{\if{html}{\out{<prefix>}}Z}{The z-score.}
-\item{\if{html}{\out{<prefix>}}T}{The T-score.}
+\item{\verb{\{score_prefix\}Raw}}{The raw input score.}
+\item{\verb{\{score_prefix\}Scaled}}{The transformed analysis-scale score.}
+\item{\verb{\{score_prefix\}Predicted}}{The predicted score from the normative model.}
+\item{\verb{\{score_prefix\}Z}}{The z-score.}
+\item{\verb{\{score_prefix\}T}}{The T-score.}
 }
 }
 \description{

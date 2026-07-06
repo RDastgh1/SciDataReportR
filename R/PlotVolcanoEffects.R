@@ -666,6 +666,26 @@ PlotVolcanoEffects <- function(data,
         PlotY = dplyr::if_else(is.infinite(.data$PlotY), NA_real_, .data$PlotY)
       )
 
+    # Point layer. When InteractiveLabels is TRUE, a `text` aesthetic is added
+    # for plotly::ggplotly(tooltip = "text") compatibility. `text` is not a
+    # standard ggplot2 aesthetic, so it is added via ggplot2::layer() with
+    # check.aes = FALSE to suppress the "Ignoring unknown aesthetics: text"
+    # warning at build time. inherit.aes = TRUE keeps the plot-level x/y/color.
+    volcano_point_layer <- if (InteractiveLabels) {
+      ggplot2::layer(
+        geom = "point",
+        stat = "identity",
+        position = "identity",
+        mapping = ggplot2::aes(text = .data$Tooltip),
+        params = list(na.rm = FALSE, alpha = 0.85, size = 2.4),
+        inherit.aes = TRUE,
+        check.aes = FALSE,
+        show.legend = NA
+      )
+    } else {
+      ggplot2::geom_point(alpha = 0.85, size = 2.4)
+    }
+
     if (Format == "effect_gradient") {
       p <- ggplot2::ggplot(
         plot_data,
@@ -675,11 +695,7 @@ PlotVolcanoEffects <- function(data,
           color = .data$Effect
         )
       ) +
-        ggplot2::geom_point(
-          ggplot2::aes(text = if (InteractiveLabels) .data$Tooltip else NULL),
-          alpha = 0.85,
-          size = 2.4
-        ) +
+        volcano_point_layer +
         ggplot2::scale_color_gradient2(
           low = "#3B4CC0",
           mid = "grey80",
@@ -714,11 +730,7 @@ PlotVolcanoEffects <- function(data,
           color = .data$PlotColor
         )
       ) +
-        ggplot2::geom_point(
-          ggplot2::aes(text = if (InteractiveLabels) .data$Tooltip else NULL),
-          alpha = 0.85,
-          size = 2.4
-        )
+        volcano_point_layer
 
       if (Format == "tiered") {
         p <- p +

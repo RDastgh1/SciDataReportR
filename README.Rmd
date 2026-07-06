@@ -19,7 +19,7 @@ knitr::opts_chunk$set(
 [![R-CMD-check](https://github.com/RDastgh1/SciDataReportR/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/RDastgh1/SciDataReportR/actions/workflows/R-CMD-check.yaml)
 [![pkgdown](https://github.com/RDastgh1/SciDataReportR/actions/workflows/pkgdown.yaml/badge.svg)](https://github.com/RDastgh1/SciDataReportR/actions/workflows/pkgdown.yaml)
 [![Lifecycle: maturing](https://img.shields.io/badge/lifecycle-maturing-blue.svg)](https://lifecycle.r-lib.org/articles/stages.html)
-[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE.md)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](https://github.com/RDastgh1/SciDataReportR/blob/master/LICENSE.md)
 [![GitHub release](https://img.shields.io/github/v/release/RDastgh1/SciDataReportR)](https://github.com/RDastgh1/SciDataReportR/releases)
 [![GitHub issues](https://img.shields.io/github/issues/RDastgh1/SciDataReportR)](https://github.com/RDastgh1/SciDataReportR/issues)
 <!-- badges: end -->

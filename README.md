@@ -10,7 +10,7 @@
 [![Lifecycle:
 maturing](https://img.shields.io/badge/lifecycle-maturing-blue.svg)](https://lifecycle.r-lib.org/articles/stages.html)
 [![License:
-MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE.md)
+MIT](https://img.shields.io/badge/license-MIT-green.svg)](https://github.com/RDastgh1/SciDataReportR/blob/master/LICENSE.md)
 [![GitHub
 release](https://img.shields.io/github/v/release/RDastgh1/SciDataReportR)](https://github.com/RDastgh1/SciDataReportR/releases)
 [![GitHub

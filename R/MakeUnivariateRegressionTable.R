@@ -13,6 +13,7 @@
 #' @param LogisticExponentiate Logical. If `TRUE`, logistic regression estimates
 #'   are exponentiated and reported as odds ratios.
 #' @importFrom sjlabelled get_label set_label
+#' @importFrom broom.helpers tidy_plus_plus
 #' @return A list containing:
 #'   - FormattedTable: A merged table with formatted regression results
 #'   - LargeTable: A merged table with unformatted regression results
@@ -82,6 +83,12 @@ MakeUnivariateRegressionTable <- function(data,
   }
   if (!is.logical(LogisticExponentiate) || length(LogisticExponentiate) != 1) {
     stop("LogisticExponentiate must be TRUE or FALSE.")
+  }
+  if (!requireNamespace("broom.helpers", quietly = TRUE)) {
+    stop(
+      "Package 'broom.helpers' (>= 1.20.0) is required by MakeUnivariateRegressionTable(). ",
+      "Install it with install.packages('broom.helpers')."
+    )
   }
 
   all_model_vars <- unique(c(OutcomeVars, PredictorVars, Covars))
@@ -153,7 +160,7 @@ MakeUnivariateRegressionTable <- function(data,
         tblformatted_list[[xVar]] <- modTableCombined
       }, error = function(e) {
         stop(paste("Error processing", YVar, "and", xVar,
-                   ": ", e$message))
+                   ": ", conditionMessage(e)))
       })
     }
     Wide_tbl_list[[YVar]] <- tbl_stack(tbl_list) %>% remove_row_type(type = "reference")

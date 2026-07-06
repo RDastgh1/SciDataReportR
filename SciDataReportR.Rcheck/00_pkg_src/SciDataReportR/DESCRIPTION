@@ -1,7 +1,7 @@
 Package: SciDataReportR
 Title: Workflow Infrastructure for Reproducible Scientific Data
         Reporting
-Version: 20.7.0
+Version: 20.8.0
 Authors@R: 
     person("Raha", "Dastgheyb", , "raha@jhmi.edu", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0002-4992-711X"))
@@ -12,9 +12,10 @@ Roxygen: list(markdown = TRUE)
 URL: https://github.com/RDastgh1/SciDataReportR,
         https://rdastgh1.github.io/SciDataReportR/
 BugReports: https://github.com/RDastgh1/SciDataReportR/issues
-Imports: dplyr, ggplot2, labelled, lifecycle, magrittr, sjlabelled,
-        stats, tidyr, rstatix, ggstatsplot, knitr, tibble, gtsummary,
-        paletteer, purrr, rlang, scales, stringr, tidyselect
+Imports: broom.helpers (>= 1.20.0), dplyr, ggplot2, labelled,
+        lifecycle, magrittr, sjlabelled, stats, tidyr, rstatix,
+        ggstatsplot, knitr, tibble, gtsummary, paletteer, purrr, rlang,
+        scales, stringr, tidyselect
 Suggests: arrow, aweSOM, BlandAltmanLeh, broom, bslib, car, cowplot,
         DescTools, DT, effectsize, emmeans, FactoMineR, ggnewscale,
         ggdist, ggrepel, gtools, ggrain, glmnet, gt, haven, Hmisc,
@@ -31,7 +32,7 @@ VignetteBuilder: quarto, knitr
 Config/roxygen2/version: 8.0.0
 Config/testthat/edition: 3
 NeedsCompilation: no
-Packaged: 2026-07-05 18:58:42 UTC; rahad
+Packaged: 2026-07-06 00:29:31 UTC; rahad
 Author: Raha Dastgheyb [aut, cre] (ORCID:
     <https://orcid.org/0000-0002-4992-711X>)
 Maintainer: Raha Dastgheyb <raha@jhmi.edu>

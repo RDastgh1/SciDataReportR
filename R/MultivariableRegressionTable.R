@@ -190,10 +190,6 @@ MultivariableRegressionTable <- function(data,
 
   multicollinearity <- ScidrRegressionMulticollinearity(Data, retained_model_terms)
 
-  if (any(outcome_families == "logistic") && !requireNamespace("pROC", quietly = TRUE)) {
-    stop("Package 'pROC' is required for logistic regression diagnostics.")
-  }
-
   model_list <- list()
   large_tables <- list()
   prediction_tables <- list()
@@ -236,6 +232,9 @@ MultivariableRegressionTable <- function(data,
           paste(remaining_levels, collapse = ", "), ". ",
           "Use a less restrictive missing-data strategy or check the outcome coding."
         )
+      }
+      if (!requireNamespace("pROC", quietly = TRUE)) {
+        stop("Package 'pROC' is required for logistic regression diagnostics.")
       }
     } else {
       outcome_info <- list(Levels = NA_character_)
