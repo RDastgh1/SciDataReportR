@@ -401,7 +401,7 @@ sessionInfo()
 
     other attached packages:
     [1] plotly_4.12.0         ggplot2_4.0.3         dplyr_1.2.1
-    [4] SciDataReportR_20.8.0
+    [4] SciDataReportR_20.9.0
 
     loaded via a namespace (and not attached):
      [1] ggstatsplot_1.0.0      sjlabelled_1.2.0       tidyselect_1.2.1
