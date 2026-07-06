@@ -405,8 +405,8 @@ sessionInfo()
     [1] stats     graphics  grDevices utils     datasets  methods   base
 
     other attached packages:
-    [1] plotly_4.12.0         ggplot2_4.0.3         dplyr_1.2.1
-    [4] SciDataReportR_20.9.0
+    [1] plotly_4.12.0          ggplot2_4.0.3          dplyr_1.2.1
+    [4] SciDataReportR_20.10.0
 
     loaded via a namespace (and not attached):
      [1] gtable_0.3.6           xfun_0.59              bayestestR_0.18.1
