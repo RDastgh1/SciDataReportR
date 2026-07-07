@@ -337,13 +337,13 @@ print(sessionInfo())
     [43] gtsummary_2.5.1        purrr_1.2.2            rematch2_2.1.2
     [46] forcats_1.0.1          ggstatsplot_1.0.0      labelled_2.16.0
     [49] fastmap_1.2.0          grid_4.6.1             cli_3.6.6
-    [52] magrittr_2.0.5         base64enc_0.1-6        cards_0.8.0
+    [52] magrittr_2.0.5         base64enc_0.1-6        cards_0.8.1
     [55] patchwork_1.3.2        dichromat_2.0-0.1      broom_1.0.13
     [58] withr_3.0.3            scales_1.4.0           backports_1.5.1
     [61] estimability_2.0.0     rmarkdown_2.31         emmeans_2.0.3
     [64] otel_0.2.0             hms_1.1.4              coda_0.19-4.1
     [67] evaluate_1.0.5         knitr_1.51             haven_2.5.5
     [70] parameters_0.29.2      markdown_2.0           rstantools_2.6.0
-    [73] rlang_1.2.0            xtable_1.8-8           glue_1.8.1
+    [73] rlang_1.3.0            xtable_1.8-8           glue_1.8.1
     [76] xml2_1.6.0             jsonlite_2.0.0         effectsize_1.0.2
     [79] R6_2.6.1               fs_2.1.0              

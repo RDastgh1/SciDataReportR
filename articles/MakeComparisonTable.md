@@ -306,7 +306,7 @@ sessionInfo()
      [10] bayestestR_0.18.1      broom.helpers_1.22.0   labelled_2.16.0
      [13] digest_0.6.39          estimability_2.0.0     lifecycle_1.0.5
      [16] lmom_3.3               magrittr_2.0.5         compiler_4.6.1
-     [19] rlang_1.2.0            sass_0.4.10            tools_4.6.1
+     [19] rlang_1.3.0            sass_0.4.10            tools_4.6.1
      [22] yaml_2.3.12            gt_1.3.0               data.table_1.18.4
      [25] knitr_1.51             xml2_1.6.0             RColorBrewer_1.1-3
      [28] abind_1.4-8            expm_1.0-0             withr_3.0.3
@@ -329,8 +329,8 @@ sessionInfo()
      [79] tibble_3.3.1           pillar_1.11.1          htmltools_0.5.9
      [82] R6_2.6.1               evaluate_1.0.5         lattice_0.22-9
      [85] readr_2.2.0            markdown_2.0           haven_2.5.5
-     [88] backports_1.5.1        cards_0.8.0            broom_1.0.13
+     [88] backports_1.5.1        cards_0.8.1            broom_1.0.13
      [91] snakecase_0.11.1       rstantools_2.6.0       DescTools_0.99.60
-     [94] class_7.3-23           Rcpp_1.1.1-1.1         coda_0.19-4.1
+     [94] class_7.3-23           Rcpp_1.1.2             coda_0.19-4.1
      [97] xfun_0.59              fs_2.1.0               zoo_1.8-15
     [100] forcats_1.0.1          pkgconfig_2.0.3       

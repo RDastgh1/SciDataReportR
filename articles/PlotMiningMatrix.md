@@ -382,6 +382,6 @@ sessionInfo()
     [61] emmeans_2.0.3          otel_0.2.0             gridExtra_2.3.1
     [64] hms_1.1.4              coda_0.19-4.1          evaluate_1.0.5
     [67] knitr_1.51             haven_2.5.5            parameters_0.29.2
-    [70] viridisLite_0.4.3      rstantools_2.6.0       rlang_1.2.0
+    [70] viridisLite_0.4.3      rstantools_2.6.0       rlang_1.3.0
     [73] xtable_1.8-8           glue_1.8.1             jsonlite_2.0.0
     [76] effectsize_1.0.2       R6_2.6.1              

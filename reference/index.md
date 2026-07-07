@@ -57,6 +57,8 @@
   parameters
 - [`CreateZScorePlot()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateZScorePlot.md)
   : Create a Z-score plot with statistical significance
+- [`DeriveFreesurferVolumes()`](https://rdastgh1.github.io/SciDataReportR/reference/DeriveFreesurferVolumes.md)
+  : Derive Freesurfer bilateral totals and ICV-adjusted measures
 - [`ExploreDatasetComparison()`](https://rdastgh1.github.io/SciDataReportR/reference/ExploreDatasetComparison.md)
   : Explore dataset comparison results interactively
 - [`ExploreMergeValidation()`](https://rdastgh1.github.io/SciDataReportR/reference/ExploreMergeValidation.md)
