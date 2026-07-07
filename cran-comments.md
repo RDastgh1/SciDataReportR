@@ -1,6 +1,6 @@
 # cran-comments
 
-## Submission: SciDataReportR 20.9.0
+## Submission: SciDataReportR 20.10.0
 
 This is a new submission (first release of this package on CRAN).
 
