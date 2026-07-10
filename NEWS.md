@@ -1,3 +1,5 @@
+# SciDataReportR 20.13.0
+
 # SciDataReportR 20.12.0
 
 * `PlotVolcanoEffects()` now reports more detail in its `ResultsTable` and point tooltips. Continuous outcomes gain `R` (zero-order Pearson correlation) and `AdjustedR` (covariate-adjusted partial correlation). Two-group categorical outcomes gain `Group1Level`, `Group2Level`, `Group1Mean`, and `Group2Mean` (raw predictor means within each group). These values also appear in the `Tooltip` column so they show up when the plot is passed to `plotly::ggplotly(tooltip = "text")`.
