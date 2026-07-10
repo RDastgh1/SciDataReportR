@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">SciDataReportR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">20.11.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">20.12.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -73,7 +73,7 @@
       <img src="../logo.png" class="logo" alt=""><h1>Merge QC workflow</h1>
             
       
-      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/v20.11.0/vignettes/merge-qc-workflow.Rmd" class="external-link"><code>vignettes/merge-qc-workflow.Rmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/master/vignettes/merge-qc-workflow.Rmd" class="external-link"><code>vignettes/merge-qc-workflow.Rmd</code></a></small>
       <div class="d-none name"><code>merge-qc-workflow.Rmd</code></div>
     </div>
 
@@ -131,14 +131,17 @@ were not staged for this vignette.</p>
 its own. The one-row <code>log</code> is the pipeline-friendly view:</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">m_pbc</span><span class="op">$</span><span class="va">log</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 1 × 16</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 1 × 27</span></span></span>
 <span><span class="co">#&gt;   Merge        Status ReadyForAnalysis RowsBefore RowsAfter ColsBefore ColsAfter</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;lgl&gt;</span>                 <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;int&gt;</span></span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> pbc baselin… FAIL   FALSE                   418      <span style="text-decoration: underline;">2</span>051          5         9</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 9 more variables: ExpectedColsAdded &lt;int&gt;, ActualColsAdded &lt;int&gt;,</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;">#   MatchedKeys &lt;int&gt;, LeftUniqueKeys &lt;int&gt;, MatchRate &lt;dbl&gt;,</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;">#   DuplicateKeyGroups &lt;int&gt;, UnresolvedDupVars &lt;int&gt;, KeyHarmonization &lt;chr&gt;,</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;">#   Note &lt;chr&gt;</span></span></span></code></pre></div>
+<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 20 more variables: ExpectedColsAdded &lt;int&gt;, ActualColsAdded &lt;int&gt;,</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;">#   ExpectedRelationship &lt;chr&gt;, DetectedRelationship &lt;chr&gt;,</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;">#   RelationshipMatchesExpected &lt;lgl&gt;, MatchedKeys &lt;int&gt;, LeftUniqueKeys &lt;int&gt;,</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;">#   MatchRate &lt;dbl&gt;, DuplicateKeyBlockers &lt;int&gt;, DuplicateKeyGroups_Left &lt;int&gt;,</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;">#   DuplicateKeyGroups_Right &lt;int&gt;, DuplicateKeyGroups_Merged &lt;int&gt;,</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;">#   DuplicateKeyGroups &lt;int&gt;, UnresolvedDupVars &lt;int&gt;,</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;">#   NewUnresolvedDupVars &lt;int&gt;, InheritedUnresolvedDupVars &lt;int&gt;, …</span></span></span></code></pre></div>
 <p>The <code>summary</code> element is a ready-made
 <code><a href="https://rdrr.io/pkg/knitr/man/kable.html" class="external-link">knitr::kable()</a></code>:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
@@ -161,10 +164,7 @@ Value
 Status
 </td>
 <td style="text-align:left;font-weight: bold;">
-&lt;span style=” font-weight: bold; color: white
-!important;border-radius: 4px; padding-right: 4px; padding-left: 4px;
-background-color: rgba(198, 40, 40, 255) !important;”
-&gt;FAIL&lt;/span&gt;
+FAIL
 </td>
 </tr>
 <tr>
@@ -193,6 +193,30 @@ expected +4; actual +4
 </tr>
 <tr>
 <td style="text-align:left;">
+Expected relationship
+</td>
+<td style="text-align:left;">
+one-to-one
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Detected relationship
+</td>
+<td style="text-align:left;">
+one-to-many
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Relationship matches expected
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
 Keys matched
 </td>
 <td style="text-align:left;">
@@ -209,10 +233,58 @@ Match rate
 </tr>
 <tr>
 <td style="text-align:left;">
-Duplicate key groups
+Duplicate key blockers
 </td>
 <td style="text-align:left;">
 570
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Duplicate key groups left/right/merged
+</td>
+<td style="text-align:left;">
+0 / 285 / 285
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Unresolved duplicate variables before merge
+</td>
+<td style="text-align:left;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Unresolved duplicate variables after merge
+</td>
+<td style="text-align:left;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+New unresolved duplicate variables
+</td>
+<td style="text-align:left;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Inherited unresolved duplicate variables
+</td>
+<td style="text-align:left;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Overlapping variables before merge
+</td>
+<td style="text-align:left;">
+0
 </td>
 </tr>
 <tr>
@@ -225,10 +297,19 @@ Key types already compatible.
 </tr>
 <tr>
 <td style="text-align:left;">
+Duplicate variable note
+</td>
+<td style="text-align:left;">
+No unresolved duplicate variable pairs detected.
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
 Note
 </td>
 <td style="text-align:left;">
-Rows changed after merge. Review for row multiplication or filtering.
+Rows changed after merge, but expected_relationship should preserve
+left-side row count.
 </td>
 </tr>
 </tbody>
@@ -259,10 +340,10 @@ conflicts, skipping any empty section. In R Markdown, use a chunk with
 <table class="table">
 <caption>pbc baseline + follow-up labs: validation checks</caption>
 <colgroup>
-<col width="21%">
+<col width="19%">
 <col width="5%">
 <col width="5%">
-<col width="67%">
+<col width="69%">
 </colgroup>
 <thead><tr class="header">
 <th align="left">Check</th>
@@ -284,17 +365,32 @@ conflicts, skipping any empty section. In R Markdown, use a chunk with
 <td align="left">No missing key rows detected.</td>
 </tr>
 <tr class="odd">
+<td align="left">Expected Relationship</td>
+<td align="right">570.000</td>
+<td align="left">FAIL</td>
+<td align="left">Detected relationship is one-to-many, but
+expected_relationship = ‘one-to-one’. Duplicate key blockers: 570.</td>
+</tr>
+<tr class="even">
 <td align="left">Duplicate Keys</td>
 <td align="right">570.000</td>
 <td align="left">FAIL</td>
-<td align="left">Duplicate complete key combinations were detected.</td>
+<td align="left">Duplicate complete key combinations violate the
+expected relationship.</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td align="left">Coverage</td>
 <td align="right">106.000</td>
 <td align="left">WARNING</td>
 <td align="left">Some complete key combinations appear only in one
 source dataset.</td>
+</tr>
+<tr class="even">
+<td align="left">Row Count</td>
+<td align="right">1.000</td>
+<td align="left">FAIL</td>
+<td align="left">MergedData row count changed even though the expected
+relationship should preserve left-side row count.</td>
 </tr>
 <tr class="odd">
 <td align="left">Row Inflation</td>
@@ -333,8 +429,8 @@ variables detected.</td>
 <td align="left">Merge Readiness</td>
 <td align="right">1.000</td>
 <td align="left">FAIL</td>
-<td align="left">Major merge-integrity blockers detected. Review
-duplicate keys and unresolved duplicate variables.</td>
+<td align="left">Major merge-integrity blockers detected. Review failed
+checks.</td>
 </tr>
 </tbody>
 </table>
@@ -388,14 +484,17 @@ day 0 here).</p>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">m_closest</span><span class="op">$</span><span class="va">log</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 1 × 16</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 1 × 27</span></span></span>
 <span><span class="co">#&gt;   Merge        Status ReadyForAnalysis RowsBefore RowsAfter ColsBefore ColsAfter</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;lgl&gt;</span>                 <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;int&gt;</span></span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> closest lab… FAIL   FALSE                   418       418          6        10</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 9 more variables: ExpectedColsAdded &lt;int&gt;, ActualColsAdded &lt;int&gt;,</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;">#   MatchedKeys &lt;int&gt;, LeftUniqueKeys &lt;int&gt;, MatchRate &lt;dbl&gt;,</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;">#   DuplicateKeyGroups &lt;int&gt;, UnresolvedDupVars &lt;int&gt;, KeyHarmonization &lt;chr&gt;,</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;">#   Note &lt;chr&gt;</span></span></span></code></pre></div>
+<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 20 more variables: ExpectedColsAdded &lt;int&gt;, ActualColsAdded &lt;int&gt;,</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;">#   ExpectedRelationship &lt;chr&gt;, DetectedRelationship &lt;chr&gt;,</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;">#   RelationshipMatchesExpected &lt;lgl&gt;, MatchedKeys &lt;int&gt;, LeftUniqueKeys &lt;int&gt;,</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;">#   MatchRate &lt;dbl&gt;, DuplicateKeyBlockers &lt;int&gt;, DuplicateKeyGroups_Left &lt;int&gt;,</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;">#   DuplicateKeyGroups_Right &lt;int&gt;, DuplicateKeyGroups_Merged &lt;int&gt;,</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;">#   DuplicateKeyGroups &lt;int&gt;, UnresolvedDupVars &lt;int&gt;,</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;">#   NewUnresolvedDupVars &lt;int&gt;, InheritedUnresolvedDupVars &lt;int&gt;, …</span></span></span></code></pre></div>
 <p>Note the caveat: <code><a href="../reference/ValidateMerge.html">ValidateMerge()</a></code> audits duplicate keys
 using <code>by</code> alone (here <code>id</code>), not the time
 variables. In longitudinal settings, repeated keys in the lab data are
@@ -438,14 +537,17 @@ values.</p>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">m_synth</span><span class="op">$</span><span class="va">log</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 1 × 16</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 1 × 27</span></span></span>
 <span><span class="co">#&gt;   Merge        Status ReadyForAnalysis RowsBefore RowsAfter ColsBefore ColsAfter</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;lgl&gt;</span>                 <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;int&gt;</span></span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> demographic… FAIL   FALSE                     6         7          3         5</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 9 more variables: ExpectedColsAdded &lt;int&gt;, ActualColsAdded &lt;int&gt;,</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;">#   MatchedKeys &lt;int&gt;, LeftUniqueKeys &lt;int&gt;, MatchRate &lt;dbl&gt;,</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;">#   DuplicateKeyGroups &lt;int&gt;, UnresolvedDupVars &lt;int&gt;, KeyHarmonization &lt;chr&gt;,</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;">#   Note &lt;chr&gt;</span></span></span></code></pre></div>
+<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 20 more variables: ExpectedColsAdded &lt;int&gt;, ActualColsAdded &lt;int&gt;,</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;">#   ExpectedRelationship &lt;chr&gt;, DetectedRelationship &lt;chr&gt;,</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;">#   RelationshipMatchesExpected &lt;lgl&gt;, MatchedKeys &lt;int&gt;, LeftUniqueKeys &lt;int&gt;,</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;">#   MatchRate &lt;dbl&gt;, DuplicateKeyBlockers &lt;int&gt;, DuplicateKeyGroups_Left &lt;int&gt;,</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;">#   DuplicateKeyGroups_Right &lt;int&gt;, DuplicateKeyGroups_Merged &lt;int&gt;,</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;">#   DuplicateKeyGroups &lt;int&gt;, UnresolvedDupVars &lt;int&gt;,</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;">#   NewUnresolvedDupVars &lt;int&gt;, InheritedUnresolvedDupVars &lt;int&gt;, …</span></span></span></code></pre></div>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">m_synth</span><span class="op">$</span><span class="va">summary</span></span></code></pre></div>
 <table class="table table" style="width: auto !important; margin-left: auto; margin-right: auto;">
@@ -466,10 +568,7 @@ Value
 Status
 </td>
 <td style="text-align:left;font-weight: bold;">
-&lt;span style=” font-weight: bold; color: white
-!important;border-radius: 4px; padding-right: 4px; padding-left: 4px;
-background-color: rgba(198, 40, 40, 255) !important;”
-&gt;FAIL&lt;/span&gt;
+FAIL
 </td>
 </tr>
 <tr>
@@ -498,6 +597,30 @@ expected +2; actual +2
 </tr>
 <tr>
 <td style="text-align:left;">
+Expected relationship
+</td>
+<td style="text-align:left;">
+one-to-one
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Detected relationship
+</td>
+<td style="text-align:left;">
+one-to-many
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Relationship matches expected
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
 Keys matched
 </td>
 <td style="text-align:left;">
@@ -514,10 +637,58 @@ Match rate
 </tr>
 <tr>
 <td style="text-align:left;">
-Duplicate key groups
+Duplicate key blockers
 </td>
 <td style="text-align:left;">
 2
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Duplicate key groups left/right/merged
+</td>
+<td style="text-align:left;">
+0 / 1 / 1
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Unresolved duplicate variables before merge
+</td>
+<td style="text-align:left;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Unresolved duplicate variables after merge
+</td>
+<td style="text-align:left;">
+1
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+New unresolved duplicate variables
+</td>
+<td style="text-align:left;">
+1
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Inherited unresolved duplicate variables
+</td>
+<td style="text-align:left;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Overlapping variables before merge
+</td>
+<td style="text-align:left;">
+1
 </td>
 </tr>
 <tr>
@@ -530,10 +701,20 @@ id: integer / numeric -&gt; numeric
 </tr>
 <tr>
 <td style="text-align:left;">
+Duplicate variable note
+</td>
+<td style="text-align:left;">
+Merged data contains 1 new unresolved duplicate variable pair(s)
+introduced by this merge.
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
 Note
 </td>
 <td style="text-align:left;">
-Rows changed after merge. Review for row multiplication or filtering.
+Rows changed after merge, but expected_relationship should preserve
+left-side row count.
 </td>
 </tr>
 </tbody>
@@ -548,10 +729,10 @@ variables, and value conflicts appear as warnings.</p>
 <table class="table">
 <caption>demographics + device data: validation checks</caption>
 <colgroup>
-<col width="21%">
-<col width="4%">
+<col width="20%">
+<col width="3%">
 <col width="5%">
-<col width="68%">
+<col width="70%">
 </colgroup>
 <thead><tr class="header">
 <th align="left">Check</th>
@@ -573,17 +754,32 @@ variables, and value conflicts appear as warnings.</p>
 <td align="left">No missing key rows detected.</td>
 </tr>
 <tr class="odd">
+<td align="left">Expected Relationship</td>
+<td align="right">2.000</td>
+<td align="left">FAIL</td>
+<td align="left">Detected relationship is one-to-many, but
+expected_relationship = ‘one-to-one’. Duplicate key blockers: 2.</td>
+</tr>
+<tr class="even">
 <td align="left">Duplicate Keys</td>
 <td align="right">2.000</td>
 <td align="left">FAIL</td>
-<td align="left">Duplicate complete key combinations were detected.</td>
+<td align="left">Duplicate complete key combinations violate the
+expected relationship.</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td align="left">Coverage</td>
 <td align="right">4.000</td>
 <td align="left">WARNING</td>
 <td align="left">Some complete key combinations appear only in one
 source dataset.</td>
+</tr>
+<tr class="even">
+<td align="left">Row Count</td>
+<td align="right">1.000</td>
+<td align="left">FAIL</td>
+<td align="left">MergedData row count changed even though the expected
+relationship should preserve left-side row count.</td>
 </tr>
 <tr class="odd">
 <td align="left">Row Inflation</td>
@@ -624,8 +820,8 @@ mismatched classes.</td>
 <td align="left">Merge Readiness</td>
 <td align="right">1.000</td>
 <td align="left">FAIL</td>
-<td align="left">Major merge-integrity blockers detected. Review
-duplicate keys and unresolved duplicate variables.</td>
+<td align="left">Major merge-integrity blockers detected. Review failed
+checks.</td>
 </tr>
 </tbody>
 </table>
@@ -834,7 +1030,7 @@ sections labeled with their item counts. Use
 <div class="sdr-section-title">Validation checks</div>
 <div class="sdr-section-subtitle">Search, filter, sort, and expand rows to inspect merge-integrity examples. INFO rows summarize rows, columns, and unique keys across the source and merged datasets.</div>
 <div id="htmlwidget-ac96cb3ee4656e2e9ec3" class="reactable html-widget" style="width:100%;height:350px;"></div>
-<script type="application/json" data-for="htmlwidget-ac96cb3ee4656e2e9ec3">{"x":{"tag":{"name":"Reactable","attribs":{"data":{"Status":["INFO","INFO","INFO","PASS","PASS","FAIL","WARNING","WARNING","WARNING","FAIL","WARNING","WARNING","FAIL"],"Check":["Rows","Columns","Unique keys","Key Types","Missing Keys","Duplicate Keys","Coverage","Row Inflation","Overlapping variables","Unresolved duplicates","Variable conflicts","Suspicious conflicts","Merge readiness"],"Count":[7,5,6,0,0,2,4,1.167,1,1,4,1,1],"Details":["Left: 6; Right: 5; Merged: 7.","Left: 3; Right: 3; Merged: 5.","Unique key combinations - Left: 6; Right: 4; Merged: 6.","Key storage classes match across datasets.","No missing key rows detected.","Duplicate complete key combinations were detected.","Some complete key combinations appear only in one source dataset.","MergedData has more rows than expected. Review whether row multiplication was intentional.","Variables appear in both source datasets but were not specified as keys.","MergedData still contains unresolved .x/.y or _x/_y variable pairs.","At least one duplicated variable pair contains conflicting values.","At least one duplicated variable has low agreement or mismatched classes.","Major merge-integrity blockers detected. Review duplicate keys and unresolved duplicate variables."],"Examples":["None","None","None","None","None","<strong>Left duplicate examples:<\/strong><br>None<br><br><strong>Right duplicate examples:<\/strong><br>2 | F | 0.75 | 2<br>2 | M | 0.71 | 2<br><br><strong>Merged duplicate examples:<\/strong><br>2 | M | 61 | F | 0.75<br>2 | M | 61 | M | 0.71","<strong>Matching examples:<\/strong><br>1<br>2<br>5<br><br><strong>Left only examples:<\/strong><br>3<br>4<br>6<br><br><strong>Right only examples:<\/strong><br>7","Row inflation factor: 1.167","sex","sex (sex.x / sex.y)","sex (4 conflicts; 42.86% agreement)","sex (42.86% agreement; character vs character)","Major merge-integrity blockers detected. Review duplicate keys, unresolved duplicate variables, and other warnings."]},"columns":[{"id":".details","name":"","type":null,"sortable":false,"resizable":false,"filterable":false,"searchable":false,"width":45,"align":"center","details":[null,null,null,{"name":"div","attribs":{"className":"sdr-detail-box"},"children":[{"name":"div","attribs":{"className":"sdr-detail-title"},"children":["Key Types details"]},{"name":"p","attribs":{},"children":["Key storage classes match across datasets."]},{"name":"div","attribs":{"className":"sdr-detail-subtitle"},"children":["Examples"]},{"name":"div","attribs":{"className":"sdr-detail-examples"},"children":["None"]}]},{"name":"div","attribs":{"className":"sdr-detail-box"},"children":[{"name":"div","attribs":{"className":"sdr-detail-title"},"children":["Missing Keys details"]},{"name":"p","attribs":{},"children":["No missing key rows detected."]},{"name":"div","attribs":{"className":"sdr-detail-subtitle"},"children":["Examples"]},{"name":"div","attribs":{"className":"sdr-detail-examples"},"children":["None"]}]},{"name":"div","attribs":{"className":"sdr-detail-box"},"children":[{"name":"div","attribs":{"className":"sdr-detail-title"},"children":["Duplicate Keys details"]},{"name":"p","attribs":{},"children":["Duplicate complete key combinations were detected."]},{"name":"div","attribs":{"className":"sdr-detail-subtitle"},"children":["Examples"]},{"name":"div","attribs":{"className":"sdr-detail-examples"},"children":["<strong>Left duplicate examples:<\/strong><br>None<br><br><strong>Right duplicate examples:<\/strong><br>2 | F | 0.75 | 2<br>2 | M | 0.71 | 2<br><br><strong>Merged duplicate examples:<\/strong><br>2 | M | 61 | F | 0.75<br>2 | M | 61 | M | 0.71"]}]},{"name":"div","attribs":{"className":"sdr-detail-box"},"children":[{"name":"div","attribs":{"className":"sdr-detail-title"},"children":["Coverage details"]},{"name":"p","attribs":{},"children":["Some complete key combinations appear only in one source dataset."]},{"name":"div","attribs":{"className":"sdr-detail-subtitle"},"children":["Examples"]},{"name":"div","attribs":{"className":"sdr-detail-examples"},"children":["<strong>Matching examples:<\/strong><br>1<br>2<br>5<br><br><strong>Left only examples:<\/strong><br>3<br>4<br>6<br><br><strong>Right only examples:<\/strong><br>7"]}]},{"name":"div","attribs":{"className":"sdr-detail-box"},"children":[{"name":"div","attribs":{"className":"sdr-detail-title"},"children":["Row Inflation details"]},{"name":"p","attribs":{},"children":["MergedData has more rows than expected. Review whether row multiplication was intentional."]},{"name":"div","attribs":{"className":"sdr-detail-subtitle"},"children":["Examples"]},{"name":"div","attribs":{"className":"sdr-detail-examples"},"children":["Row inflation factor: 1.167"]}]},{"name":"div","attribs":{"className":"sdr-detail-box"},"children":[{"name":"div","attribs":{"className":"sdr-detail-title"},"children":["Overlapping variables details"]},{"name":"p","attribs":{},"children":["Variables appear in both source datasets but were not specified as keys."]},{"name":"div","attribs":{"className":"sdr-detail-subtitle"},"children":["Examples"]},{"name":"div","attribs":{"className":"sdr-detail-examples"},"children":["sex"]}]},{"name":"div","attribs":{"className":"sdr-detail-box"},"children":[{"name":"div","attribs":{"className":"sdr-detail-title"},"children":["Unresolved duplicates details"]},{"name":"p","attribs":{},"children":["MergedData still contains unresolved .x/.y or _x/_y variable pairs."]},{"name":"div","attribs":{"className":"sdr-detail-subtitle"},"children":["Examples"]},{"name":"div","attribs":{"className":"sdr-detail-examples"},"children":["sex (sex.x / sex.y)"]}]},{"name":"div","attribs":{"className":"sdr-detail-box"},"children":[{"name":"div","attribs":{"className":"sdr-detail-title"},"children":["Variable conflicts details"]},{"name":"p","attribs":{},"children":["At least one duplicated variable pair contains conflicting values."]},{"name":"div","attribs":{"className":"sdr-detail-subtitle"},"children":["Examples"]},{"name":"div","attribs":{"className":"sdr-detail-examples"},"children":["sex (4 conflicts; 42.86% agreement)"]}]},{"name":"div","attribs":{"className":"sdr-detail-box"},"children":[{"name":"div","attribs":{"className":"sdr-detail-title"},"children":["Suspicious conflicts details"]},{"name":"p","attribs":{},"children":["At least one duplicated variable has low agreement or mismatched classes."]},{"name":"div","attribs":{"className":"sdr-detail-subtitle"},"children":["Examples"]},{"name":"div","attribs":{"className":"sdr-detail-examples"},"children":["sex (42.86% agreement; character vs character)"]}]},{"name":"div","attribs":{"className":"sdr-detail-box"},"children":[{"name":"div","attribs":{"className":"sdr-detail-title"},"children":["Merge readiness details"]},{"name":"p","attribs":{},"children":["Major merge-integrity blockers detected. Review duplicate keys and unresolved duplicate variables."]},{"name":"div","attribs":{"className":"sdr-detail-subtitle"},"children":["Examples"]},{"name":"div","attribs":{"className":"sdr-detail-examples"},"children":["Major merge-integrity blockers detected. Review duplicate keys, unresolved duplicate variables, and other warnings."]}]}]},{"id":"Status","name":"Status","type":"character","cell":[{"name":"span","attribs":{"style":{"display":"inline-block","padding":"4px 9px","border-radius":"999px","font-weight":"700","color":"#1565C0","background":"#E3F2FD"}},"children":["● INFO"]},{"name":"span","attribs":{"style":{"display":"inline-block","padding":"4px 9px","border-radius":"999px","font-weight":"700","color":"#1565C0","background":"#E3F2FD"}},"children":["● INFO"]},{"name":"span","attribs":{"style":{"display":"inline-block","padding":"4px 9px","border-radius":"999px","font-weight":"700","color":"#1565C0","background":"#E3F2FD"}},"children":["● INFO"]},{"name":"span","attribs":{"style":{"display":"inline-block","padding":"4px 9px","border-radius":"999px","font-weight":"700","color":"#2E7D32","background":"#E8F5E9"}},"children":["● PASS"]},{"name":"span","attribs":{"style":{"display":"inline-block","padding":"4px 9px","border-radius":"999px","font-weight":"700","color":"#2E7D32","background":"#E8F5E9"}},"children":["● PASS"]},{"name":"span","attribs":{"style":{"display":"inline-block","padding":"4px 9px","border-radius":"999px","font-weight":"700","color":"#C62828","background":"#FFEBEE"}},"children":["● FAIL"]},{"name":"span","attribs":{"style":{"display":"inline-block","padding":"4px 9px","border-radius":"999px","font-weight":"700","color":"#F9A825","background":"#FFF8E1"}},"children":["● WARNING"]},{"name":"span","attribs":{"style":{"display":"inline-block","padding":"4px 9px","border-radius":"999px","font-weight":"700","color":"#F9A825","background":"#FFF8E1"}},"children":["● WARNING"]},{"name":"span","attribs":{"style":{"display":"inline-block","padding":"4px 9px","border-radius":"999px","font-weight":"700","color":"#F9A825","background":"#FFF8E1"}},"children":["● WARNING"]},{"name":"span","attribs":{"style":{"display":"inline-block","padding":"4px 9px","border-radius":"999px","font-weight":"700","color":"#C62828","background":"#FFEBEE"}},"children":["● FAIL"]},{"name":"span","attribs":{"style":{"display":"inline-block","padding":"4px 9px","border-radius":"999px","font-weight":"700","color":"#F9A825","background":"#FFF8E1"}},"children":["● WARNING"]},{"name":"span","attribs":{"style":{"display":"inline-block","padding":"4px 9px","border-radius":"999px","font-weight":"700","color":"#F9A825","background":"#FFF8E1"}},"children":["● WARNING"]},{"name":"span","attribs":{"style":{"display":"inline-block","padding":"4px 9px","border-radius":"999px","font-weight":"700","color":"#C62828","background":"#FFEBEE"}},"children":["● FAIL"]}],"width":130},{"id":"Check","name":"Check","type":"character","minWidth":190},{"id":"Count","name":"Count","type":"numeric","width":90,"align":"center"},{"id":"Details","name":"Details","type":"character","minWidth":350},{"id":"Examples","name":"Examples","type":"character","show":false,"html":true}],"filterable":true,"searchable":true,"pagination":false,"highlight":true,"bordered":true,"striped":true,"compact":true,"width":"100%","height":"350px","dataKey":"74f2bb4057c1a0ccd19d8c781e679230"},"children":[]},"class":"reactR_markup"},"evals":[],"jsHooks":[]}</script>
+<script type="application/json" data-for="htmlwidget-ac96cb3ee4656e2e9ec3">{"x":{"tag":{"name":"Reactable","attribs":{"data":{"Status":["INFO","INFO","INFO","PASS","PASS","FAIL","FAIL","WARNING","FAIL","WARNING","WARNING","FAIL","WARNING","WARNING","FAIL"],"Check":["Rows","Columns","Unique keys","Key Types","Missing Keys","Expected Relationship","Duplicate Keys","Coverage","Row Count","Row Inflation","Overlapping variables","Unresolved duplicates","Variable conflicts","Suspicious conflicts","Merge readiness"],"Count":[7,5,6,0,0,2,2,4,1,1.167,1,1,4,1,1],"Details":["Left: 6; Right: 5; Merged: 7.","Left: 3; Right: 3; Merged: 5.","Unique key combinations - Left: 6; Right: 4; Merged: 6.","Key storage classes match across datasets.","No missing key rows detected.","Detected relationship is one-to-many, but expected_relationship = 'one-to-one'. Duplicate key blockers: 2.","Duplicate complete key combinations violate the expected relationship.","Some complete key combinations appear only in one source dataset.","MergedData row count changed even though the expected relationship should preserve left-side row count.","MergedData has more rows than expected. Review whether row multiplication was intentional.","Variables appear in both source datasets but were not specified as keys.","MergedData still contains unresolved .x/.y or _x/_y variable pairs.","At least one duplicated variable pair contains conflicting values.","At least one duplicated variable has low agreement or mismatched classes.","Major merge-integrity blockers detected. Review failed checks."],"Examples":["None","None","None","None","None","None","<strong>Left duplicate examples:<\/strong><br>None<br><br><strong>Right duplicate examples:<\/strong><br>2 | 2<br><br><strong>Merged duplicate examples:<\/strong><br>2 | 2","<strong>Matching examples:<\/strong><br>1<br>2<br>5<br><br><strong>Left only examples:<\/strong><br>3<br>4<br>6<br><br><strong>Right only examples:<\/strong><br>7","None","Row inflation factor: 1.167","sex","sex (sex.x / sex.y)","sex (4 conflicts; 42.86% agreement)","sex (42.86% agreement; character vs character)","Major merge-integrity blockers detected. Review duplicate keys, unresolved duplicate variables, and other warnings."]},"columns":[{"id":".details","name":"","type":null,"sortable":false,"resizable":false,"filterable":false,"searchable":false,"width":45,"align":"center","details":[null,null,null,{"name":"div","attribs":{"className":"sdr-detail-box"},"children":[{"name":"div","attribs":{"className":"sdr-detail-title"},"children":["Key Types details"]},{"name":"p","attribs":{},"children":["Key storage classes match across datasets."]},{"name":"div","attribs":{"className":"sdr-detail-subtitle"},"children":["Examples"]},{"name":"div","attribs":{"className":"sdr-detail-examples"},"children":["None"]}]},{"name":"div","attribs":{"className":"sdr-detail-box"},"children":[{"name":"div","attribs":{"className":"sdr-detail-title"},"children":["Missing Keys details"]},{"name":"p","attribs":{},"children":["No missing key rows detected."]},{"name":"div","attribs":{"className":"sdr-detail-subtitle"},"children":["Examples"]},{"name":"div","attribs":{"className":"sdr-detail-examples"},"children":["None"]}]},{"name":"div","attribs":{"className":"sdr-detail-box"},"children":[{"name":"div","attribs":{"className":"sdr-detail-title"},"children":["Expected Relationship details"]},{"name":"p","attribs":{},"children":["Detected relationship is one-to-many, but expected_relationship = 'one-to-one'. Duplicate key blockers: 2."]},{"name":"div","attribs":{"className":"sdr-detail-subtitle"},"children":["Examples"]},{"name":"div","attribs":{"className":"sdr-detail-examples"},"children":["None"]}]},{"name":"div","attribs":{"className":"sdr-detail-box"},"children":[{"name":"div","attribs":{"className":"sdr-detail-title"},"children":["Duplicate Keys details"]},{"name":"p","attribs":{},"children":["Duplicate complete key combinations violate the expected relationship."]},{"name":"div","attribs":{"className":"sdr-detail-subtitle"},"children":["Examples"]},{"name":"div","attribs":{"className":"sdr-detail-examples"},"children":["<strong>Left duplicate examples:<\/strong><br>None<br><br><strong>Right duplicate examples:<\/strong><br>2 | 2<br><br><strong>Merged duplicate examples:<\/strong><br>2 | 2"]}]},{"name":"div","attribs":{"className":"sdr-detail-box"},"children":[{"name":"div","attribs":{"className":"sdr-detail-title"},"children":["Coverage details"]},{"name":"p","attribs":{},"children":["Some complete key combinations appear only in one source dataset."]},{"name":"div","attribs":{"className":"sdr-detail-subtitle"},"children":["Examples"]},{"name":"div","attribs":{"className":"sdr-detail-examples"},"children":["<strong>Matching examples:<\/strong><br>1<br>2<br>5<br><br><strong>Left only examples:<\/strong><br>3<br>4<br>6<br><br><strong>Right only examples:<\/strong><br>7"]}]},{"name":"div","attribs":{"className":"sdr-detail-box"},"children":[{"name":"div","attribs":{"className":"sdr-detail-title"},"children":["Row Count details"]},{"name":"p","attribs":{},"children":["MergedData row count changed even though the expected relationship should preserve left-side row count."]},{"name":"div","attribs":{"className":"sdr-detail-subtitle"},"children":["Examples"]},{"name":"div","attribs":{"className":"sdr-detail-examples"},"children":["None"]}]},{"name":"div","attribs":{"className":"sdr-detail-box"},"children":[{"name":"div","attribs":{"className":"sdr-detail-title"},"children":["Row Inflation details"]},{"name":"p","attribs":{},"children":["MergedData has more rows than expected. Review whether row multiplication was intentional."]},{"name":"div","attribs":{"className":"sdr-detail-subtitle"},"children":["Examples"]},{"name":"div","attribs":{"className":"sdr-detail-examples"},"children":["Row inflation factor: 1.167"]}]},{"name":"div","attribs":{"className":"sdr-detail-box"},"children":[{"name":"div","attribs":{"className":"sdr-detail-title"},"children":["Overlapping variables details"]},{"name":"p","attribs":{},"children":["Variables appear in both source datasets but were not specified as keys."]},{"name":"div","attribs":{"className":"sdr-detail-subtitle"},"children":["Examples"]},{"name":"div","attribs":{"className":"sdr-detail-examples"},"children":["sex"]}]},{"name":"div","attribs":{"className":"sdr-detail-box"},"children":[{"name":"div","attribs":{"className":"sdr-detail-title"},"children":["Unresolved duplicates details"]},{"name":"p","attribs":{},"children":["MergedData still contains unresolved .x/.y or _x/_y variable pairs."]},{"name":"div","attribs":{"className":"sdr-detail-subtitle"},"children":["Examples"]},{"name":"div","attribs":{"className":"sdr-detail-examples"},"children":["sex (sex.x / sex.y)"]}]},{"name":"div","attribs":{"className":"sdr-detail-box"},"children":[{"name":"div","attribs":{"className":"sdr-detail-title"},"children":["Variable conflicts details"]},{"name":"p","attribs":{},"children":["At least one duplicated variable pair contains conflicting values."]},{"name":"div","attribs":{"className":"sdr-detail-subtitle"},"children":["Examples"]},{"name":"div","attribs":{"className":"sdr-detail-examples"},"children":["sex (4 conflicts; 42.86% agreement)"]}]},{"name":"div","attribs":{"className":"sdr-detail-box"},"children":[{"name":"div","attribs":{"className":"sdr-detail-title"},"children":["Suspicious conflicts details"]},{"name":"p","attribs":{},"children":["At least one duplicated variable has low agreement or mismatched classes."]},{"name":"div","attribs":{"className":"sdr-detail-subtitle"},"children":["Examples"]},{"name":"div","attribs":{"className":"sdr-detail-examples"},"children":["sex (42.86% agreement; character vs character)"]}]},{"name":"div","attribs":{"className":"sdr-detail-box"},"children":[{"name":"div","attribs":{"className":"sdr-detail-title"},"children":["Merge readiness details"]},{"name":"p","attribs":{},"children":["Major merge-integrity blockers detected. Review failed checks."]},{"name":"div","attribs":{"className":"sdr-detail-subtitle"},"children":["Examples"]},{"name":"div","attribs":{"className":"sdr-detail-examples"},"children":["Major merge-integrity blockers detected. Review duplicate keys, unresolved duplicate variables, and other warnings."]}]}]},{"id":"Status","name":"Status","type":"character","cell":[{"name":"span","attribs":{"style":{"display":"inline-block","padding":"4px 9px","border-radius":"999px","font-weight":"700","color":"#1565C0","background":"#E3F2FD"}},"children":["● INFO"]},{"name":"span","attribs":{"style":{"display":"inline-block","padding":"4px 9px","border-radius":"999px","font-weight":"700","color":"#1565C0","background":"#E3F2FD"}},"children":["● INFO"]},{"name":"span","attribs":{"style":{"display":"inline-block","padding":"4px 9px","border-radius":"999px","font-weight":"700","color":"#1565C0","background":"#E3F2FD"}},"children":["● INFO"]},{"name":"span","attribs":{"style":{"display":"inline-block","padding":"4px 9px","border-radius":"999px","font-weight":"700","color":"#2E7D32","background":"#E8F5E9"}},"children":["● PASS"]},{"name":"span","attribs":{"style":{"display":"inline-block","padding":"4px 9px","border-radius":"999px","font-weight":"700","color":"#2E7D32","background":"#E8F5E9"}},"children":["● PASS"]},{"name":"span","attribs":{"style":{"display":"inline-block","padding":"4px 9px","border-radius":"999px","font-weight":"700","color":"#C62828","background":"#FFEBEE"}},"children":["● FAIL"]},{"name":"span","attribs":{"style":{"display":"inline-block","padding":"4px 9px","border-radius":"999px","font-weight":"700","color":"#C62828","background":"#FFEBEE"}},"children":["● FAIL"]},{"name":"span","attribs":{"style":{"display":"inline-block","padding":"4px 9px","border-radius":"999px","font-weight":"700","color":"#F9A825","background":"#FFF8E1"}},"children":["● WARNING"]},{"name":"span","attribs":{"style":{"display":"inline-block","padding":"4px 9px","border-radius":"999px","font-weight":"700","color":"#C62828","background":"#FFEBEE"}},"children":["● FAIL"]},{"name":"span","attribs":{"style":{"display":"inline-block","padding":"4px 9px","border-radius":"999px","font-weight":"700","color":"#F9A825","background":"#FFF8E1"}},"children":["● WARNING"]},{"name":"span","attribs":{"style":{"display":"inline-block","padding":"4px 9px","border-radius":"999px","font-weight":"700","color":"#F9A825","background":"#FFF8E1"}},"children":["● WARNING"]},{"name":"span","attribs":{"style":{"display":"inline-block","padding":"4px 9px","border-radius":"999px","font-weight":"700","color":"#C62828","background":"#FFEBEE"}},"children":["● FAIL"]},{"name":"span","attribs":{"style":{"display":"inline-block","padding":"4px 9px","border-radius":"999px","font-weight":"700","color":"#F9A825","background":"#FFF8E1"}},"children":["● WARNING"]},{"name":"span","attribs":{"style":{"display":"inline-block","padding":"4px 9px","border-radius":"999px","font-weight":"700","color":"#F9A825","background":"#FFF8E1"}},"children":["● WARNING"]},{"name":"span","attribs":{"style":{"display":"inline-block","padding":"4px 9px","border-radius":"999px","font-weight":"700","color":"#C62828","background":"#FFEBEE"}},"children":["● FAIL"]}],"width":130},{"id":"Check","name":"Check","type":"character","minWidth":190},{"id":"Count","name":"Count","type":"numeric","width":90,"align":"center"},{"id":"Details","name":"Details","type":"character","minWidth":350},{"id":"Examples","name":"Examples","type":"character","show":false,"html":true}],"filterable":true,"searchable":true,"pagination":false,"highlight":true,"bordered":true,"striped":true,"compact":true,"width":"100%","height":"350px","dataKey":"a16eb6073df4a052845dff1abfaee54c"},"children":[]},"class":"reactR_markup"},"evals":[],"jsHooks":[]}</script>
 </div>
 <details class="sdr-accordion"><summary class="sdr-accordion-summary">Coverage explorer (4 unmatched)</summary><div class="sdr-section-subtitle">Review matching, left-only, and right-only key combinations.</div>
 <div id="htmlwidget-e5c8c404fe174e4c81bd" class="reactable html-widget" style="width:100%;height:350px;"></div>
@@ -844,7 +1040,7 @@ sections labeled with their item counts. Use
 <div class="sdr-section-title">Suggested actions</div>
 <div class="sdr-section-subtitle">Recommended next steps generated from the merge audit.</div>
 <div id="htmlwidget-febe03efa1a2d8d52a86" class="reactable html-widget" style="width:100%;height:250px;"></div>
-<script type="application/json" data-for="htmlwidget-febe03efa1a2d8d52a86">{"x":{"tag":{"name":"Reactable","attribs":{"data":{"Priority":["High","High","Medium","High","Medium","Medium","Medium","Medium"],"Action":["Investigate duplicate complete key combinations in RightData: 1 duplicated key group(s).","Investigate duplicate complete key combinations in MergedData: 1 duplicated key group(s).","Review overlapping non-key variable: sex. If dplyr join was run without `by =`, this variable may have been used as an unintended join key.","Resolve duplicated variable pair: sex.","Review 3 complete key combination(s) present only in LeftData.","Review 1 complete key combination(s) present only in RightData.","Review 4 conflict(s) for duplicated variable sex.","Inspect suspicious duplicated variable sex (Agreement: 42.86%; Left class: character; Right class: character)."]},"columns":[{"id":"Priority","name":"Priority","type":"character","cell":[{"name":"span","attribs":{"style":{"display":"inline-block","padding":"4px 9px","border-radius":"999px","font-weight":"700","color":"#C62828","background":"#FFEBEE"}},"children":["High"]},{"name":"span","attribs":{"style":{"display":"inline-block","padding":"4px 9px","border-radius":"999px","font-weight":"700","color":"#C62828","background":"#FFEBEE"}},"children":["High"]},{"name":"span","attribs":{"style":{"display":"inline-block","padding":"4px 9px","border-radius":"999px","font-weight":"700","color":"#F9A825","background":"#FFF8E1"}},"children":["Medium"]},{"name":"span","attribs":{"style":{"display":"inline-block","padding":"4px 9px","border-radius":"999px","font-weight":"700","color":"#C62828","background":"#FFEBEE"}},"children":["High"]},{"name":"span","attribs":{"style":{"display":"inline-block","padding":"4px 9px","border-radius":"999px","font-weight":"700","color":"#F9A825","background":"#FFF8E1"}},"children":["Medium"]},{"name":"span","attribs":{"style":{"display":"inline-block","padding":"4px 9px","border-radius":"999px","font-weight":"700","color":"#F9A825","background":"#FFF8E1"}},"children":["Medium"]},{"name":"span","attribs":{"style":{"display":"inline-block","padding":"4px 9px","border-radius":"999px","font-weight":"700","color":"#F9A825","background":"#FFF8E1"}},"children":["Medium"]},{"name":"span","attribs":{"style":{"display":"inline-block","padding":"4px 9px","border-radius":"999px","font-weight":"700","color":"#F9A825","background":"#FFF8E1"}},"children":["Medium"]}],"width":120},{"id":"Action","name":"Action","type":"character","minWidth":500}],"filterable":true,"searchable":true,"pagination":false,"highlight":true,"bordered":true,"striped":true,"compact":true,"width":"100%","height":"250px","dataKey":"28773fa58f2c9291b38f0ef015e724f6"},"children":[]},"class":"reactR_markup"},"evals":[],"jsHooks":[]}</script>
+<script type="application/json" data-for="htmlwidget-febe03efa1a2d8d52a86">{"x":{"tag":{"name":"Reactable","attribs":{"data":{"Priority":["High","High","High","Medium","High","Medium","Medium","Medium","Medium"],"Action":["Review expected relationship. Expected one-to-one but detected one-to-many.","Investigate duplicate key blockers for expected relationship: 2 duplicated key group(s).","Review row count change. This expected relationship should preserve the left-side row count.","Review overlapping non-key variable: sex. If dplyr join was run without `by =`, this variable may have been used as an unintended join key.","Resolve duplicated variable pair: sex.","Review 3 complete key combination(s) present only in LeftData.","Review 1 complete key combination(s) present only in RightData.","Review 4 conflict(s) for duplicated variable sex.","Inspect suspicious duplicated variable sex (Agreement: 42.86%; Left class: character; Right class: character)."]},"columns":[{"id":"Priority","name":"Priority","type":"character","cell":[{"name":"span","attribs":{"style":{"display":"inline-block","padding":"4px 9px","border-radius":"999px","font-weight":"700","color":"#C62828","background":"#FFEBEE"}},"children":["High"]},{"name":"span","attribs":{"style":{"display":"inline-block","padding":"4px 9px","border-radius":"999px","font-weight":"700","color":"#C62828","background":"#FFEBEE"}},"children":["High"]},{"name":"span","attribs":{"style":{"display":"inline-block","padding":"4px 9px","border-radius":"999px","font-weight":"700","color":"#C62828","background":"#FFEBEE"}},"children":["High"]},{"name":"span","attribs":{"style":{"display":"inline-block","padding":"4px 9px","border-radius":"999px","font-weight":"700","color":"#F9A825","background":"#FFF8E1"}},"children":["Medium"]},{"name":"span","attribs":{"style":{"display":"inline-block","padding":"4px 9px","border-radius":"999px","font-weight":"700","color":"#C62828","background":"#FFEBEE"}},"children":["High"]},{"name":"span","attribs":{"style":{"display":"inline-block","padding":"4px 9px","border-radius":"999px","font-weight":"700","color":"#F9A825","background":"#FFF8E1"}},"children":["Medium"]},{"name":"span","attribs":{"style":{"display":"inline-block","padding":"4px 9px","border-radius":"999px","font-weight":"700","color":"#F9A825","background":"#FFF8E1"}},"children":["Medium"]},{"name":"span","attribs":{"style":{"display":"inline-block","padding":"4px 9px","border-radius":"999px","font-weight":"700","color":"#F9A825","background":"#FFF8E1"}},"children":["Medium"]},{"name":"span","attribs":{"style":{"display":"inline-block","padding":"4px 9px","border-radius":"999px","font-weight":"700","color":"#F9A825","background":"#FFF8E1"}},"children":["Medium"]}],"width":120},{"id":"Action","name":"Action","type":"character","minWidth":500}],"filterable":true,"searchable":true,"pagination":false,"highlight":true,"bordered":true,"striped":true,"compact":true,"width":"100%","height":"250px","dataKey":"c7221d5b65bacab5662442f9602f41ef"},"children":[]},"class":"reactR_markup"},"evals":[],"jsHooks":[]}</script>
 </div>
 </div>
 </div>
@@ -860,16 +1056,19 @@ is not <code>PASS</code> remain — an end-of-pipeline QC gate:</p>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="va">m_pbc</span><span class="op">$</span><span class="va">log</span>, <span class="va">m_closest</span><span class="op">$</span><span class="va">log</span>, <span class="va">m_synth</span><span class="op">$</span><span class="va">log</span><span class="op">)</span>,</span>
 <span>  flagged_only <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 3 × 16</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 3 × 27</span></span></span>
 <span><span class="co">#&gt;   Merge        Status ReadyForAnalysis RowsBefore RowsAfter ColsBefore ColsAfter</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;lgl&gt;</span>                 <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;int&gt;</span></span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> pbc baselin… FAIL   FALSE                   418      <span style="text-decoration: underline;">2</span>051          5         9</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> closest lab… FAIL   FALSE                   418       418          6        10</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> demographic… FAIL   FALSE                     6         7          3         5</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 9 more variables: ExpectedColsAdded &lt;int&gt;, ActualColsAdded &lt;int&gt;,</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;">#   MatchedKeys &lt;int&gt;, LeftUniqueKeys &lt;int&gt;, MatchRate &lt;dbl&gt;,</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;">#   DuplicateKeyGroups &lt;int&gt;, UnresolvedDupVars &lt;int&gt;, KeyHarmonization &lt;chr&gt;,</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;">#   Note &lt;chr&gt;</span></span></span></code></pre></div>
+<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 20 more variables: ExpectedColsAdded &lt;int&gt;, ActualColsAdded &lt;int&gt;,</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;">#   ExpectedRelationship &lt;chr&gt;, DetectedRelationship &lt;chr&gt;,</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;">#   RelationshipMatchesExpected &lt;lgl&gt;, MatchedKeys &lt;int&gt;, LeftUniqueKeys &lt;int&gt;,</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;">#   MatchRate &lt;dbl&gt;, DuplicateKeyBlockers &lt;int&gt;, DuplicateKeyGroups_Left &lt;int&gt;,</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;">#   DuplicateKeyGroups_Right &lt;int&gt;, DuplicateKeyGroups_Merged &lt;int&gt;,</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;">#   DuplicateKeyGroups &lt;int&gt;, UnresolvedDupVars &lt;int&gt;,</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;">#   NewUnresolvedDupVars &lt;int&gt;, InheritedUnresolvedDupVars &lt;int&gt;, …</span></span></span></code></pre></div>
 <p>An empty table here would mean every merge in the pipeline passed
 cleanly; any row that appears is a merge that still needs review before
 analysis.</p>
@@ -885,7 +1084,7 @@ analysis.</p>
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
     </footer>

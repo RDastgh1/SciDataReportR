@@ -15,7 +15,7 @@ backwards-compatible synonym."><meta property="og:image" content="https://rdastg
 
     <a class="navbar-brand me-2" href="../index.html">SciDataReportR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">20.11.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">20.12.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -49,7 +49,7 @@ backwards-compatible synonym."><meta property="og:image" content="https://rdastg
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Univariate Regression Table</h1>
-      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/v20.11.0/R/MakeUnivariateRegressionTable.R" class="external-link"><code>R/MakeUnivariateRegressionTable.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/master/R/MakeUnivariateRegressionTable.R" class="external-link"><code>R/MakeUnivariateRegressionTable.R</code></a></small>
       <div class="d-none name"><code>MakeUnivariateRegressionTable.Rd</code></div>
     </div>
 
@@ -71,6 +71,7 @@ backwards-compatible synonym.</p>
 <span>  Standardize <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  Method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"auto"</span>, <span class="st">"lm"</span>, <span class="st">"logistic"</span><span class="op">)</span>,</span>
 <span>  LogisticExponentiate <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  ReturnModels <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  Data <span class="op">=</span> <span class="fu">lifecycle</span><span class="fu">::</span><span class="fu"><a href="https://lifecycle.r-lib.org/reference/deprecated.html" class="external-link">deprecated</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  OutcomeVars <span class="op">=</span> <span class="fu">lifecycle</span><span class="fu">::</span><span class="fu"><a href="https://lifecycle.r-lib.org/reference/deprecated.html" class="external-link">deprecated</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  PredictorVars <span class="op">=</span> <span class="fu">lifecycle</span><span class="fu">::</span><span class="fu"><a href="https://lifecycle.r-lib.org/reference/deprecated.html" class="external-link">deprecated</a></span><span class="op">(</span><span class="op">)</span>,</span>
@@ -85,6 +86,7 @@ backwards-compatible synonym.</p>
 <span>  Standardize <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  Method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"auto"</span>, <span class="st">"lm"</span>, <span class="st">"logistic"</span><span class="op">)</span>,</span>
 <span>  LogisticExponentiate <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  ReturnModels <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  Data <span class="op">=</span> <span class="fu">lifecycle</span><span class="fu">::</span><span class="fu"><a href="https://lifecycle.r-lib.org/reference/deprecated.html" class="external-link">deprecated</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  OutcomeVars <span class="op">=</span> <span class="fu">lifecycle</span><span class="fu">::</span><span class="fu"><a href="https://lifecycle.r-lib.org/reference/deprecated.html" class="external-link">deprecated</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  PredictorVars <span class="op">=</span> <span class="fu">lifecycle</span><span class="fu">::</span><span class="fu"><a href="https://lifecycle.r-lib.org/reference/deprecated.html" class="external-link">deprecated</a></span><span class="op">(</span><span class="op">)</span>,</span>
@@ -127,6 +129,11 @@ outcomes. <code>"lm"</code> and <code>"logistic"</code> force one model family f
 are exponentiated and reported as odds ratios.</p></dd>
 
 
+<dt id="arg-returnmodels">ReturnModels<a class="anchor" aria-label="anchor" href="#arg-returnmodels"></a></dt>
+<dd><p>Logical. If <code>TRUE</code>, return fitted model objects in
+<code>ModelSummaries</code>. Default is <code>FALSE</code> to keep large screening runs lighter.</p></dd>
+
+
 <dt id="arg-data">Data<a class="anchor" aria-label="anchor" href="#arg-data"></a></dt>
 <dd><p><strong>Deprecated</strong> (since 19.15.0). Use <code>data</code> instead.</p></dd>
 
@@ -145,15 +152,16 @@ are exponentiated and reported as odds ratios.</p></dd>
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>A list containing:</p><ul><li><p>FormattedTable: A merged table with formatted regression results</p></li>
-<li><p>LargeTable: A merged table with unformatted regression results</p></li>
+    <p>A list containing:</p><ul><li><p>FormattedTable: A <code>gt</code> table with formatted regression results</p></li>
+<li><p>LargeTable: A <code>gt</code> table with unformatted regression results</p></li>
 <li><p>Results: A tidy dataframe with one row per estimated term. Columns:
 <code>Outcome</code>, <code>OutcomeLabel</code>, <code>OutcomeFamily</code>, <code>EffectType</code>, <code>Predictor</code>,
 <code>PredictorLabel</code>, <code>Term</code>, <code>Level</code>, <code>TermLabel</code>, <code>N</code>, <code>Estimate</code>,
 <code>StdError</code>, <code>ConfLow</code>, <code>ConfHigh</code>, <code>PValue</code>, <code>Significant</code>, and
 <code>ReferenceValue</code>. This dataframe can be filtered and passed directly to
 <code><a href="PlotForestFromTable.html">PlotForestFromTable()</a></code>.</p></li>
-<li><p>ModelSummaries: A list of fitted model objects</p></li>
+<li><p>ModelSummaries: A list of fitted model objects when <code>ReturnModels = TRUE</code>,
+otherwise <code>NULL</code></p></li>
 <li><p>Metadata: Outcome families and analysis settings</p></li>
 </ul></div>
 
@@ -166,7 +174,7 @@ are exponentiated and reported as odds ratios.</p></dd>
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
     </footer></div>

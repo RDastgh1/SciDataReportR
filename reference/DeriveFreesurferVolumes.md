@@ -23,32 +23,42 @@ DeriveFreesurferVolumes(data, verbose = TRUE)
 ## Value
 
 A data frame containing only newly derived variables, with the same
-number of rows as `data`.
+number of rows as `data`. A derivation log is stored in the attribute
+`"Freesurfer_derivation_log"`.
 
 ## Details
 
-This function is designed for Freesurfer data frames that already
-contain cleaned variable names such as:
+This function is designed for Freesurfer data frames that contain ASEG,
+DKT, and global Freesurfer volume variables. It supports both native
+Freesurfer-style ASEG names using hyphens and cleaned names using
+underscores.
 
-- `Left_Hippocampus`
+Supported ASEG-style bilateral pairs include names such as:
 
-- `Right_Hippocampus`
+- `Left-Hippocampus`
+
+- `Right-Hippocampus`
+
+- `Left_Caudate`
+
+- `Right_Caudate`
+
+Supported DKT-style bilateral cortical pairs include names such as:
 
 - `lh_fusiform_volume`
 
 - `rh_fusiform_volume`
 
+Supported intracranial volume columns are:
+
 - `EstimatedTotalIntraCranialVol`
 
 - `eTIV`
 
-The function detects:
-
-- ASEG-style bilateral pairs using `Left_` and `Right_`
-
-- DKT-style bilateral cortical pairs using `lh_` and `rh_`
-
-- selected global Freesurfer volume variables
+If both `EstimatedTotalIntraCranialVol` and `eTIV` are present, the
+function checks that they are equivalent before deriving ICV-adjusted
+variables. If the two columns differ, the function stops and asks the
+user to resolve which intracranial volume variable should be used.
 
 Bilateral totals are computed as:
 
@@ -57,11 +67,6 @@ Bilateral totals are computed as:
 ICV-adjusted ratios are computed as:
 
 `volume / intracranial volume`
-
-If both `EstimatedTotalIntraCranialVol` and `eTIV` are present, the
-function checks that they are equivalent before deriving ICV-adjusted
-variables. If the two columns differ, the function stops and asks the
-user to resolve which intracranial volume variable should be used.
 
 The function returns only the newly derived variables, not the original
 data. This makes it convenient to append the derived columns with
@@ -72,11 +77,13 @@ data. This makes it convenient to append the derived columns with
 
 ``` r
 if (FALSE) { # \dontrun{
-fs_derived <- DeriveFreesurferVolumes(df_Freesurfer)
+fs_derived <- DeriveFreesurferVolumes(df_freesurfer)
 
-df_Freesurfer <- cbind(
-  df_Freesurfer,
-  DeriveFreesurferVolumes(df_Freesurfer)
+df_freesurfer <- dplyr::bind_cols(
+  df_freesurfer,
+  DeriveFreesurferVolumes(df_freesurfer)
 )
+
+attr(fs_derived, "Freesurfer_derivation_log")
 } # }
 ```

@@ -1,5 +1,41 @@
 # Changelog
 
+## SciDataReportR 20.12.0
+
+- [`PlotVolcanoEffects()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotVolcanoEffects.md)
+  now reports more detail in its `ResultsTable` and point tooltips.
+  Continuous outcomes gain `R` (zero-order Pearson correlation) and
+  `AdjustedR` (covariate-adjusted partial correlation). Two-group
+  categorical outcomes gain `Group1Level`, `Group2Level`, `Group1Mean`,
+  and `Group2Mean` (raw predictor means within each group). These values
+  also appear in the `Tooltip` column so they show up when the plot is
+  passed to `plotly::ggplotly(tooltip = "text")`.
+- New
+  [`FreezeTableHeader()`](https://rdastgh1.github.io/SciDataReportR/reference/FreezeTableHeader.md)
+  wraps a `gtsummary` table (or data frame) so its header row stays
+  frozen while scrolling long tables in HTML Quarto/R Markdown output.
+- [`MakeComparisonTable()`](https://rdastgh1.github.io/SciDataReportR/reference/MakeComparisonTable.md)
+  now uses safe internal names for its pairwise columns. Previously
+  contrast labels such as `"3 - 1"` produced column names like
+  `pw_X3...1`, whose trailing `...1` collided with tidyverse name-repair
+  and broke downstream tibble round-trips (for example
+  [`gtsummary::as_kable_extra()`](https://www.danieldsjoberg.com/gtsummary/reference/as_kable_extra.html),
+  and therefore
+  [`FreezeTableHeader()`](https://rdastgh1.github.io/SciDataReportR/reference/FreezeTableHeader.md)).
+  Displayed contrast headers are unchanged.
+- [`MakeUnivariateRegressionTable()`](https://rdastgh1.github.io/SciDataReportR/reference/MakeUnivariateRegressionTable.md)
+  now extracts regression results directly from model coefficient tables
+  and formats the final display with `gt`, avoiding the slow per-model
+  [`gtsummary::tbl_regression()`](https://www.danieldsjoberg.com/gtsummary/reference/tbl_regression.html)
+  path. Fitted model objects are now skipped by default; set
+  `ReturnModels = TRUE` to include them in `ModelSummaries`.
+- [`ReadSciData()`](https://rdastgh1.github.io/SciDataReportR/reference/ReadSciData.md)
+  now uses
+  [`data.table::fread()`](https://rdrr.io/pkg/data.table/man/fread.html)
+  for ordinary delimited files when available, which substantially
+  speeds up large `.csv`, `.tsv`, and `.txt` imports. Set
+  `fast_delimited = FALSE` to force the previous `readr` path.
+
 ## SciDataReportR 20.11.0
 
 ## SciDataReportR 20.10.0

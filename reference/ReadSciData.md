@@ -23,6 +23,7 @@ ReadSciData(
   delim = NULL,
   repair_names = TRUE,
   inspect_styles = FALSE,
+  fast_delimited = TRUE,
   ...
 )
 ```
@@ -84,6 +85,14 @@ ReadSciData(
 
   Logical. If `TRUE`, inspect Excel workbook formatting. This can be
   slower and noisier for large workbooks.
+
+- fast_delimited:
+
+  Logical. If `TRUE`, use
+  [`data.table::fread()`](https://rdrr.io/pkg/data.table/man/fread.html)
+  for delimited text files when available and when no extra reader
+  arguments are supplied through `...`. This is usually much faster than
+  `readr` for large `.csv`, `.tsv`, and `.txt` files.
 
 - ...:
 

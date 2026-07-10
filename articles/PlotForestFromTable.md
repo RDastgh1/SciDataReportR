@@ -189,7 +189,13 @@ Reg_Obj_Logistic <- MakeUnivariateRegressionTable(
 Reg_Obj_Logistic$FormattedTable
 ```
 
-[TABLE]
+| Variable                   | Effect     | N   | Estimate (95% CI)   | p-value |
+|----------------------------|------------|-----|---------------------|---------|
+| Diagnosis                  |            |     |                     |         |
+| Age                        | Odds ratio | 322 | 0.929 (0.728, 1.18) | 0.55    |
+| Calbindin                  | Odds ratio | 333 | 1.25 (0.981, 1.6)   | 0.071   |
+| Ferritin                   | Odds ratio | 333 | 1.3 (1.02, 1.66)    | 0.036   |
+| Matrix metalloproteinase 7 | Odds ratio | 333 | 1.8 (1.38, 2.35)    | \<0.001 |
 
 ``` r
 
@@ -239,33 +245,31 @@ print(sessionInfo())
     [1] stats     graphics  grDevices utils     datasets  methods   base
 
     other attached packages:
-    [1] dplyr_1.2.1            SciDataReportR_20.11.0
+    [1] dplyr_1.2.1            SciDataReportR_20.12.0
 
     loaded via a namespace (and not attached):
-     [1] gtable_0.3.6           xfun_0.59              bayestestR_0.18.1
+     [1] gtable_0.3.6           xfun_0.60              bayestestR_0.18.1
      [4] ggplot2_4.0.3          insight_1.5.2          rstatix_1.0.0
      [7] lattice_0.22-9         paletteer_1.7.0        vctrs_0.7.3
     [10] tools_4.6.1            generics_0.1.4         datawizard_1.3.1
     [13] tibble_3.3.1           pkgconfig_2.0.3        RColorBrewer_1.1-3
-    [16] correlation_0.8.8      S7_0.2.2               gt_1.3.0
-    [19] RcppParallel_5.1.11-2  lifecycle_1.0.5        compiler_4.6.1
-    [22] farver_2.1.2           stringr_1.6.0          carData_3.0-6
-    [25] snakecase_0.11.1       litedown_0.9           sass_0.4.10
-    [28] htmltools_0.5.9        yaml_2.3.12            Formula_1.2-5
-    [31] pillar_1.11.1          car_3.1-5              tidyr_1.3.2
-    [34] broom.helpers_1.22.0   statsExpressions_2.0.0 abind_1.4-8
-    [37] commonmark_2.0.0       tidyselect_1.2.1       sjlabelled_1.2.0
-    [40] digest_0.6.39          stringi_1.8.7          mvtnorm_1.4-1
-    [43] gtsummary_2.5.1        purrr_1.2.2            rematch2_2.1.2
-    [46] labeling_0.4.3         forcats_1.0.1          ggstatsplot_1.0.0
-    [49] labelled_2.16.0        fastmap_1.2.0          grid_4.6.1
-    [52] cli_3.6.6              magrittr_2.0.5         base64enc_0.1-6
-    [55] cards_0.8.1            patchwork_1.3.2        dichromat_2.0-0.1
-    [58] broom_1.0.13           withr_3.0.3            scales_1.4.0
-    [61] backports_1.5.1        estimability_2.0.0     rmarkdown_2.31
-    [64] emmeans_2.0.3          otel_0.2.0             hms_1.1.4
-    [67] coda_0.19-4.1          evaluate_1.0.5         knitr_1.51
-    [70] haven_2.5.5            parameters_0.29.2      markdown_2.0
-    [73] rstantools_2.6.0       rlang_1.3.0            xtable_1.8-8
-    [76] glue_1.8.1             xml2_1.6.0             jsonlite_2.0.0
-    [79] effectsize_1.0.2       R6_2.6.1               fs_2.1.0              
+    [16] correlation_0.8.8      S7_0.2.2               RcppParallel_5.1.11-2
+    [19] gt_1.3.0               lifecycle_1.0.5        compiler_4.6.1
+    [22] farver_2.1.2           carData_3.0-6          snakecase_0.11.1
+    [25] sass_0.4.10            htmltools_0.5.9        yaml_2.3.12
+    [28] Formula_1.2-5          pillar_1.11.1          car_3.1-5
+    [31] tidyr_1.3.2            statsExpressions_2.0.0 abind_1.4-8
+    [34] tidyselect_1.2.1       sjlabelled_1.2.0       digest_0.6.39
+    [37] mvtnorm_1.4-1          gtsummary_2.5.1        purrr_1.2.2
+    [40] rematch2_2.1.2         labeling_0.4.3         forcats_1.0.1
+    [43] ggstatsplot_1.0.0      labelled_2.16.0        fastmap_1.2.0
+    [46] grid_4.6.1             cli_3.6.6              magrittr_2.0.5
+    [49] patchwork_1.3.2        dichromat_2.0-0.1      broom_1.0.13
+    [52] withr_3.0.3            scales_1.4.0           backports_1.5.1
+    [55] estimability_2.0.0     rmarkdown_2.31         emmeans_2.0.3
+    [58] otel_0.2.0             hms_1.1.4              coda_0.19-4.1
+    [61] evaluate_1.0.5         knitr_1.51             haven_2.5.5
+    [64] parameters_0.29.2      rstantools_2.6.0       rlang_1.3.0
+    [67] xtable_1.8-8           glue_1.8.1             xml2_1.6.0
+    [70] jsonlite_2.0.0         effectsize_1.0.3       R6_2.6.1
+    [73] fs_2.1.0              

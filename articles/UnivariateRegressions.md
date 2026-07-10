@@ -90,7 +90,32 @@ preparation.
 UniObj$FormattedTable
 ```
 
-[TABLE]
+| Variable                   | Effect     | N   | Estimate (95% CI)    | p-value |
+|----------------------------|------------|-----|----------------------|---------|
+| Diagnosis                  |            |     |                      |         |
+| Genotype : E2E3            | Odds ratio | 333 | 494242 (0, Inf)      | 0.98    |
+| Genotype : E2E4            | Odds ratio | 333 | 302597 (0, Inf)      | 0.98    |
+| Genotype : E3E3            | Odds ratio | 333 | 541490 (0, Inf)      | 0.98    |
+| Genotype : E3E4            | Odds ratio | 333 | 1336083 (0, Inf)     | 0.98    |
+| Genotype : E4E4            | Odds ratio | 333 | 3389088 (0, Inf)     | 0.98    |
+| Calbindin                  | Odds ratio | 333 | 1.06 (0.995, 1.12)   | 0.071   |
+| Ferritin                   | Odds ratio | 333 | 1.4 (1.02, 1.92)     | 0.036   |
+| Matrix metalloproteinase 7 | Odds ratio | 333 | 1.46 (1.23, 1.73)    | \<0.001 |
+| Calbindin                  | Odds ratio | 333 | 1.06 (0.995, 1.12)   | 0.071   |
+| Sortilin                   | Odds ratio | 333 | 1.65 (1.23, 2.22)    | \<0.001 |
+| Osteopontin                | Odds ratio | 333 | 2.75 (1.45, 5.21)    | 0.0019  |
+| Sex                        |            |     |                      |         |
+| Genotype : E2E3            | Odds ratio | 333 | 0.000000322 (0, Inf) | 0.98    |
+| Genotype : E2E4            | Odds ratio | 333 | 0.000000472 (0, Inf) | 0.98    |
+| Genotype : E3E3            | Odds ratio | 333 | 0.000000316 (0, Inf) | 0.98    |
+| Genotype : E3E4            | Odds ratio | 333 | 0.000000243 (0, Inf) | 0.98    |
+| Genotype : E4E4            | Odds ratio | 333 | 0.000000295 (0, Inf) | 0.98    |
+| Calbindin                  | Odds ratio | 333 | 0.908 (0.859, 0.961) | \<0.001 |
+| Ferritin                   | Odds ratio | 333 | 1.53 (1.14, 2.05)    | 0.0045  |
+| Matrix metalloproteinase 7 | Odds ratio | 333 | 1.2 (1.04, 1.39)     | 0.015   |
+| Calbindin                  | Odds ratio | 333 | 0.908 (0.859, 0.961) | \<0.001 |
+| Sortilin                   | Odds ratio | 333 | 0.975 (0.756, 1.26)  | 0.84    |
+| Osteopontin                | Odds ratio | 333 | 0.634 (0.359, 1.12)  | 0.11    |
 
 Estimates and standard errors are combined into a compact format and
 significance stars are automatically added.
@@ -104,7 +129,32 @@ The larger table provides additional model details.
 UniObj$LargeTable
 ```
 
-[TABLE]
+| Outcome | Variable | Effect | N | Estimate | SE | 95% CI Low | 95% CI High | p-value |
+|----|----|----|----|----|----|----|----|----|
+| Diagnosis |  |  |  |  |  |  |  |  |
+| Diagnosis | Genotype : E2E3 | Odds ratio | 333 | 494,241.994 | 624.194 | 0.000 | Inf | 0.983 |
+| Diagnosis | Genotype : E2E4 | Odds ratio | 333 | 302,597.139 | 624.195 | 0.000 | Inf | 0.984 |
+| Diagnosis | Genotype : E3E3 | Odds ratio | 333 | 541,489.618 | 624.194 | 0.000 | Inf | 0.983 |
+| Diagnosis | Genotype : E3E4 | Odds ratio | 333 | 1,336,082.754 | 624.194 | 0.000 | Inf | 0.982 |
+| Diagnosis | Genotype : E4E4 | Odds ratio | 333 | 3,389,087.961 | 624.194 | 0.000 | Inf | 0.981 |
+| Diagnosis | Calbindin | Odds ratio | 333 | 1.055 | 0.030 | 0.995 | 1.119 | 0.071 |
+| Diagnosis | Ferritin | Odds ratio | 333 | 1.399 | 0.160 | 1.022 | 1.915 | 0.036 |
+| Diagnosis | Matrix metalloproteinase 7 | Odds ratio | 333 | 1.462 | 0.087 | 1.232 | 1.734 | 0.000 |
+| Diagnosis | Calbindin | Odds ratio | 333 | 1.055 | 0.030 | 0.995 | 1.119 | 0.071 |
+| Diagnosis | Sortilin | Odds ratio | 333 | 1.653 | 0.150 | 1.233 | 2.215 | 0.001 |
+| Diagnosis | Osteopontin | Odds ratio | 333 | 2.749 | 0.326 | 1.452 | 5.205 | 0.002 |
+| Sex |  |  |  |  |  |  |  |  |
+| sex | Genotype : E2E3 | Odds ratio | 333 | 0.000 | 624.194 | 0.000 | Inf | 0.981 |
+| sex | Genotype : E2E4 | Odds ratio | 333 | 0.000 | 624.194 | 0.000 | Inf | 0.981 |
+| sex | Genotype : E3E3 | Odds ratio | 333 | 0.000 | 624.194 | 0.000 | Inf | 0.981 |
+| sex | Genotype : E3E4 | Odds ratio | 333 | 0.000 | 624.194 | 0.000 | Inf | 0.981 |
+| sex | Genotype : E4E4 | Odds ratio | 333 | 0.000 | 624.194 | 0.000 | Inf | 0.981 |
+| sex | Calbindin | Odds ratio | 333 | 0.908 | 0.029 | 0.859 | 0.961 | 0.001 |
+| sex | Ferritin | Odds ratio | 333 | 1.527 | 0.149 | 1.140 | 2.046 | 0.005 |
+| sex | Matrix metalloproteinase 7 | Odds ratio | 333 | 1.199 | 0.074 | 1.036 | 1.387 | 0.015 |
+| sex | Calbindin | Odds ratio | 333 | 0.908 | 0.029 | 0.859 | 0.961 | 0.001 |
+| sex | Sortilin | Odds ratio | 333 | 0.975 | 0.130 | 0.756 | 1.257 | 0.843 |
+| sex | Osteopontin | Odds ratio | 333 | 0.634 | 0.289 | 0.359 | 1.117 | 0.114 |
 
 This version is often useful during exploratory analyses and quality
 control.
@@ -131,7 +181,32 @@ UniObj_Covar <- MakeUnivariateRegressionTable(
 UniObj_Covar$FormattedTable
 ```
 
-[TABLE]
+| Variable                   | Effect     | N   | Estimate (95% CI)    | p-value |
+|----------------------------|------------|-----|----------------------|---------|
+| Diagnosis                  |            |     |                      |         |
+| Genotype : E2E3            | Odds ratio | 322 | 577505 (0, Inf)      | 0.98    |
+| Genotype : E2E4            | Odds ratio | 322 | 369682 (0, Inf)      | 0.98    |
+| Genotype : E3E3            | Odds ratio | 322 | 676911 (0, Inf)      | 0.98    |
+| Genotype : E3E4            | Odds ratio | 322 | 1534198 (0, Inf)     | 0.98    |
+| Genotype : E4E4            | Odds ratio | 322 | 5091058 (0, Inf)     | 0.98    |
+| Calbindin                  | Odds ratio | 322 | 1.06 (0.995, 1.12)   | 0.074   |
+| Ferritin                   | Odds ratio | 322 | 1.38 (1.01, 1.89)    | 0.046   |
+| Matrix metalloproteinase 7 | Odds ratio | 322 | 1.45 (1.22, 1.72)    | \<0.001 |
+| Calbindin                  | Odds ratio | 322 | 1.06 (0.995, 1.12)   | 0.074   |
+| Sortilin                   | Odds ratio | 322 | 1.64 (1.22, 2.2)     | 0.0011  |
+| Osteopontin                | Odds ratio | 322 | 2.69 (1.42, 5.08)    | 0.0024  |
+| Sex                        |            |     |                      |         |
+| Genotype : E2E3            | Odds ratio | 322 | 0.000000418 (0, Inf) | 0.98    |
+| Genotype : E2E4            | Odds ratio | 322 | 0.000000669 (0, Inf) | 0.98    |
+| Genotype : E3E3            | Odds ratio | 322 | 0.000000394 (0, Inf) | 0.98    |
+| Genotype : E3E4            | Odds ratio | 322 | 0.000000308 (0, Inf) | 0.98    |
+| Genotype : E4E4            | Odds ratio | 322 | 0.000000454 (0, Inf) | 0.98    |
+| Calbindin                  | Odds ratio | 322 | 0.906 (0.856, 0.96)  | \<0.001 |
+| Ferritin                   | Odds ratio | 322 | 1.55 (1.15, 2.09)    | 0.0044  |
+| Matrix metalloproteinase 7 | Odds ratio | 322 | 1.18 (1.02, 1.37)    | 0.027   |
+| Calbindin                  | Odds ratio | 322 | 0.906 (0.856, 0.96)  | \<0.001 |
+| Sortilin                   | Odds ratio | 322 | 0.986 (0.76, 1.28)   | 0.92    |
+| Osteopontin                | Odds ratio | 322 | 0.643 (0.362, 1.14)  | 0.13    |
 
 This allows investigators to determine whether associations remain
 significant after accounting for potential confounding factors.
@@ -156,7 +231,32 @@ UniObj_Std <- MakeUnivariateRegressionTable(
 UniObj_Std$FormattedTable
 ```
 
-[TABLE]
+| Variable                   | Effect     | N   | Estimate (95% CI)    | p-value |
+|----------------------------|------------|-----|----------------------|---------|
+| Diagnosis                  |            |     |                      |         |
+| Genotype : E2E3            | Odds ratio | 333 | 494242 (0, Inf)      | 0.98    |
+| Genotype : E2E4            | Odds ratio | 333 | 302597 (0, Inf)      | 0.98    |
+| Genotype : E3E3            | Odds ratio | 333 | 541490 (0, Inf)      | 0.98    |
+| Genotype : E3E4            | Odds ratio | 333 | 1336083 (0, Inf)     | 0.98    |
+| Genotype : E4E4            | Odds ratio | 333 | 3389088 (0, Inf)     | 0.98    |
+| Calbindin                  | Odds ratio | 333 | 1.25 (0.981, 1.6)    | 0.071   |
+| Ferritin                   | Odds ratio | 333 | 1.3 (1.02, 1.66)     | 0.036   |
+| Matrix metalloproteinase 7 | Odds ratio | 333 | 1.8 (1.38, 2.35)     | \<0.001 |
+| Calbindin                  | Odds ratio | 333 | 1.25 (0.981, 1.6)    | 0.071   |
+| Sortilin                   | Odds ratio | 333 | 1.55 ( 1.2, 1.99)    | \<0.001 |
+| Osteopontin                | Odds ratio | 333 | 1.49 (1.16, 1.92)    | 0.0019  |
+| Sex                        |            |     |                      |         |
+| Genotype : E2E3            | Odds ratio | 333 | 0.000000322 (0, Inf) | 0.98    |
+| Genotype : E2E4            | Odds ratio | 333 | 0.000000472 (0, Inf) | 0.98    |
+| Genotype : E3E3            | Odds ratio | 333 | 0.000000316 (0, Inf) | 0.98    |
+| Genotype : E3E4            | Odds ratio | 333 | 0.000000243 (0, Inf) | 0.98    |
+| Genotype : E4E4            | Odds ratio | 333 | 0.000000295 (0, Inf) | 0.98    |
+| Calbindin                  | Odds ratio | 333 | 0.669 (0.529, 0.845) | \<0.001 |
+| Ferritin                   | Odds ratio | 333 | 1.39 (1.11, 1.75)    | 0.0045  |
+| Matrix metalloproteinase 7 | Odds ratio | 333 | 1.33 (1.06, 1.66)    | 0.015   |
+| Calbindin                  | Odds ratio | 333 | 0.669 (0.529, 0.845) | \<0.001 |
+| Sortilin                   | Odds ratio | 333 | 0.978 (0.784, 1.22)  | 0.84    |
+| Osteopontin                | Odds ratio | 333 | 0.835 (0.668, 1.04)  | 0.11    |
 
 Standardized coefficients represent changes in standard deviation units
 and facilitate comparison across predictors.
@@ -172,7 +272,7 @@ names(
 )
 ```
 
-    [1] "Diagnosis" "sex"      
+    NULL
 
 For example:
 
@@ -183,24 +283,8 @@ summary(
 )
 ```
 
-
-    Call:
-    stats::glm(formula = f, family = stats::binomial(), data = ModelData)
-
-    Coefficients:
-                Estimate Std. Error z value Pr(>|z|)
-    (Intercept)  -1.9184     0.4720  -4.065 4.81e-05 ***
-    Ferritin      0.3359     0.1601   2.098   0.0359 *
-    ---
-    Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
-
-    (Dispersion parameter for binomial family taken to be 1)
-
-        Null deviance: 390.60  on 332  degrees of freedom
-    Residual deviance: 386.11  on 331  degrees of freedom
-    AIC: 390.11
-
-    Number of Fisher Scoring iterations: 4
+    Length  Class   Mode
+         0   NULL   NULL 
 
 This allows additional diagnostics and custom analyses.
 
@@ -308,33 +392,31 @@ sessionInfo()
     [1] stats     graphics  grDevices utils     datasets  methods   base
 
     other attached packages:
-    [1] dplyr_1.2.1            SciDataReportR_20.11.0
+    [1] dplyr_1.2.1            SciDataReportR_20.12.0
 
     loaded via a namespace (and not attached):
-     [1] gtable_0.3.6           xfun_0.59              bayestestR_0.18.1
+     [1] gtable_0.3.6           xfun_0.60              bayestestR_0.18.1
      [4] ggplot2_4.0.3          insight_1.5.2          rstatix_1.0.0
      [7] lattice_0.22-9         paletteer_1.7.0        vctrs_0.7.3
     [10] tools_4.6.1            generics_0.1.4         datawizard_1.3.1
     [13] tibble_3.3.1           pkgconfig_2.0.3        RColorBrewer_1.1-3
-    [16] correlation_0.8.8      S7_0.2.2               gt_1.3.0
-    [19] RcppParallel_5.1.11-2  lifecycle_1.0.5        compiler_4.6.1
-    [22] farver_2.1.2           stringr_1.6.0          carData_3.0-6
-    [25] snakecase_0.11.1       litedown_0.9           sass_0.4.10
-    [28] htmltools_0.5.9        yaml_2.3.12            Formula_1.2-5
-    [31] pillar_1.11.1          car_3.1-5              tidyr_1.3.2
-    [34] broom.helpers_1.22.0   statsExpressions_2.0.0 abind_1.4-8
-    [37] commonmark_2.0.0       tidyselect_1.2.1       sjlabelled_1.2.0
-    [40] digest_0.6.39          mvtnorm_1.4-1          stringi_1.8.7
-    [43] gtsummary_2.5.1        purrr_1.2.2            rematch2_2.1.2
-    [46] labeling_0.4.3         forcats_1.0.1          ggstatsplot_1.0.0
-    [49] labelled_2.16.0        fastmap_1.2.0          grid_4.6.1
-    [52] cli_3.6.6              magrittr_2.0.5         base64enc_0.1-6
-    [55] cards_0.8.1            patchwork_1.3.2        dichromat_2.0-0.1
-    [58] broom_1.0.13           withr_3.0.3            scales_1.4.0
-    [61] backports_1.5.1        estimability_2.0.0     rmarkdown_2.31
-    [64] emmeans_2.0.3          otel_0.2.0             hms_1.1.4
-    [67] coda_0.19-4.1          evaluate_1.0.5         knitr_1.51
-    [70] haven_2.5.5            parameters_0.29.2      markdown_2.0
-    [73] rstantools_2.6.0       rlang_1.3.0            xtable_1.8-8
-    [76] glue_1.8.1             xml2_1.6.0             jsonlite_2.0.0
-    [79] effectsize_1.0.2       R6_2.6.1               fs_2.1.0              
+    [16] correlation_0.8.8      S7_0.2.2               RcppParallel_5.1.11-2
+    [19] gt_1.3.0               lifecycle_1.0.5        compiler_4.6.1
+    [22] farver_2.1.2           carData_3.0-6          snakecase_0.11.1
+    [25] sass_0.4.10            htmltools_0.5.9        yaml_2.3.12
+    [28] Formula_1.2-5          pillar_1.11.1          car_3.1-5
+    [31] tidyr_1.3.2            statsExpressions_2.0.0 abind_1.4-8
+    [34] tidyselect_1.2.1       sjlabelled_1.2.0       digest_0.6.39
+    [37] mvtnorm_1.4-1          gtsummary_2.5.1        purrr_1.2.2
+    [40] rematch2_2.1.2         labeling_0.4.3         forcats_1.0.1
+    [43] ggstatsplot_1.0.0      labelled_2.16.0        fastmap_1.2.0
+    [46] grid_4.6.1             cli_3.6.6              magrittr_2.0.5
+    [49] patchwork_1.3.2        dichromat_2.0-0.1      broom_1.0.13
+    [52] withr_3.0.3            scales_1.4.0           backports_1.5.1
+    [55] estimability_2.0.0     rmarkdown_2.31         emmeans_2.0.3
+    [58] otel_0.2.0             hms_1.1.4              coda_0.19-4.1
+    [61] evaluate_1.0.5         knitr_1.51             haven_2.5.5
+    [64] parameters_0.29.2      rstantools_2.6.0       rlang_1.3.0
+    [67] xtable_1.8-8           glue_1.8.1             xml2_1.6.0
+    [70] jsonlite_2.0.0         effectsize_1.0.3       R6_2.6.1
+    [73] fs_2.1.0              

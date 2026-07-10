@@ -406,10 +406,10 @@ sessionInfo()
 
     other attached packages:
     [1] plotly_4.12.0          ggplot2_4.0.3          dplyr_1.2.1
-    [4] SciDataReportR_20.11.0
+    [4] SciDataReportR_20.12.0
 
     loaded via a namespace (and not attached):
-     [1] gtable_0.3.6           xfun_0.59              bayestestR_0.18.1
+     [1] gtable_0.3.6           xfun_0.60              bayestestR_0.18.1
      [4] htmlwidgets_1.6.4      insight_1.5.2          rstatix_1.0.0
      [7] lattice_0.22-9         paletteer_1.7.0        vctrs_0.7.3
     [10] tools_4.6.1            generics_0.1.4         datawizard_1.3.1
@@ -419,18 +419,18 @@ sessionInfo()
     [22] farver_2.1.2           snakecase_0.11.1       carData_3.0-6
     [25] htmltools_0.5.9        lazyeval_0.2.3         yaml_2.3.12
     [28] Formula_1.2-5          pillar_1.11.1          car_3.1-5
-    [31] tidyr_1.3.2            broom.helpers_1.22.0   statsExpressions_2.0.0
-    [34] abind_1.4-8            tidyselect_1.2.1       sjlabelled_1.2.0
-    [37] digest_0.6.39          mvtnorm_1.4-1          gtsummary_2.5.1
-    [40] purrr_1.2.2            rematch2_2.1.2         labeling_0.4.3
-    [43] forcats_1.0.1          ggstatsplot_1.0.0      labelled_2.16.0
-    [46] fastmap_1.2.0          grid_4.6.1             cli_3.6.6
-    [49] magrittr_2.0.5         patchwork_1.3.2        dichromat_2.0-0.1
-    [52] broom_1.0.13           withr_3.0.3            scales_1.4.0
-    [55] backports_1.5.1        estimability_2.0.0     httr_1.4.8
-    [58] rmarkdown_2.31         emmeans_2.0.3          otel_0.2.0
-    [61] hms_1.1.4              coda_0.19-4.1          evaluate_1.0.5
-    [64] knitr_1.51             haven_2.5.5            parameters_0.29.2
-    [67] viridisLite_0.4.3      rstantools_2.6.0       rlang_1.3.0
-    [70] xtable_1.8-8           glue_1.8.1             jsonlite_2.0.0
-    [73] effectsize_1.0.2       R6_2.6.1              
+    [31] tidyr_1.3.2            statsExpressions_2.0.0 abind_1.4-8
+    [34] tidyselect_1.2.1       sjlabelled_1.2.0       digest_0.6.39
+    [37] mvtnorm_1.4-1          gtsummary_2.5.1        purrr_1.2.2
+    [40] rematch2_2.1.2         labeling_0.4.3         forcats_1.0.1
+    [43] ggstatsplot_1.0.0      labelled_2.16.0        fastmap_1.2.0
+    [46] grid_4.6.1             cli_3.6.6              magrittr_2.0.5
+    [49] patchwork_1.3.2        dichromat_2.0-0.1      broom_1.0.13
+    [52] withr_3.0.3            scales_1.4.0           backports_1.5.1
+    [55] estimability_2.0.0     httr_1.4.8             rmarkdown_2.31
+    [58] emmeans_2.0.3          otel_0.2.0             hms_1.1.4
+    [61] coda_0.19-4.1          evaluate_1.0.5         knitr_1.51
+    [64] haven_2.5.5            parameters_0.29.2      viridisLite_0.4.3
+    [67] rstantools_2.6.0       rlang_1.3.0            xtable_1.8-8
+    [70] glue_1.8.1             jsonlite_2.0.0         effectsize_1.0.3
+    [73] R6_2.6.1              

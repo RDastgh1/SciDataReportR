@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">SciDataReportR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">20.11.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">20.12.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -41,9 +41,21 @@
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Changelog</h1>
-      <small>Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/v20.11.0/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
+      <small>Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/master/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="20.12.0" id="scidatareportr-20120">SciDataReportR 20.12.0<a class="anchor" aria-label="anchor" href="#scidatareportr-20120"></a></h2>
+<ul><li>
+<code><a href="../reference/PlotVolcanoEffects.html">PlotVolcanoEffects()</a></code> now reports more detail in its <code>ResultsTable</code> and point tooltips. Continuous outcomes gain <code>R</code> (zero-order Pearson correlation) and <code>AdjustedR</code> (covariate-adjusted partial correlation). Two-group categorical outcomes gain <code>Group1Level</code>, <code>Group2Level</code>, <code>Group1Mean</code>, and <code>Group2Mean</code> (raw predictor means within each group). These values also appear in the <code>Tooltip</code> column so they show up when the plot is passed to <code>plotly::ggplotly(tooltip = "text")</code>.</li>
+<li>New <code><a href="../reference/FreezeTableHeader.html">FreezeTableHeader()</a></code> wraps a <code>gtsummary</code> table (or data frame) so its header row stays frozen while scrolling long tables in HTML Quarto/R Markdown output.</li>
+<li>
+<code><a href="../reference/MakeComparisonTable.html">MakeComparisonTable()</a></code> now uses safe internal names for its pairwise columns. Previously contrast labels such as <code>"3 - 1"</code> produced column names like <code>pw_X3...1</code>, whose trailing <code>...1</code> collided with tidyverse name-repair and broke downstream tibble round-trips (for example <code><a href="https://www.danieldsjoberg.com/gtsummary/reference/as_kable_extra.html" class="external-link">gtsummary::as_kable_extra()</a></code>, and therefore <code><a href="../reference/FreezeTableHeader.html">FreezeTableHeader()</a></code>). Displayed contrast headers are unchanged.</li>
+<li>
+<code><a href="../reference/MakeUnivariateRegressionTable.html">MakeUnivariateRegressionTable()</a></code> now extracts regression results directly from model coefficient tables and formats the final display with <code>gt</code>, avoiding the slow per-model <code><a href="https://www.danieldsjoberg.com/gtsummary/reference/tbl_regression.html" class="external-link">gtsummary::tbl_regression()</a></code> path. Fitted model objects are now skipped by default; set <code>ReturnModels = TRUE</code> to include them in <code>ModelSummaries</code>.</li>
+<li>
+<code><a href="../reference/ReadSciData.html">ReadSciData()</a></code> now uses <code><a href="https://rdrr.io/pkg/data.table/man/fread.html" class="external-link">data.table::fread()</a></code> for ordinary delimited files when available, which substantially speeds up large <code>.csv</code>, <code>.tsv</code>, and <code>.txt</code> imports. Set <code>fast_delimited = FALSE</code> to force the previous <code>readr</code> path.</li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="20.11.0" id="scidatareportr-20110">SciDataReportR 20.11.0<a class="anchor" aria-label="anchor" href="#scidatareportr-20110"></a></h2>
 </div>
@@ -673,7 +685,7 @@
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
     </footer></div>

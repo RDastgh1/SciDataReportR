@@ -47,13 +47,16 @@ vitals <- data.frame(id = 1:4, sbp = c(120, 135, 118, 141))
 m1 <- safe_merge(baseline, labs, by = "id", name = "Baseline + labs")
 m2 <- safe_merge(m1$data, vitals, by = "id", name = "+ vitals")
 merge_summary_table(list(m1$log, m2$log))
-#> # A tibble: 2 × 16
+#> # A tibble: 2 × 27
 #>   Merge        Status ReadyForAnalysis RowsBefore RowsAfter ColsBefore ColsAfter
 #>   <chr>        <chr>  <lgl>                 <int>     <int>      <int>     <int>
 #> 1 Baseline + … WARNI… TRUE                      4         4          2         3
 #> 2 + vitals     PASS   TRUE                      4         4          3         4
-#> # ℹ 9 more variables: ExpectedColsAdded <int>, ActualColsAdded <int>,
-#> #   MatchedKeys <int>, LeftUniqueKeys <int>, MatchRate <dbl>,
-#> #   DuplicateKeyGroups <int>, UnresolvedDupVars <int>, KeyHarmonization <chr>,
-#> #   Note <chr>
+#> # ℹ 20 more variables: ExpectedColsAdded <int>, ActualColsAdded <int>,
+#> #   ExpectedRelationship <chr>, DetectedRelationship <chr>,
+#> #   RelationshipMatchesExpected <lgl>, MatchedKeys <int>, LeftUniqueKeys <int>,
+#> #   MatchRate <dbl>, DuplicateKeyBlockers <int>, DuplicateKeyGroups_Left <int>,
+#> #   DuplicateKeyGroups_Right <int>, DuplicateKeyGroups_Merged <int>,
+#> #   DuplicateKeyGroups <int>, UnresolvedDupVars <int>,
+#> #   NewUnresolvedDupVars <int>, InheritedUnresolvedDupVars <int>, …
 ```

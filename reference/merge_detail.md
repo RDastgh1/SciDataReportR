@@ -59,8 +59,10 @@ merge_detail(m)
 #> |:------------------------------|-----:|:-------|:-------------------------------------------------------------------|
 #> |Key Types                      |     0|PASS    |Key storage classes match across datasets.                          |
 #> |Missing Keys                   |     0|PASS    |No missing key rows detected.                                       |
-#> |Duplicate Keys                 |     0|PASS    |No duplicate complete key combinations detected.                    |
+#> |Expected Relationship          |     0|PASS    |Detected relationship matches expected_relationship = 'one-to-one'. |
+#> |Duplicate Keys                 |     0|PASS    |No duplicate key blockers detected for the expected relationship.   |
 #> |Coverage                       |     1|WARNING |Some complete key combinations appear only in one source dataset.   |
+#> |Row Count                      |     0|PASS    |MergedData row count matches LeftData row count.                    |
 #> |Row Inflation                  |     1|PASS    |No meaningful row inflation detected.                               |
 #> |Overlapping Variables          |     0|PASS    |No non-key variables overlap across source datasets.                |
 #> |Unresolved Duplicate Variables |     0|PASS    |No unresolved duplicate variable pairs detected.                    |

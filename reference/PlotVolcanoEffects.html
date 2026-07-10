@@ -15,7 +15,7 @@ Optional covariates are included in the model for each predictor."><meta propert
 
     <a class="navbar-brand me-2" href="../index.html">SciDataReportR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">20.11.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">20.12.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -49,7 +49,7 @@ Optional covariates are included in the model for each predictor."><meta propert
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Plot volcano-style association effects</h1>
-      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/v20.11.0/R/PlotVolcanoEffects.R" class="external-link"><code>R/PlotVolcanoEffects.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/master/R/PlotVolcanoEffects.R" class="external-link"><code>R/PlotVolcanoEffects.R</code></a></small>
       <div class="d-none name"><code>PlotVolcanoEffects.Rd</code></div>
     </div>
 
@@ -186,7 +186,13 @@ compatibility with <code>plotly::ggplotly(tooltip = "text")</code>. Default is <
     <p>A named list with <code>RawPPlot</code>, <code>FDRPlot</code>, and <code>ResultsTable</code>.
 <code>RawPPlot</code> uses <code>-log10(PValue)</code> on the y-axis. <code>FDRPlot</code> uses
 <code>-log10(FDR)</code> on the y-axis. <code>ResultsTable</code> is a tibble with one row per
-analyzed predictor.</p>
+analyzed predictor. For continuous outcomes it includes <code>R</code> (the zero-order
+Pearson correlation between the predictor and outcome) and <code>AdjustedR</code> (the
+covariate-adjusted partial correlation, <code>NA</code> when no covariates are given).
+For two-group categorical outcomes it includes <code>Group1Level</code>, <code>Group2Level</code>,
+<code>Group1Mean</code>, and <code>Group2Mean</code> (the raw predictor means within each outcome
+group). These values are also surfaced in the <code>Tooltip</code> column used by
+<code>plotly::ggplotly(tooltip = "text")</code>.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
@@ -243,7 +249,7 @@ covariates. Invalid predictor variables are removed with a warning.</p>
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
     </footer></div>

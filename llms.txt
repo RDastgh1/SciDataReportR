@@ -275,6 +275,8 @@ Contributions, bug reports, and workflow ideas are welcome through
   : Extract PCA component summaries
 - [`FormattedDataDictionary()`](https://rdastgh1.github.io/SciDataReportR/reference/FormattedDataDictionary.md)
   : Create a formatted data dictionary table
+- [`FreezeTableHeader()`](https://rdastgh1.github.io/SciDataReportR/reference/FreezeTableHeader.md)
+  : Freeze the header row of a long table when scrolling
 - [`IQROutliers()`](https://rdastgh1.github.io/SciDataReportR/reference/IQROutliers.md)
   : Detect outliers using the Tukey IQR rule and visualize results
 - [`InsertValues()`](https://rdastgh1.github.io/SciDataReportR/reference/InsertValues.md)
@@ -418,7 +420,7 @@ Contributions, bug reports, and workflow ideas are welcome through
 - [`UpdateDataDictionary()`](https://rdastgh1.github.io/SciDataReportR/reference/UpdateDataDictionary.md)
   : Update an existing data dictionary with new variables and types
 - [`ValidateMerge()`](https://rdastgh1.github.io/SciDataReportR/reference/ValidateMerge.md)
-  : Validate a merged dataset against its source datasets
+  : Validate a merge between two source data frames and a merged result
 - [`add_r_and_stars()`](https://rdastgh1.github.io/SciDataReportR/reference/add_r_and_stars.md)
   : Add r-values and significance stars to a correlations heatmap
 - [`calculate_pathway_results()`](https://rdastgh1.github.io/SciDataReportR/reference/calculate_pathway_results.md)
@@ -454,7 +456,7 @@ Contributions, bug reports, and workflow ideas are welcome through
 - [`reverseFactorLevels()`](https://rdastgh1.github.io/SciDataReportR/reference/reverseFactorLevels.md)
   : Reverse Levels of Categorical Factors
 - [`safe_merge()`](https://rdastgh1.github.io/SciDataReportR/reference/safe_merge.md)
-  : Merge two data frames and validate the result in one step
+  : Safely merge two data frames with relationship-aware validation
 - [`use_EDATemplate()`](https://rdastgh1.github.io/SciDataReportR/reference/use_EDATemplate.md)
   : Use the EDATemplate Quarto Template
 - [`use_GetStartedScript()`](https://rdastgh1.github.io/SciDataReportR/reference/use_GetStartedScript.md)

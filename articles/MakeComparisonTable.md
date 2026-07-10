@@ -297,40 +297,40 @@ sessionInfo()
     [1] stats     graphics  grDevices utils     datasets  methods   base
 
     other attached packages:
-    [1] dplyr_1.2.1            SciDataReportR_20.11.0
+    [1] dplyr_1.2.1            SciDataReportR_20.12.0
 
     loaded via a namespace (and not attached):
       [1] Exact_3.3              ggstatsplot_1.0.0      sjlabelled_1.2.0
       [4] tidyselect_1.2.1       rootSolve_1.8.2.4      farver_2.1.2
       [7] statsExpressions_2.0.0 S7_0.2.2               fastmap_1.2.0
-     [10] bayestestR_0.18.1      broom.helpers_1.22.0   labelled_2.16.0
-     [13] digest_0.6.39          estimability_2.0.0     lifecycle_1.0.5
-     [16] lmom_3.3               magrittr_2.0.5         compiler_4.6.1
-     [19] rlang_1.3.0            sass_0.4.10            tools_4.6.1
-     [22] yaml_2.3.12            gt_1.3.0               data.table_1.18.4
-     [25] knitr_1.51             xml2_1.6.0             RColorBrewer_1.1-3
-     [28] abind_1.4-8            expm_1.0-0             withr_3.0.3
-     [31] purrr_1.2.2            nnet_7.3-20            grid_4.6.1
-     [34] datawizard_1.3.1       xtable_1.8-8           e1071_1.7-17
-     [37] gtsummary_2.5.1        paletteer_1.7.0        ggplot2_4.0.3
-     [40] MASS_7.3-65            emmeans_2.0.3          scales_1.4.0
-     [43] dichromat_2.0-0.1      insight_1.5.2          cli_3.6.6
-     [46] mvtnorm_1.4-1          rmarkdown_2.31         generics_0.1.4
-     [49] otel_0.2.0             RcppParallel_5.1.11-2  rstudioapi_0.19.0
-     [52] httr_1.4.8             tzdb_0.5.0             parameters_0.29.2
-     [55] commonmark_2.0.0       readxl_1.5.0           gld_2.6.8
-     [58] proxy_0.4-29           effectsize_1.0.2       cellranger_1.1.0
-     [61] base64enc_0.1-6        vctrs_0.7.3            Matrix_1.7-5
-     [64] boot_1.3-32            sandwich_3.1-1         jsonlite_2.0.0
-     [67] carData_3.0-6          car_3.1-5              litedown_0.9
-     [70] hms_1.1.4              patchwork_1.3.2        rstatix_1.0.0
-     [73] Formula_1.2-5          correlation_0.8.8      tidyr_1.3.2
-     [76] glue_1.8.1             rematch2_2.1.2         gtable_0.3.6
-     [79] tibble_3.3.1           pillar_1.11.1          htmltools_0.5.9
-     [82] R6_2.6.1               evaluate_1.0.5         lattice_0.22-9
-     [85] readr_2.2.0            markdown_2.0           haven_2.5.5
-     [88] backports_1.5.1        cards_0.8.1            broom_1.0.13
-     [91] snakecase_0.11.1       rstantools_2.6.0       DescTools_0.99.60
-     [94] class_7.3-23           Rcpp_1.1.2             coda_0.19-4.1
-     [97] xfun_0.59              fs_2.1.0               zoo_1.8-15
-    [100] forcats_1.0.1          pkgconfig_2.0.3       
+     [10] bayestestR_0.18.1      labelled_2.16.0        digest_0.6.39
+     [13] estimability_2.0.0     lifecycle_1.0.5        lmom_3.3
+     [16] magrittr_2.0.5         compiler_4.6.1         rlang_1.3.0
+     [19] sass_0.4.10            tools_4.6.1            yaml_2.3.12
+     [22] gt_1.3.0               data.table_1.18.4      knitr_1.51
+     [25] xml2_1.6.0             RColorBrewer_1.1-3     abind_1.4-8
+     [28] expm_1.0-0             withr_3.0.3            purrr_1.2.2
+     [31] nnet_7.3-20            grid_4.6.1             datawizard_1.3.1
+     [34] xtable_1.8-8           e1071_1.7-17           gtsummary_2.5.1
+     [37] paletteer_1.7.0        ggplot2_4.0.3          emmeans_2.0.3
+     [40] scales_1.4.0           MASS_7.3-65            dichromat_2.0-0.1
+     [43] insight_1.5.2          cli_3.6.6              mvtnorm_1.4-1
+     [46] rmarkdown_2.31         generics_0.1.4         otel_0.2.0
+     [49] RcppParallel_5.1.11-2  rstudioapi_0.19.0      httr_1.4.8
+     [52] tzdb_0.5.0             parameters_0.29.2      commonmark_2.0.0
+     [55] readxl_1.5.0           gld_2.6.8              proxy_0.4-29
+     [58] effectsize_1.0.3       cellranger_1.1.0       base64enc_0.1-6
+     [61] vctrs_0.7.3            Matrix_1.7-5           boot_1.3-32
+     [64] sandwich_3.1-1         jsonlite_2.0.0         carData_3.0-6
+     [67] car_3.1-5              litedown_0.9           hms_1.1.4
+     [70] patchwork_1.3.2        rstatix_1.0.0          Formula_1.2-5
+     [73] correlation_0.8.8      tidyr_1.3.2            glue_1.8.1
+     [76] rematch2_2.1.2         gtable_0.3.6           tibble_3.3.1
+     [79] pillar_1.11.1          htmltools_0.5.9        R6_2.6.1
+     [82] evaluate_1.0.5         lattice_0.22-9         readr_2.2.0
+     [85] markdown_2.0           haven_2.5.5            backports_1.5.1
+     [88] cards_0.8.1            broom_1.0.13           snakecase_0.11.1
+     [91] rstantools_2.6.0       DescTools_0.99.60      class_7.3-23
+     [94] Rcpp_1.1.2             coda_0.19-4.1          xfun_0.60
+     [97] fs_2.1.0               zoo_1.8-15             forcats_1.0.1
+    [100] pkgconfig_2.0.3       

@@ -19,6 +19,7 @@ MakeUnivariateRegressionTable(
   Standardize = FALSE,
   Method = c("auto", "lm", "logistic"),
   LogisticExponentiate = TRUE,
+  ReturnModels = FALSE,
   Data = lifecycle::deprecated(),
   OutcomeVars = lifecycle::deprecated(),
   PredictorVars = lifecycle::deprecated(),
@@ -33,6 +34,7 @@ UnivariateRegressionTable(
   Standardize = FALSE,
   Method = c("auto", "lm", "logistic"),
   LogisticExponentiate = TRUE,
+  ReturnModels = FALSE,
   Data = lifecycle::deprecated(),
   OutcomeVars = lifecycle::deprecated(),
   PredictorVars = lifecycle::deprecated(),
@@ -75,6 +77,11 @@ UnivariateRegressionTable(
   Logical. If `TRUE`, logistic regression estimates are exponentiated
   and reported as odds ratios.
 
+- ReturnModels:
+
+  Logical. If `TRUE`, return fitted model objects in `ModelSummaries`.
+  Default is `FALSE` to keep large screening runs lighter.
+
 - Data:
 
   **Deprecated** (since 19.15.0). Use `data` instead.
@@ -95,9 +102,9 @@ UnivariateRegressionTable(
 
 A list containing:
 
-- FormattedTable: A merged table with formatted regression results
+- FormattedTable: A `gt` table with formatted regression results
 
-- LargeTable: A merged table with unformatted regression results
+- LargeTable: A `gt` table with unformatted regression results
 
 - Results: A tidy dataframe with one row per estimated term. Columns:
   `Outcome`, `OutcomeLabel`, `OutcomeFamily`, `EffectType`, `Predictor`,
@@ -107,6 +114,7 @@ A list containing:
   to
   [`PlotForestFromTable()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotForestFromTable.md).
 
-- ModelSummaries: A list of fitted model objects
+- ModelSummaries: A list of fitted model objects when
+  `ReturnModels = TRUE`, otherwise `NULL`
 
 - Metadata: Outcome families and analysis settings

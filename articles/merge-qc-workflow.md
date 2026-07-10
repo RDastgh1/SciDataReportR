@@ -56,14 +56,17 @@ is the pipeline-friendly view:
 ``` r
 
 m_pbc$log
-#> # A tibble: 1 × 16
+#> # A tibble: 1 × 27
 #>   Merge        Status ReadyForAnalysis RowsBefore RowsAfter ColsBefore ColsAfter
 #>   <chr>        <chr>  <lgl>                 <int>     <int>      <int>     <int>
 #> 1 pbc baselin… FAIL   FALSE                   418      2051          5         9
-#> # ℹ 9 more variables: ExpectedColsAdded <int>, ActualColsAdded <int>,
-#> #   MatchedKeys <int>, LeftUniqueKeys <int>, MatchRate <dbl>,
-#> #   DuplicateKeyGroups <int>, UnresolvedDupVars <int>, KeyHarmonization <chr>,
-#> #   Note <chr>
+#> # ℹ 20 more variables: ExpectedColsAdded <int>, ActualColsAdded <int>,
+#> #   ExpectedRelationship <chr>, DetectedRelationship <chr>,
+#> #   RelationshipMatchesExpected <lgl>, MatchedKeys <int>, LeftUniqueKeys <int>,
+#> #   MatchRate <dbl>, DuplicateKeyBlockers <int>, DuplicateKeyGroups_Left <int>,
+#> #   DuplicateKeyGroups_Right <int>, DuplicateKeyGroups_Merged <int>,
+#> #   DuplicateKeyGroups <int>, UnresolvedDupVars <int>,
+#> #   NewUnresolvedDupVars <int>, InheritedUnresolvedDupVars <int>, …
 ```
 
 The `summary` element is a ready-made
@@ -76,15 +79,25 @@ m_pbc$summary
 
 | Metric | Value |
 |:---|:---|
-| Status | \<span style=” font-weight: bold; color: white !important;border-radius: 4px; padding-right: 4px; padding-left: 4px; background-color: rgba(198, 40, 40, 255) !important;” \>FAIL\</span\> |
+| Status | FAIL |
 | Rows (before -\> after) | 418 -\> 2051 |
 | Columns (before -\> after) | 5 -\> 9 |
 | Columns added (expected vs actual) | expected +4; actual +4 |
+| Expected relationship | one-to-one |
+| Detected relationship | one-to-many |
+| Relationship matches expected | FALSE |
 | Keys matched | 312 / 418 |
 | Match rate | 74.6% |
-| Duplicate key groups | 570 |
+| Duplicate key blockers | 570 |
+| Duplicate key groups left/right/merged | 0 / 285 / 285 |
+| Unresolved duplicate variables before merge | 0 |
+| Unresolved duplicate variables after merge | 0 |
+| New unresolved duplicate variables | 0 |
+| Inherited unresolved duplicate variables | 0 |
+| Overlapping variables before merge | 0 |
 | Key harmonization | Key types already compatible. |
-| Note | Rows changed after merge. Review for row multiplication or filtering. |
+| Duplicate variable note | No unresolved duplicate variable pairs detected. |
+| Note | Rows changed after merge, but expected_relationship should preserve left-side row count. |
 
 pbc baseline + follow-up labs {.table .table
 style="width: auto !important; margin-left: auto; margin-right: auto;"}
@@ -117,14 +130,16 @@ merge_detail(m_pbc, TopN = 5)
 |:---|---:|:---|:---|
 | Key Types | 0.000 | PASS | Key storage classes match across datasets. |
 | Missing Keys | 0.000 | PASS | No missing key rows detected. |
-| Duplicate Keys | 570.000 | FAIL | Duplicate complete key combinations were detected. |
+| Expected Relationship | 570.000 | FAIL | Detected relationship is one-to-many, but expected_relationship = ‘one-to-one’. Duplicate key blockers: 570. |
+| Duplicate Keys | 570.000 | FAIL | Duplicate complete key combinations violate the expected relationship. |
 | Coverage | 106.000 | WARNING | Some complete key combinations appear only in one source dataset. |
+| Row Count | 1.000 | FAIL | MergedData row count changed even though the expected relationship should preserve left-side row count. |
 | Row Inflation | 1.054 | WARNING | MergedData has more rows than expected. Review whether row multiplication was intentional. |
 | Overlapping Variables | 0.000 | PASS | No non-key variables overlap across source datasets. |
 | Unresolved Duplicate Variables | 0.000 | PASS | No unresolved duplicate variable pairs detected. |
 | Variable Conflicts | 0.000 | PASS | No duplicated-variable value conflicts detected. |
 | Suspicious Conflicts | 0.000 | PASS | No low-agreement or class-mismatched duplicated variables detected. |
-| Merge Readiness | 1.000 | FAIL | Major merge-integrity blockers detected. Review duplicate keys and unresolved duplicate variables. |
+| Merge Readiness | 1.000 | FAIL | Major merge-integrity blockers detected. Review failed checks. |
 
 pbc baseline + follow-up labs: validation checks {.table}
 
@@ -165,14 +180,17 @@ m_closest <- safe_merge(
 )
 
 m_closest$log
-#> # A tibble: 1 × 16
+#> # A tibble: 1 × 27
 #>   Merge        Status ReadyForAnalysis RowsBefore RowsAfter ColsBefore ColsAfter
 #>   <chr>        <chr>  <lgl>                 <int>     <int>      <int>     <int>
 #> 1 closest lab… FAIL   FALSE                   418       418          6        10
-#> # ℹ 9 more variables: ExpectedColsAdded <int>, ActualColsAdded <int>,
-#> #   MatchedKeys <int>, LeftUniqueKeys <int>, MatchRate <dbl>,
-#> #   DuplicateKeyGroups <int>, UnresolvedDupVars <int>, KeyHarmonization <chr>,
-#> #   Note <chr>
+#> # ℹ 20 more variables: ExpectedColsAdded <int>, ActualColsAdded <int>,
+#> #   ExpectedRelationship <chr>, DetectedRelationship <chr>,
+#> #   RelationshipMatchesExpected <lgl>, MatchedKeys <int>, LeftUniqueKeys <int>,
+#> #   MatchRate <dbl>, DuplicateKeyBlockers <int>, DuplicateKeyGroups_Left <int>,
+#> #   DuplicateKeyGroups_Right <int>, DuplicateKeyGroups_Merged <int>,
+#> #   DuplicateKeyGroups <int>, UnresolvedDupVars <int>,
+#> #   NewUnresolvedDupVars <int>, InheritedUnresolvedDupVars <int>, …
 ```
 
 Note the caveat:
@@ -216,14 +234,17 @@ m_synth <- safe_merge(
 )
 
 m_synth$log
-#> # A tibble: 1 × 16
+#> # A tibble: 1 × 27
 #>   Merge        Status ReadyForAnalysis RowsBefore RowsAfter ColsBefore ColsAfter
 #>   <chr>        <chr>  <lgl>                 <int>     <int>      <int>     <int>
 #> 1 demographic… FAIL   FALSE                     6         7          3         5
-#> # ℹ 9 more variables: ExpectedColsAdded <int>, ActualColsAdded <int>,
-#> #   MatchedKeys <int>, LeftUniqueKeys <int>, MatchRate <dbl>,
-#> #   DuplicateKeyGroups <int>, UnresolvedDupVars <int>, KeyHarmonization <chr>,
-#> #   Note <chr>
+#> # ℹ 20 more variables: ExpectedColsAdded <int>, ActualColsAdded <int>,
+#> #   ExpectedRelationship <chr>, DetectedRelationship <chr>,
+#> #   RelationshipMatchesExpected <lgl>, MatchedKeys <int>, LeftUniqueKeys <int>,
+#> #   MatchRate <dbl>, DuplicateKeyBlockers <int>, DuplicateKeyGroups_Left <int>,
+#> #   DuplicateKeyGroups_Right <int>, DuplicateKeyGroups_Merged <int>,
+#> #   DuplicateKeyGroups <int>, UnresolvedDupVars <int>,
+#> #   NewUnresolvedDupVars <int>, InheritedUnresolvedDupVars <int>, …
 ```
 
 ``` r
@@ -233,15 +254,25 @@ m_synth$summary
 
 | Metric | Value |
 |:---|:---|
-| Status | \<span style=” font-weight: bold; color: white !important;border-radius: 4px; padding-right: 4px; padding-left: 4px; background-color: rgba(198, 40, 40, 255) !important;” \>FAIL\</span\> |
+| Status | FAIL |
 | Rows (before -\> after) | 6 -\> 7 |
 | Columns (before -\> after) | 3 -\> 5 |
 | Columns added (expected vs actual) | expected +2; actual +2 |
+| Expected relationship | one-to-one |
+| Detected relationship | one-to-many |
+| Relationship matches expected | FALSE |
 | Keys matched | 3 / 6 |
 | Match rate | 50% |
-| Duplicate key groups | 2 |
+| Duplicate key blockers | 2 |
+| Duplicate key groups left/right/merged | 0 / 1 / 1 |
+| Unresolved duplicate variables before merge | 0 |
+| Unresolved duplicate variables after merge | 1 |
+| New unresolved duplicate variables | 1 |
+| Inherited unresolved duplicate variables | 0 |
+| Overlapping variables before merge | 1 |
 | Key harmonization | id: integer / numeric -\> numeric |
-| Note | Rows changed after merge. Review for row multiplication or filtering. |
+| Duplicate variable note | Merged data contains 1 new unresolved duplicate variable pair(s) introduced by this merge. |
+| Note | Rows changed after merge, but expected_relationship should preserve left-side row count. |
 
 demographics + device data {.table .table
 style="width: auto !important; margin-left: auto; margin-right: auto;"}
@@ -262,14 +293,16 @@ merge_detail(m_synth)
 |:---|---:|:---|:---|
 | Key Types | 0.000 | PASS | Key storage classes match across datasets. |
 | Missing Keys | 0.000 | PASS | No missing key rows detected. |
-| Duplicate Keys | 2.000 | FAIL | Duplicate complete key combinations were detected. |
+| Expected Relationship | 2.000 | FAIL | Detected relationship is one-to-many, but expected_relationship = ‘one-to-one’. Duplicate key blockers: 2. |
+| Duplicate Keys | 2.000 | FAIL | Duplicate complete key combinations violate the expected relationship. |
 | Coverage | 4.000 | WARNING | Some complete key combinations appear only in one source dataset. |
+| Row Count | 1.000 | FAIL | MergedData row count changed even though the expected relationship should preserve left-side row count. |
 | Row Inflation | 1.167 | WARNING | MergedData has more rows than expected. Review whether row multiplication was intentional. |
 | Overlapping Variables | 1.000 | WARNING | Variables appear in both source datasets but were not specified as keys. |
 | Unresolved Duplicate Variables | 1.000 | FAIL | MergedData still contains unresolved .x/.y or \_x/\_y variable pairs. |
 | Variable Conflicts | 4.000 | WARNING | At least one duplicated variable pair contains conflicting values. |
 | Suspicious Conflicts | 1.000 | WARNING | At least one duplicated variable has low agreement or mismatched classes. |
-| Merge Readiness | 1.000 | FAIL | Major merge-integrity blockers detected. Review duplicate keys and unresolved duplicate variables. |
+| Merge Readiness | 1.000 | FAIL | Major merge-integrity blockers detected. Review failed checks. |
 
 demographics + device data: validation checks {.table}
 
@@ -354,16 +387,19 @@ merge_summary_table(
   list(m_pbc$log, m_closest$log, m_synth$log),
   flagged_only = TRUE
 )
-#> # A tibble: 3 × 16
+#> # A tibble: 3 × 27
 #>   Merge        Status ReadyForAnalysis RowsBefore RowsAfter ColsBefore ColsAfter
 #>   <chr>        <chr>  <lgl>                 <int>     <int>      <int>     <int>
 #> 1 pbc baselin… FAIL   FALSE                   418      2051          5         9
 #> 2 closest lab… FAIL   FALSE                   418       418          6        10
 #> 3 demographic… FAIL   FALSE                     6         7          3         5
-#> # ℹ 9 more variables: ExpectedColsAdded <int>, ActualColsAdded <int>,
-#> #   MatchedKeys <int>, LeftUniqueKeys <int>, MatchRate <dbl>,
-#> #   DuplicateKeyGroups <int>, UnresolvedDupVars <int>, KeyHarmonization <chr>,
-#> #   Note <chr>
+#> # ℹ 20 more variables: ExpectedColsAdded <int>, ActualColsAdded <int>,
+#> #   ExpectedRelationship <chr>, DetectedRelationship <chr>,
+#> #   RelationshipMatchesExpected <lgl>, MatchedKeys <int>, LeftUniqueKeys <int>,
+#> #   MatchRate <dbl>, DuplicateKeyBlockers <int>, DuplicateKeyGroups_Left <int>,
+#> #   DuplicateKeyGroups_Right <int>, DuplicateKeyGroups_Merged <int>,
+#> #   DuplicateKeyGroups <int>, UnresolvedDupVars <int>,
+#> #   NewUnresolvedDupVars <int>, InheritedUnresolvedDupVars <int>, …
 ```
 
 An empty table here would mean every merge in the pipeline passed

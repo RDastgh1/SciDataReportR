@@ -131,6 +131,13 @@ PlotVolcanoEffects(
 A named list with `RawPPlot`, `FDRPlot`, and `ResultsTable`. `RawPPlot`
 uses `-log10(PValue)` on the y-axis. `FDRPlot` uses `-log10(FDR)` on the
 y-axis. `ResultsTable` is a tibble with one row per analyzed predictor.
+For continuous outcomes it includes `R` (the zero-order Pearson
+correlation between the predictor and outcome) and `AdjustedR` (the
+covariate-adjusted partial correlation, `NA` when no covariates are
+given). For two-group categorical outcomes it includes `Group1Level`,
+`Group2Level`, `Group1Mean`, and `Group2Mean` (the raw predictor means
+within each outcome group). These values are also surfaced in the
+`Tooltip` column used by `plotly::ggplotly(tooltip = "text")`.
 
 ## Details
 

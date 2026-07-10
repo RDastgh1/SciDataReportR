@@ -9,7 +9,7 @@ outputs, then creates intracranial-volume-adjusted ratios."><meta property="og:i
 
     <a class="navbar-brand me-2" href="../index.html">SciDataReportR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">20.11.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">20.12.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -43,7 +43,7 @@ outputs, then creates intracranial-volume-adjusted ratios."><meta property="og:i
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Derive Freesurfer bilateral totals and ICV-adjusted measures</h1>
-      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/v20.11.0/R/DeriveFreesurferVolumes.R" class="external-link"><code>R/DeriveFreesurferVolumes.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/master/R/DeriveFreesurferVolumes.R" class="external-link"><code>R/DeriveFreesurferVolumes.R</code></a></small>
       <div class="d-none name"><code>DeriveFreesurferVolumes.Rd</code></div>
     </div>
 
@@ -73,28 +73,31 @@ Default is <code>TRUE</code>.</p></dd>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A data frame containing only newly derived variables, with the same
-number of rows as <code>data</code>.</p>
+number of rows as <code>data</code>. A derivation log is stored in the attribute
+<code>"Freesurfer_derivation_log"</code>.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p>This function is designed for Freesurfer data frames that already contain
-cleaned variable names such as:</p><ul><li><p><code>Left_Hippocampus</code></p></li>
-<li><p><code>Right_Hippocampus</code></p></li>
-<li><p><code>lh_fusiform_volume</code></p></li>
+    <p>This function is designed for Freesurfer data frames that contain ASEG,
+DKT, and global Freesurfer volume variables. It supports both native
+Freesurfer-style ASEG names using hyphens and cleaned names using
+underscores.</p>
+<p>Supported ASEG-style bilateral pairs include names such as:</p><ul><li><p><code>Left-Hippocampus</code></p></li>
+<li><p><code>Right-Hippocampus</code></p></li>
+<li><p><code>Left_Caudate</code></p></li>
+<li><p><code>Right_Caudate</code></p></li>
+</ul><p>Supported DKT-style bilateral cortical pairs include names such as:</p><ul><li><p><code>lh_fusiform_volume</code></p></li>
 <li><p><code>rh_fusiform_volume</code></p></li>
-<li><p><code>EstimatedTotalIntraCranialVol</code></p></li>
+</ul><p>Supported intracranial volume columns are:</p><ul><li><p><code>EstimatedTotalIntraCranialVol</code></p></li>
 <li><p><code>eTIV</code></p></li>
-</ul><p>The function detects:</p><ul><li><p>ASEG-style bilateral pairs using <code>Left_</code> and <code>Right_</code></p></li>
-<li><p>DKT-style bilateral cortical pairs using <code>lh_</code> and <code>rh_</code></p></li>
-<li><p>selected global Freesurfer volume variables</p></li>
-</ul><p>Bilateral totals are computed as:</p>
+</ul><p>If both <code>EstimatedTotalIntraCranialVol</code> and <code>eTIV</code> are present, the function
+checks that they are equivalent before deriving ICV-adjusted variables. If
+the two columns differ, the function stops and asks the user to resolve which
+intracranial volume variable should be used.</p>
+<p>Bilateral totals are computed as:</p>
 <p><code>left + right</code></p>
 <p>ICV-adjusted ratios are computed as:</p>
 <p><code>volume / intracranial volume</code></p>
-<p>If both <code>EstimatedTotalIntraCranialVol</code> and <code>eTIV</code> are present, the function
-checks that they are equivalent before deriving ICV-adjusted variables. If the
-two columns differ, the function stops and asks the user to resolve which
-intracranial volume variable should be used.</p>
 <p>The function returns only the newly derived variables, not the original data.
 This makes it convenient to append the derived columns with <code><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind()</a></code> or
 <code><a href="https://dplyr.tidyverse.org/reference/bind_cols.html" class="external-link">dplyr::bind_cols()</a></code>.</p>
@@ -103,13 +106,16 @@ This makes it convenient to append the derived columns with <code><a href="https
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
-<span class="r-in"><span><span class="va">fs_derived</span> <span class="op">&lt;-</span> <span class="fu">DeriveFreesurferVolumes</span><span class="op">(</span><span class="va">df_Freesurfer</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">fs_derived</span> <span class="op">&lt;-</span> <span class="fu">DeriveFreesurferVolumes</span><span class="op">(</span><span class="va">df_freesurfer</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="va">df_Freesurfer</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span></span></span>
-<span class="r-in"><span>  <span class="va">df_Freesurfer</span>,</span></span>
-<span class="r-in"><span>  <span class="fu">DeriveFreesurferVolumes</span><span class="op">(</span><span class="va">df_Freesurfer</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">df_freesurfer</span> <span class="op">&lt;-</span> <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/bind_cols.html" class="external-link">bind_cols</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>  <span class="va">df_freesurfer</span>,</span></span>
+<span class="r-in"><span>  <span class="fu">DeriveFreesurferVolumes</span><span class="op">(</span><span class="va">df_freesurfer</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">fs_derived</span>, <span class="st">"Freesurfer_derivation_log"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
+<span class="r-in"><span></span></span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
@@ -121,7 +127,7 @@ This makes it convenient to append the derived columns with <code><a href="https
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
     </footer></div>
