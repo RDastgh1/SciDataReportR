@@ -1,5 +1,7 @@
 # Changelog
 
+## SciDataReportR 20.13.0
+
 ## SciDataReportR 20.12.0
 
 - [`PlotVolcanoEffects()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotVolcanoEffects.md)

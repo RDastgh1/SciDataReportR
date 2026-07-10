@@ -353,7 +353,7 @@ print(sessionInfo())
     [1] stats     graphics  grDevices utils     datasets  methods   base
 
     other attached packages:
-    [1] dplyr_1.2.1            SciDataReportR_20.12.0
+    [1] dplyr_1.2.1            SciDataReportR_20.13.0
 
     loaded via a namespace (and not attached):
      [1] gtable_0.3.6           xfun_0.60              bayestestR_0.18.1
