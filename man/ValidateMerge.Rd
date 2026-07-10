@@ -2,39 +2,82 @@
 % Please edit documentation in R/ValidateMerge.R
 \name{ValidateMerge}
 \alias{ValidateMerge}
-\title{Validate a merged dataset against its source datasets}
+\title{Validate a merge between two source data frames and a merged result}
 \usage{
 ValidateMerge(
   LeftData,
   RightData,
   MergedData,
   keys,
-  Keys = lifecycle::deprecated()
+  Keys = lifecycle::deprecated(),
+  expected_relationship = c("one-to-one", "many-to-one", "one-to-many", "many-to-many",
+    "auto")
 )
 }
 \arguments{
-\item{LeftData}{A data frame used as one source for the merge.}
+\item{LeftData}{A data frame used as the left side of the merge.}
 
-\item{RightData}{A data frame used as the other source for the merge.}
+\item{RightData}{A data frame used as the right side of the merge.}
 
-\item{MergedData}{The merged data frame to audit.}
+\item{MergedData}{A data frame produced by merging \code{LeftData} and \code{RightData}.}
 
-\item{keys}{Character vector of key variables intended to define the merge.
-Multiple keys are supported, such as \code{c("study_id", "visit")}.}
+\item{keys}{Character vector of merge key column names.}
 
-\item{Keys}{Deprecated. Use \code{keys} instead.}
+\item{Keys}{Deprecated. Use \code{keys}.}
+
+\item{expected_relationship}{Character. Expected relationship between
+\code{LeftData} and \code{RightData} under \code{keys}. Defaults to \code{"one-to-one"} to
+preserve strict historical behavior. One of:
+\itemize{
+\item \code{"one-to-one"}: left keys and right keys should both be unique.
+\item \code{"many-to-one"}: left keys may repeat, right keys should be unique.
+This is common when merging participant-level data into a longitudinal
+participant-visit master table by \code{record_id}.
+\item \code{"one-to-many"}: left keys should be unique, right keys may repeat.
+\item \code{"many-to-many"}: both sides may repeat. This is allowed only when
+explicitly expected.
+\item \code{"auto"}: infer and report relationship, but do not fail solely
+because of duplicate keys or relationship type.
+}}
 }
 \value{
-A list with merge validation results.
+A list containing merge validation summaries, checks, relationship
+audits, duplicate-key audits, coverage tables, overlap audits, duplicated
+variable audits, conflict tables, and suggested actions.
 }
 \description{
-Audit a merged dataset against the two source datasets used to create it.
-This function is designed to catch common merge problems before analysis,
-including incompatible key types, duplicate key combinations, incomplete
-key coverage, unexpected overlapping variables, unresolved \code{.x} / \code{.y}
-variables, and value conflicts between duplicated variables.
+\code{ValidateMerge()} audits a completed merge by comparing the left/source data,
+right/add-on data, and merged result. It checks key coverage, key uniqueness,
+expected merge relationship, row inflation, overlapping non-key variables,
+unresolved \code{.x}/\code{.y} or \verb{_x}/\verb{_y} columns, and duplicated-variable conflicts.
 }
 \details{
-This function does not perform a merge. It assumes the user has already
-created a merged dataset and wants to check whether the merge can be trusted.
+This version supports expected merge relationships. The default is
+\code{"one-to-one"} to preserve strict historical behavior. For longitudinal
+databases, use \code{"many-to-one"} when the left/master data frame is a
+participant-visit table and the right/add-on data frame is participant-level.
+}
+\examples{
+left <- data.frame(
+  record_id = c(1, 1, 2, 2),
+  visit_type = c(1, 2, 1, 2),
+  age = c(40, 40, 55, 55)
+)
+
+right <- data.frame(
+  record_id = c(1, 2),
+  imaging_score = c(0.4, 0.8)
+)
+
+merged <- dplyr::left_join(left, right, by = "record_id")
+
+validation <- ValidateMerge(
+  LeftData = left,
+  RightData = right,
+  MergedData = merged,
+  keys = "record_id",
+  expected_relationship = "many-to-one"
+)
+
+validation$Summary
 }

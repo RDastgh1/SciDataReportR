@@ -28,6 +28,10 @@
 #'   names after import.
 #' @param inspect_styles Logical. If `TRUE`, inspect Excel workbook formatting.
 #'   This can be slower and noisier for large workbooks.
+#' @param fast_delimited Logical. If `TRUE`, use `data.table::fread()` for
+#'   delimited text files when available and when no extra reader arguments are
+#'   supplied through `...`. This is usually much faster than `readr` for large
+#'   `.csv`, `.tsv`, and `.txt` files.
 #' @param ... Additional arguments passed to the underlying reader.
 #'
 #' @return Imported data object. Inspection metadata is attached as the
@@ -46,6 +50,7 @@ ReadSciData <- function(
   delim = NULL,
   repair_names = TRUE,
   inspect_styles = FALSE,
+  fast_delimited = TRUE,
   ...
 ) {
   if (length(path) != 1) {
@@ -58,6 +63,11 @@ ReadSciData <- function(
 
   ext <- tolower(tools::file_ext(path))
   inspection <- NULL
+  reader_args <- list(...)
+
+  if (!is.logical(fast_delimited) || length(fast_delimited) != 1 || is.na(fast_delimited)) {
+    stop("`fast_delimited` must be TRUE or FALSE.", call. = FALSE)
+  }
 
   if (isTRUE(inspect)) {
     inspection <- InspectFile(
@@ -112,32 +122,31 @@ ReadSciData <- function(
   out <- switch(
     ext,
 
-    csv = readr::read_csv(
-      file = path,
+    csv = .ReadSciDelimited(
+      path = path,
+      delim = ",",
       col_names = col_names,
       guess_max = guess_max,
-      name_repair = "minimal",
-      show_col_types = FALSE,
-      ...
+      fast_delimited = fast_delimited,
+      reader_args = reader_args
     ),
 
-    tsv = readr::read_tsv(
-      file = path,
+    tsv = .ReadSciDelimited(
+      path = path,
+      delim = "\t",
       col_names = col_names,
       guess_max = guess_max,
-      name_repair = "minimal",
-      show_col_types = FALSE,
-      ...
+      fast_delimited = fast_delimited,
+      reader_args = reader_args
     ),
 
-    txt = readr::read_delim(
-      file = path,
+    txt = .ReadSciDelimited(
+      path = path,
       delim = if (is.null(delim)) "\t" else delim,
       col_names = col_names,
       guess_max = guess_max,
-      name_repair = "minimal",
-      show_col_types = FALSE,
-      ...
+      fast_delimited = fast_delimited,
+      reader_args = reader_args
     ),
 
     xlsx = {
@@ -321,4 +330,58 @@ ReadSciData <- function(
     duplicate_changed_positions = which(before_unique != repaired_names),
     changed_positions = which(original_names != repaired_names)
   )
+}
+
+.ReadSciDelimited <- function(
+  path,
+  delim,
+  col_names,
+  guess_max,
+  fast_delimited,
+  reader_args
+) {
+  can_use_fread <- isTRUE(fast_delimited) &&
+    requireNamespace("data.table", quietly = TRUE) &&
+    length(reader_args) == 0 &&
+    (isTRUE(col_names) || is.character(col_names))
+
+  if (can_use_fread) {
+    header <- isTRUE(col_names)
+    out <- data.table::fread(
+      file = path,
+      sep = delim,
+      header = header,
+      data.table = FALSE,
+      check.names = FALSE,
+      showProgress = FALSE
+    )
+
+    if (is.character(col_names)) {
+      names(out) <- col_names
+    }
+
+    return(tibble::as_tibble(out, .name_repair = "minimal"))
+  }
+
+  read_fun <- if (identical(delim, ",")) {
+    readr::read_csv
+  } else if (identical(delim, "\t")) {
+    readr::read_tsv
+  } else {
+    readr::read_delim
+  }
+
+  args <- c(
+    list(
+      file = path,
+      col_names = col_names,
+      guess_max = guess_max,
+      name_repair = "minimal",
+      show_col_types = FALSE
+    ),
+    if (!identical(delim, ",") && !identical(delim, "\t")) list(delim = delim),
+    reader_args
+  )
+
+  do.call(read_fun, args)
 }

@@ -1,39 +1,90 @@
-#' Merge two data frames and validate the result in one step
+#' Safely merge two data frames with relationship-aware validation
 #'
-#' Perform a left join or closest-time merge and immediately audit the result
-#' with [ValidateMerge()]. `safe_merge()` can also harmonize merge key types
-#' before joining, so common numeric-vs-character key mismatches do not break
-#' an otherwise valid merge.
+#' `safe_merge()` performs a merge, validates its structure, logs merge metrics,
+#' and returns the merged data plus validation results. It is designed for
+#' reproducible database construction pipelines where row count, column count,
+#' key coverage, duplicate keys, expected merge relationships, and unresolved
+#' duplicate variables need to be audited every time the merge is run.
 #'
-#' @param df_before A data frame. The left dataset that rows are added to.
-#' @param df_add A data frame. The right dataset being merged in.
-#' @param by Character vector of merge keys. Multiple keys are supported.
-#' @param name Required. A short label for this merge.
-#' @param method Either `"exact"` or `"closest_time"`.
-#' @param time_var_before For `method = "closest_time"`, the time variable in
-#'   `df_before`.
-#' @param time_var_add For `method = "closest_time"`, the time variable in
+#' The default `expected_relationship` is `"one-to-one"` to preserve strict
+#' historical behavior. For longitudinal databases, use `"many-to-one"` when
+#' the left/master data frame has repeated participant IDs because of multiple
+#' visits and the right/add-on data frame has one row per participant.
+#'
+#' Duplicate-variable handling is current-merge aware. If unresolved duplicate
+#' variable pairs such as `sy_x` / `sy_y` or `sy.x` / `sy.y` already exist in
+#' `df_before`, they are classified as inherited duplicate variables. By default,
+#' inherited duplicate variables are reported but do not cause the current merge
+#' to fail. New unresolved duplicate variables introduced by the current merge
+#' are treated as failures by default.
+#'
+#' @param df_before Data frame on the left side of the merge.
+#' @param df_add Data frame to add to `df_before`.
+#' @param by Character vector of merge key column names.
+#' @param name Single character label used in the merge log and summary table.
+#' @param method Merge method. `"exact"` uses `dplyr::left_join()`.
+#'   `"closest_time"` uses `Merge_ByClosestTime()`.
+#' @param time_var_before Required when `method = "closest_time"`. Time variable
+#'   in `df_before`.
+#' @param time_var_add Required when `method = "closest_time"`. Time variable in
 #'   `df_add`.
-#' @param min_match_rate Minimum acceptable key match rate before a merge is
-#'   marked as `"WARNING"`.
-#' @param harmonize_keys Logical. If `TRUE`, harmonize merge key types before
-#'   joining.
-#' @param key_parser Optional named list of parser functions for specific merge
-#'   keys. Names should match values in `by`.
-#' @param stop_on_failed_numeric Logical. If `TRUE`, stop when one key is
-#'   numeric-like and the other contains values that cannot be safely converted
-#'   to numeric.
-#' @param ... Additional arguments passed to [Merge_ByClosestTime()] when
+#' @param min_match_rate Numeric between 0 and 1. Merges below this left-key
+#'   match rate are marked as `"WARNING"` unless another structural blocker
+#'   makes them `"FAIL"`.
+#' @param harmonize_keys Logical. If `TRUE`, keys are harmonized using
+#'   `HarmonizeMergeKeys()` before merging.
+#' @param key_parser Optional parser passed to `HarmonizeMergeKeys()`.
+#' @param stop_on_failed_numeric Logical passed to `HarmonizeMergeKeys()`.
+#' @param expected_relationship Character. Expected relationship between
+#'   `df_before` and `df_add` under `by`. Defaults to `"one-to-one"` to preserve
+#'   strict historical behavior. One of:
+#'   \itemize{
+#'     \item `"one-to-one"`: both sides should be unique by `by`.
+#'     \item `"many-to-one"`: left side may repeat keys, right side should be
+#'       unique.
+#'     \item `"one-to-many"`: left side should be unique, right side may repeat.
+#'     \item `"many-to-many"`: both sides may repeat.
+#'     \item `"auto"`: infer and report relationship, but do not enforce it.
+#'   }
+#' @param fail_on_new_duplicate_variables Logical. If `TRUE`, unresolved duplicate
+#'   variable pairs introduced by the current merge cause the merge status to be
+#'   `"FAIL"`. Default is `TRUE`.
+#' @param fail_on_inherited_duplicate_variables Logical. If `TRUE`, unresolved
+#'   duplicate variable pairs already present in `df_before` cause the merge
+#'   status to be `"FAIL"`. Default is `FALSE`.
+#' @param ... Additional arguments passed to `Merge_ByClosestTime()` when
 #'   `method = "closest_time"`.
 #'
-#' @return A list with four elements:
-#' \describe{
-#'   \item{data}{The merged data frame.}
-#'   \item{validation}{The full [ValidateMerge()] result, including
-#'   `KeyHarmonization` and `SummaryTable`.}
-#'   \item{log}{A one-row tibble with merge-level status and metrics.}
-#'   \item{summary}{A compact formatted summary table.}
-#' }
+#' @return A list with:
+#'   \itemize{
+#'     \item `data`: Merged data frame.
+#'     \item `validation`: Full validation object from `ValidateMerge()`, with
+#'       additional current-merge-aware duplicate-variable diagnostics.
+#'     \item `log`: One-row tibble containing merge log metrics.
+#'     \item `summary`: A `knitr::kable()` summary table.
+#'   }
+#'
+#' @examples
+#' left <- data.frame(
+#'   record_id = c(1, 1, 2, 2),
+#'   visit_type = c(1, 2, 1, 2),
+#'   age = c(40, 40, 55, 55)
+#' )
+#'
+#' right <- data.frame(
+#'   record_id = c(1, 2),
+#'   imaging_score = c(0.4, 0.8)
+#' )
+#'
+#' m <- safe_merge(
+#'   df_before = left,
+#'   df_add = right,
+#'   by = "record_id",
+#'   name = "Example imaging merge",
+#'   expected_relationship = "many-to-one"
+#' )
+#'
+#' m$log
 #'
 #' @export
 safe_merge <- function(df_before,
@@ -47,9 +98,23 @@ safe_merge <- function(df_before,
                        harmonize_keys = TRUE,
                        key_parser = NULL,
                        stop_on_failed_numeric = TRUE,
+                       expected_relationship = c(
+                         "one-to-one",
+                         "many-to-one",
+                         "one-to-many",
+                         "many-to-many",
+                         "auto"
+                       ),
+                       fail_on_new_duplicate_variables = TRUE,
+                       fail_on_inherited_duplicate_variables = FALSE,
                        ...) {
 
   method <- match.arg(method)
+  expected_relationship <- match.arg(expected_relationship)
+
+  ############################################################
+  ## Input checks
+  ############################################################
 
   if (!is.data.frame(df_before)) {
     stop("df_before must be a data.frame.", call. = FALSE)
@@ -82,6 +147,24 @@ safe_merge <- function(df_before,
     stop("min_match_rate must be a single number between 0 and 1.", call. = FALSE)
   }
 
+  if (!is.logical(fail_on_new_duplicate_variables) ||
+      length(fail_on_new_duplicate_variables) != 1 ||
+      is.na(fail_on_new_duplicate_variables)) {
+    stop(
+      "fail_on_new_duplicate_variables must be TRUE or FALSE.",
+      call. = FALSE
+    )
+  }
+
+  if (!is.logical(fail_on_inherited_duplicate_variables) ||
+      length(fail_on_inherited_duplicate_variables) != 1 ||
+      is.na(fail_on_inherited_duplicate_variables)) {
+    stop(
+      "fail_on_inherited_duplicate_variables must be TRUE or FALSE.",
+      call. = FALSE
+    )
+  }
+
   missing_before <- setdiff(by, names(df_before))
   missing_add <- setdiff(by, names(df_add))
 
@@ -101,6 +184,55 @@ safe_merge <- function(df_before,
     )
   }
 
+  ############################################################
+  ## Helper: detect unresolved duplicate variable pairs
+  ############################################################
+
+  detect_unresolved_duplicate_variables <- function(data) {
+
+    variable_names <- names(data)
+
+    x_dot <- variable_names[grepl("\\.x$", variable_names)]
+    y_dot <- variable_names[grepl("\\.y$", variable_names)]
+
+    x_under <- variable_names[grepl("_x$", variable_names)]
+    y_under <- variable_names[grepl("_y$", variable_names)]
+
+    dot_pairs <- tibble::tibble(
+      Variable = sub("\\.x$", "", x_dot),
+      XVariable = x_dot,
+      SuffixStyle = ".x/.y"
+    ) %>%
+      dplyr::mutate(
+        YVariable = paste0(Variable, ".y")
+      ) %>%
+      dplyr::filter(YVariable %in% y_dot)
+
+    under_pairs <- tibble::tibble(
+      Variable = sub("_x$", "", x_under),
+      XVariable = x_under,
+      SuffixStyle = "_x/_y"
+    ) %>%
+      dplyr::mutate(
+        YVariable = paste0(Variable, "_y")
+      ) %>%
+      dplyr::filter(YVariable %in% y_under)
+
+    dplyr::bind_rows(dot_pairs, under_pairs) %>%
+      dplyr::distinct(
+        Variable,
+        XVariable,
+        YVariable,
+        SuffixStyle,
+        .keep_all = TRUE
+      ) %>%
+      dplyr::arrange(Variable, XVariable, YVariable)
+  }
+
+  ############################################################
+  ## Initialize key harmonization report
+  ############################################################
+
   key_report <- tibble::tibble(
     Key = character(),
     LeftTypeBefore = character(),
@@ -118,6 +250,10 @@ safe_merge <- function(df_before,
   df_before_join <- df_before
   df_add_join <- df_add
 
+  ############################################################
+  ## Harmonize keys
+  ############################################################
+
   if (isTRUE(harmonize_keys)) {
     key_harmonized <- HarmonizeMergeKeys(
       df_before = df_before,
@@ -132,6 +268,28 @@ safe_merge <- function(df_before,
     key_report <- key_harmonized$report
   }
 
+  ############################################################
+  ## Current-merge-aware duplicate-variable baseline
+  ############################################################
+
+  unresolved_duplicate_variables_before <- detect_unresolved_duplicate_variables(
+    df_before_join
+  )
+
+  overlapping_variables_before_merge <- intersect(
+    setdiff(names(df_before_join), by),
+    setdiff(names(df_add_join), by)
+  )
+
+  overlapping_variables_before_merge <- tibble::tibble(
+    Variable = overlapping_variables_before_merge
+  ) %>%
+    dplyr::arrange(Variable)
+
+  ############################################################
+  ## Perform merge
+  ############################################################
+
   if (method == "exact") {
     df_after <- dplyr::left_join(
       df_before_join,
@@ -139,6 +297,7 @@ safe_merge <- function(df_before,
       by = by
     )
   } else {
+
     if (is.null(time_var_before) || is.null(time_var_add)) {
       stop(
         "method = \"closest_time\" requires both time_var_before and time_var_add.",
@@ -176,25 +335,73 @@ safe_merge <- function(df_before,
     df_after <- closest_result$merged_dataframe
   }
 
+  ############################################################
+  ## Validate merge
+  ############################################################
+
   validation <- ValidateMerge(
     LeftData = df_before_join,
     RightData = df_add_join,
     MergedData = df_after,
-    keys = by
+    keys = by,
+    expected_relationship = expected_relationship
   )
 
   summary_row <- validation$Summary
 
-  duplicate_key_groups <- summary_row$DuplicateKeyGroups_Left +
-    summary_row$DuplicateKeyGroups_Right +
-    summary_row$DuplicateKeyGroups_Merged
+  ############################################################
+  ## Current-merge-aware duplicate-variable classification
+  ############################################################
+
+  unresolved_duplicate_variables_after <- detect_unresolved_duplicate_variables(
+    df_after
+  )
+
+  inherited_duplicate_variables <- unresolved_duplicate_variables_after %>%
+    dplyr::semi_join(
+      unresolved_duplicate_variables_before,
+      by = c("Variable", "XVariable", "YVariable", "SuffixStyle")
+    )
+
+  new_duplicate_variables <- unresolved_duplicate_variables_after %>%
+    dplyr::anti_join(
+      unresolved_duplicate_variables_before,
+      by = c("Variable", "XVariable", "YVariable", "SuffixStyle")
+    )
+
+  n_unresolved_duplicate_variables_before <- nrow(
+    unresolved_duplicate_variables_before
+  )
+
+  n_unresolved_duplicate_variables_after <- nrow(
+    unresolved_duplicate_variables_after
+  )
+
+  n_inherited_duplicate_variables <- nrow(inherited_duplicate_variables)
+  n_new_duplicate_variables <- nrow(new_duplicate_variables)
+
+  ############################################################
+  ## Core merge metrics
+  ############################################################
 
   expected_cols_added <- ncol(df_add_join) - length(by)
   actual_cols_added <- ncol(df_after) - ncol(df_before_join)
 
   rows_changed <- nrow(df_after) != nrow(df_before_join)
+
+  row_change_allowed <- expected_relationship %in% c(
+    "one-to-many",
+    "many-to-many",
+    "auto"
+  )
+
+  rows_changed_blocker <- rows_changed && !row_change_allowed
+
   cols_wrong <- actual_cols_added != expected_cols_added
-  duplicate_keys <- duplicate_key_groups > 0
+
+  duplicate_key_blockers <- summary_row$DuplicateKeyBlockers
+
+  relationship_matches_expected <- summary_row$RelationshipMatchesExpected
 
   match_rate <- ifelse(
     summary_row$LeftUniqueKeys > 0,
@@ -202,34 +409,40 @@ safe_merge <- function(df_before,
     NA_real_
   )
 
+  new_duplicate_blocker <- isTRUE(fail_on_new_duplicate_variables) &&
+    n_new_duplicate_variables > 0
+
+  inherited_duplicate_blocker <- isTRUE(fail_on_inherited_duplicate_variables) &&
+    n_inherited_duplicate_variables > 0
+
+  ############################################################
+  ## Merge status
+  ############################################################
+
   merge_status <- dplyr::case_when(
-    rows_changed ~ "FAIL",
-    duplicate_keys ~ "FAIL",
+    rows_changed_blocker ~ "FAIL",
     cols_wrong ~ "FAIL",
+    duplicate_key_blockers > 0 ~ "FAIL",
+    expected_relationship != "auto" && !relationship_matches_expected ~ "FAIL",
+    new_duplicate_blocker ~ "FAIL",
+    inherited_duplicate_blocker ~ "FAIL",
     !is.na(match_rate) && match_rate < min_match_rate ~ "WARNING",
+    n_inherited_duplicate_variables > 0 ~ "WARNING",
     TRUE ~ "PASS"
   )
 
   ready_for_analysis <- merge_status != "FAIL"
 
-  status_label <- dplyr::case_when(
-    merge_status == "PASS" ~ "PASS",
-    merge_status == "WARNING" ~ "WARNING",
-    merge_status == "FAIL" ~ "FAIL",
-    TRUE ~ merge_status
-  )
-
-  status_background <- dplyr::case_when(
-    merge_status == "PASS" ~ "#2E7D32",
-    merge_status == "WARNING" ~ "#F9A825",
-    merge_status == "FAIL" ~ "#C62828",
-    TRUE ~ "#616161"
-  )
+  ############################################################
+  ## Notes
+  ############################################################
 
   key_harmonization_note <- if (nrow(key_report) == 0) {
     "No key harmonization performed."
-  } else if (any(key_report$LeftTypeBefore != key_report$RightTypeBefore) ||
-             any(key_report$ParserUsed)) {
+  } else if (
+    any(key_report$LeftTypeBefore != key_report$RightTypeBefore) ||
+      any(key_report$ParserUsed)
+  ) {
     paste(
       paste0(
         key_report$Key,
@@ -246,10 +459,62 @@ safe_merge <- function(df_before,
     "Key types already compatible."
   }
 
+  duplicate_variable_note <- dplyr::case_when(
+    n_new_duplicate_variables > 0 && n_inherited_duplicate_variables > 0 ~
+      paste0(
+        "Merged data contains ",
+        n_new_duplicate_variables,
+        " new unresolved duplicate variable pair(s) and ",
+        n_inherited_duplicate_variables,
+        " inherited unresolved duplicate variable pair(s)."
+      ),
+    n_new_duplicate_variables > 0 ~
+      paste0(
+        "Merged data contains ",
+        n_new_duplicate_variables,
+        " new unresolved duplicate variable pair(s) introduced by this merge."
+      ),
+    n_inherited_duplicate_variables > 0 ~
+      paste0(
+        "Merged data contains ",
+        n_inherited_duplicate_variables,
+        " inherited unresolved duplicate variable pair(s) already present in df_before."
+      ),
+    TRUE ~
+      "No unresolved duplicate variable pairs detected."
+  )
+
   status_note <- dplyr::case_when(
-    rows_changed ~ "Rows changed after merge. Review for row multiplication or filtering.",
-    duplicate_keys ~ "Duplicate key groups detected after merge.",
-    cols_wrong ~ "Actual columns added did not match expected columns added.",
+    rows_changed_blocker ~
+      "Rows changed after merge, but expected_relationship should preserve left-side row count.",
+    cols_wrong ~
+      "Actual columns added did not match expected columns added.",
+    duplicate_key_blockers > 0 ~
+      paste0(
+        "Duplicate key groups violate expected_relationship = '",
+        expected_relationship,
+        "'."
+      ),
+    expected_relationship != "auto" && !relationship_matches_expected ~
+      paste0(
+        "Detected relationship '",
+        summary_row$DetectedRelationship,
+        "' does not match expected_relationship = '",
+        expected_relationship,
+        "'."
+      ),
+    new_duplicate_blocker ~
+      paste0(
+        "This merge introduced unresolved duplicate variable pair(s): ",
+        paste(new_duplicate_variables$Variable, collapse = ", "),
+        ". Resolve or rename overlapping variables before merging."
+      ),
+    inherited_duplicate_blocker ~
+      paste0(
+        "df_before already contained unresolved duplicate variable pair(s): ",
+        paste(inherited_duplicate_variables$Variable, collapse = ", "),
+        "."
+      ),
     !is.na(match_rate) && match_rate < min_match_rate ~
       paste0(
         "Match rate below threshold: ",
@@ -258,8 +523,19 @@ safe_merge <- function(df_before,
         round(100 * min_match_rate, 1),
         "%."
       ),
-    TRUE ~ "Merge structure looks valid."
+    n_inherited_duplicate_variables > 0 ~
+      paste0(
+        "Merge structure looks valid, but inherited unresolved duplicate variable pair(s) remain: ",
+        paste(inherited_duplicate_variables$Variable, collapse = ", "),
+        "."
+      ),
+    TRUE ~
+      "Merge structure looks valid."
   )
+
+  ############################################################
+  ## Log
+  ############################################################
 
   log <- tibble::tibble(
     Merge = name,
@@ -271,14 +547,29 @@ safe_merge <- function(df_before,
     ColsAfter = ncol(df_after),
     ExpectedColsAdded = expected_cols_added,
     ActualColsAdded = actual_cols_added,
+    ExpectedRelationship = expected_relationship,
+    DetectedRelationship = summary_row$DetectedRelationship,
+    RelationshipMatchesExpected = relationship_matches_expected,
     MatchedKeys = summary_row$MatchingKeys,
     LeftUniqueKeys = summary_row$LeftUniqueKeys,
     MatchRate = match_rate,
-    DuplicateKeyGroups = duplicate_key_groups,
-    UnresolvedDupVars = summary_row$UnresolvedDuplicateVariables,
+    DuplicateKeyBlockers = duplicate_key_blockers,
+    DuplicateKeyGroups_Left = summary_row$DuplicateKeyGroups_Left,
+    DuplicateKeyGroups_Right = summary_row$DuplicateKeyGroups_Right,
+    DuplicateKeyGroups_Merged = summary_row$DuplicateKeyGroups_Merged,
+    DuplicateKeyGroups = duplicate_key_blockers,
+    UnresolvedDupVars = n_unresolved_duplicate_variables_after,
+    NewUnresolvedDupVars = n_new_duplicate_variables,
+    InheritedUnresolvedDupVars = n_inherited_duplicate_variables,
+    PreExistingUnresolvedDupVars = n_unresolved_duplicate_variables_before,
     KeyHarmonization = key_harmonization_note,
+    DuplicateVariableNote = duplicate_variable_note,
     Note = status_note
   )
+
+  ############################################################
+  ## Summary table
+  ############################################################
 
   summary_df <- tibble::tibble(
     Metric = c(
@@ -286,66 +577,106 @@ safe_merge <- function(df_before,
       "Rows (before -> after)",
       "Columns (before -> after)",
       "Columns added (expected vs actual)",
+      "Expected relationship",
+      "Detected relationship",
+      "Relationship matches expected",
       "Keys matched",
       "Match rate",
-      "Duplicate key groups",
+      "Duplicate key blockers",
+      "Duplicate key groups left/right/merged",
+      "Unresolved duplicate variables before merge",
+      "Unresolved duplicate variables after merge",
+      "New unresolved duplicate variables",
+      "Inherited unresolved duplicate variables",
+      "Overlapping variables before merge",
       "Key harmonization",
+      "Duplicate variable note",
       "Note"
     ),
     Value = c(
-      status_label,
+      merge_status,
       paste0(nrow(df_before_join), " -> ", nrow(df_after)),
       paste0(ncol(df_before_join), " -> ", ncol(df_after)),
       paste0("expected +", expected_cols_added, "; actual +", actual_cols_added),
+      expected_relationship,
+      summary_row$DetectedRelationship,
+      as.character(relationship_matches_expected),
       paste0(summary_row$MatchingKeys, " / ", summary_row$LeftUniqueKeys),
       ifelse(
         is.na(match_rate),
         NA_character_,
         paste0(round(100 * match_rate, 1), "%")
       ),
-      as.character(duplicate_key_groups),
+      as.character(duplicate_key_blockers),
+      paste0(
+        summary_row$DuplicateKeyGroups_Left,
+        " / ",
+        summary_row$DuplicateKeyGroups_Right,
+        " / ",
+        summary_row$DuplicateKeyGroups_Merged
+      ),
+      as.character(n_unresolved_duplicate_variables_before),
+      as.character(n_unresolved_duplicate_variables_after),
+      as.character(n_new_duplicate_variables),
+      as.character(n_inherited_duplicate_variables),
+      as.character(nrow(overlapping_variables_before_merge)),
       key_harmonization_note,
+      duplicate_variable_note,
       status_note
     )
   )
 
-  summary_display <- summary_df
-
-  if (requireNamespace("kableExtra", quietly = TRUE)) {
-    summary_display$Value[summary_display$Metric == "Status"] <-
-      kableExtra::cell_spec(
-        summary_display$Value[summary_display$Metric == "Status"],
-        bold = TRUE,
-        color = "white",
-        background = status_background
-      )
-
-    summary_kable <- summary_display %>%
-      knitr::kable(
-        caption = name,
-        escape = FALSE,
-        align = c("l", "l")
-      ) %>%
-      kableExtra::kable_styling(
-        full_width = FALSE
-      ) %>%
-      kableExtra::row_spec(
-        1,
-        bold = TRUE
-      )
-  } else {
-    summary_kable <- knitr::kable(
-      summary_df,
+  summary_kable <- summary_df %>%
+    knitr::kable(
       caption = name,
+      escape = TRUE,
       align = c("l", "l")
     )
+
+  if (requireNamespace("kableExtra", quietly = TRUE)) {
+    summary_kable <- summary_kable %>%
+      kableExtra::kable_styling(full_width = FALSE) %>%
+      kableExtra::row_spec(1, bold = TRUE)
   }
+
+  ############################################################
+  ## Add enhanced diagnostics to validation object
+  ############################################################
 
   validation$KeyHarmonization <- key_report
   validation$SummaryTable <- summary_df
   validation$MergeStatus <- merge_status
   validation$MergeReadyForAnalysis <- ready_for_analysis
   validation$MergeNote <- status_note
+
+  validation$DuplicateVariableAudit <- list(
+    Before = unresolved_duplicate_variables_before,
+    After = unresolved_duplicate_variables_after,
+    New = new_duplicate_variables,
+    Inherited = inherited_duplicate_variables,
+    OverlappingVariablesBeforeMerge = overlapping_variables_before_merge
+  )
+
+  validation$DuplicateVariableSummary <- tibble::tibble(
+    Metric = c(
+      "Before",
+      "After",
+      "New",
+      "Inherited",
+      "Overlapping variables before merge"
+    ),
+    Count = c(
+      n_unresolved_duplicate_variables_before,
+      n_unresolved_duplicate_variables_after,
+      n_new_duplicate_variables,
+      n_inherited_duplicate_variables,
+      nrow(overlapping_variables_before_merge)
+    )
+  )
+
+  ############################################################
+  ## Return
+  ############################################################
 
   list(
     data = df_after,

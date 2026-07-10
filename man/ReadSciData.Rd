@@ -17,6 +17,7 @@ ReadSciData(
   delim = NULL,
   repair_names = TRUE,
   inspect_styles = FALSE,
+  fast_delimited = TRUE,
   ...
 )
 }
@@ -50,6 +51,11 @@ names after import.}
 
 \item{inspect_styles}{Logical. If \code{TRUE}, inspect Excel workbook formatting.
 This can be slower and noisier for large workbooks.}
+
+\item{fast_delimited}{Logical. If \code{TRUE}, use \code{data.table::fread()} for
+delimited text files when available and when no extra reader arguments are
+supplied through \code{...}. This is usually much faster than \code{readr} for large
+\code{.csv}, \code{.tsv}, and \code{.txt} files.}
 
 \item{...}{Additional arguments passed to the underlying reader.}
 }

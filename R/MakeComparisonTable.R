@@ -1247,7 +1247,12 @@ MakeComparisonTable <- function(data,
 
     if (nrow(pw_long) > 0) {
       contrast_levels <- unique(pw_long$contrast_label)
-      safe_names <- make.unique(paste0("pw_", make.names(contrast_levels)))
+      # Sequential internal column names. The user-facing label is applied later
+      # via modify_header(), so these names only need to be unique and safe.
+      # Avoid make.names() here: contrast labels like "3 - 1" become "X3...1",
+      # and the trailing "...1" collides with tidyverse name-repair, which breaks
+      # later tibble round-trips (e.g. gtsummary::as_kable_extra()).
+      safe_names <- paste0("pw_", seq_along(contrast_levels))
 
       map_cols <- tibble::tibble(
         contrast_label = contrast_levels,

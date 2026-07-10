@@ -12,18 +12,20 @@
 #'   outcomes. `"lm"` and `"logistic"` force one model family for all outcomes.
 #' @param LogisticExponentiate Logical. If `TRUE`, logistic regression estimates
 #'   are exponentiated and reported as odds ratios.
+#' @param ReturnModels Logical. If `TRUE`, return fitted model objects in
+#'   `ModelSummaries`. Default is `FALSE` to keep large screening runs lighter.
 #' @importFrom sjlabelled get_label set_label
-#' @importFrom broom.helpers tidy_plus_plus
 #' @return A list containing:
-#'   - FormattedTable: A merged table with formatted regression results
-#'   - LargeTable: A merged table with unformatted regression results
+#'   - FormattedTable: A `gt` table with formatted regression results
+#'   - LargeTable: A `gt` table with unformatted regression results
 #'   - Results: A tidy dataframe with one row per estimated term. Columns:
 #'     `Outcome`, `OutcomeLabel`, `OutcomeFamily`, `EffectType`, `Predictor`,
 #'     `PredictorLabel`, `Term`, `Level`, `TermLabel`, `N`, `Estimate`,
 #'     `StdError`, `ConfLow`, `ConfHigh`, `PValue`, `Significant`, and
 #'     `ReferenceValue`. This dataframe can be filtered and passed directly to
 #'     [PlotForestFromTable()].
-#'   - ModelSummaries: A list of fitted model objects
+#'   - ModelSummaries: A list of fitted model objects when `ReturnModels = TRUE`,
+#'     otherwise `NULL`
 #'   - Metadata: Outcome families and analysis settings
 #' @param Data \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
 #' @param OutcomeVars \strong{Deprecated} (since 19.15.0). Use \code{outcome_vars} instead.
@@ -38,6 +40,7 @@ MakeUnivariateRegressionTable <- function(data,
     Standardize = FALSE,
     Method = c("auto", "lm", "logistic"),
     LogisticExponentiate = TRUE,
+    ReturnModels = FALSE,
     Data = lifecycle::deprecated(),
     OutcomeVars = lifecycle::deprecated(),
     PredictorVars = lifecycle::deprecated(),
@@ -84,10 +87,13 @@ MakeUnivariateRegressionTable <- function(data,
   if (!is.logical(LogisticExponentiate) || length(LogisticExponentiate) != 1) {
     stop("LogisticExponentiate must be TRUE or FALSE.")
   }
-  if (!requireNamespace("broom.helpers", quietly = TRUE)) {
+  if (!is.logical(ReturnModels) || length(ReturnModels) != 1) {
+    stop("ReturnModels must be TRUE or FALSE.")
+  }
+  if (!requireNamespace("gt", quietly = TRUE)) {
     stop(
-      "Package 'broom.helpers' (>= 1.20.0) is required by MakeUnivariateRegressionTable(). ",
-      "Install it with install.packages('broom.helpers')."
+      "Package 'gt' is required by MakeUnivariateRegressionTable(). ",
+      "Install it with install.packages('gt')."
     )
   }
 
@@ -97,9 +103,7 @@ MakeUnivariateRegressionTable <- function(data,
     stop("The following variables were not found in Data: ", paste(missing_vars, collapse = ", "))
   }
 
-  Wide_tbl_list <- list()
   Wide_mod_list <- list()
-  Wide_tblformatted_list <- list()
   results_list <- list()
   outcome_metadata <- list()
 
@@ -110,9 +114,7 @@ MakeUnivariateRegressionTable <- function(data,
     model_data_full <- Data
     model_data_full[[YVar]] <- outcome_info$Value
 
-    tbl_list <- list()
     mod_list <- list()
-    tblformatted_list <- list()
     for (xVarIndex in seq_along(PredictorVars)) {
       xVar <- PredictorVars[xVarIndex]
       tryCatch(expr = {
@@ -135,44 +137,105 @@ MakeUnivariateRegressionTable <- function(data,
         } else {
           stats::lm(formula = f, data = ModelData)
         }
-        mod_list[[xVar]] <- mod
-        labels <- get_label(Data, def.value = colnames(Data))
+        if (ReturnModels) {
+          mod_list[[xVar]] <- mod
+        }
+
+        model_summary <- summary(mod)
+        coefficient_table <- as.data.frame(model_summary$coefficients)
+        coefficient_table$Term <- rownames(coefficient_table)
+        rownames(coefficient_table) <- NULL
+
+        if (outcome_family == "logistic") {
+          estimate_col <- "Estimate"
+          std_error_col <- "Std. Error"
+          p_col <- "Pr(>|z|)"
+          critical_value <- stats::qnorm(0.975)
+        } else {
+          estimate_col <- "Estimate"
+          std_error_col <- "Std. Error"
+          p_col <- "Pr(>|t|)"
+          critical_value <- stats::qt(0.975, df = stats::df.residual(mod))
+        }
+
+        labels <- sjlabelled::get_label(Data, def.value = colnames(Data))
         labels <- labels[c(PredictorVars, OutcomeVars)]
-        label_list <- setNames(as.list(labels), c(PredictorVars,
-                                                  OutcomeVars))
-        modTableP <- tbl_regression(mod, pvalue_fun = ~style_pvalue(.x,
-                                                                    digits = 2), label = label_list[xVar],
-                                     exponentiate = outcome_family == "logistic" && LogisticExponentiate) %>%
-          bold_p() %>% bold_labels() %>% italicize_levels()
-        modTableP$table_body <- modTableP$table_body %>%
-          filter(variable %!in% Covars)
-        modTableP$table_body$outcome_family <- outcome_family
-        modTableP$table_body$effect_type <- ifelse(
+        labels <- stats::setNames(as.character(labels), c(PredictorVars, OutcomeVars))
+        predictor_label <- labels[[xVar]]
+        effect_type <- ifelse(
           outcome_family == "logistic" && LogisticExponentiate,
           "Odds ratio",
           "Estimate"
         )
-        modTableP$table_body$var_label <- as.character(modTableP$table_body$var_label)
-        tbl_list[[xVar]] <- modTableP
-        modTableCombined <- modTableP %>% add_significance_stars() %>%
-          modify_table_styling(columns = "estimate",
-                               cols_merge_pattern = "{estimate} ({std.error}){stars}")
-        tblformatted_list[[xVar]] <- modTableCombined
+
+        model_terms <- attr(stats::terms(mod), "term.labels")
+        keep_terms <- model_terms[model_terms %!in% Covars]
+        keep_rows <- coefficient_table$Term %in% keep_terms
+        if (length(keep_terms) > 0) {
+          keep_rows <- keep_rows | startsWith(coefficient_table$Term, paste0(keep_terms, ""))
+        }
+        coefficient_table <- coefficient_table[keep_rows, , drop = FALSE]
+
+        if (nrow(coefficient_table) == 0) {
+          return(NULL)
+        }
+
+        raw_estimate <- coefficient_table[[estimate_col]]
+        std_error <- coefficient_table[[std_error_col]]
+        conf_low <- raw_estimate - critical_value * std_error
+        conf_high <- raw_estimate + critical_value * std_error
+        estimate <- raw_estimate
+
+        if (outcome_family == "logistic" && LogisticExponentiate) {
+          estimate <- exp(raw_estimate)
+          conf_low <- exp(conf_low)
+          conf_high <- exp(conf_high)
+        }
+
+        term_label <- coefficient_table$Term
+        level <- rep(NA_character_, nrow(coefficient_table))
+        if (is.factor(ModelData[[xVar]]) || is.character(ModelData[[xVar]])) {
+          level <- sub(paste0("^", xVar), "", coefficient_table$Term)
+          level[level == coefficient_table$Term | level == ""] <- NA_character_
+          term_label <- ifelse(
+            !is.na(level),
+            paste0(predictor_label, " : ", level),
+            predictor_label
+          )
+        } else {
+          term_label <- rep(predictor_label, nrow(coefficient_table))
+        }
+
+        results_list[[length(results_list) + 1]] <- data.frame(
+          Outcome = YVar,
+          OutcomeLabel = sjlabelled::get_label(Data[[YVar]], def.value = YVar) %>% as.character(),
+          OutcomeFamily = outcome_family,
+          EffectType = effect_type,
+          Predictor = xVar,
+          PredictorLabel = predictor_label,
+          Term = coefficient_table$Term,
+          Level = level,
+          TermLabel = term_label,
+          N = stats::nobs(mod),
+          Estimate = estimate,
+          StdError = std_error,
+          ConfLow = conf_low,
+          ConfHigh = conf_high,
+          PValue = coefficient_table[[p_col]],
+          Significant = coefficient_table[[p_col]] < 0.05,
+          ReferenceValue = ifelse(effect_type == "Odds ratio", 1, 0),
+          stringsAsFactors = FALSE,
+          row.names = NULL
+        )
       }, error = function(e) {
         stop(paste("Error processing", YVar, "and", xVar,
                    ": ", conditionMessage(e)))
       })
     }
-    Wide_tbl_list[[YVar]] <- tbl_stack(tbl_list) %>% remove_row_type(type = "reference")
-    Wide_mod_list[[YVar]] <- mod_list
-    Wide_tblformatted_list[[YVar]] <- tbl_stack(tblformatted_list) %>%
-      remove_row_type(type = "reference")
+    if (ReturnModels) {
+      Wide_mod_list[[YVar]] <- mod_list
+    }
     outcome_label <- sjlabelled::get_label(Data[[YVar]], def.value = YVar) %>% as.character()
-    results_list[[YVar]] <- ScidrUnivariateResultsFromBody(
-      Wide_tbl_list[[YVar]]$table_body,
-      outcome = YVar,
-      outcome_label = outcome_label
-    )
     outcome_metadata[[YVar]] <- data.frame(
       Outcome = YVar,
       OutcomeLabel = outcome_label,
@@ -182,19 +245,10 @@ MakeUnivariateRegressionTable <- function(data,
       stringsAsFactors = FALSE
     )
   }
-  s <- vapply(
-    OutcomeVars,
-    function(var) {
-      # for each var: if it has an sjlabel, use it; otherwise fall back to the var name
-      sjlabelled::get_label(Data[[var]], def.value = var) %>% as.character()
-    },
-    FUN.VALUE = character(1),
-    USE.NAMES = FALSE
-  )
 
-  FinalTable <- tbl_merge(Wide_tbl_list, tab_spanner = unname(s))
-  FinalFormattedTable <- tbl_merge(Wide_tblformatted_list,
-                                   tab_spanner = unname(s))
+  results <- dplyr::bind_rows(results_list)
+  FinalTable <- ScidrUnivariateGtTable(results, formatted = FALSE)
+  FinalFormattedTable <- ScidrUnivariateGtTable(results, formatted = TRUE)
 
   metadata <- list(
     Outcomes = dplyr::bind_rows(outcome_metadata),
@@ -204,13 +258,15 @@ MakeUnivariateRegressionTable <- function(data,
       PredictorVars = PredictorVars,
       Covars = Covars,
       Standardize = Standardize,
-      LogisticExponentiate = LogisticExponentiate
+      LogisticExponentiate = LogisticExponentiate,
+      ReturnModels = ReturnModels
     )
   )
 
   return(list(FormattedTable = FinalFormattedTable, LargeTable = FinalTable,
-              Results = dplyr::bind_rows(results_list),
-              ModelSummaries = Wide_mod_list, Metadata = metadata))
+              Results = results,
+              ModelSummaries = if (ReturnModels) Wide_mod_list else NULL,
+              Metadata = metadata))
 }
 
 #' @description `UnivariateRegressionTable()` was renamed to
@@ -226,6 +282,7 @@ UnivariateRegressionTable <- function(data,
     Standardize = FALSE,
     Method = c("auto", "lm", "logistic"),
     LogisticExponentiate = TRUE,
+    ReturnModels = FALSE,
     Data = lifecycle::deprecated(),
     OutcomeVars = lifecycle::deprecated(),
     PredictorVars = lifecycle::deprecated(),
@@ -236,34 +293,87 @@ UnivariateRegressionTable <- function(data,
   eval.parent(call)
 }
 
-ScidrUnivariateResultsFromBody <- function(body, outcome, outcome_label) {
-  rows <- body[!is.na(body$estimate), , drop = FALSE]
-  n_col <- intersect(c("N_obs", "N"), names(rows))
-  data.frame(
-    Outcome = outcome,
-    OutcomeLabel = outcome_label,
-    OutcomeFamily = rows$outcome_family,
-    EffectType = rows$effect_type,
-    Predictor = rows$variable,
-    PredictorLabel = rows$var_label,
-    Term = if ("term" %in% names(rows)) rows$term else NA_character_,
-    Level = ifelse(rows$row_type == "level", rows$label, NA_character_),
-    TermLabel = ifelse(
-      !is.na(rows$label) & rows$label != rows$var_label,
-      paste0(rows$var_label, " : ", rows$label),
-      rows$var_label
-    ),
-    N = if (length(n_col) > 0) as.numeric(rows[[n_col[[1]]]]) else NA_real_,
-    Estimate = rows$estimate,
-    StdError = rows$std.error,
-    ConfLow = rows$conf.low,
-    ConfHigh = rows$conf.high,
-    PValue = rows$p.value,
-    Significant = rows$p.value < 0.05,
-    ReferenceValue = ifelse(rows$effect_type == "Odds ratio", 1, 0),
-    stringsAsFactors = FALSE,
-    row.names = NULL
-  )
+ScidrUnivariateGtTable <- function(results, formatted = TRUE) {
+  table_data <- results %>%
+    dplyr::mutate(
+      Estimate_CI = paste0(
+        formatC(.data$Estimate, digits = 3, format = "fg"),
+        " (",
+        formatC(.data$ConfLow, digits = 3, format = "fg"),
+        ", ",
+        formatC(.data$ConfHigh, digits = 3, format = "fg"),
+        ")"
+      ),
+      P = dplyr::case_when(
+        is.na(.data$PValue) ~ NA_character_,
+        .data$PValue < 0.001 ~ "<0.001",
+        TRUE ~ formatC(.data$PValue, digits = 2, format = "fg")
+      )
+    )
+
+  if (formatted) {
+    table_data <- table_data %>%
+      dplyr::select(
+        OutcomeLabel,
+        TermLabel,
+        EffectType,
+        N,
+        Estimate_CI,
+        P,
+        Significant
+      )
+
+    out <- gt::gt(table_data, groupname_col = "OutcomeLabel") %>%
+      gt::cols_label(
+        TermLabel = "Variable",
+        EffectType = "Effect",
+        N = "N",
+        Estimate_CI = "Estimate (95% CI)",
+        P = "p-value"
+      ) %>%
+      gt::cols_hide(columns = "Significant") %>%
+      gt::tab_style(
+        style = gt::cell_text(weight = "bold"),
+        locations = gt::cells_body(
+          columns = "P",
+          rows = Significant
+        )
+      )
+  } else {
+    table_data <- table_data %>%
+      dplyr::select(
+        Outcome,
+        OutcomeLabel,
+        TermLabel,
+        EffectType,
+        N,
+        Estimate,
+        StdError,
+        ConfLow,
+        ConfHigh,
+        PValue
+      )
+
+    out <- gt::gt(table_data, groupname_col = "OutcomeLabel") %>%
+      gt::cols_label(
+        Outcome = "Outcome",
+        TermLabel = "Variable",
+        EffectType = "Effect",
+        N = "N",
+        Estimate = "Estimate",
+        StdError = "SE",
+        ConfLow = "95% CI Low",
+        ConfHigh = "95% CI High",
+        PValue = "p-value"
+      ) %>%
+      gt::fmt_number(
+        columns = c("Estimate", "StdError", "ConfLow", "ConfHigh"),
+        decimals = 3
+      ) %>%
+      gt::fmt_number(columns = "PValue", decimals = 3)
+  }
+
+  out
 }
 
 ScidrUnivariateOutcomeFamily <- function(x, outcome, method) {

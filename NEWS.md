@@ -1,3 +1,11 @@
+# SciDataReportR 20.12.0
+
+* `PlotVolcanoEffects()` now reports more detail in its `ResultsTable` and point tooltips. Continuous outcomes gain `R` (zero-order Pearson correlation) and `AdjustedR` (covariate-adjusted partial correlation). Two-group categorical outcomes gain `Group1Level`, `Group2Level`, `Group1Mean`, and `Group2Mean` (raw predictor means within each group). These values also appear in the `Tooltip` column so they show up when the plot is passed to `plotly::ggplotly(tooltip = "text")`.
+* New `FreezeTableHeader()` wraps a `gtsummary` table (or data frame) so its header row stays frozen while scrolling long tables in HTML Quarto/R Markdown output.
+* `MakeComparisonTable()` now uses safe internal names for its pairwise columns. Previously contrast labels such as `"3 - 1"` produced column names like `pw_X3...1`, whose trailing `...1` collided with tidyverse name-repair and broke downstream tibble round-trips (for example `gtsummary::as_kable_extra()`, and therefore `FreezeTableHeader()`). Displayed contrast headers are unchanged.
+* `MakeUnivariateRegressionTable()` now extracts regression results directly from model coefficient tables and formats the final display with `gt`, avoiding the slow per-model `gtsummary::tbl_regression()` path. Fitted model objects are now skipped by default; set `ReturnModels = TRUE` to include them in `ModelSummaries`.
+* `ReadSciData()` now uses `data.table::fread()` for ordinary delimited files when available, which substantially speeds up large `.csv`, `.tsv`, and `.txt` imports. Set `fast_delimited = FALSE` to force the previous `readr` path.
+
 # SciDataReportR 20.11.0
 
 # SciDataReportR 20.10.0

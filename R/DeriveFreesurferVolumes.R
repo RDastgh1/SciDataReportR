@@ -3,21 +3,32 @@
 #' Automatically derives bilateral Freesurfer volume measures from ASEG and DKT
 #' outputs, then creates intracranial-volume-adjusted ratios.
 #'
-#' This function is designed for Freesurfer data frames that already contain
-#' cleaned variable names such as:
+#' This function is designed for Freesurfer data frames that contain ASEG,
+#' DKT, and global Freesurfer volume variables. It supports both native
+#' Freesurfer-style ASEG names using hyphens and cleaned names using
+#' underscores.
 #'
-#' * `Left_Hippocampus`
-#' * `Right_Hippocampus`
+#' Supported ASEG-style bilateral pairs include names such as:
+#'
+#' * `Left-Hippocampus`
+#' * `Right-Hippocampus`
+#' * `Left_Caudate`
+#' * `Right_Caudate`
+#'
+#' Supported DKT-style bilateral cortical pairs include names such as:
+#'
 #' * `lh_fusiform_volume`
 #' * `rh_fusiform_volume`
+#'
+#' Supported intracranial volume columns are:
+#'
 #' * `EstimatedTotalIntraCranialVol`
 #' * `eTIV`
 #'
-#' The function detects:
-#'
-#' * ASEG-style bilateral pairs using `Left_` and `Right_`
-#' * DKT-style bilateral cortical pairs using `lh_` and `rh_`
-#' * selected global Freesurfer volume variables
+#' If both `EstimatedTotalIntraCranialVol` and `eTIV` are present, the function
+#' checks that they are equivalent before deriving ICV-adjusted variables. If
+#' the two columns differ, the function stops and asks the user to resolve which
+#' intracranial volume variable should be used.
 #'
 #' Bilateral totals are computed as:
 #'
@@ -26,11 +37,6 @@
 #' ICV-adjusted ratios are computed as:
 #'
 #' `volume / intracranial volume`
-#'
-#' If both `EstimatedTotalIntraCranialVol` and `eTIV` are present, the function
-#' checks that they are equivalent before deriving ICV-adjusted variables. If the
-#' two columns differ, the function stops and asks the user to resolve which
-#' intracranial volume variable should be used.
 #'
 #' The function returns only the newly derived variables, not the original data.
 #' This makes it convenient to append the derived columns with `cbind()` or
@@ -41,17 +47,21 @@
 #'   Default is `TRUE`.
 #'
 #' @return A data frame containing only newly derived variables, with the same
-#' number of rows as `data`.
+#'   number of rows as `data`. A derivation log is stored in the attribute
+#'   `"Freesurfer_derivation_log"`.
 #'
 #' @examples
 #' \dontrun{
-#' fs_derived <- DeriveFreesurferVolumes(df_Freesurfer)
+#' fs_derived <- DeriveFreesurferVolumes(df_freesurfer)
 #'
-#' df_Freesurfer <- cbind(
-#'   df_Freesurfer,
-#'   DeriveFreesurferVolumes(df_Freesurfer)
+#' df_freesurfer <- dplyr::bind_cols(
+#'   df_freesurfer,
+#'   DeriveFreesurferVolumes(df_freesurfer)
 #' )
+#'
+#' attr(fs_derived, "Freesurfer_derivation_log")
 #' }
+#'
 #' @export
 DeriveFreesurferVolumes <- function(
   data,
@@ -74,6 +84,36 @@ DeriveFreesurferVolumes <- function(
       "`verbose` must be either TRUE or FALSE.",
       call. = FALSE
     )
+  }
+
+  ############################################################
+  ## Internal helper functions
+  ############################################################
+
+  clean_output_name <- function(x) {
+    x <- gsub("-", "_", x)
+    x <- gsub("[^A-Za-z0-9_]", "_", x)
+    x <- gsub("_+", "_", x)
+    x <- gsub("^_|_$", "", x)
+    x
+  }
+
+  get_aseg_side <- function(x) {
+    ifelse(
+      grepl("^Left[-_]", x),
+      "Left",
+      ifelse(
+        grepl("^Right[-_]", x),
+        "Right",
+        NA_character_
+      )
+    )
+  }
+
+  get_aseg_structure <- function(x) {
+    structure <- sub("^Left[-_]", "", x)
+    structure <- sub("^Right[-_]", "", structure)
+    structure
   }
 
   ############################################################
@@ -173,81 +213,101 @@ DeriveFreesurferVolumes <- function(
   unmatched_dkt_left <- character()
   unmatched_dkt_right <- character()
 
+  skipped_non_numeric_aseg <- character()
+  skipped_non_numeric_dkt <- character()
+  skipped_non_numeric_global <- character()
+
   ############################################################
   ## ASEG bilateral totals
   ##
-  ## Example:
+  ## Supports:
+  ## Left-Hippocampus + Right-Hippocampus = Hippocampus_total
   ## Left_Hippocampus + Right_Hippocampus = Hippocampus_total
   ############################################################
 
-  left_cols <- grep(
-    "^Left_",
-    names(data),
-    value = TRUE
-  )
+  aseg_cols <- names(data)[grepl("^(Left|Right)[-_]", names(data))]
 
-  right_cols <- grep(
-    "^Right_",
-    names(data),
-    value = TRUE
-  )
+  if (length(aseg_cols) > 0) {
 
-  for (left_col in left_cols) {
-
-    structure <- sub(
-      "^Left_",
-      "",
-      left_col
+    aseg_map <- data.frame(
+      original_col = aseg_cols,
+      side = get_aseg_side(aseg_cols),
+      structure_raw = get_aseg_structure(aseg_cols),
+      stringsAsFactors = FALSE
     )
 
-    right_col <- paste0(
-      "Right_",
-      structure
-    )
+    aseg_map$structure_key <- clean_output_name(aseg_map$structure_raw)
 
-    if (!right_col %in% names(data)) {
-      unmatched_aseg_left <- c(
-        unmatched_aseg_left,
-        left_col
+    left_map <- aseg_map[aseg_map$side == "Left", , drop = FALSE]
+    right_map <- aseg_map[aseg_map$side == "Right", , drop = FALSE]
+
+    for (i in seq_len(nrow(left_map))) {
+
+      left_col <- left_map$original_col[i]
+      structure_key <- left_map$structure_key[i]
+
+      matching_right <- right_map$original_col[
+        right_map$structure_key == structure_key
+      ]
+
+      if (length(matching_right) == 0) {
+        unmatched_aseg_left <- c(
+          unmatched_aseg_left,
+          left_col
+        )
+        next
+      }
+
+      if (length(matching_right) > 1) {
+        stop(
+          paste(
+            "Multiple right-side ASEG matches were found for",
+            paste0("`", left_col, "`."),
+            "Please inspect duplicated or inconsistently named Freesurfer columns."
+          ),
+          call. = FALSE
+        )
+      }
+
+      right_col <- matching_right[1]
+
+      if (!is.numeric(data[[left_col]]) || !is.numeric(data[[right_col]])) {
+        skipped_non_numeric_aseg <- c(
+          skipped_non_numeric_aseg,
+          left_col,
+          right_col
+        )
+        next
+      }
+
+      new_col <- paste0(
+        structure_key,
+        "_total"
       )
-      next
+
+      out[[new_col]] <- data[[left_col]] + data[[right_col]]
+
+      aseg_total_cols <- c(
+        aseg_total_cols,
+        new_col
+      )
     }
 
-    if (!is.numeric(data[[left_col]]) || !is.numeric(data[[right_col]])) {
-      next
-    }
+    for (i in seq_len(nrow(right_map))) {
 
-    new_col <- paste0(
-      structure,
-      "_total"
-    )
+      right_col <- right_map$original_col[i]
+      structure_key <- right_map$structure_key[i]
 
-    out[[new_col]] <- data[[left_col]] + data[[right_col]]
+      matching_left <- left_map$original_col[
+        left_map$structure_key == structure_key
+      ]
 
-    aseg_total_cols <- c(
-      aseg_total_cols,
-      new_col
-    )
-  }
-
-  for (right_col in right_cols) {
-
-    structure <- sub(
-      "^Right_",
-      "",
-      right_col
-    )
-
-    left_col <- paste0(
-      "Left_",
-      structure
-    )
-
-    if (!left_col %in% names(data)) {
-      unmatched_aseg_right <- c(
-        unmatched_aseg_right,
-        right_col
-      )
+      if (length(matching_left) == 0) {
+        unmatched_aseg_right <- c(
+          unmatched_aseg_right,
+          right_col
+        )
+      }
     }
   }
 
@@ -292,6 +352,11 @@ DeriveFreesurferVolumes <- function(
     }
 
     if (!is.numeric(data[[lh_col]]) || !is.numeric(data[[rh_col]])) {
+      skipped_non_numeric_dkt <- c(
+        skipped_non_numeric_dkt,
+        lh_col,
+        rh_col
+      )
       next
     }
 
@@ -300,6 +365,8 @@ DeriveFreesurferVolumes <- function(
       "",
       region
     )
+
+    region_name <- clean_output_name(region_name)
 
     new_col <- paste0(
       region_name,
@@ -362,6 +429,10 @@ DeriveFreesurferVolumes <- function(
   for (global_col in global_volumes) {
 
     if (!is.numeric(data[[global_col]])) {
+      skipped_non_numeric_global <- c(
+        skipped_non_numeric_global,
+        global_col
+      )
       next
     }
 
@@ -429,7 +500,10 @@ DeriveFreesurferVolumes <- function(
     unmatched_aseg_left = unmatched_aseg_left,
     unmatched_aseg_right = unmatched_aseg_right,
     unmatched_dkt_left = unmatched_dkt_left,
-    unmatched_dkt_right = unmatched_dkt_right
+    unmatched_dkt_right = unmatched_dkt_right,
+    skipped_non_numeric_aseg = unique(skipped_non_numeric_aseg),
+    skipped_non_numeric_dkt = unique(skipped_non_numeric_dkt),
+    skipped_non_numeric_global = unique(skipped_non_numeric_global)
   )
 
   attr(out, "Freesurfer_derivation_log") <- derivation_log
@@ -453,8 +527,17 @@ DeriveFreesurferVolumes <- function(
       length(unmatched_dkt_left) +
       length(unmatched_dkt_right)
 
+    n_skipped_non_numeric <- length(unique(skipped_non_numeric_aseg)) +
+      length(unique(skipped_non_numeric_dkt)) +
+      length(unique(skipped_non_numeric_global))
+
     if (n_unmatched > 0) {
       message("  Unmatched left/right variables: ", n_unmatched)
+      message("  Inspect `attr(output, 'Freesurfer_derivation_log')` for details.")
+    }
+
+    if (n_skipped_non_numeric > 0) {
+      message("  Skipped non-numeric variables: ", n_skipped_non_numeric)
       message("  Inspect `attr(output, 'Freesurfer_derivation_log')` for details.")
     }
   }

@@ -13,6 +13,7 @@ MakeUnivariateRegressionTable(
   Standardize = FALSE,
   Method = c("auto", "lm", "logistic"),
   LogisticExponentiate = TRUE,
+  ReturnModels = FALSE,
   Data = lifecycle::deprecated(),
   OutcomeVars = lifecycle::deprecated(),
   PredictorVars = lifecycle::deprecated(),
@@ -27,6 +28,7 @@ UnivariateRegressionTable(
   Standardize = FALSE,
   Method = c("auto", "lm", "logistic"),
   LogisticExponentiate = TRUE,
+  ReturnModels = FALSE,
   Data = lifecycle::deprecated(),
   OutcomeVars = lifecycle::deprecated(),
   PredictorVars = lifecycle::deprecated(),
@@ -51,6 +53,9 @@ outcomes. \code{"lm"} and \code{"logistic"} force one model family for all outco
 \item{LogisticExponentiate}{Logical. If \code{TRUE}, logistic regression estimates
 are exponentiated and reported as odds ratios.}
 
+\item{ReturnModels}{Logical. If \code{TRUE}, return fitted model objects in
+\code{ModelSummaries}. Default is \code{FALSE} to keep large screening runs lighter.}
+
 \item{Data}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
 
 \item{OutcomeVars}{\strong{Deprecated} (since 19.15.0). Use \code{outcome_vars} instead.}
@@ -62,15 +67,16 @@ are exponentiated and reported as odds ratios.}
 \value{
 A list containing:
 \itemize{
-\item FormattedTable: A merged table with formatted regression results
-\item LargeTable: A merged table with unformatted regression results
+\item FormattedTable: A \code{gt} table with formatted regression results
+\item LargeTable: A \code{gt} table with unformatted regression results
 \item Results: A tidy dataframe with one row per estimated term. Columns:
 \code{Outcome}, \code{OutcomeLabel}, \code{OutcomeFamily}, \code{EffectType}, \code{Predictor},
 \code{PredictorLabel}, \code{Term}, \code{Level}, \code{TermLabel}, \code{N}, \code{Estimate},
 \code{StdError}, \code{ConfLow}, \code{ConfHigh}, \code{PValue}, \code{Significant}, and
 \code{ReferenceValue}. This dataframe can be filtered and passed directly to
 \code{\link[=PlotForestFromTable]{PlotForestFromTable()}}.
-\item ModelSummaries: A list of fitted model objects
+\item ModelSummaries: A list of fitted model objects when \code{ReturnModels = TRUE},
+otherwise \code{NULL}
 \item Metadata: Outcome families and analysis settings
 }
 }

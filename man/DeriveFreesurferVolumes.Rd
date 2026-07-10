@@ -14,30 +14,43 @@ Default is \code{TRUE}.}
 }
 \value{
 A data frame containing only newly derived variables, with the same
-number of rows as \code{data}.
+number of rows as \code{data}. A derivation log is stored in the attribute
+\code{"Freesurfer_derivation_log"}.
 }
 \description{
 Automatically derives bilateral Freesurfer volume measures from ASEG and DKT
 outputs, then creates intracranial-volume-adjusted ratios.
 }
 \details{
-This function is designed for Freesurfer data frames that already contain
-cleaned variable names such as:
+This function is designed for Freesurfer data frames that contain ASEG,
+DKT, and global Freesurfer volume variables. It supports both native
+Freesurfer-style ASEG names using hyphens and cleaned names using
+underscores.
+
+Supported ASEG-style bilateral pairs include names such as:
 \itemize{
-\item \code{Left_Hippocampus}
-\item \code{Right_Hippocampus}
+\item \code{Left-Hippocampus}
+\item \code{Right-Hippocampus}
+\item \code{Left_Caudate}
+\item \code{Right_Caudate}
+}
+
+Supported DKT-style bilateral cortical pairs include names such as:
+\itemize{
 \item \code{lh_fusiform_volume}
 \item \code{rh_fusiform_volume}
+}
+
+Supported intracranial volume columns are:
+\itemize{
 \item \code{EstimatedTotalIntraCranialVol}
 \item \code{eTIV}
 }
 
-The function detects:
-\itemize{
-\item ASEG-style bilateral pairs using \code{Left_} and \code{Right_}
-\item DKT-style bilateral cortical pairs using \code{lh_} and \code{rh_}
-\item selected global Freesurfer volume variables
-}
+If both \code{EstimatedTotalIntraCranialVol} and \code{eTIV} are present, the function
+checks that they are equivalent before deriving ICV-adjusted variables. If
+the two columns differ, the function stops and asks the user to resolve which
+intracranial volume variable should be used.
 
 Bilateral totals are computed as:
 
@@ -47,22 +60,20 @@ ICV-adjusted ratios are computed as:
 
 \verb{volume / intracranial volume}
 
-If both \code{EstimatedTotalIntraCranialVol} and \code{eTIV} are present, the function
-checks that they are equivalent before deriving ICV-adjusted variables. If the
-two columns differ, the function stops and asks the user to resolve which
-intracranial volume variable should be used.
-
 The function returns only the newly derived variables, not the original data.
 This makes it convenient to append the derived columns with \code{cbind()} or
 \code{dplyr::bind_cols()}.
 }
 \examples{
 \dontrun{
-fs_derived <- DeriveFreesurferVolumes(df_Freesurfer)
+fs_derived <- DeriveFreesurferVolumes(df_freesurfer)
 
-df_Freesurfer <- cbind(
-  df_Freesurfer,
-  DeriveFreesurferVolumes(df_Freesurfer)
+df_freesurfer <- dplyr::bind_cols(
+  df_freesurfer,
+  DeriveFreesurferVolumes(df_freesurfer)
 )
+
+attr(fs_derived, "Freesurfer_derivation_log")
 }
+
 }

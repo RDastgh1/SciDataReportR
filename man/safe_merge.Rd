@@ -2,7 +2,7 @@
 % Please edit documentation in R/safe_merge.R
 \name{safe_merge}
 \alias{safe_merge}
-\title{Merge two data frames and validate the result in one step}
+\title{Safely merge two data frames with relationship-aware validation}
 \usage{
 safe_merge(
   df_before,
@@ -16,55 +16,115 @@ safe_merge(
   harmonize_keys = TRUE,
   key_parser = NULL,
   stop_on_failed_numeric = TRUE,
+  expected_relationship = c("one-to-one", "many-to-one", "one-to-many", "many-to-many",
+    "auto"),
+  fail_on_new_duplicate_variables = TRUE,
+  fail_on_inherited_duplicate_variables = FALSE,
   ...
 )
 }
 \arguments{
-\item{df_before}{A data frame. The left dataset that rows are added to.}
+\item{df_before}{Data frame on the left side of the merge.}
 
-\item{df_add}{A data frame. The right dataset being merged in.}
+\item{df_add}{Data frame to add to \code{df_before}.}
 
-\item{by}{Character vector of merge keys. Multiple keys are supported.}
+\item{by}{Character vector of merge key column names.}
 
-\item{name}{Required. A short label for this merge.}
+\item{name}{Single character label used in the merge log and summary table.}
 
-\item{method}{Either \code{"exact"} or \code{"closest_time"}.}
+\item{method}{Merge method. \code{"exact"} uses \code{dplyr::left_join()}.
+\code{"closest_time"} uses \code{Merge_ByClosestTime()}.}
 
-\item{time_var_before}{For \code{method = "closest_time"}, the time variable in
-\code{df_before}.}
+\item{time_var_before}{Required when \code{method = "closest_time"}. Time variable
+in \code{df_before}.}
 
-\item{time_var_add}{For \code{method = "closest_time"}, the time variable in
+\item{time_var_add}{Required when \code{method = "closest_time"}. Time variable in
 \code{df_add}.}
 
-\item{min_match_rate}{Minimum acceptable key match rate before a merge is
-marked as \code{"WARNING"}.}
+\item{min_match_rate}{Numeric between 0 and 1. Merges below this left-key
+match rate are marked as \code{"WARNING"} unless another structural blocker
+makes them \code{"FAIL"}.}
 
-\item{harmonize_keys}{Logical. If \code{TRUE}, harmonize merge key types before
-joining.}
+\item{harmonize_keys}{Logical. If \code{TRUE}, keys are harmonized using
+\code{HarmonizeMergeKeys()} before merging.}
 
-\item{key_parser}{Optional named list of parser functions for specific merge
-keys. Names should match values in \code{by}.}
+\item{key_parser}{Optional parser passed to \code{HarmonizeMergeKeys()}.}
 
-\item{stop_on_failed_numeric}{Logical. If \code{TRUE}, stop when one key is
-numeric-like and the other contains values that cannot be safely converted
-to numeric.}
+\item{stop_on_failed_numeric}{Logical passed to \code{HarmonizeMergeKeys()}.}
 
-\item{...}{Additional arguments passed to \code{\link[=Merge_ByClosestTime]{Merge_ByClosestTime()}} when
+\item{expected_relationship}{Character. Expected relationship between
+\code{df_before} and \code{df_add} under \code{by}. Defaults to \code{"one-to-one"} to preserve
+strict historical behavior. One of:
+\itemize{
+\item \code{"one-to-one"}: both sides should be unique by \code{by}.
+\item \code{"many-to-one"}: left side may repeat keys, right side should be
+unique.
+\item \code{"one-to-many"}: left side should be unique, right side may repeat.
+\item \code{"many-to-many"}: both sides may repeat.
+\item \code{"auto"}: infer and report relationship, but do not enforce it.
+}}
+
+\item{fail_on_new_duplicate_variables}{Logical. If \code{TRUE}, unresolved duplicate
+variable pairs introduced by the current merge cause the merge status to be
+\code{"FAIL"}. Default is \code{TRUE}.}
+
+\item{fail_on_inherited_duplicate_variables}{Logical. If \code{TRUE}, unresolved
+duplicate variable pairs already present in \code{df_before} cause the merge
+status to be \code{"FAIL"}. Default is \code{FALSE}.}
+
+\item{...}{Additional arguments passed to \code{Merge_ByClosestTime()} when
 \code{method = "closest_time"}.}
 }
 \value{
-A list with four elements:
-\describe{
-\item{data}{The merged data frame.}
-\item{validation}{The full \code{\link[=ValidateMerge]{ValidateMerge()}} result, including
-\code{KeyHarmonization} and \code{SummaryTable}.}
-\item{log}{A one-row tibble with merge-level status and metrics.}
-\item{summary}{A compact formatted summary table.}
+A list with:
+\itemize{
+\item \code{data}: Merged data frame.
+\item \code{validation}: Full validation object from \code{ValidateMerge()}, with
+additional current-merge-aware duplicate-variable diagnostics.
+\item \code{log}: One-row tibble containing merge log metrics.
+\item \code{summary}: A \code{knitr::kable()} summary table.
 }
 }
 \description{
-Perform a left join or closest-time merge and immediately audit the result
-with \code{\link[=ValidateMerge]{ValidateMerge()}}. \code{safe_merge()} can also harmonize merge key types
-before joining, so common numeric-vs-character key mismatches do not break
-an otherwise valid merge.
+\code{safe_merge()} performs a merge, validates its structure, logs merge metrics,
+and returns the merged data plus validation results. It is designed for
+reproducible database construction pipelines where row count, column count,
+key coverage, duplicate keys, expected merge relationships, and unresolved
+duplicate variables need to be audited every time the merge is run.
+}
+\details{
+The default \code{expected_relationship} is \code{"one-to-one"} to preserve strict
+historical behavior. For longitudinal databases, use \code{"many-to-one"} when
+the left/master data frame has repeated participant IDs because of multiple
+visits and the right/add-on data frame has one row per participant.
+
+Duplicate-variable handling is current-merge aware. If unresolved duplicate
+variable pairs such as \code{sy_x} / \code{sy_y} or \code{sy.x} / \code{sy.y} already exist in
+\code{df_before}, they are classified as inherited duplicate variables. By default,
+inherited duplicate variables are reported but do not cause the current merge
+to fail. New unresolved duplicate variables introduced by the current merge
+are treated as failures by default.
+}
+\examples{
+left <- data.frame(
+  record_id = c(1, 1, 2, 2),
+  visit_type = c(1, 2, 1, 2),
+  age = c(40, 40, 55, 55)
+)
+
+right <- data.frame(
+  record_id = c(1, 2),
+  imaging_score = c(0.4, 0.8)
+)
+
+m <- safe_merge(
+  df_before = left,
+  df_add = right,
+  by = "record_id",
+  name = "Example imaging merge",
+  expected_relationship = "many-to-one"
+)
+
+m$log
+
 }

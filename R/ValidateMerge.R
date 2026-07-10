@@ -1,29 +1,77 @@
-#' Validate a merged dataset against its source datasets
+#' Validate a merge between two source data frames and a merged result
 #'
-#' Audit a merged dataset against the two source datasets used to create it.
-#' This function is designed to catch common merge problems before analysis,
-#' including incompatible key types, duplicate key combinations, incomplete
-#' key coverage, unexpected overlapping variables, unresolved `.x` / `.y`
-#' variables, and value conflicts between duplicated variables.
+#' `ValidateMerge()` audits a completed merge by comparing the left/source data,
+#' right/add-on data, and merged result. It checks key coverage, key uniqueness,
+#' expected merge relationship, row inflation, overlapping non-key variables,
+#' unresolved `.x`/`.y` or `_x`/`_y` columns, and duplicated-variable conflicts.
 #'
-#' This function does not perform a merge. It assumes the user has already
-#' created a merged dataset and wants to check whether the merge can be trusted.
+#' This version supports expected merge relationships. The default is
+#' `"one-to-one"` to preserve strict historical behavior. For longitudinal
+#' databases, use `"many-to-one"` when the left/master data frame is a
+#' participant-visit table and the right/add-on data frame is participant-level.
 #'
-#' @param LeftData A data frame used as one source for the merge.
-#' @param RightData A data frame used as the other source for the merge.
-#' @param MergedData The merged data frame to audit.
-#' @param keys Character vector of key variables intended to define the merge.
-#'   Multiple keys are supported, such as `c("study_id", "visit")`.
-#' @param Keys Deprecated. Use `keys` instead.
+#' @param LeftData A data frame used as the left side of the merge.
+#' @param RightData A data frame used as the right side of the merge.
+#' @param MergedData A data frame produced by merging `LeftData` and `RightData`.
+#' @param keys Character vector of merge key column names.
+#' @param Keys Deprecated. Use `keys`.
+#' @param expected_relationship Character. Expected relationship between
+#'   `LeftData` and `RightData` under `keys`. Defaults to `"one-to-one"` to
+#'   preserve strict historical behavior. One of:
+#'   \itemize{
+#'     \item `"one-to-one"`: left keys and right keys should both be unique.
+#'     \item `"many-to-one"`: left keys may repeat, right keys should be unique.
+#'       This is common when merging participant-level data into a longitudinal
+#'       participant-visit master table by `record_id`.
+#'     \item `"one-to-many"`: left keys should be unique, right keys may repeat.
+#'     \item `"many-to-many"`: both sides may repeat. This is allowed only when
+#'       explicitly expected.
+#'     \item `"auto"`: infer and report relationship, but do not fail solely
+#'       because of duplicate keys or relationship type.
+#'   }
 #'
-#' @return A list with merge validation results.
+#' @return A list containing merge validation summaries, checks, relationship
+#'   audits, duplicate-key audits, coverage tables, overlap audits, duplicated
+#'   variable audits, conflict tables, and suggested actions.
 #'
+#' @examples
+#' left <- data.frame(
+#'   record_id = c(1, 1, 2, 2),
+#'   visit_type = c(1, 2, 1, 2),
+#'   age = c(40, 40, 55, 55)
+#' )
+#'
+#' right <- data.frame(
+#'   record_id = c(1, 2),
+#'   imaging_score = c(0.4, 0.8)
+#' )
+#'
+#' merged <- dplyr::left_join(left, right, by = "record_id")
+#'
+#' validation <- ValidateMerge(
+#'   LeftData = left,
+#'   RightData = right,
+#'   MergedData = merged,
+#'   keys = "record_id",
+#'   expected_relationship = "many-to-one"
+#' )
+#'
+#' validation$Summary
 #' @export
 ValidateMerge <- function(LeftData,
                           RightData,
                           MergedData,
                           keys,
-                          Keys = lifecycle::deprecated()) {
+                          Keys = lifecycle::deprecated(),
+                          expected_relationship = c(
+                            "one-to-one",
+                            "many-to-one",
+                            "one-to-many",
+                            "many-to-many",
+                            "auto"
+                          )) {
+
+  expected_relationship <- match.arg(expected_relationship)
 
   if (lifecycle::is_present(Keys)) {
     lifecycle::deprecate_warn(
@@ -85,7 +133,8 @@ ValidateMerge <- function(LeftData,
         x_name_under <- paste0(key, "_x")
         y_name_under <- paste0(key, "_y")
 
-        if (x_name_dot %in% names(MergedData) && y_name_dot %in% names(MergedData)) {
+        if (x_name_dot %in% names(MergedData) &&
+            y_name_dot %in% names(MergedData)) {
           paste0(
             key,
             " appears to be present as ",
@@ -94,7 +143,8 @@ ValidateMerge <- function(LeftData,
             y_name_dot,
             ". This often happens when the merge was performed using fewer keys than intended."
           )
-        } else if (x_name_under %in% names(MergedData) && y_name_under %in% names(MergedData)) {
+        } else if (x_name_under %in% names(MergedData) &&
+                   y_name_under %in% names(MergedData)) {
           paste0(
             key,
             " appears to be present as ",
@@ -114,8 +164,7 @@ ValidateMerge <- function(LeftData,
       paste(missing_merged, collapse = ", "),
       "\n\n",
       paste(missing_merged_audit, collapse = "\n"),
-      "\n\n",
-      "Check whether the merge was performed with the intended `by = ` variables.",
+      "\n\nCheck whether the merge was performed with the intended `by = ` variables.",
       call. = FALSE
     )
   }
@@ -136,10 +185,7 @@ ValidateMerge <- function(LeftData,
   }
 
   empty_variable_conflicts <- function(keys) {
-    key_cols <- stats::setNames(
-      rep(list(character()), length(keys)),
-      keys
-    )
+    key_cols <- stats::setNames(rep(list(character()), length(keys)), keys)
 
     tibble::tibble(
       !!!key_cols,
@@ -151,12 +197,7 @@ ValidateMerge <- function(LeftData,
   }
 
   empty_key_table <- function(keys) {
-    tibble::as_tibble(
-      stats::setNames(
-        rep(list(character()), length(keys)),
-        keys
-      )
-    )
+    tibble::as_tibble(stats::setNames(rep(list(character()), length(keys)), keys))
   }
 
   key_complete <- function(df, keys) {
@@ -186,12 +227,10 @@ ValidateMerge <- function(LeftData,
     }
 
     df %>%
-      dplyr::distinct(
-        dplyr::across(dplyr::all_of(keys))
-      )
+      dplyr::distinct(dplyr::across(dplyr::all_of(keys)))
   }
 
-  duplicated_key_rows <- function(df, keys) {
+  duplicate_key_groups_table <- function(df, keys) {
     if (nrow(df) == 0) {
       out <- empty_key_table(keys)
       out$.n <- integer()
@@ -199,24 +238,8 @@ ValidateMerge <- function(LeftData,
     }
 
     df %>%
-      dplyr::group_by(
-        dplyr::across(dplyr::all_of(keys))
-      ) %>%
-      dplyr::mutate(.n = dplyr::n()) %>%
-      dplyr::ungroup() %>%
+      dplyr::count(dplyr::across(dplyr::all_of(keys)), name = ".n") %>%
       dplyr::filter(.n > 1)
-  }
-
-  count_duplicate_key_groups <- function(df, keys) {
-    if (nrow(df) == 0) {
-      return(0L)
-    }
-
-    df %>%
-      dplyr::distinct(
-        dplyr::across(dplyr::all_of(keys))
-      ) %>%
-      nrow()
   }
 
   key_types <- tibble::tibble(
@@ -261,23 +284,9 @@ ValidateMerge <- function(LeftData,
   right_keys <- distinct_keys(RightData_keyed, Keys)
   merged_keys <- distinct_keys(MergedData_keyed, Keys)
 
-  matching_keys <- dplyr::inner_join(
-    left_keys,
-    right_keys,
-    by = Keys
-  )
-
-  left_only_keys <- dplyr::anti_join(
-    left_keys,
-    right_keys,
-    by = Keys
-  )
-
-  right_only_keys <- dplyr::anti_join(
-    right_keys,
-    left_keys,
-    by = Keys
-  )
+  matching_keys <- dplyr::inner_join(left_keys, right_keys, by = Keys)
+  left_only_keys <- dplyr::anti_join(left_keys, right_keys, by = Keys)
+  right_only_keys <- dplyr::anti_join(right_keys, left_keys, by = Keys)
 
   id_coverage <- list(
     Matching = matching_keys,
@@ -312,13 +321,13 @@ ValidateMerge <- function(LeftData,
     )
   )
 
-  duplicate_keys_left <- duplicated_key_rows(LeftData_keyed, Keys)
-  duplicate_keys_right <- duplicated_key_rows(RightData_keyed, Keys)
-  duplicate_keys_merged <- duplicated_key_rows(MergedData_keyed, Keys)
+  duplicate_keys_left <- duplicate_key_groups_table(LeftData_keyed, Keys)
+  duplicate_keys_right <- duplicate_key_groups_table(RightData_keyed, Keys)
+  duplicate_keys_merged <- duplicate_key_groups_table(MergedData_keyed, Keys)
 
-  duplicate_key_groups_left <- count_duplicate_key_groups(duplicate_keys_left, Keys)
-  duplicate_key_groups_right <- count_duplicate_key_groups(duplicate_keys_right, Keys)
-  duplicate_key_groups_merged <- count_duplicate_key_groups(duplicate_keys_merged, Keys)
+  duplicate_key_groups_left <- nrow(duplicate_keys_left)
+  duplicate_key_groups_right <- nrow(duplicate_keys_right)
+  duplicate_key_groups_merged <- nrow(duplicate_keys_merged)
 
   duplicate_keys <- list(
     Left = duplicate_keys_left,
@@ -326,15 +335,98 @@ ValidateMerge <- function(LeftData,
     Merged = duplicate_keys_merged
   )
 
-  source_overlap_vars <- intersect(
-    names(LeftData),
-    names(RightData)
+  left_unique <- duplicate_key_groups_left == 0
+  right_unique <- duplicate_key_groups_right == 0
+  merged_unique <- duplicate_key_groups_merged == 0
+
+  detected_relationship <- dplyr::case_when(
+    left_unique & right_unique ~ "one-to-one",
+    !left_unique & right_unique ~ "many-to-one",
+    left_unique & !right_unique ~ "one-to-many",
+    TRUE ~ "many-to-many"
   )
 
-  overlapping_non_key_vars <- setdiff(
-    source_overlap_vars,
-    Keys
+  relationship_matches_expected <- if (expected_relationship == "auto") {
+    TRUE
+  } else {
+    identical(detected_relationship, expected_relationship)
+  }
+
+  relationship_duplicate_blockers <- dplyr::case_when(
+    expected_relationship == "auto" ~ 0L,
+
+    expected_relationship == "one-to-one" ~
+      duplicate_key_groups_left +
+      duplicate_key_groups_right +
+      duplicate_key_groups_merged,
+
+    expected_relationship == "many-to-one" ~
+      duplicate_key_groups_right,
+
+    expected_relationship == "one-to-many" ~
+      duplicate_key_groups_left,
+
+    expected_relationship == "many-to-many" ~ 0L,
+
+    TRUE ~
+      duplicate_key_groups_left +
+      duplicate_key_groups_right +
+      duplicate_key_groups_merged
   )
+
+  relationship_status <- dplyr::case_when(
+    expected_relationship == "auto" ~ "PASS",
+    relationship_matches_expected ~ "PASS",
+    relationship_duplicate_blockers > 0 ~ "FAIL",
+    TRUE ~ "FAIL"
+  )
+
+  relationship_details <- dplyr::case_when(
+    expected_relationship == "auto" ~ paste0(
+      "Detected relationship is ",
+      detected_relationship,
+      ". No expected relationship was enforced."
+    ),
+    relationship_matches_expected ~ paste0(
+      "Detected relationship matches expected_relationship = '",
+      expected_relationship,
+      "'."
+    ),
+    relationship_duplicate_blockers > 0 ~ paste0(
+      "Detected relationship is ",
+      detected_relationship,
+      ", but expected_relationship = '",
+      expected_relationship,
+      "'. Duplicate key blockers: ",
+      relationship_duplicate_blockers,
+      "."
+    ),
+    TRUE ~ paste0(
+      "Detected relationship is ",
+      detected_relationship,
+      ", but expected_relationship = '",
+      expected_relationship,
+      "'."
+    )
+  )
+
+  relationship <- tibble::tibble(
+    Dataset = c("Left", "Right", "Merged"),
+    UniqueKeys = c(left_unique, right_unique, merged_unique),
+    DuplicateKeyGroups = c(
+      duplicate_key_groups_left,
+      duplicate_key_groups_right,
+      duplicate_key_groups_merged
+    ),
+    ExpectedRelationship = expected_relationship,
+    DetectedRelationship = detected_relationship,
+    RelationshipMatchesExpected = relationship_matches_expected,
+    RelationshipDuplicateBlockers = relationship_duplicate_blockers,
+    RelationshipStatus = relationship_status
+  )
+
+  source_overlap_vars <- intersect(names(LeftData), names(RightData))
+  overlapping_non_key_vars <- setdiff(source_overlap_vars, Keys)
 
   overlapping_variables <- tibble::tibble(
     Variable = sort(overlapping_non_key_vars)
@@ -357,10 +449,7 @@ ValidateMerge <- function(LeftData,
       )
     )
 
-  all_source_vars <- sort(unique(c(
-    names(LeftData),
-    names(RightData)
-  )))
+  all_source_vars <- sort(unique(c(names(LeftData), names(RightData))))
 
   overlap_audit <- tibble::tibble(
     Variable = all_source_vars
@@ -380,11 +469,13 @@ ValidateMerge <- function(LeftData,
     x_vars <- grep(paste0("\\", suffix_x, "$"), data_names, value = TRUE)
 
     if (length(x_vars) == 0) {
-      return(tibble::tibble(
-        Variable = character(),
-        XVar = character(),
-        YVar = character()
-      ))
+      return(
+        tibble::tibble(
+          Variable = character(),
+          XVar = character(),
+          YVar = character()
+        )
+      )
     }
 
     purrr::map_dfr(
@@ -422,8 +513,21 @@ ValidateMerge <- function(LeftData,
     dplyr::arrange(Variable)
 
   if (nrow(unresolved_duplicate_variables) == 0) {
-    unresolved_duplicate_variables <- tibble::tibble(
-      Variable = character()
+    unresolved_duplicate_variables <- tibble::tibble(Variable = character())
+  }
+
+  empty_duplicate_variables <- function() {
+    tibble::tibble(
+      Variable = character(),
+      XVariable = character(),
+      YVariable = character(),
+      LeftClass = character(),
+      RightClass = character(),
+      Agreement = numeric(),
+      Conflicts = integer(),
+      MissingnessConflicts = integer(),
+      BothMissing = integer(),
+      TotalRows = integer()
     )
   }
 
@@ -464,10 +568,7 @@ ValidateMerge <- function(LeftData,
 
   if (nrow(duplicate_variables) > 0) {
     suspicious_conflicts <- duplicate_variables %>%
-      dplyr::filter(
-        Agreement < 75 |
-          LeftClass != RightClass
-      ) %>%
+      dplyr::filter(Agreement < 75 | LeftClass != RightClass) %>%
       dplyr::arrange(Variable)
   } else {
     suspicious_conflicts <- empty_duplicate_variables()
@@ -481,10 +582,7 @@ ValidateMerge <- function(LeftData,
         y_var <- duplicate_pairs$YVar[i]
 
         tmp <- MergedData %>%
-          dplyr::select(
-            dplyr::all_of(Keys),
-            dplyr::all_of(c(x_var, y_var))
-          )
+          dplyr::select(dplyr::all_of(Keys), dplyr::all_of(c(x_var, y_var)))
 
         x <- as.character(tmp[[x_var]])
         y <- as.character(tmp[[y_var]])
@@ -526,69 +624,40 @@ ValidateMerge <- function(LeftData,
     variable_conflicts <- empty_variable_conflicts(Keys)
   }
 
-  left_unique <- duplicate_key_groups_left == 0
-  right_unique <- duplicate_key_groups_right == 0
-  merged_unique <- duplicate_key_groups_merged == 0
+  max_source_rows <- max(nrow(LeftData), nrow(RightData))
 
-  relationship_type <- dplyr::case_when(
-    left_unique & right_unique ~ "one-to-one",
-    left_unique & !right_unique ~ "one-to-many",
-    !left_unique & right_unique ~ "many-to-one",
-    TRUE ~ "many-to-many"
+  row_inflation_factor <- ifelse(
+    max_source_rows > 0,
+    round(nrow(MergedData) / max_source_rows, 3),
+    NA_real_
   )
 
-  relationship <- tibble::tibble(
-    Dataset = c("Left", "Right", "Merged"),
-    UniqueKeys = c(
-      left_unique,
-      right_unique,
-      merged_unique
-    ),
-    DuplicateKeyGroups = c(
-      duplicate_key_groups_left,
-      duplicate_key_groups_right,
-      duplicate_key_groups_merged
-    ),
-    Relationship = c(
-      relationship_type,
-      relationship_type,
-      paste0(
-        "Merged result: ",
-        ifelse(merged_unique, "unique keys", "duplicate keys")
-      )
-    )
+  row_count_expected_to_change <- expected_relationship %in% c(
+    "one-to-many",
+    "many-to-many",
+    "auto"
   )
 
-  duplicate_key_total <- duplicate_key_groups_left +
-    duplicate_key_groups_right +
-    duplicate_key_groups_merged
+  row_count_changed <- nrow(MergedData) != nrow(LeftData)
+  row_count_blocker <- row_count_changed && !row_count_expected_to_change
 
   coverage_total <- nrow(left_only_keys) + nrow(right_only_keys)
-
   overlap_total <- nrow(overlapping_variables)
-
   unresolved_duplicate_total <- nrow(unresolved_duplicate_variables)
-
   conflict_total <- nrow(variable_conflicts)
-
   suspicious_conflict_total <- nrow(suspicious_conflicts)
-
   missing_key_total <- missing_key_rows_left +
     missing_key_rows_right +
     missing_key_rows_merged
-
-  row_inflation_factor <- ifelse(
-    max(nrow(LeftData), nrow(RightData)) > 0,
-    round(nrow(MergedData) / max(nrow(LeftData), nrow(RightData)), 3),
-    NA_real_
-  )
 
   checks <- tibble::tibble(
     Check = c(
       "Key Types",
       "Missing Keys",
+      "Expected Relationship",
       "Duplicate Keys",
       "Coverage",
+      "Row Count",
       "Row Inflation",
       "Overlapping Variables",
       "Unresolved Duplicate Variables",
@@ -598,8 +667,10 @@ ValidateMerge <- function(LeftData,
     Count = c(
       key_type_count,
       missing_key_total,
-      duplicate_key_total,
+      relationship_duplicate_blockers,
+      relationship_duplicate_blockers,
       coverage_total,
+      as.integer(row_count_changed),
       row_inflation_factor,
       overlap_total,
       unresolved_duplicate_total,
@@ -611,8 +682,15 @@ ValidateMerge <- function(LeftData,
       Status = dplyr::case_when(
         Check == "Key Types" & Count > 0 ~ "WARNING",
         Check == "Missing Keys" & Count > 0 ~ "WARNING",
-        Check == "Duplicate Keys" & Count > 0 ~ "FAIL",
+        Check == "Expected Relationship" &
+          expected_relationship != "auto" &
+          !relationship_matches_expected ~ "FAIL",
+        Check == "Expected Relationship" ~ "PASS",
+        Check == "Duplicate Keys" & relationship_duplicate_blockers > 0 ~ "FAIL",
+        Check == "Duplicate Keys" ~ "PASS",
         Check == "Coverage" & Count > 0 ~ "WARNING",
+        Check == "Row Count" & row_count_blocker ~ "FAIL",
+        Check == "Row Count" & row_count_changed ~ "WARNING",
         Check == "Row Inflation" & Count > 2 ~ "FAIL",
         Check == "Row Inflation" & Count > 1.05 ~ "WARNING",
         Check == "Overlapping Variables" & Count > 0 ~ "WARNING",
@@ -626,55 +704,52 @@ ValidateMerge <- function(LeftData,
           "At least one key has different storage classes across datasets. Keys were coerced to character for auditing.",
         Check == "Key Types" ~
           "Key storage classes match across datasets.",
-
         Check == "Missing Keys" & Count > 0 ~
           "At least one source or merged dataset contains rows with missing key values. These rows are excluded from duplicate-key and coverage calculations.",
         Check == "Missing Keys" ~
           "No missing key rows detected.",
-
-        Check == "Duplicate Keys" & Count > 0 ~
-          "Duplicate complete key combinations were detected.",
+        Check == "Expected Relationship" ~ relationship_details,
+        Check == "Duplicate Keys" & relationship_duplicate_blockers > 0 ~
+          "Duplicate complete key combinations violate the expected relationship.",
         Check == "Duplicate Keys" ~
-          "No duplicate complete key combinations detected.",
-
+          "No duplicate key blockers detected for the expected relationship.",
         Check == "Coverage" & Count > 0 ~
           "Some complete key combinations appear only in one source dataset.",
         Check == "Coverage" ~
           "All complete source key combinations overlap.",
-
+        Check == "Row Count" & row_count_blocker ~
+          "MergedData row count changed even though the expected relationship should preserve left-side row count.",
+        Check == "Row Count" & row_count_changed ~
+          "MergedData row count changed. This may be expected for one-to-many, many-to-many, or auto relationship checks.",
+        Check == "Row Count" ~
+          "MergedData row count matches LeftData row count.",
         Check == "Row Inflation" & Count > 2 ~
           "MergedData has more than twice as many rows as the larger source dataset. This may indicate an accidental many-to-many merge.",
         Check == "Row Inflation" & Count > 1.05 ~
           "MergedData has more rows than expected. Review whether row multiplication was intentional.",
         Check == "Row Inflation" ~
           "No meaningful row inflation detected.",
-
         Check == "Overlapping Variables" & Count > 0 ~
           "Variables appear in both source datasets but were not specified as keys.",
         Check == "Overlapping Variables" ~
           "No non-key variables overlap across source datasets.",
-
         Check == "Unresolved Duplicate Variables" & Count > 0 ~
           "MergedData still contains unresolved .x/.y or _x/_y variable pairs.",
         Check == "Unresolved Duplicate Variables" ~
           "No unresolved duplicate variable pairs detected.",
-
         Check == "Variable Conflicts" & Count > 0 ~
           "At least one duplicated variable pair contains conflicting values.",
         Check == "Variable Conflicts" ~
           "No duplicated-variable value conflicts detected.",
-
         Check == "Suspicious Conflicts" & Count > 0 ~
           "At least one duplicated variable has low agreement or mismatched classes.",
         Check == "Suspicious Conflicts" ~
           "No low-agreement or class-mismatched duplicated variables detected.",
-
         TRUE ~ ""
       )
     )
 
-  ready_for_analysis <- duplicate_key_total == 0 &&
-    unresolved_duplicate_total == 0
+  ready_for_analysis <- !any(checks$Status == "FAIL", na.rm = TRUE)
 
   checks <- dplyr::bind_rows(
     checks,
@@ -685,7 +760,7 @@ ValidateMerge <- function(LeftData,
       Details = ifelse(
         ready_for_analysis,
         "No major merge-integrity blockers detected.",
-        "Major merge-integrity blockers detected. Review duplicate keys and unresolved duplicate variables."
+        "Major merge-integrity blockers detected. Review failed checks."
       )
     )
   )
@@ -718,10 +793,7 @@ ValidateMerge <- function(LeftData,
       ) %>%
       dplyr::select(Priority, Action)
 
-    suggested_actions <- dplyr::bind_rows(
-      suggested_actions,
-      key_type_actions
-    )
+    suggested_actions <- dplyr::bind_rows(suggested_actions, key_type_actions)
   }
 
   if (missing_key_total > 0) {
@@ -742,78 +814,70 @@ ValidateMerge <- function(LeftData,
     )
   }
 
-  if (duplicate_key_groups_left > 0) {
+  if (expected_relationship != "auto" && !relationship_matches_expected) {
     suggested_actions <- dplyr::bind_rows(
       suggested_actions,
       tibble::tibble(
         Priority = "High",
         Action = paste0(
-          "Investigate duplicate complete key combinations in LeftData: ",
-          duplicate_key_groups_left,
+          "Review expected relationship. Expected ",
+          expected_relationship,
+          " but detected ",
+          detected_relationship,
+          "."
+        )
+      )
+    )
+  }
+
+  if (relationship_duplicate_blockers > 0) {
+    suggested_actions <- dplyr::bind_rows(
+      suggested_actions,
+      tibble::tibble(
+        Priority = "High",
+        Action = paste0(
+          "Investigate duplicate key blockers for expected relationship: ",
+          relationship_duplicate_blockers,
           " duplicated key group(s)."
         )
       )
     )
   }
 
-  if (duplicate_key_groups_right > 0) {
+  if (row_count_blocker) {
     suggested_actions <- dplyr::bind_rows(
       suggested_actions,
       tibble::tibble(
         Priority = "High",
-        Action = paste0(
-          "Investigate duplicate complete key combinations in RightData: ",
-          duplicate_key_groups_right,
-          " duplicated key group(s)."
-        )
-      )
-    )
-  }
-
-  if (duplicate_key_groups_merged > 0) {
-    suggested_actions <- dplyr::bind_rows(
-      suggested_actions,
-      tibble::tibble(
-        Priority = "High",
-        Action = paste0(
-          "Investigate duplicate complete key combinations in MergedData: ",
-          duplicate_key_groups_merged,
-          " duplicated key group(s)."
-        )
+        Action = "Review row count change. This expected relationship should preserve the left-side row count."
       )
     )
   }
 
   if (nrow(potential_merge_risk) > 0) {
-    suggested_actions <- dplyr::bind_rows(
-      suggested_actions,
-      potential_merge_risk %>%
-        dplyr::mutate(
-          Priority = "Medium",
-          Action = paste0(
-            "Review overlapping non-key variable: ",
-            Variable,
-            ". If dplyr join was run without `by =`, this variable may have been used as an unintended join key."
-          )
-        ) %>%
-        dplyr::select(Priority, Action)
-    )
+    overlap_actions <- potential_merge_risk %>%
+      dplyr::mutate(
+        Priority = "Medium",
+        Action = paste0(
+          "Review overlapping non-key variable: ",
+          Variable,
+          ". If dplyr join was run without `by =`, this variable may have been used as an unintended join key."
+        )
+      ) %>%
+      dplyr::select(Priority, Action)
+
+    suggested_actions <- dplyr::bind_rows(suggested_actions, overlap_actions)
   }
 
   if (nrow(unresolved_duplicate_variables) > 0) {
-    suggested_actions <- dplyr::bind_rows(
-      suggested_actions,
-      unresolved_duplicate_variables %>%
-        dplyr::mutate(
-          Priority = "High",
-          Action = paste0(
-            "Resolve duplicated variable pair: ",
-            Variable,
-            "."
-          )
-        ) %>%
-        dplyr::select(Priority, Action)
-    )
+    dup_var_actions <- unresolved_duplicate_variables %>%
+      dplyr::mutate(
+        Priority = "High",
+        Action = paste0("Resolve duplicated variable pair: ", Variable, ".")
+      ) %>%
+      dplyr::select(Priority, Action)
+
+    suggested_actions <- dplyr::bind_rows(suggested_actions, dup_var_actions)
   }
 
   if (nrow(left_only_keys) > 0) {
@@ -860,10 +924,7 @@ ValidateMerge <- function(LeftData,
       ) %>%
       dplyr::select(Priority, Action)
 
-    suggested_actions <- dplyr::bind_rows(
-      suggested_actions,
-      conflict_actions
-    )
+    suggested_actions <- dplyr::bind_rows(suggested_actions, conflict_actions)
   }
 
   if (nrow(suspicious_conflicts) > 0) {
@@ -884,10 +945,7 @@ ValidateMerge <- function(LeftData,
       ) %>%
       dplyr::select(Priority, Action)
 
-    suggested_actions <- dplyr::bind_rows(
-      suggested_actions,
-      suspicious_actions
-    )
+    suggested_actions <- dplyr::bind_rows(suggested_actions, suspicious_actions)
   }
 
   left_match_rate <- ifelse(
@@ -924,11 +982,17 @@ ValidateMerge <- function(LeftData,
     DuplicateKeyGroups_Left = duplicate_key_groups_left,
     DuplicateKeyGroups_Right = duplicate_key_groups_right,
     DuplicateKeyGroups_Merged = duplicate_key_groups_merged,
+    DuplicateKeyBlockers = relationship_duplicate_blockers,
+    ExpectedRelationship = expected_relationship,
+    DetectedRelationship = detected_relationship,
+    RelationshipMatchesExpected = relationship_matches_expected,
     KeyTypeMismatches = key_type_count,
     OverlappingVariables = nrow(overlapping_variables),
     UnresolvedDuplicateVariables = nrow(unresolved_duplicate_variables),
     VariableConflictCount = nrow(variable_conflicts),
     SuspiciousConflictCount = nrow(suspicious_conflicts),
+    RowCountChanged = row_count_changed,
+    RowCountBlocker = row_count_blocker,
     ReadyForAnalysis = ready_for_analysis
   )
 
@@ -996,97 +1060,66 @@ ValidateMerge <- function(LeftData,
     "MERGE VALIDATION SUMMARY\n\n",
     "Keys:\n",
     paste(Keys, collapse = ", "),
-    "\n\n",
-
-    "Rows:\n",
+    "\n\nRows:\n",
     "Left: ",
     nrow(LeftData),
-    "\n",
-    "Right: ",
+    "\nRight: ",
     nrow(RightData),
-    "\n",
-    "Merged: ",
+    "\nMerged: ",
     nrow(MergedData),
-    "\n",
-    "Row Inflation Factor: ",
+    "\nRow Inflation Factor: ",
     row_inflation_factor,
-    "\n\n",
-
-    "Unique Complete Key Combinations:\n",
+    "\n\nUnique Complete Key Combinations:\n",
     "Left: ",
     nrow(left_keys),
-    "\n",
-    "Right: ",
+    "\nRight: ",
     nrow(right_keys),
-    "\n",
-    "Merged: ",
+    "\nMerged: ",
     nrow(merged_keys),
-    "\n\n",
-
-    "Rows With Missing Keys:\n",
+    "\n\nRows With Missing Keys:\n",
     "Left: ",
     missing_key_rows_left,
-    "\n",
-    "Right: ",
+    "\nRight: ",
     missing_key_rows_right,
-    "\n",
-    "Merged: ",
+    "\nMerged: ",
     missing_key_rows_merged,
-    "\n\n",
-
-    "Coverage:\n",
+    "\n\nCoverage:\n",
     "Matching: ",
     nrow(matching_keys),
-    "\n",
-    "Left Only: ",
+    "\nLeft Only: ",
     nrow(left_only_keys),
-    "\n",
-    "Right Only: ",
+    "\nRight Only: ",
     nrow(right_only_keys),
-    "\n",
-    "Left Match Rate: ",
+    "\nLeft Match Rate: ",
     left_match_rate,
-    "%\n",
-    "Right Match Rate: ",
+    "%\nRight Match Rate: ",
     right_match_rate,
-    "%\n\n",
-
-    "Duplicate Complete Key Groups:\n",
+    "%\n\nDuplicate Complete Key Groups:\n",
     "Left: ",
     duplicate_key_groups_left,
-    "\n",
-    "Right: ",
+    "\nRight: ",
     duplicate_key_groups_right,
-    "\n",
-    "Merged: ",
+    "\nMerged: ",
     duplicate_key_groups_merged,
-    "\n\n",
-
-    "Key Type Mismatches:\n",
+    "\nBlockers For Expected Relationship: ",
+    relationship_duplicate_blockers,
+    "\n\nExpected Relationship:\n",
+    expected_relationship,
+    "\nDetected Relationship:\n",
+    detected_relationship,
+    "\nRelationship Matches Expected:\n",
+    relationship_matches_expected,
+    "\n\nKey Type Mismatches:\n",
     key_type_text,
-    "\n\n",
-
-    "Overlapping Variables Not In Keys:\n",
+    "\n\nOverlapping Variables Not In Keys:\n",
     overlap_text,
-    "\n\n",
-
-    "Unresolved Duplicate Variables:\n",
+    "\n\nUnresolved Duplicate Variables:\n",
     unresolved_text,
-    "\n\n",
-
-    "Variable Conflicts:\n",
+    "\n\nVariable Conflicts:\n",
     nrow(variable_conflicts),
-    "\n\n",
-
-    "Suspicious Conflicts:\n",
+    "\n\nSuspicious Conflicts:\n",
     suspicious_text,
-    "\n\n",
-
-    "Detected Source Relationship:\n",
-    relationship_type,
-    "\n\n",
-
-    "Ready For Analysis:\n",
+    "\n\nReady For Analysis:\n",
     ready_for_analysis
   )
 
@@ -1114,3 +1147,4 @@ ValidateMerge <- function(LeftData,
 
   return(result)
 }
+

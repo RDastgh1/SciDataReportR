@@ -84,7 +84,13 @@ compatibility with \code{plotly::ggplotly(tooltip = "text")}. Default is \code{T
 A named list with \code{RawPPlot}, \code{FDRPlot}, and \code{ResultsTable}.
 \code{RawPPlot} uses \code{-log10(PValue)} on the y-axis. \code{FDRPlot} uses
 \code{-log10(FDR)} on the y-axis. \code{ResultsTable} is a tibble with one row per
-analyzed predictor.
+analyzed predictor. For continuous outcomes it includes \code{R} (the zero-order
+Pearson correlation between the predictor and outcome) and \code{AdjustedR} (the
+covariate-adjusted partial correlation, \code{NA} when no covariates are given).
+For two-group categorical outcomes it includes \code{Group1Level}, \code{Group2Level},
+\code{Group1Mean}, and \code{Group2Mean} (the raw predictor means within each outcome
+group). These values are also surfaced in the \code{Tooltip} column used by
+\code{plotly::ggplotly(tooltip = "text")}.
 }
 \description{
 Screen a set of predictor variables against one outcome and visualize the
