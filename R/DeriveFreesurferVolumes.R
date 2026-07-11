@@ -38,6 +38,12 @@
 #'
 #' `volume / intracranial volume`
 #'
+#' ICV-adjusted ratios are produced for each individual left/right (or
+#' `lh`/`rh`) measure, for the derived bilateral totals, and for the global
+#' Freesurfer volumes. For example, `Left-Hippocampus` and `Right-Hippocampus`
+#' yield `Left_Hippocampus_icv`, `Right_Hippocampus_icv`, and
+#' `Hippocampus_total_icv`.
+#'
 #' The function returns only the newly derived variables, not the original data.
 #' This makes it convenient to append the derived columns with `cbind()` or
 #' `dplyr::bind_cols()`.
@@ -207,6 +213,7 @@ DeriveFreesurferVolumes <- function(
   dkt_total_cols <- character()
   global_icv_cols <- character()
   bilateral_icv_cols <- character()
+  lateralized_icv_cols <- character()
 
   unmatched_aseg_left <- character()
   unmatched_aseg_right <- character()
@@ -450,6 +457,38 @@ DeriveFreesurferVolumes <- function(
   }
 
   ############################################################
+  ## ICV-adjusted lateralized (left/right) variables
+  ##
+  ## Each individual left/right ASEG column and lh/rh DKT column
+  ## is divided by ICV, so ratios exist for the sides, not only
+  ## for the bilateral totals.
+  ##
+  ## Formula:
+  ## side_volume / ICV
+  ############################################################
+
+  lateralized_side_cols <- c(aseg_cols, lh_cols, rh_cols)
+
+  for (side_col in lateralized_side_cols) {
+
+    if (!is.numeric(data[[side_col]])) {
+      next
+    }
+
+    new_col <- paste0(
+      clean_output_name(side_col),
+      "_icv"
+    )
+
+    out[[new_col]] <- data[[side_col]] / icv
+
+    lateralized_icv_cols <- c(
+      lateralized_icv_cols,
+      new_col
+    )
+  }
+
+  ############################################################
   ## ICV-adjusted bilateral total variables
   ##
   ## Formula:
@@ -491,11 +530,13 @@ DeriveFreesurferVolumes <- function(
     n_aseg_total_cols = length(aseg_total_cols),
     n_dkt_total_cols = length(dkt_total_cols),
     n_global_icv_cols = length(global_icv_cols),
+    n_lateralized_icv_cols = length(lateralized_icv_cols),
     n_bilateral_icv_cols = length(bilateral_icv_cols),
     n_cols_output = ncol(out),
     aseg_total_cols = aseg_total_cols,
     dkt_total_cols = dkt_total_cols,
     global_icv_cols = global_icv_cols,
+    lateralized_icv_cols = lateralized_icv_cols,
     bilateral_icv_cols = bilateral_icv_cols,
     unmatched_aseg_left = unmatched_aseg_left,
     unmatched_aseg_right = unmatched_aseg_right,
@@ -519,6 +560,7 @@ DeriveFreesurferVolumes <- function(
     message("  ASEG bilateral totals: ", length(aseg_total_cols))
     message("  DKT bilateral totals: ", length(dkt_total_cols))
     message("  Global ICV-adjusted measures: ", length(global_icv_cols))
+    message("  Lateralized (left/right) ICV-adjusted measures: ", length(lateralized_icv_cols))
     message("  Bilateral ICV-adjusted measures: ", length(bilateral_icv_cols))
     message("  Returned derived variables: ", ncol(out))
 
