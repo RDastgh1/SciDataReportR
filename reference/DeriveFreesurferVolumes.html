@@ -43,7 +43,7 @@ outputs, then creates intracranial-volume-adjusted ratios."><meta property="og:i
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Derive Freesurfer bilateral totals and ICV-adjusted measures</h1>
-      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/v20.13.0/R/DeriveFreesurferVolumes.R" class="external-link"><code>R/DeriveFreesurferVolumes.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/master/R/DeriveFreesurferVolumes.R" class="external-link"><code>R/DeriveFreesurferVolumes.R</code></a></small>
       <div class="d-none name"><code>DeriveFreesurferVolumes.Rd</code></div>
     </div>
 
@@ -98,6 +98,11 @@ intracranial volume variable should be used.</p>
 <p><code>left + right</code></p>
 <p>ICV-adjusted ratios are computed as:</p>
 <p><code>volume / intracranial volume</code></p>
+<p>ICV-adjusted ratios are produced for each individual left/right (or
+<code>lh</code>/<code>rh</code>) measure, for the derived bilateral totals, and for the global
+Freesurfer volumes. For example, <code>Left-Hippocampus</code> and <code>Right-Hippocampus</code>
+yield <code>Left_Hippocampus_icv</code>, <code>Right_Hippocampus_icv</code>, and
+<code>Hippocampus_total_icv</code>.</p>
 <p>The function returns only the newly derived variables, not the original data.
 This makes it convenient to append the derived columns with <code><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind()</a></code> or
 <code><a href="https://dplyr.tidyverse.org/reference/bind_cols.html" class="external-link">dplyr::bind_cols()</a></code>.</p>

@@ -68,6 +68,12 @@ ICV-adjusted ratios are computed as:
 
 `volume / intracranial volume`
 
+ICV-adjusted ratios are produced for each individual left/right (or
+`lh`/`rh`) measure, for the derived bilateral totals, and for the global
+Freesurfer volumes. For example, `Left-Hippocampus` and
+`Right-Hippocampus` yield `Left_Hippocampus_icv`,
+`Right_Hippocampus_icv`, and `Hippocampus_total_icv`.
+
 The function returns only the newly derived variables, not the original
 data. This makes it convenient to append the derived columns with
 [`cbind()`](https://rdrr.io/r/base/cbind.html) or
