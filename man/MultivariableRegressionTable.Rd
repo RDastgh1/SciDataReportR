@@ -35,7 +35,11 @@ MultivariableRegressionTable(
 
 \item{predictor_vars}{Character vector of predictor variable names.}
 
-\item{covariates}{Optional character vector of covariate variable names.}
+\item{covariates}{Optional character vector of covariate variable names.
+Covariates are treated as mandatory adjustments: for penalized methods
+(\code{"ridge"}, \code{"lasso"}, \code{"elasticnet"}) they are exempted from the penalty
+(\code{penalty.factor = 0}), so they are never shrunk or selected out of the
+model.}
 
 \item{Standardize}{Logical. If \code{TRUE}, ordinary models are fit on
 standardized continuous variables for the primary estimate. Standardized
@@ -86,8 +90,28 @@ after missing-data handling.}
 A named list with stable components: \code{Models}, \code{FormattedTable},
 \code{LargeTable}, \code{RegressionMatrix}, \code{VariableImportanceMatrix},
 \code{Predictions}, \code{Diagnostics}, \code{ModelSummary}, \code{Multicollinearity},
-\code{Plots}, and \code{Metadata}. \code{Plots} contains ggplot objects built from the
-stored result tables and predictions without refitting models.
+\code{Plots}, and \code{Metadata}. \code{FormattedTable} is a report-facing \code{gt} table
+grouped by outcome, matching the style of
+\code{\link[=MakeUnivariateRegressionTable]{MakeUnivariateRegressionTable()}}: predictor rows only, a combined
+\verb{Estimate (95\% CI)} cell, and bold significant p-values. \code{LargeTable} is a
+data frame holding the full per-term detail (including covariate rows) for
+programmatic use, plus an \code{Aliased} flag marking perfectly collinear terms
+the model dropped. \code{ModelSummary} reports per-outcome \code{Converged},
+\code{SeparationDetected}, and \code{AliasedTermCount}. For ordinary (\code{"lm"})
+logistic fits, quasi-complete separation is detected (fitted probabilities
+pinned at 0/1, exploded standardized coefficients, or non-convergence); the
+affected model's estimates are blanked (\code{NA}) and \code{Converged} is set to
+\code{FALSE} so unreliable coefficients do not propagate into tables or plots.
+\code{ModelSummary} also carries an omnibus model test per outcome
+(\code{ModelStat}, \code{ModelStatType}, \code{ModelPValue}): an F-test for linear models
+and a likelihood-ratio test for logistic models (\code{NA} for penalized fits,
+which have no valid classical omnibus test). \code{Plots} contains ggplot
+objects built from the stored result tables and predictions without
+refitting models; the coefficient heatmap uses robust, clamped fill limits
+so a single extreme value cannot dominate the scale, and each outcome
+column is annotated at the top with its omnibus p-value (ordinary models)
+or cross-validated deviance explained (penalized models) to discourage
+interpreting coefficients from a model that is not significant overall.
 }
 \description{
 Fit one multivariable regression model per outcome and return a stable,

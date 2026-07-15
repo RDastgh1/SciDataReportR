@@ -7,6 +7,10 @@
 #' @param outcome_vars Character vector of outcome variable names.
 #' @param predictor_vars Character vector of predictor variable names.
 #' @param covariates Optional character vector of covariate variable names.
+#'   Covariates are treated as mandatory adjustments: for penalized methods
+#'   (`"ridge"`, `"lasso"`, `"elasticnet"`) they are exempted from the penalty
+#'   (`penalty.factor = 0`), so they are never shrunk or selected out of the
+#'   model.
 #' @param Standardize Logical. If `TRUE`, ordinary models are fit on
 #'   standardized continuous variables for the primary estimate. Standardized
 #'   coefficients are always calculated separately regardless of this setting.
@@ -36,8 +40,28 @@
 #' @return A named list with stable components: `Models`, `FormattedTable`,
 #'   `LargeTable`, `RegressionMatrix`, `VariableImportanceMatrix`,
 #'   `Predictions`, `Diagnostics`, `ModelSummary`, `Multicollinearity`,
-#'   `Plots`, and `Metadata`. `Plots` contains ggplot objects built from the
-#'   stored result tables and predictions without refitting models.
+#'   `Plots`, and `Metadata`. `FormattedTable` is a report-facing `gt` table
+#'   grouped by outcome, matching the style of
+#'   [MakeUnivariateRegressionTable()]: predictor rows only, a combined
+#'   `Estimate (95% CI)` cell, and bold significant p-values. `LargeTable` is a
+#'   data frame holding the full per-term detail (including covariate rows) for
+#'   programmatic use, plus an `Aliased` flag marking perfectly collinear terms
+#'   the model dropped. `ModelSummary` reports per-outcome `Converged`,
+#'   `SeparationDetected`, and `AliasedTermCount`. For ordinary (`"lm"`)
+#'   logistic fits, quasi-complete separation is detected (fitted probabilities
+#'   pinned at 0/1, exploded standardized coefficients, or non-convergence); the
+#'   affected model's estimates are blanked (`NA`) and `Converged` is set to
+#'   `FALSE` so unreliable coefficients do not propagate into tables or plots.
+#'   `ModelSummary` also carries an omnibus model test per outcome
+#'   (`ModelStat`, `ModelStatType`, `ModelPValue`): an F-test for linear models
+#'   and a likelihood-ratio test for logistic models (`NA` for penalized fits,
+#'   which have no valid classical omnibus test). `Plots` contains ggplot
+#'   objects built from the stored result tables and predictions without
+#'   refitting models; the coefficient heatmap uses robust, clamped fill limits
+#'   so a single extreme value cannot dominate the scale, and each outcome
+#'   column is annotated at the top with its omnibus p-value (ordinary models)
+#'   or cross-validated deviance explained (penalized models) to discourage
+#'   interpreting coefficients from a model that is not significant overall.
 #' @param Data \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
 #' @param OutcomeVars \strong{Deprecated} (since 19.15.0). Use \code{outcome_vars} instead.
 #' @param PredictorVars \strong{Deprecated} (since 19.15.0). Use \code{predictor_vars} instead.
@@ -342,12 +366,8 @@ MultivariableRegressionTable <- function(data,
   large_table$HoverText <- ScidrRegressionHoverText(large_table)
 
   reporting_rows <- large_table$Predictor %in% PredictorVars
-  formatted_table <- large_table[reporting_rows, c(
-    "Outcome", "Predictor", "OutcomeFamily", "Estimate", "Effect", "EffectType",
-    "StandardizedBeta", "LowerCI", "UpperCI", "PValue", "FDR",
-    "VariableImportance", "VariableImportanceType", "SampleSize", "Selected",
-    "Lambda", "Alpha"
-  ), drop = FALSE]
+  formatted_reporting <- large_table[reporting_rows, , drop = FALSE]
+  formatted_table <- ScidrMultivariableGtTable(formatted_reporting, formatted = TRUE)
   regression_matrix <- large_table[reporting_rows, c(
     "OutcomeIndex", "PredictorIndex", "Outcome", "Predictor", "OutcomeLabel",
     "PredictorLabel", "OutcomeFamily", "Estimate", "Effect", "EffectType",
@@ -367,8 +387,10 @@ MultivariableRegressionTable <- function(data,
   model_summary <- diagnostics[, c(
     "Outcome", "OutcomeLabel", "OutcomeFamily", "RegressionMethod", "SampleSize",
     "MissingRemoved", "PercentRemoved", "PredictorCount", "Converged",
+    "SeparationDetected", "AliasedTermCount",
+    "ModelStat", "ModelStatType", "ModelPValue",
     "R2", "AdjustedR2", "AUC", "McFaddenR2", "RMSE", "AIC", "BIC",
-    "DroppedPredictorCount", "ImputedPredictorCount"
+    "DevianceExplained", "DroppedPredictorCount", "ImputedPredictorCount"
   ), drop = FALSE]
   model_summary$MaximumVIF <- multicollinearity$MaximumVIF
   model_summary$MaximumCorrelation <- multicollinearity$MaximumCorrelation
@@ -410,7 +432,7 @@ MultivariableRegressionTable <- function(data,
 
   return(list(
     Models = model_list,
-    FormattedTable = as.data.frame(formatted_table),
+    FormattedTable = formatted_table,
     LargeTable = as.data.frame(large_table),
     RegressionMatrix = as.data.frame(regression_matrix),
     VariableImportanceMatrix = as.data.frame(variable_importance_matrix),
@@ -421,6 +443,112 @@ MultivariableRegressionTable <- function(data,
     Plots = plots,
     Metadata = metadata
   ))
+}
+
+ScidrMultivariableGtTable <- function(reporting, formatted = TRUE) {
+  # Report-facing table mirroring ScidrUnivariateGtTable(): the primary
+  # estimate is the effect (odds ratio for logistic, beta for linear) on the
+  # same scale as its confidence interval, combined into a single cell, with
+  # significant p-values shown in bold. Penalized fits (lasso/ridge/elasticnet)
+  # carry no p-values or CIs, so those cells are left blank and nothing is
+  # bolded; the estimate cell then shows the penalized coefficient alone.
+  if (nrow(reporting) == 0) {
+    return(gt::gt(reporting))
+  }
+
+  # Significance follows the same source as the plotted stars: FDR when it was
+  # calculated (ordinary models with FDR = TRUE), otherwise the raw p-value.
+  sig_source <- ifelse(!is.na(reporting$FDR), reporting$FDR, reporting$PValue)
+
+  table_data <- reporting %>%
+    dplyr::mutate(
+      Significant = !is.na(sig_source) & sig_source < 0.05,
+      Estimate_CI = dplyr::case_when(
+        is.na(.data$Effect) ~ NA_character_,
+        is.na(.data$LowerCI) | is.na(.data$UpperCI) ~
+          formatC(.data$Effect, digits = 3, format = "fg"),
+        TRUE ~ paste0(
+          formatC(.data$Effect, digits = 3, format = "fg"),
+          " (",
+          formatC(.data$LowerCI, digits = 3, format = "fg"),
+          ", ",
+          formatC(.data$UpperCI, digits = 3, format = "fg"),
+          ")"
+        )
+      ),
+      P = dplyr::case_when(
+        is.na(.data$PValue) ~ NA_character_,
+        .data$PValue < 0.001 ~ "<0.001",
+        TRUE ~ formatC(.data$PValue, digits = 2, format = "fg")
+      )
+    )
+
+  if (formatted) {
+    table_data <- table_data %>%
+      dplyr::select(
+        OutcomeLabel,
+        PredictorLabel,
+        EffectType,
+        SampleSize,
+        Estimate_CI,
+        P,
+        Significant
+      )
+
+    out <- gt::gt(table_data, groupname_col = "OutcomeLabel") %>%
+      gt::cols_label(
+        PredictorLabel = "Variable",
+        EffectType = "Effect",
+        SampleSize = "N",
+        Estimate_CI = "Estimate (95% CI)",
+        P = "p-value"
+      ) %>%
+      gt::cols_hide(columns = "Significant") %>%
+      gt::sub_missing(columns = c("Estimate_CI", "P"), missing_text = "") %>%
+      gt::tab_style(
+        style = gt::cell_text(weight = "bold"),
+        locations = gt::cells_body(
+          columns = "P",
+          rows = Significant
+        )
+      )
+  } else {
+    table_data <- table_data %>%
+      dplyr::select(
+        Outcome,
+        OutcomeLabel,
+        PredictorLabel,
+        EffectType,
+        SampleSize,
+        Effect,
+        StandardizedBeta,
+        LowerCI,
+        UpperCI,
+        PValue,
+        FDR
+      )
+
+    out <- gt::gt(table_data, groupname_col = "OutcomeLabel") %>%
+      gt::cols_label(
+        Outcome = "Outcome",
+        PredictorLabel = "Variable",
+        EffectType = "Effect",
+        SampleSize = "N",
+        Effect = "Estimate",
+        StandardizedBeta = "Std. beta",
+        LowerCI = "95% CI Low",
+        UpperCI = "95% CI High",
+        PValue = "p-value",
+        FDR = "FDR"
+      ) %>%
+      gt::fmt_number(
+        columns = c("Effect", "StandardizedBeta", "LowerCI", "UpperCI"),
+        decimals = 3
+      ) %>%
+      gt::fmt_number(columns = c("PValue", "FDR"), decimals = 3)
+  }
+
+  out
 }
 
 ScidrOutcomeFamily <- function(x, outcome) {
@@ -622,7 +750,10 @@ ScidrFitOrdinaryRegression <- function(df_model,
     } else {
       stats::glm(formula, data = standardized_data, family = stats::binomial())
     },
-    warning = function(w) invokeRestart("muffleWarning")
+    warning = function(w) {
+      warnings_vec <<- c(warnings_vec, conditionMessage(w))
+      invokeRestart("muffleWarning")
+    }
   )
 
   coef_table <- as.data.frame(summary(model)$coefficients)
@@ -637,8 +768,58 @@ ScidrFitOrdinaryRegression <- function(df_model,
     stats::glm(stats::reformulate("1", response = outcome), data = fit_data, family = stats::binomial())
   }
 
+  # Rank deficiency: lm()/glm() set aliased (perfectly collinear) coefficients
+  # to NA and drop them from summary(), so they would otherwise appear as
+  # unexplained blank cells. Surface them explicitly.
+  full_coef <- stats::coef(model)
+  aliased_terms <- names(full_coef)[is.na(full_coef)]
+  if (length(aliased_terms) > 0) {
+    warnings_vec <- c(
+      warnings_vec,
+      paste0(
+        "Perfectly collinear (aliased) terms dropped by the model: ",
+        paste(aliased_terms, collapse = ", "),
+        ". Check for redundant predictors (e.g. change scores alongside their components)."
+      )
+    )
+  }
+
+  # Separation / non-convergence: for logistic fits, quasi-complete separation
+  # makes coefficients and standard errors explode (fitted probabilities pinned
+  # at 0/1). The estimates are not interpretable, so flag the fit and blank its
+  # numeric outputs rather than let them poison downstream tables and plots.
+  separation_detected <- FALSE
+  if (outcome_family == "logistic") {
+    fitted_probs <- stats::fitted(model)
+    extreme_fitted <- any(fitted_probs < 1e-5 | fitted_probs > 1 - 1e-5, na.rm = TRUE)
+    std_slopes <- std_coef[names(std_coef) != "(Intercept)"]
+    huge_coef <- any(abs(std_slopes) > 10, na.rm = TRUE)
+    warn_sep <- any(grepl(
+      "fitted probabilities numerically 0 or 1|did not converge",
+      warnings_vec,
+      ignore.case = TRUE
+    ))
+    separation_detected <- extreme_fitted || huge_coef || warn_sep || !isTRUE(model$converged)
+    if (separation_detected) {
+      warnings_vec <- c(
+        warnings_vec,
+        paste0(
+          "Separation / non-convergence detected for outcome '", outcome,
+          "': logistic coefficients are unreliable and have been blanked. ",
+          "Consider a penalized method (lasso/ridge) or fewer predictors."
+        )
+      )
+    }
+  }
+  converged <- if (outcome_family == "logistic") {
+    isTRUE(model$converged) && !separation_detected
+  } else {
+    TRUE
+  }
+
   rows <- lapply(model_terms, function(term) {
     row_name <- ScidrMatchingCoefficientName(coef_table$Term, term)
+    is_aliased <- any(startsWith(aliased_terms, term))
     estimate <- if (!is.na(row_name)) coef_table$Estimate[coef_table$Term == row_name][1] else NA_real_
     p_value <- if (!is.na(row_name)) coef_table$PValue[coef_table$Term == row_name][1] else NA_real_
     se <- if (!is.na(row_name)) coef_table$StandardError[coef_table$Term == row_name][1] else NA_real_
@@ -646,7 +827,23 @@ ScidrFitOrdinaryRegression <- function(df_model,
     lower_ci <- if (!is.null(ci) && row_name %in% rownames(ci)) ci[row_name, 1] else NA_real_
     upper_ci <- if (!is.null(ci) && row_name %in% rownames(ci)) ci[row_name, 2] else NA_real_
     std_beta <- if (!is.na(row_name) && row_name %in% names(std_coef)) unname(std_coef[[row_name]]) else NA_real_
-    variable_importance <- ScidrOrdinaryVariableImportance(model, base_model, term, outcome_family)
+
+    # A separated logistic fit yields no trustworthy estimates for any term, so
+    # blank the whole model's inferential outputs rather than plot noise (and
+    # skip the reduced-model refit that would only add more separation warnings).
+    if (separation_detected) {
+      estimate <- NA_real_
+      p_value <- NA_real_
+      se <- NA_real_
+      test_stat <- NA_real_
+      lower_ci <- NA_real_
+      upper_ci <- NA_real_
+      std_beta <- NA_real_
+      variable_importance <- NA_real_
+    } else {
+      variable_importance <- ScidrOrdinaryVariableImportance(model, base_model, term, outcome_family)
+    }
+
     data.frame(
       Predictor = term,
       Estimate = estimate,
@@ -664,9 +861,10 @@ ScidrFitOrdinaryRegression <- function(df_model,
       VariableImportance = variable_importance,
       VariableImportanceType = if (outcome_family == "logistic") "Likelihood Ratio Chi-square" else "Partial R2",
       Selected = NA,
+      Aliased = is_aliased,
       Lambda = NA_real_,
       Alpha = NA_real_,
-      Converged = if (outcome_family == "logistic") isTRUE(model$converged) else TRUE,
+      Converged = converged,
       Warnings = paste(unique(warnings_vec), collapse = "; "),
       stringsAsFactors = FALSE
     )
@@ -677,6 +875,9 @@ ScidrFitOrdinaryRegression <- function(df_model,
     StandardizedModel = standardized_model,
     TermTable = dplyr::bind_rows(rows),
     Warnings = warnings_vec,
+    SeparationDetected = separation_detected,
+    AliasedTerms = aliased_terms,
+    Converged = converged,
     Tuning = list()
   )
 }
@@ -690,13 +891,24 @@ ScidrFitPenalizedRegression <- function(df_model,
                                         cv_folds,
                                         lambda_choice,
                                         seed) {
-  x_raw <- stats::model.matrix(stats::reformulate(model_terms), data = df_model)[, -1, drop = FALSE]
+  model_formula <- stats::reformulate(model_terms)
+  x_full <- stats::model.matrix(model_formula, data = df_model)
+  column_terms <- attr(x_full, "assign")[-1]
+  x_raw <- x_full[, -1, drop = FALSE]
   x_std <- scale(x_raw)
   x_std[, attr(x_std, "scaled:scale") == 0] <- 0
   x_std <- as.matrix(x_std)
   y <- df_model[[outcome]]
   family <- if (outcome_family == "logistic") "binomial" else "gaussian"
   alpha_grid <- if (method == "ridge") 0 else if (method == "lasso") 1 else seq(0, 1, 0.1)
+
+  # Covariates are mandatory adjustments: exempt them from the penalty so
+  # ridge/lasso/elasticnet never shrink or drop them. penalty.factor is
+  # per model-matrix column; map columns back to their originating term.
+  term_labels <- attr(stats::terms(model_formula), "term.labels")
+  covariate_terms <- setdiff(model_terms, predictor_vars)
+  penalty_factor <- ifelse(term_labels[column_terms] %in% covariate_terms, 0, 1)
+  names(penalty_factor) <- colnames(x_raw)
 
   set.seed(seed)
   foldid <- sample(rep(seq_len(cv_folds), length.out = nrow(df_model)))
@@ -713,7 +925,8 @@ ScidrFitPenalizedRegression <- function(df_model,
         family = family,
         alpha = alpha,
         foldid = foldid,
-        standardize = TRUE
+        standardize = TRUE,
+        penalty.factor = penalty_factor
       ),
       warning = function(w) {
         warnings_vec <<- c(warnings_vec, conditionMessage(w))
@@ -728,7 +941,8 @@ ScidrFitPenalizedRegression <- function(df_model,
         alpha = alpha,
         foldid = foldid,
         lambda = fit$lambda,
-        standardize = FALSE
+        standardize = FALSE,
+        penalty.factor = penalty_factor
       ),
       warning = function(w) {
         warnings_vec <<- c(warnings_vec, conditionMessage(w))
@@ -783,6 +997,7 @@ ScidrFitPenalizedRegression <- function(df_model,
       VariableImportance = abs(std_estimate),
       VariableImportanceType = "Absolute Standardized Beta",
       Selected = !is.na(row_name) && abs(estimate) > 0,
+      Aliased = FALSE,
       Lambda = selected_lambda,
       Alpha = best_alpha,
       Converged = TRUE,
@@ -796,11 +1011,16 @@ ScidrFitPenalizedRegression <- function(df_model,
     StandardizedModel = cv_std_fit,
     TermTable = dplyr::bind_rows(rows),
     Warnings = warnings_vec,
+    SeparationDetected = FALSE,
+    AliasedTerms = character(0),
+    Converged = TRUE,
     Tuning = list(
       AlphaGrid = alpha_grid,
       CrossValidationErrors = cv_errors,
       BestAlpha = best_alpha,
-      BestLambda = selected_lambda
+      BestLambda = selected_lambda,
+      PenaltyFactors = penalty_factor,
+      UnpenalizedTerms = covariate_terms
     ),
     PenalizedPredictions = list(
       LinearPredictor = linear_predictor,
@@ -923,7 +1143,12 @@ ScidrRegressionDiagnostics <- function(fit_result,
     RetainedPredictorCount = NA_integer_, RetainedPredictors = I(list(character(0))),
     DevianceExplained = NA_real_, SampleSize = nrow(df_model),
     PredictorCount = length(setdiff(names(df_model), outcome)),
-    Converged = TRUE, Warnings = paste(unique(fit_result$Warnings), collapse = "; "),
+    Converged = isTRUE(fit_result$Converged),
+    SeparationDetected = isTRUE(fit_result$SeparationDetected),
+    AliasedTermCount = length(fit_result$AliasedTerms),
+    AliasedTerms = I(list(fit_result$AliasedTerms)),
+    ModelPValue = NA_real_, ModelStat = NA_real_, ModelStatType = NA_character_,
+    Warnings = paste(unique(fit_result$Warnings), collapse = "; "),
     stringsAsFactors = FALSE
   )
 
@@ -935,6 +1160,8 @@ ScidrRegressionDiagnostics <- function(fit_result,
     base$RetainedPredictorCount <- length(retained)
     base$RetainedPredictors <- I(list(retained))
     base$DevianceExplained <- fit_result$PenalizedPredictions$DevianceExplained
+    # Penalized models have no valid classical omnibus test; ModelPValue stays NA
+    # and cross-validated deviance explained is the column-level fit summary.
   } else if (outcome_family == "linear") {
     model_summary <- summary(fit_result$Model)
     residuals <- predictions_complete$Residual
@@ -944,6 +1171,13 @@ ScidrRegressionDiagnostics <- function(fit_result,
     base$ResidualSD <- stats::sd(residuals, na.rm = TRUE)
     base$AIC <- stats::AIC(fit_result$Model)
     base$BIC <- stats::BIC(fit_result$Model)
+    # Omnibus F-test for the whole model.
+    fstat <- model_summary$fstatistic
+    if (!is.null(fstat)) {
+      base$ModelStat <- unname(fstat[1])
+      base$ModelStatType <- "F"
+      base$ModelPValue <- stats::pf(fstat[1], fstat[2], fstat[3], lower.tail = FALSE)
+    }
   } else {
     probs <- predictions_complete$PredictedProbability
     observed <- predictions_complete$Observed
@@ -966,7 +1200,17 @@ ScidrRegressionDiagnostics <- function(fit_result,
     base$McFaddenR2 <- 1 - as.numeric(stats::logLik(fit_result$Model)) / as.numeric(stats::logLik(null_model))
     base$AIC <- stats::AIC(fit_result$Model)
     base$BIC <- stats::BIC(fit_result$Model)
-    base$Converged <- isTRUE(fit_result$Model$converged)
+    base$Converged <- isTRUE(fit_result$Model$converged) && !isTRUE(fit_result$SeparationDetected)
+    # Omnibus likelihood-ratio test of the full model against the null. Suppress
+    # for separated fits, where the deviance drop is an artefact, not evidence.
+    model_obj <- fit_result$Model
+    lr_chisq <- model_obj$null.deviance - model_obj$deviance
+    lr_df <- model_obj$df.null - model_obj$df.residual
+    if (!isTRUE(fit_result$SeparationDetected) && is.finite(lr_chisq) && lr_df > 0) {
+      base$ModelStat <- lr_chisq
+      base$ModelStatType <- "LR chi-square"
+      base$ModelPValue <- stats::pchisq(lr_chisq, lr_df, lower.tail = FALSE)
+    }
   }
   base
 }
@@ -1109,11 +1353,87 @@ ScidrRegressionHoverText <- function(tbl) {
   )
 }
 
+ScidrRobustFillLimits <- function(values, probs = 0.99, floor = 0.1) {
+  vals <- values[is.finite(values)]
+  if (length(vals) == 0) {
+    return(NULL)
+  }
+  m <- stats::quantile(abs(vals), probs = probs, na.rm = TRUE, names = FALSE)
+  if (!is.finite(m) || m <= 0) {
+    m <- max(abs(vals), na.rm = TRUE)
+  }
+  if (!is.finite(m) || m <= 0) {
+    return(NULL)
+  }
+  m <- max(m, floor)
+  c(-m, m)
+}
+
+ScidrColumnAnnotations <- function(model_summary) {
+  empty <- data.frame(OutcomeLabel = character(0), Label = character(0), stringsAsFactors = FALSE)
+  if (is.null(model_summary) || nrow(model_summary) == 0) {
+    return(empty)
+  }
+  format_p <- function(p) {
+    if (is.na(p)) {
+      return(NA_character_)
+    }
+    if (p < 0.001) {
+      return("p < 0.001")
+    }
+    paste0("p = ", formatC(p, digits = 2, format = "fg"))
+  }
+  labels <- vapply(seq_len(nrow(model_summary)), function(i) {
+    row <- model_summary[i, , drop = FALSE]
+    penalized <- !identical(as.character(row$RegressionMethod), "lm")
+    if (penalized) {
+      # No valid omnibus p-value for penalized fits: report CV deviance explained.
+      dev <- row$DevianceExplained
+      if (is.na(dev)) {
+        return("")
+      }
+      return(paste0("Dev. expl. = ", formatC(dev, digits = 2, format = "f")))
+    }
+    if (isTRUE(row$SeparationDetected)) {
+      return("unstable fit")
+    }
+    p <- row$ModelPValue
+    if (is.na(p)) {
+      return("")
+    }
+    format_p(p)
+  }, character(1))
+  data.frame(
+    OutcomeLabel = as.character(model_summary$OutcomeLabel),
+    Label = labels,
+    stringsAsFactors = FALSE
+  )
+}
+
+ScidrAddColumnAnnotations <- function(p, annotations) {
+  annotations <- annotations[!is.na(annotations$Label) & annotations$Label != "", , drop = FALSE]
+  if (nrow(annotations) == 0) {
+    return(p)
+  }
+  p +
+    ggplot2::geom_text(
+      data = annotations,
+      mapping = ggplot2::aes(x = .data$OutcomeLabel, y = Inf, label = .data$Label),
+      inherit.aes = FALSE,
+      vjust = -0.4,
+      size = 3,
+      na.rm = TRUE
+    ) +
+    ggplot2::coord_cartesian(clip = "off") +
+    ggplot2::theme(plot.margin = ggplot2::margin(t = 22, r = 6, b = 6, l = 6))
+}
+
 ScidrRegressionPlots <- function(regression_matrix,
                                  variable_importance_matrix,
                                  predictions,
                                  model_summary) {
   plots <- list()
+  column_annotations <- ScidrColumnAnnotations(model_summary)
 
   if (nrow(regression_matrix) > 0) {
     plot_data <- regression_matrix
@@ -1125,6 +1445,11 @@ ScidrRegressionPlots <- function(regression_matrix,
       plot_data$OutcomeLabel,
       levels = unique(plot_data$OutcomeLabel[order(plot_data$OutcomeIndex)])
     )
+
+    # Robust symmetric limits so a single extreme (e.g. an unstable coefficient
+    # that slipped through) can't dominate the diverging scale and wash out the
+    # rest of the panel. Values outside the limits are clamped, not dropped.
+    fill_limits <- ScidrRobustFillLimits(plot_data$StandardizedBeta)
 
     plots$RegressionMatrix <- ggplot2::ggplot(
       plot_data,
@@ -1141,7 +1466,16 @@ ScidrRegressionPlots <- function(regression_matrix,
         mid = "white",
         high = "#B2182B",
         midpoint = 0,
-        na.value = "grey90"
+        na.value = "grey90",
+        limits = fill_limits,
+        oob = function(x, range = fill_limits) {
+          if (is.null(range)) {
+            return(x)
+          }
+          x[x < range[1]] <- range[1]
+          x[x > range[2]] <- range[2]
+          x
+        }
       ) +
       ggplot2::labs(
         x = NULL,
@@ -1153,6 +1487,10 @@ ScidrRegressionPlots <- function(regression_matrix,
         panel.grid = ggplot2::element_blank(),
         axis.text.x = ggplot2::element_text(angle = 45, hjust = 1)
       )
+    # Omnibus model summary at the top of each column: p-value for ordinary
+    # models (so cells in a non-significant model are not over-interpreted),
+    # or cross-validated deviance explained for penalized models.
+    plots$RegressionMatrix <- ScidrAddColumnAnnotations(plots$RegressionMatrix, column_annotations)
   }
 
   if (nrow(variable_importance_matrix) > 0) {
@@ -1165,6 +1503,9 @@ ScidrRegressionPlots <- function(regression_matrix,
       importance_data$OutcomeLabel,
       levels = unique(importance_data$OutcomeLabel[order(importance_data$OutcomeIndex)])
     )
+
+    importance_upper <- ScidrRobustFillLimits(importance_data$VariableImportance)
+    importance_limits <- if (is.null(importance_upper)) NULL else c(0, importance_upper[2])
 
     plots$VariableImportanceMatrix <- ggplot2::ggplot(
       importance_data,
@@ -1179,7 +1520,16 @@ ScidrRegressionPlots <- function(regression_matrix,
       ggplot2::scale_fill_gradient(
         low = "grey95",
         high = "#1B7837",
-        na.value = "grey90"
+        na.value = "grey90",
+        limits = importance_limits,
+        oob = function(x, range = importance_limits) {
+          if (is.null(range)) {
+            return(x)
+          }
+          x[x < range[1]] <- range[1]
+          x[x > range[2]] <- range[2]
+          x
+        }
       ) +
       ggplot2::labs(
         x = NULL,
@@ -1191,6 +1541,7 @@ ScidrRegressionPlots <- function(regression_matrix,
         panel.grid = ggplot2::element_blank(),
         axis.text.x = ggplot2::element_text(angle = 45, hjust = 1)
       )
+    plots$VariableImportanceMatrix <- ScidrAddColumnAnnotations(plots$VariableImportanceMatrix, column_annotations)
   }
 
   if (nrow(model_summary) > 0) {

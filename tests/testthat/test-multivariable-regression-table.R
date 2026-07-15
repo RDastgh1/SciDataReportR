@@ -27,7 +27,7 @@ test_that("MultivariableRegressionTable returns a stable ordinary regression obj
       "ModelSummary", "Multicollinearity", "Plots", "Metadata"
     )
   )
-  expect_s3_class(res$FormattedTable, "data.frame")
+  expect_s3_class(res$FormattedTable, "gt_tbl")
   expect_s3_class(res$LargeTable, "data.frame")
   expect_s3_class(res$RegressionMatrix, "data.frame")
   expect_s3_class(res$VariableImportanceMatrix, "data.frame")
@@ -106,6 +106,177 @@ test_that("MultivariableRegressionTable stores penalized regression tuning", {
   expect_s3_class(res$Metadata$AnalysisSettings$Tuning$y$CrossValidationErrors, "data.frame")
   expect_true("RetainedPredictors" %in% names(res$Diagnostics))
   expect_type(res$Diagnostics$RetainedPredictors[[1]], "character")
+})
+
+test_that("MultivariableRegressionTable treats covariates as mandatory (unpenalized) adjustments", {
+  skip_if_not_installed("glmnet")
+
+  set.seed(512)
+  n <- 80
+  df <- data.frame(
+    x1 = rnorm(n),
+    x2 = rnorm(n),
+    cov = rnorm(n),
+    cov_cat = factor(sample(c("A", "B", "C"), n, replace = TRUE))
+  )
+  df$y <- 0.8 * df$x1 + 0.5 * df$cov + rnorm(n)
+
+  res <- MultivariableRegressionTable(
+    data = df,
+    outcome_vars = "y",
+    predictor_vars = c("x1", "x2"),
+    covariates = c("cov", "cov_cat"),
+    Method = "lasso",
+    CVFolds = 5
+  )
+
+  tuning <- res$Metadata$AnalysisSettings$Tuning$y
+  expect_true(all(c("PenaltyFactors", "UnpenalizedTerms") %in% names(tuning)))
+  expect_setequal(tuning$UnpenalizedTerms, c("cov", "cov_cat"))
+
+  # Covariate columns (including factor dummies) get penalty factor 0,
+  # predictor columns get 1.
+  pf <- tuning$PenaltyFactors
+  expect_equal(unname(pf[c("x1", "x2")]), c(1, 1))
+  expect_true(all(pf[startsWith(names(pf), "cov")] == 0))
+
+  # Unpenalized covariates are always retained by the lasso.
+  # (Covariate rows live in LargeTable; RegressionMatrix reports predictors only.)
+  cov_rows <- res$LargeTable$Predictor %in% c("cov", "cov_cat")
+  expect_true(any(cov_rows))
+  expect_true(all(res$LargeTable$Selected[cov_rows]))
+})
+
+test_that("MultivariableRegressionTable FormattedTable is a gt table matching the univariate style", {
+  skip_if_not_installed("gt")
+  skip_if_not_installed("pROC")
+
+  set.seed(618)
+  df <- data.frame(
+    y = rnorm(80),
+    x1 = rnorm(80),
+    x2 = rnorm(80),
+    cov = rnorm(80)
+  )
+
+  res <- MultivariableRegressionTable(
+    data = df,
+    outcome_vars = "y",
+    predictor_vars = c("x1", "x2"),
+    covariates = "cov",
+    Method = "lm"
+  )
+
+  expect_s3_class(res$FormattedTable, "gt_tbl")
+
+  # The rendered table exposes a single combined estimate cell and a p-value
+  # column, and reports predictor rows only (covariates are adjusted for but
+  # not shown), mirroring MakeUnivariateRegressionTable's FormattedTable.
+  gt_data <- res$FormattedTable[["_data"]]
+  expect_true(all(c("Estimate_CI", "P") %in% names(gt_data)))
+  expect_true(all(grepl("(", gt_data$Estimate_CI, fixed = TRUE)))
+  expect_equal(nrow(gt_data), 2L)
+})
+
+test_that("MultivariableRegressionTable flags separation and blanks unreliable logistic estimates", {
+  skip_if_not_installed("pROC")
+
+  # x1 perfectly separates the outcome -> quasi-complete separation.
+  set.seed(70)
+  df <- data.frame(
+    grp = factor(c(rep("No", 20), rep("Yes", 20))),
+    x1 = c(rep(-10, 20), rep(10, 20)),
+    x2 = rnorm(40)
+  )
+
+  res <- MultivariableRegressionTable(
+    data = df,
+    outcome_vars = "grp",
+    predictor_vars = c("x1", "x2"),
+    Method = "lm"
+  )
+
+  expect_true(res$ModelSummary$SeparationDetected)
+  expect_false(res$ModelSummary$Converged)
+  # Unreliable coefficients are blanked, not left to explode into the plot.
+  expect_true(all(is.na(res$RegressionMatrix$StandardizedBeta)))
+  expect_true(any(grepl("Separation", res$Diagnostics$Warnings, ignore.case = TRUE)))
+})
+
+test_that("MultivariableRegressionTable reports perfectly collinear (aliased) terms", {
+  skip_if_not_installed("pROC")
+
+  set.seed(88)
+  n <- 60
+  df <- data.frame(y = rnorm(n), a = rnorm(n))
+  df$b <- df$a       # exact duplicate -> aliased
+  df$c <- 2 * df$a   # linear combination -> aliased
+
+  res <- MultivariableRegressionTable(
+    data = df,
+    outcome_vars = "y",
+    predictor_vars = c("a", "b", "c"),
+    Method = "lm"
+  )
+
+  expect_gt(res$ModelSummary$AliasedTermCount, 0)
+  expect_true(any(res$LargeTable$Aliased))
+  expect_true(any(grepl("aliased", res$Diagnostics$Warnings, ignore.case = TRUE)))
+})
+
+test_that("MultivariableRegressionTable reports an omnibus model p-value with a matching column annotation", {
+  skip_if_not_installed("pROC")
+
+  set.seed(131)
+  n <- 90
+  df <- data.frame(x1 = rnorm(n), x2 = rnorm(n))
+  df$y <- 1.2 * df$x1 + rnorm(n)  # strong linear signal -> significant omnibus F
+
+  res <- MultivariableRegressionTable(
+    data = df,
+    outcome_vars = "y",
+    predictor_vars = c("x1", "x2"),
+    Method = "lm"
+  )
+
+  expect_equal(res$ModelSummary$ModelStatType, "F")
+  expect_true(is.finite(res$ModelSummary$ModelPValue))
+  expect_lt(res$ModelSummary$ModelPValue, 0.05)
+
+  ann <- SciDataReportR:::ScidrColumnAnnotations(res$ModelSummary)
+  expect_true(any(grepl("^p", ann$Label)))
+})
+
+test_that("Penalized column annotation reports deviance explained, not a p-value", {
+  skip_if_not_installed("glmnet")
+
+  set.seed(202)
+  n <- 90
+  df <- data.frame(x1 = rnorm(n), x2 = rnorm(n))
+  df$y <- 1.0 * df$x1 + rnorm(n)
+
+  res <- MultivariableRegressionTable(
+    data = df,
+    outcome_vars = "y",
+    predictor_vars = c("x1", "x2"),
+    Method = "lasso",
+    CVFolds = 5
+  )
+
+  expect_true(is.na(res$ModelSummary$ModelPValue))
+  ann <- SciDataReportR:::ScidrColumnAnnotations(res$ModelSummary)
+  expect_true(any(grepl("Dev. expl", ann$Label, fixed = TRUE)))
+})
+
+test_that("ScidrRobustFillLimits clamps extreme values to symmetric limits", {
+  # A lone extreme should not blow out the range set by the bulk of the data.
+  vals <- c(rnorm(100, sd = 0.3), 600)
+  lims <- SciDataReportR:::ScidrRobustFillLimits(vals)
+  expect_length(lims, 2)
+  expect_equal(lims[1], -lims[2])
+  expect_lt(lims[2], 600)
+
+  expect_null(SciDataReportR:::ScidrRobustFillLimits(c(NA_real_, NA_real_)))
 })
 
 test_that("MultivariableRegressionTable drops sparse predictors and imputes by default", {

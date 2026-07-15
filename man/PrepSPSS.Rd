@@ -8,10 +8,12 @@ PrepSPSS(
   data,
   path = NULL,
   name_map_path = NULL,
+  label_map_path = NULL,
   return = c("list", "data", "map"),
   quiet = FALSE,
   show_map = FALSE,
   max_length = 64,
+  max_label_length = 120,
   compress = "byte",
   ...
 )
@@ -24,6 +26,9 @@ data are written using \code{haven::write_sav()}.}
 
 \item{name_map_path}{Optional file path for saving the name map as a CSV.}
 
+\item{label_map_path}{Optional file path for saving the label map (all
+truncated labels alongside their original text) as a CSV.}
+
 \item{return}{One of \code{"list"}, \code{"data"}, or \code{"map"}.}
 
 \item{quiet}{Logical. If \code{FALSE}, prints a compact summary.}
@@ -34,16 +39,29 @@ of renamed variables.}
 
 \item{max_length}{Maximum SPSS variable-name length. Defaults to 64.}
 
+\item{max_label_length}{Maximum value-label length in bytes. Defaults to 120,
+the SPSS limit enforced by \code{haven::write_sav()}. Factor levels and value
+labels longer than this are truncated and recorded in the label map.}
+
 \item{compress}{Compression type passed to \code{haven::write_sav()}.}
 
 \item{...}{Additional arguments passed to \code{haven::write_sav()} if \code{path} is
 supplied.}
 }
 \value{
-Depending on \code{return}, either a list, data frame, or name map.
+Depending on \code{return}, either a list (with elements \code{data},
+\code{name_map}, and \code{label_map}), the prepared data frame, or the name map.
 }
 \description{
 \code{PrepSPSS()} converts column names to SPSS-safe variable names while
 preserving the original column names as variable labels. It also returns and
 optionally writes a name map so users can track original and exported names.
+}
+\details{
+SPSS caps value labels (factor levels and \code{haven::labelled()} value labels)
+at 120 bytes and variable labels at 256 bytes; \code{haven::write_sav()} refuses
+to write files that exceed these limits. \code{PrepSPSS()} truncates over-long
+labels to fit (marking them with \code{"..."}), de-duplicates factor levels that
+collide after truncation, and records every truncation in a label map so no
+information is silently lost.
 }
