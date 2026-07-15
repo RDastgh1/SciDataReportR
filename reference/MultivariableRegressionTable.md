@@ -48,7 +48,11 @@ MultivariableRegressionTable(
 
 - covariates:
 
-  Optional character vector of covariate variable names.
+  Optional character vector of covariate variable names. Covariates are
+  treated as mandatory adjustments: for penalized methods (`"ridge"`,
+  `"lasso"`, `"elasticnet"`) they are exempted from the penalty
+  (`penalty.factor = 0`), so they are never shrunk or selected out of
+  the model.
 
 - Standardize:
 
@@ -131,8 +135,30 @@ MultivariableRegressionTable(
 A named list with stable components: `Models`, `FormattedTable`,
 `LargeTable`, `RegressionMatrix`, `VariableImportanceMatrix`,
 `Predictions`, `Diagnostics`, `ModelSummary`, `Multicollinearity`,
-`Plots`, and `Metadata`. `Plots` contains ggplot objects built from the
-stored result tables and predictions without refitting models.
+`Plots`, and `Metadata`. `FormattedTable` is a report-facing `gt` table
+grouped by outcome, matching the style of
+[`MakeUnivariateRegressionTable()`](https://rdastgh1.github.io/SciDataReportR/reference/MakeUnivariateRegressionTable.md):
+predictor rows only, a combined `Estimate (95% CI)` cell, and bold
+significant p-values. `LargeTable` is a data frame holding the full
+per-term detail (including covariate rows) for programmatic use, plus an
+`Aliased` flag marking perfectly collinear terms the model dropped.
+`ModelSummary` reports per-outcome `Converged`, `SeparationDetected`,
+and `AliasedTermCount`. For ordinary (`"lm"`) logistic fits,
+quasi-complete separation is detected (fitted probabilities pinned at
+0/1, exploded standardized coefficients, or non-convergence); the
+affected model's estimates are blanked (`NA`) and `Converged` is set to
+`FALSE` so unreliable coefficients do not propagate into tables or
+plots. `ModelSummary` also carries an omnibus model test per outcome
+(`ModelStat`, `ModelStatType`, `ModelPValue`): an F-test for linear
+models and a likelihood-ratio test for logistic models (`NA` for
+penalized fits, which have no valid classical omnibus test). `Plots`
+contains ggplot objects built from the stored result tables and
+predictions without refitting models; the coefficient heatmap uses
+robust, clamped fill limits so a single extreme value cannot dominate
+the scale, and each outcome column is annotated at the top with its
+omnibus p-value (ordinary models) or cross-validated deviance explained
+(penalized models) to discourage interpreting coefficients from a model
+that is not significant overall.
 
 ## Examples
 

@@ -12,10 +12,12 @@ PrepSPSS(
   data,
   path = NULL,
   name_map_path = NULL,
+  label_map_path = NULL,
   return = c("list", "data", "map"),
   quiet = FALSE,
   show_map = FALSE,
   max_length = 64,
+  max_label_length = 120,
   compress = "byte",
   ...
 )
@@ -37,6 +39,11 @@ PrepSPSS(
 
   Optional file path for saving the name map as a CSV.
 
+- label_map_path:
+
+  Optional file path for saving the label map (all truncated labels
+  alongside their original text) as a CSV.
+
 - return:
 
   One of `"list"`, `"data"`, or `"map"`.
@@ -55,6 +62,14 @@ PrepSPSS(
 
   Maximum SPSS variable-name length. Defaults to 64.
 
+- max_label_length:
+
+  Maximum value-label length in bytes. Defaults to 120, the SPSS limit
+  enforced by
+  [`haven::write_sav()`](https://haven.tidyverse.org/reference/read_spss.html).
+  Factor levels and value labels longer than this are truncated and
+  recorded in the label map.
+
 - compress:
 
   Compression type passed to
@@ -68,4 +83,16 @@ PrepSPSS(
 
 ## Value
 
-Depending on `return`, either a list, data frame, or name map.
+Depending on `return`, either a list (with elements `data`, `name_map`,
+and `label_map`), the prepared data frame, or the name map.
+
+## Details
+
+SPSS caps value labels (factor levels and
+[`haven::labelled()`](https://haven.tidyverse.org/reference/labelled.html)
+value labels) at 120 bytes and variable labels at 256 bytes;
+[`haven::write_sav()`](https://haven.tidyverse.org/reference/read_spss.html)
+refuses to write files that exceed these limits. `PrepSPSS()` truncates
+over-long labels to fit (marking them with `"..."`), de-duplicates
+factor levels that collide after truncation, and records every
+truncation in a label map so no information is silently lost.

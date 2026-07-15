@@ -87,6 +87,8 @@
 - [`MakeFacetCatComparisonTable()`](https://rdastgh1.github.io/SciDataReportR/reference/MakeFacetCatComparisonTable.md)
   : Create a merged gtsummary table by faceting comparisons across
   multiple categorical variables
+- [`MakePairwiseHeatmap()`](https://rdastgh1.github.io/SciDataReportR/reference/MakePairwiseHeatmap.md)
+  : Make a pairwise referent heatmap
 - [`MakeTable1()`](https://rdastgh1.github.io/SciDataReportR/reference/MakeTable1.md)
   : Create Summary Table using gtsummary
 - [`MakeUnivariateRegressionTable()`](https://rdastgh1.github.io/SciDataReportR/reference/MakeUnivariateRegressionTable.md)

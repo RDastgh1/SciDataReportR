@@ -368,7 +368,7 @@ print(sessionInfo())
     [28] Formula_1.2-5          pillar_1.11.1          car_3.1-5
     [31] tidyr_1.3.2            statsExpressions_2.0.0 abind_1.4-8
     [34] tidyselect_1.2.1       sjlabelled_1.2.0       digest_0.6.39
-    [37] mvtnorm_1.4-1          gtsummary_2.5.1        purrr_1.2.2
+    [37] mvtnorm_1.4-2          gtsummary_2.5.1        purrr_1.2.2
     [40] rematch2_2.1.2         forcats_1.0.1          ggstatsplot_1.0.0
     [43] labelled_2.16.0        fastmap_1.2.0          grid_4.6.1
     [46] cli_3.6.6              magrittr_2.0.5         patchwork_1.3.2

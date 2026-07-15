@@ -61,10 +61,12 @@ optionally writes a name map so users can track original and exported names.</p>
 <span>  <span class="va">data</span>,</span>
 <span>  path <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  name_map_path <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  label_map_path <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  return <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"list"</span>, <span class="st">"data"</span>, <span class="st">"map"</span><span class="op">)</span>,</span>
 <span>  quiet <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  show_map <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  max_length <span class="op">=</span> <span class="fl">64</span>,</span>
+<span>  max_label_length <span class="op">=</span> <span class="fl">120</span>,</span>
 <span>  compress <span class="op">=</span> <span class="st">"byte"</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -87,6 +89,11 @@ data are written using <code><a href="https://haven.tidyverse.org/reference/read
 <dd><p>Optional file path for saving the name map as a CSV.</p></dd>
 
 
+<dt id="arg-label-map-path">label_map_path<a class="anchor" aria-label="anchor" href="#arg-label-map-path"></a></dt>
+<dd><p>Optional file path for saving the label map (all
+truncated labels alongside their original text) as a CSV.</p></dd>
+
+
 <dt id="arg-return">return<a class="anchor" aria-label="anchor" href="#arg-return"></a></dt>
 <dd><p>One of <code>"list"</code>, <code>"data"</code>, or <code>"map"</code>.</p></dd>
 
@@ -105,6 +112,12 @@ of renamed variables.</p></dd>
 <dd><p>Maximum SPSS variable-name length. Defaults to 64.</p></dd>
 
 
+<dt id="arg-max-label-length">max_label_length<a class="anchor" aria-label="anchor" href="#arg-max-label-length"></a></dt>
+<dd><p>Maximum value-label length in bytes. Defaults to 120,
+the SPSS limit enforced by <code><a href="https://haven.tidyverse.org/reference/read_spss.html" class="external-link">haven::write_sav()</a></code>. Factor levels and value
+labels longer than this are truncated and recorded in the label map.</p></dd>
+
+
 <dt id="arg-compress">compress<a class="anchor" aria-label="anchor" href="#arg-compress"></a></dt>
 <dd><p>Compression type passed to <code><a href="https://haven.tidyverse.org/reference/read_spss.html" class="external-link">haven::write_sav()</a></code>.</p></dd>
 
@@ -116,7 +129,17 @@ supplied.</p></dd>
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>Depending on <code>return</code>, either a list, data frame, or name map.</p>
+    <p>Depending on <code>return</code>, either a list (with elements <code>data</code>,
+<code>name_map</code>, and <code>label_map</code>), the prepared data frame, or the name map.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
+    <p>SPSS caps value labels (factor levels and <code><a href="https://haven.tidyverse.org/reference/labelled.html" class="external-link">haven::labelled()</a></code> value labels)
+at 120 bytes and variable labels at 256 bytes; <code><a href="https://haven.tidyverse.org/reference/read_spss.html" class="external-link">haven::write_sav()</a></code> refuses
+to write files that exceed these limits. <code>PrepSPSS()</code> truncates over-long
+labels to fit (marking them with <code>"..."</code>), de-duplicates factor levels that
+collide after truncation, and records every truncation in a label map so no
+information is silently lost.</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
