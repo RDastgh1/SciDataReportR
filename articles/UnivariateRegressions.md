@@ -132,11 +132,11 @@ UniObj$LargeTable
 | Outcome | Variable | Effect | N | Estimate | SE | 95% CI Low | 95% CI High | p-value |
 |----|----|----|----|----|----|----|----|----|
 | Diagnosis |  |  |  |  |  |  |  |  |
-| Diagnosis | Genotype : E2E3 | Odds ratio | 333 | 494,241.994 | 624.194 | 0.000 | Inf | 0.983 |
-| Diagnosis | Genotype : E2E4 | Odds ratio | 333 | 302,597.139 | 624.195 | 0.000 | Inf | 0.984 |
+| Diagnosis | Genotype : E2E3 | Odds ratio | 333 | 494,241.995 | 624.194 | 0.000 | Inf | 0.983 |
+| Diagnosis | Genotype : E2E4 | Odds ratio | 333 | 302,597.140 | 624.195 | 0.000 | Inf | 0.984 |
 | Diagnosis | Genotype : E3E3 | Odds ratio | 333 | 541,489.618 | 624.194 | 0.000 | Inf | 0.983 |
-| Diagnosis | Genotype : E3E4 | Odds ratio | 333 | 1,336,082.754 | 624.194 | 0.000 | Inf | 0.982 |
-| Diagnosis | Genotype : E4E4 | Odds ratio | 333 | 3,389,087.961 | 624.194 | 0.000 | Inf | 0.981 |
+| Diagnosis | Genotype : E3E4 | Odds ratio | 333 | 1,336,082.755 | 624.194 | 0.000 | Inf | 0.982 |
+| Diagnosis | Genotype : E4E4 | Odds ratio | 333 | 3,389,087.963 | 624.194 | 0.000 | Inf | 0.981 |
 | Diagnosis | Calbindin | Odds ratio | 333 | 1.055 | 0.030 | 0.995 | 1.119 | 0.071 |
 | Diagnosis | Ferritin | Odds ratio | 333 | 1.399 | 0.160 | 1.022 | 1.915 | 0.036 |
 | Diagnosis | Matrix metalloproteinase 7 | Odds ratio | 333 | 1.462 | 0.087 | 1.232 | 1.734 | 0.000 |
@@ -392,7 +392,7 @@ sessionInfo()
     [1] stats     graphics  grDevices utils     datasets  methods   base
 
     other attached packages:
-    [1] dplyr_1.2.1            SciDataReportR_20.13.0
+    [1] dplyr_1.2.1            SciDataReportR_20.14.0
 
     loaded via a namespace (and not attached):
      [1] gtable_0.3.6           xfun_0.60              bayestestR_0.18.1
