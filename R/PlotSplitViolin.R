@@ -34,8 +34,11 @@
 #' @param covars \strong{Deprecated} (since 19.15.0). Use \code{covariates} instead.
 #' @examples
 #' data(SampleData)
+#' data(SampleVariableTypes)
 #'
-#' PlotSplitViolin(SampleData, Var = "AXL", group_var = "Diagnosis")
+#' Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
+#'
+#' PlotSplitViolin(Labelled, Var = "AXL", group_var = "Diagnosis")
 #' @export
 PlotSplitViolin <- function(data,
     Var,

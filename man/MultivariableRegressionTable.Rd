@@ -22,6 +22,9 @@ MultivariableRegressionTable(
   MaxMissingPredictor = 0.3,
   ImputeMethod = c("median_mode"),
   MinCompleteCases = NULL,
+  outcome_modes = "auto",
+  reference_levels = NULL,
+  binary_subsets = NULL,
   Data = lifecycle::deprecated(),
   OutcomeVars = lifecycle::deprecated(),
   PredictorVars = lifecycle::deprecated(),
@@ -78,6 +81,20 @@ factor, character, and logical variables.}
 \item{MinCompleteCases}{Optional minimum number of modeling rows required
 after missing-data handling.}
 
+\item{outcome_modes}{Multi-category outcome strategy. Supply a single
+\code{"auto"} or a named character vector whose values are \code{"auto"},
+\code{"multinomial"}, \code{"ordinal"}, \code{"one_vs_rest"}, \code{"binary_subset"}, or
+\code{"skip"}. In automatic mode, ordered factors use proportional-odds
+regression and unordered factors use multinomial regression.}
+
+\item{reference_levels}{Optional named character vector giving reference
+levels for categorical outcomes. Unspecified outcomes use their first
+retained factor level.}
+
+\item{binary_subsets}{Optional named list. Each outcome assigned
+\code{"binary_subset"} must have exactly two level names here, ordered as
+reference then event.}
+
 \item{Data}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
 
 \item{OutcomeVars}{\strong{Deprecated} (since 19.15.0). Use \code{outcome_vars} instead.}
@@ -112,6 +129,17 @@ so a single extreme value cannot dominate the scale, and each outcome
 column is annotated at the top with its omnibus p-value (ordinary models)
 or cross-validated deviance explained (penalized models) to discourage
 interpreting coefficients from a model that is not significant overall.
+
+Multi-category outcomes add explicit \code{OutcomeLevel}, \code{ReferenceLevel},
+\code{Contrast}, \code{ComparisonLabel}, and \code{OutcomeMode} fields. Unordered factors
+use nominal multinomial models by default. Ordered factors use
+proportional-odds models; their odds ratios describe movement toward a
+higher category, conditional on the predictors. One-vs-rest models are
+available for level-specific scientific questions, but their overlapping
+comparisons should be interpreted with multiplicity in mind. Binary
+subsets change both the analysis population and estimand. The resolved
+strategy, reference, engine, class counts, and concise scientific advice
+are recorded under \code{Metadata$Outcomes} and \code{Metadata$ModelingAdvice}.
 }
 \description{
 Fit one multivariable regression model per outcome and return a stable,
@@ -120,9 +148,12 @@ label-aware regression object for downstream tables, diagnostics, and plots.
 \examples{
 \donttest{
 data(SampleData)
+data(SampleVariableTypes)
+
+Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
 
 result <- MultivariableRegressionTable(
-  SampleData,
+  Labelled,
   outcome_vars = "AXL",
   predictor_vars = c("Adiponectin", "Alpha_1_Antitrypsin", "Alpha_2_Macroglobulin"),
   covariates = "age"
@@ -130,5 +161,28 @@ result <- MultivariableRegressionTable(
 
 # Display the regression coefficient matrix plot
 result$Plots$RegressionMatrix
+
+# Nominal outcome: each non-reference level versus the named reference.
+ExampleData <- Labelled
+ExampleData$Race <- factor(rep(c("Asian", "Black", "White"), length.out = nrow(ExampleData)))
+nominal_result <- MultivariableRegressionTable(
+  ExampleData,
+  outcome_vars = "Race",
+  predictor_vars = c("Adiponectin", "Alpha_1_Antitrypsin"),
+  Method = "lasso",
+  reference_levels = c(Race = "White")
+)
+
+# Ordered outcome: one proportional-odds effect per predictor.
+ExampleData$Severity <- ordered(
+  rep(c("Mild", "Moderate", "Severe"), length.out = nrow(ExampleData)),
+  levels = c("Mild", "Moderate", "Severe")
+)
+ordinal_result <- MultivariableRegressionTable(
+  ExampleData,
+  outcome_vars = "Severity",
+  predictor_vars = c("Adiponectin", "Alpha_1_Antitrypsin"),
+  Method = "lm"
+)
 }
 }

@@ -72,17 +72,20 @@
 #' @param MakeInteractive \strong{Deprecated} (since 19.15.0). Use \code{interactive} instead.
 #' @examples
 #' data(SampleData)
+#' data(SampleVariableTypes)
+#'
+#' Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
 #'
 #' # Static spider chart
 #' PlotSpiderChart(
-#'   SampleData,
+#'   Labelled,
 #'   variables = c("age", "AXL", "Adiponectin", "Alpha_1_Antitrypsin"),
 #'   group_var = "Diagnosis"
 #' )
 #'
 #' # Interactive (plotly) version of the same chart
 #' PlotSpiderChart(
-#'   SampleData,
+#'   Labelled,
 #'   variables = c("age", "AXL", "Adiponectin", "Alpha_1_Antitrypsin"),
 #'   group_var = "Diagnosis",
 #'   interactive = TRUE

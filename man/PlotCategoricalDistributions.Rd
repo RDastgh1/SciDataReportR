@@ -45,9 +45,12 @@ variables in a dataframe.
 }
 \examples{
 data(SampleData)
+data(SampleVariableTypes)
+
+Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
 
 PlotCategoricalDistributions(
-  SampleData,
+  Labelled,
   variables = c("Diagnosis", "Genotype")
 )
 }

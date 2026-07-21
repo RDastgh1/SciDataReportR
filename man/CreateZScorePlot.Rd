@@ -18,9 +18,12 @@ because this function creates a scientific visualization.
 }
 \examples{
 data(SampleData)
+data(SampleVariableTypes)
+
+Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
 
 CreateZScorePlot(
-  SampleData,
+  Labelled,
   TargetVar = "Diagnosis",
   variables = c("age", "AXL", "Adiponectin")
 )

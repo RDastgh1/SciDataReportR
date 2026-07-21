@@ -38,10 +38,13 @@ convention. It remains available as a backwards-compatible synonym.
 \examples{
 \donttest{
 data(SampleData)
+data(SampleVariableTypes)
+
+Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
 
 # Build univariate regression tables to plot
 urt <- MakeUnivariateRegressionTable(
-  data = SampleData,
+  data = Labelled,
   outcome_vars = "AXL",
   predictor_vars = c("age", "Adiponectin", "Alpha_1_Antitrypsin")
 )

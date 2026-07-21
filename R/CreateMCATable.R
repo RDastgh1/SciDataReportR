@@ -32,9 +32,12 @@
 #' @param Data \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
 #' @examples
 #' data(SampleData)
+#' data(SampleVariableTypes)
+#'
+#' Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
 #'
 #' mca <- CreateMCAObject(
-#'   SampleData,
+#'   Labelled,
 #'   VarsToReduce = c("Diagnosis", "Genotype")
 #' )
 #'
@@ -174,8 +177,11 @@ CreateMCAObject <- function(data,
 #' @seealso [CreateMCAObject()] for the canonical function and full examples.
 #' @examples
 #' data(SampleData)
+#' data(SampleVariableTypes)
 #'
-#' mca <- CreateMCATable(SampleData, VarsToReduce = c("Diagnosis", "Genotype"))
+#' Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
+#'
+#' mca <- CreateMCATable(Labelled, VarsToReduce = c("Diagnosis", "Genotype"))
 #' mca$p_scree
 #' @export
 CreateMCATable <- function(...) {

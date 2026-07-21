@@ -89,6 +89,9 @@ and automatically using variable labels for axis and title when available.
 }
 \examples{
 data(SampleData)
+data(SampleVariableTypes)
 
-PlotSplitViolin(SampleData, Var = "AXL", group_var = "Diagnosis")
+Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
+
+PlotSplitViolin(Labelled, Var = "AXL", group_var = "Diagnosis")
 }

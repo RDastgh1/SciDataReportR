@@ -206,9 +206,12 @@ PlotZScore <- function(data,
 #' @seealso [PlotZScore()] for the canonical function and full examples.
 #' @examples
 #' data(SampleData)
+#' data(SampleVariableTypes)
+#'
+#' Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
 #'
 #' CreateZScorePlot(
-#'   SampleData,
+#'   Labelled,
 #'   TargetVar = "Diagnosis",
 #'   variables = c("age", "AXL", "Adiponectin")
 #' )

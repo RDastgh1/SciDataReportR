@@ -44,9 +44,12 @@ more continuous variables, with optional group-wise colouring.
 }
 \examples{
 data(SampleData)
+data(SampleVariableTypes)
+
+Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
 
 PlotContinuousDistributions(
-  SampleData,
+  Labelled,
   variables = c("age", "AXL", "Adiponectin")
 )
 }

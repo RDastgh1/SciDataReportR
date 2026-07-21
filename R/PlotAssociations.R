@@ -19,15 +19,18 @@
 #' @param DataFrame \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
 #' @examples
 #' data(SampleData)
+#' data(SampleVariableTypes)
+#'
+#' Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
 #'
 #' # Two categorical variables (grouped bar chart)
-#' PlotAssociations(SampleData, "Diagnosis", "Genotype")
+#' PlotAssociations(Labelled, "Diagnosis", "Genotype")
 #'
 #' # Two continuous variables (scatter plot with correlation)
-#' PlotAssociations(SampleData, "age", "AXL")
+#' PlotAssociations(Labelled, "age", "AXL")
 #'
 #' # One continuous and one categorical variable (box/violin plot)
-#' PlotAssociations(SampleData, "Diagnosis", "AXL")
+#' PlotAssociations(Labelled, "Diagnosis", "AXL")
 #' @export
 PlotAssociations <- function(data,
     Var1,

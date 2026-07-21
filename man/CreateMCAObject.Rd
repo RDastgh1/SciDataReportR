@@ -60,9 +60,12 @@ in \code{DESCRIPTION} and should be installed for MCA workflows.
 }
 \examples{
 data(SampleData)
+data(SampleVariableTypes)
+
+Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
 
 mca <- CreateMCAObject(
-  SampleData,
+  Labelled,
   VarsToReduce = c("Diagnosis", "Genotype")
 )
 

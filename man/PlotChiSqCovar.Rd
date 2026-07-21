@@ -64,9 +64,12 @@ If you need true covariate adjustment, use regression-based models (logistic/mul
 }
 \examples{
 data(SampleData)
+data(SampleVariableTypes)
+
+Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
 
 result <- PlotChiSqCovar(
-  SampleData,
+  Labelled,
   predictor_vars = c("Diagnosis", "Genotype"),
   outcome_vars = c("Diagnosis", "Genotype")
 )

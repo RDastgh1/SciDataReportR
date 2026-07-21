@@ -27,9 +27,12 @@
 #' @param Covariates \strong{Deprecated} (since 19.15.0). Use \code{covariates} instead.
 #' @examples
 #' data(SampleData)
+#' data(SampleVariableTypes)
+#'
+#' Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
 #'
 #' result <- PlotPartialRegressionScatter(
-#'   SampleData,
+#'   Labelled,
 #'   IndepVar = "age",
 #'   DepVar = "AXL",
 #'   covariates = "Adiponectin"

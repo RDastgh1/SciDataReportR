@@ -30,9 +30,12 @@
 #' @param covars \strong{Deprecated} (since 19.15.0). Use \code{covariates} instead.
 #' @examples
 #' data(SampleData)
+#' data(SampleVariableTypes)
+#'
+#' Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
 #'
 #' result <- PlotChiSqCovar(
-#'   SampleData,
+#'   Labelled,
 #'   predictor_vars = c("Diagnosis", "Genotype"),
 #'   outcome_vars = c("Diagnosis", "Genotype")
 #' )

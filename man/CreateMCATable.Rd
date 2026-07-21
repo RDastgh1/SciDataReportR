@@ -19,8 +19,11 @@ static table.
 }
 \examples{
 data(SampleData)
+data(SampleVariableTypes)
 
-mca <- CreateMCATable(SampleData, VarsToReduce = c("Diagnosis", "Genotype"))
+Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
+
+mca <- CreateMCATable(Labelled, VarsToReduce = c("Diagnosis", "Genotype"))
 mca$p_scree
 }
 \seealso{

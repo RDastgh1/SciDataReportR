@@ -46,9 +46,12 @@ across two or more groups.
 }
 \examples{
 data(SampleData)
+data(SampleVariableTypes)
+
+Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
 
 PlotPValueComparisons(
-  SampleData,
+  Labelled,
   group_var = "Diagnosis",
   variables = c("age", "AXL", "Adiponectin")
 )

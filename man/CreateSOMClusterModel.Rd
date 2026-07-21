@@ -243,9 +243,12 @@ in \code{ModelInfo_MClust$diagnostics}.
 # version pin issue). The reduced settings below (k_range = 2:4, models = 1)
 # are otherwise fast enough to run once the bug is resolved.
 data(SampleData)
+data(SampleVariableTypes)
+
+Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
 
 model <- CreateSOMClusterModel(
-  data = SampleData,
+  data = Labelled,
   variables = c("age", "AXL", "Adiponectin", "Alpha_1_Antitrypsin"),
   method = "exploratory",
   k_range = 2:4,

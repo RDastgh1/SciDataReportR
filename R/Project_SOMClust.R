@@ -73,16 +73,19 @@
 #' # CreateSOMClusterModel() currently errors on the tracked get_data() bug
 #' # (see CreateSOMClusterModel() for details).
 #' data(SampleData)
+#' data(SampleVariableTypes)
+#'
+#' Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
 #'
 #' model <- CreateSOMClusterModel(
-#'   data = SampleData,
+#'   data = Labelled,
 #'   variables = c("age", "AXL", "Adiponectin", "Alpha_1_Antitrypsin"),
 #'   method = "finalize",
 #'   final_k = 3,
 #'   final_model = 1
 #' )
 #'
-#' projected <- ProjectSOMCluster(object = model, new_df = SampleData)
+#' projected <- ProjectSOMCluster(object = model, new_df = Labelled)
 #' }
 #' @export
 ProjectSOMCluster <- function(
@@ -786,7 +789,12 @@ ProjectSOMCluster <- function(
 #' \dontrun{
 #' # NOTE: Not run - see ProjectSOMCluster() and CreateSOMClusterModel() for the
 #' # tracked get_data() bug that blocks the SOM workflow.
-#' Project_SOMClust(object = model, new_df = SampleData)
+#' data(SampleData)
+#' data(SampleVariableTypes)
+#'
+#' Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
+#'
+#' Project_SOMClust(object = model, new_df = Labelled)
 #' }
 #' @export
 Project_SOMClust <- function(...) {

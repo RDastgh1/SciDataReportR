@@ -23,9 +23,12 @@
 #' @param Data \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
 #' @examples
 #' data(SampleData)
+#' data(SampleVariableTypes)
+#'
+#' Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
 #'
 #' # CatVars must be binary (exactly two unique non-NA values)
-#' result <- PlotPhiHeatmap(SampleData, CatVars = c("Diagnosis", "sex"))
+#' result <- PlotPhiHeatmap(Labelled, CatVars = c("Diagnosis", "sex"))
 #'
 #' result$Unadjusted$plot
 #' @export

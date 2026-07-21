@@ -117,19 +117,25 @@ SciDataReportR now uses workflow-oriented canonical names for new code, while ol
 library(SciDataReportR)
 
 # Metadata-aware setup
-variable_types <- CreateVariableTypesTemplate(SampleData)
-data_dictionary <- MakeDataDictionary(SampleData)
+data("SampleData")
+data("SampleVariableTypes")
+
+df_Revalued <- RevalueData(
+  SampleData,
+  SampleVariableTypes
+)$RevaluedData
+df_DataDictionary <- MakeDataDictionary(SampleData)
 
 # Cohort comparison workflow
 comparison <- MakeComparisonTable(
-  DataFrame = SampleData,
+  DataFrame = df_Revalued,
   CompVariable = "Diagnosis",
   Variables = c("age", "tau", "p_tau")
 )
 
 # Correlation heatmap workflow with downstream annotation
 cor_res <- PlotCorrelationsHeatmap(
-  Data = SampleData,
+  Data = df_Revalued,
   xVars = c("age", "tau", "p_tau"),
   yVars = c("Ab_42", "C_Reactive_Protein")
 )

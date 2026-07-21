@@ -348,16 +348,24 @@ test_that("MultivariableRegressionTable validates inputs", {
   )
 })
 
-test_that("MultivariableRegressionTable validates missingness and unsupported outcomes", {
+test_that("MultivariableRegressionTable supports ordinary multinomial outcomes", {
   df_three <- data.frame(
     cohort = factor(rep(c("A", "B", "C"), each = 10)),
     x1 = rnorm(30)
   )
 
-  expect_error(
-    MultivariableRegressionTable(df_three, "cohort", "x1"),
-    "Multinomial regression is not yet supported"
-  )
+  res <- MultivariableRegressionTable(df_three, "cohort", "x1")
+
+  expect_equal(unique(res$RegressionMatrix$OutcomeMode), "multinomial")
+  expect_equal(unique(res$RegressionMatrix$ReferenceLevel), "A")
+  expect_equal(unique(res$RegressionMatrix$OutcomeLevel), c("B", "C"))
+  expect_equal(unique(res$RegressionMatrix$ComparisonLabel), c("cohort: B vs A", "cohort: C vs A"))
+  expect_true(all(res$RegressionMatrix$EffectType == "Odds Ratio"))
+  expect_s3_class(res$Plots$RegressionMatrix, "ggplot")
+  expect_equal(res$Metadata$Outcomes$Engine, "nnet::multinom")
+})
+
+test_that("MultivariableRegressionTable validates missingness", {
 
   df_one_level <- data.frame(
     cohort = factor(c(rep("A", 10), rep("B", 10)), levels = c("A", "B")),
@@ -400,4 +408,144 @@ test_that("MultivariableRegressionTable validates missingness and unsupported ou
     ),
     "does not have enough rows after missing-data handling"
   )
+})
+
+test_that("MultivariableRegressionTable supports ordered proportional-odds outcomes", {
+  set.seed(641)
+  df <- data.frame(
+    severity = ordered(
+      sample(c("Mild", "Moderate", "Severe"), 90, replace = TRUE),
+      levels = c("Mild", "Moderate", "Severe")
+    ),
+    x1 = rnorm(90),
+    x2 = rnorm(90)
+  )
+
+  res <- MultivariableRegressionTable(df, "severity", c("x1", "x2"), Method = "lm")
+
+  expect_equal(unique(res$RegressionMatrix$OutcomeMode), "ordinal")
+  expect_equal(unique(res$RegressionMatrix$Contrast), "higher vs lower")
+  expect_equal(unique(res$RegressionMatrix$ComparisonLabel), "severity: higher vs lower")
+  expect_equal(res$Metadata$Outcomes$Engine, "MASS::polr")
+  expect_true(res$Metadata$Outcomes$Ordered)
+  expect_true(isTRUE(res$Metadata$AnalysisSettings$Tuning$severity$ProportionalOdds))
+})
+
+test_that("MultivariableRegressionTable supports grouped penalized multinomial outcomes", {
+  skip_if_not_installed("glmnet")
+  set.seed(642)
+  df <- data.frame(
+    cohort = factor(sample(c("A", "B", "C"), 120, replace = TRUE)),
+    x1 = rnorm(120),
+    x2 = rnorm(120),
+    age = rnorm(120, 50, 10)
+  )
+
+  res <- MultivariableRegressionTable(
+    df, "cohort", c("x1", "x2"), covariates = "age",
+    Method = "lasso", CVFolds = 3, reference_levels = c(cohort = "B")
+  )
+
+  expect_equal(unique(res$RegressionMatrix$ReferenceLevel), "B")
+  expect_equal(sort(unique(res$RegressionMatrix$OutcomeLevel)), c("A", "C"))
+  expect_true(all(is.na(res$RegressionMatrix$PValue)))
+  expect_equal(res$Metadata$AnalysisSettings$Tuning$cohort$TypeMultinomial, "grouped")
+  expect_equal(unname(res$Metadata$AnalysisSettings$Tuning$cohort$PenaltyFactors["age"]), 0)
+})
+
+test_that("MultivariableRegressionTable supports one-vs-rest, binary subsets, and skip", {
+  set.seed(643)
+  df <- data.frame(
+    cohort = factor(sample(c("A", "B", "C"), 120, replace = TRUE)),
+    y = rnorm(120),
+    x1 = rnorm(120)
+  )
+
+  ovr <- MultivariableRegressionTable(
+    df, c("cohort", "y"), "x1",
+    outcome_modes = c(cohort = "one_vs_rest")
+  )
+  expect_equal(
+    unique(ovr$RegressionMatrix$ComparisonLabel[ovr$RegressionMatrix$Outcome == "cohort"]),
+    paste0("cohort: ", c("A", "B", "C"), " vs all others")
+  )
+  expect_true(all(c("nominal", "ordinal", "one_vs_rest", "binary_subset", "skip") %in%
+    names(ovr$Metadata$ModelingAdvice)))
+
+  subset <- MultivariableRegressionTable(
+    df, "cohort", "x1", outcome_modes = c(cohort = "binary_subset"),
+    binary_subsets = list(cohort = c("C", "A"))
+  )
+  expect_equal(unique(subset$RegressionMatrix$ComparisonLabel), "cohort: A vs C")
+  expect_equal(unique(subset$RegressionMatrix$ReferenceLevel), "C")
+
+  expect_warning(
+    skipped <- MultivariableRegressionTable(
+      df, c("cohort", "y"), "x1", outcome_modes = c(cohort = "skip")
+    ),
+    "Skipping multi-category outcome"
+  )
+  expect_equal(unique(skipped$RegressionMatrix$Outcome), "y")
+  expect_equal(skipped$Metadata$SkippedOutcomes, "cohort")
+})
+
+test_that("MultivariableRegressionTable validates multi-category controls", {
+  df <- data.frame(
+    cohort = factor(rep(c("A", "B", "C"), each = 15)),
+    x1 = rnorm(45)
+  )
+
+  expect_error(
+    MultivariableRegressionTable(df, "cohort", "x1", reference_levels = c(cohort = "D")),
+    "not retained"
+  )
+  expect_error(
+    MultivariableRegressionTable(
+      df, "cohort", "x1", outcome_modes = c(cohort = "binary_subset"),
+      binary_subsets = list(cohort = c("A", "D"))
+    ),
+    "exactly two distinct retained levels"
+  )
+  expect_error(
+    MultivariableRegressionTable(df, "cohort", "x1", Method = "lasso", CVFolds = 20),
+    "exceeds the smallest class size"
+  )
+})
+
+test_that("penalized ordinal outcomes require ordinalNet", {
+  if (requireNamespace("ordinalNet", quietly = TRUE)) skip("ordinalNet is installed")
+  df <- data.frame(
+    severity = ordered(rep(c("Mild", "Moderate", "Severe"), each = 20)),
+    x1 = rnorm(60)
+  )
+
+  expect_error(
+    MultivariableRegressionTable(df, "severity", "x1", Method = "lasso", CVFolds = 3),
+    "ordinalNet"
+  )
+})
+
+test_that("MultivariableRegressionTable supports penalized proportional odds", {
+  skip_if_not_installed("ordinalNet")
+  set.seed(644)
+  df <- data.frame(
+    severity = ordered(
+      sample(c("Mild", "Moderate", "Severe"), 90, replace = TRUE),
+      levels = c("Mild", "Moderate", "Severe")
+    ),
+    x1 = rnorm(90),
+    x2 = rnorm(90),
+    age = rnorm(90, 50, 8)
+  )
+
+  res <- MultivariableRegressionTable(
+    df, "severity", c("x1", "x2"), covariates = "age",
+    Method = "lasso", CVFolds = 3
+  )
+
+  expect_equal(unique(res$RegressionMatrix$OutcomeMode), "ordinal")
+  expect_true(all(is.na(res$RegressionMatrix$PValue)))
+  expect_equal(res$Metadata$AnalysisSettings$Tuning$severity$Family, "cumulative")
+  expect_equal(res$Metadata$AnalysisSettings$Tuning$severity$UnpenalizedTerms, "age")
+  expect_true(all(res$Metadata$AnalysisSettings$Tuning$severity$PenaltyFactors["age"] == 0))
 })

@@ -21,13 +21,16 @@
 #'
 #' @examples
 #' data(SampleData)
+#' data(SampleVariableTypes)
 #'
-#' # SampleData has real missingness in several assays
+#' Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
+#'
+#' # The revalued data includes missingness defined in the codebook
 #' vars <- c("age", "AXL", "Angiotensinogen", "BMP_6", "IL_6",
 #'           "Fetuin_A", "NT_proBNP", "ENA_78")
 #'
 #' PlotMissingData(
-#'   SampleData,
+#'   Labelled,
 #'   variables = vars,
 #'   HoverVars = "Diagnosis"
 #' )

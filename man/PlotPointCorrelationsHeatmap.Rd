@@ -51,10 +51,13 @@ where 1 == PositiveLevel from \code{createBinaryMapping()}, and renders heatmap-
 }
 \examples{
 data(SampleData)
+data(SampleVariableTypes)
+
+Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
 
 # CatVars must be binary (exactly two unique non-NA values)
 result <- PlotPointCorrelationsHeatmap(
-  SampleData,
+  Labelled,
   CatVars = c("Diagnosis", "sex"),
   ContVars = c("age", "AXL", "Adiponectin")
 )

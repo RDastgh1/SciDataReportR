@@ -40,19 +40,32 @@ SciDataReportR organizes that work into repeatable steps:
 Most SciDataReportR workflows start with a data frame and, when available, a variable-type table or codebook.
 
 ```{r}
+#| label: LoadPackages
 library(SciDataReportR)
+```
 
+```{r}
+#| label: LoadData
 data("SampleData")
 data("SampleVariableTypes")
+
+df_Raw <- SampleData
+VariableTypes <- SampleVariableTypes
 ```
+
+::: callout-note
+The examples use the raw `SampleData` dataset and its shipped `SampleVariableTypes` codebook. The raw `age` variable contains `999` as a sentinel for missing data; `RevalueData()` uses the codebook to convert those values to `NA` before any summaries, plots, or models are created.
+:::
 
 For a project dataset, the starting point might look like this:
 
 ```{r}
-library(readr)
-
-clinical_data <- read_csv("path/to/data.csv")
-variable_types <- read_csv("path/to/variable_types.csv")
+#| label: ProjectDataExample
+#| eval: false
+df_Clinical <- readr::read_csv(here::here("data", "clinical_data.csv"))
+VariableTypes_Clinical <- readr::read_csv(
+  here::here("data", "variable_types.csv")
+)
 ```
 
 ## Create variable metadata
@@ -60,14 +73,18 @@ variable_types <- read_csv("path/to/variable_types.csv")
 Variable type templates make the analysis plan explicit. They help distinguish continuous, categorical, binary, ordinal, outcome, covariate, and feature variables before plotting or testing.
 
 ```{r}
-variable_types <- CreateVariableTypesTemplate(SampleData)
+#| label: CreateVariableMetadata
+VariableTypes_Template <- CreateVariableTypesTemplate(df_Raw)
 ```
+
+`CreateVariableTypesTemplate()` is useful when a dataset does not yet have a codebook. For the remaining examples, use the shipped `SampleVariableTypes` object because it already contains the labels, recodes, and missing-value rules for `SampleData`.
 
 Data dictionaries summarize the available variables and make the dataset easier to review with collaborators.
 
 ```{r}
-data_dictionary <- MakeDataDictionary(SampleData)
-FormattedDataDictionary(SampleData)
+#| label: ReviewDataDictionary
+df_DataDictionary <- MakeDataDictionary(df_Raw)
+FormattedDataDictionary(df_Raw)
 ```
 
 ## Recode and relabel data
@@ -75,8 +92,8 @@ FormattedDataDictionary(SampleData)
 When a variable-type table contains recoding or label information, use it to produce an analysis-ready data frame while preserving scientific meaning.
 
 ```{r}
-revalued <- RevalueData(SampleData, variable_types)
-analysis_data <- revalued$RevaluedData
+#| label: RevalueSampleData
+df_Revalued <- RevalueData(df_Raw, VariableTypes)$RevaluedData
 ```
 
 ## Inspect missingness
@@ -84,7 +101,8 @@ analysis_data <- revalued$RevaluedData
 Missing data patterns are one of the first bottlenecks in scientific analysis. They affect which variables are interpretable, which models are feasible, and whether downstream comparisons are biased.
 
 ```{r}
-PlotMissingData(analysis_data, Relabel = TRUE)
+#| label: PlotMissingness
+PlotMissingData(df_Revalued, Relabel = TRUE)
 ```
 
 ## Create report-ready summaries
@@ -92,18 +110,20 @@ PlotMissingData(analysis_data, Relabel = TRUE)
 Table 1 style summaries help reviewers and collaborators understand the cohort before detailed analyses.
 
 ```{r}
-MakeTable1(analysis_data, TreatOrdinalAs = "Continuous")
+#| label: CreateTableOne
+MakeTable1(df_Revalued, TreatOrdinalAs = "Continuous")
 ```
 
 Continuous and categorical profiling functions help researchers inspect variable distributions without hand-building repeated plots.
 
 ```{r}
-continuous_vars <- getNumVars(analysis_data, Ordinal = FALSE)
-categorical_vars <- getCatVars(analysis_data)
+#| label: ProfileDistributions
+vars_Continuous <- getNumVars(df_Revalued, Ordinal = FALSE)
+vars_Categorical <- getCatVars(df_Revalued)
 
-CreateSummaryTable(analysis_data, continuous_vars, Relabel = TRUE)
-PlotContinuousDistributions(analysis_data, continuous_vars[1:12], ncol = 3)
-PlotCategoricalDistributions(analysis_data, categorical_vars)
+CreateSummaryTable(df_Revalued, vars_Continuous, Relabel = TRUE)
+PlotContinuousDistributions(df_Revalued, vars_Continuous[1:12], ncol = 3)
+PlotCategoricalDistributions(df_Revalued, vars_Categorical)
 ```
 
 ## Screen associations
@@ -111,17 +131,19 @@ PlotCategoricalDistributions(analysis_data, categorical_vars)
 SciDataReportR supports both focused plots and matrix-style screening. This helps researchers identify relationships, candidate covariates, and patterns that may need dimensionality reduction.
 
 ```{r}
-PlotAssociations(analysis_data, "age", "Adiponectin")
-PlotAssociations(analysis_data, "Diagnosis", "Ab_42")
+#| label: PlotFocusedAssociations
+PlotAssociations(df_Revalued, "age", "Adiponectin")
+PlotAssociations(df_Revalued, "Diagnosis", "Ab_42")
 ```
 
 Correlation heatmaps return structured objects that can be reused downstream.
 
 ```{r}
+#| label: PlotCorrelationHeatmap
 correlation_result <- PlotCorrelationsHeatmap(
-  analysis_data,
-  xVars = continuous_vars[1:5],
-  yVars = continuous_vars[20:40],
+  df_Revalued,
+  xVars = vars_Continuous[1:5],
+  yVars = vars_Continuous[20:40],
   method = "pearson",
   covars = NULL,
   Relabel = TRUE,
@@ -134,6 +156,7 @@ correlation_result$Unadjusted$plot
 The output of `PlotCorrelationsHeatmap()` can be passed to `add_r_and_stars()`, and the returned plot can use `geom_starcaption()` to explain significance stars.
 
 ```{r}
+#| label: AnnotateCorrelationHeatmap
 add_r_and_stars(correlation_result) + geom_starcaption()
 ```
 
@@ -142,8 +165,9 @@ add_r_and_stars(correlation_result) + geom_starcaption()
 Group comparisons are a central part of clinical and life science reporting. `MakeComparisonTable()` provides report-ready summaries with optional covariates, effect sizes, and pairwise contrasts.
 
 ```{r}
+#| label: CompareDiagnosisGroups
 MakeComparisonTable(
-  DataFrame = analysis_data,
+  DataFrame = df_Revalued,
   CompVariable = "Diagnosis",
   Variables = c("age", "tau", "p_tau"),
   AddEffectSize = TRUE
@@ -153,12 +177,13 @@ MakeComparisonTable(
 For high-dimensional group signals, z-score plots provide a compact visual summary across many variables.
 
 ```{r}
-lab_measures <- continuous_vars[10:60]
+#| label: PlotGroupZScores
+vars_LabMeasures <- vars_Continuous[10:60]
 
 PlotZScore(
-  analysis_data,
+  df_Revalued,
   TargetVar = "Diagnosis",
-  Variables = lab_measures,
+  Variables = vars_LabMeasures,
   sort = FALSE
 )
 ```
@@ -168,9 +193,10 @@ PlotZScore(
 PCA workflows can produce scree plots, loading summaries, and reusable projection objects. This is useful when a cohort-level transformation should be applied to future datasets.
 
 ```{r}
+#| label: CreatePCAObject
 pca_object <- CreatePCAObject(
-  analysis_data,
-  lab_measures,
+  df_Revalued,
+  vars_LabMeasures,
   minThresh = 0.75,
   scale = TRUE,
   center = TRUE
@@ -183,6 +209,8 @@ pca_object$Lollipop
 Projection functions make the fit/apply split explicit:
 
 ```{r}
+#| label: ProjectPCAExample
+#| eval: false
 projected_scores <- ProjectPCA(new_data, pca_object)
 ```
 
@@ -191,7 +219,9 @@ projected_scores <- ProjectPCA(new_data, pca_object)
 SciDataReportR workflows are designed to make repeated analysis steps visible and reusable. For reports, include session information and preserve the variable-type table, codebook, and any fit objects used for projections.
 
 ```{r}
-sessionInfo()
+#| label: Reproducibility
+# save.image(here::here("results", "getting-started.RData"))
+print(sessionInfo())
 ```
 
 ## Next steps

@@ -48,9 +48,12 @@ are returned.
 }
 \examples{
 data(SampleData)
+data(SampleVariableTypes)
+
+Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
 
 result <- PlotPartialRegressionScatter(
-  SampleData,
+  Labelled,
   IndepVar = "age",
   DepVar = "AXL",
   covariates = "Adiponectin"

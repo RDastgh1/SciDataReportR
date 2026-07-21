@@ -23,9 +23,12 @@
 #' @param Variables \strong{Deprecated} (since 19.15.0). Use \code{variables} instead.
 #' @examples
 #' data(SampleData)
+#' data(SampleVariableTypes)
+#'
+#' Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
 #'
 #' PlotPValueComparisons(
-#'   SampleData,
+#'   Labelled,
 #'   group_var = "Diagnosis",
 #'   variables = c("age", "AXL", "Adiponectin")
 #' )
