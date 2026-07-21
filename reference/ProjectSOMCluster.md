@@ -112,15 +112,18 @@ if (FALSE) { # \dontrun{
 # CreateSOMClusterModel() currently errors on the tracked get_data() bug
 # (see CreateSOMClusterModel() for details).
 data(SampleData)
+data(SampleVariableTypes)
+
+Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
 
 model <- CreateSOMClusterModel(
-  data = SampleData,
+  data = Labelled,
   variables = c("age", "AXL", "Adiponectin", "Alpha_1_Antitrypsin"),
   method = "finalize",
   final_k = 3,
   final_model = 1
 )
 
-projected <- ProjectSOMCluster(object = model, new_df = SampleData)
+projected <- ProjectSOMCluster(object = model, new_df = Labelled)
 } # }
 ```

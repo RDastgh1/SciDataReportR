@@ -266,7 +266,7 @@ print(sessionInfo())
     [46] grid_4.6.1             cli_3.6.6              magrittr_2.0.5
     [49] patchwork_1.3.2        dichromat_2.0-0.1      broom_1.0.13
     [52] withr_3.0.3            scales_1.4.0           backports_1.5.1
-    [55] estimability_2.0.0     rmarkdown_2.31         emmeans_2.0.3
+    [55] estimability_2.0.0     rmarkdown_2.31         emmeans_2.0.4
     [58] otel_0.2.0             hms_1.1.4              coda_0.19-4.1
     [61] evaluate_1.0.5         knitr_1.51             haven_2.5.5
     [64] parameters_0.29.2      rstantools_2.6.0       rlang_1.3.0

@@ -312,7 +312,7 @@ sessionInfo()
      [28] expm_1.0-0             withr_3.0.3            purrr_1.2.2
      [31] nnet_7.3-20            grid_4.6.1             datawizard_1.3.1
      [34] xtable_1.8-8           e1071_1.7-17           gtsummary_2.5.1
-     [37] paletteer_1.7.0        ggplot2_4.0.3          emmeans_2.0.3
+     [37] paletteer_1.7.0        ggplot2_4.0.3          emmeans_2.0.4
      [40] scales_1.4.0           MASS_7.3-65            dichromat_2.0-0.1
      [43] insight_1.5.2          cli_3.6.6              mvtnorm_1.4-2
      [46] rmarkdown_2.31         generics_0.1.4         otel_0.2.0

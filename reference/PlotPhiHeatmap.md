@@ -69,9 +69,12 @@ A list with:
 
 ``` r
 data(SampleData)
+data(SampleVariableTypes)
+
+Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
 
 # CatVars must be binary (exactly two unique non-NA values)
-result <- PlotPhiHeatmap(SampleData, CatVars = c("Diagnosis", "sex"))
+result <- PlotPhiHeatmap(Labelled, CatVars = c("Diagnosis", "sex"))
 
 result$Unadjusted$plot
 ```

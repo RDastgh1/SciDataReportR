@@ -34,8 +34,11 @@ for the canonical function and full examples.
 
 ``` r
 data(SampleData)
+data(SampleVariableTypes)
 
-mca <- CreateMCATable(SampleData, VarsToReduce = c("Diagnosis", "Genotype"))
+Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
+
+mca <- CreateMCATable(Labelled, VarsToReduce = c("Diagnosis", "Genotype"))
 #> Warning: no non-missing arguments to min; returning Inf
 mca$p_scree
 ```

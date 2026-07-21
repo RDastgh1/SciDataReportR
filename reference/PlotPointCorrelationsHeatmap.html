@@ -43,7 +43,7 @@ where 1 == PositiveLevel from createBinaryMapping(), and renders heatmap-style t
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Plot Point-Biserial Correlations Between Binary and Continuous Variables</h1>
-      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/v20.14.0/R/PlotPointCorrelations.R" class="external-link"><code>R/PlotPointCorrelations.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/master/R/PlotPointCorrelations.R" class="external-link"><code>R/PlotPointCorrelations.R</code></a></small>
       <div class="d-none name"><code>PlotPointCorrelationsHeatmap.Rd</code></div>
     </div>
 
@@ -124,10 +124,13 @@ continuous variable: outcomes are the continuous variables (<code>ContVars</code
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">SampleData</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">SampleVariableTypes</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="va">Labelled</span> <span class="op">&lt;-</span> <span class="fu"><a href="RevalueData.html">RevalueData</a></span><span class="op">(</span><span class="va">SampleData</span>, <span class="va">SampleVariableTypes</span><span class="op">)</span><span class="op">$</span><span class="va">RevaluedData</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># CatVars must be binary (exactly two unique non-NA values)</span></span></span>
 <span class="r-in"><span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu">PlotPointCorrelationsHeatmap</span><span class="op">(</span></span></span>
-<span class="r-in"><span>  <span class="va">SampleData</span>,</span></span>
+<span class="r-in"><span>  <span class="va">Labelled</span>,</span></span>
 <span class="r-in"><span>  CatVars <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Diagnosis"</span>, <span class="st">"sex"</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>  ContVars <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"age"</span>, <span class="st">"AXL"</span>, <span class="st">"Adiponectin"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>

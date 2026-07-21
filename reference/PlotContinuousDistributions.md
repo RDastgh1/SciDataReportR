@@ -65,13 +65,22 @@ A ggplot object.
 
 ``` r
 data(SampleData)
+data(SampleVariableTypes)
+
+Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
 
 PlotContinuousDistributions(
-  SampleData,
+  Labelled,
   variables = c("age", "AXL", "Adiponectin")
 )
 #> Registered S3 methods overwritten by 'ggpp':
 #>   method                  from   
 #>   heightDetails.titleGrob ggplot2
 #>   widthDetails.titleGrob  ggplot2
+#> Warning: Removed 11 rows containing non-finite outside the scale range
+#> (`stat_half_ydensity()`).
+#> Warning: Removed 11 rows containing non-finite outside the scale range
+#> (`stat_boxplot()`).
+#> Warning: Removed 11 rows containing missing values or values outside the scale range
+#> (`geom_point_sorted()`).
 ```

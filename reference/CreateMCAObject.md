@@ -117,9 +117,12 @@ listed in `DESCRIPTION` and should be installed for MCA workflows.
 
 ``` r
 data(SampleData)
+data(SampleVariableTypes)
+
+Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
 
 mca <- CreateMCAObject(
-  SampleData,
+  Labelled,
   VarsToReduce = c("Diagnosis", "Genotype")
 )
 #> Warning: no non-missing arguments to min; returning Inf

@@ -35,6 +35,11 @@ for the canonical function and full examples.
 if (FALSE) { # \dontrun{
 # NOTE: Not run - see ProjectSOMCluster() and CreateSOMClusterModel() for the
 # tracked get_data() bug that blocks the SOM workflow.
-Project_SOMClust(object = model, new_df = SampleData)
+data(SampleData)
+data(SampleVariableTypes)
+
+Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
+
+Project_SOMClust(object = model, new_df = Labelled)
 } # }
 ```

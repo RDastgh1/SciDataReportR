@@ -33,9 +33,12 @@ for the canonical function and full examples.
 
 ``` r
 data(SampleData)
+data(SampleVariableTypes)
+
+Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
 
 CreateZScorePlot(
-  SampleData,
+  Labelled,
   TargetVar = "Diagnosis",
   variables = c("age", "AXL", "Adiponectin")
 )

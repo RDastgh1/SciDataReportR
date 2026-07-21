@@ -65,9 +65,12 @@ A ggplot object displaying the p-value comparisons.
 
 ``` r
 data(SampleData)
+data(SampleVariableTypes)
+
+Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
 
 PlotPValueComparisons(
-  SampleData,
+  Labelled,
   group_var = "Diagnosis",
   variables = c("age", "AXL", "Adiponectin")
 )

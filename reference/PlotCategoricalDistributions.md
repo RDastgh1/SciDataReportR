@@ -64,9 +64,12 @@ A ggplot object visualizing the distributions of categorical variables.
 
 ``` r
 data(SampleData)
+data(SampleVariableTypes)
+
+Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
 
 PlotCategoricalDistributions(
-  SampleData,
+  Labelled,
   variables = c("Diagnosis", "Genotype")
 )
 ```

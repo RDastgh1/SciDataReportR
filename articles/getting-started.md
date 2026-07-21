@@ -43,19 +43,34 @@ available, a variable-type table or codebook.
 ``` r
 
 library(SciDataReportR)
+```
+
+``` r
 
 data("SampleData")
 data("SampleVariableTypes")
+
+df_Raw <- SampleData
+VariableTypes <- SampleVariableTypes
 ```
+
+> **Note**
+>
+> The examples use the raw `SampleData` dataset and its shipped
+> `SampleVariableTypes` codebook. The raw `age` variable contains `999`
+> as a sentinel for missing data;
+> [`RevalueData()`](https://rdastgh1.github.io/SciDataReportR/reference/RevalueData.md)
+> uses the codebook to convert those values to `NA` before any
+> summaries, plots, or models are created.
 
 For a project dataset, the starting point might look like this:
 
 ``` r
 
-library(readr)
-
-clinical_data <- read_csv("path/to/data.csv")
-variable_types <- read_csv("path/to/variable_types.csv")
+df_Clinical <- readr::read_csv(here::here("data", "clinical_data.csv"))
+VariableTypes_Clinical <- readr::read_csv(
+  here::here("data", "variable_types.csv")
+)
 ```
 
 ## Create variable metadata
@@ -66,16 +81,22 @@ covariate, and feature variables before plotting or testing.
 
 ``` r
 
-variable_types <- CreateVariableTypesTemplate(SampleData)
+VariableTypes_Template <- CreateVariableTypesTemplate(df_Raw)
 ```
+
+[`CreateVariableTypesTemplate()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateVariableTypesTemplate.md)
+is useful when a dataset does not yet have a codebook. For the remaining
+examples, use the shipped `SampleVariableTypes` object because it
+already contains the labels, recodes, and missing-value rules for
+`SampleData`.
 
 Data dictionaries summarize the available variables and make the dataset
 easier to review with collaborators.
 
 ``` r
 
-data_dictionary <- MakeDataDictionary(SampleData)
-FormattedDataDictionary(SampleData)
+df_DataDictionary <- MakeDataDictionary(df_Raw)
+FormattedDataDictionary(df_Raw)
 ```
 
 ## Recode and relabel data
@@ -86,8 +107,7 @@ meaning.
 
 ``` r
 
-revalued <- RevalueData(SampleData, variable_types)
-analysis_data <- revalued$RevaluedData
+df_Revalued <- RevalueData(df_Raw, VariableTypes)$RevaluedData
 ```
 
 ## Inspect missingness
@@ -98,7 +118,7 @@ are feasible, and whether downstream comparisons are biased.
 
 ``` r
 
-PlotMissingData(analysis_data, Relabel = TRUE)
+PlotMissingData(df_Revalued, Relabel = TRUE)
 ```
 
 ## Create report-ready summaries
@@ -108,7 +128,7 @@ cohort before detailed analyses.
 
 ``` r
 
-MakeTable1(analysis_data, TreatOrdinalAs = "Continuous")
+MakeTable1(df_Revalued, TreatOrdinalAs = "Continuous")
 ```
 
 Continuous and categorical profiling functions help researchers inspect
@@ -116,12 +136,12 @@ variable distributions without hand-building repeated plots.
 
 ``` r
 
-continuous_vars <- getNumVars(analysis_data, Ordinal = FALSE)
-categorical_vars <- getCatVars(analysis_data)
+vars_Continuous <- getNumVars(df_Revalued, Ordinal = FALSE)
+vars_Categorical <- getCatVars(df_Revalued)
 
-CreateSummaryTable(analysis_data, continuous_vars, Relabel = TRUE)
-PlotContinuousDistributions(analysis_data, continuous_vars[1:12], ncol = 3)
-PlotCategoricalDistributions(analysis_data, categorical_vars)
+CreateSummaryTable(df_Revalued, vars_Continuous, Relabel = TRUE)
+PlotContinuousDistributions(df_Revalued, vars_Continuous[1:12], ncol = 3)
+PlotCategoricalDistributions(df_Revalued, vars_Categorical)
 ```
 
 ## Screen associations
@@ -132,8 +152,8 @@ patterns that may need dimensionality reduction.
 
 ``` r
 
-PlotAssociations(analysis_data, "age", "Adiponectin")
-PlotAssociations(analysis_data, "Diagnosis", "Ab_42")
+PlotAssociations(df_Revalued, "age", "Adiponectin")
+PlotAssociations(df_Revalued, "Diagnosis", "Ab_42")
 ```
 
 Correlation heatmaps return structured objects that can be reused
@@ -142,9 +162,9 @@ downstream.
 ``` r
 
 correlation_result <- PlotCorrelationsHeatmap(
-  analysis_data,
-  xVars = continuous_vars[1:5],
-  yVars = continuous_vars[20:40],
+  df_Revalued,
+  xVars = vars_Continuous[1:5],
+  yVars = vars_Continuous[20:40],
   method = "pearson",
   covars = NULL,
   Relabel = TRUE,
@@ -178,7 +198,7 @@ and pairwise contrasts.
 ``` r
 
 MakeComparisonTable(
-  DataFrame = analysis_data,
+  DataFrame = df_Revalued,
   CompVariable = "Diagnosis",
   Variables = c("age", "tau", "p_tau"),
   AddEffectSize = TRUE
@@ -190,12 +210,12 @@ visual summary across many variables.
 
 ``` r
 
-lab_measures <- continuous_vars[10:60]
+vars_LabMeasures <- vars_Continuous[10:60]
 
 PlotZScore(
-  analysis_data,
+  df_Revalued,
   TargetVar = "Diagnosis",
-  Variables = lab_measures,
+  Variables = vars_LabMeasures,
   sort = FALSE
 )
 ```
@@ -209,8 +229,8 @@ should be applied to future datasets.
 ``` r
 
 pca_object <- CreatePCAObject(
-  analysis_data,
-  lab_measures,
+  df_Revalued,
+  vars_LabMeasures,
   minThresh = 0.75,
   scale = TRUE,
   center = TRUE
@@ -236,7 +256,8 @@ projections.
 
 ``` r
 
-sessionInfo()
+# save.image(here::here("results", "getting-started.RData"))
+print(sessionInfo())
 ```
 
 ## Next steps

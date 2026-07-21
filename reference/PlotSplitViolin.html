@@ -47,7 +47,7 @@ and automatically using variable labels for axis and title when available."><met
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Split violin with aligned half-boxplots, significance label, sample sizes, and label-aware title</h1>
-      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/v20.14.0/R/PlotSplitViolin.R" class="external-link"><code>R/PlotSplitViolin.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/master/R/PlotSplitViolin.R" class="external-link"><code>R/PlotSplitViolin.R</code></a></small>
       <div class="d-none name"><code>PlotSplitViolin.Rd</code></div>
     </div>
 
@@ -192,8 +192,11 @@ If <code>TRUE</code>, uses Wilcoxon (with residualization if covariates are pres
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">SampleData</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">SampleVariableTypes</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="fu">PlotSplitViolin</span><span class="op">(</span><span class="va">SampleData</span>, Var <span class="op">=</span> <span class="st">"AXL"</span>, group_var <span class="op">=</span> <span class="st">"Diagnosis"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">Labelled</span> <span class="op">&lt;-</span> <span class="fu"><a href="RevalueData.html">RevalueData</a></span><span class="op">(</span><span class="va">SampleData</span>, <span class="va">SampleVariableTypes</span><span class="op">)</span><span class="op">$</span><span class="va">RevaluedData</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="fu">PlotSplitViolin</span><span class="op">(</span><span class="va">Labelled</span>, Var <span class="op">=</span> <span class="st">"AXL"</span>, group_var <span class="op">=</span> <span class="st">"Diagnosis"</span><span class="op">)</span></span></span>
 <span class="r-plt img"><img src="PlotSplitViolin-1.png" alt="" width="700" height="433"></span>
 </code></pre></div>
     </div>

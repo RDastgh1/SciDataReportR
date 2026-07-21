@@ -43,7 +43,7 @@ in new code."><meta property="og:image" content="https://rdastgh1.github.io/SciD
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Project new data onto an existing SOM clinical phenotype space</h1>
-      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/v20.14.0/R/Project_SOMClust.R" class="external-link"><code>R/Project_SOMClust.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/master/R/Project_SOMClust.R" class="external-link"><code>R/Project_SOMClust.R</code></a></small>
       <div class="d-none name"><code>Project_SOMClust.Rd</code></div>
     </div>
 
@@ -79,7 +79,12 @@ in new code.</p>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
 <span class="r-in"><span><span class="co"># NOTE: Not run - see ProjectSOMCluster() and CreateSOMClusterModel() for the</span></span></span>
 <span class="r-in"><span><span class="co"># tracked get_data() bug that blocks the SOM workflow.</span></span></span>
-<span class="r-in"><span><span class="fu">Project_SOMClust</span><span class="op">(</span>object <span class="op">=</span> <span class="va">model</span>, new_df <span class="op">=</span> <span class="va">SampleData</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">SampleData</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">SampleVariableTypes</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="va">Labelled</span> <span class="op">&lt;-</span> <span class="fu"><a href="RevalueData.html">RevalueData</a></span><span class="op">(</span><span class="va">SampleData</span>, <span class="va">SampleVariableTypes</span><span class="op">)</span><span class="op">$</span><span class="va">RevaluedData</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="fu">Project_SOMClust</span><span class="op">(</span>object <span class="op">=</span> <span class="va">model</span>, new_df <span class="op">=</span> <span class="va">Labelled</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
 </code></pre></div>
     </div>

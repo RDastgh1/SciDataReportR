@@ -139,6 +139,9 @@ A ggplot2 object.
 
 ``` r
 data(SampleData)
+data(SampleVariableTypes)
 
-PlotSplitViolin(SampleData, Var = "AXL", group_var = "Diagnosis")
+Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
+
+PlotSplitViolin(Labelled, Var = "AXL", group_var = "Diagnosis")
 ```

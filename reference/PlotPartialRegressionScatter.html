@@ -47,7 +47,7 @@ are returned."><meta property="og:image" content="https://rdastgh1.github.io/Sci
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Partial Regression Plot</h1>
-      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/v20.14.0/R/PlotPartialRegressionScatter.R" class="external-link"><code>R/PlotPartialRegressionScatter.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/master/R/PlotPartialRegressionScatter.R" class="external-link"><code>R/PlotPartialRegressionScatter.R</code></a></small>
       <div class="d-none name"><code>PlotPartialRegressionScatter.Rd</code></div>
     </div>
 
@@ -135,9 +135,12 @@ are returned.</p>
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">SampleData</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">SampleVariableTypes</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="va">Labelled</span> <span class="op">&lt;-</span> <span class="fu"><a href="RevalueData.html">RevalueData</a></span><span class="op">(</span><span class="va">SampleData</span>, <span class="va">SampleVariableTypes</span><span class="op">)</span><span class="op">$</span><span class="va">RevaluedData</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu">PlotPartialRegressionScatter</span><span class="op">(</span></span></span>
-<span class="r-in"><span>  <span class="va">SampleData</span>,</span></span>
+<span class="r-in"><span>  <span class="va">Labelled</span>,</span></span>
 <span class="r-in"><span>  IndepVar <span class="op">=</span> <span class="st">"age"</span>,</span></span>
 <span class="r-in"><span>  DepVar <span class="op">=</span> <span class="st">"AXL"</span>,</span></span>
 <span class="r-in"><span>  covariates <span class="op">=</span> <span class="st">"Adiponectin"</span></span></span>

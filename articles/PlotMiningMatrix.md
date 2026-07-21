@@ -378,7 +378,7 @@ sessionInfo()
     [49] magrittr_2.0.5         patchwork_1.3.2        utf8_1.2.6
     [52] dichromat_2.0-0.1      broom_1.0.13           withr_3.0.3
     [55] scales_1.4.0           backports_1.5.1        estimability_2.0.0
-    [58] httr_1.4.8             rmarkdown_2.31         emmeans_2.0.3
+    [58] httr_1.4.8             rmarkdown_2.31         emmeans_2.0.4
     [61] otel_0.2.0             gridExtra_2.3.1        hms_1.1.4
     [64] coda_0.19-4.1          evaluate_1.0.5         knitr_1.51
     [67] haven_2.5.5            parameters_0.29.2      viridisLite_0.4.3

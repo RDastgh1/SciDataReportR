@@ -133,7 +133,7 @@ as-is and does not re-zscore.
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>SOM + latent profile clustering pipeline (with AHP and distance baselines)</h1>
-      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/v20.14.0/R/Pipeline_SOMClust.R" class="external-link"><code>R/Pipeline_SOMClust.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/master/R/Pipeline_SOMClust.R" class="external-link"><code>R/Pipeline_SOMClust.R</code></a></small>
       <div class="d-none name"><code>CreateSOMClusterModel.Rd</code></div>
     </div>
 
@@ -428,9 +428,12 @@ in <code>ModelInfo_MClust$diagnostics</code>.</p>
 <span class="r-in"><span><span class="co"># version pin issue). The reduced settings below (k_range = 2:4, models = 1)</span></span></span>
 <span class="r-in"><span><span class="co"># are otherwise fast enough to run once the bug is resolved.</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">SampleData</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">SampleVariableTypes</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="va">Labelled</span> <span class="op">&lt;-</span> <span class="fu"><a href="RevalueData.html">RevalueData</a></span><span class="op">(</span><span class="va">SampleData</span>, <span class="va">SampleVariableTypes</span><span class="op">)</span><span class="op">$</span><span class="va">RevaluedData</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="va">model</span> <span class="op">&lt;-</span> <span class="fu">CreateSOMClusterModel</span><span class="op">(</span></span></span>
-<span class="r-in"><span>  data <span class="op">=</span> <span class="va">SampleData</span>,</span></span>
+<span class="r-in"><span>  data <span class="op">=</span> <span class="va">Labelled</span>,</span></span>
 <span class="r-in"><span>  variables <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"age"</span>, <span class="st">"AXL"</span>, <span class="st">"Adiponectin"</span>, <span class="st">"Alpha_1_Antitrypsin"</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>  method <span class="op">=</span> <span class="st">"exploratory"</span>,</span></span>
 <span class="r-in"><span>  k_range <span class="op">=</span> <span class="fl">2</span><span class="op">:</span><span class="fl">4</span>,</span></span>

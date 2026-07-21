@@ -35,9 +35,12 @@ for the canonical function and full examples.
 if (FALSE) { # \dontrun{
 # NOTE: Not run - see CreateSOMClusterModel() for the tracked get_data() bug.
 data(SampleData)
+data(SampleVariableTypes)
+
+Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
 
 Pipeline_SOMClust(
-  data = SampleData,
+  data = Labelled,
   variables = c("age", "AXL", "Adiponectin", "Alpha_1_Antitrypsin"),
   method = "exploratory",
   k_range = 2:4,

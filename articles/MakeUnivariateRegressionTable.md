@@ -374,7 +374,7 @@ print(sessionInfo())
     [46] cli_3.6.6              magrittr_2.0.5         patchwork_1.3.2
     [49] dichromat_2.0-0.1      broom_1.0.13           withr_3.0.3
     [52] scales_1.4.0           backports_1.5.1        estimability_2.0.0
-    [55] rmarkdown_2.31         emmeans_2.0.3          otel_0.2.0
+    [55] rmarkdown_2.31         emmeans_2.0.4          otel_0.2.0
     [58] hms_1.1.4              coda_0.19-4.1          evaluate_1.0.5
     [61] knitr_1.51             haven_2.5.5            parameters_0.29.2
     [64] rstantools_2.6.0       rlang_1.3.0            xtable_1.8-8

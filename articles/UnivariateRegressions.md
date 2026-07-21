@@ -132,11 +132,11 @@ UniObj$LargeTable
 | Outcome | Variable | Effect | N | Estimate | SE | 95% CI Low | 95% CI High | p-value |
 |----|----|----|----|----|----|----|----|----|
 | Diagnosis |  |  |  |  |  |  |  |  |
-| Diagnosis | Genotype : E2E3 | Odds ratio | 333 | 494,241.995 | 624.194 | 0.000 | Inf | 0.983 |
-| Diagnosis | Genotype : E2E4 | Odds ratio | 333 | 302,597.140 | 624.195 | 0.000 | Inf | 0.984 |
+| Diagnosis | Genotype : E2E3 | Odds ratio | 333 | 494,241.994 | 624.194 | 0.000 | Inf | 0.983 |
+| Diagnosis | Genotype : E2E4 | Odds ratio | 333 | 302,597.139 | 624.195 | 0.000 | Inf | 0.984 |
 | Diagnosis | Genotype : E3E3 | Odds ratio | 333 | 541,489.618 | 624.194 | 0.000 | Inf | 0.983 |
-| Diagnosis | Genotype : E3E4 | Odds ratio | 333 | 1,336,082.755 | 624.194 | 0.000 | Inf | 0.982 |
-| Diagnosis | Genotype : E4E4 | Odds ratio | 333 | 3,389,087.963 | 624.194 | 0.000 | Inf | 0.981 |
+| Diagnosis | Genotype : E3E4 | Odds ratio | 333 | 1,336,082.754 | 624.194 | 0.000 | Inf | 0.982 |
+| Diagnosis | Genotype : E4E4 | Odds ratio | 333 | 3,389,087.961 | 624.194 | 0.000 | Inf | 0.981 |
 | Diagnosis | Calbindin | Odds ratio | 333 | 1.055 | 0.030 | 0.995 | 1.119 | 0.071 |
 | Diagnosis | Ferritin | Odds ratio | 333 | 1.399 | 0.160 | 1.022 | 1.915 | 0.036 |
 | Diagnosis | Matrix metalloproteinase 7 | Odds ratio | 333 | 1.462 | 0.087 | 1.232 | 1.734 | 0.000 |
@@ -413,7 +413,7 @@ sessionInfo()
     [46] grid_4.6.1             cli_3.6.6              magrittr_2.0.5
     [49] patchwork_1.3.2        dichromat_2.0-0.1      broom_1.0.13
     [52] withr_3.0.3            scales_1.4.0           backports_1.5.1
-    [55] estimability_2.0.0     rmarkdown_2.31         emmeans_2.0.3
+    [55] estimability_2.0.0     rmarkdown_2.31         emmeans_2.0.4
     [58] otel_0.2.0             hms_1.1.4              coda_0.19-4.1
     [61] evaluate_1.0.5         knitr_1.51             haven_2.5.5
     [64] parameters_0.29.2      rstantools_2.6.0       rlang_1.3.0
