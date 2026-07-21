@@ -990,12 +990,32 @@ ScidrMulticategoryTermRow <- function(term, estimate, std_estimate, se, p_value,
   )
 }
 
+ScidrQuoteFormulaNames <- function(var_names) {
+  if (length(var_names) == 0) return(character(0))
+  vapply(var_names, function(var_name) deparse1(as.name(var_name), backtick = TRUE), character(1), USE.NAMES = FALSE)
+}
+
+ScidrRegressionFormula <- function(model_terms, outcome = NULL) {
+  term_symbols <- lapply(model_terms, as.name)
+  rhs <- if (length(term_symbols) == 0) {
+    1
+  } else {
+    Reduce(function(left, right) call("+", left, right), term_symbols)
+  }
+  formula_call <- if (is.null(outcome)) {
+    call("~", rhs)
+  } else {
+    call("~", as.name(outcome), rhs)
+  }
+  stats::as.formula(formula_call, env = parent.frame())
+}
+
 ScidrModelMatrixInfo <- function(df_model, model_terms) {
-  formula <- stats::reformulate(model_terms)
+  formula <- ScidrRegressionFormula(model_terms)
   x_full <- stats::model.matrix(formula, data = df_model)
   x <- x_full[, -1, drop = FALSE]
   assign <- attr(x_full, "assign")[-1]
-  term_labels <- attr(stats::terms(formula), "term.labels")
+  term_labels <- model_terms
   list(
     Formula = formula, X = x, Assign = assign, TermLabels = term_labels,
     ColumnTerms = term_labels[assign]
@@ -1004,7 +1024,7 @@ ScidrModelMatrixInfo <- function(df_model, model_terms) {
 
 ScidrFitOrdinaryMultinomial <- function(df_model, outcome, model_terms, predictor_vars, Standardize, reference) {
   if (!requireNamespace("nnet", quietly = TRUE)) stop("Package 'nnet' is required for ordinary multinomial regression.")
-  formula <- stats::reformulate(model_terms, response = outcome)
+  formula <- ScidrRegressionFormula(model_terms, outcome)
   fit_data <- if (Standardize) ScidrScaleContinuousColumns(df_model, outcome = outcome) else df_model
   std_data <- ScidrScaleContinuousColumns(df_model, outcome = outcome)
   warnings_vec <- character(0)
@@ -1036,7 +1056,7 @@ ScidrFitOrdinaryMultinomial <- function(df_model, outcome, model_terms, predicto
     }
   }
   probabilities <- stats::predict(model, type = "probs")
-  null_model <- nnet::multinom(stats::reformulate("1", response = outcome), data = fit_data, trace = FALSE)
+  null_model <- nnet::multinom(ScidrRegressionFormula(character(0), outcome), data = fit_data, trace = FALSE)
   lr <- 2 * (as.numeric(stats::logLik(model)) - as.numeric(stats::logLik(null_model)))
   lr_df <- attr(stats::logLik(model), "df") - attr(stats::logLik(null_model), "df")
   list(
@@ -1050,7 +1070,7 @@ ScidrFitOrdinaryMultinomial <- function(df_model, outcome, model_terms, predicto
 
 ScidrFitOrdinaryOrdinal <- function(df_model, outcome, model_terms, predictor_vars, Standardize) {
   if (!requireNamespace("MASS", quietly = TRUE)) stop("Package 'MASS' is required for proportional-odds regression.")
-  formula <- stats::reformulate(model_terms, response = outcome)
+  formula <- ScidrRegressionFormula(model_terms, outcome)
   fit_data <- if (Standardize) ScidrScaleContinuousColumns(df_model, outcome = outcome) else df_model
   std_data <- ScidrScaleContinuousColumns(df_model, outcome = outcome)
   warnings_vec <- character(0)
@@ -1075,7 +1095,7 @@ ScidrFitOrdinaryOrdinal <- function(df_model, outcome, model_terms, predictor_va
     )
   })
   probabilities <- stats::predict(model, type = "probs")
-  null_model <- MASS::polr(stats::reformulate("1", response = outcome), data = fit_data, Hess = TRUE)
+  null_model <- MASS::polr(ScidrRegressionFormula(character(0), outcome), data = fit_data, Hess = TRUE)
   lr <- 2 * (as.numeric(stats::logLik(model)) - as.numeric(stats::logLik(null_model)))
   lr_df <- attr(stats::logLik(model), "df") - attr(stats::logLik(null_model), "df")
   list(
@@ -1708,7 +1728,7 @@ ScidrFitOrdinaryRegression <- function(df_model,
                                        predictor_vars,
                                        outcome_family,
                                        standardize_estimates) {
-  formula <- stats::reformulate(model_terms, response = outcome)
+  formula <- ScidrRegressionFormula(model_terms, outcome)
   fit_data <- if (standardize_estimates) {
     ScidrScaleContinuousColumns(df_model, outcome = outcome, standardize_outcome = outcome_family == "linear")
   } else {
@@ -1752,9 +1772,9 @@ ScidrFitOrdinaryRegression <- function(df_model,
   std_coef <- stats::coef(standardized_model)
   ci <- tryCatch(stats::confint(model), error = function(e) NULL)
   base_model <- if (outcome_family == "linear") {
-    stats::lm(stats::reformulate("1", response = outcome), data = fit_data)
+    stats::lm(ScidrRegressionFormula(character(0), outcome), data = fit_data)
   } else {
-    stats::glm(stats::reformulate("1", response = outcome), data = fit_data, family = stats::binomial())
+    stats::glm(ScidrRegressionFormula(character(0), outcome), data = fit_data, family = stats::binomial())
   }
 
   # Rank deficiency: lm()/glm() set aliased (perfectly collinear) coefficients
@@ -1880,7 +1900,7 @@ ScidrFitPenalizedRegression <- function(df_model,
                                         cv_folds,
                                         lambda_choice,
                                         seed) {
-  model_formula <- stats::reformulate(model_terms)
+  model_formula <- ScidrRegressionFormula(model_terms)
   x_full <- stats::model.matrix(model_formula, data = df_model)
   column_terms <- attr(x_full, "assign")[-1]
   x_raw <- x_full[, -1, drop = FALSE]
@@ -1894,7 +1914,7 @@ ScidrFitPenalizedRegression <- function(df_model,
   # Covariates are mandatory adjustments: exempt them from the penalty so
   # ridge/lasso/elasticnet never shrink or drop them. penalty.factor is
   # per model-matrix column; map columns back to their originating term.
-  term_labels <- attr(stats::terms(model_formula), "term.labels")
+  term_labels <- model_terms
   covariate_terms <- setdiff(model_terms, predictor_vars)
   penalty_factor <- ifelse(term_labels[column_terms] %in% covariate_terms, 0, 1)
   names(penalty_factor) <- colnames(x_raw)
@@ -2024,7 +2044,12 @@ ScidrFitPenalizedRegression <- function(df_model,
 }
 
 ScidrMatchingCoefficientName <- function(coef_names, term) {
-  candidates <- coef_names[coef_names == term | startsWith(coef_names, paste0(term))]
+  quoted_term <- ScidrQuoteFormulaNames(term)
+  candidates <- coef_names[
+    coef_names %in% c(term, quoted_term) |
+      startsWith(coef_names, term) |
+      startsWith(coef_names, quoted_term)
+  ]
   candidates <- setdiff(candidates, "(Intercept)")
   if (length(candidates) == 0) {
     return(NA_character_)
@@ -2034,7 +2059,10 @@ ScidrMatchingCoefficientName <- function(coef_names, term) {
 
 ScidrOrdinaryVariableImportance <- function(model, base_model, term, outcome_family) {
   full_loglik <- as.numeric(stats::logLik(model))
-  reduced_formula <- stats::update.formula(stats::formula(model), paste(". ~ . -", term))
+  reduced_formula <- stats::update.formula(
+    stats::formula(model),
+    paste(". ~ . -", ScidrQuoteFormulaNames(term))
+  )
   reduced_model <- tryCatch(
     if (outcome_family == "linear") stats::lm(reduced_formula, data = model$model) else stats::glm(reduced_formula, data = model$model, family = stats::binomial()),
     error = function(e) NULL
@@ -2174,7 +2202,7 @@ ScidrRegressionDiagnostics <- function(fit_result,
     threshold <- threshold_info$Threshold
     pred_class <- as.integer(probs >= threshold)
     metrics <- ScidrConfusionMetrics(observed, pred_class)
-    null_model <- stats::glm(stats::reformulate("1", response = outcome), data = df_model, family = stats::binomial())
+    null_model <- stats::glm(ScidrRegressionFormula(character(0), outcome), data = df_model, family = stats::binomial())
     base$AUC <- threshold_info$AUC
     base$AUCLowerCI <- threshold_info$AUCLowerCI
     base$AUCUpperCI <- threshold_info$AUCUpperCI
@@ -2247,7 +2275,7 @@ ScidrConfusionMetrics <- function(observed, predicted) {
 ScidrRegressionMulticollinearity <- function(Data, model_terms) {
   model_data <- Data[, model_terms, drop = FALSE]
   model_data <- model_data[stats::complete.cases(model_data), , drop = FALSE]
-  x <- stats::model.matrix(stats::reformulate(model_terms), data = model_data)[, -1, drop = FALSE]
+  x <- stats::model.matrix(ScidrRegressionFormula(model_terms), data = model_data)[, -1, drop = FALSE]
   empty <- list(
     CorrelationMatrix = matrix(numeric(0), nrow = 0, ncol = 0),
     CorrelationDataFrame = data.frame(),

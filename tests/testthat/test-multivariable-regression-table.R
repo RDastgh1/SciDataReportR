@@ -549,3 +549,60 @@ test_that("MultivariableRegressionTable supports penalized proportional odds", {
   expect_equal(res$Metadata$AnalysisSettings$Tuning$severity$UnpenalizedTerms, "age")
   expect_true(all(res$Metadata$AnalysisSettings$Tuning$severity$PenaltyFactors["age"] == 0))
 })
+
+test_that("MultivariableRegressionTable supports non-syntactic variable names", {
+  set.seed(645)
+  n <- 120
+  df <- data.frame(
+    check.names = FALSE,
+    "Gender at birth" = factor(sample(c("Female", "Male", "Other"), n, replace = TRUE)),
+    "Education level" = factor(sample(c("High school", "College", "Graduate"), n, replace = TRUE)),
+    "Continuous outcome" = rnorm(n),
+    "Callosum Anterior Frontal_sfr" = rnorm(n),
+    "Left Inferior Fronto-occipital_sfr" = rnorm(n),
+    "Left Inferior Longitudinal" = rnorm(n),
+    "Left Corticospinal_sfr" = rnorm(n),
+    "Age" = rnorm(n, 50, 10)
+  )
+
+  ordinary <- MultivariableRegressionTable(
+    data = df,
+    outcome_vars = "Continuous outcome",
+    predictor_vars = c(
+      "Left Inferior Fronto-occipital_sfr",
+      "Left Inferior Longitudinal",
+      "Left Corticospinal_sfr"
+    ),
+    covariates = "Age",
+    Method = "lm"
+  )
+
+  expect_equal(
+    ordinary$RegressionMatrix$Predictor,
+    c(
+      "Left Inferior Fronto-occipital_sfr",
+      "Left Inferior Longitudinal",
+      "Left Corticospinal_sfr"
+    )
+  )
+  expect_true(all(is.finite(ordinary$RegressionMatrix$Estimate)))
+  expect_s3_class(ordinary$Plots$RegressionMatrix, "ggplot")
+
+  skip_if_not_installed("glmnet")
+  penalized <- MultivariableRegressionTable(
+    data = df,
+    outcome_vars = c("Gender at birth", "Education level"),
+    predictor_vars = c("Callosum Anterior Frontal_sfr", "Left Corticospinal_sfr"),
+    covariates = "Age",
+    Method = "lasso",
+    CVFolds = 3
+  )
+
+  expect_equal(sort(unique(penalized$RegressionMatrix$Outcome)), c("Education level", "Gender at birth"))
+  expect_equal(
+    sort(unique(penalized$RegressionMatrix$Predictor)),
+    c("Callosum Anterior Frontal_sfr", "Left Corticospinal_sfr")
+  )
+  expect_equal(nrow(penalized$RegressionMatrix), 8)
+  expect_true(all(grepl(" vs ", penalized$RegressionMatrix$ComparisonLabel, fixed = TRUE)))
+})
