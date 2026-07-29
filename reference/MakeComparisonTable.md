@@ -185,6 +185,14 @@ ANCOVA with Type II tests. If `Parametric = FALSE`, robust HC3
 covariance is used for the group-level Wald test and adjusted pairwise
 comparisons.
 
+For parametric continuous outcomes, effect sizes are reported as
+absolute Cohen's d for two-group comparisons and Cohen's f for omnibus
+comparisons involving more than two groups. With covariates, two-group
+Cohen's d uses the estimated marginal mean difference divided by the
+model residual standard deviation, and multi-group Cohen's f is
+calculated from the Type II ANCOVA group effect. These effect-size
+scales are not numerically equivalent.
+
 Binary categorical outcomes with covariates are tested using logistic
 regression likelihood-ratio tests. Multicategory categorical outcomes
 with covariates are tested using multinomial likelihood-ratio tests.
@@ -222,7 +230,7 @@ MakeComparisonTable(
 
 
   
-Comparison table (display: mean (SD)). Global p-values: unadjusted (no covariates). Categorical global test: auto; adjusted multi-category: multinomial_LR. Pairwise: included (p-adjust: bonferroni).
+Comparison table (display: mean (SD)). Global p-values: unadjusted (no covariates). Categorical global test: auto; adjusted multi-category: multinomial_LR. Pairwise: included (p-adjust: bonferroni). Effect sizes: |d|: 0.2/0.5/0.8 indicate small/medium/large effects; Cramer’s V: 0.1/0.3/0.5 are small/medium/large heuristics only for 2x2 tables; larger tables depend on their dimensions. Thresholds are conventional heuristics, not clinical-importance cutoffs.
 
   
 Characteristic

@@ -108,11 +108,30 @@ tbl_effectsize
 
 Comparison table (display: mean (SD)). Global p-values: unadjusted (no
 covariates). Categorical global test: auto; adjusted multi-category:
-multinomial_LR. Pairwise: not included (p-adjust: bonferroni). {.table
-.gt_table .caption-top style="width:100%;" quarto-bootstrap="false"}
+multinomial_LR. Pairwise: not included (p-adjust: bonferroni). Effect
+sizes: \|d\|: 0.2/0.5/0.8 indicate small/medium/large effects; Cramer’s
+V: 0.1/0.3/0.5 are small/medium/large heuristics only for 2x2 tables;
+larger tables depend on their dimensions. Thresholds are conventional
+heuristics, not clinical-importance cutoffs. {.table .gt_table
+.caption-top style="width:100%;" quarto-bootstrap="false"}
 
 When reporting group differences, effect sizes should generally be
 interpreted alongside p-values.
+
+For parametric continuous outcomes, the reported effect size depends on
+the number of groups:
+
+- Two groups use absolute Cohen’s (d). With covariates, this is the
+  adjusted estimated marginal mean difference divided by the ANCOVA
+  residual standard deviation.
+- More than two groups use Cohen’s (f). With covariates, partial
+  Cohen’s (f) is calculated from the Type II ANCOVA group effect.
+
+Cohen’s (d) and Cohen’s (f) are not numerically equivalent. In a
+balanced two-group design only, (d 2f). When effect sizes are requested,
+the table caption lists the scales that are present and provides
+conventional magnitude guides. These guides are heuristics rather than
+thresholds for clinical importance.
 
 ## 6 Nonparametric analyses
 
@@ -144,8 +163,13 @@ tbl_nonparametric
 
 Comparison table (display: median \[IQR\]). Global p-values: unadjusted
 (no covariates). Categorical global test: auto; adjusted multi-category:
-multinomial_LR. Pairwise: not included (p-adjust: bonferroni). {.table
-.gt_table .caption-top style="width:100%;" quarto-bootstrap="false"}
+multinomial_LR. Pairwise: not included (p-adjust: bonferroni). Effect
+sizes: epsilon-squared: 0.01/0.06/0.14 are heuristic small/medium/large
+thresholds; Cramer’s V: 0.1/0.3/0.5 are small/medium/large heuristics
+only for 2x2 tables; larger tables depend on their dimensions.
+Thresholds are conventional heuristics, not clinical-importance cutoffs.
+{.table .gt_table .caption-top style="width:100%;"
+quarto-bootstrap="false"}
 
 ## 7 Including Covariates
 
@@ -177,8 +201,12 @@ tbl_covariate
 
 Comparison table (display: mean (SD)). Global p-values: adjusted (ANCOVA
 Type II / LR). Categorical global test: auto; adjusted multi-category:
-multinomial_LR. Pairwise: not included (p-adjust: bonferroni). {.table
-.gt_table .caption-top style="width:100%;" quarto-bootstrap="false"}
+multinomial_LR. Pairwise: not included (p-adjust: bonferroni). Effect
+sizes: \|d\|: 0.2/0.5/0.8 indicate small/medium/large effects; Cramer’s
+V: 0.1/0.3/0.5 are small/medium/large heuristics only for 2x2 tables;
+larger tables depend on their dimensions. Thresholds are conventional
+heuristics, not clinical-importance cutoffs. {.table .gt_table
+.caption-top style="width:100%;" quarto-bootstrap="false"}
 
 Covariate adjustment can help determine whether observed group
 differences persist after controlling for potential confounding factors.
@@ -213,8 +241,12 @@ tbl_pairwise
 
 Comparison table (display: mean (SD)). Global p-values: unadjusted (no
 covariates). Categorical global test: auto; adjusted multi-category:
-multinomial_LR. Pairwise: included (p-adjust: bonferroni). {.table
-.gt_table .caption-top style="width:100%;" quarto-bootstrap="false"}
+multinomial_LR. Pairwise: included (p-adjust: bonferroni). Effect sizes:
+Cohen’s f: 0.1/0.25/0.4 indicate small/medium/large effects; Cramer’s V:
+0.1/0.3/0.5 are small/medium/large heuristics only for 2x2 tables;
+larger tables depend on their dimensions. Thresholds are conventional
+heuristics, not clinical-importance cutoffs. {.table .gt_table
+.caption-top style="width:100%;" quarto-bootstrap="false"}
 
 You can also choose a referent and compare only to that
 
@@ -244,8 +276,12 @@ tbl_pairwise_referent
 
 Comparison table (display: mean (SD)). Global p-values: unadjusted (no
 covariates). Categorical global test: auto; adjusted multi-category:
-multinomial_LR. Pairwise: included (p-adjust: bonferroni). {.table
-.gt_table .caption-top quarto-bootstrap="false"}
+multinomial_LR. Pairwise: included (p-adjust: bonferroni). Effect sizes:
+Cohen’s f: 0.1/0.25/0.4 indicate small/medium/large effects; Cramer’s V:
+0.1/0.3/0.5 are small/medium/large heuristics only for 2x2 tables;
+larger tables depend on their dimensions. Thresholds are conventional
+heuristics, not clinical-importance cutoffs. {.table .gt_table
+.caption-top quarto-bootstrap="false"}
 
 ## 9 Summary
 

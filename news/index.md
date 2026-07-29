@@ -2,6 +2,13 @@
 
 ## SciDataReportR 20.15.0
 
+- [`MakeComparisonTable()`](https://rdastgh1.github.io/SciDataReportR/reference/MakeComparisonTable.md)
+  now reports absolute Cohen’s d for two-group parametric comparisons,
+  including covariate-adjusted d from estimated marginal means, and
+  Cohen’s f for multi-group omnibus comparisons. Effect-size captions
+  identify the scales present, provide qualified magnitude guides, and
+  warn when d and f should not be compared numerically.
+
 ## SciDataReportR 20.14.0
 
 ## SciDataReportR 20.13.0
