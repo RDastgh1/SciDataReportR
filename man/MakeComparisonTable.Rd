@@ -120,6 +120,13 @@ When covariates are supplied, continuous outcomes are tested using ANCOVA
 with Type II tests. If \code{Parametric = FALSE}, robust HC3 covariance is used
 for the group-level Wald test and adjusted pairwise comparisons.
 
+For parametric continuous outcomes, effect sizes are reported as absolute
+Cohen's d for two-group comparisons and Cohen's f for omnibus comparisons
+involving more than two groups. With covariates, two-group Cohen's d uses
+the estimated marginal mean difference divided by the model residual
+standard deviation, and multi-group Cohen's f is calculated from the Type II
+ANCOVA group effect. These effect-size scales are not numerically equivalent.
+
 Binary categorical outcomes with covariates are tested using logistic
 regression likelihood-ratio tests. Multicategory categorical outcomes with
 covariates are tested using multinomial likelihood-ratio tests.

@@ -13,6 +13,13 @@
 #' with Type II tests. If `Parametric = FALSE`, robust HC3 covariance is used
 #' for the group-level Wald test and adjusted pairwise comparisons.
 #'
+#' For parametric continuous outcomes, effect sizes are reported as absolute
+#' Cohen's d for two-group comparisons and Cohen's f for omnibus comparisons
+#' involving more than two groups. With covariates, two-group Cohen's d uses
+#' the estimated marginal mean difference divided by the model residual
+#' standard deviation, and multi-group Cohen's f is calculated from the Type II
+#' ANCOVA group effect. These effect-size scales are not numerically equivalent.
+#'
 #' Binary categorical outcomes with covariates are tested using logistic
 #' regression likelihood-ratio tests. Multicategory categorical outcomes with
 #' covariates are tested using multinomial likelihood-ratio tests.
@@ -1024,9 +1031,27 @@ MakeComparisonTable <- function(data,
 
           fit <- tryCatch(stats::lm(fmla(var, c(CompVariable, Covariates)), data = df_cc), error = function(e) NULL)
           a2 <- tryCatch(car::Anova(fit, type = 2), error = function(e) NULL)
-          et <- tryCatch(effectsize::eta_squared(a2, partial = TRUE), error = function(e) NULL)
-
           val <- NA_real_
+          k_cc <- nlevels(df_cc[[CompVariable]])
+
+          if (k_cc == 2) {
+            val <- tryCatch({
+              emm <- emmeans::emmeans(
+                fit,
+                specs = stats::as.formula(paste0("~", btick(CompVariable)))
+              )
+              emm_pair <- summary(emmeans::contrast(emm, method = "pairwise"))
+              abs(as.numeric(emm_pair$estimate[1]) / stats::sigma(fit))
+            }, error = function(e) NA_real_)
+
+            return(tibble::tibble(
+              variable = var,
+              effect_size = val,
+              es_method = "adjusted |d| (EMM / residual SD)"
+            ))
+          }
+
+          et <- tryCatch(effectsize::eta_squared(a2, partial = TRUE), error = function(e) NULL)
 
           if (!is.null(et)) {
             idx <- if ("Parameter" %in% names(et)) {
@@ -1035,13 +1060,18 @@ MakeComparisonTable <- function(data,
               rownames(et) == CompVariable
             }
 
-            val <- suppressWarnings(et$Eta2_partial[idx][1])
+            eta_partial <- suppressWarnings(et$Eta2_partial[idx][1])
+
+            if (length(eta_partial) && is.finite(eta_partial) &&
+                eta_partial >= 0 && eta_partial < 1) {
+              val <- sqrt(eta_partial / (1 - eta_partial))
+            }
           }
 
           return(tibble::tibble(
             variable = var,
             effect_size = val,
-            es_method = "partial eta-squared"
+            es_method = "partial Cohen's f"
           ))
         }
 
@@ -1061,18 +1091,23 @@ MakeComparisonTable <- function(data,
             ))
           }
 
-          val <- tryCatch(
+          eta <- tryCatch(
             effectsize::eta_squared(
               stats::aov(fmla(var, CompVariable), data = df_vg),
               partial = FALSE
             )$Eta2[1],
             error = function(e) NA_real_
           )
+          val <- if (is.finite(eta) && eta >= 0 && eta < 1) {
+            sqrt(eta / (1 - eta))
+          } else {
+            NA_real_
+          }
 
           return(tibble::tibble(
             variable = var,
             effect_size = val,
-            es_method = "eta-squared"
+            es_method = "Cohen's f"
           ))
         }
 
@@ -1358,6 +1393,56 @@ MakeComparisonTable <- function(data,
     if (AddPairwise) "included" else "not included",
     PairwiseMethod
   )
+
+  if (AddEffectSize && exists("es_df", inherits = FALSE)) {
+    es_methods <- unique(stats::na.omit(es_df$es_method))
+    es_guides <- character(0)
+
+    if (any(grepl("\\|d\\|", es_methods))) {
+      es_guides <- c(
+        es_guides,
+        "|d|: 0.2/0.5/0.8 indicate small/medium/large effects"
+      )
+    }
+
+    if (any(grepl("Cohen's f", es_methods, fixed = TRUE))) {
+      es_guides <- c(
+        es_guides,
+        "Cohen's f: 0.1/0.25/0.4 indicate small/medium/large effects"
+      )
+    }
+
+    if ("epsilon-squared" %in% es_methods) {
+      es_guides <- c(
+        es_guides,
+        "epsilon-squared: 0.01/0.06/0.14 are heuristic small/medium/large thresholds"
+      )
+    }
+
+    if ("Cramer's V" %in% es_methods) {
+      es_guides <- c(
+        es_guides,
+        "Cramer's V: 0.1/0.3/0.5 are small/medium/large heuristics only for 2x2 tables; larger tables depend on their dimensions"
+      )
+    }
+
+    if (any(grepl("\\|d\\|", es_methods)) &&
+        any(grepl("Cohen's f", es_methods, fixed = TRUE))) {
+      es_guides <- c(
+        es_guides,
+        "d and f are not numerically equivalent; d is approximately 2f only in a balanced two-group design"
+      )
+    }
+
+    if (length(es_guides)) {
+      cap <- paste0(
+        cap,
+        " Effect sizes: ",
+        paste(es_guides, collapse = "; "),
+        ". Thresholds are conventional heuristics, not clinical-importance cutoffs."
+      )
+    }
+  }
 
   tbl %>% gtsummary::modify_caption(cap)
 }

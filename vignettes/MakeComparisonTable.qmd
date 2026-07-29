@@ -107,7 +107,20 @@ tbl_effectsize
 
 When reporting group differences, effect sizes should generally be interpreted alongside p-values.
 
+For parametric continuous outcomes, the reported effect size depends on the
+number of groups:
 
+* Two groups use absolute Cohen's \(d\). With covariates, this is the adjusted
+  estimated marginal mean difference divided by the ANCOVA residual standard
+  deviation.
+* More than two groups use Cohen's \(f\). With covariates, partial Cohen's
+  \(f\) is calculated from the Type II ANCOVA group effect.
+
+Cohen's \(d\) and Cohen's \(f\) are not numerically equivalent. In a balanced
+two-group design only, \(d \approx 2f\). When effect sizes are requested, the
+table caption lists the scales that are present and provides conventional
+magnitude guides. These guides are heuristics rather than thresholds for
+clinical importance.
 
 ## Nonparametric analyses
 
