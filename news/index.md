@@ -1,5 +1,7 @@
 # Changelog
 
+## SciDataReportR 20.16.0
+
 ## SciDataReportR 20.15.0
 
 - [`MakeComparisonTable()`](https://rdastgh1.github.io/SciDataReportR/reference/MakeComparisonTable.md)
