@@ -236,6 +236,12 @@ PlotClusterBoxplot <- function(data,
     dplyr::select(dplyr::all_of(c(ClusterVar, Variables))) %>%
     dplyr::mutate(
       .ClusterPlot = .data[[ClusterVar]]
+    ) %>%
+    dplyr::mutate(
+      dplyr::across(
+        dplyr::all_of(Variables),
+        ~ as.numeric(.x)
+      )
     )
 
   if (Scale) {
