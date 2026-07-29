@@ -405,32 +405,31 @@ sessionInfo()
     [1] stats     graphics  grDevices utils     datasets  methods   base
 
     other attached packages:
-    [1] plotly_4.12.0          ggplot2_4.0.3          dplyr_1.2.1
+    [1] plotly_4.12.1          ggplot2_4.0.3          dplyr_1.2.1
     [4] SciDataReportR_20.14.0
 
     loaded via a namespace (and not attached):
      [1] gtable_0.3.6           xfun_0.60              bayestestR_0.18.1
-     [4] htmlwidgets_1.6.4      insight_1.5.2          rstatix_1.0.0
+     [4] htmlwidgets_1.6.4      insight_1.5.2          rstatix_1.1.0
      [7] lattice_0.22-9         paletteer_1.7.0        vctrs_0.7.3
     [10] tools_4.6.1            generics_0.1.4         datawizard_1.3.1
     [13] tibble_3.3.1           pkgconfig_2.0.3        data.table_1.18.4
     [16] RColorBrewer_1.1-3     correlation_0.8.8      S7_0.2.2
-    [19] RcppParallel_5.1.11-2  lifecycle_1.0.5        compiler_4.6.1
+    [19] RcppParallel_6.1.1     lifecycle_1.0.5        compiler_4.6.1
     [22] farver_2.1.2           snakecase_0.11.1       carData_3.0-6
-    [25] htmltools_0.5.9        lazyeval_0.2.3         yaml_2.3.12
-    [28] Formula_1.2-5          pillar_1.11.1          car_3.1-5
-    [31] tidyr_1.3.2            statsExpressions_2.0.0 abind_1.4-8
-    [34] tidyselect_1.2.1       sjlabelled_1.2.0       digest_0.6.39
-    [37] mvtnorm_1.4-2          gtsummary_2.5.1        purrr_1.2.2
-    [40] rematch2_2.1.2         labeling_0.4.3         forcats_1.0.1
-    [43] ggstatsplot_1.0.0      labelled_2.16.0        fastmap_1.2.0
-    [46] grid_4.6.1             cli_3.6.6              magrittr_2.0.5
-    [49] patchwork_1.3.2        dichromat_2.0-0.1      broom_1.0.13
-    [52] withr_3.0.3            scales_1.4.0           backports_1.5.1
-    [55] estimability_2.0.0     httr_1.4.8             rmarkdown_2.31
-    [58] emmeans_2.0.4          otel_0.2.0             hms_1.1.4
-    [61] coda_0.19-4.1          evaluate_1.0.5         knitr_1.51
-    [64] haven_2.5.5            parameters_0.29.2      viridisLite_0.4.3
-    [67] rstantools_2.6.0       rlang_1.3.0            xtable_1.8-8
-    [70] glue_1.8.1             jsonlite_2.0.0         effectsize_1.0.3
-    [73] R6_2.6.1              
+    [25] htmltools_0.5.9        yaml_2.3.12            Formula_1.2-5
+    [28] pillar_1.11.1          car_3.1-5              tidyr_1.3.2
+    [31] statsExpressions_2.0.0 abind_1.4-8            tidyselect_1.2.1
+    [34] sjlabelled_1.2.0       digest_0.6.39          mvtnorm_1.4-2
+    [37] gtsummary_2.5.1        purrr_1.2.2            rematch2_2.1.2
+    [40] labeling_0.4.3         forcats_1.0.1          ggstatsplot_1.0.0
+    [43] labelled_2.16.0        fastmap_1.2.0          grid_4.6.1
+    [46] cli_3.6.6              magrittr_2.0.5         patchwork_1.3.2
+    [49] dichromat_2.0-1        broom_1.0.13           withr_3.0.3
+    [52] scales_1.4.0           backports_1.5.1        estimability_2.0.0
+    [55] httr_1.4.8             rmarkdown_2.31         emmeans_2.0.4
+    [58] otel_0.2.0             hms_1.1.4              coda_0.19-4.1
+    [61] evaluate_1.0.5         knitr_1.51             haven_2.5.5
+    [64] parameters_0.29.2      viridisLite_0.4.3      rstantools_2.7.0
+    [67] rlang_1.3.0            xtable_1.8-8           glue_1.8.1
+    [70] jsonlite_2.0.0         effectsize_1.0.3       R6_2.6.1              

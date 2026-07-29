@@ -357,11 +357,11 @@ print(sessionInfo())
 
     loaded via a namespace (and not attached):
      [1] gtable_0.3.6           xfun_0.60              bayestestR_0.18.1
-     [4] ggplot2_4.0.3          insight_1.5.2          rstatix_1.0.0
+     [4] ggplot2_4.0.3          insight_1.5.2          rstatix_1.1.0
      [7] lattice_0.22-9         paletteer_1.7.0        vctrs_0.7.3
     [10] tools_4.6.1            generics_0.1.4         datawizard_1.3.1
     [13] tibble_3.3.1           pkgconfig_2.0.3        RColorBrewer_1.1-3
-    [16] correlation_0.8.8      S7_0.2.2               RcppParallel_5.1.11-2
+    [16] correlation_0.8.8      S7_0.2.2               RcppParallel_6.1.1
     [19] gt_1.3.0               lifecycle_1.0.5        compiler_4.6.1
     [22] farver_2.1.2           carData_3.0-6          snakecase_0.11.1
     [25] sass_0.4.10            htmltools_0.5.9        yaml_2.3.12
@@ -372,11 +372,11 @@ print(sessionInfo())
     [40] rematch2_2.1.2         forcats_1.0.1          ggstatsplot_1.0.0
     [43] labelled_2.16.0        fastmap_1.2.0          grid_4.6.1
     [46] cli_3.6.6              magrittr_2.0.5         patchwork_1.3.2
-    [49] dichromat_2.0-0.1      broom_1.0.13           withr_3.0.3
+    [49] dichromat_2.0-1        broom_1.0.13           withr_3.0.3
     [52] scales_1.4.0           backports_1.5.1        estimability_2.0.0
     [55] rmarkdown_2.31         emmeans_2.0.4          otel_0.2.0
     [58] hms_1.1.4              coda_0.19-4.1          evaluate_1.0.5
     [61] knitr_1.51             haven_2.5.5            parameters_0.29.2
-    [64] rstantools_2.6.0       rlang_1.3.0            xtable_1.8-8
+    [64] rstantools_2.7.0       rlang_1.3.0            xtable_1.8-8
     [67] glue_1.8.1             xml2_1.6.0             jsonlite_2.0.0
     [70] effectsize_1.0.3       R6_2.6.1               fs_2.1.0              
