@@ -29,7 +29,8 @@ Imports:
     rlang,
     scales,
     stringr,
-    tidyselect
+    tidyselect,
+    viridisLite
 Suggests:
     arrow,
     aweSOM,

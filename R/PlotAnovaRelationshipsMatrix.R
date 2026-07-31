@@ -2,7 +2,9 @@
 #'
 #' This function plots the relationship between continuous and categorical variables
 #' using ANOVA or Kruskal-Wallis tests. It generates a "heatmap" with points
-#' colored and shaped based on statistical significance and effect size.
+#' colored and shaped based on statistical significance and effect size. When
+#' generalized eta-squared is unavailable, raw p-values are colored with
+#' [scale_color_pvalue()]; the FDR-corrected plot uses adjusted p-values.
 #'
 #' @param data The data frame containing the variables of interest.
 #' @param CatVars Character vector of categorical variable names.
@@ -15,7 +17,7 @@
 #' @param eps Small positive value used to avoid zero-size plotting artifacts.
 #' @return A list containing three ggplot objects: p (scatter plot without multiple comparison correction), p_FDR (scatter plot with FDR correction), and pvaltable (data frame of p-values and significance).
 #' @import dplyr
-#' @importFrom ggplot2 aes geom_point labs scale_shape_manual scale_color_gradientn guides theme
+#' @importFrom ggplot2 aes geom_point labs scale_shape_manual scale_colour_gradient guides theme
 #' @importFrom sjlabelled get_label
 #' @importFrom tidyr pivot_longer
 #' @importFrom rstatix anova_test kruskal_test get_summary_stats add_significance adjust_pvalue
@@ -283,11 +285,12 @@ PlotAnovaRelationshipsMatrix <- function(data,
     dplyr::mutate(Test = method) |>
     as.data.frame()
 
-  # plots: use ges if available, else color by p
-  colour_var <- if ("ges" %in% names(stat.test)) "ges" else "p"
+  has_effect_size <- "ges" %in% names(stat.test)
 
-  p <- ggplot2::ggplot(stat.test, ggplot2::aes(y = YLabel, x = XLabel, shape = `p<.05`, text = PlotText)) +
-    ggplot2::geom_point(ggplot2::aes(size = `p<.05`, colour = .data[[colour_var]])) +
+  p <- ggplot2::ggplot(
+    stat.test,
+    ggplot2::aes(y = YLabel, x = XLabel, shape = `p<.05`, text = PlotText)
+  ) +
     ggplot2::theme(
       axis.text.x = ggplot2::element_text(angle = 90),
       axis.title.x = ggplot2::element_blank(),
@@ -296,14 +299,31 @@ PlotAnovaRelationshipsMatrix <- function(data,
     ggplot2::scale_shape_manual(values = c(7, 16, 17, 15, 18), drop = FALSE) +
     ggplot2::guides(size = "none") +
     ggplot2::labs(subtitle = "No Multiple Comparison Correction") +
-    ggplot2::xlab("") + ggplot2::ylab("") + ggplot2::scale_colour_gradient(
+    ggplot2::xlab("") +
+    ggplot2::ylab("")
+
+  if (has_effect_size) {
+    p <- p +
+      ggplot2::geom_point(
+        ggplot2::aes(size = `p<.05`, colour = .data[["ges"]])
+      ) +
+      ggplot2::scale_colour_gradient(
       low = "#c6dbef",   # light blue
       high = "#08306b",  # dark blue
       name = "Effect Size"
     )
+  } else {
+    p <- p +
+      ggplot2::geom_point(
+        ggplot2::aes(size = `p<.05`, colour = .data[["p"]])
+      ) +
+      scale_color_pvalue()
+  }
 
-  p_FDR <- ggplot2::ggplot(stat.test, ggplot2::aes(y = YLabel, x = XLabel, shape = p.adj.signif, text = PlotText)) +
-    ggplot2::geom_point(ggplot2::aes(size = p.adj.signif, colour = .data[[colour_var]])) +
+  p_FDR <- ggplot2::ggplot(
+    stat.test,
+    ggplot2::aes(y = YLabel, x = XLabel, shape = p.adj.signif, text = PlotText)
+  ) +
     ggplot2::theme(
       axis.text.x = ggplot2::element_text(angle = 90),
       axis.title.x = ggplot2::element_blank(),
@@ -312,11 +332,26 @@ PlotAnovaRelationshipsMatrix <- function(data,
     ggplot2::scale_shape_manual(values = c(7, 16, 17, 15, 18), drop = FALSE) +
     ggplot2::guides(size = "none") +
     ggplot2::labs(subtitle = "FDR Correction") +
-    ggplot2::xlab("") + ggplot2::ylab("") + ggplot2::scale_colour_gradient(
+    ggplot2::xlab("") +
+    ggplot2::ylab("")
+
+  if (has_effect_size) {
+    p_FDR <- p_FDR +
+      ggplot2::geom_point(
+        ggplot2::aes(size = p.adj.signif, colour = .data[["ges"]])
+      ) +
+      ggplot2::scale_colour_gradient(
       low = "#c6dbef",   # light blue
       high = "#08306b",  # dark blue
       name = "Effect Size"
     )
+  } else {
+    p_FDR <- p_FDR +
+      ggplot2::geom_point(
+        ggplot2::aes(size = p.adj.signif, colour = .data[["p.adj"]])
+      ) +
+      scale_color_pvalue(name = "FDR-adjusted P-value")
+  }
 
   out <- list(
     Unadjusted = list(PvalTable = stat.test, plot = p),
