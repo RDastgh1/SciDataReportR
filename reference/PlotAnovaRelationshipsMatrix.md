@@ -3,7 +3,10 @@
 This function plots the relationship between continuous and categorical
 variables using ANOVA or Kruskal-Wallis tests. It generates a "heatmap"
 with points colored and shaped based on statistical significance and
-effect size.
+effect size. When generalized eta-squared is unavailable, raw p-values
+are colored with
+[`scale_color_pvalue()`](https://rdastgh1.github.io/SciDataReportR/reference/scale_color_pvalue.md);
+the FDR-corrected plot uses adjusted p-values.
 
 ## Usage
 

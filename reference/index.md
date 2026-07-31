@@ -251,6 +251,10 @@
   : Reverse Levels of Categorical Factors
 - [`safe_merge()`](https://rdastgh1.github.io/SciDataReportR/reference/safe_merge.md)
   : Safely merge two data frames with relationship-aware validation
+- [`scale_color_pvalue()`](https://rdastgh1.github.io/SciDataReportR/reference/scale_color_pvalue.md)
+  : Apply an evidence-aware p-value color scale
+- [`scale_fill_pvalue()`](https://rdastgh1.github.io/SciDataReportR/reference/scale_fill_pvalue.md)
+  : Apply an evidence-aware p-value fill scale
 - [`use_EDATemplate()`](https://rdastgh1.github.io/SciDataReportR/reference/use_EDATemplate.md)
   : Use the EDATemplate Quarto Template
 - [`use_GetStartedScript()`](https://rdastgh1.github.io/SciDataReportR/reference/use_GetStartedScript.md)

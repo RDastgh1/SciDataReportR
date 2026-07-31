@@ -400,7 +400,7 @@ sessionInfo()
      [7] lattice_0.22-9         paletteer_1.7.0        vctrs_0.7.3
     [10] tools_4.6.1            generics_0.1.4         datawizard_1.3.1
     [13] tibble_3.3.1           pkgconfig_2.0.3        RColorBrewer_1.1-3
-    [16] correlation_0.8.8      S7_0.2.2               RcppParallel_6.1.1
+    [16] correlation_0.8.8      S7_0.2.2               RcppParallel_6.2.0
     [19] gt_1.3.0               lifecycle_1.0.5        compiler_4.6.1
     [22] farver_2.1.2           carData_3.0-6          snakecase_0.11.1
     [25] sass_0.4.10            htmltools_0.5.9        yaml_2.3.12

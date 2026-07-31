@@ -44,6 +44,9 @@
   Rapidly identify patterns, anomalies, covariates, and candidate
   hypotheses across an entire dataset.
 
+- [Threshold-aware p-value color
+  scales](https://rdastgh1.github.io/SciDataReportR/articles/PValueColorScales.md):
+
 - [Screening predictors with
   MakeUnivariateRegressionTable()](https://rdastgh1.github.io/SciDataReportR/articles/UnivariateRegressions.md):
 

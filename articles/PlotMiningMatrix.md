@@ -365,7 +365,7 @@ sessionInfo()
     [10] tools_4.6.1            generics_0.1.4         datawizard_1.3.1
     [13] tibble_3.3.1           pkgconfig_2.0.3        data.table_1.18.4
     [16] RColorBrewer_1.1-3     correlation_0.8.8      S7_0.2.2
-    [19] RcppParallel_6.1.1     lifecycle_1.0.5        compiler_4.6.1
+    [19] RcppParallel_6.2.0     lifecycle_1.0.5        compiler_4.6.1
     [22] farver_2.1.2           snakecase_0.11.1       carData_3.0-6
     [25] htmltools_0.5.9        yaml_2.3.12            Formula_1.2-5
     [28] pillar_1.11.1          car_3.1-5              tidyr_1.3.2
