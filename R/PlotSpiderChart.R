@@ -789,9 +789,7 @@ PlotSpiderChart <- function(data,
           title = list(text = LegendTitle),
           orientation = "v"
         ),
-        annotations = InteractiveAnnotations,
-        width = InteractiveWidth,
-        height = InteractiveHeight
+        annotations = InteractiveAnnotations
       )
 
     return(p_int)

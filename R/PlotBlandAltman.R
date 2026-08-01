@@ -91,9 +91,9 @@ PlotBlandAltman <- function(data,
       fill = "lightgray", alpha = 0.3, color = 'white'
     ) +
     ggplot2::geom_point(shape = 16, size = 1.5, alpha = 0.5) +
-    ggplot2::geom_hline(yintercept = BAstats$mean.diffs, linetype = "dashed", color = "blue", size = 0.8) +
-    ggplot2::geom_hline(yintercept = BAstats$upper.limit, linetype = "dashed", color = "blue", size = 0.7) +
-    ggplot2::geom_hline(yintercept = BAstats$lower.limit, linetype = "dashed", color = "blue", size = 0.7) +
+    ggplot2::geom_hline(yintercept = BAstats$mean.diffs, linetype = "dashed", color = "blue", linewidth = 0.8) +
+    ggplot2::geom_hline(yintercept = BAstats$upper.limit, linetype = "dashed", color = "blue", linewidth = 0.7) +
+    ggplot2::geom_hline(yintercept = BAstats$lower.limit, linetype = "dashed", color = "blue", linewidth = 0.7) +
     ggplot2::theme_bw() +
     ggplot2::labs(subtitle = caption) +
     ggplot2::xlab("Averages") +

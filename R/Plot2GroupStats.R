@@ -144,14 +144,14 @@ Plot2GroupStats <- function(data,
   # ---- working data ---------------------------------------------------------
   tData <- Data
   tData$GroupVar <- Data[[GroupVar]]
-  tData <- tData |>
-    dplyr::select(GroupVar, dplyr::all_of(Variables)) |>
+  tData <- tData %>%
+    dplyr::select(GroupVar, dplyr::all_of(Variables)) %>%
     dplyr::filter(GroupVar %in% c(normalClust, impClust))
   if (!all(c(normalClust, impClust) %in% unique(tData$GroupVar))) {
     stop("After filtering, one of the groups is missing. Check `impClust` / `normalClust` and data.")
   }
   tData$GroupVar <- factor(tData$GroupVar, levels = c(normalClust, impClust))
-  tData <- tData |> dplyr::mutate(dplyr::across(where(is.character), factor))
+  tData <- tData %>% dplyr::mutate(dplyr::across(where(is.character), factor))
 
   # ---- pruning --------------------------------------------------------------
   miss_prop <- colMeans(is.na(tData))
@@ -208,8 +208,8 @@ Plot2GroupStats <- function(data,
   if (!all(c("row_type","variable") %in% names(tb))) {
     stop("Unexpected structure from MakeComparisonTable$table_body (needs `row_type` and `variable`).")
   }
-  pvaltable <- tb |>
-    dplyr::filter(.data$row_type == "label") |>
+  pvaltable <- tb %>%
+    dplyr::filter(.data$row_type == "label") %>%
     dplyr::select(dplyr::any_of(c("variable","label","p.value","effect_size","es_method")))
   if (!"p.value" %in% names(pvaltable)) {
     stop("`p.value` is missing in MakeComparisonTable output.")

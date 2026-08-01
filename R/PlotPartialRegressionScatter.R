@@ -119,7 +119,7 @@ PlotPartialRegressionScatter <- function(data,
   }
 
   # Create the ggplot object.
-  plotObj <- ggplot(DataSub, aes_string(x = paste0(IndepVar, "_resid"), y = paste0(DepVar, "_resid"))) +
+  plotObj <- ggplot(DataSub, aes(x = .data[[paste0(IndepVar, "_resid")]], y = .data[[paste0(DepVar, "_resid")]])) +
     geom_point() +
     geom_smooth(method = "lm", se = FALSE, color = "blue") +
     labs(title = "Partial Regression Plot",

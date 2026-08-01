@@ -223,6 +223,9 @@ add_r_and_stars <- function(res,
   }
 
   # Add new layers
+  d$label_r[is.na(d$r) | is.nan(d$r)] <- ""
+  d$label_star[is.na(d$r) | is.nan(d$r)] <- ""
+
   p +
     ggplot2::geom_text(
       data = d,

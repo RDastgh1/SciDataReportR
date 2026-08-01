@@ -99,7 +99,8 @@ CreateMCAObject <- function(data,
 
   # Determine number of components if not provided
   if (is.null(numComponents)) {
-    nc <- min(which(mca_result$eig[, 3] >= minThresh))  # Select based on variance
+    nc_candidates <- which(mca_result$eig[, 3] >= minThresh)
+    nc <- if (length(nc_candidates) == 0) nrow(mca_result$eig) else min(nc_candidates)
   } else {
     nc <- numComponents
   }
@@ -148,12 +149,13 @@ CreateMCAObject <- function(data,
   }
 
   # Create a lollipop plot for loadings
-  p <- ggplot2::ggplot(mLoading, ggplot2::aes(x = rowname, y = Contribution, alpha = TopContributor)) +
+  p <- ggplot2::ggplot(mLoading, ggplot2::aes(x = rowname, y = Contribution, alpha = as.numeric(TopContributor))) +
     ggplot2::geom_segment(ggplot2::aes(xend = rowname, y = 0, yend = Contribution), color = "black") +
     ggplot2::geom_point() +
     ggplot2::facet_wrap(~Dimension, nrow = 1) +
     ggplot2::coord_flip() +
     ggplot2::geom_hline(yintercept = 0) +
+    ggplot2::scale_alpha_continuous(range = c(0.4, 1), guide = "none") +
     ggplot2::theme_bw()
 
   CombinedData <- cbind(Data, MCAind$coord)

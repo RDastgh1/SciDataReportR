@@ -893,7 +893,7 @@ CreatePCAObject <- function(data,
       loadings_raw <- sweep(
         fit_raw$rotation,
         2,
-        fit_raw$sdev,
+        fit_raw$sdev[seq_len(ncol(fit_raw$rotation))],
         FUN = "*"
       )
 
@@ -1051,7 +1051,7 @@ CreatePCAObject <- function(data,
       ggplot2::aes(
         x = PlotLabel,
         y = value,
-        alpha = TopContributor,
+        alpha = as.numeric(TopContributor),
         color = color
       )
     ) +
@@ -1077,6 +1077,7 @@ CreatePCAObject <- function(data,
         axis.title.y = ggplot2::element_blank()
       ) +
       ggplot2::geom_point() +
+      ggplot2::scale_alpha_continuous(range = c(0.4, 1), guide = "none") +
       ggplot2::scale_color_manual(values = c("black"))
   } else {
     p <- ggplot2::ggplot(
@@ -1084,7 +1085,7 @@ CreatePCAObject <- function(data,
       ggplot2::aes(
         x = PlotLabel,
         y = value,
-        alpha = TopContributor,
+        alpha = as.numeric(TopContributor),
         color = color
       )
     ) +
@@ -1110,6 +1111,7 @@ CreatePCAObject <- function(data,
         axis.title.y = ggplot2::element_blank()
       ) +
       ggplot2::geom_point() +
+      ggplot2::scale_alpha_continuous(range = c(0.4, 1), guide = "none") +
       ggplot2::scale_color_manual(values = classcolors)
   }
 

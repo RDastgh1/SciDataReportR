@@ -58,22 +58,19 @@ df_Revalued <- RevaluedObj$RevaluedData
 
 ## Define outcomes and predictors
 
-For this example we will evaluate a panel of biomarkers as predictors of several clinical outcomes.
+For this example we will evaluate clinical and demographic predictors of continuous biomarker outcomes.
 
 ```{r}
 OutcomeVars <- c(
-  "Diagnosis",
-  "sex"
+  "Calbindin",
+  "Ferritin"
 )
 
 PredictorVars <- c(
-  "Genotype",
-  "Calbindin",
-  "Ferritin",
-  "MMP7",
-  "Calbindin",
-  "Sortilin",
-  "Osteopontin"
+  "Diagnosis",
+  "age",
+  "sex",
+  "Genotype"
 )
 ```
 
@@ -111,14 +108,14 @@ This version is often useful during exploratory analyses and quality control.
 
 Covariates can be included in every regression model.
 
-For example, age is commonly included when evaluating biomarker associations.
+For example, MMP7 can be included when evaluating whether associations are independent of another biomarker.
 
 ```{r}
 UniObj_Covar <- MakeUnivariateRegressionTable(
   data = df_Revalued,
   outcome_vars = OutcomeVars,
   predictor_vars = PredictorVars,
-  covariates = "age"
+  covariates = "MMP7"
 )
 ```
 
@@ -161,7 +158,7 @@ For example:
 
 ```{r}
 summary(
-  UniObj$ModelSummaries$Diagnosis$Ferritin
+  UniObj$ModelSummaries$Calbindin$Diagnosis
 )
 ```
 

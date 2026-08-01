@@ -131,36 +131,36 @@ PlotAnovaRelationshipsMatrix <- function(data,
 
   vars_keep <- unique(c(CatVars, ContVars, Covariates))
 
-  df0 <- Data |>
-    dplyr::select(dplyr::all_of(vars_keep)) |>
-    dplyr::mutate(.rowID = dplyr::row_number()) |>
+  df0 <- Data %>%
+    dplyr::select(dplyr::all_of(vars_keep)) %>%
+    dplyr::mutate(.rowID = dplyr::row_number()) %>%
     dplyr::mutate(dplyr::across(dplyr::all_of(CatVars), ~ as.factor(.x)))
 
   # Keep covars attached by rowID (avoid pivot mixing types)
   cov_df <- if (length(Covariates) > 0) {
-    df0 |> dplyr::select(.rowID, dplyr::all_of(Covariates))
+    df0 %>% dplyr::select(.rowID, dplyr::all_of(Covariates))
   } else {
-    df0 |> dplyr::select(.rowID)
+    df0 %>% dplyr::select(.rowID)
   }
 
-  mData <- df0 |>
+  mData <- df0 %>%
     tidyr::pivot_longer(
       cols = dplyr::all_of(CatVars),
       names_to = "CategoricalVariable",
       values_to = "CategoricalValue"
-    ) |>
+    ) %>%
     tidyr::pivot_longer(
       cols = dplyr::all_of(ContVars),
       names_to = "ContinuousVariable",
       values_to = "ContinuousValue"
-    ) |>
-    dplyr::select(-dplyr::any_of(Covariates)) |>
-    dplyr::left_join(cov_df, by = ".rowID") |>
+    ) %>%
+    dplyr::select(-dplyr::any_of(Covariates)) %>%
+    dplyr::left_join(cov_df, by = ".rowID") %>%
     dplyr::mutate(
       CategoricalValue = as.factor(CategoricalValue),
       ContinuousVariable = as.factor(ContinuousVariable),
       ContinuousValue = suppressWarnings(as.numeric(as.character(ContinuousValue)))
-    ) |>
+    ) %>%
     tidyr::drop_na(CategoricalValue, ContinuousValue)
 
   if (length(Covariates) > 0) {
@@ -170,14 +170,14 @@ PlotAnovaRelationshipsMatrix <- function(data,
   if (nrow(mData) == 0) return(empty_return())
 
   # pair-level guards
-  mData <- mData |>
-    dplyr::group_by(ContinuousVariable, CategoricalVariable) |>
+  mData <- mData %>%
+    dplyr::group_by(ContinuousVariable, CategoricalVariable) %>%
     dplyr::filter(
       dplyr::n() >= min_n,
       dplyr::n_distinct(CategoricalValue) > 1,
       dplyr::n_distinct(ContinuousValue) > 2,
       stats::sd(ContinuousValue, na.rm = TRUE) > eps
-    ) |>
+    ) %>%
     dplyr::ungroup()
 
   if (nrow(mData) == 0) return(empty_return())
@@ -200,13 +200,13 @@ PlotAnovaRelationshipsMatrix <- function(data,
     as.data.frame(out)  # strip classes
   }
 
-  stat.test <- mData |>
-    dplyr::group_by(ContinuousVariable, CategoricalVariable) |>
+  stat.test <- mData %>%
+    dplyr::group_by(ContinuousVariable, CategoricalVariable) %>%
     dplyr::group_modify(~{
       res <- safe_test_df(.x)
       if (is.null(res)) return(tibble::tibble())
       tibble::as_tibble(res)
-    }) |>
+    }) %>%
     dplyr::ungroup()
 
   if (nrow(stat.test) == 0) return(empty_return())
@@ -215,7 +215,7 @@ PlotAnovaRelationshipsMatrix <- function(data,
     stat.test <- dplyr::rename(stat.test, p = p.value)
   }
 
-  stat.test <- stat.test |>
+  stat.test <- stat.test %>%
     rstatix::add_significance(p.col = "p", output.col = "p.signif")
   # Outcomes are the continuous variables (ContVars) for "per_outcome".
   stat.test$p.adj <- ApplyFDRCorrection(
@@ -223,7 +223,7 @@ PlotAnovaRelationshipsMatrix <- function(data,
     fdr_scope = fdr_scope,
     outcome_ids = stat.test$ContinuousVariable
   )
-  stat.test <- stat.test |>
+  stat.test <- stat.test %>%
     rstatix::add_significance(p.col = "p.adj", output.col = "p.adj.signif")
 
   stat.test$logp <- -log10(stat.test$p)
@@ -233,7 +233,7 @@ PlotAnovaRelationshipsMatrix <- function(data,
 
   # Keep only main effect row if present
   if ("Effect" %in% names(stat.test)) {
-    stat.test <- stat.test |>
+    stat.test <- stat.test %>%
       dplyr::filter(Effect == "CategoricalValue")
   }
 
@@ -242,14 +242,14 @@ PlotAnovaRelationshipsMatrix <- function(data,
     Data <- ReplaceMissingLabels(Data)
 
     xlabels <- sjlabelled::get_label(Data[as.character(stat.test$CategoricalVariable)],
-                                     def.value = stat.test$CategoricalVariable) |>
-      as.data.frame() |>
+                                     def.value = stat.test$CategoricalVariable) %>%
+      as.data.frame() %>%
       tibble::rownames_to_column()
     colnames(xlabels) <- c("Variable", "label")
 
     ylabels <- sjlabelled::get_label(Data[as.character(stat.test$ContinuousVariable)],
-                                     def.value = stat.test$ContinuousVariable) |>
-      as.data.frame() |>
+                                     def.value = stat.test$ContinuousVariable) %>%
+      as.data.frame() %>%
       tibble::rownames_to_column()
     colnames(ylabels) <- c("Variable", "label")
 
@@ -281,8 +281,8 @@ PlotAnovaRelationshipsMatrix <- function(data,
     if ("ges" %in% names(stat.test)) paste0("</br>GES:", stat.test$ges) else ""
   )
 
-  stat.test <- stat.test |>
-    dplyr::mutate(Test = method) |>
+  stat.test <- stat.test %>%
+    dplyr::mutate(Test = method) %>%
     as.data.frame()
 
   has_effect_size <- "ges" %in% names(stat.test)
@@ -305,7 +305,7 @@ PlotAnovaRelationshipsMatrix <- function(data,
   if (has_effect_size) {
     p <- p +
       ggplot2::geom_point(
-        ggplot2::aes(size = `p<.05`, colour = .data[["ges"]])
+        ggplot2::aes(size = as.numeric(`p<.05`), colour = .data[["ges"]])
       ) +
       ggplot2::scale_colour_gradient(
       low = "#c6dbef",   # light blue
@@ -315,7 +315,7 @@ PlotAnovaRelationshipsMatrix <- function(data,
   } else {
     p <- p +
       ggplot2::geom_point(
-        ggplot2::aes(size = `p<.05`, colour = .data[["p"]])
+        ggplot2::aes(size = as.numeric(`p<.05`), colour = .data[["p"]])
       ) +
       scale_color_pvalue()
   }

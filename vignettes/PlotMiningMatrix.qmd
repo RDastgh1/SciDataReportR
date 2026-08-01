@@ -44,6 +44,7 @@ using appropriate statistical methods for each comparison.
 ## Load packages
 
 ```{r}
+#| label: LoadPackages
 library(SciDataReportR)
 library(dplyr)
 library(plotly)
@@ -52,6 +53,7 @@ library(plotly)
 ## Load example data
 
 ```{r}
+#| label: LoadData
 data("SampleData")
 data("SampleVariableTypes")
 
@@ -65,27 +67,37 @@ df_Revalued <- RevaluedObj$RevaluedData
 
 ## Create a mining matrix
 
-For exploratory mining it is often useful to evaluate nearly the entire dataset simultaneously.
+For exploratory mining it is often useful to evaluate a clinically meaningful subset of variables. Full-dataset matrices are better explored interactively because labels become unreadable in a static report.
 
 ```{r}
-vars_mining <- names(df_Revalued)
+#| label: DefineMiningVariables
+vars_mining <- c(
+  "Diagnosis",
+  "age",
+  "sex",
+  "AXL",
+  "Calbindin",
+  "Ferritin",
+  "MMP7"
+)
 
 length(vars_mining)
 ```
 
 ```{r}
+#| label: PlotTargetedMiningMatrix
 #| column: screen
-#| fig-height: 8
-#| fig-width: 12
+#| fig-height: 5
+#| fig-width: 7
 MiningObj <- PlotMiningMatrix(
-  Data = df_Revalued,
-  OutcomeVars = vars_mining
+  data = df_Revalued,
+  outcome_vars = vars_mining
 )
 
 MiningObj$Unadjusted$plot
 ```
 
-The resulting visualization summarizes hundreds or thousands of statistical relationships simultaneously.
+The resulting visualization summarizes associations among the selected clinical and biomarker variables.
 
 Color intensity represents effect size magnitude, while symbol size and shape represent statistical significance.
 
@@ -121,12 +133,12 @@ By default, parametric analyses are used.
 
 ```{r}
 #| column: screen
-#| fig-height: 8
-#| fig-width: 12
+#| fig-height: 5
+#| fig-width: 7
 #| 
 MiningParametric <- PlotMiningMatrix(
-  Data = df_Revalued,
-  OutcomeVars = vars_mining,
+  data = df_Revalued,
+  outcome_vars = vars_mining,
   Parametric = TRUE
 )
 
@@ -141,13 +153,13 @@ For skewed variables or datasets containing substantial outliers, nonparametric 
 
 ```{r}
 #| column: screen
-#| fig-height: 8
-#| fig-width: 12
+#| fig-height: 5
+#| fig-width: 7
 
 
 MiningNonParametric <- PlotMiningMatrix(
-  Data = df_Revalued,
-  OutcomeVars = vars_mining,
+  data = df_Revalued,
+  outcome_vars = vars_mining,
   Parametric = FALSE
 )
 
@@ -162,8 +174,8 @@ The default plot displays significance based on unadjusted p-values.
 
 ```{r}
 #| column: screen
-#| fig-height: 8
-#| fig-width: 12
+#| fig-height: 5
+#| fig-width: 7
 MiningObj$Unadjusted$plot
 ```
 
@@ -175,8 +187,8 @@ Because large mining matrices may involve hundreds or thousands of statistical t
 
 ```{r}
 #| column: screen
-#| fig-height: 8
-#| fig-width: 12
+#| fig-height: 5
+#| fig-width: 7
 MiningObj$FDRCorrected$plot
 ```
 
