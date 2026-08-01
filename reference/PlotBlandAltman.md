@@ -64,11 +64,6 @@ method_data <- data.frame(
 )
 
 result <- PlotBlandAltman(method_data, "DeviceA", "DeviceB")
-#> Warning: Using `size` aesthetic for lines was deprecated in ggplot2 3.4.0.
-#> ℹ Please use `linewidth` instead.
-#> ℹ The deprecated feature was likely used in the SciDataReportR package.
-#>   Please report the issue at
-#>   <https://github.com/RDastgh1/SciDataReportR/issues>.
 
 # Agreement plot: mean difference (bias) and 95% limits of agreement
 result$plot

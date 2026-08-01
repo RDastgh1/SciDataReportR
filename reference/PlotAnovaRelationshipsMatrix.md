@@ -110,5 +110,4 @@ result <- PlotAnovaRelationshipsMatrix(
 )
 
 result$Unadjusted$plot
-#> Warning: Using size for a discrete variable is not advised.
 ```

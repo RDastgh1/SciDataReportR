@@ -48,24 +48,21 @@ df_Revalued <- RevaluedObj$RevaluedData
 
 ## 4 Define outcomes and predictors
 
-For this example we will evaluate a panel of biomarkers as predictors of
-several clinical outcomes.
+For this example we will evaluate clinical and demographic predictors of
+continuous biomarker outcomes.
 
 ``` r
 
 OutcomeVars <- c(
-  "Diagnosis",
-  "sex"
+  "Calbindin",
+  "Ferritin"
 )
 
 PredictorVars <- c(
-  "Genotype",
-  "Calbindin",
-  "Ferritin",
-  "MMP7",
-  "Calbindin",
-  "Sortilin",
-  "Osteopontin"
+  "Diagnosis",
+  "age",
+  "sex",
+  "Genotype"
 )
 ```
 
@@ -90,32 +87,26 @@ preparation.
 UniObj$FormattedTable
 ```
 
-| Variable                   | Effect     | N   | Estimate (95% CI)    | p-value |
-|----------------------------|------------|-----|----------------------|---------|
-| Diagnosis                  |            |     |                      |         |
-| Genotype : E2E3            | Odds ratio | 333 | 494242 (0, Inf)      | 0.98    |
-| Genotype : E2E4            | Odds ratio | 333 | 302597 (0, Inf)      | 0.98    |
-| Genotype : E3E3            | Odds ratio | 333 | 541490 (0, Inf)      | 0.98    |
-| Genotype : E3E4            | Odds ratio | 333 | 1336083 (0, Inf)     | 0.98    |
-| Genotype : E4E4            | Odds ratio | 333 | 3389088 (0, Inf)     | 0.98    |
-| Calbindin                  | Odds ratio | 333 | 1.06 (0.995, 1.12)   | 0.071   |
-| Ferritin                   | Odds ratio | 333 | 1.4 (1.02, 1.92)     | 0.036   |
-| Matrix metalloproteinase 7 | Odds ratio | 333 | 1.46 (1.23, 1.73)    | \<0.001 |
-| Calbindin                  | Odds ratio | 333 | 1.06 (0.995, 1.12)   | 0.071   |
-| Sortilin                   | Odds ratio | 333 | 1.65 (1.23, 2.22)    | \<0.001 |
-| Osteopontin                | Odds ratio | 333 | 2.75 (1.45, 5.21)    | 0.0019  |
-| Sex                        |            |     |                      |         |
-| Genotype : E2E3            | Odds ratio | 333 | 0.000000322 (0, Inf) | 0.98    |
-| Genotype : E2E4            | Odds ratio | 333 | 0.000000472 (0, Inf) | 0.98    |
-| Genotype : E3E3            | Odds ratio | 333 | 0.000000316 (0, Inf) | 0.98    |
-| Genotype : E3E4            | Odds ratio | 333 | 0.000000243 (0, Inf) | 0.98    |
-| Genotype : E4E4            | Odds ratio | 333 | 0.000000295 (0, Inf) | 0.98    |
-| Calbindin                  | Odds ratio | 333 | 0.908 (0.859, 0.961) | \<0.001 |
-| Ferritin                   | Odds ratio | 333 | 1.53 (1.14, 2.05)    | 0.0045  |
-| Matrix metalloproteinase 7 | Odds ratio | 333 | 1.2 (1.04, 1.39)     | 0.015   |
-| Calbindin                  | Odds ratio | 333 | 0.908 (0.859, 0.961) | \<0.001 |
-| Sortilin                   | Odds ratio | 333 | 0.975 (0.756, 1.26)  | 0.84    |
-| Osteopontin                | Odds ratio | 333 | 0.634 (0.359, 1.12)  | 0.11    |
+| Variable             | Effect   | N   | Estimate (95% CI)          | p-value |
+|----------------------|----------|-----|----------------------------|---------|
+| Calbindin            |          |     |                            |         |
+| Diagnosis : Impaired | Estimate | 333 | 0.936 (-0.075, 1.95)       | 0.069   |
+| Age                  | Estimate | 322 | 0.0164 (-0.0185, 0.0513)   | 0.36    |
+| Sex : Male           | Estimate | 333 | -1.62 (-2.53, -0.704)      | \<0.001 |
+| Genotype : E2E3      | Estimate | 333 | 1.74 (-4.26, 7.75)         | 0.57    |
+| Genotype : E2E4      | Estimate | 333 | 3.13 (-3.42, 9.67)         | 0.35    |
+| Genotype : E3E3      | Estimate | 333 | 1.81 (-4.08, 7.69)         | 0.55    |
+| Genotype : E3E4      | Estimate | 333 | 2.46 (-3.44, 8.37)         | 0.41    |
+| Genotype : E4E4      | Estimate | 333 | 1.31 (-4.98, 7.6)          | 0.68    |
+| Ferritin             |          |     |                            |         |
+| Diagnosis : Impaired | Estimate | 333 | 0.203 (0.0147, 0.392)      | 0.035   |
+| Age                  | Estimate | 322 | 0.0018 (-0.00474, 0.00834) | 0.59    |
+| Sex : Male           | Estimate | 333 | 0.253 (0.0815, 0.425)      | 0.004   |
+| Genotype : E2E3      | Estimate | 333 | 0.218 (-0.907, 1.34)       | 0.7     |
+| Genotype : E2E4      | Estimate | 333 | 0.223 ( -1, 1.45)          | 0.72    |
+| Genotype : E3E3      | Estimate | 333 | 0.195 (-0.907, 1.3)        | 0.73    |
+| Genotype : E3E4      | Estimate | 333 | 0.267 (-0.838, 1.37)       | 0.63    |
+| Genotype : E4E4      | Estimate | 333 | -0.059 (-1.24, 1.12)       | 0.92    |
 
 Estimates and standard errors are combined into a compact format and
 significance stars are automatically added.
@@ -131,30 +122,24 @@ UniObj$LargeTable
 
 | Outcome | Variable | Effect | N | Estimate | SE | 95% CI Low | 95% CI High | p-value |
 |----|----|----|----|----|----|----|----|----|
-| Diagnosis |  |  |  |  |  |  |  |  |
-| Diagnosis | Genotype : E2E3 | Odds ratio | 333 | 494,241.994 | 624.194 | 0.000 | Inf | 0.983 |
-| Diagnosis | Genotype : E2E4 | Odds ratio | 333 | 302,597.139 | 624.195 | 0.000 | Inf | 0.984 |
-| Diagnosis | Genotype : E3E3 | Odds ratio | 333 | 541,489.618 | 624.194 | 0.000 | Inf | 0.983 |
-| Diagnosis | Genotype : E3E4 | Odds ratio | 333 | 1,336,082.754 | 624.194 | 0.000 | Inf | 0.982 |
-| Diagnosis | Genotype : E4E4 | Odds ratio | 333 | 3,389,087.961 | 624.194 | 0.000 | Inf | 0.981 |
-| Diagnosis | Calbindin | Odds ratio | 333 | 1.055 | 0.030 | 0.995 | 1.119 | 0.071 |
-| Diagnosis | Ferritin | Odds ratio | 333 | 1.399 | 0.160 | 1.022 | 1.915 | 0.036 |
-| Diagnosis | Matrix metalloproteinase 7 | Odds ratio | 333 | 1.462 | 0.087 | 1.232 | 1.734 | 0.000 |
-| Diagnosis | Calbindin | Odds ratio | 333 | 1.055 | 0.030 | 0.995 | 1.119 | 0.071 |
-| Diagnosis | Sortilin | Odds ratio | 333 | 1.653 | 0.150 | 1.233 | 2.215 | 0.001 |
-| Diagnosis | Osteopontin | Odds ratio | 333 | 2.749 | 0.326 | 1.452 | 5.205 | 0.002 |
-| Sex |  |  |  |  |  |  |  |  |
-| sex | Genotype : E2E3 | Odds ratio | 333 | 0.000 | 624.194 | 0.000 | Inf | 0.981 |
-| sex | Genotype : E2E4 | Odds ratio | 333 | 0.000 | 624.194 | 0.000 | Inf | 0.981 |
-| sex | Genotype : E3E3 | Odds ratio | 333 | 0.000 | 624.194 | 0.000 | Inf | 0.981 |
-| sex | Genotype : E3E4 | Odds ratio | 333 | 0.000 | 624.194 | 0.000 | Inf | 0.981 |
-| sex | Genotype : E4E4 | Odds ratio | 333 | 0.000 | 624.194 | 0.000 | Inf | 0.981 |
-| sex | Calbindin | Odds ratio | 333 | 0.908 | 0.029 | 0.859 | 0.961 | 0.001 |
-| sex | Ferritin | Odds ratio | 333 | 1.527 | 0.149 | 1.140 | 2.046 | 0.005 |
-| sex | Matrix metalloproteinase 7 | Odds ratio | 333 | 1.199 | 0.074 | 1.036 | 1.387 | 0.015 |
-| sex | Calbindin | Odds ratio | 333 | 0.908 | 0.029 | 0.859 | 0.961 | 0.001 |
-| sex | Sortilin | Odds ratio | 333 | 0.975 | 0.130 | 0.756 | 1.257 | 0.843 |
-| sex | Osteopontin | Odds ratio | 333 | 0.634 | 0.289 | 0.359 | 1.117 | 0.114 |
+| Calbindin |  |  |  |  |  |  |  |  |
+| Calbindin | Diagnosis : Impaired | Estimate | 333 | 0.936 | 0.514 | −0.075 | 1.948 | 0.069 |
+| Calbindin | Age | Estimate | 322 | 0.016 | 0.018 | −0.018 | 0.051 | 0.355 |
+| Calbindin | Sex : Male | Estimate | 333 | −1.617 | 0.464 | −2.530 | −0.704 | 0.001 |
+| Calbindin | Genotype : E2E3 | Estimate | 333 | 1.745 | 3.054 | −4.263 | 7.753 | 0.568 |
+| Calbindin | Genotype : E2E4 | Estimate | 333 | 3.127 | 3.326 | −3.415 | 9.670 | 0.348 |
+| Calbindin | Genotype : E3E3 | Estimate | 333 | 1.807 | 2.992 | −4.080 | 7.694 | 0.546 |
+| Calbindin | Genotype : E3E4 | Estimate | 333 | 2.464 | 3.003 | −3.443 | 8.371 | 0.412 |
+| Calbindin | Genotype : E4E4 | Estimate | 333 | 1.310 | 3.195 | −4.976 | 7.596 | 0.682 |
+| Ferritin |  |  |  |  |  |  |  |  |
+| Ferritin | Diagnosis : Impaired | Estimate | 333 | 0.203 | 0.096 | 0.015 | 0.392 | 0.035 |
+| Ferritin | Age | Estimate | 322 | 0.002 | 0.003 | −0.005 | 0.008 | 0.589 |
+| Ferritin | Sex : Male | Estimate | 333 | 0.253 | 0.087 | 0.082 | 0.425 | 0.004 |
+| Ferritin | Genotype : E2E3 | Estimate | 333 | 0.218 | 0.572 | −0.907 | 1.343 | 0.703 |
+| Ferritin | Genotype : E2E4 | Estimate | 333 | 0.223 | 0.623 | −1.001 | 1.448 | 0.720 |
+| Ferritin | Genotype : E3E3 | Estimate | 333 | 0.195 | 0.560 | −0.907 | 1.297 | 0.728 |
+| Ferritin | Genotype : E3E4 | Estimate | 333 | 0.267 | 0.562 | −0.838 | 1.373 | 0.635 |
+| Ferritin | Genotype : E4E4 | Estimate | 333 | −0.059 | 0.598 | −1.236 | 1.118 | 0.921 |
 
 This version is often useful during exploratory analyses and quality
 control.
@@ -163,8 +148,8 @@ control.
 
 Covariates can be included in every regression model.
 
-For example, age is commonly included when evaluating biomarker
-associations.
+For example, MMP7 can be included when evaluating whether associations
+are independent of another biomarker.
 
 ``` r
 
@@ -172,7 +157,7 @@ UniObj_Covar <- MakeUnivariateRegressionTable(
   data = df_Revalued,
   outcome_vars = OutcomeVars,
   predictor_vars = PredictorVars,
-  covariates = "age"
+  covariates = "MMP7"
 )
 ```
 
@@ -181,32 +166,26 @@ UniObj_Covar <- MakeUnivariateRegressionTable(
 UniObj_Covar$FormattedTable
 ```
 
-| Variable                   | Effect     | N   | Estimate (95% CI)    | p-value |
-|----------------------------|------------|-----|----------------------|---------|
-| Diagnosis                  |            |     |                      |         |
-| Genotype : E2E3            | Odds ratio | 322 | 577505 (0, Inf)      | 0.98    |
-| Genotype : E2E4            | Odds ratio | 322 | 369682 (0, Inf)      | 0.98    |
-| Genotype : E3E3            | Odds ratio | 322 | 676911 (0, Inf)      | 0.98    |
-| Genotype : E3E4            | Odds ratio | 322 | 1534198 (0, Inf)     | 0.98    |
-| Genotype : E4E4            | Odds ratio | 322 | 5091058 (0, Inf)     | 0.98    |
-| Calbindin                  | Odds ratio | 322 | 1.06 (0.995, 1.12)   | 0.074   |
-| Ferritin                   | Odds ratio | 322 | 1.38 (1.01, 1.89)    | 0.046   |
-| Matrix metalloproteinase 7 | Odds ratio | 322 | 1.45 (1.22, 1.72)    | \<0.001 |
-| Calbindin                  | Odds ratio | 322 | 1.06 (0.995, 1.12)   | 0.074   |
-| Sortilin                   | Odds ratio | 322 | 1.64 (1.22, 2.2)     | 0.0011  |
-| Osteopontin                | Odds ratio | 322 | 2.69 (1.42, 5.08)    | 0.0024  |
-| Sex                        |            |     |                      |         |
-| Genotype : E2E3            | Odds ratio | 322 | 0.000000418 (0, Inf) | 0.98    |
-| Genotype : E2E4            | Odds ratio | 322 | 0.000000669 (0, Inf) | 0.98    |
-| Genotype : E3E3            | Odds ratio | 322 | 0.000000394 (0, Inf) | 0.98    |
-| Genotype : E3E4            | Odds ratio | 322 | 0.000000308 (0, Inf) | 0.98    |
-| Genotype : E4E4            | Odds ratio | 322 | 0.000000454 (0, Inf) | 0.98    |
-| Calbindin                  | Odds ratio | 322 | 0.906 (0.856, 0.96)  | \<0.001 |
-| Ferritin                   | Odds ratio | 322 | 1.55 (1.15, 2.09)    | 0.0044  |
-| Matrix metalloproteinase 7 | Odds ratio | 322 | 1.18 (1.02, 1.37)    | 0.027   |
-| Calbindin                  | Odds ratio | 322 | 0.906 (0.856, 0.96)  | \<0.001 |
-| Sortilin                   | Odds ratio | 322 | 0.986 (0.76, 1.28)   | 0.92    |
-| Osteopontin                | Odds ratio | 322 | 0.643 (0.362, 1.14)  | 0.13    |
+| Variable             | Effect   | N   | Estimate (95% CI)          | p-value |
+|----------------------|----------|-----|----------------------------|---------|
+| Calbindin            |          |     |                            |         |
+| Diagnosis : Impaired | Estimate | 333 | 1.05 (0.00979, 2.1)        | 0.048   |
+| Age                  | Estimate | 322 | 0.0161 (-0.0189, 0.051)    | 0.37    |
+| Sex : Male           | Estimate | 333 | -1.62 (-2.54, -0.696)      | \<0.001 |
+| Genotype : E2E3      | Estimate | 333 | 1.73 (-4.29, 7.74)         | 0.57    |
+| Genotype : E2E4      | Estimate | 333 | 3.09 (-3.46, 9.65)         | 0.35    |
+| Genotype : E3E3      | Estimate | 333 | 1.79 (-4.11, 7.68)         | 0.55    |
+| Genotype : E3E4      | Estimate | 333 | 2.44 (-3.47, 8.36)         | 0.42    |
+| Genotype : E4E4      | Estimate | 333 | 1.28 (-5.01, 7.58)         | 0.69    |
+| Ferritin             |          |     |                            |         |
+| Diagnosis : Impaired | Estimate | 333 | 0.144 (-0.0493, 0.337)     | 0.14    |
+| Age                  | Estimate | 322 | 0.00222 (-0.00425, 0.0087) | 0.5     |
+| Sex : Male           | Estimate | 333 | 0.223 (0.0513, 0.395)      | 0.011   |
+| Genotype : E2E3      | Estimate | 333 | 0.243 (-0.87, 1.36)        | 0.67    |
+| Genotype : E2E4      | Estimate | 333 | 0.272 (-0.94, 1.48)        | 0.66    |
+| Genotype : E3E3      | Estimate | 333 | 0.221 (-0.869, 1.31)       | 0.69    |
+| Genotype : E3E4      | Estimate | 333 | 0.294 (-0.8, 1.39)         | 0.6     |
+| Genotype : E4E4      | Estimate | 333 | -0.02 (-1.18, 1.14)        | 0.97    |
 
 This allows investigators to determine whether associations remain
 significant after accounting for potential confounding factors.
@@ -231,32 +210,26 @@ UniObj_Std <- MakeUnivariateRegressionTable(
 UniObj_Std$FormattedTable
 ```
 
-| Variable                   | Effect     | N   | Estimate (95% CI)    | p-value |
-|----------------------------|------------|-----|----------------------|---------|
-| Diagnosis                  |            |     |                      |         |
-| Genotype : E2E3            | Odds ratio | 333 | 494242 (0, Inf)      | 0.98    |
-| Genotype : E2E4            | Odds ratio | 333 | 302597 (0, Inf)      | 0.98    |
-| Genotype : E3E3            | Odds ratio | 333 | 541490 (0, Inf)      | 0.98    |
-| Genotype : E3E4            | Odds ratio | 333 | 1336083 (0, Inf)     | 0.98    |
-| Genotype : E4E4            | Odds ratio | 333 | 3389088 (0, Inf)     | 0.98    |
-| Calbindin                  | Odds ratio | 333 | 1.25 (0.981, 1.6)    | 0.071   |
-| Ferritin                   | Odds ratio | 333 | 1.3 (1.02, 1.66)     | 0.036   |
-| Matrix metalloproteinase 7 | Odds ratio | 333 | 1.8 (1.38, 2.35)     | \<0.001 |
-| Calbindin                  | Odds ratio | 333 | 1.25 (0.981, 1.6)    | 0.071   |
-| Sortilin                   | Odds ratio | 333 | 1.55 ( 1.2, 1.99)    | \<0.001 |
-| Osteopontin                | Odds ratio | 333 | 1.49 (1.16, 1.92)    | 0.0019  |
-| Sex                        |            |     |                      |         |
-| Genotype : E2E3            | Odds ratio | 333 | 0.000000322 (0, Inf) | 0.98    |
-| Genotype : E2E4            | Odds ratio | 333 | 0.000000472 (0, Inf) | 0.98    |
-| Genotype : E3E3            | Odds ratio | 333 | 0.000000316 (0, Inf) | 0.98    |
-| Genotype : E3E4            | Odds ratio | 333 | 0.000000243 (0, Inf) | 0.98    |
-| Genotype : E4E4            | Odds ratio | 333 | 0.000000295 (0, Inf) | 0.98    |
-| Calbindin                  | Odds ratio | 333 | 0.669 (0.529, 0.845) | \<0.001 |
-| Ferritin                   | Odds ratio | 333 | 1.39 (1.11, 1.75)    | 0.0045  |
-| Matrix metalloproteinase 7 | Odds ratio | 333 | 1.33 (1.06, 1.66)    | 0.015   |
-| Calbindin                  | Odds ratio | 333 | 0.669 (0.529, 0.845) | \<0.001 |
-| Sortilin                   | Odds ratio | 333 | 0.978 (0.784, 1.22)  | 0.84    |
-| Osteopontin                | Odds ratio | 333 | 0.835 (0.668, 1.04)  | 0.11    |
+| Variable             | Effect   | N   | Estimate (95% CI)       | p-value |
+|----------------------|----------|-----|-------------------------|---------|
+| Calbindin            |          |     |                         |         |
+| Diagnosis : Impaired | Estimate | 333 | 0.223 (-0.0179, 0.464)  | 0.069   |
+| Age                  | Estimate | 322 | 0.0517 (-0.0581, 0.161) | 0.36    |
+| Sex : Male           | Estimate | 333 | -0.385 (-0.603, -0.168) | \<0.001 |
+| Genotype : E2E3      | Estimate | 333 | 0.416 (-1.02, 1.85)     | 0.57    |
+| Genotype : E2E4      | Estimate | 333 | 0.745 (-0.814, 2.31)    | 0.35    |
+| Genotype : E3E3      | Estimate | 333 | 0.431 (-0.973, 1.83)    | 0.55    |
+| Genotype : E3E4      | Estimate | 333 | 0.587 (-0.821, 2)       | 0.41    |
+| Genotype : E4E4      | Estimate | 333 | 0.312 (-1.19, 1.81)     | 0.68    |
+| Ferritin             |          |     |                         |         |
+| Diagnosis : Impaired | Estimate | 333 | 0.259 (0.0187, 0.5)     | 0.035   |
+| Age                  | Estimate | 322 | 0.0303 (-0.0799, 0.14)  | 0.59    |
+| Sex : Male           | Estimate | 333 | 0.323 (0.104, 0.542)    | 0.004   |
+| Genotype : E2E3      | Estimate | 333 | 0.278 (-1.16, 1.71)     | 0.7     |
+| Genotype : E2E4      | Estimate | 333 | 0.285 (-1.28, 1.85)     | 0.72    |
+| Genotype : E3E3      | Estimate | 333 | 0.248 (-1.16, 1.65)     | 0.73    |
+| Genotype : E3E4      | Estimate | 333 | 0.341 (-1.07, 1.75)     | 0.63    |
+| Genotype : E4E4      | Estimate | 333 | -0.0753 (-1.58, 1.43)   | 0.92    |
 
 Standardized coefficients represent changes in standard deviation units
 and facilitate comparison across predictors.
@@ -279,7 +252,7 @@ For example:
 ``` r
 
 summary(
-  UniObj$ModelSummaries$Diagnosis$Ferritin
+  UniObj$ModelSummaries$Calbindin$Diagnosis
 )
 ```
 

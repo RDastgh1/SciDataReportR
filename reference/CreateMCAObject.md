@@ -125,7 +125,6 @@ mca <- CreateMCAObject(
   Labelled,
   VarsToReduce = c("Diagnosis", "Genotype")
 )
-#> Warning: no non-missing arguments to min; returning Inf
 
 # Display the scree plot from the returned object
 mca$p_scree

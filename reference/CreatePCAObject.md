@@ -303,7 +303,6 @@ PCA_omics <- CreatePCAObject(
   maxComponents = 5,
   maxScreeComponents = 5
 )
-#> Warning: STATS is longer than the extent of 'dim(x)[MARGIN]'
 
 # Display the scree plot from the returned object
 PCA$p_scree
@@ -311,7 +310,6 @@ PCA$p_scree
 
 # Lollipop-style loading plot of the component loadings
 PCA$Lollipop
-#> Warning: Using alpha for a discrete variable is not advised.
 
 
 # Color the lollipop loadings by a variable grouping
@@ -324,6 +322,5 @@ PCA_grouped <- CreatePCAObject(
   numComponents = 3
 )
 PCA_grouped$Lollipop
-#> Warning: Using alpha for a discrete variable is not advised.
 
 ```

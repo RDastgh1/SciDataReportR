@@ -131,32 +131,40 @@
 </section><section class="level2" data-number="4"><h2 data-number="4" id="create-a-mining-matrix">
 <span class="header-section-number">4</span> Create a mining matrix<a class="anchor" aria-label="anchor" href="#create-a-mining-matrix"></a>
 </h2>
-<p>For exploratory mining it is often useful to evaluate nearly the entire dataset simultaneously.</p>
+<p>For exploratory mining it is often useful to evaluate a clinically meaningful subset of variables. Full-dataset matrices are better explored interactively because labels become unreadable in a static report.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">vars_mining</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">df_Revalued</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">vars_mining</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
+<span>  <span class="st">"Diagnosis"</span>,</span>
+<span>  <span class="st">"age"</span>,</span>
+<span>  <span class="st">"sex"</span>,</span>
+<span>  <span class="st">"AXL"</span>,</span>
+<span>  <span class="st">"Calbindin"</span>,</span>
+<span>  <span class="st">"Ferritin"</span>,</span>
+<span>  <span class="st">"MMP7"</span></span>
+<span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">vars_mining</span><span class="op">)</span></span></code></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>[1] 131</code></pre>
+<pre><code>[1] 7</code></pre>
 </div>
 </div>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">MiningObj</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/PlotMiningMatrix.html">PlotMiningMatrix</a></span><span class="op">(</span></span>
-<span>  Data <span class="op">=</span> <span class="va">df_Revalued</span>,</span>
-<span>  OutcomeVars <span class="op">=</span> <span class="va">vars_mining</span></span>
+<span>  data <span class="op">=</span> <span class="va">df_Revalued</span>,</span>
+<span>  outcome_vars <span class="op">=</span> <span class="va">vars_mining</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">MiningObj</span><span class="op">$</span><span class="va">Unadjusted</span><span class="op">$</span><span class="va">plot</span></span></code></pre></div>
 <div class="cell-output-display column-screen">
 <div>
-<figure><p><img src="PlotMiningMatrix_files/figure-html/unnamed-chunk-4-1.png"></p>
+<figure><p><img src="PlotMiningMatrix_files/figure-html/PlotTargetedMiningMatrix-1.png"></p>
 </figure>
 </div>
 </div>
 </div>
-<p>The resulting visualization summarizes hundreds or thousands of statistical relationships simultaneously.</p>
+<p>The resulting visualization summarizes associations among the selected clinical and biomarker variables.</p>
 <p>Color intensity represents effect size magnitude, while symbol size and shape represent statistical significance.</p>
 </section><section class="level2" data-number="5"><h2 data-number="5" id="understanding-the-statistical-tests">
 <span class="header-section-number">5</span> Understanding the statistical tests<a class="anchor" aria-label="anchor" href="#understanding-the-statistical-tests"></a>
@@ -203,15 +211,15 @@
 <div class="cell">
 <div class="sourceCode cell-code" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">MiningParametric</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/PlotMiningMatrix.html">PlotMiningMatrix</a></span><span class="op">(</span></span>
-<span>  Data <span class="op">=</span> <span class="va">df_Revalued</span>,</span>
-<span>  OutcomeVars <span class="op">=</span> <span class="va">vars_mining</span>,</span>
+<span>  data <span class="op">=</span> <span class="va">df_Revalued</span>,</span>
+<span>  outcome_vars <span class="op">=</span> <span class="va">vars_mining</span>,</span>
 <span>  Parametric <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">MiningParametric</span><span class="op">$</span><span class="va">Unadjusted</span><span class="op">$</span><span class="va">plot</span></span></code></pre></div>
 <div class="cell-output-display column-screen">
 <div>
-<figure><p><img src="PlotMiningMatrix_files/figure-html/unnamed-chunk-5-1.png"></p>
+<figure><p><img src="PlotMiningMatrix_files/figure-html/unnamed-chunk-1-1.png"></p>
 </figure>
 </div>
 </div>
@@ -224,15 +232,15 @@
 <div class="cell">
 <div class="sourceCode cell-code" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">MiningNonParametric</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/PlotMiningMatrix.html">PlotMiningMatrix</a></span><span class="op">(</span></span>
-<span>  Data <span class="op">=</span> <span class="va">df_Revalued</span>,</span>
-<span>  OutcomeVars <span class="op">=</span> <span class="va">vars_mining</span>,</span>
+<span>  data <span class="op">=</span> <span class="va">df_Revalued</span>,</span>
+<span>  outcome_vars <span class="op">=</span> <span class="va">vars_mining</span>,</span>
 <span>  Parametric <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">MiningNonParametric</span><span class="op">$</span><span class="va">Unadjusted</span><span class="op">$</span><span class="va">plot</span></span></code></pre></div>
 <div class="cell-output-display column-screen">
 <div>
-<figure><p><img src="PlotMiningMatrix_files/figure-html/unnamed-chunk-6-1.png"></p>
+<figure><p><img src="PlotMiningMatrix_files/figure-html/unnamed-chunk-2-1.png"></p>
 </figure>
 </div>
 </div>
@@ -247,7 +255,7 @@
 <code class="sourceCode R"><span><span class="va">MiningObj</span><span class="op">$</span><span class="va">Unadjusted</span><span class="op">$</span><span class="va">plot</span></span></code></pre></div>
 <div class="cell-output-display column-screen">
 <div>
-<figure><p><img src="PlotMiningMatrix_files/figure-html/unnamed-chunk-7-1.png"></p>
+<figure><p><img src="PlotMiningMatrix_files/figure-html/unnamed-chunk-3-1.png"></p>
 </figure>
 </div>
 </div>
@@ -277,14 +285,14 @@
 <span><span class="op">)</span></span></code></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 6 × 11
-  XVar              YVar         p EffectSize Test     p_adj stars XLabel YLabel
-  &lt;chr&gt;             &lt;chr&gt;    &lt;dbl&gt;      &lt;dbl&gt; &lt;chr&gt;    &lt;dbl&gt; &lt;chr&gt; &lt;fct&gt;  &lt;fct&gt;
-1 ACE_CD143_Angiot… ACTH… 4.03e- 8     0.295  Corr… 1.30e- 7 ****  Angio… Adren…
-2 ACE_CD143_Angiot… AXL   2.32e-51     0.705  Corr… 1.90e-49 ****  Angio… AXL r…
-3 ACE_CD143_Angiot… Adip… 1.40e- 1     0.0811 Corr… 1.89e- 1 ns    Angio… Adipo…
-4 ACE_CD143_Angiot… Alph… 2.13e- 5     0.231  Corr… 5.24e- 5 ****  Angio… Alpha…
-5 ACE_CD143_Angiot… Alph… 4.69e- 1     0.0399 Corr… 5.39e- 1 ns    Angio… Alpha…
-6 ACE_CD143_Angiot… Alph… 3.71e- 5     0.224  Corr… 8.90e- 5 ****  Angio… Alpha…
+  XVar      YVar             p EffectSize Test         p_adj stars XLabel YLabel
+  &lt;chr&gt;     &lt;chr&gt;        &lt;dbl&gt;      &lt;dbl&gt; &lt;chr&gt;        &lt;dbl&gt; &lt;chr&gt; &lt;fct&gt;  &lt;fct&gt;
+1 AXL       Calbindin 1.09e-24   0.522    Correlat… 1.15e-23 ****  AXL r… Calbi…
+2 AXL       Diagnosis 2.62e- 1   0.004    ANOVA     3.67e- 1 ns    AXL r… Diagn…
+3 AXL       Ferritin  1.60e-29   0.565    Correlat… 3.37e-28 ****  AXL r… Ferri…
+4 AXL       MMP7      6.56e- 3   0.149    Correlat… 1.72e- 2 **    AXL r… Matri…
+5 AXL       sex       6.52e- 1   0.000616 ANOVA     6.74e- 1 ns    AXL r… Sex
+6 Calbindin Diagnosis 6.9 e- 2   0.01     ANOVA     1.20e- 1 ns    Calbi… Diagn…
 # ℹ 2 more variables: EffectSizeAbs &lt;dbl&gt;, size_val &lt;dbl&gt;</code></pre>
 </div>
 </div>
@@ -348,7 +356,7 @@
 <span><span class="va">MiningSubset</span><span class="op">$</span><span class="va">Unadjusted</span><span class="op">$</span><span class="va">plot</span></span></code></pre></div>
 <div class="cell-output-display">
 <div>
-<figure><p><img src="PlotMiningMatrix_files/figure-html/unnamed-chunk-11-1.png"></p>
+<figure><p><img src="PlotMiningMatrix_files/figure-html/unnamed-chunk-7-1.png"></p>
 </figure>
 </div>
 </div>

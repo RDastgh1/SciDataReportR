@@ -55,32 +55,42 @@ df_Revalued <- RevaluedObj$RevaluedData
 
 ## 4 Create a mining matrix
 
-For exploratory mining it is often useful to evaluate nearly the entire
-dataset simultaneously.
+For exploratory mining it is often useful to evaluate a clinically
+meaningful subset of variables. Full-dataset matrices are better
+explored interactively because labels become unreadable in a static
+report.
 
 ``` r
 
-vars_mining <- names(df_Revalued)
+vars_mining <- c(
+  "Diagnosis",
+  "age",
+  "sex",
+  "AXL",
+  "Calbindin",
+  "Ferritin",
+  "MMP7"
+)
 
 length(vars_mining)
 ```
 
-    [1] 131
+    [1] 7
 
 ``` r
 
 MiningObj <- PlotMiningMatrix(
-  Data = df_Revalued,
-  OutcomeVars = vars_mining
+  data = df_Revalued,
+  outcome_vars = vars_mining
 )
 
 MiningObj$Unadjusted$plot
 ```
 
-![](PlotMiningMatrix_files/figure-html/unnamed-chunk-4-1.png)
+![](PlotMiningMatrix_files/figure-html/PlotTargetedMiningMatrix-1.png)
 
-The resulting visualization summarizes hundreds or thousands of
-statistical relationships simultaneously.
+The resulting visualization summarizes associations among the selected
+clinical and biomarker variables.
 
 Color intensity represents effect size magnitude, while symbol size and
 shape represent statistical significance.
@@ -122,15 +132,15 @@ By default, parametric analyses are used.
 ``` r
 
 MiningParametric <- PlotMiningMatrix(
-  Data = df_Revalued,
-  OutcomeVars = vars_mining,
+  data = df_Revalued,
+  outcome_vars = vars_mining,
   Parametric = TRUE
 )
 
 MiningParametric$Unadjusted$plot
 ```
 
-![](PlotMiningMatrix_files/figure-html/unnamed-chunk-5-1.png)
+![](PlotMiningMatrix_files/figure-html/unnamed-chunk-1-1.png)
 
 For continuous variables this uses Pearson correlations and parametric
 group comparisons.
@@ -143,15 +153,15 @@ nonparametric methods may be preferable.
 ``` r
 
 MiningNonParametric <- PlotMiningMatrix(
-  Data = df_Revalued,
-  OutcomeVars = vars_mining,
+  data = df_Revalued,
+  outcome_vars = vars_mining,
   Parametric = FALSE
 )
 
 MiningNonParametric$Unadjusted$plot
 ```
 
-![](PlotMiningMatrix_files/figure-html/unnamed-chunk-6-1.png)
+![](PlotMiningMatrix_files/figure-html/unnamed-chunk-2-1.png)
 
 This switches continuous-variable analyses to Spearman correlations and
 uses nonparametric group comparisons where applicable.
@@ -165,7 +175,7 @@ The default plot displays significance based on unadjusted p-values.
 MiningObj$Unadjusted$plot
 ```
 
-![](PlotMiningMatrix_files/figure-html/unnamed-chunk-7-1.png)
+![](PlotMiningMatrix_files/figure-html/unnamed-chunk-3-1.png)
 
 This view is useful for exploratory analyses and hypothesis generation.
 
@@ -199,14 +209,14 @@ head(
 ```
 
     # A tibble: 6 × 11
-      XVar              YVar         p EffectSize Test     p_adj stars XLabel YLabel
-      <chr>             <chr>    <dbl>      <dbl> <chr>    <dbl> <chr> <fct>  <fct>
-    1 ACE_CD143_Angiot… ACTH… 4.03e- 8     0.295  Corr… 1.30e- 7 ****  Angio… Adren…
-    2 ACE_CD143_Angiot… AXL   2.32e-51     0.705  Corr… 1.90e-49 ****  Angio… AXL r…
-    3 ACE_CD143_Angiot… Adip… 1.40e- 1     0.0811 Corr… 1.89e- 1 ns    Angio… Adipo…
-    4 ACE_CD143_Angiot… Alph… 2.13e- 5     0.231  Corr… 5.24e- 5 ****  Angio… Alpha…
-    5 ACE_CD143_Angiot… Alph… 4.69e- 1     0.0399 Corr… 5.39e- 1 ns    Angio… Alpha…
-    6 ACE_CD143_Angiot… Alph… 3.71e- 5     0.224  Corr… 8.90e- 5 ****  Angio… Alpha…
+      XVar      YVar             p EffectSize Test         p_adj stars XLabel YLabel
+      <chr>     <chr>        <dbl>      <dbl> <chr>        <dbl> <chr> <fct>  <fct>
+    1 AXL       Calbindin 1.09e-24   0.522    Correlat… 1.15e-23 ****  AXL r… Calbi…
+    2 AXL       Diagnosis 2.62e- 1   0.004    ANOVA     3.67e- 1 ns    AXL r… Diagn…
+    3 AXL       Ferritin  1.60e-29   0.565    Correlat… 3.37e-28 ****  AXL r… Ferri…
+    4 AXL       MMP7      6.56e- 3   0.149    Correlat… 1.72e- 2 **    AXL r… Matri…
+    5 AXL       sex       6.52e- 1   0.000616 ANOVA     6.74e- 1 ns    AXL r… Sex
+    6 Calbindin Diagnosis 6.9 e- 2   0.01     ANOVA     1.20e- 1 ns    Calbi… Diagn…
     # ℹ 2 more variables: EffectSizeAbs <dbl>, size_val <dbl>
 
 The table includes:
@@ -281,7 +291,7 @@ MiningSubset <- PlotMiningMatrix(
 MiningSubset$Unadjusted$plot
 ```
 
-![](PlotMiningMatrix_files/figure-html/unnamed-chunk-11-1.png)
+![](PlotMiningMatrix_files/figure-html/unnamed-chunk-7-1.png)
 
 This approach is useful when focusing on a particular biological pathway
 or clinical domain.

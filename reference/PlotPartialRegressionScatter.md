@@ -102,12 +102,6 @@ result <- PlotPartialRegressionScatter(
   DepVar = "AXL",
   covariates = "Adiponectin"
 )
-#> Warning: `aes_string()` was deprecated in ggplot2 3.0.0.
-#> ℹ Please use tidy evaluation idioms with `aes()`.
-#> ℹ See also `vignette("ggplot2-in-packages")` for more information.
-#> ℹ The deprecated feature was likely used in the SciDataReportR package.
-#>   Please report the issue at
-#>   <https://github.com/RDastgh1/SciDataReportR/issues>.
 
 result$plot
 #> `geom_smooth()` using formula = 'y ~ x'
