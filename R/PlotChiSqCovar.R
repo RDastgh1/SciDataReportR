@@ -52,7 +52,7 @@ PlotChiSqCovar <- function(data,
     Data = lifecycle::deprecated(),
     xVars = lifecycle::deprecated(),
     yVars = lifecycle::deprecated(),
-    fdr_scope = c("matrix", "per_outcome"),
+    fdr_scope = c("matrix", "per_outcome", "per_predictor"),
     covars = lifecycle::deprecated()) {
   # Deprecated argument shims (SciDataReportR 19.15.0)
   if (lifecycle::is_present(Data)) {
@@ -172,7 +172,7 @@ PlotChiSqCovar <- function(data,
     dplyr::mutate(pval.adj = ApplyFDRCorrection(
       .data$pval,
       fdr_scope = fdr_scope,
-      outcome_ids = .data$YVar
+      outcome_ids = .data$YVar, predictor_ids = .data$XVar
     )) %>%
     rstatix::add_significance(p.col = "pval.adj", output.col = "pval.adj.signif") %>%
     dplyr::mutate(

@@ -9,6 +9,7 @@ RevalueData(
   codebook,
   missingVal = -999,
   splitchar = ";",
+  on_error = c("stop", "warn"),
   DatatoRevalue = lifecycle::deprecated(),
   VarTypes = lifecycle::deprecated()
 )
@@ -24,6 +25,9 @@ Variable, Recode, Code, Type, Label, MissingCode. Only Variable is required.
 
 \item{splitchar}{Separator used in VarTypes$Code between pairs (default ";").}
 
+\item{on_error}{Whether to stop at the first variable-level error (the default)
+or continue and record errors in the returned object.}
+
 \item{DatatoRevalue}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
 
 \item{VarTypes}{\strong{Deprecated} (since 19.15.0). Use \code{codebook} instead.}
@@ -31,7 +35,9 @@ Variable, Recode, Code, Type, Label, MissingCode. Only Variable is required.
 \value{
 A list with:
 RevaluedData (data), warninglist (character), recodedvars (character),
-not_in_data (character).
+not_in_data (character), and errors (data frame with \code{Variable} and
+\code{Error} columns). In the default \code{on_error = "stop"} mode, an error names
+the offending variable and preserves the underlying message.
 }
 \description{
 Revalues variables in a dataset using a VarTypes codebook.

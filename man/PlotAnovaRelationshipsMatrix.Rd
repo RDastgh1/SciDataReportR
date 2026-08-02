@@ -15,7 +15,7 @@ PlotAnovaRelationshipsMatrix(
   min_n = 4,
   eps = 1e-08,
   Data = lifecycle::deprecated(),
-  fdr_scope = c("matrix", "per_outcome"),
+  fdr_scope = c("matrix", "per_outcome", "per_predictor"),
   Covariates = lifecycle::deprecated()
 )
 }

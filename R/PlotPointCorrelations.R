@@ -40,7 +40,7 @@ PlotPointCorrelationsHeatmap <- function(data,
     Relabel = TRUE,
     Ordinal = TRUE,
     binary_map = NULL,
-    fdr_scope = c("matrix", "per_outcome"),
+    fdr_scope = c("matrix", "per_outcome", "per_predictor"),
     Data = lifecycle::deprecated(),
     Covariates = lifecycle::deprecated()) {
   # Deprecated argument shims (SciDataReportR 19.15.0)
@@ -139,7 +139,8 @@ PlotPointCorrelationsHeatmap <- function(data,
   stat.test$p.adj <- ApplyFDRCorrection(
     stat.test$p_value,
     fdr_scope = fdr_scope,
-    outcome_ids = stat.test$ContinuousVariable
+    outcome_ids = stat.test$ContinuousVariable,
+    predictor_ids = stat.test$CategoricalVariable
   )
   stat.test <- stat.test %>%
     rstatix::add_significance("p_value", output.col = "p<.05") %>%

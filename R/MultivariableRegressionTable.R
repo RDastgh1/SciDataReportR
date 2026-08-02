@@ -1536,7 +1536,7 @@ ScidrMultivariableGtTable <- function(reporting, formatted = TRUE) {
         StandardizedBeta,
         LowerCI,
         UpperCI,
-        PValue,
+        dplyr::all_of("PValue"),
         FDR
       )
 

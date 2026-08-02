@@ -28,7 +28,8 @@ This function generates a formatted data dictionary table using the specified da
 The table includes variable names, labels, types, and additional formatting based on variable types.
 }
 \details{
-This function requires the \code{gt} package. If not installed, the function will return an error.
+This function requires the \code{gt} and \code{codebook} packages. If either
+is not installed, the function will return an error.
 }
 \examples{
 data(SampleData)

@@ -119,7 +119,7 @@ PlotInteractionEffectsMatrix <- function(data,
     Data = lifecycle::deprecated(),
     outcomeVars = lifecycle::deprecated(),
     predictorVars = lifecycle::deprecated(),
-    fdr_scope = c("matrix", "per_outcome"),
+    fdr_scope = c("matrix", "per_outcome", "per_predictor"),
     covars = lifecycle::deprecated()) {
   # Deprecated argument shims (SciDataReportR 19.15.0)
   if (lifecycle::is_present(Data)) {
@@ -464,7 +464,8 @@ PlotInteractionEffectsMatrix <- function(data,
     m_G$P_FDR <- ApplyFDRCorrection(
       m_G$P,
       fdr_scope = fdr_scope,
-      outcome_ids = m_G$Outcome
+      outcome_ids = m_G$Outcome,
+      predictor_ids = m_G$Predictor
     )
   } else {
     m_G$P_FDR <- NA

@@ -8,6 +8,8 @@ PlotMissingData(
   data,
   variables = NULL,
   HoverVars = NULL,
+  x_var = NULL,
+  facet_by = NULL,
   Relabel = TRUE,
   show_perc = TRUE,
   show_perc_var = TRUE,
@@ -20,10 +22,17 @@ PlotMissingData(
 \item{data}{A data frame.}
 
 \item{variables}{Character vector of variables to visualize. If NULL,
-all columns except HoverVars are used.}
+all columns except \code{HoverVars}, \code{x_var}, and \code{facet_by} are used.}
 
 \item{HoverVars}{Optional character vector of columns to include in hover
 text. Useful for participant IDs, visit names, dates, sites, etc.}
+
+\item{x_var}{Optional single column name to use for the x-axis. Numeric and
+date variables retain their original scale; categorical variables use a
+discrete axis. Missing x values are displayed as \code{"Missing"}.}
+
+\item{facet_by}{Optional single column name used to create missingness
+panels. Missing facet values are displayed in a \code{"Missing"} panel.}
 
 \item{Relabel}{Logical. If TRUE, variable labels are used when available.}
 

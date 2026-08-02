@@ -453,29 +453,33 @@
 #' # Build a swimmer-shaped dataset from the survival::colon data: each subject
 #' # contributes a variable number of follow-up visits and a binary condition
 #' # (recurrence) that can develop over time.
-#' if (requireNamespace("survival", quietly = TRUE)) {
+#' if (requireNamespace("survival", quietly = TRUE) &&
+#'     requireNamespace("dplyr", quietly = TRUE) &&
+#'     requireNamespace("tidyr", quietly = TRUE) &&
+#'     requireNamespace("purrr", quietly = TRUE)) {
+#'   `%>%` <- dplyr::`%>%`
 #'   set.seed(2024)
 #'
-#'   subjects <- survival::colon |>
-#'     dplyr::filter(etype == 1) |>
-#'     dplyr::distinct(id, .keep_all = TRUE) |>
-#'     dplyr::slice_sample(n = 40) |>
+#'   subjects <- survival::colon %>%
+#'     dplyr::filter(etype == 1) %>%
+#'     dplyr::distinct(id, .keep_all = TRUE) %>%
+#'     dplyr::slice_sample(n = 40) %>%
 #'     dplyr::transmute(
 #'       SubjectID = paste0("P", id),
 #'       n_visits  = pmin(pmax(round(time / 400) + 2, 2), 6),
 #'       onset     = purrr::map_int(n_visits, ~ sample(0:.x, 1))
 #'     )
 #'
-#'   swimmer_df <- subjects |>
-#'     dplyr::mutate(Visit = purrr::map(n_visits, seq_len)) |>
-#'     tidyr::unnest(Visit) |>
-#'     dplyr::group_by(SubjectID) |>
+#'   swimmer_df <- subjects %>%
+#'     dplyr::mutate(Visit = purrr::map(n_visits, seq_len)) %>%
+#'     tidyr::unnest(Visit) %>%
+#'     dplyr::group_by(SubjectID) %>%
 #'     dplyr::mutate(
 #'       VisitDate  = as.Date("2020-01-01") +
 #'         cumsum(c(0, sample(60:200, dplyr::n() - 1, TRUE))),
 #'       Recurrence = as.integer(onset > 0 & Visit >= onset)
-#'     ) |>
-#'     dplyr::ungroup() |>
+#'     ) %>%
+#'     dplyr::ungroup() %>%
 #'     dplyr::select(SubjectID, Visit, VisitDate, Recurrence)
 #'
 #'   # Aligned by visit number, ordered by when the condition first develops

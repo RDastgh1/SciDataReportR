@@ -54,7 +54,7 @@ PlotCatInteractionEffectsMatrix <- function(data,
     interVar,
     Data = lifecycle::deprecated(),
     xVars = lifecycle::deprecated(),
-    fdr_scope = c("matrix", "per_outcome"),
+    fdr_scope = c("matrix", "per_outcome", "per_predictor"),
     yVars = lifecycle::deprecated()) {
   # Deprecated argument shims (SciDataReportR 19.15.0)
   if (lifecycle::is_present(Data)) {
@@ -151,7 +151,8 @@ PlotCatInteractionEffectsMatrix <- function(data,
   m_G$P_FDR <- ApplyFDRCorrection(
     m_G$P,
     fdr_scope = fdr_scope,
-    outcome_ids = m_G$Y
+    outcome_ids = m_G$Y,
+    predictor_ids = m_G$X
   )
   m_G$sign_FDR <- sign(m_G$S) %>% factor(levels = c(-1, 0, 1), labels = c("-", "ns", "+"))
   m_G$sign_FDR[m_G$P_FDR > 0.05] <- "ns"

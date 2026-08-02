@@ -21,3 +21,4 @@ conflicted copy
 ^man/figures/computerpipes\.png$
 ^CRAN-SUBMISSION$
 \.tar\.gz$
+^vignettes/.*_files$

@@ -66,7 +66,7 @@ PlotMiningMatrix <- function(data,
     Data = lifecycle::deprecated(),
     OutcomeVars = lifecycle::deprecated(),
     PredictorVars = lifecycle::deprecated(),
-    fdr_scope = c("matrix", "per_outcome"),
+    fdr_scope = c("matrix", "per_outcome", "per_predictor"),
     Covariates = lifecycle::deprecated()) {
   # Deprecated argument shims (SciDataReportR 19.15.0)
   if (lifecycle::is_present(Data)) {
@@ -290,7 +290,8 @@ PlotMiningMatrix <- function(data,
   results$p_adj <- ApplyFDRCorrection(
     results$p,
     fdr_scope = fdr_scope,
-    outcome_ids = results$XVar
+    outcome_ids = results$XVar,
+    predictor_ids = results$YVar
   )
 
   results <- results %>%

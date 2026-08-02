@@ -72,7 +72,7 @@ PlotCorrelationsHeatmap <- function(data,
     Ordinal = FALSE,
     min_n = 3,
     eps = 1e-12,
-    fdr_scope = c("matrix", "per_outcome"),
+    fdr_scope = c("matrix", "per_outcome", "per_predictor"),
     Data = lifecycle::deprecated(),
     xVars = lifecycle::deprecated(),
     yVars = lifecycle::deprecated(),
@@ -765,4 +765,3 @@ PlotCorrelationsHeatmap <- function(data,
   out$p_fdr <- out$FDRCorrected
   out
 }
-

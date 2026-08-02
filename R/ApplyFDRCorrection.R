@@ -8,7 +8,7 @@
 #'
 #' @param pmat A numeric matrix or data frame of p-values, or a plain numeric
 #'   vector. Matrices and data frames keep their dimensions and dimnames.
-#' @param fdr_scope Either `"matrix"` (default) or `"per_outcome"`.
+#' @param fdr_scope Either `"matrix"` (default), `"per_outcome"`, or `"per_predictor"`.
 #'   `"matrix"` corrects across all p-values at once (one family).
 #'   `"per_outcome"` corrects separately within each outcome's p-values:
 #'   for matrix input, groups run along `outcome_margin`; for vector input,
@@ -23,6 +23,9 @@
 #'   `pmat` is a vector and `fdr_scope = "per_outcome"`. This is how the
 #'   long-format table functions (for example [PlotPhiHeatmap()] or
 #'   [PlotChiSqCovar()]) group their p-values by outcome.
+#' @param predictor_ids Optional vector (same length as `pmat`) identifying the
+#'   predictor each p-value belongs to. Only used - and then required - when
+#'   `pmat` is a vector and `fdr_scope = "per_predictor"`.
 #'
 #' @return An object of the same shape as `pmat` (matrix, data frame, or
 #'   vector) containing adjusted p-values. Non-finite entries remain `NA`.
@@ -45,10 +48,11 @@
 #'
 #' @export
 ApplyFDRCorrection <- function(pmat,
-                               fdr_scope = c("matrix", "per_outcome"),
+                               fdr_scope = c("matrix", "per_outcome", "per_predictor"),
                                outcome_margin = 2,
                                method = "fdr",
-                               outcome_ids = NULL) {
+                               outcome_ids = NULL,
+                               predictor_ids = NULL) {
   fdr_scope <- match.arg(fdr_scope)
   if (!outcome_margin %in% c(1, 2)) {
     stop("outcome_margin must be 1 (outcomes are rows) or 2 (outcomes are columns).")
@@ -67,14 +71,16 @@ ApplyFDRCorrection <- function(pmat,
     if (fdr_scope == "matrix") {
       res <- adjust_vec(p)
     } else {
-      if (is.null(outcome_ids)) {
-        stop("outcome_ids is required when pmat is a vector and fdr_scope = 'per_outcome'.")
+      ids <- if (fdr_scope == "per_outcome") outcome_ids else predictor_ids
+      id_name <- if (fdr_scope == "per_outcome") "outcome_ids" else "predictor_ids"
+      if (is.null(ids)) {
+        stop(id_name, " is required when pmat is a vector and fdr_scope = '", fdr_scope, "'.")
       }
-      if (length(outcome_ids) != length(p)) {
-        stop("outcome_ids must have the same length as pmat.")
+      if (length(ids) != length(p)) {
+        stop(id_name, " must have the same length as pmat.")
       }
       res <- rep(NA_real_, length(p))
-      for (idx in split(seq_along(p), as.character(outcome_ids))) {
+      for (idx in split(seq_along(p), as.character(ids))) {
         res[idx] <- adjust_vec(p[idx])
       }
     }
@@ -91,10 +97,14 @@ ApplyFDRCorrection <- function(pmat,
   res <- m
   if (fdr_scope == "matrix") {
     res[] <- adjust_vec(as.vector(m))
-  } else if (outcome_margin == 2) {
+  } else if (fdr_scope == "per_outcome" && outcome_margin == 2) {
     for (j in seq_len(ncol(m))) res[, j] <- adjust_vec(m[, j])
-  } else {
+  } else if (fdr_scope == "per_outcome") {
     for (i in seq_len(nrow(m))) res[i, ] <- adjust_vec(m[i, ])
+  } else if (outcome_margin == 2) {
+    for (i in seq_len(nrow(m))) res[i, ] <- adjust_vec(m[i, ])
+  } else {
+    for (j in seq_len(ncol(m))) res[, j] <- adjust_vec(m[, j])
   }
   if (is_df) {
     res <- as.data.frame(res, check.names = FALSE, stringsAsFactors = FALSE)

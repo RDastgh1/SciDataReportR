@@ -9,7 +9,7 @@ PlotPhiHeatmap(
   CatVars,
   Relabel = TRUE,
   binary_map = NULL,
-  fdr_scope = c("matrix", "per_outcome"),
+  fdr_scope = c("matrix", "per_outcome", "per_predictor"),
   Data = lifecycle::deprecated()
 )
 }

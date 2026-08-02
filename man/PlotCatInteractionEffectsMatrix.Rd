@@ -13,7 +13,7 @@ PlotCatInteractionEffectsMatrix(
   interVar,
   Data = lifecycle::deprecated(),
   xVars = lifecycle::deprecated(),
-  fdr_scope = c("matrix", "per_outcome"),
+  fdr_scope = c("matrix", "per_outcome", "per_predictor"),
   yVars = lifecycle::deprecated()
 )
 }

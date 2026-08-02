@@ -8,10 +8,14 @@
 #'   (Backward compatible: if MissingCode is absent/NA, will fall back to Missing.)
 #' @param missingVal Default value to treat as missing when VarTypes$MissingCode is absent or NA.
 #' @param splitchar Separator used in VarTypes$Code between pairs (default ";").
+#' @param on_error Whether to stop at the first variable-level error (the default)
+#'   or continue and record errors in the returned object.
 #'
 #' @return A list with:
 #'   RevaluedData (data), warninglist (character), recodedvars (character),
-#'   not_in_data (character).
+#'   not_in_data (character), and errors (data frame with `Variable` and
+#'   `Error` columns). In the default `on_error = "stop"` mode, an error names
+#'   the offending variable and preserves the underlying message.
 #'
 #' @examples
 #' data(SampleData)
@@ -41,6 +45,7 @@ RevalueData <- function(data,
     codebook,
     missingVal = -999,
     splitchar = ";",
+    on_error = c("stop", "warn"),
     DatatoRevalue = lifecycle::deprecated(),
     VarTypes = lifecycle::deprecated()) {
   # Deprecated argument shims (SciDataReportR 19.15.0)
@@ -54,6 +59,7 @@ RevalueData <- function(data,
     codebook <- VarTypes
   }
   if (!missing(codebook)) VarTypes <- codebook
+  on_error <- match.arg(on_error)
 
   if (!requireNamespace("sjlabelled", quietly = TRUE))
     stop("Package 'sjlabelled' is required.")
@@ -111,6 +117,11 @@ RevalueData <- function(data,
 
   warninglist <- character(0)
   recodedvars <- character(0)
+  errorlist <- data.frame(
+    Variable = character(0),
+    Error = character(0),
+    stringsAsFactors = FALSE
+  )
 
   # treat these as numeric/double storage
   num_types <- c("double","numeric","numerical","integer","continuous")
@@ -119,7 +130,8 @@ RevalueData <- function(data,
   for (i in seq_along(vars)) {
     var <- vars[i]
     idx <- which(vt_in$Variable == var)[1]
-    x   <- RevaluedData[[var]]
+    tryCatch({
+      x <- RevaluedData[[var]]
 
     ## MissingCode -> NA
     mchr <- vt_in$MissingCode[idx]
@@ -140,6 +152,13 @@ RevalueData <- function(data,
 
     ## Recoding & labeling
     rc_flag <- tolower(trimws(vt_in$Recode[idx]))
+    valid_recode_flags <- c("yes", "y", "1", "true", "t", "no", "n", "0", "false", "f")
+    if (!is.na(rc_flag) && nzchar(rc_flag) && !rc_flag %in% valid_recode_flags) {
+      warninglist <- c(
+        warninglist,
+        paste0(var, ": Unrecognized Recode value '", vt_in$Recode[idx], "'. Expected Yes or No; recoding was skipped.")
+      )
+    }
     do_reco <- isTRUE(rc_flag %in% c("yes","y","1","true","t"))
     vartype <- tolower(trimws(vt_in$Type[idx]))
 
@@ -215,9 +234,18 @@ RevalueData <- function(data,
 
     # Variable label
     vlab <- vt_in$Label[idx]
-    if (!is.na(vlab) && nzchar(vlab)) {
+    if (length(vlab) > 0 && !is.na(vlab) && nzchar(vlab)) {
       RevaluedData[[var]] <- sjlabelled::set_label(RevaluedData[[var]], label = vlab)
     }
+    }, error = function(e) {
+      error_message <- paste0("Error revaluing variable '", var, "': ", conditionMessage(e))
+      errorlist <<- rbind(
+        errorlist,
+        data.frame(Variable = var, Error = conditionMessage(e), stringsAsFactors = FALSE)
+      )
+      if (on_error == "stop") stop(error_message, call. = FALSE)
+      warninglist <<- c(warninglist, error_message)
+    })
   }
 
   if (length(not_in_data) > 0) {
@@ -232,6 +260,7 @@ RevalueData <- function(data,
     RevaluedData = RevaluedData,
     warninglist  = unique(warninglist),
     recodedvars  = unique(recodedvars),
-    not_in_data  = not_in_data
+    not_in_data  = not_in_data,
+    errors       = errorlist
   )
 }

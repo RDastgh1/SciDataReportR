@@ -50,6 +50,14 @@ test_that("ApplyFDRCorrection vector input with outcome_ids groups correctly", {
   )
 })
 
+test_that("ApplyFDRCorrection supports per-predictor correction", {
+  pm <- matrix(c(0.005, 0.04, 0.03, 0.01), nrow = 2)
+  res <- ApplyFDRCorrection(pm, fdr_scope = "per_predictor")
+  expect_equal(res[1, ], ApplyFDRCorrection(pm[1, ]))
+  expect_equal(res[2, ], ApplyFDRCorrection(pm[2, ]))
+  expect_error(ApplyFDRCorrection(c(0.01, 0.02), fdr_scope = "per_predictor"), "predictor_ids")
+})
+
 test_that("ApplyFDRCorrection matrix scope reproduces stats::p.adjust exactly", {
   set.seed(7)
   pm <- matrix(runif(24), nrow = 4)

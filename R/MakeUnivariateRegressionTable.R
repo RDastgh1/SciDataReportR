@@ -351,7 +351,7 @@ ScidrUnivariateGtTable <- function(results, formatted = TRUE) {
         StdError,
         ConfLow,
         ConfHigh,
-        PValue
+        dplyr::all_of("PValue")
       )
 
     out <- gt::gt(table_data, groupname_col = "OutcomeLabel") %>%

@@ -8,7 +8,8 @@
 #'
 #' @return A formatted data dictionary table (gt object).
 #'
-#' @details This function requires the `gt` package. If not installed, the function will return an error.
+#' @details This function requires the `gt` and `codebook` packages. If either
+#' is not installed, the function will return an error.
 #'
 #' @examples
 #' data(SampleData)
@@ -43,8 +44,11 @@ FormattedDataDictionary <- function(data,
   numdecimals <- digits
 
   # Ensure `gt` is installed
-  if (!requireNamespace("gt", quietly = TRUE)) {
+  if (!ScidrPackageAvailable("gt")) {
     stop("The 'gt' package is required but not installed. Please install it using install.packages('gt').")
+  }
+  if (!ScidrPackageAvailable("codebook")) {
+    stop("The 'codebook' package is required but not installed. Please install it using install.packages('codebook').")
   }
 
   # Generate the initial data dictionary
@@ -90,4 +94,8 @@ FormattedDataDictionary <- function(data,
     )
 
   return(g)
+}
+
+ScidrPackageAvailable <- function(package) {
+  requireNamespace(package, quietly = TRUE)
 }

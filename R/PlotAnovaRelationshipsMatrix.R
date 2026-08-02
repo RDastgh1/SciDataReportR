@@ -57,7 +57,7 @@ PlotAnovaRelationshipsMatrix <- function(data,
     min_n = 4,
     eps = 1e-08,
     Data = lifecycle::deprecated(),
-    fdr_scope = c("matrix", "per_outcome"),
+    fdr_scope = c("matrix", "per_outcome", "per_predictor"),
     Covariates = lifecycle::deprecated()) {
   # Deprecated argument shims (SciDataReportR 19.15.0)
   if (lifecycle::is_present(Data)) {
@@ -221,7 +221,8 @@ PlotAnovaRelationshipsMatrix <- function(data,
   stat.test$p.adj <- ApplyFDRCorrection(
     stat.test$p,
     fdr_scope = fdr_scope,
-    outcome_ids = stat.test$ContinuousVariable
+    outcome_ids = stat.test$ContinuousVariable,
+    predictor_ids = stat.test$CategoricalVariable
   )
   stat.test <- stat.test %>%
     rstatix::add_significance(p.col = "p.adj", output.col = "p.adj.signif")

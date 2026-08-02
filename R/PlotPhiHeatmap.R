@@ -36,7 +36,7 @@ PlotPhiHeatmap <- function(data,
     CatVars,
     Relabel = TRUE,
     binary_map = NULL,
-    fdr_scope = c("matrix", "per_outcome"),
+    fdr_scope = c("matrix", "per_outcome", "per_predictor"),
     Data = lifecycle::deprecated()) {
   # Deprecated argument shims (SciDataReportR 19.15.0)
   if (lifecycle::is_present(Data)) {
@@ -146,7 +146,7 @@ PlotPhiHeatmap <- function(data,
   stat.test$p.adj <- ApplyFDRCorrection(
     stat.test$p_value,
     fdr_scope = fdr_scope,
-    outcome_ids = stat.test$YVar
+    outcome_ids = stat.test$YVar, predictor_ids = stat.test$XVar
   )
 
   # significance stars

@@ -6,17 +6,18 @@
 \usage{
 ApplyFDRCorrection(
   pmat,
-  fdr_scope = c("matrix", "per_outcome"),
+  fdr_scope = c("matrix", "per_outcome", "per_predictor"),
   outcome_margin = 2,
   method = "fdr",
-  outcome_ids = NULL
+  outcome_ids = NULL,
+  predictor_ids = NULL
 )
 }
 \arguments{
 \item{pmat}{A numeric matrix or data frame of p-values, or a plain numeric
 vector. Matrices and data frames keep their dimensions and dimnames.}
 
-\item{fdr_scope}{Either \code{"matrix"} (default) or \code{"per_outcome"}.
+\item{fdr_scope}{Either \code{"matrix"} (default), \code{"per_outcome"}, or \code{"per_predictor"}.
 \code{"matrix"} corrects across all p-values at once (one family).
 \code{"per_outcome"} corrects separately within each outcome's p-values:
 for matrix input, groups run along \code{outcome_margin}; for vector input,
@@ -34,6 +35,10 @@ outcome each p-value belongs to. Only used - and then required - when
 \code{pmat} is a vector and \code{fdr_scope = "per_outcome"}. This is how the
 long-format table functions (for example \code{\link[=PlotPhiHeatmap]{PlotPhiHeatmap()}} or
 \code{\link[=PlotChiSqCovar]{PlotChiSqCovar()}}) group their p-values by outcome.}
+
+\item{predictor_ids}{Optional vector (same length as \code{pmat}) identifying the
+predictor each p-value belongs to. Only used - and then required - when
+\code{pmat} is a vector and \code{fdr_scope = "per_predictor"}.}
 }
 \value{
 An object of the same shape as \code{pmat} (matrix, data frame, or
