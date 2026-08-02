@@ -368,5 +368,5 @@ sessionInfo()
      [88] cards_0.8.1            broom_1.0.13           snakecase_0.11.1
      [91] rstantools_2.7.0       DescTools_0.99.60      class_7.3-23
      [94] Rcpp_1.1.2             coda_0.19-4.1          xfun_0.60
-     [97] fs_2.1.0               zoo_1.8-15             forcats_1.0.1
+     [97] fs_2.1.0               zoo_1.9-0              forcats_1.0.1
     [100] pkgconfig_2.0.3       

@@ -39,8 +39,8 @@ A formatted data dictionary table (gt object).
 
 ## Details
 
-This function requires the `gt` package. If not installed, the function
-will return an error.
+This function requires the `gt` and `codebook` packages. If either is
+not installed, the function will return an error.
 
 ## Examples
 

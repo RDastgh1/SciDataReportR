@@ -17,7 +17,7 @@ PlotNumInteractionEffectsMatrix(
   Data = lifecycle::deprecated(),
   xVars = lifecycle::deprecated(),
   yVars = lifecycle::deprecated(),
-  fdr_scope = c("matrix", "per_outcome"),
+  fdr_scope = c("matrix", "per_outcome", "per_predictor"),
   covars = lifecycle::deprecated()
 )
 ```

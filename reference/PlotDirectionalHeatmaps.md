@@ -18,7 +18,7 @@ PlotDirectionalHeatmaps(
   yVars = lifecycle::deprecated(),
   Relabel = TRUE,
   Ordinal = TRUE,
-  fdr_scope = c("matrix", "per_outcome"),
+  fdr_scope = c("matrix", "per_outcome", "per_predictor"),
   Data = lifecycle::deprecated(),
   xVars = lifecycle::deprecated()
 )

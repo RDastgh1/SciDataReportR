@@ -46,7 +46,7 @@ control workflows when converting the plot to an interactive Plotly figure."><me
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Plot Missing Data</h1>
-      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/v20.18.0/R/PlotMissingData.R" class="external-link"><code>R/PlotMissingData.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/master/R/PlotMissingData.R" class="external-link"><code>R/PlotMissingData.R</code></a></small>
       <div class="d-none name"><code>PlotMissingData.Rd</code></div>
     </div>
 
@@ -62,6 +62,8 @@ control workflows when converting the plot to an interactive Plotly figure.</p>
 <span>  <span class="va">data</span>,</span>
 <span>  variables <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  HoverVars <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  x_var <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  facet_by <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  Relabel <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  show_perc <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  show_perc_var <span class="op">=</span> <span class="cn">TRUE</span>,</span>
@@ -81,12 +83,23 @@ control workflows when converting the plot to an interactive Plotly figure.</p>
 
 <dt id="arg-variables">variables<a class="anchor" aria-label="anchor" href="#arg-variables"></a></dt>
 <dd><p>Character vector of variables to visualize. If NULL,
-all columns except HoverVars are used.</p></dd>
+all columns except <code>HoverVars</code>, <code>x_var</code>, and <code>facet_by</code> are used.</p></dd>
 
 
 <dt id="arg-hovervars">HoverVars<a class="anchor" aria-label="anchor" href="#arg-hovervars"></a></dt>
 <dd><p>Optional character vector of columns to include in hover
 text. Useful for participant IDs, visit names, dates, sites, etc.</p></dd>
+
+
+<dt id="arg-x-var">x_var<a class="anchor" aria-label="anchor" href="#arg-x-var"></a></dt>
+<dd><p>Optional single column name to use for the x-axis. Numeric and
+date variables retain their original scale; categorical variables use a
+discrete axis. Missing x values are displayed as <code>"Missing"</code>.</p></dd>
+
+
+<dt id="arg-facet-by">facet_by<a class="anchor" aria-label="anchor" href="#arg-facet-by"></a></dt>
+<dd><p>Optional single column name used to create missingness
+panels. Missing facet values are displayed in a <code>"Missing"</code> panel.</p></dd>
 
 
 <dt id="arg-relabel">Relabel<a class="anchor" aria-label="anchor" href="#arg-relabel"></a></dt>

@@ -11,10 +11,11 @@ functions that now delegate to this helper.
 ``` r
 ApplyFDRCorrection(
   pmat,
-  fdr_scope = c("matrix", "per_outcome"),
+  fdr_scope = c("matrix", "per_outcome", "per_predictor"),
   outcome_margin = 2,
   method = "fdr",
-  outcome_ids = NULL
+  outcome_ids = NULL,
+  predictor_ids = NULL
 )
 ```
 
@@ -27,11 +28,11 @@ ApplyFDRCorrection(
 
 - fdr_scope:
 
-  Either `"matrix"` (default) or `"per_outcome"`. `"matrix"` corrects
-  across all p-values at once (one family). `"per_outcome"` corrects
-  separately within each outcome's p-values: for matrix input, groups
-  run along `outcome_margin`; for vector input, groups are defined by
-  `outcome_ids`.
+  Either `"matrix"` (default), `"per_outcome"`, or `"per_predictor"`.
+  `"matrix"` corrects across all p-values at once (one family).
+  `"per_outcome"` corrects separately within each outcome's p-values:
+  for matrix input, groups run along `outcome_margin`; for vector input,
+  groups are defined by `outcome_ids`.
 
 - outcome_margin:
 
@@ -55,6 +56,12 @@ ApplyFDRCorrection(
   or
   [`PlotChiSqCovar()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotChiSqCovar.md))
   group their p-values by outcome.
+
+- predictor_ids:
+
+  Optional vector (same length as `pmat`) identifying the predictor each
+  p-value belongs to. Only used - and then required - when `pmat` is a
+  vector and `fdr_scope = "per_predictor"`.
 
 ## Value
 

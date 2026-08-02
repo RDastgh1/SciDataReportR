@@ -12,6 +12,8 @@ PlotMissingData(
   data,
   variables = NULL,
   HoverVars = NULL,
+  x_var = NULL,
+  facet_by = NULL,
   Relabel = TRUE,
   show_perc = TRUE,
   show_perc_var = TRUE,
@@ -30,12 +32,23 @@ PlotMissingData(
 - variables:
 
   Character vector of variables to visualize. If NULL, all columns
-  except HoverVars are used.
+  except `HoverVars`, `x_var`, and `facet_by` are used.
 
 - HoverVars:
 
   Optional character vector of columns to include in hover text. Useful
   for participant IDs, visit names, dates, sites, etc.
+
+- x_var:
+
+  Optional single column name to use for the x-axis. Numeric and date
+  variables retain their original scale; categorical variables use a
+  discrete axis. Missing x values are displayed as `"Missing"`.
+
+- facet_by:
+
+  Optional single column name used to create missingness panels. Missing
+  facet values are displayed in a `"Missing"` panel.
 
 - Relabel:
 

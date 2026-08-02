@@ -10,6 +10,7 @@ RevalueData(
   codebook,
   missingVal = -999,
   splitchar = ";",
+  on_error = c("stop", "warn"),
   DatatoRevalue = lifecycle::deprecated(),
   VarTypes = lifecycle::deprecated()
 )
@@ -36,6 +37,11 @@ RevalueData(
 
   Separator used in VarTypes\$Code between pairs (default ";").
 
+- on_error:
+
+  Whether to stop at the first variable-level error (the default) or
+  continue and record errors in the returned object.
+
 - DatatoRevalue:
 
   **Deprecated** (since 19.15.0). Use `data` instead.
@@ -47,7 +53,10 @@ RevalueData(
 ## Value
 
 A list with: RevaluedData (data), warninglist (character), recodedvars
-(character), not_in_data (character).
+(character), not_in_data (character), and errors (data frame with
+`Variable` and `Error` columns). In the default `on_error = "stop"`
+mode, an error names the offending variable and preserves the underlying
+message.
 
 ## Examples
 
