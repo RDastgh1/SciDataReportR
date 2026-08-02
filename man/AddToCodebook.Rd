@@ -14,44 +14,75 @@ AddToCodebook(
   VariableCode = NA,
   VariableExclude = NA,
   VariableNotes = NA,
-  CB = lifecycle::deprecated()
+  CB = lifecycle::deprecated(),
+  ...
 )
 }
 \arguments{
-\item{codebook}{A data frame representing the codebook.}
+\item{codebook}{A data frame representing the codebook. It must contain a
+\code{Variable} column.}
 
-\item{VariableName}{The name of the variable.}
+\item{VariableName}{A single, non-missing, non-empty character variable name.
+It must not already appear in \code{codebook$Variable}.}
 
-\item{VariableLabel}{The label of the variable (default: same as VariableName).}
+\item{VariableLabel}{A single label for the variable. Defaults to
+\code{VariableName} when \code{NA}.}
 
-\item{VariableType}{The type of the variable (e.g., numeric, categorical).}
+\item{VariableType}{A single value for the \code{Type} column.}
 
-\item{VariableCategory}{The category to which the variable belongs.}
+\item{VariableCategory}{A single value for the \code{Category} column.}
 
-\item{VariableRecode}{The recode information for the variable.}
+\item{VariableRecode}{A single value for the \code{Recode} column.}
 
-\item{VariableCode}{The code associated with the variable.}
+\item{VariableCode}{A single value for the \code{Code} column.}
 
-\item{VariableExclude}{A flag indicating whether the variable should be excluded.}
+\item{VariableExclude}{A single value for the \code{Exclude} column.}
 
-\item{VariableNotes}{Any additional notes or comments about the variable.}
+\item{VariableNotes}{A single value for the \code{Notes} column.}
 
 \item{CB}{\strong{Deprecated} (since 19.15.0). Use \code{codebook} instead.}
+
+\item{...}{Named, single atomic values for user-defined codebook columns.
+Names matching existing columns populate them. New names create a column
+and warn. Standard fields (\code{Variable}, \code{Label}, \code{Type}, \code{Category},
+\code{Recode}, \code{Code}, \code{Exclude}, and \code{Notes}) must be supplied through their
+corresponding formal arguments.}
 }
 \value{
-A data frame representing the updated codebook with the new variable added.
+A data frame representing the updated codebook with the new variable
+added.
 }
 \description{
-This function adds a new variable entry to an existing codebook.
+Adds one variable entry to a codebook while preserving its existing schema.
+In addition to the standard codebook fields, named values supplied through
+\code{...} populate user-defined columns. A new named \code{...} column is added to
+the codebook (with \code{NA} for existing rows) and produces a warning.
+}
+\details{
+The function uses the supplied codebook as the source of truth for coded
+metadata. For every supplied field except \code{Variable}, \code{Label}, and \code{Notes}, it warns when
+a non-missing value has not previously appeared in that column or has a
+different storage type. These warnings are advisory: the row is still added
+and R may promote the column type while binding the new row.
 }
 \examples{
-# Create an empty codebook
-codebook <- data.frame(Variable = character(0), Label = character(0),
-                       Type = character(0), Category = character(0),
-                       Recode = character(0), Code = character(0),
-                       Exclude = logical(0), Notes = character(0))
+codebook <- data.frame(
+  Variable = "sex", Label = "Sex assigned at birth", Type = "Categorical",
+  Category = "Demographics", Recode = 1, Code = "0 = Female; 1 = Male",
+  Exclude = FALSE, Notes = NA_character_, Domain = "Clinical"
+)
 
-# Add a new variable to the codebook
-codebook <- AddToCodebook(codebook, "Age", "Age of participants", "numeric", "Demographics")
+# Populate an existing user-defined column.
+AddToCodebook(
+  codebook, "age", "Age at enrollment", "Double", "Demographics",
+  Domain = "Clinical"
+)
+
+# This adds `Source` and warns because it is a new column.
+AddToCodebook(codebook, "site", Source = "REDCap")
+
+# These values are retained but warn because they conflict with the old schema.
+AddToCodebook(codebook, "participant_id", VariableRecode = 4,
+              VariableExclude = 3)
 
 }
