@@ -103,7 +103,7 @@ and should be checked when composing analyses.
 SciDataReportR now uses workflow-oriented canonical names for new code,
 while older public names remain available as compatibility aliases. For
 example,
-[`CreatePCATable()`](https://rdastgh1.github.io/SciDataReportR/reference/CreatePCATable.md)
+[`CreatePCATable()`](https://rdastgh1.github.io/SciDataReportR/reference/CreatePCAObject.md)
 still works, but
 [`CreatePCAObject()`](https://rdastgh1.github.io/SciDataReportR/reference/CreatePCAObject.md)
 better describes the reusable PCA object returned by that workflow.
@@ -224,11 +224,6 @@ Contributions, bug reports, and workflow ideas are welcome through
   : Apply a normative T-score model to new data
 - [`AssemblePlots()`](https://rdastgh1.github.io/SciDataReportR/reference/AssemblePlots.md)
   : Assemble ggplot objects into a unified multi-panel figure
-- [`CalcMScore()`](https://rdastgh1.github.io/SciDataReportR/reference/CalcMScore.md)
-  : Calculate robust M-scores for numeric variables
-- [`CalcZScore()`](https://rdastgh1.github.io/SciDataReportR/reference/CalcZScore.md)
-  : Calculate Z-scores (or standardized scores) and return data +
-  parameters
 - [`CodebookMergeApp()`](https://rdastgh1.github.io/SciDataReportR/reference/CodebookMergeApp.md)
   : Interactive codebook harmonization dashboard
 - [`CombineCodebooks()`](https://rdastgh1.github.io/SciDataReportR/reference/CombineCodebooks.md)
@@ -238,26 +233,23 @@ Contributions, bug reports, and workflow ideas are welcome through
 - [`ConvertOrdinalToNumeric()`](https://rdastgh1.github.io/SciDataReportR/reference/ConvertOrdinalToNumeric.md)
   : Prepare ordinal variables for analysis
 - [`CreateMCAObject()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateMCAObject.md)
+  [`CreateMCATable()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateMCAObject.md)
   : Create a reusable MCA object and visualizations
-- [`CreateMCATable()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateMCATable.md)
-  : Create MCA table and visualization
 - [`CreateMScoreObject()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateMScoreObject.md)
+  [`CalcMScore()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateMScoreObject.md)
   : Calculate robust M-scores for numeric variables
 - [`CreateNormativeTScoreModel()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateNormativeTScoreModel.md)
-  : Create normative T-scores from a regression model
-- [`CreateNormativeTScores()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateNormativeTScores.md)
+  [`CreateNormativeTScores()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateNormativeTScoreModel.md)
   : Create normative T-scores from a regression model
 - [`CreatePCAObject()`](https://rdastgh1.github.io/SciDataReportR/reference/CreatePCAObject.md)
+  [`CreatePCATable()`](https://rdastgh1.github.io/SciDataReportR/reference/CreatePCAObject.md)
   : Create a reusable PCA object and visualizations
-- [`CreatePCATable()`](https://rdastgh1.github.io/SciDataReportR/reference/CreatePCATable.md)
-  : Create PCA table and visualization
-- [`CreatePathwayPlot_KT()`](https://rdastgh1.github.io/SciDataReportR/reference/CreatePathwayPlot_KT.md)
-  : Create Kynurenine-Tryptophan Pathway Plot
 - [`CreateProjectFolders()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateProjectFolders.md)
   : Create Project Folder Structure
 - [`CreateRCIObject()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateRCIObject.md)
   : Create a Reliable Change Index (RCI) object
 - [`CreateSOMClusterModel()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateSOMClusterModel.md)
+  [`Pipeline_SOMClust()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateSOMClusterModel.md)
   : SOM + latent profile clustering pipeline (with AHP and distance
   baselines)
 - [`CreateStatisticsTable()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateStatisticsTable.md)
@@ -267,10 +259,9 @@ Contributions, bug reports, and workflow ideas are welcome through
 - [`CreateVariableTypesTemplate()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateVariableTypesTemplate.md)
   : Create a Template for Variable Types
 - [`CreateZScoreObject()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateZScoreObject.md)
+  [`CalcZScore()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateZScoreObject.md)
   : Calculate Z-scores (or standardized scores) and return data +
   parameters
-- [`CreateZScorePlot()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateZScorePlot.md)
-  : Create a Z-score plot with statistical significance
 - [`DeriveFreesurferVolumes()`](https://rdastgh1.github.io/SciDataReportR/reference/DeriveFreesurferVolumes.md)
   : Derive Freesurfer bilateral totals and ICV-adjusted measures
 - [`ExploreDatasetComparison()`](https://rdastgh1.github.io/SciDataReportR/reference/ExploreDatasetComparison.md)
@@ -297,6 +288,7 @@ Contributions, bug reports, and workflow ideas are welcome through
   : Make comparison table with covariate adjustment, effect sizes, and
   pairwise contrasts
 - [`MakeDataDictionary()`](https://rdastgh1.github.io/SciDataReportR/reference/MakeDataDictionary.md)
+  [`Make_DataDictionary()`](https://rdastgh1.github.io/SciDataReportR/reference/MakeDataDictionary.md)
   : Create a data dictionary for a data frame
 - [`MakeFacetCatComparisonTable()`](https://rdastgh1.github.io/SciDataReportR/reference/MakeFacetCatComparisonTable.md)
   : Create a merged gtsummary table by faceting comparisons across
@@ -308,8 +300,6 @@ Contributions, bug reports, and workflow ideas are welcome through
 - [`MakeUnivariateRegressionTable()`](https://rdastgh1.github.io/SciDataReportR/reference/MakeUnivariateRegressionTable.md)
   [`UnivariateRegressionTable()`](https://rdastgh1.github.io/SciDataReportR/reference/MakeUnivariateRegressionTable.md)
   : Univariate Regression Table
-- [`Make_DataDictionary()`](https://rdastgh1.github.io/SciDataReportR/reference/Make_DataDictionary.md)
-  : Create a data dictionary for a data frame
 - [`MergeCodebooks()`](https://rdastgh1.github.io/SciDataReportR/reference/MergeCodebooks.md)
   : Merge multiple codebooks using harmonization rules
 - [`MergeFragmentedRecords()`](https://rdastgh1.github.io/SciDataReportR/reference/MergeFragmentedRecords.md)
@@ -318,9 +308,6 @@ Contributions, bug reports, and workflow ideas are welcome through
   : Merge Two Data Frames by Closest Time
 - [`MultivariableRegressionTable()`](https://rdastgh1.github.io/SciDataReportR/reference/MultivariableRegressionTable.md)
   : Multivariable regression table
-- [`Pipeline_SOMClust()`](https://rdastgh1.github.io/SciDataReportR/reference/Pipeline_SOMClust.md)
-  : SOM + latent profile clustering pipeline (with AHP and distance
-  baselines)
 - [`Plot2GroupStats()`](https://rdastgh1.github.io/SciDataReportR/reference/Plot2GroupStats.md)
   : Plot & Summarize Group Stats via MakeComparisonTable (BH q from p;
   SHAPE by p; COLOR by Category (vector or data frame); stable point
@@ -368,6 +355,7 @@ Contributions, bug reports, and workflow ideas are welcome through
 - [`PlotPartialRegressionScatter()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotPartialRegressionScatter.md)
   : Partial Regression Plot
 - [`PlotPathway_KT()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotPathway_KT.md)
+  [`CreatePathwayPlot_KT()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotPathway_KT.md)
   : Plot the kynurenine-tryptophan pathway
 - [`PlotPhiHeatmap()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotPhiHeatmap.md)
   : Plot Phi Correlations Between Binary Variables
@@ -389,6 +377,7 @@ Contributions, bug reports, and workflow ideas are welcome through
 - [`PlotVolcanoEffects()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotVolcanoEffects.md)
   : Plot volcano-style association effects
 - [`PlotZScore()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotZScore.md)
+  [`CreateZScorePlot()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotZScore.md)
   : Plot Z-score group differences with statistical significance
 - [`PrepNumericData()`](https://rdastgh1.github.io/SciDataReportR/reference/PrepNumericData.md)
   : Prepare numeric data safely for analysis
@@ -399,12 +388,10 @@ Contributions, bug reports, and workflow ideas are welcome through
 - [`ProjectRCI()`](https://rdastgh1.github.io/SciDataReportR/reference/ProjectRCI.md)
   : Project a trained RCI object onto new data
 - [`ProjectSOMCluster()`](https://rdastgh1.github.io/SciDataReportR/reference/ProjectSOMCluster.md)
+  [`Project_SOMClust()`](https://rdastgh1.github.io/SciDataReportR/reference/ProjectSOMCluster.md)
   : Project new data onto an existing SOM clinical phenotype space
 - [`ProjectZScore()`](https://rdastgh1.github.io/SciDataReportR/reference/ProjectZScore.md)
-  : Project standardized scores onto new data using external parameters
-- [`Project_SOMClust()`](https://rdastgh1.github.io/SciDataReportR/reference/Project_SOMClust.md)
-  : Project new data onto an existing SOM clinical phenotype space
-- [`Project_ZScore()`](https://rdastgh1.github.io/SciDataReportR/reference/Project_ZScore.md)
+  [`Project_ZScore()`](https://rdastgh1.github.io/SciDataReportR/reference/ProjectZScore.md)
   : Project standardized scores onto new data using external parameters
 - [`ReValueFactors()`](https://rdastgh1.github.io/SciDataReportR/reference/ReValueFactors.md)
   : Revalue Factors

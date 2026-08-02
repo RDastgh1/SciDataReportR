@@ -63,6 +63,10 @@ Z-score behavior:
 - `ZScoreType = "PreZScored"` uses existing Z-score columns in `df`
   as-is and does not re-zscore.
 
+`Pipeline_SOMClust()` has been superseded by `CreateSOMClusterModel()`.
+It remains available as a backwards-compatible alias and returns the
+same reusable SOM clustering model.
+
 ## Usage
 
 ``` r
@@ -102,6 +106,8 @@ CreateSOMClusterModel(
   df = lifecycle::deprecated(),
   id_col = lifecycle::deprecated()
 )
+
+Pipeline_SOMClust(...)
 ```
 
 ## Arguments

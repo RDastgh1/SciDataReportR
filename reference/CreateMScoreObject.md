@@ -4,6 +4,10 @@ Calculate median/MAD-based M-scores for selected numeric variables and
 return both the transformed data and the parameters needed to review or
 reuse the transformation.
 
+`CalcMScore()` has been superseded by `CreateMScoreObject()`. It remains
+available as a backwards-compatible alias and returns the same reusable
+M-score object.
+
 ## Usage
 
 ``` r
@@ -18,6 +22,8 @@ CreateMScoreObject(
   constant = 1.4826,
   df = lifecycle::deprecated()
 )
+
+CalcMScore(...)
 ```
 
 ## Arguments

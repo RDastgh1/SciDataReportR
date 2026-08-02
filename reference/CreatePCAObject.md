@@ -4,6 +4,10 @@ Perform principal component analysis (PCA) on specified variables and
 return reusable PCA results, scores, loading tables, combined data, and
 plots.
 
+`CreatePCATable()` has been superseded by `CreatePCAObject()`. It
+remains available as a backwards-compatible alias and returns the same
+reusable PCA object.
+
 ## Usage
 
 ``` r
@@ -34,6 +38,8 @@ CreatePCAObject(
   imputeMethod = lifecycle::deprecated(),
   Data = lifecycle::deprecated()
 )
+
+CreatePCATable(...)
 ```
 
 ## Arguments

@@ -1,6 +1,8 @@
 # Project standardized scores onto new data using external parameters
 
-Project standardized scores onto new data using external parameters
+`Project_ZScore()` has been superseded by `ProjectZScore()`. It remains
+available as a backwards-compatible alias and returns the same projected
+Z-score object.
 
 ## Usage
 
@@ -17,6 +19,8 @@ ProjectZScore(
   scale = TRUE,
   df = lifecycle::deprecated()
 )
+
+Project_ZScore(...)
 ```
 
 ## Arguments

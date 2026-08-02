@@ -103,7 +103,7 @@ and should be checked when composing analyses.
 SciDataReportR now uses workflow-oriented canonical names for new code,
 while older public names remain available as compatibility aliases. For
 example,
-[`CreatePCATable()`](https://rdastgh1.github.io/SciDataReportR/reference/CreatePCATable.md)
+[`CreatePCATable()`](https://rdastgh1.github.io/SciDataReportR/reference/CreatePCAObject.md)
 still works, but
 [`CreatePCAObject()`](https://rdastgh1.github.io/SciDataReportR/reference/CreatePCAObject.md)
 better describes the reusable PCA object returned by that workflow.

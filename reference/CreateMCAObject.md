@@ -4,6 +4,10 @@ This function performs Multiple Correspondence Analysis (MCA) on a set
 of categorical variables, imputes missing data if needed, and generates
 a set of visualizations and tables to interpret the results.
 
+`CreateMCATable()` has been superseded by `CreateMCAObject()`. It
+remains available as a backwards-compatible alias and returns the same
+reusable MCA object.
+
 ## Usage
 
 ``` r
@@ -20,6 +24,8 @@ CreateMCAObject(
   ImputeMissing = FALSE,
   Data = lifecycle::deprecated()
 )
+
+CreateMCATable(...)
 ```
 
 ## Arguments

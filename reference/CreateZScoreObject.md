@@ -1,6 +1,8 @@
 # Calculate Z-scores (or standardized scores) and return data + parameters
 
-Calculate Z-scores (or standardized scores) and return data + parameters
+`CalcZScore()` has been superseded by `CreateZScoreObject()`. It remains
+available as a backwards-compatible alias and returns the same reusable
+Z-score object.
 
 ## Usage
 
@@ -15,6 +17,8 @@ CreateZScoreObject(
   scale = TRUE,
   df = lifecycle::deprecated()
 )
+
+CalcZScore(...)
 ```
 
 ## Arguments

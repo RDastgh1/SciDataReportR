@@ -4,12 +4,18 @@ uses the model residual standard deviation to convert observed scores into
 z-scores and T-scores. This is useful for creating demographically adjusted
 cognitive norms with optional practice effect adjustment and optional
 preprocessing such as unit conversion, log transformation, and reverse
-scoring."><meta property="og:description" content="Fits a normative regression model in a user-defined reference subgroup and
+scoring.
+CreateNormativeTScores() has been superseded by
+CreateNormativeTScoreModel(). It remains available as a
+backwards-compatible alias and returns the same reusable normative model."><meta property="og:description" content="Fits a normative regression model in a user-defined reference subgroup and
 uses the model residual standard deviation to convert observed scores into
 z-scores and T-scores. This is useful for creating demographically adjusted
 cognitive norms with optional practice effect adjustment and optional
 preprocessing such as unit conversion, log transformation, and reverse
-scoring."><meta property="og:image" content="https://rdastgh1.github.io/SciDataReportR/logo.png"></head><body>
+scoring.
+CreateNormativeTScores() has been superseded by
+CreateNormativeTScoreModel(). It remains available as a
+backwards-compatible alias and returns the same reusable normative model."><meta property="og:image" content="https://rdastgh1.github.io/SciDataReportR/logo.png"></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -64,6 +70,9 @@ z-scores and T-scores. This is useful for creating demographically adjusted
 cognitive norms with optional practice effect adjustment and optional
 preprocessing such as unit conversion, log transformation, and reverse
 scoring.</p>
+<p><code>CreateNormativeTScores()</code> has been superseded by
+<code>CreateNormativeTScoreModel()</code>. It remains available as a
+backwards-compatible alias and returns the same reusable normative model.</p>
     </div>
 
     <div class="section level2">
@@ -84,7 +93,9 @@ scoring.</p>
 <span>  codebook <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  return_plots <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  df <span class="op">=</span> <span class="fu">lifecycle</span><span class="fu">::</span><span class="fu"><a href="https://lifecycle.r-lib.org/reference/deprecated.html" class="external-link">deprecated</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="op">)</span></span></code></pre></div>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu">CreateNormativeTScores</span><span class="op">(</span><span class="va">...</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">

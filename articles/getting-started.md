@@ -10,10 +10,10 @@ frame to metadata-aware reporting and reusable analysis outputs.
 
 The examples use the current workflow-oriented function names. Older
 names such as
-[`CreatePCATable()`](https://rdastgh1.github.io/SciDataReportR/reference/CreatePCATable.md),
-[`CreateZScorePlot()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateZScorePlot.md),
+[`CreatePCATable()`](https://rdastgh1.github.io/SciDataReportR/reference/CreatePCAObject.md),
+[`CreateZScorePlot()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotZScore.md),
 and
-[`Make_DataDictionary()`](https://rdastgh1.github.io/SciDataReportR/reference/Make_DataDictionary.md)
+[`Make_DataDictionary()`](https://rdastgh1.github.io/SciDataReportR/reference/MakeDataDictionary.md)
 remain available as compatibility aliases.
 
 ## Why this workflow matters

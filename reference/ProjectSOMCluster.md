@@ -46,6 +46,10 @@ Missing data:
 - Rows with missing Z-scores receive NA for SOM_Node, SOM_Distance, and
   the cluster label.
 
+`Project_SOMClust()` has been superseded by `ProjectSOMCluster()`. It
+remains available as a backwards-compatible alias and returns the same
+projection object.
+
 ## Usage
 
 ``` r
@@ -56,6 +60,8 @@ ProjectSOMCluster(
   high_dist_quantile = 0.95,
   low_prob_threshold = 0.7
 )
+
+Project_SOMClust(...)
 ```
 
 ## Arguments

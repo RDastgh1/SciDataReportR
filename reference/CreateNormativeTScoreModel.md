@@ -7,6 +7,11 @@ demographically adjusted cognitive norms with optional practice effect
 adjustment and optional preprocessing such as unit conversion, log
 transformation, and reverse scoring.
 
+`CreateNormativeTScores()` has been superseded by
+`CreateNormativeTScoreModel()`. It remains available as a
+backwards-compatible alias and returns the same reusable normative
+model.
+
 ## Usage
 
 ``` r
@@ -27,6 +32,8 @@ CreateNormativeTScoreModel(
   return_plots = TRUE,
   df = lifecycle::deprecated()
 )
+
+CreateNormativeTScores(...)
 ```
 
 ## Arguments

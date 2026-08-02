@@ -4,6 +4,10 @@ Creates a pathway diagram for the kynurenine-tryptophan metabolic
 pathway with color-coded fold changes or correlations and significance
 indicators.
 
+`CreatePathwayPlot_KT()` has been superseded by `PlotPathway_KT()`. It
+remains available as a backwards-compatible alias during the pathway
+plot's planned transition to a metabolomics-focused package.
+
 ## Usage
 
 ``` r
@@ -14,6 +18,8 @@ PlotPathway_KT(
   metabolite_mapping = NULL,
   use_fdr = FALSE
 )
+
+CreatePathwayPlot_KT(...)
 ```
 
 ## Arguments

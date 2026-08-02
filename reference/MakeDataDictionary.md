@@ -6,6 +6,10 @@ It is designed to work even when skim output omits type-specific summary
 columns, such as numeric summaries for data frames without numeric
 variables.
 
+`Make_DataDictionary()` has been superseded by `MakeDataDictionary()`.
+It remains available as a backwards-compatible alias and returns the
+same data dictionary.
+
 ## Usage
 
 ``` r
@@ -15,6 +19,8 @@ MakeDataDictionary(
   DataFrame = lifecycle::deprecated(),
   numdecimals = lifecycle::deprecated()
 )
+
+Make_DataDictionary(...)
 ```
 
 ## Arguments
