@@ -11,6 +11,7 @@ MultivariableRegressionTable(
   covariates = NULL,
   Standardize = TRUE,
   Relabel = TRUE,
+  TreatOrdinalAs = "Categorical",
   FDR = TRUE,
   FDRAlpha = 0.05,
   Method = c("lm", "ridge", "lasso", "elasticnet"),
@@ -50,6 +51,8 @@ coefficients are always calculated separately regardless of this setting.}
 
 \item{Relabel}{Logical. If \code{TRUE}, use variable labels from \code{sjlabelled}
 when available.}
+
+\item{TreatOrdinalAs}{How ordinal outcomes and predictors are handled.}
 
 \item{FDR}{Logical. If \code{TRUE}, calculate FDR-adjusted p-values for ordinary
 regression terms.}

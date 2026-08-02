@@ -8,7 +8,8 @@ PlotCategoricalDistributions(
   data,
   variables = NULL,
   Relabel = TRUE,
-  Ordinal = TRUE,
+  Ordinal = lifecycle::deprecated(),
+  TreatOrdinalAs = "Categorical",
   LabelType = "percent",
   MissingLabel = "Missing",
   DataFrame = lifecycle::deprecated(),
@@ -25,7 +26,11 @@ automatically detected.}
 \item{Relabel}{Logical. If TRUE, missing labels in the dataframe are replaced
 with column names as labels for plotting.}
 
-\item{Ordinal}{Logical, indicating whether ordinal variables should be included.}
+\item{Ordinal}{Deprecated logical compatibility option; use
+\code{TreatOrdinalAs} instead.}
+
+\item{TreatOrdinalAs}{How ordinal variables are handled. This categorical
+plot accepts \code{"Categorical"} or \code{"Exclude"}.}
 
 \item{LabelType}{Character. Either "percent" or "count", indicating what
 should be shown on the x-axis and inside the bars.}

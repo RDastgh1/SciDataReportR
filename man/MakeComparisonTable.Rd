@@ -28,6 +28,8 @@ MakeComparisonTable(
   MultiCatAdjusted = c("multinomial_LR", "none"),
   ShowNotes = c("auto", "always", "never"),
   NotesPosition = c("last", "after_test", "before_pairwise"),
+  Relabel = TRUE,
+  TreatOrdinalAs = "Categorical",
   DataFrame = lifecycle::deprecated(),
   CompVariable = lifecycle::deprecated(),
   Variables = lifecycle::deprecated(),
@@ -88,6 +90,11 @@ or \code{"never"}.}
 
 \item{NotesPosition}{Notes column position. One of \code{"last"}, \code{"after_test"},
 or \code{"before_pairwise"}.}
+
+\item{Relabel}{Logical; if TRUE (default), use attached variable labels.}
+
+\item{TreatOrdinalAs}{How ordinal variables are treated: \code{"Categorical"},
+\code{"Continuous"}, \code{"Both"}, or \code{"Exclude"}.}
 
 \item{DataFrame}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
 

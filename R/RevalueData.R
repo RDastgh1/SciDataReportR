@@ -237,6 +237,44 @@ RevalueData <- function(data,
     if (length(vlab) > 0 && !is.na(vlab) && nzchar(vlab)) {
       RevaluedData[[var]] <- sjlabelled::set_label(RevaluedData[[var]], label = vlab)
     }
+
+    # Preserve the measurement-level decision from the codebook. Ordered
+    # factors remain the categorical representation; the score metadata lets
+    # downstream functions create a continuous representation without trying
+    # to recover the original codes from display labels.
+    if (vartype %in% c("ordinal", "ordered factor", "ordered")) {
+      x_ordinal <- RevaluedData[[var]]
+      if (!is.ordered(x_ordinal)) x_ordinal <- as.ordered(x_ordinal)
+      attr(x_ordinal, "scidr_type") <- "ordinal"
+
+      codestr <- vt_in$Code[idx]
+      score_map <- numeric(0)
+      if (!is.na(codestr) && nzchar(codestr)) {
+        parts <- strsplit(codestr, splitchar, fixed = TRUE)[[1]]
+        for (part in parts) {
+          sep <- if (grepl("=>", part, fixed = TRUE)) "=>" else if (grepl("=", part, fixed = TRUE)) "=" else if (grepl(":", part, fixed = TRUE)) ":" else NA_character_
+          if (is.na(sep)) next
+          pair <- trimws(strsplit(part, sep, fixed = TRUE)[[1]])
+          if (length(pair) < 2) next
+          score <- suppressWarnings(as.numeric(pair[1]))
+          if (!is.na(score) && nzchar(pair[2])) score_map[pair[2]] <- score
+        }
+      }
+
+      ordinal_levels <- levels(x_ordinal)
+      if (length(score_map) && all(ordinal_levels %in% names(score_map))) {
+        attr(x_ordinal, "scidr_ordinal_scores") <- score_map[ordinal_levels]
+        attr(x_ordinal, "scidr_ordinal_score_source") <- "codebook"
+      } else {
+        attr(x_ordinal, "scidr_ordinal_scores") <- stats::setNames(seq_along(ordinal_levels), ordinal_levels)
+        attr(x_ordinal, "scidr_ordinal_score_source") <- "rank"
+        warninglist <- c(
+          warninglist,
+          paste0(var, ": Ordinal continuous scores will use ordered-level ranks because Code does not provide a complete numeric mapping.")
+        )
+      }
+      RevaluedData[[var]] <- x_ordinal
+    }
     }, error = function(e) {
       error_message <- paste0("Error revaluing variable '", var, "': ", conditionMessage(e))
       errorlist <<- rbind(

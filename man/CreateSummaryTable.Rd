@@ -9,7 +9,8 @@ CreateSummaryTable(
   variables = NULL,
   digits = 2,
   Relabel = TRUE,
-  Ordinal = FALSE,
+  Ordinal = lifecycle::deprecated(),
+  TreatOrdinalAs = "Categorical",
   ScrollBoxHeight = "700px",
   Data = lifecycle::deprecated(),
   Variables = lifecycle::deprecated(),
@@ -25,7 +26,11 @@ CreateSummaryTable(
 
 \item{Relabel}{Logical, indicating whether to use variable labels as column headers.}
 
-\item{Ordinal}{Logical, indicating whether ordinal variables should be included in the summary.}
+\item{Ordinal}{Deprecated logical compatibility option; use
+\code{TreatOrdinalAs} instead.}
+
+\item{TreatOrdinalAs}{How ordinal variables are handled. This numeric
+descriptive table accepts \code{"Continuous"} or \code{"Exclude"}.}
 
 \item{ScrollBoxHeight}{Height of the scroll box for displaying the table.}
 

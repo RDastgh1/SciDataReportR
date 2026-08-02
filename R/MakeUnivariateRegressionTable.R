@@ -14,6 +14,8 @@
 #'   are exponentiated and reported as odds ratios.
 #' @param ReturnModels Logical. If `TRUE`, return fitted model objects in
 #'   `ModelSummaries`. Default is `FALSE` to keep large screening runs lighter.
+#' @param Relabel Logical; if TRUE (default), display attached variable labels.
+#' @param TreatOrdinalAs How ordinal outcomes and predictors are handled.
 #' @importFrom sjlabelled get_label set_label
 #' @return A list containing:
 #'   - FormattedTable: A `gt` table with formatted regression results
@@ -41,6 +43,8 @@ MakeUnivariateRegressionTable <- function(data,
     Method = c("auto", "lm", "logistic"),
     LogisticExponentiate = TRUE,
     ReturnModels = FALSE,
+    Relabel = TRUE,
+    TreatOrdinalAs = "Categorical",
     Data = lifecycle::deprecated(),
     OutcomeVars = lifecycle::deprecated(),
     PredictorVars = lifecycle::deprecated(),
@@ -103,6 +107,14 @@ MakeUnivariateRegressionTable <- function(data,
     stop("The following variables were not found in Data: ", paste(missing_vars, collapse = ", "))
   }
 
+  if (identical(ScidrMatchOrdinalTreatment(TreatOrdinalAs), "Exclude") &&
+      any(vapply(Data[all_model_vars], ScidrIsOrdinal, logical(1)))) {
+    stop("TreatOrdinalAs = 'Exclude' cannot be used when ordinal model variables are explicitly supplied.", call. = FALSE)
+  }
+  prep <- ScidrPrepareOrdinal(Data, all_model_vars, TreatOrdinalAs)
+  Data <- prep$data
+  display_labels <- ScidrDisplayLabels(Data, all_model_vars, Relabel)
+
   Wide_mod_list <- list()
   results_list <- list()
   outcome_metadata <- list()
@@ -158,9 +170,7 @@ MakeUnivariateRegressionTable <- function(data,
           critical_value <- stats::qt(0.975, df = stats::df.residual(mod))
         }
 
-        labels <- sjlabelled::get_label(Data, def.value = colnames(Data))
-        labels <- labels[c(PredictorVars, OutcomeVars)]
-        labels <- stats::setNames(as.character(labels), c(PredictorVars, OutcomeVars))
+        labels <- display_labels[c(PredictorVars, OutcomeVars)]
         predictor_label <- labels[[xVar]]
         effect_type <- ifelse(
           outcome_family == "logistic" && LogisticExponentiate,
@@ -208,7 +218,7 @@ MakeUnivariateRegressionTable <- function(data,
 
         results_list[[length(results_list) + 1]] <- data.frame(
           Outcome = YVar,
-          OutcomeLabel = sjlabelled::get_label(Data[[YVar]], def.value = YVar) %>% as.character(),
+          OutcomeLabel = display_labels[[YVar]],
           OutcomeFamily = outcome_family,
           EffectType = effect_type,
           Predictor = xVar,
@@ -235,7 +245,7 @@ MakeUnivariateRegressionTable <- function(data,
     if (ReturnModels) {
       Wide_mod_list[[YVar]] <- mod_list
     }
-    outcome_label <- sjlabelled::get_label(Data[[YVar]], def.value = YVar) %>% as.character()
+    outcome_label <- display_labels[[YVar]]
     outcome_metadata[[YVar]] <- data.frame(
       Outcome = YVar,
       OutcomeLabel = outcome_label,

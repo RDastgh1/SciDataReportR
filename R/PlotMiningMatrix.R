@@ -7,6 +7,8 @@
 #' @param predictor_vars Predictor variables. If NULL, uses OutcomeVars.
 #' @param covariates Optional covariates (reserved for future use).
 #' @param Relabel Use labels instead of names.
+#' @param TreatOrdinalAs How ordinal variables are handled: `"Categorical"`,
+#' `"Continuous"`, `"Both"`, or `"Exclude"`.
 #' @param Parametric Use parametric tests.
 #'
 #' @return List with tables and plots.
@@ -62,6 +64,7 @@ PlotMiningMatrix <- function(data,
     predictor_vars = NULL,
     covariates = NULL,
     Relabel = TRUE,
+    TreatOrdinalAs = "Categorical",
     Parametric = TRUE,
     Data = lifecycle::deprecated(),
     OutcomeVars = lifecycle::deprecated(),
@@ -110,6 +113,13 @@ PlotMiningMatrix <- function(data,
     ))
   }
 
+  ordinal <- ScidrExpandOrdinalForTable(
+    Data, unique(c(OutcomeVars, PredictorVars)), TreatOrdinalAs, Relabel
+  )
+  Data <- ordinal$data
+  OutcomeVars <- unique(unlist(ordinal$variable_map[OutcomeVars], use.names = FALSE))
+  PredictorVars <- unique(unlist(ordinal$variable_map[PredictorVars], use.names = FALSE))
+
   coalesce_p <- function(df) {
     out <- rep(NA_real_, nrow(df))
     for (nm in c("p", "P", "pval", "p.value", "p_value")) {
@@ -130,12 +140,7 @@ PlotMiningMatrix <- function(data,
     out
   }
 
-  # FORCE LABEL COMPLETENESS
-  labels <- sjlabelled::get_label(Data)
-  names(labels) <- names(Data)
-
-  missing_idx <- is.na(labels) | labels == ""
-  labels[missing_idx] <- names(labels)[missing_idx]
+  labels <- ScidrDisplayLabels(Data, names(Data), Relabel)
 
   # SAFE LOOKUP FUNCTION (never returns NA)
   safe_lookup <- function(vars, labels) {
@@ -345,7 +350,11 @@ PlotMiningMatrix <- function(data,
     )
 
   out <- list(
-    Unadjusted = list(PvalTable = results, plot = p)
+    Unadjusted = list(PvalTable = results, plot = p),
+    Metadata = list(
+      TreatOrdinalAs = TreatOrdinalAs,
+      DisplayLabels = labels[unique(c(OutcomeVars, PredictorVars))]
+    )
   )
   # Standardized p-value element alias (old name kept)
   out$p <- out$Unadjusted

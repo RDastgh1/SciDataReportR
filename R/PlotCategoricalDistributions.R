@@ -9,7 +9,10 @@
 #'   automatically detected.
 #' @param Relabel Logical. If TRUE, missing labels in the dataframe are replaced
 #'   with column names as labels for plotting.
-#' @param Ordinal Logical, indicating whether ordinal variables should be included.
+#' @param TreatOrdinalAs How ordinal variables are handled. This categorical
+#' plot accepts `"Categorical"` or `"Exclude"`.
+#' @param Ordinal Deprecated logical compatibility option; use
+#' `TreatOrdinalAs` instead.
 #' @param LabelType Character. Either "percent" or "count", indicating what
 #'   should be shown on the x-axis and inside the bars.
 #' @param MissingLabel Character label to use for missing values.
@@ -33,7 +36,8 @@
 PlotCategoricalDistributions <- function(data,
     variables = NULL,
     Relabel = TRUE,
-    Ordinal = TRUE,
+    Ordinal = lifecycle::deprecated(),
+    TreatOrdinalAs = "Categorical",
     LabelType = "percent",
     MissingLabel = "Missing",
     DataFrame = lifecycle::deprecated(),
@@ -49,6 +53,15 @@ PlotCategoricalDistributions <- function(data,
     variables <- Variables
   }
   Variables <- variables
+
+  if (lifecycle::is_present(Ordinal)) {
+    lifecycle::deprecate_warn("20.20.0", "PlotCategoricalDistributions(Ordinal)", "PlotCategoricalDistributions(TreatOrdinalAs)")
+    TreatOrdinalAs <- if (isTRUE(Ordinal)) "Categorical" else "Exclude"
+  }
+  TreatOrdinalAs <- ScidrMatchOrdinalTreatment(TreatOrdinalAs)
+  if (TreatOrdinalAs %in% c("Continuous", "Both")) {
+    stop("PlotCategoricalDistributions() requires TreatOrdinalAs = 'Categorical' or 'Exclude'.", call. = FALSE)
+  }
 
 
   # Validate inputs
@@ -74,10 +87,6 @@ PlotCategoricalDistributions <- function(data,
     stop("`Relabel` must be TRUE or FALSE.")
   }
 
-  if (!is.logical(Ordinal) || length(Ordinal) != 1 || is.na(Ordinal)) {
-    stop("`Ordinal` must be TRUE or FALSE.")
-  }
-
   if (!LabelType %in% c("percent", "count")) {
     stop("`LabelType` must be either 'percent' or 'count'.")
   }
@@ -88,7 +97,7 @@ PlotCategoricalDistributions <- function(data,
 
   # Prepare data
 
-  if (!Ordinal) {
+  if (TreatOrdinalAs == "Exclude") {
     ordinal_vars <- Variables[vapply(DataFrame[Variables], is.ordered, logical(1))]
     Variables <- setdiff(Variables, ordinal_vars)
   }

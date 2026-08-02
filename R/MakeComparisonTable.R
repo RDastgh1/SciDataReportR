@@ -54,6 +54,9 @@
 #' or `"never"`.
 #' @param NotesPosition Notes column position. One of `"last"`, `"after_test"`,
 #' or `"before_pairwise"`.
+#' @param Relabel Logical; if TRUE (default), use attached variable labels.
+#' @param TreatOrdinalAs How ordinal variables are treated: `"Categorical"`,
+#' `"Continuous"`, `"Both"`, or `"Exclude"`.
 #'
 #' @return A `gtsummary` object.
 #'
@@ -112,6 +115,8 @@ MakeComparisonTable <- function(data,
     MultiCatAdjusted = c("multinomial_LR", "none"),
     ShowNotes = c("auto", "always", "never"),
     NotesPosition = c("last", "after_test", "before_pairwise"),
+    Relabel = TRUE,
+    TreatOrdinalAs = "Categorical",
     DataFrame = lifecycle::deprecated(),
     CompVariable = lifecycle::deprecated(),
     Variables = lifecycle::deprecated(),
@@ -243,6 +248,13 @@ MakeComparisonTable <- function(data,
   if (!length(Variables)) {
     stop("No variables left to summarise after removing covariates from Variables.")
   }
+
+  ordinal <- ScidrExpandOrdinalForTable(
+    DataFrame, Variables, TreatOrdinalAs, Relabel
+  )
+  DataFrame <- ordinal$data
+  Variables <- ordinal$variables
+  DataFrame <- ScidrApplyDisplayLabels(DataFrame, Variables, Relabel)
 
   as_factor_drop <- function(x) {
     if (is.factor(x)) return(droplevels(x))

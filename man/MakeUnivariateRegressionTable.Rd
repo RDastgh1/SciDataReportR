@@ -14,6 +14,8 @@ MakeUnivariateRegressionTable(
   Method = c("auto", "lm", "logistic"),
   LogisticExponentiate = TRUE,
   ReturnModels = FALSE,
+  Relabel = TRUE,
+  TreatOrdinalAs = "Categorical",
   Data = lifecycle::deprecated(),
   OutcomeVars = lifecycle::deprecated(),
   PredictorVars = lifecycle::deprecated(),
@@ -55,6 +57,10 @@ are exponentiated and reported as odds ratios.}
 
 \item{ReturnModels}{Logical. If \code{TRUE}, return fitted model objects in
 \code{ModelSummaries}. Default is \code{FALSE} to keep large screening runs lighter.}
+
+\item{Relabel}{Logical; if TRUE (default), display attached variable labels.}
+
+\item{TreatOrdinalAs}{How ordinal outcomes and predictors are handled.}
 
 \item{Data}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
 

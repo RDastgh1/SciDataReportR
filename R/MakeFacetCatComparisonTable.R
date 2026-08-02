@@ -30,6 +30,8 @@
 #' @param IncludeOverallStats Logical; if TRUE, adds overall descriptive statistics (default = FALSE).
 #' @param ShowPositiveBinaryOnLabel Logical; if TRUE, labels binary variables with positive outcome (default = TRUE).
 #' @param CompFun Comparison function to apply; defaults to `MakeComparisonTable`.
+#' @param Relabel Logical; if TRUE (default), use attached variable labels.
+#' @param TreatOrdinalAs How ordinal variables are treated in each table.
 #' @param ... Additional arguments passed to the comparison function.
 #'
 #' @return A `gtsummary` table created by merging each facet's `MakeComparisonTable()` output
@@ -62,6 +64,8 @@ MakeFacetCatComparisonTable <- function(data,
     IncludeOverallStats = FALSE,
     ShowPositiveBinaryOnLabel = TRUE,
     CompFun = MakeComparisonTable,
+    Relabel = TRUE,
+    TreatOrdinalAs = "Categorical",
     ...,
     DataFrame = lifecycle::deprecated(),
     Variables = lifecycle::deprecated(),
@@ -131,6 +135,8 @@ MakeFacetCatComparisonTable <- function(data,
       Referent = Referent,
       IncludeOverallStats = IncludeOverallStats,
       ShowPositiveBinaryOnLabel = ShowPositiveBinaryOnLabel,
+      Relabel = Relabel,
+      TreatOrdinalAs = TreatOrdinalAs,
       ...
     )
   })

@@ -11,7 +11,8 @@ PlotCorrelationsHeatmap(
   covariates = NULL,
   method = "pearson",
   Relabel = TRUE,
-  Ordinal = FALSE,
+  Ordinal = lifecycle::deprecated(),
+  TreatOrdinalAs = "Categorical",
   min_n = 3,
   eps = 1e-12,
   fdr_scope = c("matrix", "per_outcome", "per_predictor"),
@@ -34,7 +35,11 @@ PlotCorrelationsHeatmap(
 
 \item{Relabel}{use labels}
 
-\item{Ordinal}{include ordinal vars}
+\item{Ordinal}{Deprecated logical compatibility option; use
+\code{TreatOrdinalAs} instead.}
+
+\item{TreatOrdinalAs}{How ordinal variables are handled. \code{"Continuous"}
+includes ordinal scores and \code{"Exclude"} omits them.}
 
 \item{min_n}{minimum complete rows}
 

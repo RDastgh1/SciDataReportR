@@ -16,6 +16,7 @@
 #'   coefficients are always calculated separately regardless of this setting.
 #' @param Relabel Logical. If `TRUE`, use variable labels from `sjlabelled`
 #'   when available.
+#' @param TreatOrdinalAs How ordinal outcomes and predictors are handled.
 #' @param FDR Logical. If `TRUE`, calculate FDR-adjusted p-values for ordinary
 #'   regression terms.
 #' @param FDRAlpha Numeric FDR threshold retained in metadata.
@@ -135,6 +136,7 @@ MultivariableRegressionTable <- function(data,
     covariates = NULL,
     Standardize = TRUE,
     Relabel = TRUE,
+    TreatOrdinalAs = "Categorical",
     FDR = TRUE,
     FDRAlpha = 0.05,
     Method = c("lm", "ridge", "lasso", "elasticnet"),
@@ -246,6 +248,12 @@ MultivariableRegressionTable <- function(data,
   if (length(missing_vars) > 0) {
     stop("The following variables were not found in Data: ", paste(missing_vars, collapse = ", "))
   }
+  ordinal_treatment <- ScidrMatchOrdinalTreatment(TreatOrdinalAs)
+  if (ordinal_treatment == "Exclude" &&
+      any(vapply(Data[all_model_vars], ScidrIsOrdinal, logical(1)))) {
+    stop("TreatOrdinalAs = 'Exclude' cannot be used when ordinal model variables are explicitly supplied.", call. = FALSE)
+  }
+  Data <- ScidrPrepareOrdinal(Data, all_model_vars, ordinal_treatment)$data
   unknown_mode_outcomes <- setdiff(names(outcome_modes), OutcomeVars)
   unknown_reference_outcomes <- setdiff(names(reference_levels), OutcomeVars)
   unknown_subset_outcomes <- setdiff(names(binary_subsets), OutcomeVars)

@@ -1,11 +1,13 @@
 #' Convert ordinal variables to numeric
 #'
-#' Convert ordinal variables in a dataframe to numeric if they contain numeric values in their character representation.
+#' Convert ordinal variables in a dataframe to numeric scores.
 #'
 #' @param data The dataframe containing the variables.
 #' @param variables A character vector specifying the names of variables to consider. If NULL, all columns of the dataframe will be considered.
 #' @importFrom sjlabelled get_label set_label
-#' @return The dataframe with ordinal variables potentially converted to numeric.
+#' @details Numeric scores recorded by [RevalueData()] from the codebook are
+#' used when available. Otherwise the ordered-factor ranks are used.
+#' @return The dataframe with ordinal variables converted to numeric scores.
 #'
 #' @examples
 #' # An ordered factor with numeric levels, and one with non-numeric levels
@@ -42,35 +44,15 @@ ConvertOrdinalToNumeric <- function(data,
   Variables <- variables
 
 
-  # If Variables argument is NULL, consider all columns of the dataframe
-  if(is.null(Variables)){
-    Variables = colnames(Data)
+  if (is.null(Variables)) Variables <- colnames(Data)
+  missing_vars <- setdiff(Variables, names(Data))
+  if (length(missing_vars)) {
+    stop("Variables not found in data: ", paste(missing_vars, collapse = ", "), call. = FALSE)
   }
 
-  # Identify ordered variables
-  orderedVars <- names(Data[Variables])[sapply(Data, is.ordered)] %>% na.omit()
-
-  # get original labels to reset them later
-  l <- sjlabelled::get_label(Data)
-
-  # Iterate through ordered variables
-  for (col in orderedVars) {
-    # Convert ordered variable to character
-    x <- as.character(Data[[col]])
-
-    # Check if character values are numeric
-    numeric_values <- grepl("^\\d+\\.?\\d*$", x)
-
-    # If all character values are numeric, convert to numeric
-    if(sum(!numeric_values) == 0){
-      # preserve label
-
-
-      Data[[col]] <- as.numeric(x)
-    }
+  ordinal_vars <- Variables[vapply(Data[Variables], ScidrIsOrdinal, logical(1))]
+  for (var in ordinal_vars) {
+    Data[[var]] <- ScidrOrdinalAsNumeric(Data[[var]])
   }
-
-  # Readd labels
-  sjlabelled::set_label(Data)<- l
-  return(Data)
+  Data
 }

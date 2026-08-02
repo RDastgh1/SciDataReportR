@@ -7,7 +7,8 @@
 MakeTable1(
   data,
   variables = NULL,
-  TreatOrdinalAs = "Continuous",
+  TreatOrdinalAs = "Categorical",
+  Relabel = TRUE,
   AutoDetectDistribution = FALSE,
   IncludeMissing = "ifany",
   DataFrame = lifecycle::deprecated(),
@@ -20,6 +21,8 @@ MakeTable1(
 \item{variables}{Optional. A character vector specifying the names of variables to include in the summary table. If NULL, all variables are included.}
 
 \item{TreatOrdinalAs}{Character. Specifies how ordinal variables should be treated. Can be "Continuous", "Categorical", or "Both".}
+
+\item{Relabel}{Logical; if TRUE (default), use attached variable labels.}
 
 \item{AutoDetectDistribution}{Logical. If TRUE, the function will attempt to automatically detect the distribution of variables. Default is FALSE.}
 

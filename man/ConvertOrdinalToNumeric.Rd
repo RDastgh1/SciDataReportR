@@ -21,10 +21,14 @@ ConvertOrdinalToNumeric(
 \item{Variables}{\strong{Deprecated} (since 19.15.0). Use \code{variables} instead.}
 }
 \value{
-The dataframe with ordinal variables potentially converted to numeric.
+The dataframe with ordinal variables converted to numeric scores.
 }
 \description{
-Convert ordinal variables in a dataframe to numeric if they contain numeric values in their character representation.
+Convert ordinal variables in a dataframe to numeric scores.
+}
+\details{
+Numeric scores recorded by \code{\link[=RevalueData]{RevalueData()}} from the codebook are
+used when available. Otherwise the ordered-factor ranks are used.
 }
 \examples{
 # An ordered factor with numeric levels, and one with non-numeric levels

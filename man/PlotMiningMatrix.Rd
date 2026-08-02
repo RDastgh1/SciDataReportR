@@ -10,6 +10,7 @@ PlotMiningMatrix(
   predictor_vars = NULL,
   covariates = NULL,
   Relabel = TRUE,
+  TreatOrdinalAs = "Categorical",
   Parametric = TRUE,
   Data = lifecycle::deprecated(),
   OutcomeVars = lifecycle::deprecated(),
@@ -28,6 +29,9 @@ PlotMiningMatrix(
 \item{covariates}{Optional covariates (reserved for future use).}
 
 \item{Relabel}{Use labels instead of names.}
+
+\item{TreatOrdinalAs}{How ordinal variables are handled: \code{"Categorical"},
+\code{"Continuous"}, \code{"Both"}, or \code{"Exclude"}.}
 
 \item{Parametric}{Use parametric tests.}
 

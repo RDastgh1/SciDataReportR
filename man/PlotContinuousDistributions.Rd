@@ -11,7 +11,8 @@ PlotContinuousDistributions(
   Relabel = TRUE,
   FacetLabelStyle = c("both", "label_only", "variable_only", "auto"),
   ncol = 3,
-  Ordinal = TRUE,
+  Ordinal = lifecycle::deprecated(),
+  TreatOrdinalAs = "Categorical",
   DataFrame = lifecycle::deprecated(),
   Variables = lifecycle::deprecated()
 )
@@ -29,7 +30,12 @@ PlotContinuousDistributions(
 
 \item{ncol}{Number of columns in the facet grid.}
 
-\item{Ordinal}{Logical; include labelled-ordinal variables as numeric.}
+\item{Ordinal}{Deprecated logical compatibility option; use
+\code{TreatOrdinalAs} instead.}
+
+\item{TreatOrdinalAs}{How ordinal variables are handled. \code{"Continuous"}
+includes their numeric score; \code{"Exclude"} omits them. \code{"Both"} is not
+meaningful for this plot and errors.}
 
 \item{DataFrame}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
 

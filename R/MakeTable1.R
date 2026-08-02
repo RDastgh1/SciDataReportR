@@ -5,6 +5,7 @@
 #' @param data The dataframe to create the summary table from.
 #' @param variables Optional. A character vector specifying the names of variables to include in the summary table. If NULL, all variables are included.
 #' @param TreatOrdinalAs Character. Specifies how ordinal variables should be treated. Can be "Continuous", "Categorical", or "Both".
+#' @param Relabel Logical; if TRUE (default), use attached variable labels.
 #' @param AutoDetectDistribution Logical. If TRUE, the function will attempt to automatically detect the distribution of variables. Default is FALSE.
 #' @param IncludeMissing Character matching gtsummary criteria. Can be "no", "ifany", or "always". Default is "ifany"
 #' @return A summary table created using gtsummary.
@@ -40,7 +41,8 @@
 #' @export
 MakeTable1 <- function(data,
     variables = NULL,
-    TreatOrdinalAs = "Continuous",
+    TreatOrdinalAs = "Categorical",
+    Relabel = TRUE,
     AutoDetectDistribution = FALSE,
     IncludeMissing = "ifany",
     DataFrame = lifecycle::deprecated(),
@@ -61,32 +63,19 @@ MakeTable1 <- function(data,
     Variables <- colnames(DataFrame)
   }
 
-  # Treat ordinal variables as specified
-  if (TreatOrdinalAs %in% c("Continuous", "Both")) {
-    Table1 <- DataFrame %>%
-      select(all_of(Variables)) %>%
-      gtsummary::tbl_summary(
-        type = list(
-          where(is.numeric) ~ "continuous"
-        ),
-        statistic = list(
-          gtsummary::all_continuous() ~ "{mean} ({sd})"
-        ),
-        missing = IncludeMissing
-      )
-  } else {
-    Table1 <- DataFrame %>%
-      select(all_of(Variables)) %>%
-      gtsummary::tbl_summary(
-        type = list(
-          where(is.numeric) ~ "continuous"
-        ),
-        statistic = list(
-          gtsummary::all_continuous() ~ "{mean} ({sd})"
-        ),
-        missing = IncludeMissing
-      )
-  }
+  ordinal <- ScidrExpandOrdinalForTable(
+    DataFrame, Variables, TreatOrdinalAs, Relabel
+  )
+  DataFrame <- ScidrApplyDisplayLabels(ordinal$data, ordinal$variables, Relabel)
+  Variables <- ordinal$variables
+
+  Table1 <- DataFrame %>%
+    dplyr::select(dplyr::all_of(Variables)) %>%
+    gtsummary::tbl_summary(
+      type = list(where(is.numeric) ~ "continuous"),
+      statistic = list(gtsummary::all_continuous() ~ "{mean} ({sd})"),
+      missing = IncludeMissing
+    )
 
   return(Table1)
 }

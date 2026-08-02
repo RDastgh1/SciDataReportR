@@ -16,7 +16,10 @@
 #' @param covariates optional covariates
 #' @param method pearson/spearman/kendall
 #' @param Relabel use labels
-#' @param Ordinal include ordinal vars
+#' @param TreatOrdinalAs How ordinal variables are handled. `"Continuous"`
+#' includes ordinal scores and `"Exclude"` omits them.
+#' @param Ordinal Deprecated logical compatibility option; use
+#' `TreatOrdinalAs` instead.
 #' @param min_n minimum complete rows
 #' @param eps variance tolerance
 #' @param fdr_scope Either `"matrix"` (default) or `"per_outcome"`, passed to
@@ -69,7 +72,8 @@ PlotCorrelationsHeatmap <- function(data,
     covariates = NULL,
     method = "pearson",
     Relabel = TRUE,
-    Ordinal = FALSE,
+    Ordinal = lifecycle::deprecated(),
+    TreatOrdinalAs = "Categorical",
     min_n = 3,
     eps = 1e-12,
     fdr_scope = c("matrix", "per_outcome", "per_predictor"),
@@ -99,6 +103,16 @@ PlotCorrelationsHeatmap <- function(data,
   }
   covars <- covariates
 
+  if (lifecycle::is_present(Ordinal)) {
+    lifecycle::deprecate_warn("20.20.0", "PlotCorrelationsHeatmap(Ordinal)", "PlotCorrelationsHeatmap(TreatOrdinalAs)")
+    TreatOrdinalAs <- if (isTRUE(Ordinal)) "Continuous" else "Exclude"
+  }
+  TreatOrdinalAs <- ScidrMatchOrdinalTreatment(TreatOrdinalAs)
+  if (TreatOrdinalAs %in% c("Categorical", "Both")) {
+    if (TreatOrdinalAs == "Both") stop("TreatOrdinalAs = 'Both' is not meaningful for PlotCorrelationsHeatmap().", call. = FALSE)
+    TreatOrdinalAs <- "Exclude"
+  }
+
   fdr_scope <- match.arg(fdr_scope)
 
   `%||%` <- function(x, y) {
@@ -119,7 +133,7 @@ PlotCorrelationsHeatmap <- function(data,
     stop("method must be pearson, spearman, or kendall")
   }
 
-  Data <- ReplaceMissingLabels(Data)
+  Data <- ScidrApplyDisplayLabels(Data, names(Data), Relabel)
 
   # =========================================================
   # Determine variables
@@ -129,7 +143,7 @@ PlotCorrelationsHeatmap <- function(data,
 
     xVars <- getNumVars(
       Data,
-      Ordinal = isTRUE(Ordinal)
+      Ordinal = identical(TreatOrdinalAs, "Continuous")
     )
   }
 
@@ -152,6 +166,13 @@ PlotCorrelationsHeatmap <- function(data,
     as.character(yVars),
     names(Data)
   )
+
+  prep <- ScidrPrepareOrdinal(
+    Data, unique(c(xVars, yVars)), TreatOrdinalAs
+  )
+  Data <- prep$data
+  xVars <- intersect(xVars, prep$variables)
+  yVars <- intersect(yVars, prep$variables)
 
   covars_in <- covars
 

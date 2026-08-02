@@ -24,6 +24,8 @@ MakeFacetCatComparisonTable(
   IncludeOverallStats = FALSE,
   ShowPositiveBinaryOnLabel = TRUE,
   CompFun = MakeComparisonTable,
+  Relabel = TRUE,
+  TreatOrdinalAs = "Categorical",
   ...,
   DataFrame = lifecycle::deprecated(),
   Variables = lifecycle::deprecated(),
@@ -72,6 +74,10 @@ The function automatically selects those that are categorical (\code{factor} or 
 \item{ShowPositiveBinaryOnLabel}{Logical; if TRUE, labels binary variables with positive outcome (default = TRUE).}
 
 \item{CompFun}{Comparison function to apply; defaults to \code{MakeComparisonTable}.}
+
+\item{Relabel}{Logical; if TRUE (default), use attached variable labels.}
+
+\item{TreatOrdinalAs}{How ordinal variables are treated in each table.}
 
 \item{...}{Additional arguments passed to the comparison function.}
 

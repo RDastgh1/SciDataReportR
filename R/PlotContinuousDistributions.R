@@ -9,7 +9,11 @@
 #' @param Relabel Logical; use variable labels when available.
 #' @param FacetLabelStyle One of "both", "label_only", "variable_only", "auto".
 #' @param ncol Number of columns in the facet grid.
-#' @param Ordinal Logical; include labelled-ordinal variables as numeric.
+#' @param TreatOrdinalAs How ordinal variables are handled. `"Continuous"`
+#' includes their numeric score; `"Exclude"` omits them. `"Both"` is not
+#' meaningful for this plot and errors.
+#' @param Ordinal Deprecated logical compatibility option; use
+#' `TreatOrdinalAs` instead.
 #'
 #' @return A ggplot object.
 #' @param DataFrame \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
@@ -31,7 +35,8 @@ PlotContinuousDistributions <- function(data,
     Relabel = TRUE,
     FacetLabelStyle = c("both", "label_only", "variable_only", "auto"),
     ncol = 3,
-    Ordinal = TRUE,
+    Ordinal = lifecycle::deprecated(),
+    TreatOrdinalAs = "Categorical",
     DataFrame = lifecycle::deprecated(),
     Variables = lifecycle::deprecated()) {
   # Deprecated argument shims (SciDataReportR 19.15.0)
@@ -46,25 +51,30 @@ PlotContinuousDistributions <- function(data,
   }
   Variables <- variables
 
+  if (lifecycle::is_present(Ordinal)) {
+    lifecycle::deprecate_warn("20.20.0", "PlotContinuousDistributions(Ordinal)", "PlotContinuousDistributions(TreatOrdinalAs)")
+    TreatOrdinalAs <- if (isTRUE(Ordinal)) "Continuous" else "Exclude"
+  }
+  TreatOrdinalAs <- ScidrMatchOrdinalTreatment(TreatOrdinalAs)
+  if (TreatOrdinalAs %in% c("Categorical", "Both")) {
+    if (TreatOrdinalAs == "Both") {
+      stop("TreatOrdinalAs = 'Both' is not meaningful for PlotContinuousDistributions().", call. = FALSE)
+    }
+    TreatOrdinalAs <- "Exclude"
+  }
+
 
   FacetLabelStyle <- match.arg(FacetLabelStyle)
 
   # Select Variables
   if (is.null(Variables)) {
     Variables <- getNumVars(DataFrame, Ordinal = FALSE)
-    if (Ordinal) Variables <- getNumVars(DataFrame, Ordinal = TRUE)
+    if (TreatOrdinalAs == "Continuous") Variables <- getNumVars(DataFrame, Ordinal = TRUE)
   }
 
-  # Convert and Relabel
-  if (Ordinal) {
-    OriginalLabels <- sjlabelled::get_label(DataFrame, def.value = colnames(DataFrame))
-    DataFrame      <- ConvertOrdinalToNumeric(DataFrame, Variables)
-    DataFrame[Variables] <- lapply(DataFrame[Variables], as.numeric)
-
-    for (v in Variables) {
-      DataFrame[[v]] <- sjlabelled::set_label(DataFrame[[v]], OriginalLabels[[v]])
-    }
-  }
+  prep <- ScidrPrepareOrdinal(DataFrame, Variables, TreatOrdinalAs)
+  DataFrame <- prep$data
+  Variables <- prep$variables
 
   # Build facet labels
   var_labels <- sjlabelled::get_label(DataFrame[Variables], def.value = Variables)
