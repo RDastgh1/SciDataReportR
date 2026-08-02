@@ -48,6 +48,10 @@ CreatePathwayPlot_KT(...)
   Logical: if TRUE uses FDR-adjusted p-values (p_adj) for significance,
   if FALSE uses raw p-values. Default is FALSE.
 
+- ...:
+
+  Arguments passed to `PlotPathway_KT()`.
+
 ## Value
 
 A ggplot2 object

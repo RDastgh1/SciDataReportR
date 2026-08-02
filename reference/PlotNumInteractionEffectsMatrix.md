@@ -110,5 +110,10 @@ result <- PlotNumInteractionEffectsMatrix(
 #> Joining with `by = join_by(X, Y)`
 #> Joining with `by = join_by(X, Y)`
 
+# Raw p-value interaction matrix
 result$p
+
+
+# FDR-adjusted interaction matrix
+result$p_FDR
 ```

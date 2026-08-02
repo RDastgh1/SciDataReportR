@@ -75,6 +75,10 @@ Project_ZScore(...)
 
   **Deprecated** (since 19.15.0). Use `data` instead.
 
+- ...:
+
+  Arguments passed to `ProjectZScore()`.
+
 ## Value
 
 List with same structure as CreateZScoreObject():

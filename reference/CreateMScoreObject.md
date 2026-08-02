@@ -67,6 +67,10 @@ CalcMScore(...)
 
   **Deprecated** (since 19.15.0). Use `data` instead.
 
+- ...:
+
+  Arguments passed to `CreateMScoreObject()`.
+
 ## Value
 
 An object of class `"MScoreObj"`, a list with:

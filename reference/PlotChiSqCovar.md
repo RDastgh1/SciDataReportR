@@ -129,5 +129,10 @@ result <- PlotChiSqCovar(
 #> ! Chi-squared approximation may be incorrect
 #> ℹ Run `dplyr::last_dplyr_warnings()` to see the 2 remaining warnings.
 
+# Raw p-value associations
 result$p
+
+
+# FDR-adjusted associations
+result$p_FDR
 ```

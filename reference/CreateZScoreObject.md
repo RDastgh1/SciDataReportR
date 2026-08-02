@@ -56,6 +56,10 @@ CalcZScore(...)
 
   **Deprecated** (since 19.15.0). Use `data` instead.
 
+- ...:
+
+  Arguments passed to `CreateZScoreObject()`.
+
 ## Value
 
 An object of class "ZScoreObj", a list with:

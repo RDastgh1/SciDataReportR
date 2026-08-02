@@ -181,6 +181,10 @@ CreatePCATable(...)
 
   **Deprecated** (since 19.15.0). Use `data` instead.
 
+- ...:
+
+  Arguments passed to `CreatePCAObject()`.
+
 ## Value
 
 A list with the following elements:

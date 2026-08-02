@@ -104,8 +104,15 @@ result <- PlotDirectionalHeatmaps(
                 "Insulin", "Leptin")
 )
 
+# Raw p-value directional heatmap
 result$Unadjusted$plot
 #> Warning: Removed 24 rows containing missing values or values outside the scale range
+#> (`geom_text()`).
+
+
+# FDR-adjusted directional heatmap
+result$FDRCorrected$plot
+#> Warning: Removed 26 rows containing missing values or values outside the scale range
 #> (`geom_text()`).
 
 

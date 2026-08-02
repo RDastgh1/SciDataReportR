@@ -41,6 +41,10 @@ Make_DataDictionary(...)
 
   **Deprecated** (since 19.15.0). Use `digits` instead.
 
+- ...:
+
+  Arguments passed to `MakeDataDictionary()`.
+
 ## Value
 
 A data frame with one row per variable and stable summary columns.

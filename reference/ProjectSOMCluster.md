@@ -91,6 +91,10 @@ Project_SOMClust(...)
   Numeric posterior probability threshold used to flag uncertain
   phenotype membership. Default is `0.70`.
 
+- ...:
+
+  Arguments passed to `ProjectSOMCluster()`.
+
 ## Value
 
 A list of class `"Project_SOMClust"` with components:

@@ -225,8 +225,11 @@ covariates. Invalid predictor variables are removed with a warning.</p>
 <span class="r-in"><span>  LabelMode <span class="op">=</span> <span class="st">"top_n"</span>,</span></span>
 <span class="r-in"><span>  TopN <span class="op">=</span> <span class="fl">3</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="co"># Raw and FDR-adjusted continuous-outcome volcano plots</span></span></span>
 <span class="r-in"><span><span class="va">cont</span><span class="op">$</span><span class="va">RawPPlot</span></span></span>
 <span class="r-plt img"><img src="PlotVolcanoEffects-1.png" alt="" width="700" height="433"></span>
+<span class="r-in"><span><span class="va">cont</span><span class="op">$</span><span class="va">FDRPlot</span></span></span>
+<span class="r-plt img"><img src="PlotVolcanoEffects-2.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Categorical outcome (Diagnosis), Cohen's d effect metric</span></span></span>
 <span class="r-in"><span><span class="va">cat_res</span> <span class="op">&lt;-</span> <span class="fu">PlotVolcanoEffects</span><span class="op">(</span></span></span>
@@ -238,8 +241,11 @@ covariates. Invalid predictor variables are removed with a warning.</p>
 <span class="r-in"><span>  LabelMode <span class="op">=</span> <span class="st">"top_n"</span>,</span></span>
 <span class="r-in"><span>  TopN <span class="op">=</span> <span class="fl">3</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="co"># Raw and FDR-adjusted categorical-outcome volcano plots</span></span></span>
 <span class="r-in"><span><span class="va">cat_res</span><span class="op">$</span><span class="va">RawPPlot</span></span></span>
-<span class="r-plt img"><img src="PlotVolcanoEffects-2.png" alt="" width="700" height="433"></span>
+<span class="r-plt img"><img src="PlotVolcanoEffects-3.png" alt="" width="700" height="433"></span>
+<span class="r-in"><span><span class="va">cat_res</span><span class="op">$</span><span class="va">FDRPlot</span></span></span>
+<span class="r-plt img"><img src="PlotVolcanoEffects-4.png" alt="" width="700" height="433"></span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

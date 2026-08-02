@@ -82,6 +82,10 @@ CreateMCATable(...)
 
   **Deprecated** (since 19.15.0). Use `data` instead.
 
+- ...:
+
+  Arguments passed to `CreateMCAObject()`.
+
 ## Value
 
 A list with the following elements:
@@ -132,6 +136,10 @@ mca <- CreateMCAObject(
   VarsToReduce = c("Diagnosis", "Genotype")
 )
 
-# Display the scree plot from the returned object
+# Variance explained by MCA dimensions
 mca$p_scree
+
+
+# Variable loadings across MCA dimensions
+mca$Lollipop
 ```

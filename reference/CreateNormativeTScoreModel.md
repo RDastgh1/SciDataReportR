@@ -112,6 +112,10 @@ CreateNormativeTScores(...)
 
   **Deprecated** (since 19.15.0). Use `data` instead.
 
+- ...:
+
+  Arguments passed to `CreateNormativeTScoreModel()`.
+
 ## Value
 
 A list with the following elements:
@@ -215,7 +219,27 @@ out$model
 #>         0.0989387  
 #> 
 
-# Display the fitted T-score plot from the returned object
+# Raw, transformed, and normed score distributions
+out$plots$raw
+#> `stat_bin()` using `bins = 30`. Pick better value `binwidth`.
+
+out$plots$scaled
+#> `stat_bin()` using `bins = 30`. Pick better value `binwidth`.
+
 out$plots$tscore
 #> `stat_bin()` using `bins = 30`. Pick better value `binwidth`.
+
+
+# T-score diagnostics by reference group, practice count, and covariates
+out$plots$reference
+
+out$plots$practice
+#> `geom_smooth()` using formula = 'y ~ x'
+
+out$plots$Age
+#> `geom_smooth()` using formula = 'y ~ x'
+
+out$plots$Education
+
+out$plots$Sex
 ```

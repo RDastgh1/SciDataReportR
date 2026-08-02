@@ -214,8 +214,15 @@ result <- MultivariableRegressionTable(
   covariates = "age"
 )
 
-# Display the regression coefficient matrix plot
-result$Plots$RegressionMatrix
+# Display every visualization available for this fitted model
+for (plot_name in names(result$Plots)) {
+  print(result$Plots[[plot_name]])
+}
+
+
+
+
+
 
 
 # Nominal outcome: each non-reference level versus the named reference.

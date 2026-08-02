@@ -123,7 +123,6 @@ Long format is recommended for datasets with more than two visits.
 ## Examples
 
 ``` r
-set.seed(1)
 rci_data <- data.frame(
   id = rep(1:30, each = 2),
   visit = rep(c("Baseline", "Followup"), 30),
@@ -139,6 +138,14 @@ rci <- CreateRCIObject(
   BaselineVisit = "Baseline"
 )
 
-# Display a spaghetti plot from the returned object
+# Individual trajectories across visits
 rci$Plots$Spaghetti$Score
+
+
+# Participant-level reliable-change values
+rci$Plots$Waterfall$Score
+
+
+# Baseline values relative to reliable change
+rci$Plots$Quadrant$Score
 ```

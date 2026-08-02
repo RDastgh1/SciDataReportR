@@ -90,7 +90,14 @@ result <- PlotPointCorrelationsHeatmap(
   ContVars = c("age", "AXL", "Adiponectin")
 )
 
+# Raw p-value point-biserial heatmap
 result$Unadjusted$plot
 #> Warning: Removed 5 rows containing missing values or values outside the scale range
+#> (`geom_text()`).
+
+
+# FDR-adjusted point-biserial heatmap
+result$FDRCorrected$plot
+#> Warning: Removed 6 rows containing missing values or values outside the scale range
 #> (`geom_text()`).
 ```

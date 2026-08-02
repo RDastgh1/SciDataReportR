@@ -202,8 +202,12 @@ results_cont <- PlotInteractionEffectsMatrix(
 )
 #> Warning: Ignoring unknown aesthetics: text
 
-# Display the plot (colored tiles mark significant interactions)
+# Raw p-value interaction matrix
 results$Unadjusted$plot
+
+
+# FDR-adjusted interaction matrix
+results$FDRCorrected$plot
 
 # }
 ```

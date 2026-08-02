@@ -281,6 +281,10 @@ Pipeline_SOMClust(...)
 
   **Deprecated** (since 19.15.0). Use `id_var` instead.
 
+- ...:
+
+  Arguments passed to `CreateSOMClusterModel()`.
+
 ## Value
 
 A list of class `"Pipeline_SOMClust"` with components:

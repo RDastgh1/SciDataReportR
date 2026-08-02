@@ -169,7 +169,10 @@ cont <- PlotVolcanoEffects(
   LabelMode = "top_n",
   TopN = 3
 )
+# Raw and FDR-adjusted continuous-outcome volcano plots
 cont$RawPPlot
+
+cont$FDRPlot
 
 
 # Categorical outcome (Diagnosis), Cohen's d effect metric
@@ -182,5 +185,8 @@ cat_res <- PlotVolcanoEffects(
   LabelMode = "top_n",
   TopN = 3
 )
+# Raw and FDR-adjusted categorical-outcome volcano plots
 cat_res$RawPPlot
+
+cat_res$FDRPlot
 ```
