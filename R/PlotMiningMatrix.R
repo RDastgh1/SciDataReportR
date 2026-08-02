@@ -113,8 +113,9 @@ PlotMiningMatrix <- function(data,
     ))
   }
 
-  ordinal <- ScidrExpandOrdinalForTable(
-    Data, unique(c(OutcomeVars, PredictorVars)), TreatOrdinalAs, Relabel
+  ordinal <- ConvertOrdinalToNumeric(
+    Data, unique(c(OutcomeVars, PredictorVars)), TreatOrdinalAs = TreatOrdinalAs,
+    Relabel = Relabel, ReturnMetadata = TRUE
   )
   Data <- ordinal$data
   OutcomeVars <- unique(unlist(ordinal$variable_map[OutcomeVars], use.names = FALSE))

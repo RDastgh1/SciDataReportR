@@ -134,7 +134,12 @@ PlotAnovaRelationshipsMatrix <- function(data,
   df0 <- Data %>%
     dplyr::select(dplyr::all_of(vars_keep)) %>%
     dplyr::mutate(.rowID = dplyr::row_number()) %>%
-    dplyr::mutate(dplyr::across(dplyr::all_of(CatVars), ScidrAsPlainFactor))
+    dplyr::mutate(
+      dplyr::across(
+        dplyr::all_of(CatVars),
+        function(x) if (is.factor(x)) factor(as.character(x), levels = levels(x)) else factor(x)
+      )
+    )
 
   # Keep covars attached by rowID (avoid pivot mixing types)
   cov_df <- if (length(Covariates) > 0) {

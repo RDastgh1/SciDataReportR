@@ -58,7 +58,7 @@ PlotCategoricalDistributions <- function(data,
     lifecycle::deprecate_warn("20.20.0", "PlotCategoricalDistributions(Ordinal)", "PlotCategoricalDistributions(TreatOrdinalAs)")
     TreatOrdinalAs <- if (isTRUE(Ordinal)) "Categorical" else "Exclude"
   }
-  TreatOrdinalAs <- ScidrMatchOrdinalTreatment(TreatOrdinalAs)
+  TreatOrdinalAs <- match.arg(TreatOrdinalAs, c("Categorical", "Continuous", "Both", "Exclude"))
   if (TreatOrdinalAs %in% c("Continuous", "Both")) {
     stop("PlotCategoricalDistributions() requires TreatOrdinalAs = 'Categorical' or 'Exclude'.", call. = FALSE)
   }
@@ -97,10 +97,12 @@ PlotCategoricalDistributions <- function(data,
 
   # Prepare data
 
-  if (TreatOrdinalAs == "Exclude") {
-    ordinal_vars <- Variables[vapply(DataFrame[Variables], is.ordered, logical(1))]
-    Variables <- setdiff(Variables, ordinal_vars)
-  }
+  ordinal <- ConvertOrdinalToNumeric(
+    DataFrame, Variables, TreatOrdinalAs = TreatOrdinalAs,
+    ReturnMetadata = TRUE
+  )
+  DataFrame <- ordinal$data
+  Variables <- ordinal$variables
 
   if (length(Variables) == 0) {
     stop("No variables available to plot.")

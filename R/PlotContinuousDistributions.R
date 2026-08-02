@@ -55,7 +55,7 @@ PlotContinuousDistributions <- function(data,
     lifecycle::deprecate_warn("20.20.0", "PlotContinuousDistributions(Ordinal)", "PlotContinuousDistributions(TreatOrdinalAs)")
     TreatOrdinalAs <- if (isTRUE(Ordinal)) "Continuous" else "Exclude"
   }
-  TreatOrdinalAs <- ScidrMatchOrdinalTreatment(TreatOrdinalAs)
+  TreatOrdinalAs <- match.arg(TreatOrdinalAs, c("Categorical", "Continuous", "Both", "Exclude"))
   if (TreatOrdinalAs %in% c("Categorical", "Both")) {
     if (TreatOrdinalAs == "Both") {
       stop("TreatOrdinalAs = 'Both' is not meaningful for PlotContinuousDistributions().", call. = FALSE)
@@ -72,9 +72,12 @@ PlotContinuousDistributions <- function(data,
     if (TreatOrdinalAs == "Continuous") Variables <- getNumVars(DataFrame, Ordinal = TRUE)
   }
 
-  prep <- ScidrPrepareOrdinal(DataFrame, Variables, TreatOrdinalAs)
-  DataFrame <- prep$data
-  Variables <- prep$variables
+  ordinal <- ConvertOrdinalToNumeric(
+    DataFrame, Variables, TreatOrdinalAs = TreatOrdinalAs,
+    Relabel = Relabel, ReturnMetadata = TRUE
+  )
+  DataFrame <- ordinal$data
+  Variables <- ordinal$variables
 
   # Build facet labels
   var_labels <- sjlabelled::get_label(DataFrame[Variables], def.value = Variables)

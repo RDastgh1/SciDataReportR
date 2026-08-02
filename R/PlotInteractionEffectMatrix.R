@@ -9,7 +9,11 @@
 #' @param predictor_vars Character vector of predictor variable names (displayed on columns)
 #' @param covariates Character vector of covariate names to include in the models
 #' @param Relabel Logical indicating whether to use variable labels if available (default: TRUE)
-#' @param Ordinal Logical indicating whether to treat ordered factors as numeric (default: FALSE)
+#' @param TreatOrdinalAs How ordinal variables are handled. This interaction
+#'   matrix accepts `"Exclude"`, `"Continuous"`, or `"Categorical"`.
+#'   Categorical ordinal outcomes are not supported by the linear models.
+#' @param Ordinal \strong{Deprecated} (since 20.20.0). Use
+#'   \code{TreatOrdinalAs} instead.
 #'
 #' @return A list containing:
 #' \describe{
@@ -115,7 +119,8 @@ PlotInteractionEffectsMatrix <- function(data,
     predictor_vars = NULL,
     covariates = NULL,
     Relabel = TRUE,
-    Ordinal = FALSE,
+    Ordinal = lifecycle::deprecated(),
+    TreatOrdinalAs = "Exclude",
     Data = lifecycle::deprecated(),
     outcomeVars = lifecycle::deprecated(),
     predictorVars = lifecycle::deprecated(),
@@ -143,6 +148,14 @@ PlotInteractionEffectsMatrix <- function(data,
   }
   covars <- covariates
   fdr_scope <- match.arg(fdr_scope)
+  if (lifecycle::is_present(Ordinal)) {
+    lifecycle::deprecate_warn("20.20.0", "PlotInteractionEffectsMatrix(Ordinal)", "PlotInteractionEffectsMatrix(TreatOrdinalAs)")
+    TreatOrdinalAs <- if (isTRUE(Ordinal)) "Continuous" else "Exclude"
+  }
+  TreatOrdinalAs <- match.arg(TreatOrdinalAs, c("Categorical", "Continuous", "Both", "Exclude"))
+  if (TreatOrdinalAs == "Both") {
+    stop("TreatOrdinalAs = 'Both' is not meaningful for PlotInteractionEffectsMatrix().", call. = FALSE)
+  }
 
 
   # Check for required packages
@@ -181,17 +194,6 @@ PlotInteractionEffectsMatrix <- function(data,
     }
   }
 
-  if (!exists("ConvertOrdinalToNumeric")) {
-    ConvertOrdinalToNumeric <- function(data, variables) {
-      for (var in variables) {
-        if (is.ordered(data[[var]])) {
-          data[[var]] <- as.numeric(data[[var]])
-        }
-      }
-      return(data)
-    }
-  }
-
   # Input validation
   if (is.null(Data) || !is.data.frame(Data)) {
     stop("Data must be a non-null data frame")
@@ -204,9 +206,6 @@ PlotInteractionEffectsMatrix <- function(data,
   if (!interVar %in% names(Data)) {
     stop(paste("interVar", interVar, "not found in Data"))
   }
-
-  # Check if interaction variable is continuous
-  interVar_is_continuous <- is.numeric(Data[[interVar]])
 
   # Check for missing values and replace with appropriate labels
   removediag <- FALSE
@@ -221,19 +220,9 @@ PlotInteractionEffectsMatrix <- function(data,
   # If outcomeVars is null, get all numeric variables
   if (is.null(outcomeVars)) {
     outcomeVars <- getNumVars(Data, Ordinal = FALSE)
-    if (Ordinal) {
+    if (TreatOrdinalAs == "Continuous") {
       outcomeVars <- getNumVars(Data, Ordinal = TRUE)
     }
-  }
-
-  # Combine variables into a single vector
-  Variables <- c(interVar, outcomeVars, predictorVars)
-
-  # If Ordinal is TRUE, convert ordinal variables to numeric and update Variables
-  if (Ordinal) {
-    Variables <- c(outcomeVars, predictorVars)
-    Data <- ConvertOrdinalToNumeric(Data, Variables)
-    Data[Variables] <- lapply(Data[Variables], as.numeric)
   }
 
   # Update outcomeVars and predictorVars to exclude covariates
@@ -241,6 +230,28 @@ PlotInteractionEffectsMatrix <- function(data,
     outcomeVars <- outcomeVars[!outcomeVars %in% covars]
     predictorVars <- predictorVars[!predictorVars %in% covars]
   }
+
+  ordinal <- ConvertOrdinalToNumeric(
+    Data, unique(c(interVar, outcomeVars, predictorVars, covars)),
+    TreatOrdinalAs = TreatOrdinalAs, Relabel = Relabel, ReturnMetadata = TRUE
+  )
+  Data <- ordinal$data
+  if (!interVar %in% ordinal$variables) {
+    stop("`interVar` is ordinal and was excluded by TreatOrdinalAs = 'Exclude'.", call. = FALSE)
+  }
+  outcomeVars <- intersect(outcomeVars, ordinal$variables)
+  predictorVars <- intersect(predictorVars, ordinal$variables)
+  covars <- intersect(covars, ordinal$variables)
+  if (TreatOrdinalAs == "Categorical" &&
+      any(outcomeVars %in% ordinal$ordinal_variables)) {
+    stop(
+      "Categorical ordinal outcomes are not supported by PlotInteractionEffectsMatrix(); use TreatOrdinalAs = 'Continuous' or 'Exclude'.",
+      call. = FALSE
+    )
+  }
+
+  # Check whether the interaction variable is continuous after ordinal treatment.
+  interVar_is_continuous <- is.numeric(Data[[interVar]])
 
   # Initialize matrices to store results
   r_P <- r_C <- r_S <- r_D <- matrix(NA, nrow = length(outcomeVars), ncol = length(predictorVars))

@@ -66,3 +66,26 @@ cell-level comparison is performed only for key combinations that are unique
 in both datasets. Duplicate keys are returned separately and flagged in
 \code{Checks}.
 }
+\examples{
+data(SampleData)
+
+# Add a stable participant key, then create a revised data extract.
+df_OldData <- dplyr::mutate(
+  SampleData,
+  ParticipantID = seq_len(nrow(SampleData)),
+  .before = 1
+)
+df_NewData <- df_OldData
+df_NewData$age[1:5] <- df_NewData$age[1:5] + 1
+
+comparison <- CompareDatasets(
+  OldData = df_OldData,
+  NewData = df_NewData,
+  keys = "ParticipantID"
+)
+
+# Review the high-level QA metrics and the individual changed cells.
+comparison$Summary
+comparison$ModifiedValues
+
+}

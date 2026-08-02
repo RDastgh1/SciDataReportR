@@ -54,10 +54,13 @@ CreateSummaryTable <- function(data,
     lifecycle::deprecate_warn("20.20.0", "CreateSummaryTable(Ordinal)", "CreateSummaryTable(TreatOrdinalAs)")
     TreatOrdinalAs <- if (isTRUE(Ordinal)) "Continuous" else "Exclude"
   }
-  TreatOrdinalAs <- ScidrMatchOrdinalTreatment(TreatOrdinalAs)
-  check_vars <- if (is.null(Variables)) names(Data) else intersect(Variables, names(Data))
-  has_ordinal <- any(vapply(Data[check_vars], ScidrIsOrdinal, logical(1)))
-  if (has_ordinal && TreatOrdinalAs %in% c("Categorical", "Both")) {
+  TreatOrdinalAs <- match.arg(TreatOrdinalAs, c("Categorical", "Continuous", "Both", "Exclude"))
+  if (is.null(Variables)) Variables <- names(Data)
+  ordinal <- ConvertOrdinalToNumeric(
+    Data, Variables, TreatOrdinalAs = TreatOrdinalAs,
+    Relabel = Relabel, ReturnMetadata = TRUE
+  )
+  if (length(ordinal$ordinal_variables) && TreatOrdinalAs %in% c("Categorical", "Both")) {
     stop("CreateSummaryTable() is numeric-only; use TreatOrdinalAs = 'Continuous' or 'Exclude'. Use MakeTable1() for categorical or both ordinal summaries.", call. = FALSE)
   }
 
@@ -70,15 +73,9 @@ CreateSummaryTable <- function(data,
     }
   }
 
-  if (is.null(Variables)) {
-    Variables <- colnames(Data)
-  }
-
   suppressWarnings({
-    Data <- dplyr::select(Data, dplyr::all_of(Variables))
-    prep <- ScidrPrepareOrdinal(Data, Variables, TreatOrdinalAs)
-    Data <- prep$data
-    Variables <- prep$variables
+    Data <- dplyr::select(ordinal$data, dplyr::all_of(ordinal$variables))
+    Variables <- ordinal$variables
 
     d <- summarytools::descr(Data)
     statVars <- c("Mean", "Std.Dev", "Median", "IQR", "Min", "Max", "Skewness", "Kurtosis", "N.Valid", "Pct.Valid")

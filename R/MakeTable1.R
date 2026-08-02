@@ -63,8 +63,9 @@ MakeTable1 <- function(data,
     Variables <- colnames(DataFrame)
   }
 
-  ordinal <- ScidrExpandOrdinalForTable(
-    DataFrame, Variables, TreatOrdinalAs, Relabel
+  ordinal <- ConvertOrdinalToNumeric(
+    DataFrame, Variables, TreatOrdinalAs = TreatOrdinalAs,
+    Relabel = Relabel, ReturnMetadata = TRUE
   )
   DataFrame <- ScidrApplyDisplayLabels(ordinal$data, ordinal$variables, Relabel)
   Variables <- ordinal$variables

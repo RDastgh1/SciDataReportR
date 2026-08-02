@@ -248,12 +248,20 @@ MultivariableRegressionTable <- function(data,
   if (length(missing_vars) > 0) {
     stop("The following variables were not found in Data: ", paste(missing_vars, collapse = ", "))
   }
-  ordinal_treatment <- ScidrMatchOrdinalTreatment(TreatOrdinalAs)
+  ordinal_treatment <- match.arg(TreatOrdinalAs, c("Categorical", "Continuous", "Both", "Exclude"))
+  if (ordinal_treatment == "Both") {
+    stop("TreatOrdinalAs = 'Both' is not meaningful for MultivariableRegressionTable().", call. = FALSE)
+  }
+  ordinal_reference <- ConvertOrdinalToNumeric(
+    Data, all_model_vars, TreatOrdinalAs = "Categorical", ReturnMetadata = TRUE
+  )
   if (ordinal_treatment == "Exclude" &&
-      any(vapply(Data[all_model_vars], ScidrIsOrdinal, logical(1)))) {
+      length(ordinal_reference$ordinal_variables)) {
     stop("TreatOrdinalAs = 'Exclude' cannot be used when ordinal model variables are explicitly supplied.", call. = FALSE)
   }
-  Data <- ScidrPrepareOrdinal(Data, all_model_vars, ordinal_treatment)$data
+  Data <- ConvertOrdinalToNumeric(
+    Data, all_model_vars, TreatOrdinalAs = ordinal_treatment, ReturnMetadata = TRUE
+  )$data
   unknown_mode_outcomes <- setdiff(names(outcome_modes), OutcomeVars)
   unknown_reference_outcomes <- setdiff(names(reference_levels), OutcomeVars)
   unknown_subset_outcomes <- setdiff(names(binary_subsets), OutcomeVars)

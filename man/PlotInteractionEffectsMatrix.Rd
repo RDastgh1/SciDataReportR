@@ -11,7 +11,8 @@ PlotInteractionEffectsMatrix(
   predictor_vars = NULL,
   covariates = NULL,
   Relabel = TRUE,
-  Ordinal = FALSE,
+  Ordinal = lifecycle::deprecated(),
+  TreatOrdinalAs = "Exclude",
   Data = lifecycle::deprecated(),
   outcomeVars = lifecycle::deprecated(),
   predictorVars = lifecycle::deprecated(),
@@ -32,7 +33,12 @@ PlotInteractionEffectsMatrix(
 
 \item{Relabel}{Logical indicating whether to use variable labels if available (default: TRUE)}
 
-\item{Ordinal}{Logical indicating whether to treat ordered factors as numeric (default: FALSE)}
+\item{Ordinal}{\strong{Deprecated} (since 20.20.0). Use
+\code{TreatOrdinalAs} instead.}
+
+\item{TreatOrdinalAs}{How ordinal variables are handled. This interaction
+matrix accepts \code{"Exclude"}, \code{"Continuous"}, or \code{"Categorical"}.
+Categorical ordinal outcomes are not supported by the linear models.}
 
 \item{Data}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
 

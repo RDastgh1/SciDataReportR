@@ -12,7 +12,8 @@ PlotZScore(
   Relabel = TRUE,
   sort = TRUE,
   RemoveXAxisLabels = TRUE,
-  Ordinal = TRUE,
+  Ordinal = lifecycle::deprecated(),
+  TreatOrdinalAs = "Continuous",
   Parametric = TRUE,
   SigP_YCoord = 1.5,
   SigFDR_YCoord = 1.6,
@@ -35,7 +36,11 @@ PlotZScore(
 
 \item{RemoveXAxisLabels}{Logical; if TRUE, X-axis labels will be removed.}
 
-\item{Ordinal}{Logical; if TRUE, ordinal variables will be converted to numeric.}
+\item{Ordinal}{\strong{Deprecated} (since 20.20.0). Use
+\code{TreatOrdinalAs} instead.}
+
+\item{TreatOrdinalAs}{How ordinal variables are handled. This numeric plot
+accepts \code{"Continuous"} or \code{"Exclude"}.}
 
 \item{Parametric}{Logical; if TRUE, parametric tests (t-test/ANOVA) will be used; otherwise, non-parametric tests (Wilcoxon/Kruskal-Wallis) will be used.}
 
@@ -53,7 +58,7 @@ A ggplot object representing the Z-score plot.
 \description{
 This function generates a Z-score plot to compare multiple variables across
 different groups. It offers options for parametric or non-parametric tests,
-ordinal variable conversion, and custom labeling. Significant p-values and
+ordinal treatment, and custom labeling. Significant p-values and
 FDR-adjusted p-values are highlighted on the plot.
 }
 \examples{

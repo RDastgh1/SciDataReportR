@@ -109,7 +109,10 @@ PlotChiSqCovar <- function(data,
     dplyr::select(dplyr::all_of(unique(c(xVars, yVars, covars)))) %>%
     dplyr::mutate(.rowID = dplyr::row_number()) %>%
     dplyr::mutate(
-      dplyr::across(dplyr::all_of(unique(c(xVars, yVars))), ScidrAsPlainFactor)
+      dplyr::across(
+        dplyr::all_of(unique(c(xVars, yVars))),
+        function(x) if (is.factor(x)) factor(as.character(x), levels = levels(x)) else factor(x)
+      )
     )
 
   cov_df <- if (length(covars) > 0) {

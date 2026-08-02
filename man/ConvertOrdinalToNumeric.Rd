@@ -2,47 +2,60 @@
 % Please edit documentation in R/ConvertOrdinalToNumeric.R
 \name{ConvertOrdinalToNumeric}
 \alias{ConvertOrdinalToNumeric}
-\title{Convert ordinal variables to numeric}
+\title{Prepare ordinal variables for analysis}
 \usage{
 ConvertOrdinalToNumeric(
   data,
   variables = NULL,
+  TreatOrdinalAs = c("Continuous", "Categorical", "Both", "Exclude"),
+  Relabel = TRUE,
+  ReturnMetadata = FALSE,
   Data = lifecycle::deprecated(),
   Variables = lifecycle::deprecated()
 )
 }
 \arguments{
-\item{data}{The dataframe containing the variables.}
+\item{data}{The data frame containing the variables.}
 
-\item{variables}{A character vector specifying the names of variables to consider. If NULL, all columns of the dataframe will be considered.}
+\item{variables}{Character vector of variables to consider. If \code{NULL}, all
+columns are considered.}
+
+\item{TreatOrdinalAs}{How ordinal variables are handled: \code{"Continuous"},
+\code{"Categorical"}, \code{"Both"}, or \code{"Exclude"}.}
+
+\item{Relabel}{Logical; when \code{TreatOrdinalAs = "Both"}, apply descriptive
+labels to the derived categorical and continuous variables.}
+
+\item{ReturnMetadata}{Logical; if \code{FALSE} (default), return only the
+transformed data frame. If \code{TRUE}, return a list containing the data,
+selected variables, ordinal variables, variable map, and treatment.}
 
 \item{Data}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
 
 \item{Variables}{\strong{Deprecated} (since 19.15.0). Use \code{variables} instead.}
 }
 \value{
-The dataframe with ordinal variables converted to numeric scores.
+A transformed data frame, or a metadata list when
+\code{ReturnMetadata = TRUE}.
 }
 \description{
-Convert ordinal variables in a dataframe to numeric scores.
-}
-\details{
-Numeric scores recorded by \code{\link[=RevalueData]{RevalueData()}} from the codebook are
-used when available. Otherwise the ordered-factor ranks are used.
+Applies a consistent ordinal-treatment policy to selected variables. Ordinal
+score mappings recorded by \code{\link[=RevalueData]{RevalueData()}} are used when available;
+otherwise ordered-factor ranks are used.
 }
 \examples{
-# An ordered factor with numeric levels, and one with non-numeric levels
 df <- data.frame(
-  id     = 1:5,
+  id = 1:5,
   likert = factor(c("1", "2", "3", "2", "1"),
                   levels = c("1", "2", "3"), ordered = TRUE),
-  grade  = factor(c("A", "B", "A", "C", "B"),
-                  levels = c("A", "B", "C"), ordered = TRUE)
+  grade = factor(c("A", "B", "A", "C", "B"),
+                 levels = c("A", "B", "C"), ordered = TRUE)
 )
 
-out <- ConvertOrdinalToNumeric(df)
+# Convert ordinal ranks to numeric scores.
+ConvertOrdinalToNumeric(df)
 
-# likert becomes numeric; grade stays an ordered factor (levels are not numeric)
-sapply(out, class)
+# Keep both categorical and continuous versions for a summary table.
+ConvertOrdinalToNumeric(df, TreatOrdinalAs = "Both", ReturnMetadata = TRUE)
 
 }

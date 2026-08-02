@@ -249,8 +249,9 @@ MakeComparisonTable <- function(data,
     stop("No variables left to summarise after removing covariates from Variables.")
   }
 
-  ordinal <- ScidrExpandOrdinalForTable(
-    DataFrame, Variables, TreatOrdinalAs, Relabel
+  ordinal <- ConvertOrdinalToNumeric(
+    DataFrame, Variables, TreatOrdinalAs = TreatOrdinalAs,
+    Relabel = Relabel, ReturnMetadata = TRUE
   )
   DataFrame <- ordinal$data
   Variables <- ordinal$variables

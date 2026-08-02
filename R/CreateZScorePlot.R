@@ -2,7 +2,7 @@
 #'
 #' This function generates a Z-score plot to compare multiple variables across
 #' different groups. It offers options for parametric or non-parametric tests,
-#' ordinal variable conversion, and custom labeling. Significant p-values and
+#' ordinal treatment, and custom labeling. Significant p-values and
 #' FDR-adjusted p-values are highlighted on the plot.
 #'
 #'
@@ -13,7 +13,10 @@
 #' @param Relabel Logical; if TRUE, variables will be relabeled using their labels from the dataframe.
 #' @param sort Logical; if TRUE, variables will be sorted by category and p-value.
 #' @param RemoveXAxisLabels Logical; if TRUE, X-axis labels will be removed.
-#' @param Ordinal Logical; if TRUE, ordinal variables will be converted to numeric.
+#' @param TreatOrdinalAs How ordinal variables are handled. This numeric plot
+#'   accepts `"Continuous"` or `"Exclude"`.
+#' @param Ordinal \strong{Deprecated} (since 20.20.0). Use
+#'   \code{TreatOrdinalAs} instead.
 #' @param Parametric Logical; if TRUE, parametric tests (t-test/ANOVA) will be used; otherwise, non-parametric tests (Wilcoxon/Kruskal-Wallis) will be used.
 #' @param SigP_YCoord Numeric; the y-coordinate for marking significant p-values.
 #' @param SigFDR_YCoord Numeric; the y-coordinate for marking significant FDR-adjusted p-values.
@@ -57,7 +60,8 @@ PlotZScore <- function(data,
     Relabel = TRUE,
     sort = TRUE,
     RemoveXAxisLabels = TRUE,
-    Ordinal = TRUE,
+    Ordinal = lifecycle::deprecated(),
+    TreatOrdinalAs = "Continuous",
     Parametric = TRUE,
     SigP_YCoord = 1.5,
     SigFDR_YCoord = 1.6,
@@ -75,9 +79,20 @@ PlotZScore <- function(data,
   }
   if (!missing(variables)) Variables <- variables
 
-  if (Ordinal) {
-    Data <- ConvertOrdinalToNumeric(Data, Variables)
+  if (lifecycle::is_present(Ordinal)) {
+    lifecycle::deprecate_warn("20.20.0", "PlotZScore(Ordinal)", "PlotZScore(TreatOrdinalAs)")
+    TreatOrdinalAs <- if (isTRUE(Ordinal)) "Continuous" else "Exclude"
   }
+  TreatOrdinalAs <- match.arg(TreatOrdinalAs, c("Categorical", "Continuous", "Both", "Exclude"))
+  if (!TreatOrdinalAs %in% c("Continuous", "Exclude")) {
+    stop("PlotZScore() requires TreatOrdinalAs = 'Continuous' or 'Exclude'.", call. = FALSE)
+  }
+  ordinal <- ConvertOrdinalToNumeric(
+    Data, Variables, TreatOrdinalAs = TreatOrdinalAs,
+    Relabel = Relabel, ReturnMetadata = TRUE
+  )
+  Data <- ordinal$data
+  Variables <- ordinal$variables
 
   classcolors <- c(paletteer::paletteer_d("calecopal::superbloom2"),
                    paletteer::paletteer_d("calecopal::vermillion"), paletteer::paletteer_d("fishualize::Antennarius_commerson"),

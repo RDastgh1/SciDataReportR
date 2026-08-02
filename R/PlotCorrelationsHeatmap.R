@@ -107,7 +107,7 @@ PlotCorrelationsHeatmap <- function(data,
     lifecycle::deprecate_warn("20.20.0", "PlotCorrelationsHeatmap(Ordinal)", "PlotCorrelationsHeatmap(TreatOrdinalAs)")
     TreatOrdinalAs <- if (isTRUE(Ordinal)) "Continuous" else "Exclude"
   }
-  TreatOrdinalAs <- ScidrMatchOrdinalTreatment(TreatOrdinalAs)
+  TreatOrdinalAs <- match.arg(TreatOrdinalAs, c("Categorical", "Continuous", "Both", "Exclude"))
   if (TreatOrdinalAs %in% c("Categorical", "Both")) {
     if (TreatOrdinalAs == "Both") stop("TreatOrdinalAs = 'Both' is not meaningful for PlotCorrelationsHeatmap().", call. = FALSE)
     TreatOrdinalAs <- "Exclude"
@@ -167,12 +167,13 @@ PlotCorrelationsHeatmap <- function(data,
     names(Data)
   )
 
-  prep <- ScidrPrepareOrdinal(
-    Data, unique(c(xVars, yVars)), TreatOrdinalAs
+  ordinal <- ConvertOrdinalToNumeric(
+    Data, unique(c(xVars, yVars)), TreatOrdinalAs = TreatOrdinalAs,
+    Relabel = Relabel, ReturnMetadata = TRUE
   )
-  Data <- prep$data
-  xVars <- intersect(xVars, prep$variables)
-  yVars <- intersect(yVars, prep$variables)
+  Data <- ordinal$data
+  xVars <- intersect(xVars, ordinal$variables)
+  yVars <- intersect(yVars, ordinal$variables)
 
   covars_in <- covars
 

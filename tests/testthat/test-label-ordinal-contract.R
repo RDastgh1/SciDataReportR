@@ -29,6 +29,38 @@ test_that("ordinal rank scoring works when no numeric code mapping is available"
   expect_identical(sjlabelled::get_label(out$severity), "Clinical severity")
 })
 
+test_that("ConvertOrdinalToNumeric supports categorical, exclude, and metadata modes", {
+  df_Test <- data.frame(
+    group = factor(c("A", "B", "A")),
+    severity = ordered(c("Mild", "Moderate", "Severe"),
+                       levels = c("Mild", "Moderate", "Severe"))
+  )
+  sjlabelled::set_label(df_Test$severity) <- "Clinical severity"
+
+  categorical <- ConvertOrdinalToNumeric(
+    df_Test, TreatOrdinalAs = "Categorical", ReturnMetadata = TRUE
+  )
+  excluded <- ConvertOrdinalToNumeric(
+    df_Test, TreatOrdinalAs = "Exclude", ReturnMetadata = TRUE
+  )
+  both <- ConvertOrdinalToNumeric(
+    df_Test, TreatOrdinalAs = "Both", ReturnMetadata = TRUE
+  )
+
+  expect_true(is.ordered(categorical$data$severity))
+  expect_identical(excluded$variables, "group")
+  expect_identical(excluded$variable_map$severity, character(0))
+  expect_true(all(c(
+    ".scidr_ordinal_categorical_severity",
+    ".scidr_ordinal_continuous_severity"
+  ) %in% both$variables))
+  expect_identical(
+    sjlabelled::get_label(both$data$.scidr_ordinal_continuous_severity),
+    "Clinical severity (continuous)"
+  )
+  expect_error(ConvertOrdinalToNumeric(df_Test, TreatOrdinalAs = "invalid"), "arg")
+})
+
 test_that("MakeTable1 includes ordinal variables twice when requested", {
   skip_if_not_installed("gtsummary")
   df_Test <- data.frame(
