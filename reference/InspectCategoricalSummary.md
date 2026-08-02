@@ -107,8 +107,7 @@ InspectCategoricalSummary(
 
 - BaseSize:
 
-  Base font size passed to
-  [`theme_minimal()`](https://ggplot2.tidyverse.org/reference/ggtheme.html).
+  Base font size passed to `theme_minimal()`.
 
 - Data:
 
