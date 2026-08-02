@@ -64,20 +64,23 @@
 #' }
 #'
 #' @examples
-#' library(ggplot2)
+#' data(SampleData)
+#' data(SampleVariableTypes)
 #'
-#' p1 <- ggplot(mtcars, aes(mpg, wt)) +
-#'   geom_point()
+#' df_Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
 #'
-#' p2 <- ggplot(mtcars, aes(hp, wt)) +
-#'   geom_point()
+#' p_Categorical <- PlotAssociations(df_Labelled, "Diagnosis", "Genotype")
+#' p_Continuous <- PlotAssociations(df_Labelled, "age", "AXL")
 #'
-#' AssemblePlots(list(p1, p2))
-#'
+#' # Keep each association plot's own statistical annotation and legend.
 #' AssemblePlots(
-#'   list(MPG = p1, Horsepower = p2),
-#'   UseNamesAsTitles = TRUE,
-#'   LegendPosition = "top"
+#'   list(
+#'     "Diagnosis and genotype" = p_Categorical,
+#'     "Age and AXL" = p_Continuous
+#'   ),
+#'   ncol = 2,
+#'   CollectLegend = FALSE,
+#'   Labels = c("A", "B")
 #' )
 #'
 #' @export
