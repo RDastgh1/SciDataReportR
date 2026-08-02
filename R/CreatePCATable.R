@@ -1175,28 +1175,10 @@ CreatePCAObject <- function(data,
   ))
 }
 
-#' Create PCA table and visualization
-#'
-#' Compatibility alias for [CreatePCAObject()]. Prefer `CreatePCAObject()` in
-#' new code because this workflow returns a reusable PCA object, not only a
-#' static table.
-#'
-#' @param ... Arguments passed to [CreatePCAObject()].
-#'
-#' @return The same object returned by [CreatePCAObject()].
-#'
-#' @seealso [CreatePCAObject()] for the canonical function and full examples.
-#'
-#' @examples
-#' PCA <- CreatePCATable(
-#'   data = mtcars,
-#'   VarsToReduce = names(mtcars),
-#'   numComponents = 3
-#' )
-#'
-#' # Display the scree plot from the returned object
-#' PCA$p_scree
-#'
+#' @description `CreatePCATable()` has been superseded by
+#'   `CreatePCAObject()`. It remains available as a backwards-compatible alias
+#'   and returns the same reusable PCA object.
+#' @rdname CreatePCAObject
 #' @export
 CreatePCATable <- function(...) {
   CreatePCAObject(...)

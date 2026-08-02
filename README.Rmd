@@ -99,7 +99,7 @@ SciDataReportR operationalizes practical scientific methods that commonly sit be
 
 Some functions are designed to consume outputs from other SciDataReportR functions. These relationships are part of the workflow infrastructure and should be checked when composing analyses.
 
-SciDataReportR now uses workflow-oriented canonical names for new code, while older public names remain available as compatibility aliases. For example, `CreatePCATable()` still works, but `CreatePCAObject()` better describes the reusable PCA object returned by that workflow.
+SciDataReportR now uses workflow-oriented canonical names for new code, while older public names remain available as compatibility aliases. For example, [`CreatePCATable()`](reference/CreatePCAObject.html) still works, but `CreatePCAObject()` better describes the reusable PCA object returned by that workflow.
 
 | Function | Primary input | Upstream SciDataReportR function | Output | Common downstream use |
 | --- | --- | --- | --- | --- |

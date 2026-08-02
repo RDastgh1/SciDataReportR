@@ -2,6 +2,7 @@
 % Please edit documentation in R/Pipeline_SOMClust.R
 \name{CreateSOMClusterModel}
 \alias{CreateSOMClusterModel}
+\alias{Pipeline_SOMClust}
 \title{SOM + latent profile clustering pipeline (with AHP and distance baselines)}
 \usage{
 CreateSOMClusterModel(
@@ -40,6 +41,8 @@ CreateSOMClusterModel(
   df = lifecycle::deprecated(),
   id_col = lifecycle::deprecated()
 )
+
+Pipeline_SOMClust(...)
 }
 \arguments{
 \item{data}{Data frame containing the variables to be used in SOM and
@@ -219,6 +222,10 @@ Z-scores from \code{df} via \code{CreateZScoreObject()}.
 \item \code{ZScoreType = "PreZScored"} uses existing Z-score columns in \code{df}
 as-is and does not re-zscore.
 }
+
+\code{Pipeline_SOMClust()} has been superseded by
+\code{CreateSOMClusterModel()}. It remains available as a backwards-compatible
+alias and returns the same reusable SOM clustering model.
 }
 \details{
 The AHP-style index is computed by:

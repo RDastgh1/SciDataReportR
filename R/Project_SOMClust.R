@@ -777,25 +777,10 @@ ProjectSOMCluster <- function(
   out
 }
 
-#' Project new data onto an existing SOM clinical phenotype space
-#'
-#' Compatibility alias for [ProjectSOMCluster()]. Prefer `ProjectSOMCluster()`
-#' in new code.
-#'
-#' @param ... Arguments passed to [ProjectSOMCluster()].
-#' @return The same projection object returned by [ProjectSOMCluster()].
-#' @seealso [ProjectSOMCluster()] for the canonical function and full examples.
-#' @examples
-#' \dontrun{
-#' # NOTE: Not run - see ProjectSOMCluster() and CreateSOMClusterModel() for the
-#' # tracked get_data() bug that blocks the SOM workflow.
-#' data(SampleData)
-#' data(SampleVariableTypes)
-#'
-#' Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
-#'
-#' Project_SOMClust(object = model, new_df = Labelled)
-#' }
+#' @description `Project_SOMClust()` has been superseded by
+#'   `ProjectSOMCluster()`. It remains available as a backwards-compatible
+#'   alias and returns the same projection object.
+#' @rdname ProjectSOMCluster
 #' @export
 Project_SOMClust <- function(...) {
   ProjectSOMCluster(...)

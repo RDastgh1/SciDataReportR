@@ -2,6 +2,7 @@
 % Please edit documentation in R/CreatePathwayPlot_KT.R
 \name{PlotPathway_KT}
 \alias{PlotPathway_KT}
+\alias{CreatePathwayPlot_KT}
 \title{Plot the kynurenine-tryptophan pathway}
 \usage{
 PlotPathway_KT(
@@ -11,6 +12,8 @@ PlotPathway_KT(
   metabolite_mapping = NULL,
   use_fdr = FALSE
 )
+
+CreatePathwayPlot_KT(...)
 }
 \arguments{
 \item{results_table}{Data frame with columns: Metabolite, p_value, p_adj, and either "\% Change" or "correlation"}
@@ -30,6 +33,11 @@ A ggplot2 object
 \description{
 Creates a pathway diagram for the kynurenine-tryptophan metabolic pathway with
 color-coded fold changes or correlations and significance indicators.
+
+\code{CreatePathwayPlot_KT()} has been superseded by
+\code{PlotPathway_KT()}. It remains available as a backwards-compatible alias
+during the pathway plot's planned transition to a metabolomics-focused
+package.
 }
 \details{
 This KT pathway visualization remains available in SciDataReportR for now,

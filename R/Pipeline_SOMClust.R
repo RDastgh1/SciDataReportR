@@ -1463,33 +1463,10 @@ CreateSOMClusterModel <- function(data,
   out
 }
 
-#' SOM + latent profile clustering pipeline (with AHP and distance baselines)
-#'
-#' Compatibility alias for [CreateSOMClusterModel()]. Prefer
-#' `CreateSOMClusterModel()` in new code because this function fits a reusable
-#' SOM clustering model.
-#'
-#' @param ... Arguments passed to [CreateSOMClusterModel()].
-#' @return The same `Pipeline_SOMClust` object returned by
-#'   [CreateSOMClusterModel()].
-#' @seealso [CreateSOMClusterModel()] for the canonical function and full
-#'   examples.
-#' @examples
-#' \dontrun{
-#' # NOTE: Not run - see CreateSOMClusterModel() for the tracked get_data() bug.
-#' data(SampleData)
-#' data(SampleVariableTypes)
-#'
-#' Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
-#'
-#' Pipeline_SOMClust(
-#'   data = Labelled,
-#'   variables = c("age", "AXL", "Adiponectin", "Alpha_1_Antitrypsin"),
-#'   method = "exploratory",
-#'   k_range = 2:4,
-#'   models = 1
-#' )
-#' }
+#' @description `Pipeline_SOMClust()` has been superseded by
+#'   `CreateSOMClusterModel()`. It remains available as a backwards-compatible
+#'   alias and returns the same reusable SOM clustering model.
+#' @rdname CreateSOMClusterModel
 #' @export
 Pipeline_SOMClust <- function(...) {
   CreateSOMClusterModel(...)

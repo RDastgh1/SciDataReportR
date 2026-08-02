@@ -215,14 +215,10 @@ CreateMScoreObject <- function(data,
   out
 }
 
-#' Calculate robust M-scores for numeric variables
-#'
-#' Compatibility alias for [CreateMScoreObject()]. Prefer
-#' `CreateMScoreObject()` in new code because this function returns reusable
-#' M-score parameters.
-#'
-#' @param ... Arguments passed to [CreateMScoreObject()].
-#' @return The same `MScoreObj` returned by [CreateMScoreObject()].
+#' @description `CalcMScore()` has been superseded by `CreateMScoreObject()`.
+#'   It remains available as a backwards-compatible alias and returns the same
+#'   reusable M-score object.
+#' @rdname CreateMScoreObject
 #' @export
 CalcMScore <- function(...) {
   CreateMScoreObject(...)

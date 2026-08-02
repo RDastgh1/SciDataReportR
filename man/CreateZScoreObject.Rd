@@ -2,6 +2,7 @@
 % Please edit documentation in R/CalcZScore.R
 \name{CreateZScoreObject}
 \alias{CreateZScoreObject}
+\alias{CalcZScore}
 \title{Calculate Z-scores (or standardized scores) and return data + parameters}
 \usage{
 CreateZScoreObject(
@@ -14,6 +15,8 @@ CreateZScoreObject(
   scale = TRUE,
   df = lifecycle::deprecated()
 )
+
+CalcZScore(...)
 }
 \arguments{
 \item{data}{Data frame with variables to standardize.}
@@ -44,5 +47,7 @@ An object of class "ZScoreObj", a list with:
 }
 }
 \description{
-Calculate Z-scores (or standardized scores) and return data + parameters
+\code{CalcZScore()} has been superseded by \code{CreateZScoreObject()}.
+It remains available as a backwards-compatible alias and returns the same
+reusable Z-score object.
 }

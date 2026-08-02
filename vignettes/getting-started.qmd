@@ -19,7 +19,7 @@ SciDataReportR helps researchers turn labelled scientific and clinical data into
 
 This article is adapted from the SciDataReportR R/Medicine workflow narrative. It follows the common path from a raw researcher-native data frame to metadata-aware reporting and reusable analysis outputs.
 
-The examples use the current workflow-oriented function names. Older names such as `CreatePCATable()`, `CreateZScorePlot()`, and `Make_DataDictionary()` remain available as compatibility aliases.
+The examples use the current workflow-oriented function names. Older names such as [`CreatePCATable()`](../reference/CreatePCAObject.html), [`CreateZScorePlot()`](../reference/PlotZScore.html), and [`Make_DataDictionary()`](../reference/MakeDataDictionary.html) remain available as compatibility aliases.
 
 ## Why this workflow matters
 

@@ -168,23 +168,10 @@ CreateMCAObject <- function(data,
               Lollipop = p))
 }
 
-#' Create MCA table and visualization
-#'
-#' Compatibility alias for [CreateMCAObject()]. Prefer `CreateMCAObject()` in
-#' new code because this workflow returns a reusable MCA object, not only a
-#' static table.
-#'
-#' @param ... Arguments passed to [CreateMCAObject()].
-#' @return The same object returned by [CreateMCAObject()].
-#' @seealso [CreateMCAObject()] for the canonical function and full examples.
-#' @examples
-#' data(SampleData)
-#' data(SampleVariableTypes)
-#'
-#' Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
-#'
-#' mca <- CreateMCATable(Labelled, VarsToReduce = c("Diagnosis", "Genotype"))
-#' mca$p_scree
+#' @description `CreateMCATable()` has been superseded by `CreateMCAObject()`.
+#'   It remains available as a backwards-compatible alias and returns the same
+#'   reusable MCA object.
+#' @rdname CreateMCAObject
 #' @export
 CreateMCATable <- function(...) {
   CreateMCAObject(...)

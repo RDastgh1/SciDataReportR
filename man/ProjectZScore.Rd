@@ -2,6 +2,7 @@
 % Please edit documentation in R/ProjectZScore.R
 \name{ProjectZScore}
 \alias{ProjectZScore}
+\alias{Project_ZScore}
 \title{Project standardized scores onto new data using external parameters}
 \usage{
 ProjectZScore(
@@ -16,6 +17,8 @@ ProjectZScore(
   scale = TRUE,
   df = lifecycle::deprecated()
 )
+
+Project_ZScore(...)
 }
 \arguments{
 \item{data}{Data frame on which to project scores.}
@@ -58,5 +61,7 @@ List with same structure as CreateZScoreObject():
 }
 }
 \description{
-Project standardized scores onto new data using external parameters
+\code{Project_ZScore()} has been superseded by \code{ProjectZScore()}.
+It remains available as a backwards-compatible alias and returns the same
+projected Z-score object.
 }

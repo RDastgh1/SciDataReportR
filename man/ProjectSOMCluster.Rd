@@ -2,6 +2,7 @@
 % Please edit documentation in R/Project_SOMClust.R
 \name{ProjectSOMCluster}
 \alias{ProjectSOMCluster}
+\alias{Project_SOMClust}
 \title{Project new data onto an existing SOM clinical phenotype space}
 \usage{
 ProjectSOMCluster(
@@ -11,6 +12,8 @@ ProjectSOMCluster(
   high_dist_quantile = 0.95,
   low_prob_threshold = 0.7
 )
+
+Project_SOMClust(...)
 }
 \arguments{
 \item{object}{A SOM cluster model object from \code{\link[=CreateSOMClusterModel]{CreateSOMClusterModel()}}.}
@@ -85,6 +88,10 @@ Missing data:
 \item Rows with missing Z-scores receive NA for SOM_Node, SOM_Distance,
 and the cluster label.
 }
+
+\code{Project_SOMClust()} has been superseded by
+\code{ProjectSOMCluster()}. It remains available as a backwards-compatible
+alias and returns the same projection object.
 }
 \examples{
 \dontrun{

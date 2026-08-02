@@ -141,13 +141,10 @@ MakeDataDictionary <- function(data,
   CB
 }
 
-#' Create a data dictionary for a data frame
-#'
-#' Compatibility alias for [MakeDataDictionary()]. Prefer `MakeDataDictionary()`
-#' in new code.
-#'
-#' @param ... Arguments passed to [MakeDataDictionary()].
-#' @return A data frame with one row per variable and stable summary columns.
+#' @description `Make_DataDictionary()` has been superseded by
+#'   `MakeDataDictionary()`. It remains available as a backwards-compatible
+#'   alias and returns the same data dictionary.
+#' @rdname MakeDataDictionary
 #' @export
 Make_DataDictionary <- function(...) {
   MakeDataDictionary(...)

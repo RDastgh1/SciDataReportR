@@ -118,7 +118,7 @@ and should be checked when composing analyses.
 
 SciDataReportR now uses workflow-oriented canonical names for new code,
 while older public names remain available as compatibility aliases. For
-example, `CreatePCATable()` still works, but `CreatePCAObject()` better
+example, [`CreatePCATable()`](reference/CreatePCAObject.html) still works, but `CreatePCAObject()` better
 describes the reusable PCA object returned by that workflow.
 
 | Function | Primary input | Upstream SciDataReportR function | Output | Common downstream use |

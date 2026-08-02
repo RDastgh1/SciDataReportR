@@ -132,14 +132,10 @@ CreateZScoreObject <- function(data,
   out
 }
 
-#' Calculate Z-scores (or standardized scores) and return data + parameters
-#'
-#' Compatibility alias for [CreateZScoreObject()]. Prefer
-#' `CreateZScoreObject()` in new code because this function returns a reusable
-#' `ZScoreObj`.
-#'
-#' @param ... Arguments passed to [CreateZScoreObject()].
-#' @return The same `ZScoreObj` returned by [CreateZScoreObject()].
+#' @description `CalcZScore()` has been superseded by `CreateZScoreObject()`.
+#'   It remains available as a backwards-compatible alias and returns the same
+#'   reusable Z-score object.
+#' @rdname CreateZScoreObject
 #' @export
 CalcZScore <- function(...) {
   CreateZScoreObject(...)

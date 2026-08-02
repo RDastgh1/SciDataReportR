@@ -2,6 +2,7 @@
 % Please edit documentation in R/CalcMScore.R
 \name{CreateMScoreObject}
 \alias{CreateMScoreObject}
+\alias{CalcMScore}
 \title{Calculate robust M-scores for numeric variables}
 \usage{
 CreateMScoreObject(
@@ -15,6 +16,8 @@ CreateMScoreObject(
   constant = 1.4826,
   df = lifecycle::deprecated()
 )
+
+CalcMScore(...)
 }
 \arguments{
 \item{data}{A data frame.}
@@ -51,4 +54,8 @@ An object of class \code{"MScoreObj"}, a list with:
 Calculate median/MAD-based M-scores for selected numeric variables and return
 both the transformed data and the parameters needed to review or reuse the
 transformation.
+
+\code{CalcMScore()} has been superseded by \code{CreateMScoreObject()}.
+It remains available as a backwards-compatible alias and returns the same
+reusable M-score object.
 }

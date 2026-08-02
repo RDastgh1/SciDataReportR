@@ -194,13 +194,10 @@ ProjectZScore <- function(data,
   out
 }
 
-#' Project standardized scores onto new data using external parameters
-#'
-#' Compatibility alias for [ProjectZScore()]. Prefer `ProjectZScore()` in new
-#' code.
-#'
-#' @param ... Arguments passed to [ProjectZScore()].
-#' @return The same projected `ZScoreObj` returned by [ProjectZScore()].
+#' @description `Project_ZScore()` has been superseded by `ProjectZScore()`.
+#'   It remains available as a backwards-compatible alias and returns the same
+#'   projected Z-score object.
+#' @rdname ProjectZScore
 #' @export
 Project_ZScore <- function(...) {
   ProjectZScore(...)

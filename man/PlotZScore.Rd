@@ -2,6 +2,7 @@
 % Please edit documentation in R/CreateZScorePlot.R
 \name{PlotZScore}
 \alias{PlotZScore}
+\alias{CreateZScorePlot}
 \title{Plot Z-score group differences with statistical significance}
 \usage{
 PlotZScore(
@@ -20,6 +21,8 @@ PlotZScore(
   Data = lifecycle::deprecated(),
   Variables = lifecycle::deprecated()
 )
+
+CreateZScorePlot(...)
 }
 \arguments{
 \item{data}{A dataframe containing the data to be analyzed.}
@@ -60,6 +63,10 @@ This function generates a Z-score plot to compare multiple variables across
 different groups. It offers options for parametric or non-parametric tests,
 ordinal treatment, and custom labeling. Significant p-values and
 FDR-adjusted p-values are highlighted on the plot.
+
+\code{CreateZScorePlot()} has been superseded by \code{PlotZScore()}.
+It remains available as a backwards-compatible alias and returns the same
+scientific visualization.
 }
 \examples{
 data(SampleData)

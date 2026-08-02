@@ -2,6 +2,7 @@
 % Please edit documentation in R/CreatePCATable.R
 \name{CreatePCAObject}
 \alias{CreatePCAObject}
+\alias{CreatePCATable}
 \title{Create a reusable PCA object and visualizations}
 \usage{
 CreatePCAObject(
@@ -31,6 +32,8 @@ CreatePCAObject(
   imputeMethod = lifecycle::deprecated(),
   Data = lifecycle::deprecated()
 )
+
+CreatePCATable(...)
 }
 \arguments{
 \item{data}{A data frame containing the variables for PCA.}
@@ -151,6 +154,10 @@ PCA, and rows imputed.}
 \description{
 Perform principal component analysis (PCA) on specified variables and return
 reusable PCA results, scores, loading tables, combined data, and plots.
+
+\code{CreatePCATable()} has been superseded by
+\code{CreatePCAObject()}. It remains available as a backwards-compatible alias
+and returns the same reusable PCA object.
 }
 \details{
 The default \code{"classic"} mode preserves the original \code{psych::principal()}

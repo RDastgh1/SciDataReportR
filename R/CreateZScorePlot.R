@@ -211,25 +211,10 @@ PlotZScore <- function(data,
   return(pZ)
 }
 
-#' Create a Z-score plot with statistical significance
-#'
-#' Compatibility alias for [PlotZScore()]. Prefer `PlotZScore()` in new code
-#' because this function creates a scientific visualization.
-#'
-#' @param ... Arguments passed to [PlotZScore()].
-#' @return A ggplot object returned by [PlotZScore()].
-#' @seealso [PlotZScore()] for the canonical function and full examples.
-#' @examples
-#' data(SampleData)
-#' data(SampleVariableTypes)
-#'
-#' Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
-#'
-#' CreateZScorePlot(
-#'   Labelled,
-#'   TargetVar = "Diagnosis",
-#'   variables = c("age", "AXL", "Adiponectin")
-#' )
+#' @description `CreateZScorePlot()` has been superseded by `PlotZScore()`.
+#'   It remains available as a backwards-compatible alias and returns the same
+#'   scientific visualization.
+#' @rdname PlotZScore
 #' @export
 CreateZScorePlot <- function(...) {
   PlotZScore(...)

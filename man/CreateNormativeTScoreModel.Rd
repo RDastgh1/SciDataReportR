@@ -2,6 +2,7 @@
 % Please edit documentation in R/CreateNormativeTScores.R
 \name{CreateNormativeTScoreModel}
 \alias{CreateNormativeTScoreModel}
+\alias{CreateNormativeTScores}
 \title{Create normative T-scores from a regression model}
 \usage{
 CreateNormativeTScoreModel(
@@ -21,6 +22,8 @@ CreateNormativeTScoreModel(
   return_plots = TRUE,
   df = lifecycle::deprecated()
 )
+
+CreateNormativeTScores(...)
 }
 \arguments{
 \item{data}{A data frame containing the test variable, count variable,
@@ -87,6 +90,10 @@ z-scores and T-scores. This is useful for creating demographically adjusted
 cognitive norms with optional practice effect adjustment and optional
 preprocessing such as unit conversion, log transformation, and reverse
 scoring.
+
+\code{CreateNormativeTScores()} has been superseded by
+\code{CreateNormativeTScoreModel()}. It remains available as a
+backwards-compatible alias and returns the same reusable normative model.
 }
 \details{
 The reference group is defined by \code{reference_var == reference_value}.

@@ -219,25 +219,11 @@ PlotPathway_KT <- function(results_table,
   return(p)
 }
 
-#' Create Kynurenine-Tryptophan Pathway Plot
-#'
-#' Compatibility alias for [PlotPathway_KT()]. Prefer `PlotPathway_KT()` in new
-#' code. This KT pathway visualization is expected to move to a future
-#' metabolomics-focused package; this compatibility alias will remain during the
-#' transition.
-#'
-#' @param ... Arguments passed to [PlotPathway_KT()].
-#' @return A ggplot2 object returned by [PlotPathway_KT()].
-#' @seealso [PlotPathway_KT()] for the canonical function and full examples.
-#' @examples
-#' results <- data.frame(
-#'   Metabolite = c("Tryptophan", "Kynurenine", "Quinolinic Acid"),
-#'   correlation = c(0.3, 0.1, 0.45),
-#'   p_value = c(0.01, 0.5, 0.008),
-#'   p_adj = c(0.05, 0.7, 0.03)
-#' )
-#'
-#' CreatePathwayPlot_KT(results, "Kynurenine pathway")
+#' @description `CreatePathwayPlot_KT()` has been superseded by
+#'   `PlotPathway_KT()`. It remains available as a backwards-compatible alias
+#'   during the pathway plot's planned transition to a metabolomics-focused
+#'   package.
+#' @rdname PlotPathway_KT
 #' @export
 CreatePathwayPlot_KT <- function(...) {
   PlotPathway_KT(...)

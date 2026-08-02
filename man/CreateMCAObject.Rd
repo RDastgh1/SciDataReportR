@@ -2,6 +2,7 @@
 % Please edit documentation in R/CreateMCATable.R
 \name{CreateMCAObject}
 \alias{CreateMCAObject}
+\alias{CreateMCATable}
 \title{Create a reusable MCA object and visualizations}
 \usage{
 CreateMCAObject(
@@ -17,6 +18,8 @@ CreateMCAObject(
   ImputeMissing = FALSE,
   Data = lifecycle::deprecated()
 )
+
+CreateMCATable(...)
 }
 \arguments{
 \item{data}{A dataframe containing the data to be analyzed.}
@@ -52,6 +55,10 @@ A list with the following elements:
 }
 \description{
 This function performs Multiple Correspondence Analysis (MCA) on a set of categorical variables, imputes missing data if needed, and generates a set of visualizations and tables to interpret the results.
+
+\code{CreateMCATable()} has been superseded by \code{CreateMCAObject()}.
+It remains available as a backwards-compatible alias and returns the same
+reusable MCA object.
 }
 \details{
 Optional dependencies used by this workflow include \code{missRanger} for

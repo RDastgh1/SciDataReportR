@@ -2,6 +2,7 @@
 % Please edit documentation in R/Make_DataDictionary.R
 \name{MakeDataDictionary}
 \alias{MakeDataDictionary}
+\alias{Make_DataDictionary}
 \title{Create a data dictionary for a data frame}
 \usage{
 MakeDataDictionary(
@@ -10,6 +11,8 @@ MakeDataDictionary(
   DataFrame = lifecycle::deprecated(),
   numdecimals = lifecycle::deprecated()
 )
+
+Make_DataDictionary(...)
 }
 \arguments{
 \item{data}{A data frame.}
@@ -28,6 +31,10 @@ This function generates a stable data dictionary for a data frame using
 \code{codebook::skim_codebook()}. It is designed to work even when skim output
 omits type-specific summary columns, such as numeric summaries for data
 frames without numeric variables.
+
+\code{Make_DataDictionary()} has been superseded by
+\code{MakeDataDictionary()}. It remains available as a backwards-compatible
+alias and returns the same data dictionary.
 }
 \examples{
 df <- tibble::tibble(
