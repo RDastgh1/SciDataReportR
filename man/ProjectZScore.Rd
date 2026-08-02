@@ -50,6 +50,8 @@ or "ExternalDataframe". Ignored for "ZScoreObj" (it uses stored flags).}
 \item{scale}{Logical; same logic as \code{center}.}
 
 \item{df}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
+
+\item{...}{Arguments passed to \code{\link[=ProjectZScore]{ProjectZScore()}}.}
 }
 \value{
 List with same structure as CreateZScoreObject():

@@ -31,8 +31,18 @@
 #'
 #' comparison <- CompareDatasets(old_data, new_data, keys = "id")
 #'
-#' # Display a single diagnostic plot
-#' PlotDatasetComparison(comparison, Plot = "Checks")
+#' diagnostics <- PlotDatasetComparison(
+#'   comparison,
+#'   Plot = "All",
+#'   interactive = FALSE
+#' )
+#'
+#' # Check status, summary metrics, structural, value-change, and top-change views
+#' diagnostics$Checks
+#' diagnostics$SummaryMetrics
+#' diagnostics$StructureChanges
+#' diagnostics$VariableChanges
+#' diagnostics$TopChangedVariables
 #' @export
 PlotDatasetComparison <- function(CompareObj,
     Plot = c("All", "Checks", "SummaryMetrics", "StructureChanges", "VariableChanges", "TopChangedVariables"),

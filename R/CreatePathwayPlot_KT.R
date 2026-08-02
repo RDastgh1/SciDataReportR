@@ -224,6 +224,7 @@ PlotPathway_KT <- function(results_table,
 #'   during the pathway plot's planned transition to a metabolomics-focused
 #'   package.
 #' @rdname PlotPathway_KT
+#' @param ... Arguments passed to [PlotPathway_KT()].
 #' @export
 CreatePathwayPlot_KT <- function(...) {
   PlotPathway_KT(...)

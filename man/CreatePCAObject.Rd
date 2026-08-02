@@ -122,6 +122,8 @@ instead. If supplied, it sets \code{ImputeMethod} and uses
 explicitly set.}
 
 \item{Data}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
+
+\item{...}{Arguments passed to \code{\link[=CreatePCAObject]{CreatePCAObject()}}.}
 }
 \value{
 A list with the following elements:

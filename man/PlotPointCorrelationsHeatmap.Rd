@@ -62,5 +62,9 @@ result <- PlotPointCorrelationsHeatmap(
   ContVars = c("age", "AXL", "Adiponectin")
 )
 
+# Raw p-value point-biserial heatmap
 result$Unadjusted$plot
+
+# FDR-adjusted point-biserial heatmap
+result$FDRCorrected$plot
 }

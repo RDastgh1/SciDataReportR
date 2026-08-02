@@ -145,6 +145,7 @@ MakeDataDictionary <- function(data,
 #'   `MakeDataDictionary()`. It remains available as a backwards-compatible
 #'   alias and returns the same data dictionary.
 #' @rdname MakeDataDictionary
+#' @param ... Arguments passed to [MakeDataDictionary()].
 #' @export
 Make_DataDictionary <- function(...) {
   MakeDataDictionary(...)

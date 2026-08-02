@@ -136,6 +136,7 @@ CreateZScoreObject <- function(data,
 #'   It remains available as a backwards-compatible alias and returns the same
 #'   reusable Z-score object.
 #' @rdname CreateZScoreObject
+#' @param ... Arguments passed to [CreateZScoreObject()].
 #' @export
 CalcZScore <- function(...) {
   CreateZScoreObject(...)

@@ -1467,6 +1467,7 @@ CreateSOMClusterModel <- function(data,
 #'   `CreateSOMClusterModel()`. It remains available as a backwards-compatible
 #'   alias and returns the same reusable SOM clustering model.
 #' @rdname CreateSOMClusterModel
+#' @param ... Arguments passed to [CreateSOMClusterModel()].
 #' @export
 Pipeline_SOMClust <- function(...) {
   CreateSOMClusterModel(...)

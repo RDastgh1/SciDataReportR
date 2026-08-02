@@ -74,5 +74,9 @@ result <- PlotChiSqCovar(
   outcome_vars = c("Diagnosis", "Genotype")
 )
 
+# Raw p-value associations
 result$p
+
+# FDR-adjusted associations
+result$p_FDR
 }

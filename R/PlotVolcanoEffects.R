@@ -69,7 +69,9 @@
 #'   LabelMode = "top_n",
 #'   TopN = 3
 #' )
+#' # Raw and FDR-adjusted continuous-outcome volcano plots
 #' cont$RawPPlot
+#' cont$FDRPlot
 #'
 #' # Categorical outcome (Diagnosis), Cohen's d effect metric
 #' cat_res <- PlotVolcanoEffects(
@@ -81,7 +83,9 @@
 #'   LabelMode = "top_n",
 #'   TopN = 3
 #' )
+#' # Raw and FDR-adjusted categorical-outcome volcano plots
 #' cat_res$RawPPlot
+#' cat_res$FDRPlot
 #' @param Data \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
 #' @param xVars \strong{Deprecated} (since 19.15.0). Use \code{predictor_vars} instead.
 #' @param yVar \strong{Deprecated} (since 19.15.0). Use \code{outcome_var} instead.

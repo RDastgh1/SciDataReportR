@@ -38,6 +38,8 @@ CalcMScore(...)
 \item{constant}{Scaling constant passed to \code{\link[stats:mad]{stats::mad()}}.}
 
 \item{df}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
+
+\item{...}{Arguments passed to \code{\link[=CreateMScoreObject]{CreateMScoreObject()}}.}
 }
 \value{
 An object of class \code{"MScoreObj"}, a list with:

@@ -94,8 +94,11 @@
 #'   predictor_vars = predictors
 #' )
 #'
-#' # Display the plot (colored tiles mark significant interactions)
+#' # Raw p-value interaction matrix
 #' results$Unadjusted$plot
+#'
+#' # FDR-adjusted interaction matrix
+#' results$FDRCorrected$plot
 #' }
 #'
 #' @param fdr_scope Either `"matrix"` (default) or `"per_outcome"`, passed to

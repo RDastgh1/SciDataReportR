@@ -41,8 +41,11 @@
 #'   VarsToReduce = c("Diagnosis", "Genotype")
 #' )
 #'
-#' # Display the scree plot from the returned object
+#' # Variance explained by MCA dimensions
 #' mca$p_scree
+#'
+#' # Variable loadings across MCA dimensions
+#' mca$Lollipop
 #' @export
 #'
 CreateMCAObject <- function(data,
@@ -172,6 +175,7 @@ CreateMCAObject <- function(data,
 #'   It remains available as a backwards-compatible alias and returns the same
 #'   reusable MCA object.
 #' @rdname CreateMCAObject
+#' @param ... Arguments passed to [CreateMCAObject()].
 #' @export
 CreateMCATable <- function(...) {
   CreateMCAObject(...)

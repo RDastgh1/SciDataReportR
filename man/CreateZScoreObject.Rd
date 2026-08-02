@@ -35,6 +35,8 @@ SciDataReportR::getNumVars(df).}
 \item{scale}{Logical; if TRUE, divide by the SD.}
 
 \item{df}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
+
+\item{...}{Arguments passed to \code{\link[=CreateZScoreObject]{CreateZScoreObject()}}.}
 }
 \value{
 An object of class "ZScoreObj", a list with:

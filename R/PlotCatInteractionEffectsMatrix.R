@@ -44,7 +44,11 @@
 #'   interVar = "Diagnosis"
 #' )
 #'
+#' # Raw p-value interaction matrix
 #' result$p
+#'
+#' # FDR-adjusted interaction matrix
+#' result$p_FDR
 #' @export
 PlotCatInteractionEffectsMatrix <- function(data,
     predictor_vars,

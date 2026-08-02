@@ -80,7 +80,11 @@ result <- PlotDirectionalHeatmaps(
                 "Insulin", "Leptin")
 )
 
+# Raw p-value directional heatmap
 result$Unadjusted$plot
+
+# FDR-adjusted directional heatmap
+result$FDRCorrected$plot
 
 # How binary variables were coded (which level counts as the positive one)
 result$BinaryMapping

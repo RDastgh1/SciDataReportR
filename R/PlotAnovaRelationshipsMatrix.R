@@ -45,7 +45,11 @@
 #'                "Apolipoprotein_A1")
 #' )
 #'
+#' # Raw p-value associations
 #' result$Unadjusted$plot
+#'
+#' # FDR-adjusted associations
+#' result$FDRCorrected$plot
 #' @export
 PlotAnovaRelationshipsMatrix <- function(data,
     CatVars,

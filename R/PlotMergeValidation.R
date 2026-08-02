@@ -29,8 +29,18 @@
 #'
 #' validation <- ValidateMerge(left, right, merged, keys = "id")
 #'
-#' # Display a single diagnostic plot
-#' PlotMergeValidation(validation, Plot = "Checks")
+#' diagnostics <- PlotMergeValidation(
+#'   validation,
+#'   Plot = "All",
+#'   interactive = FALSE
+#' )
+#'
+#' # Merge-check status, key coverage, join audit, agreement, and conflicts
+#' diagnostics$Checks
+#' diagnostics$Coverage
+#' diagnostics$JoinAudit
+#' diagnostics$Agreement
+#' diagnostics$Conflicts
 #' @export
 PlotMergeValidation <- function(MergeObj,
     Plot = c("All", "Checks", "Coverage", "JoinAudit", "Agreement", "Conflicts"),

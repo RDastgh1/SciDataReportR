@@ -148,6 +148,8 @@ flag uncertain phenotype membership. Default is \code{0.70}.}
 \item{df}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
 
 \item{id_col}{\strong{Deprecated} (since 19.15.0). Use \code{id_var} instead.}
+
+\item{...}{Arguments passed to \code{\link[=CreateSOMClusterModel]{CreateSOMClusterModel()}}.}
 }
 \value{
 A list of class \code{"Pipeline_SOMClust"} with components:

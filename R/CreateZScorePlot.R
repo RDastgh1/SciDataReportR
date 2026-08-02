@@ -215,6 +215,7 @@ PlotZScore <- function(data,
 #'   It remains available as a backwards-compatible alias and returns the same
 #'   scientific visualization.
 #' @rdname PlotZScore
+#' @param ... Arguments passed to [PlotZScore()].
 #' @export
 CreateZScorePlot <- function(...) {
   PlotZScore(...)

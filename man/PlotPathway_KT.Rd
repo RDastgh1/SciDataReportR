@@ -26,6 +26,8 @@ CreatePathwayPlot_KT(...)
 For example: c("N'-Formylkynurenine" = "N-Formylkynurenine", "Quinolinic Acid(log10)" = "Quinolinic Acid")}
 
 \item{use_fdr}{Logical: if TRUE uses FDR-adjusted p-values (p_adj) for significance, if FALSE uses raw p-values. Default is FALSE.}
+
+\item{...}{Arguments passed to \code{\link[=PlotPathway_KT]{PlotPathway_KT()}}.}
 }
 \value{
 A ggplot2 object

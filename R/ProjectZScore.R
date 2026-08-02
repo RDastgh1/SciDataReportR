@@ -198,6 +198,7 @@ ProjectZScore <- function(data,
 #'   It remains available as a backwards-compatible alias and returns the same
 #'   projected Z-score object.
 #' @rdname ProjectZScore
+#' @param ... Arguments passed to [ProjectZScore()].
 #' @export
 Project_ZScore <- function(...) {
   ProjectZScore(...)

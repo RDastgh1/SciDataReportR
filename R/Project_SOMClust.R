@@ -781,6 +781,7 @@ ProjectSOMCluster <- function(
 #'   `ProjectSOMCluster()`. It remains available as a backwards-compatible
 #'   alias and returns the same projection object.
 #' @rdname ProjectSOMCluster
+#' @param ... Arguments passed to [ProjectSOMCluster()].
 #' @export
 Project_SOMClust <- function(...) {
   ProjectSOMCluster(...)

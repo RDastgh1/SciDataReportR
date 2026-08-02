@@ -69,6 +69,8 @@ If supplied, plot labels use variable labels when available.}
 \item{return_plots}{Logical. If \code{TRUE}, returns a list of diagnostic plots.}
 
 \item{df}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
+
+\item{...}{Arguments passed to \code{\link[=CreateNormativeTScoreModel]{CreateNormativeTScoreModel()}}.}
 }
 \value{
 A list with the following elements:
@@ -138,6 +140,15 @@ out <- CreateNormativeTScoreModel(
 out$data
 out$model
 
-# Display the fitted T-score plot from the returned object
+# Raw, transformed, and normed score distributions
+out$plots$raw
+out$plots$scaled
 out$plots$tscore
+
+# T-score diagnostics by reference group, practice count, and covariates
+out$plots$reference
+out$plots$practice
+out$plots$Age
+out$plots$Education
+out$plots$Sex
 }

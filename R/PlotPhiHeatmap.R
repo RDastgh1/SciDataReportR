@@ -30,7 +30,11 @@
 #' # CatVars must be binary (exactly two unique non-NA values)
 #' result <- PlotPhiHeatmap(Labelled, CatVars = c("Diagnosis", "sex"))
 #'
+#' # Raw p-value phi heatmap
 #' result$Unadjusted$plot
+#'
+#' # FDR-adjusted phi heatmap
+#' result$FDRCorrected$plot
 #' @export
 PlotPhiHeatmap <- function(data,
     CatVars,

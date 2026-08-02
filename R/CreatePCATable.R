@@ -1179,6 +1179,7 @@ CreatePCAObject <- function(data,
 #'   `CreatePCAObject()`. It remains available as a backwards-compatible alias
 #'   and returns the same reusable PCA object.
 #' @rdname CreatePCAObject
+#' @param ... Arguments passed to [CreatePCAObject()].
 #' @export
 CreatePCATable <- function(...) {
   CreatePCAObject(...)

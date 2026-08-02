@@ -219,6 +219,7 @@ CreateMScoreObject <- function(data,
 #'   It remains available as a backwards-compatible alias and returns the same
 #'   reusable M-score object.
 #' @rdname CreateMScoreObject
+#' @param ... Arguments passed to [CreateMScoreObject()].
 #' @export
 CalcMScore <- function(...) {
   CreateMScoreObject(...)

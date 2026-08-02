@@ -30,6 +30,8 @@ is \code{0.95}.}
 
 \item{low_prob_threshold}{Numeric posterior probability threshold used to
 flag uncertain phenotype membership. Default is \code{0.70}.}
+
+\item{...}{Arguments passed to \code{\link[=ProjectSOMCluster]{ProjectSOMCluster()}}.}
 }
 \value{
 A list of class \code{"Project_SOMClust"} with components:

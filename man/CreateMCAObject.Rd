@@ -43,6 +43,8 @@ CreateMCATable(...)
 \item{ImputeMissing}{Logical, if TRUE, missing values will be imputed using \code{missRanger}. Default is FALSE.}
 
 \item{Data}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
+
+\item{...}{Arguments passed to \code{\link[=CreateMCAObject]{CreateMCAObject()}}.}
 }
 \value{
 A list with the following elements:
@@ -76,6 +78,9 @@ mca <- CreateMCAObject(
   VarsToReduce = c("Diagnosis", "Genotype")
 )
 
-# Display the scree plot from the returned object
+# Variance explained by MCA dimensions
 mca$p_scree
+
+# Variable loadings across MCA dimensions
+mca$Lollipop
 }

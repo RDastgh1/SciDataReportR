@@ -74,5 +74,9 @@ result <- PlotNumInteractionEffectsMatrix(
   interVar = "age"
 )
 
+# Raw p-value interaction matrix
 result$p
+
+# FDR-adjusted interaction matrix
+result$p_FDR
 }

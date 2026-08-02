@@ -90,8 +90,17 @@
 #' out$data
 #' out$model
 #'
-#' # Display the fitted T-score plot from the returned object
+#' # Raw, transformed, and normed score distributions
+#' out$plots$raw
+#' out$plots$scaled
 #' out$plots$tscore
+#'
+#' # T-score diagnostics by reference group, practice count, and covariates
+#' out$plots$reference
+#' out$plots$practice
+#' out$plots$Age
+#' out$plots$Education
+#' out$plots$Sex
 #' @param df \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
 #' @export
 CreateNormativeTScoreModel <- function(data,
@@ -499,6 +508,7 @@ CreateNormativeTScoreModel <- function(data,
 #'   `CreateNormativeTScoreModel()`. It remains available as a
 #'   backwards-compatible alias and returns the same reusable normative model.
 #' @rdname CreateNormativeTScoreModel
+#' @param ... Arguments passed to [CreateNormativeTScoreModel()].
 #' @export
 CreateNormativeTScores <- function(...) {
   CreateNormativeTScoreModel(...)
