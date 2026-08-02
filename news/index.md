@@ -1,5 +1,7 @@
 # Changelog
 
+## SciDataReportR 20.20.0
+
 ## SciDataReportR 20.19.0
 
 ## SciDataReportR 20.18.0
