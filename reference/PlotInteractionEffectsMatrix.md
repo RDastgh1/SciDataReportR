@@ -14,7 +14,8 @@ PlotInteractionEffectsMatrix(
   predictor_vars = NULL,
   covariates = NULL,
   Relabel = TRUE,
-  Ordinal = FALSE,
+  Ordinal = lifecycle::deprecated(),
+  TreatOrdinalAs = "Exclude",
   Data = lifecycle::deprecated(),
   outcomeVars = lifecycle::deprecated(),
   predictorVars = lifecycle::deprecated(),
@@ -53,8 +54,13 @@ PlotInteractionEffectsMatrix(
 
 - Ordinal:
 
-  Logical indicating whether to treat ordered factors as numeric
-  (default: FALSE)
+  **Deprecated** (since 20.20.0). Use `TreatOrdinalAs` instead.
+
+- TreatOrdinalAs:
+
+  How ordinal variables are handled. This interaction matrix accepts
+  `"Exclude"`, `"Continuous"`, or `"Categorical"`. Categorical ordinal
+  outcomes are not supported by the linear models.
 
 - Data:
 

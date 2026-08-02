@@ -22,7 +22,7 @@
 - [`CompareDatasets()`](https://rdastgh1.github.io/SciDataReportR/reference/CompareDatasets.md)
   : Compare two versions of a dataset
 - [`ConvertOrdinalToNumeric()`](https://rdastgh1.github.io/SciDataReportR/reference/ConvertOrdinalToNumeric.md)
-  : Convert ordinal variables to numeric
+  : Prepare ordinal variables for analysis
 - [`CreateMCAObject()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateMCAObject.md)
   : Create a reusable MCA object and visualizations
 - [`CreateMCATable()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateMCATable.md)

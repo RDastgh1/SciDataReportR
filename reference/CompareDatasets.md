@@ -138,3 +138,48 @@ If duplicate key combinations are detected, the function still runs, but
 cell-level comparison is performed only for key combinations that are
 unique in both datasets. Duplicate keys are returned separately and
 flagged in `Checks`.
+
+## Examples
+
+``` r
+data(SampleData)
+
+# Add a stable participant key, then create a revised data extract.
+df_OldData <- dplyr::mutate(
+  SampleData,
+  ParticipantID = seq_len(nrow(SampleData)),
+  .before = 1
+)
+df_NewData <- df_OldData
+df_NewData$age[1:5] <- df_NewData$age[1:5] + 1
+
+comparison <- CompareDatasets(
+  OldData = df_OldData,
+  NewData = df_NewData,
+  keys = "ParticipantID"
+)
+
+# Review the high-level QA metrics and the individual changed cells.
+comparison$Summary
+#> # A tibble: 1 × 31
+#>   OldRows NewRows RowDifference OldColumns NewColumns ColumnDifference
+#>     <int>   <int>         <int>      <int>      <int>            <int>
+#> 1     333     333             0        132        132                0
+#> # ℹ 25 more variables: OldUniqueKeys <int>, NewUniqueKeys <int>,
+#> #   MatchingKeys <int>, OldMatchRate <dbl>, NewMatchRate <dbl>,
+#> #   AddedRecords <int>, RemovedRecords <int>, AddedVariables <int>,
+#> #   RemovedVariables <int>, SchemaChangeCount <int>,
+#> #   NameRepairDifferences <int>, VariablesSkippedFromCellComparison <int>,
+#> #   CommonVariablesMapped <int>, CommonVariablesCompared <int>,
+#> #   ComparedKeys <int>, ComparedCells <int>, DuplicateKeyGroups_Old <int>, …
+comparison$ModifiedValues
+#> # A tibble: 5 × 9
+#>   ParticipantID Variable OldVariable NewVariable OldValue NewValue OldClass
+#>   <chr>         <chr>    <chr>       <chr>       <chr>    <chr>    <chr>   
+#> 1 1             age      age         age         52       53       numeric 
+#> 2 2             age      age         age         61       62       numeric 
+#> 3 3             age      age         age         77       78       numeric 
+#> 4 4             age      age         age         97       98       numeric 
+#> 5 5             age      age         age         73       74       numeric 
+#> # ℹ 2 more variables: NewClass <chr>, ChangeType <chr>
+```
