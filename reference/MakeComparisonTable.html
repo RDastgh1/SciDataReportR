@@ -28,6 +28,7 @@ pairwise comparisons."><meta property="og:image" content="https://rdastgh1.githu
     <li><a class="dropdown-item" href="../articles/MakeComparisonTable.html">Creating comparison tables with MakeComparisonTable()</a></li>
     <li><a class="dropdown-item" href="../articles/MakeUnivariateRegressionTable.html">Screening Outcomes and Predictors with MakeUnivariateRegressionTable()</a></li>
     <li><a class="dropdown-item" href="../articles/merge-qc-workflow.html">Merge QC workflow</a></li>
+    <li><a class="dropdown-item" href="../articles/OrdinalVariables.html">Working with ordinal variables</a></li>
     <li><a class="dropdown-item" href="../articles/PlotCorrelationsHeatmap.html">Exploring associations with PlotCorrelationsHeatmap()</a></li>
     <li><a class="dropdown-item" href="../articles/PlotForestFromTable.html">Forest Plots from Univariate Regression Tables</a></li>
     <li><a class="dropdown-item" href="../articles/PlotMiningMatrix.html">Exploratory discovery with PlotMiningMatrix()</a></li>
@@ -46,7 +47,7 @@ pairwise comparisons."><meta property="og:image" content="https://rdastgh1.githu
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Make comparison table with covariate adjustment, effect sizes, and pairwise contrasts</h1>
-      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/v20.19.0/R/MakeComparisonTable.R" class="external-link"><code>R/MakeComparisonTable.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/master/R/MakeComparisonTable.R" class="external-link"><code>R/MakeComparisonTable.R</code></a></small>
       <div class="d-none name"><code>MakeComparisonTable.Rd</code></div>
     </div>
 
@@ -82,6 +83,8 @@ pairwise comparisons.</p>
 <span>  MultiCatAdjusted <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"multinomial_LR"</span>, <span class="st">"none"</span><span class="op">)</span>,</span>
 <span>  ShowNotes <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"auto"</span>, <span class="st">"always"</span>, <span class="st">"never"</span><span class="op">)</span>,</span>
 <span>  NotesPosition <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"last"</span>, <span class="st">"after_test"</span>, <span class="st">"before_pairwise"</span><span class="op">)</span>,</span>
+<span>  Relabel <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  TreatOrdinalAs <span class="op">=</span> <span class="st">"Categorical"</span>,</span>
 <span>  DataFrame <span class="op">=</span> <span class="fu">lifecycle</span><span class="fu">::</span><span class="fu"><a href="https://lifecycle.r-lib.org/reference/deprecated.html" class="external-link">deprecated</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  CompVariable <span class="op">=</span> <span class="fu">lifecycle</span><span class="fu">::</span><span class="fu"><a href="https://lifecycle.r-lib.org/reference/deprecated.html" class="external-link">deprecated</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  Variables <span class="op">=</span> <span class="fu">lifecycle</span><span class="fu">::</span><span class="fu"><a href="https://lifecycle.r-lib.org/reference/deprecated.html" class="external-link">deprecated</a></span><span class="op">(</span><span class="op">)</span>,</span>
@@ -191,6 +194,15 @@ or <code>"never"</code>.</p></dd>
 <dt id="arg-notesposition">NotesPosition<a class="anchor" aria-label="anchor" href="#arg-notesposition"></a></dt>
 <dd><p>Notes column position. One of <code>"last"</code>, <code>"after_test"</code>,
 or <code>"before_pairwise"</code>.</p></dd>
+
+
+<dt id="arg-relabel">Relabel<a class="anchor" aria-label="anchor" href="#arg-relabel"></a></dt>
+<dd><p>Logical; if TRUE (default), use attached variable labels.</p></dd>
+
+
+<dt id="arg-treatordinalas">TreatOrdinalAs<a class="anchor" aria-label="anchor" href="#arg-treatordinalas"></a></dt>
+<dd><p>How ordinal variables are treated: <code>"Categorical"</code>,
+<code>"Continuous"</code>, <code>"Both"</code>, or <code>"Exclude"</code>.</p></dd>
 
 
 <dt id="arg-dataframe">DataFrame<a class="anchor" aria-label="anchor" href="#arg-dataframe"></a></dt>

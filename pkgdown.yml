@@ -8,12 +8,13 @@ articles:
   MakeComparisonTable: MakeComparisonTable.html
   MakeUnivariateRegressionTable: MakeUnivariateRegressionTable.html
   merge-qc-workflow: merge-qc-workflow.html
+  OrdinalVariables: OrdinalVariables.html
   PlotCorrelationsHeatmap: PlotCorrelationsHeatmap.html
   PlotForestFromTable: PlotForestFromTable.html
   PlotMiningMatrix: PlotMiningMatrix.html
   PValueColorScales: PValueColorScales.html
   UnivariateRegressions: UnivariateRegressions.html
-last_built: 2026-08-02T13:26Z
+last_built: 2026-08-02T16:23Z
 urls:
   reference: https://rdastgh1.github.io/SciDataReportR/reference
   article: https://rdastgh1.github.io/SciDataReportR/articles

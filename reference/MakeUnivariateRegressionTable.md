@@ -20,6 +20,8 @@ MakeUnivariateRegressionTable(
   Method = c("auto", "lm", "logistic"),
   LogisticExponentiate = TRUE,
   ReturnModels = FALSE,
+  Relabel = TRUE,
+  TreatOrdinalAs = "Categorical",
   Data = lifecycle::deprecated(),
   OutcomeVars = lifecycle::deprecated(),
   PredictorVars = lifecycle::deprecated(),
@@ -81,6 +83,14 @@ UnivariateRegressionTable(
 
   Logical. If `TRUE`, return fitted model objects in `ModelSummaries`.
   Default is `FALSE` to keep large screening runs lighter.
+
+- Relabel:
+
+  Logical; if TRUE (default), display attached variable labels.
+
+- TreatOrdinalAs:
+
+  How ordinal outcomes and predictors are handled.
 
 - Data:
 

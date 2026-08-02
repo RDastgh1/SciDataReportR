@@ -10,7 +10,8 @@ that ensures continuous variables are treated as continuous.
 MakeTable1(
   data,
   variables = NULL,
-  TreatOrdinalAs = "Continuous",
+  TreatOrdinalAs = "Categorical",
+  Relabel = TRUE,
   AutoDetectDistribution = FALSE,
   IncludeMissing = "ifany",
   DataFrame = lifecycle::deprecated(),
@@ -33,6 +34,10 @@ MakeTable1(
 
   Character. Specifies how ordinal variables should be treated. Can be
   "Continuous", "Categorical", or "Both".
+
+- Relabel:
+
+  Logical; if TRUE (default), use attached variable labels.
 
 - AutoDetectDistribution:
 

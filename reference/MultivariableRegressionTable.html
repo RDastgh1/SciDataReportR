@@ -26,6 +26,7 @@ label-aware regression object for downstream tables, diagnostics, and plots."><m
     <li><a class="dropdown-item" href="../articles/MakeComparisonTable.html">Creating comparison tables with MakeComparisonTable()</a></li>
     <li><a class="dropdown-item" href="../articles/MakeUnivariateRegressionTable.html">Screening Outcomes and Predictors with MakeUnivariateRegressionTable()</a></li>
     <li><a class="dropdown-item" href="../articles/merge-qc-workflow.html">Merge QC workflow</a></li>
+    <li><a class="dropdown-item" href="../articles/OrdinalVariables.html">Working with ordinal variables</a></li>
     <li><a class="dropdown-item" href="../articles/PlotCorrelationsHeatmap.html">Exploring associations with PlotCorrelationsHeatmap()</a></li>
     <li><a class="dropdown-item" href="../articles/PlotForestFromTable.html">Forest Plots from Univariate Regression Tables</a></li>
     <li><a class="dropdown-item" href="../articles/PlotMiningMatrix.html">Exploratory discovery with PlotMiningMatrix()</a></li>
@@ -44,7 +45,7 @@ label-aware regression object for downstream tables, diagnostics, and plots."><m
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Multivariable regression table</h1>
-      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/v20.19.0/R/MultivariableRegressionTable.R" class="external-link"><code>R/MultivariableRegressionTable.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/master/R/MultivariableRegressionTable.R" class="external-link"><code>R/MultivariableRegressionTable.R</code></a></small>
       <div class="d-none name"><code>MultivariableRegressionTable.Rd</code></div>
     </div>
 
@@ -62,6 +63,7 @@ label-aware regression object for downstream tables, diagnostics, and plots.</p>
 <span>  covariates <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  Standardize <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  Relabel <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  TreatOrdinalAs <span class="op">=</span> <span class="st">"Categorical"</span>,</span>
 <span>  FDR <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  FDRAlpha <span class="op">=</span> <span class="fl">0.05</span>,</span>
 <span>  Method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"lm"</span>, <span class="st">"ridge"</span>, <span class="st">"lasso"</span>, <span class="st">"elasticnet"</span><span class="op">)</span>,</span>
@@ -116,6 +118,10 @@ coefficients are always calculated separately regardless of this setting.</p></d
 <dt id="arg-relabel">Relabel<a class="anchor" aria-label="anchor" href="#arg-relabel"></a></dt>
 <dd><p>Logical. If <code>TRUE</code>, use variable labels from <code>sjlabelled</code>
 when available.</p></dd>
+
+
+<dt id="arg-treatordinalas">TreatOrdinalAs<a class="anchor" aria-label="anchor" href="#arg-treatordinalas"></a></dt>
+<dd><p>How ordinal outcomes and predictors are handled.</p></dd>
 
 
 <dt id="arg-fdr">FDR<a class="anchor" aria-label="anchor" href="#arg-fdr"></a></dt>

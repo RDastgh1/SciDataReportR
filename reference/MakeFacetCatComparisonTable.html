@@ -34,6 +34,7 @@ categorical dimensions such as Race, Sex, or HIV status."><meta property="og:ima
     <li><a class="dropdown-item" href="../articles/MakeComparisonTable.html">Creating comparison tables with MakeComparisonTable()</a></li>
     <li><a class="dropdown-item" href="../articles/MakeUnivariateRegressionTable.html">Screening Outcomes and Predictors with MakeUnivariateRegressionTable()</a></li>
     <li><a class="dropdown-item" href="../articles/merge-qc-workflow.html">Merge QC workflow</a></li>
+    <li><a class="dropdown-item" href="../articles/OrdinalVariables.html">Working with ordinal variables</a></li>
     <li><a class="dropdown-item" href="../articles/PlotCorrelationsHeatmap.html">Exploring associations with PlotCorrelationsHeatmap()</a></li>
     <li><a class="dropdown-item" href="../articles/PlotForestFromTable.html">Forest Plots from Univariate Regression Tables</a></li>
     <li><a class="dropdown-item" href="../articles/PlotMiningMatrix.html">Exploratory discovery with PlotMiningMatrix()</a></li>
@@ -52,7 +53,7 @@ categorical dimensions such as Race, Sex, or HIV status."><meta property="og:ima
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Create a merged gtsummary table by faceting comparisons across multiple categorical variables</h1>
-      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/v20.19.0/R/MakeFacetCatComparisonTable.R" class="external-link"><code>R/MakeFacetCatComparisonTable.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/master/R/MakeFacetCatComparisonTable.R" class="external-link"><code>R/MakeFacetCatComparisonTable.R</code></a></small>
       <div class="d-none name"><code>MakeFacetCatComparisonTable.Rd</code></div>
     </div>
 
@@ -87,6 +88,8 @@ categorical dimensions such as Race, Sex, or HIV status.</p>
 <span>  IncludeOverallStats <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  ShowPositiveBinaryOnLabel <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  CompFun <span class="op">=</span> <span class="va">MakeComparisonTable</span>,</span>
+<span>  Relabel <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  TreatOrdinalAs <span class="op">=</span> <span class="st">"Categorical"</span>,</span>
 <span>  <span class="va">...</span>,</span>
 <span>  DataFrame <span class="op">=</span> <span class="fu">lifecycle</span><span class="fu">::</span><span class="fu"><a href="https://lifecycle.r-lib.org/reference/deprecated.html" class="external-link">deprecated</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  Variables <span class="op">=</span> <span class="fu">lifecycle</span><span class="fu">::</span><span class="fu"><a href="https://lifecycle.r-lib.org/reference/deprecated.html" class="external-link">deprecated</a></span><span class="op">(</span><span class="op">)</span>,</span>
@@ -176,6 +179,14 @@ The function automatically selects those that are categorical (<code>factor</cod
 
 <dt id="arg-compfun">CompFun<a class="anchor" aria-label="anchor" href="#arg-compfun"></a></dt>
 <dd><p>Comparison function to apply; defaults to <code>MakeComparisonTable</code>.</p></dd>
+
+
+<dt id="arg-relabel">Relabel<a class="anchor" aria-label="anchor" href="#arg-relabel"></a></dt>
+<dd><p>Logical; if TRUE (default), use attached variable labels.</p></dd>
+
+
+<dt id="arg-treatordinalas">TreatOrdinalAs<a class="anchor" aria-label="anchor" href="#arg-treatordinalas"></a></dt>
+<dd><p>How ordinal variables are treated in each table.</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>

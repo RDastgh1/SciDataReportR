@@ -26,6 +26,9 @@
 - [Merge QC
   workflow](https://rdastgh1.github.io/SciDataReportR/articles/merge-qc-workflow.md):
 
+- [Working with ordinal
+  variables](https://rdastgh1.github.io/SciDataReportR/articles/OrdinalVariables.md):
+
 - [Exploring associations with
   PlotCorrelationsHeatmap()](https://rdastgh1.github.io/SciDataReportR/articles/PlotCorrelationsHeatmap.md):
 

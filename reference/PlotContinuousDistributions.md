@@ -13,7 +13,8 @@ PlotContinuousDistributions(
   Relabel = TRUE,
   FacetLabelStyle = c("both", "label_only", "variable_only", "auto"),
   ncol = 3,
-  Ordinal = TRUE,
+  Ordinal = lifecycle::deprecated(),
+  TreatOrdinalAs = "Categorical",
   DataFrame = lifecycle::deprecated(),
   Variables = lifecycle::deprecated()
 )
@@ -47,7 +48,13 @@ PlotContinuousDistributions(
 
 - Ordinal:
 
-  Logical; include labelled-ordinal variables as numeric.
+  Deprecated logical compatibility option; use `TreatOrdinalAs` instead.
+
+- TreatOrdinalAs:
+
+  How ordinal variables are handled. `"Continuous"` includes their
+  numeric score; `"Exclude"` omits them. `"Both"` is not meaningful for
+  this plot and errors.
 
 - DataFrame:
 

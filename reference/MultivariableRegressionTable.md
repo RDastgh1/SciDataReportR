@@ -14,6 +14,7 @@ MultivariableRegressionTable(
   covariates = NULL,
   Standardize = TRUE,
   Relabel = TRUE,
+  TreatOrdinalAs = "Categorical",
   FDR = TRUE,
   FDRAlpha = 0.05,
   Method = c("lm", "ridge", "lasso", "elasticnet"),
@@ -67,6 +68,10 @@ MultivariableRegressionTable(
 
   Logical. If `TRUE`, use variable labels from `sjlabelled` when
   available.
+
+- TreatOrdinalAs:
+
+  How ordinal outcomes and predictors are handled.
 
 - FDR:
 

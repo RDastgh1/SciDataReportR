@@ -32,6 +32,7 @@ backwards-compatible synonym."><meta property="og:image" content="https://rdastg
     <li><a class="dropdown-item" href="../articles/MakeComparisonTable.html">Creating comparison tables with MakeComparisonTable()</a></li>
     <li><a class="dropdown-item" href="../articles/MakeUnivariateRegressionTable.html">Screening Outcomes and Predictors with MakeUnivariateRegressionTable()</a></li>
     <li><a class="dropdown-item" href="../articles/merge-qc-workflow.html">Merge QC workflow</a></li>
+    <li><a class="dropdown-item" href="../articles/OrdinalVariables.html">Working with ordinal variables</a></li>
     <li><a class="dropdown-item" href="../articles/PlotCorrelationsHeatmap.html">Exploring associations with PlotCorrelationsHeatmap()</a></li>
     <li><a class="dropdown-item" href="../articles/PlotForestFromTable.html">Forest Plots from Univariate Regression Tables</a></li>
     <li><a class="dropdown-item" href="../articles/PlotMiningMatrix.html">Exploratory discovery with PlotMiningMatrix()</a></li>
@@ -50,7 +51,7 @@ backwards-compatible synonym."><meta property="og:image" content="https://rdastg
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Univariate Regression Table</h1>
-      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/v20.19.0/R/MakeUnivariateRegressionTable.R" class="external-link"><code>R/MakeUnivariateRegressionTable.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/master/R/MakeUnivariateRegressionTable.R" class="external-link"><code>R/MakeUnivariateRegressionTable.R</code></a></small>
       <div class="d-none name"><code>MakeUnivariateRegressionTable.Rd</code></div>
     </div>
 
@@ -73,6 +74,8 @@ backwards-compatible synonym.</p>
 <span>  Method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"auto"</span>, <span class="st">"lm"</span>, <span class="st">"logistic"</span><span class="op">)</span>,</span>
 <span>  LogisticExponentiate <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  ReturnModels <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  Relabel <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  TreatOrdinalAs <span class="op">=</span> <span class="st">"Categorical"</span>,</span>
 <span>  Data <span class="op">=</span> <span class="fu">lifecycle</span><span class="fu">::</span><span class="fu"><a href="https://lifecycle.r-lib.org/reference/deprecated.html" class="external-link">deprecated</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  OutcomeVars <span class="op">=</span> <span class="fu">lifecycle</span><span class="fu">::</span><span class="fu"><a href="https://lifecycle.r-lib.org/reference/deprecated.html" class="external-link">deprecated</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  PredictorVars <span class="op">=</span> <span class="fu">lifecycle</span><span class="fu">::</span><span class="fu"><a href="https://lifecycle.r-lib.org/reference/deprecated.html" class="external-link">deprecated</a></span><span class="op">(</span><span class="op">)</span>,</span>
@@ -133,6 +136,14 @@ are exponentiated and reported as odds ratios.</p></dd>
 <dt id="arg-returnmodels">ReturnModels<a class="anchor" aria-label="anchor" href="#arg-returnmodels"></a></dt>
 <dd><p>Logical. If <code>TRUE</code>, return fitted model objects in
 <code>ModelSummaries</code>. Default is <code>FALSE</code> to keep large screening runs lighter.</p></dd>
+
+
+<dt id="arg-relabel">Relabel<a class="anchor" aria-label="anchor" href="#arg-relabel"></a></dt>
+<dd><p>Logical; if TRUE (default), display attached variable labels.</p></dd>
+
+
+<dt id="arg-treatordinalas">TreatOrdinalAs<a class="anchor" aria-label="anchor" href="#arg-treatordinalas"></a></dt>
+<dd><p>How ordinal outcomes and predictors are handled.</p></dd>
 
 
 <dt id="arg-data">Data<a class="anchor" aria-label="anchor" href="#arg-data"></a></dt>

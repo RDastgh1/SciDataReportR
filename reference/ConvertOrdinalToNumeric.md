@@ -1,7 +1,6 @@
 # Convert ordinal variables to numeric
 
-Convert ordinal variables in a dataframe to numeric if they contain
-numeric values in their character representation.
+Convert ordinal variables in a dataframe to numeric scores.
 
 ## Usage
 
@@ -35,7 +34,14 @@ ConvertOrdinalToNumeric(
 
 ## Value
 
-The dataframe with ordinal variables potentially converted to numeric.
+The dataframe with ordinal variables converted to numeric scores.
+
+## Details
+
+Numeric scores recorded by
+[`RevalueData()`](https://rdastgh1.github.io/SciDataReportR/reference/RevalueData.md)
+from the codebook are used when available. Otherwise the ordered-factor
+ranks are used.
 
 ## Examples
 
@@ -53,13 +59,6 @@ out <- ConvertOrdinalToNumeric(df)
 
 # likert becomes numeric; grade stays an ordered factor (levels are not numeric)
 sapply(out, class)
-#> $id
-#> [1] "integer"
-#> 
-#> $likert
-#> [1] "numeric"
-#> 
-#> $grade
-#> [1] "ordered" "factor" 
-#> 
+#>        id    likert     grade 
+#> "integer" "numeric" "numeric" 
 ```

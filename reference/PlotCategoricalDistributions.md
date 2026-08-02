@@ -10,7 +10,8 @@ PlotCategoricalDistributions(
   data,
   variables = NULL,
   Relabel = TRUE,
-  Ordinal = TRUE,
+  Ordinal = lifecycle::deprecated(),
+  TreatOrdinalAs = "Categorical",
   LabelType = "percent",
   MissingLabel = "Missing",
   DataFrame = lifecycle::deprecated(),
@@ -37,7 +38,12 @@ PlotCategoricalDistributions(
 
 - Ordinal:
 
-  Logical, indicating whether ordinal variables should be included.
+  Deprecated logical compatibility option; use `TreatOrdinalAs` instead.
+
+- TreatOrdinalAs:
+
+  How ordinal variables are handled. This categorical plot accepts
+  `"Categorical"` or `"Exclude"`.
 
 - LabelType:
 

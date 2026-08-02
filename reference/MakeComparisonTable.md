@@ -32,6 +32,8 @@ MakeComparisonTable(
   MultiCatAdjusted = c("multinomial_LR", "none"),
   ShowNotes = c("auto", "always", "never"),
   NotesPosition = c("last", "after_test", "before_pairwise"),
+  Relabel = TRUE,
+  TreatOrdinalAs = "Categorical",
   DataFrame = lifecycle::deprecated(),
   CompVariable = lifecycle::deprecated(),
   Variables = lifecycle::deprecated(),
@@ -141,6 +143,15 @@ MakeComparisonTable(
 
   Notes column position. One of `"last"`, `"after_test"`, or
   `"before_pairwise"`.
+
+- Relabel:
+
+  Logical; if TRUE (default), use attached variable labels.
+
+- TreatOrdinalAs:
+
+  How ordinal variables are treated: `"Categorical"`, `"Continuous"`,
+  `"Both"`, or `"Exclude"`.
 
 - DataFrame:
 

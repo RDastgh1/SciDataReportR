@@ -26,6 +26,7 @@ more continuous variables, with optional group-wise colouring."><meta property="
     <li><a class="dropdown-item" href="../articles/MakeComparisonTable.html">Creating comparison tables with MakeComparisonTable()</a></li>
     <li><a class="dropdown-item" href="../articles/MakeUnivariateRegressionTable.html">Screening Outcomes and Predictors with MakeUnivariateRegressionTable()</a></li>
     <li><a class="dropdown-item" href="../articles/merge-qc-workflow.html">Merge QC workflow</a></li>
+    <li><a class="dropdown-item" href="../articles/OrdinalVariables.html">Working with ordinal variables</a></li>
     <li><a class="dropdown-item" href="../articles/PlotCorrelationsHeatmap.html">Exploring associations with PlotCorrelationsHeatmap()</a></li>
     <li><a class="dropdown-item" href="../articles/PlotForestFromTable.html">Forest Plots from Univariate Regression Tables</a></li>
     <li><a class="dropdown-item" href="../articles/PlotMiningMatrix.html">Exploratory discovery with PlotMiningMatrix()</a></li>
@@ -44,7 +45,7 @@ more continuous variables, with optional group-wise colouring."><meta property="
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Plot Continuous Distributions</h1>
-      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/v20.19.0/R/PlotContinuousDistributions.R" class="external-link"><code>R/PlotContinuousDistributions.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/master/R/PlotContinuousDistributions.R" class="external-link"><code>R/PlotContinuousDistributions.R</code></a></small>
       <div class="d-none name"><code>PlotContinuousDistributions.Rd</code></div>
     </div>
 
@@ -62,7 +63,8 @@ more continuous variables, with optional group-wise colouring.</p>
 <span>  Relabel <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  FacetLabelStyle <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"both"</span>, <span class="st">"label_only"</span>, <span class="st">"variable_only"</span>, <span class="st">"auto"</span><span class="op">)</span>,</span>
 <span>  ncol <span class="op">=</span> <span class="fl">3</span>,</span>
-<span>  Ordinal <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  Ordinal <span class="op">=</span> <span class="fu">lifecycle</span><span class="fu">::</span><span class="fu"><a href="https://lifecycle.r-lib.org/reference/deprecated.html" class="external-link">deprecated</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  TreatOrdinalAs <span class="op">=</span> <span class="st">"Categorical"</span>,</span>
 <span>  DataFrame <span class="op">=</span> <span class="fu">lifecycle</span><span class="fu">::</span><span class="fu"><a href="https://lifecycle.r-lib.org/reference/deprecated.html" class="external-link">deprecated</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  Variables <span class="op">=</span> <span class="fu">lifecycle</span><span class="fu">::</span><span class="fu"><a href="https://lifecycle.r-lib.org/reference/deprecated.html" class="external-link">deprecated</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -97,7 +99,14 @@ more continuous variables, with optional group-wise colouring.</p>
 
 
 <dt id="arg-ordinal">Ordinal<a class="anchor" aria-label="anchor" href="#arg-ordinal"></a></dt>
-<dd><p>Logical; include labelled-ordinal variables as numeric.</p></dd>
+<dd><p>Deprecated logical compatibility option; use
+<code>TreatOrdinalAs</code> instead.</p></dd>
+
+
+<dt id="arg-treatordinalas">TreatOrdinalAs<a class="anchor" aria-label="anchor" href="#arg-treatordinalas"></a></dt>
+<dd><p>How ordinal variables are handled. <code>"Continuous"</code>
+includes their numeric score; <code>"Exclude"</code> omits them. <code>"Both"</code> is not
+meaningful for this plot and errors.</p></dd>
 
 
 <dt id="arg-dataframe">DataFrame<a class="anchor" aria-label="anchor" href="#arg-dataframe"></a></dt>

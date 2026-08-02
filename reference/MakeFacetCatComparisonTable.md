@@ -35,6 +35,8 @@ MakeFacetCatComparisonTable(
   IncludeOverallStats = FALSE,
   ShowPositiveBinaryOnLabel = TRUE,
   CompFun = MakeComparisonTable,
+  Relabel = TRUE,
+  TreatOrdinalAs = "Categorical",
   ...,
   DataFrame = lifecycle::deprecated(),
   Variables = lifecycle::deprecated(),
@@ -130,6 +132,14 @@ MakeFacetCatComparisonTable(
 - CompFun:
 
   Comparison function to apply; defaults to `MakeComparisonTable`.
+
+- Relabel:
+
+  Logical; if TRUE (default), use attached variable labels.
+
+- TreatOrdinalAs:
+
+  How ordinal variables are treated in each table.
 
 - ...:
 
