@@ -1,11 +1,11 @@
 # =============================================================================
-# Regenerate the CodebookMergeApp reference screenshot
+# Regenerate the CodebookMergeApp reference screenshots
 # =============================================================================
 #
 # CodebookMergeApp() launches an interactive Shiny dashboard, so its reference
-# page cannot render a live example. Instead we capture a static screenshot of
-# the running app and commit it to man/figures/, where the roxygen `\figure{}`
-# directive in R/MergeCodebooks.R embeds it on the reference page.
+# page cannot render a live example. Instead we capture each dashboard tab and
+# commit the static screenshots to man/figures/, where the roxygen `\figure{}`
+# directives in R/MergeCodebooks.R embed them on the reference page.
 #
 # Run this script whenever the app UI changes:
 #
@@ -23,7 +23,9 @@ if (!requireNamespace("shinytest2", quietly = TRUE)) {
        "Install it with install.packages('shinytest2').")
 }
 
-library(SciDataReportR)
+if (!exists("CodebookMergeApp", mode = "function")) {
+  library(SciDataReportR)
+}
 
 # Build two small, overlapping codebooks to give the app something to harmonize.
 data("SampleVariableTypes", package = "SciDataReportR")
@@ -45,21 +47,43 @@ codebooks <- list(CohortA = base_cb, CohortB = alt_cb)
 
 app <- CodebookMergeApp(codebooks, VariableCol = "Variable")
 
-# Capture the initial view of the dashboard.
+# Capture the Overview, Harmonization, and Export views of the dashboard.
 out_dir <- "man/figures"
 dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)
-out_png <- file.path(out_dir, "CodebookMergeApp.png")
+overview_png <- file.path(out_dir, "CodebookMergeApp.png")
+harmonization_png <- file.path(out_dir, "CodebookMergeApp-harmonization.png")
+export_png <- file.path(out_dir, "CodebookMergeApp-export.png")
 
 driver <- shinytest2::AppDriver$new(
   app,
-  name           = "CodebookMergeApp",
+  name           = "CodebookMergeApp-screenshots",
   width          = 1200,
   height         = 800,
-  load_timeout   = 30000,
-  screenshot_args = list(selector = "viewport")
+  load_timeout   = 30000
 )
 on.exit(driver$stop(), add = TRUE)
 
-driver$get_screenshot(out_png)
+# Use an HTML selector rather than shinytest2's symbolic selectors, which are
+# not compatible with newer chromote versions.
+viewport <- list(selector = "html")
+driver$wait_for_idle()
+driver$get_screenshot(overview_png, screenshot_args = viewport)
 
-message("Wrote ", out_png)
+# Select the first conflict so the resolution controls are illustrated.
+driver$set_inputs(codebook_merge_tabs = "Harmonization")
+driver$wait_for_idle()
+driver$click(selector = "#harmonization_table tbody tr:first-child")
+driver$wait_for_idle()
+driver$get_screenshot(harmonization_png, screenshot_args = viewport)
+
+# Save the default observed resolution and generate reproducible merge rules.
+driver$click("save_resolution")
+driver$set_inputs(codebook_merge_tabs = "Export")
+driver$wait_for_idle()
+driver$click("generate_rules")
+driver$wait_for_idle()
+driver$get_screenshot(export_png, screenshot_args = viewport)
+
+message("Wrote ", overview_png)
+message("Wrote ", harmonization_png)
+message("Wrote ", export_png)

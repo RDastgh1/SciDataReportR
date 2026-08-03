@@ -132,6 +132,27 @@
 #' the entire pipeline. Successful fits are retained and failed fits are listed
 #' in \code{ModelInfo_MClust$diagnostics}.
 #'
+#' @section Model review and refinement:
+#' Start with \code{ModelInfo_MClust$fit_table}, the AHP recommendation, and
+#' \code{fit_plot} to compare candidate model specifications and numbers of
+#' profiles. AHP is a useful starting point, not an automatic final decision:
+#' retain solutions whose fit, cluster size, and clinical interpretability are
+#' all reasonable.
+#'
+#' The Circular and Line SOM widgets show how the analysis variables vary across
+#' the map; the Cloud widget shows the observations within map cells. Use them
+#' to assess whether the candidate solution represents coherent, interpretable
+#' phenotype patterns. Inspect \code{SOMFit$node_occupancy} for empty or sparse
+#' cells, and the SOM-distance plots for clusters with systematically poor map
+#' representation. The posterior-probability plots in \code{ProbFit$plots}
+#' identify uncertain node- or individual-level assignments.
+#'
+#' If these diagnostics suggest a weak solution, reconsider the variables, SOM
+#' grid dimensions, model family, or candidate \code{k} range and refit in
+#' exploratory mode. Once a solution is selected, refit it with
+#' \code{method = "finalize"}, \code{final_k}, and \code{final_model} to create
+#' the reusable model for projection.
+#'
 #' @return A list of class \code{"Pipeline_SOMClust"} with components:
 #'   \itemize{
 #'     \item \code{method}, \code{vars_used}, \code{ZScoreType},
@@ -158,25 +179,41 @@
 #' @param df \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
 #' @param id_col \strong{Deprecated} (since 19.15.0). Use \code{id_var} instead.
 #' @examples
-#' \dontrun{
-#' # NOTE: This example is kept in \dontrun{} because the function currently
-#' # errors with "could not find function 'get_data'": tidyLPA::get_data()
-#' # fails to dispatch under this call path (tracked bug, possibly a tidyLPA
-#' # version pin issue). The reduced settings below (k_range = 2:4, models = 1)
-#' # are otherwise fast enough to run once the bug is resolved.
+#' \donttest{
 #' data(SampleData)
 #' data(SampleVariableTypes)
 #'
-#' Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
+#' df_Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
 #'
 #' model <- CreateSOMClusterModel(
-#'   data = Labelled,
+#'   data = df_Labelled,
 #'   variables = c("age", "AXL", "Adiponectin", "Alpha_1_Antitrypsin"),
 #'   method = "exploratory",
 #'   k_range = 2:4,
 #'   models = 1
 #' )
-#' model$plots$cluster_fit_summary_plot
+#'
+#' # Compare candidate model fit and use the recommendation as a starting point.
+#' model$ModelInfo_MClust$fit_table
+#' model$ModelInfo_MClust$AHP$recommendation
+#' model$fit_plot
+#'
+#' # Explore feature patterns and topology in the interactive SOM widgets.
+#' model$ModelInfo_SOM$plots$Circular
+#' model$ModelInfo_SOM$plots$Line
+#' model$ModelInfo_SOM$plots$Cloud
+#'
+#' # Review map representation and high-distance training cases.
+#' model$ModelInfo_SOM$SOMFit$plots$distance_hist
+#' model$ModelInfo_SOM$SOMFit$plots$distance_by_cluster_box
+#' model$ModelInfo_SOM$PhenotypeReference$plots$distance_ecdf
+#' model$ModelInfo_SOM$PhenotypeReference$plots$cluster_fit_summary_plot
+#'
+#' # Assess node- and individual-level membership confidence.
+#' model$ProbFit$plots$node_MaxProbBoxplot
+#' model$ProbFit$plots$node_ProbAssignedDensity
+#' model$ProbFit$plots$individual_MaxProbBoxplot
+#' model$ProbFit$plots$individual_ProbAssignedDensity
 #' }
 #' @export
 CreateSOMClusterModel <- function(data,
@@ -741,7 +778,9 @@ CreateSOMClusterModel <- function(data,
     if (!higher_is_better) {
       x <- -x
     }
-    if (all(is.na(x)) || stats::sd(x, na.rm = TRUE) == 0) {
+
+    finite_x <- x[is.finite(x)]
+    if (length(finite_x) < 2 || stats::sd(finite_x) == 0) {
       return(rep(0, length(x)))
     }
     as.numeric(scale(x))
@@ -1004,7 +1043,19 @@ CreateSOMClusterModel <- function(data,
 
   # Node-level cluster and posteriors --------------------------------------
 
-  best_data <- tidyLPA::get_data(best_lpa)
+  # tidyLPA::get_data.tidyLPA() dispatches through an unqualified generic in
+  # tidyLPA 2.0.2. Extracting the selected tidyProfile first avoids that
+  # dispatch path while preserving the model data used for node assignment.
+  best_profile <- if (inherits(best_lpa, "tidyLPA")) {
+    if (length(best_lpa) != 1) {
+      stop("The selected LPA solution must contain exactly one profile.")
+    }
+    best_lpa[[1]]
+  } else {
+    best_lpa
+  }
+
+  best_data <- tidyLPA::get_data(best_profile)
 
   node_df <- best_data %>%
     dplyr::mutate(NodeID = dplyr::row_number()) %>%

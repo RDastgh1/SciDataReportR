@@ -91,19 +91,21 @@ If \code{ReturnMetadata = TRUE}, returns a list containing:
 }
 }
 \description{
-Combine ggplot objects or lists of ggplot objects into a consistently styled
-multi-panel layout with optional legend collection, global theming,
-automatic layout estimation, and suggested figure dimensions for reporting
-workflows.
+A SciDataReportR wrapper around \code{\link[cowplot:plot_grid]{cowplot::plot_grid()}} and
+\code{\link[cowplot:get_legend]{cowplot::get_legend()}}. Cowplot supplies the underlying grid layout,
+alignment, panel-label, and shared-legend tools; \code{AssemblePlots()} packages
+them into one reporting-oriented workflow.
 }
 \details{
-This function is designed as a centralized visualization orchestration layer
-for SciDataReportR workflows. It standardizes layout behavior across
-analytical outputs while preserving full ggplot compatibility.
+Compared with calling cowplot directly, \code{AssemblePlots()} accepts ggplots or
+nested plot lists, removes \code{NULL} entries, estimates a layout automatically,
+applies shared themes and layers, can use list names as missing titles,
+collects and positions legends, and returns suggested figure dimensions or
+layout metadata. This avoids repeating the same publication-figure setup
+across SciDataReportR analyses while preserving full ggplot compatibility.
 
-Internally, cowplot is used for layout assembly and legend extraction
-because it provides more predictable spacing and legend behavior for
-publication-style figures than patchwork.
+Cowplot is used here because it provides predictable spacing and legend
+behavior for publication-style figures.
 
 Supports:
 \itemize{

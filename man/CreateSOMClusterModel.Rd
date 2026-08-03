@@ -244,26 +244,65 @@ warning-producing solutions are captured in diagnostics instead of blocking
 the entire pipeline. Successful fits are retained and failed fits are listed
 in \code{ModelInfo_MClust$diagnostics}.
 }
+\section{Model review and refinement}{
+
+Start with \code{ModelInfo_MClust$fit_table}, the AHP recommendation, and
+\code{fit_plot} to compare candidate model specifications and numbers of
+profiles. AHP is a useful starting point, not an automatic final decision:
+retain solutions whose fit, cluster size, and clinical interpretability are
+all reasonable.
+
+The Circular and Line SOM widgets show how the analysis variables vary across
+the map; the Cloud widget shows the observations within map cells. Use them
+to assess whether the candidate solution represents coherent, interpretable
+phenotype patterns. Inspect \code{SOMFit$node_occupancy} for empty or sparse
+cells, and the SOM-distance plots for clusters with systematically poor map
+representation. The posterior-probability plots in \code{ProbFit$plots}
+identify uncertain node- or individual-level assignments.
+
+If these diagnostics suggest a weak solution, reconsider the variables, SOM
+grid dimensions, model family, or candidate \code{k} range and refit in
+exploratory mode. Once a solution is selected, refit it with
+\code{method = "finalize"}, \code{final_k}, and \code{final_model} to create
+the reusable model for projection.
+}
+
 \examples{
-\dontrun{
-# NOTE: This example is kept in \dontrun{} because the function currently
-# errors with "could not find function 'get_data'": tidyLPA::get_data()
-# fails to dispatch under this call path (tracked bug, possibly a tidyLPA
-# version pin issue). The reduced settings below (k_range = 2:4, models = 1)
-# are otherwise fast enough to run once the bug is resolved.
+\donttest{
 data(SampleData)
 data(SampleVariableTypes)
 
-Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
+df_Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
 
 model <- CreateSOMClusterModel(
-  data = Labelled,
+  data = df_Labelled,
   variables = c("age", "AXL", "Adiponectin", "Alpha_1_Antitrypsin"),
   method = "exploratory",
   k_range = 2:4,
   models = 1
 )
-model$plots$cluster_fit_summary_plot
+
+# Compare candidate model fit and use the recommendation as a starting point.
+model$ModelInfo_MClust$fit_table
+model$ModelInfo_MClust$AHP$recommendation
+model$fit_plot
+
+# Explore feature patterns and topology in the interactive SOM widgets.
+model$ModelInfo_SOM$plots$Circular
+model$ModelInfo_SOM$plots$Line
+model$ModelInfo_SOM$plots$Cloud
+
+# Review map representation and high-distance training cases.
+model$ModelInfo_SOM$SOMFit$plots$distance_hist
+model$ModelInfo_SOM$SOMFit$plots$distance_by_cluster_box
+model$ModelInfo_SOM$PhenotypeReference$plots$distance_ecdf
+model$ModelInfo_SOM$PhenotypeReference$plots$cluster_fit_summary_plot
+
+# Assess node- and individual-level membership confidence.
+model$ProbFit$plots$node_MaxProbBoxplot
+model$ProbFit$plots$node_ProbAssignedDensity
+model$ProbFit$plots$individual_MaxProbBoxplot
+model$ProbFit$plots$individual_ProbAssignedDensity
 }
 }
 \references{
