@@ -1,9 +1,12 @@
 # Assemble ggplot objects into a unified multi-panel figure
 
-Combine ggplot objects or lists of ggplot objects into a consistently
-styled multi-panel layout with optional legend collection, global
-theming, automatic layout estimation, and suggested figure dimensions
-for reporting workflows.
+A SciDataReportR wrapper around
+[`cowplot::plot_grid()`](https://wilkelab.org/cowplot/reference/plot_grid.html)
+and
+[`cowplot::get_legend()`](https://wilkelab.org/cowplot/reference/get_legend.html).
+Cowplot supplies the underlying grid layout, alignment, panel-label, and
+shared-legend tools; `AssemblePlots()` packages them into one
+reporting-oriented workflow.
 
 ## Usage
 
@@ -153,13 +156,16 @@ If `ReturnMetadata = TRUE`, returns a list containing:
 
 ## Details
 
-This function is designed as a centralized visualization orchestration
-layer for SciDataReportR workflows. It standardizes layout behavior
-across analytical outputs while preserving full ggplot compatibility.
+Compared with calling cowplot directly, `AssemblePlots()` accepts
+ggplots or nested plot lists, removes `NULL` entries, estimates a layout
+automatically, applies shared themes and layers, can use list names as
+missing titles, collects and positions legends, and returns suggested
+figure dimensions or layout metadata. This avoids repeating the same
+publication-figure setup across SciDataReportR analyses while preserving
+full ggplot compatibility.
 
-Internally, cowplot is used for layout assembly and legend extraction
-because it provides more predictable spacing and legend behavior for
-publication-style figures than patchwork.
+Cowplot is used here because it provides predictable spacing and legend
+behavior for publication-style figures.
 
 Supports:
 
