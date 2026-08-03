@@ -8,7 +8,7 @@
 ## Citation
 
 Source:
-[`DESCRIPTION`](https://github.com/RDastgh1/SciDataReportR/blob/master/DESCRIPTION)
+[`DESCRIPTION`](https://github.com/RDastgh1/SciDataReportR/blob/v20.22.0/DESCRIPTION)
 
 Dastgheyb R (2026). *SciDataReportR: Workflow Infrastructure for
 Reproducible Scientific Data Reporting*. R package version 20.22.0,
