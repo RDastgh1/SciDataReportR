@@ -87,59 +87,23 @@ preparation.
 UniObj$FormattedTable
 ```
 
-| Variable             | Effect   | N   | Estimate (95% CI)          | p-value |
-|----------------------|----------|-----|----------------------------|---------|
-| Calbindin            |          |     |                            |         |
-| Diagnosis : Impaired | Estimate | 333 | 0.936 (-0.075, 1.95)       | 0.069   |
-| Age                  | Estimate | 322 | 0.0164 (-0.0185, 0.0513)   | 0.36    |
-| Sex : Male           | Estimate | 333 | -1.62 (-2.53, -0.704)      | \<0.001 |
-| Genotype : E2E3      | Estimate | 333 | 1.74 (-4.26, 7.75)         | 0.57    |
-| Genotype : E2E4      | Estimate | 333 | 3.13 (-3.42, 9.67)         | 0.35    |
-| Genotype : E3E3      | Estimate | 333 | 1.81 (-4.08, 7.69)         | 0.55    |
-| Genotype : E3E4      | Estimate | 333 | 2.46 (-3.44, 8.37)         | 0.41    |
-| Genotype : E4E4      | Estimate | 333 | 1.31 (-4.98, 7.6)          | 0.68    |
-| Ferritin             |          |     |                            |         |
-| Diagnosis : Impaired | Estimate | 333 | 0.203 (0.0147, 0.392)      | 0.035   |
-| Age                  | Estimate | 322 | 0.0018 (-0.00474, 0.00834) | 0.59    |
-| Sex : Male           | Estimate | 333 | 0.253 (0.0815, 0.425)      | 0.004   |
-| Genotype : E2E3      | Estimate | 333 | 0.218 (-0.907, 1.34)       | 0.7     |
-| Genotype : E2E4      | Estimate | 333 | 0.223 ( -1, 1.45)          | 0.72    |
-| Genotype : E3E3      | Estimate | 333 | 0.195 (-0.907, 1.3)        | 0.73    |
-| Genotype : E3E4      | Estimate | 333 | 0.267 (-0.838, 1.37)       | 0.63    |
-| Genotype : E4E4      | Estimate | 333 | -0.059 (-1.24, 1.12)       | 0.92    |
+[TABLE]
 
-Estimates and standard errors are combined into a compact format and
-significance stars are automatically added.
+Each outcome has its own column spanner. Effects are displayed as
+estimate (95% CI), with significance stars appended and both the effect
+and p-value bolded when significant.
 
 ## 7 Detailed regression table
 
-The larger table provides additional model details.
+The larger table keeps the same wide outcome layout while exposing N,
+estimate, standard error, confidence limits, and p-value separately.
 
 ``` r
 
 UniObj$LargeTable
 ```
 
-| Outcome | Variable | Effect | N | Estimate | SE | 95% CI Low | 95% CI High | p-value |
-|----|----|----|----|----|----|----|----|----|
-| Calbindin |  |  |  |  |  |  |  |  |
-| Calbindin | Diagnosis : Impaired | Estimate | 333 | 0.936 | 0.514 | −0.075 | 1.948 | 0.069 |
-| Calbindin | Age | Estimate | 322 | 0.016 | 0.018 | −0.018 | 0.051 | 0.355 |
-| Calbindin | Sex : Male | Estimate | 333 | −1.617 | 0.464 | −2.530 | −0.704 | 0.001 |
-| Calbindin | Genotype : E2E3 | Estimate | 333 | 1.745 | 3.054 | −4.263 | 7.753 | 0.568 |
-| Calbindin | Genotype : E2E4 | Estimate | 333 | 3.127 | 3.326 | −3.415 | 9.670 | 0.348 |
-| Calbindin | Genotype : E3E3 | Estimate | 333 | 1.807 | 2.992 | −4.080 | 7.694 | 0.546 |
-| Calbindin | Genotype : E3E4 | Estimate | 333 | 2.464 | 3.003 | −3.443 | 8.371 | 0.412 |
-| Calbindin | Genotype : E4E4 | Estimate | 333 | 1.310 | 3.195 | −4.976 | 7.596 | 0.682 |
-| Ferritin |  |  |  |  |  |  |  |  |
-| Ferritin | Diagnosis : Impaired | Estimate | 333 | 0.203 | 0.096 | 0.015 | 0.392 | 0.035 |
-| Ferritin | Age | Estimate | 322 | 0.002 | 0.003 | −0.005 | 0.008 | 0.589 |
-| Ferritin | Sex : Male | Estimate | 333 | 0.253 | 0.087 | 0.082 | 0.425 | 0.004 |
-| Ferritin | Genotype : E2E3 | Estimate | 333 | 0.218 | 0.572 | −0.907 | 1.343 | 0.703 |
-| Ferritin | Genotype : E2E4 | Estimate | 333 | 0.223 | 0.623 | −1.001 | 1.448 | 0.720 |
-| Ferritin | Genotype : E3E3 | Estimate | 333 | 0.195 | 0.560 | −0.907 | 1.297 | 0.728 |
-| Ferritin | Genotype : E3E4 | Estimate | 333 | 0.267 | 0.562 | −0.838 | 1.373 | 0.635 |
-| Ferritin | Genotype : E4E4 | Estimate | 333 | −0.059 | 0.598 | −1.236 | 1.118 | 0.921 |
+[TABLE]
 
 This version is often useful during exploratory analyses and quality
 control.
@@ -166,26 +130,7 @@ UniObj_Covar <- MakeUnivariateRegressionTable(
 UniObj_Covar$FormattedTable
 ```
 
-| Variable             | Effect   | N   | Estimate (95% CI)          | p-value |
-|----------------------|----------|-----|----------------------------|---------|
-| Calbindin            |          |     |                            |         |
-| Diagnosis : Impaired | Estimate | 333 | 1.05 (0.00979, 2.1)        | 0.048   |
-| Age                  | Estimate | 322 | 0.0161 (-0.0189, 0.051)    | 0.37    |
-| Sex : Male           | Estimate | 333 | -1.62 (-2.54, -0.696)      | \<0.001 |
-| Genotype : E2E3      | Estimate | 333 | 1.73 (-4.29, 7.74)         | 0.57    |
-| Genotype : E2E4      | Estimate | 333 | 3.09 (-3.46, 9.65)         | 0.35    |
-| Genotype : E3E3      | Estimate | 333 | 1.79 (-4.11, 7.68)         | 0.55    |
-| Genotype : E3E4      | Estimate | 333 | 2.44 (-3.47, 8.36)         | 0.42    |
-| Genotype : E4E4      | Estimate | 333 | 1.28 (-5.01, 7.58)         | 0.69    |
-| Ferritin             |          |     |                            |         |
-| Diagnosis : Impaired | Estimate | 333 | 0.144 (-0.0493, 0.337)     | 0.14    |
-| Age                  | Estimate | 322 | 0.00222 (-0.00425, 0.0087) | 0.5     |
-| Sex : Male           | Estimate | 333 | 0.223 (0.0513, 0.395)      | 0.011   |
-| Genotype : E2E3      | Estimate | 333 | 0.243 (-0.87, 1.36)        | 0.67    |
-| Genotype : E2E4      | Estimate | 333 | 0.272 (-0.94, 1.48)        | 0.66    |
-| Genotype : E3E3      | Estimate | 333 | 0.221 (-0.869, 1.31)       | 0.69    |
-| Genotype : E3E4      | Estimate | 333 | 0.294 (-0.8, 1.39)         | 0.6     |
-| Genotype : E4E4      | Estimate | 333 | -0.02 (-1.18, 1.14)        | 0.97    |
+[TABLE]
 
 This allows investigators to determine whether associations remain
 significant after accounting for potential confounding factors.
@@ -210,26 +155,7 @@ UniObj_Std <- MakeUnivariateRegressionTable(
 UniObj_Std$FormattedTable
 ```
 
-| Variable             | Effect   | N   | Estimate (95% CI)       | p-value |
-|----------------------|----------|-----|-------------------------|---------|
-| Calbindin            |          |     |                         |         |
-| Diagnosis : Impaired | Estimate | 333 | 0.223 (-0.0179, 0.464)  | 0.069   |
-| Age                  | Estimate | 322 | 0.0517 (-0.0581, 0.161) | 0.36    |
-| Sex : Male           | Estimate | 333 | -0.385 (-0.603, -0.168) | \<0.001 |
-| Genotype : E2E3      | Estimate | 333 | 0.416 (-1.02, 1.85)     | 0.57    |
-| Genotype : E2E4      | Estimate | 333 | 0.745 (-0.814, 2.31)    | 0.35    |
-| Genotype : E3E3      | Estimate | 333 | 0.431 (-0.973, 1.83)    | 0.55    |
-| Genotype : E3E4      | Estimate | 333 | 0.587 (-0.821, 2)       | 0.41    |
-| Genotype : E4E4      | Estimate | 333 | 0.312 (-1.19, 1.81)     | 0.68    |
-| Ferritin             |          |     |                         |         |
-| Diagnosis : Impaired | Estimate | 333 | 0.259 (0.0187, 0.5)     | 0.035   |
-| Age                  | Estimate | 322 | 0.0303 (-0.0799, 0.14)  | 0.59    |
-| Sex : Male           | Estimate | 333 | 0.323 (0.104, 0.542)    | 0.004   |
-| Genotype : E2E3      | Estimate | 333 | 0.278 (-1.16, 1.71)     | 0.7     |
-| Genotype : E2E4      | Estimate | 333 | 0.285 (-1.28, 1.85)     | 0.72    |
-| Genotype : E3E3      | Estimate | 333 | 0.248 (-1.16, 1.65)     | 0.73    |
-| Genotype : E3E4      | Estimate | 333 | 0.341 (-1.07, 1.75)     | 0.63    |
-| Genotype : E4E4      | Estimate | 333 | -0.0753 (-1.58, 1.43)   | 0.92    |
+[TABLE]
 
 Standardized coefficients represent changes in standard deviation units
 and facilitate comparison across predictors.
@@ -365,7 +291,7 @@ sessionInfo()
     [1] stats     graphics  grDevices utils     datasets  methods   base
 
     other attached packages:
-    [1] dplyr_1.2.1            SciDataReportR_20.22.0
+    [1] dplyr_1.2.1            SciDataReportR_20.24.0
 
     loaded via a namespace (and not attached):
      [1] gtable_0.3.6           xfun_0.60              bayestestR_0.18.1
@@ -377,7 +303,7 @@ sessionInfo()
     [19] gt_1.3.0               lifecycle_1.0.5        compiler_4.6.1
     [22] farver_2.1.2           carData_3.0-6          snakecase_0.11.1
     [25] sass_0.4.10            htmltools_0.5.9        yaml_2.3.12
-    [28] Formula_1.2-5          pillar_1.11.1          car_3.1-5
+    [28] Formula_1.2-6          pillar_1.11.1          car_3.1-5
     [31] tidyr_1.3.2            statsExpressions_2.0.0 abind_1.4-8
     [34] tidyselect_1.2.1       sjlabelled_1.2.0       digest_0.6.39
     [37] mvtnorm_1.4-2          gtsummary_2.5.1        purrr_1.2.2

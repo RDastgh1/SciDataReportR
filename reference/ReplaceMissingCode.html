@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">SciDataReportR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">20.22.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">20.24.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -19,6 +19,8 @@
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/argument-renaming.html">Migration note: argument renaming in 19.15.0</a></li>
+    <li><a class="dropdown-item" href="../articles/BiomarkerPerformance.html">Evaluating candidate biomarkers</a></li>
+    <li><a class="dropdown-item" href="../articles/ClusteringPhenotyping.html">Clustering and clinical phenotyping</a></li>
     <li><a class="dropdown-item" href="../articles/fdr-correction.html">FDR correction scope: matrix-wide vs per-outcome</a></li>
     <li><a class="dropdown-item" href="../articles/getting-started.html">Getting started with SciDataReportR</a></li>
     <li><a class="dropdown-item" href="../articles/MakeComparisonTable.html">Creating comparison tables with MakeComparisonTable()</a></li>
@@ -43,7 +45,7 @@
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Replace Missing Codes with NA</h1>
-      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/v20.22.0/R/ReplaceMissingCode.R" class="external-link"><code>R/ReplaceMissingCode.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/master/R/ReplaceMissingCode.R" class="external-link"><code>R/ReplaceMissingCode.R</code></a></small>
       <div class="d-none name"><code>ReplaceMissingCode.Rd</code></div>
     </div>
 
@@ -70,7 +72,11 @@
 
 
 <dt id="arg-codebook">codebook<a class="anchor" aria-label="anchor" href="#arg-codebook"></a></dt>
-<dd><p>A data frame containing the variable codebook. It should have columns <code>Variable</code> and <code>MissingCode</code>, where <code>Variable</code> specifies the variable name in the data frame and <code>MissingCode</code> specifies the code to be replaced with <code>NA</code>.</p></dd>
+<dd><p>A data frame containing the variable codebook. It must have
+columns <code>Variable</code> and <code>MissingCode</code>. <code>Variable</code> names the column in
+<code>data</code>; <code>MissingCode</code> holds the code, or several codes separated by commas
+or semicolons, to replace with <code>NA</code>. Rows with a missing or blank
+<code>MissingCode</code> are skipped.</p></dd>
 
 
 <dt id="arg-dataframe">DataFrame<a class="anchor" aria-label="anchor" href="#arg-dataframe"></a></dt>
@@ -85,41 +91,102 @@
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A data frame with specified missing codes replaced by <code>NA</code>.</p>
     </div>
+    <div class="section level2">
+    <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
+    <p>Study databases rarely leave missing values empty. They record <em>why</em> the
+value is missing, using sentinel numbers outside the plausible range - <code>-7</code>
+for "not applicable", <code>-8</code> for "refused", <code>-9</code> for "not asked", <code>999</code> for
+"unknown". Left in place, those codes are read as real measurements: a mean
+age climbs into the hundreds, and a variable coded <code>-7</code>/<code>-8</code> gets a negative
+mean that no one notices until much later.</p>
+<p>This converts every code listed in the codebook to <code>NA</code>, so the values are
+excluded from statistics and counted as missing.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="several-markers-for-one-variable">Several markers for one variable<a class="anchor" aria-label="anchor" href="#several-markers-for-one-variable"></a></h2>
+
+
+<p>A variable usually has more than one missing code, since the whole point of
+sentinels is to distinguish reasons. List them all in a single
+<code>MissingCode</code> cell, separated by commas or semicolons:</p>
+<p></p><div class="sourceCode"><pre><code><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a>Variable   MissingCode</span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a>age        <span class="sc">-</span><span class="dv">7</span>, <span class="sc">-</span><span class="dv">8</span>, <span class="sc">-</span><span class="dv">9</span></span>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a>income     <span class="dv">999</span>; <span class="dv">9999</span></span></code></pre><p></p></div>
+<p>Whitespace around the separators is ignored, so <code>-7,-8</code> and <code>-7, -8</code> behave
+identically. When a codebook is assembled in R rather than read from a
+spreadsheet, <code>MissingCode</code> may also be a list-column of vectors.</p>
+<p>Codes are matched on the column's own scale: numerically for numeric
+columns, and as text for character and factor columns, so markers like
+<code>"Refused"</code> or <code>"Unknown"</code> work. When such a marker is a factor level, the
+level is removed along with the values, so it does not linger as an empty
+category in later tables.</p>
+<p>Variables whose <code>MissingCode</code> is blank are left untouched, and a codebook
+naming variables that are not in <code>data</code> warns rather than failing - a
+codebook usually describes more columns than any one analysis selects.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
+    <div class="dont-index"><p><code><a href="CreateVariableTypesTemplate.html">CreateVariableTypesTemplate()</a></code>, which generates a codebook with a
+<code>MissingCode</code> column ready to fill in, and <code><a href="RevalueData.html">RevalueData()</a></code>, which applies
+missing codes as part of the full relabelling workflow.</p></div>
+    </div>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># A data frame that uses sentinel values to encode missingness</span></span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># `age` uses three different codes to record three different reasons</span></span></span>
 <span class="r-in"><span><span class="va">df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span></span>
-<span class="r-in"><span>  id    <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">6</span>,</span></span>
-<span class="r-in"><span>  age   <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">34</span>, <span class="fl">999</span>, <span class="fl">52</span>, <span class="fl">999</span>, <span class="fl">41</span>, <span class="fl">29</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>  score <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">10</span>, <span class="op">-</span><span class="fl">9</span>, <span class="op">-</span><span class="fl">9</span>, <span class="fl">15</span>, <span class="fl">20</span>, <span class="fl">12</span><span class="op">)</span></span></span>
+<span class="r-in"><span>  id     <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">6</span>,</span></span>
+<span class="r-in"><span>  age    <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">34</span>, <span class="fl">999</span>, <span class="fl">52</span>, <span class="op">-</span><span class="fl">7</span>, <span class="fl">41</span>, <span class="op">-</span><span class="fl">8</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  score  <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">10</span>, <span class="op">-</span><span class="fl">9</span>, <span class="op">-</span><span class="fl">9</span>, <span class="fl">15</span>, <span class="fl">20</span>, <span class="fl">12</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  status <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Active"</span>, <span class="st">"Unknown"</span>, <span class="st">"Active"</span>, <span class="st">"Withdrawn"</span>, <span class="st">"Unknown"</span>, <span class="st">"Active"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># A codebook mapping each variable to its missing code(s)</span></span></span>
+<span class="r-in"><span><span class="co"># Several markers for one variable go in one cell</span></span></span>
 <span class="r-in"><span><span class="va">codebook</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span></span>
-<span class="r-in"><span>  Variable    <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"age"</span>, <span class="st">"score"</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>  MissingCode <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"999"</span>, <span class="st">"-9"</span><span class="op">)</span></span></span>
+<span class="r-in"><span>  Variable    <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"age"</span>, <span class="st">"score"</span>, <span class="st">"status"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  MissingCode <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"999, -7, -8"</span>, <span class="st">"-9"</span>, <span class="st">"Unknown"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Before: sentinel codes still present</span></span></span>
+<span class="r-in"><span><span class="co"># Before: the sentinels are averaged in as if they were ages</span></span></span>
 <span class="r-in"><span><span class="va">df</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   id age score</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1  1  34    10</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2  2 999    -9</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3  3  52    -9</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4  4 999    15</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5  5  41    20</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 6  6  29    12</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   id age score    status</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1  1  34    10    Active</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2  2 999    -9   Unknown</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3  3  52    -9    Active</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4  4  -7    15 Withdrawn</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5  5  41    20   Unknown</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6  6  -8    12    Active</span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">df</span><span class="op">$</span><span class="va">age</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 185.1667</span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># After: sentinel codes replaced with NA</span></span></span>
-<span class="r-in"><span><span class="fu">ReplaceMissingCode</span><span class="op">(</span><span class="va">df</span>, <span class="va">codebook</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   id age score</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1  1  34    10</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2  2  NA    NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3  3  52    NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4  4  NA    15</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5  5  41    20</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 6  6  29    12</span>
+<span class="r-in"><span><span class="co"># After: every listed code becomes NA</span></span></span>
+<span class="r-in"><span><span class="va">cleaned</span> <span class="op">&lt;-</span> <span class="fu">ReplaceMissingCode</span><span class="op">(</span><span class="va">df</span>, <span class="va">codebook</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">cleaned</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   id age score    status</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1  1  34    10    Active</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2  2  NA    NA      &lt;NA&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3  3  52    NA    Active</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4  4  NA    15 Withdrawn</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5  5  41    20      &lt;NA&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6  6  NA    12    Active</span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">cleaned</span><span class="op">$</span><span class="va">age</span>, na.rm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 42.33333</span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/colSums.html" class="external-link">colSums</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">cleaned</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     id    age  score status </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      0      3      2      2 </span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Blank codes are skipped</span></span></span>
+<span class="r-in"><span><span class="fu">ReplaceMissingCode</span><span class="op">(</span></span></span>
+<span class="r-in"><span>  <span class="va">df</span>,</span></span>
+<span class="r-in"><span>  <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>Variable <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"id"</span>, <span class="st">"age"</span><span class="op">)</span>, MissingCode <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="cn">NA</span>, <span class="st">"999, -7, -8"</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   id age score    status</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1  1  34    10    Active</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2  2  NA    -9   Unknown</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3  3  52    -9    Active</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4  4  NA    15 Withdrawn</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5  5  41    20   Unknown</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6  6  NA    12    Active</span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

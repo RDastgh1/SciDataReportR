@@ -149,19 +149,75 @@ group and projected onto the full dataset before modeling. With the
 defaults, adjusted p-values use FDR correction within each
 group-vs-referent contrast across variables.
 
+## When to use it
+
+This plot earns its keep when the grouping has several levels. With only
+two groups it is a single column of cells and a comparison table says
+the same thing more compactly. A cluster assignment is the typical case:
+the clusters already exist, and the question is what actually
+distinguishes each one from the reference cluster.
+
+The result is one column per non-referent group and one row per measure,
+so a block structure in the cells *is* the phenotype definition - each
+group standing apart on its own set of variables, and variables that
+separate nothing left blank across the whole row.
+
+Every cell is backed by an auditable row in `Results`: the contrast, the
+model that produced it, the group sizes, the raw and adjusted p-values,
+and the correction that was applied.
+
+## Options that change the estimates
+
+**`covariates`** turns each contrast into the group difference that
+survives holding the named variables constant.
+
+**`Parametric = FALSE`** switches from Z-scores to M-scores with robust
+(HC3) standard errors, for outcomes with outliers or heavy tails.
+
+**`adjust_scope`** decides what counts as one family of tests. The
+default corrects across variables within each group-vs-referent
+contrast; `"matrix"` corrects across every cell shown, which is stricter
+and appropriate when the whole heatmap is being scanned for anything
+significant.
+
+**`cluster_rows`** groups variables that behave alike across contrasts,
+so the blocks can be read straight off the axis.
+
 ## Examples
 
 ``` r
-data(SampleData)
-data(SampleVariableTypes)
-Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
+# \donttest{
+data(SimulatedPhenotypeData)
+
+vars_Numeric <- paste0("Var", 1:12)
 
 res <- MakePairwiseHeatmap(
-  data = Labelled,
-  group_var = "Diagnosis",
-  variables = c("AXL", "Adiponectin", "Cortisol"),
-  Referent = levels(Labelled$Diagnosis)[1]
+  data = SimulatedPhenotypeData,
+  group_var = "TruthCluster",
+  variables = vars_Numeric,
+  Referent = "Cluster 4"
 )
+
+# One column per non-referent cluster, one row per measure
 res$Plot
 
+
+# The auditable row behind every cell
+htmltools::browsable(htmltools::HTML(as.character(
+  FreezeTableHeader(
+    dplyr::mutate(
+      dplyr::select(
+        res$Results,
+        Variable, Group, Referent, NGroup, NReferent,
+        EstimatedMeanDifference, PValue, AdjustedPValue,
+        SignificanceLabel, Test, Adjustment
+      ),
+      dplyr::across(dplyr::where(is.numeric), \(x) round(x, 4))
+    ),
+    height = "320px", full_width = TRUE
+  )
+)))
+
+
+ Variable 
 ```

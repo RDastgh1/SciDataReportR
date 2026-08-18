@@ -115,16 +115,28 @@ data(SampleVariableTypes)
 
 Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
 
+# Derive a few more categorical variables so the matrix has off-diagonal
+# structure to read; self-associations are dropped.
+Labelled$APOE4 <- ifelse(
+  grepl("E4", as.character(Labelled$Genotype)), "Carrier", "Non-carrier")
+Labelled$AgeGroup <- cut(
+  Labelled$age, breaks = c(-Inf, 65, 80, Inf),
+  labels = c("<65", "65-79", "80+"))
+Labelled$TauTertile <- cut(
+  Labelled$tau,
+  breaks = stats::quantile(Labelled$tau, c(0, 1 / 3, 2 / 3, 1), na.rm = TRUE),
+  labels = c("Low", "Middle", "High"), include.lowest = TRUE)
+
 result <- PlotChiSqCovar(
   Labelled,
-  predictor_vars = c("Diagnosis", "Genotype"),
-  outcome_vars = c("Diagnosis", "Genotype")
+  predictor_vars = c("Diagnosis", "sex", "APOE4"),
+  outcome_vars = c("Genotype", "AgeGroup", "TauTertile")
 )
 #> Warning: There were 3 warnings in `dplyr::summarise()`.
 #> The first warning was:
 #> ℹ In argument: `test = list(tryCatch(stats::chisq.test(XVal, YVal), error =
 #>   function(e) NULL))`.
-#> ℹ In group 2: `XVar = "Diagnosis"`, `YVar = "Genotype"`.
+#> ℹ In group 2: `XVar = "APOE4"`, `YVar = "Genotype"`.
 #> Caused by warning in `stats::chisq.test()`:
 #> ! Chi-squared approximation may be incorrect
 #> ℹ Run `dplyr::last_dplyr_warnings()` to see the 2 remaining warnings.

@@ -76,18 +76,32 @@ data(SampleVariableTypes)
 
 Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
 
+# Eight variables across three columns show wrapped labels and multi-row facets.
 PlotContinuousDistributions(
-  Labelled,
-  variables = c("age", "AXL", "Adiponectin")
+  data = Labelled,
+  variables = c("AXL", "Adiponectin", "Alpha_1_Antitrypsin", "Ferritin",
+                "Gamma_Interferon_induced_Monokin", "MMP7", "tau", "p_tau"),
+  ncol = 3
 )
-#> Registered S3 methods overwritten by 'ggpp':
-#>   method                  from   
-#>   heightDetails.titleGrob ggplot2
-#>   widthDetails.titleGrob  ggplot2
-#> Warning: Removed 11 rows containing non-finite outside the scale range
+#> Warning: Removed 100 rows containing non-finite outside the scale range
 #> (`stat_half_ydensity()`).
-#> Warning: Removed 11 rows containing non-finite outside the scale range
+#> Warning: Removed 100 rows containing non-finite outside the scale range
 #> (`stat_boxplot()`).
-#> Warning: Removed 11 rows containing missing values or values outside the scale range
+#> Warning: Removed 100 rows containing missing values or values outside the scale range
+#> (`geom_point_sorted()`).
+
+
+# Grouped rain-clouds use the Diagnosis fill to compare distributions.
+PlotContinuousDistributions(
+  data = Labelled,
+  variables = c("Ab_42", "p_tau", "tau", "GRO_alpha", "MMP10", "TRAIL_R3"),
+  Fill = "Diagnosis",
+  ncol = 3
+)
+#> Warning: Removed 200 rows containing non-finite outside the scale range
+#> (`stat_half_ydensity()`).
+#> Warning: Removed 200 rows containing non-finite outside the scale range
+#> (`stat_boxplot()`).
+#> Warning: Removed 200 rows containing missing values or values outside the scale range
 #> (`geom_point_sorted()`).
 ```

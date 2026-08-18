@@ -15,7 +15,9 @@ ApplyFDRCorrection(
   outcome_margin = 2,
   method = "fdr",
   outcome_ids = NULL,
-  predictor_ids = NULL
+  predictor_ids = NULL,
+  symmetric = "auto",
+  include_diagonal = FALSE
 )
 ```
 
@@ -63,10 +65,67 @@ ApplyFDRCorrection(
   p-value belongs to. Only used - and then required - when `pmat` is a
   vector and `fdr_scope = "per_predictor"`.
 
+- symmetric:
+
+  How to treat a square matrix whose two triangles hold the same
+  p-values. `"auto"` (default) detects symmetry and corrects each pair
+  once; `TRUE` requires it (and errors if `pmat` is not symmetric);
+  `FALSE` restores the whole-matrix behavior that counts each pair
+  twice. Ignored for vector input. See the Symmetric matrices section.
+
+- include_diagonal:
+
+  Logical; for symmetric input, whether the diagonal (self-comparisons)
+  joins the family being corrected. Default `FALSE`, which excludes it
+  and returns `NA` on the diagonal.
+
 ## Value
 
 An object of the same shape as `pmat` (matrix, data frame, or vector)
 containing adjusted p-values. Non-finite entries remain `NA`.
+
+## Symmetric matrices
+
+When a variable set is correlated against itself, the resulting p-value
+matrix is symmetric: every pair appears twice, above and below the
+diagonal, and the diagonal holds self-comparisons that were never
+tested. Correcting across every cell therefore describes a family of
+`n * (n - 1)` tests when only `n * (n - 1) / 2` were actually run - 90
+instead of 45 for ten variables.
+
+How much that matters depends on the method, and on what sits on the
+diagonal:
+
+- Benjamini-Hochberg (`method = "fdr"`, the default) is invariant to
+  exact duplication, because doubling both a p-value's rank and the
+  family size cancels out. Adjusted values are unchanged.
+
+- `"bonferroni"`, `"holm"`, and `"hochberg"` are not invariant. Counting
+  each pair twice made every adjusted p-value exactly twice as large as
+  it should be.
+
+- A diagonal carrying real values is the damaging case in every method.
+  A self-correlation p-value of 0 enters the family as the most
+  significant test there is, which drags the whole ranking down and
+  makes the off-diagonal results look *stronger* than they are.
+
+`symmetric = "auto"` (the default) detects symmetry and corrects the
+unique pairs once, then mirrors the adjusted values back into the lower
+triangle so the matrix stays symmetric. The diagonal is excluded from
+the family and returned as `NA` unless `include_diagonal = TRUE`. Set
+`symmetric = FALSE` to force the old whole-matrix behavior, or
+`symmetric = TRUE` to require symmetric handling and error out if `pmat`
+is not symmetric.
+
+Detection ignores the diagonal, since the heatmap functions routinely
+blank it before correcting, and requires the two triangles to agree on
+both their values and their missing cells. An asymmetric matrix is never
+affected.
+
+Under `"per_outcome"` or `"per_predictor"` scope each row or column is
+already a family of unique tests, so symmetric input only has its
+diagonal excluded. The result of a per-group correction on a symmetric
+matrix is not itself symmetric.
 
 ## Examples
 
@@ -92,4 +151,34 @@ ApplyFDRCorrection(c(0.01, 0.04, 0.02, 0.03),
                    fdr_scope = "per_outcome",
                    outcome_ids = c("y1", "y1", "y2", "y2"))
 #> [1] 0.02 0.04 0.03 0.03
+
+# A symmetric matrix: six filled cells, but only three pairs tested
+vars <- c("mmse", "trails", "digit_span")
+pm_sym <- matrix(NA_real_, 3, 3, dimnames = list(vars, vars))
+pm_sym[lower.tri(pm_sym)] <- c(0.001, 0.020, 0.040)
+pm_sym[upper.tri(pm_sym)] <- t(pm_sym)[upper.tri(pm_sym)]
+pm_sym
+#>             mmse trails digit_span
+#> mmse          NA  0.001       0.02
+#> trails     0.001     NA       0.04
+#> digit_span 0.020  0.040         NA
+
+# Detected automatically: three tests in the family, diagonal excluded
+ApplyFDRCorrection(pm_sym)
+#>             mmse trails digit_span
+#> mmse          NA  0.003       0.03
+#> trails     0.003     NA       0.04
+#> digit_span 0.030  0.040         NA
+
+# Bonferroni, corrected once per pair and then against all six cells
+ApplyFDRCorrection(pm_sym, method = "bonferroni")
+#>             mmse trails digit_span
+#> mmse          NA  0.003       0.06
+#> trails     0.003     NA       0.12
+#> digit_span 0.060  0.120         NA
+ApplyFDRCorrection(pm_sym, method = "bonferroni", symmetric = FALSE)
+#>             mmse trails digit_span
+#> mmse          NA  0.006       0.12
+#> trails     0.006     NA       0.24
+#> digit_span 0.120  0.240         NA
 ```

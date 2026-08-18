@@ -9,7 +9,7 @@ The table includes variable names, labels, types, and additional formatting base
 
     <a class="navbar-brand me-2" href="../index.html">SciDataReportR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">20.22.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">20.24.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -21,6 +21,8 @@ The table includes variable names, labels, types, and additional formatting base
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/argument-renaming.html">Migration note: argument renaming in 19.15.0</a></li>
+    <li><a class="dropdown-item" href="../articles/BiomarkerPerformance.html">Evaluating candidate biomarkers</a></li>
+    <li><a class="dropdown-item" href="../articles/ClusteringPhenotyping.html">Clustering and clinical phenotyping</a></li>
     <li><a class="dropdown-item" href="../articles/fdr-correction.html">FDR correction scope: matrix-wide vs per-outcome</a></li>
     <li><a class="dropdown-item" href="../articles/getting-started.html">Getting started with SciDataReportR</a></li>
     <li><a class="dropdown-item" href="../articles/MakeComparisonTable.html">Creating comparison tables with MakeComparisonTable()</a></li>
@@ -45,7 +47,7 @@ The table includes variable names, labels, types, and additional formatting base
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Create a formatted data dictionary table</h1>
-      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/v20.22.0/R/FormattedDataDictionary.R" class="external-link"><code>R/FormattedDataDictionary.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/master/R/FormattedDataDictionary.R" class="external-link"><code>R/FormattedDataDictionary.R</code></a></small>
       <div class="d-none name"><code>FormattedDataDictionary.Rd</code></div>
     </div>
 
@@ -93,21 +95,51 @@ The table includes variable names, labels, types, and additional formatting base
     <p>This function requires the <code>gt</code> and <code>codebook</code> packages. If either
 is not installed, the function will return an error.</p>
     </div>
+    <div class="section level2">
+    <h2 id="giving-the-table-room">Giving the table room<a class="anchor" aria-label="anchor" href="#giving-the-table-room"></a></h2>
+
+
+<p>A data dictionary is wide by nature - name, label, type, levels, and summary
+statistics all belong on one row - so it reads badly squeezed into a narrow
+text column. In a Quarto report the chunk option <code>column: screen</code> handles
+this. The equivalent on a reference page is to let the table spill into the
+page margins and scroll horizontally for the rest, which the example's
+<code>ColumnScreen()</code> helper does.</p>
+<p>The <code><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max()</a></code> clamp in that helper is what keeps it safe: the table breaks out
+as far as the margins allow but never past the edge of the window, so no
+column is pushed off screen and the page itself never scrolls sideways.</p>
+    </div>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">SampleData</span><span class="op">)</span></span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># \donttest{</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">SampleData</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">SampleVariableTypes</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Attach variable labels and factor levels first so the dictionary shows</span></span></span>
-<span class="r-in"><span><span class="co"># human-readable labels and correct variable types.</span></span></span>
+<span class="r-in"><span><span class="co"># Attach labels and factor levels first</span></span></span>
 <span class="r-in"><span><span class="va">Labelled</span> <span class="op">&lt;-</span> <span class="fu"><a href="RevalueData.html">RevalueData</a></span><span class="op">(</span><span class="va">SampleData</span>, <span class="va">SampleVariableTypes</span><span class="op">)</span><span class="op">$</span><span class="va">RevaluedData</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Formatted data dictionary for a subset of variables</span></span></span>
-<span class="r-in"><span><span class="fu">FormattedDataDictionary</span><span class="op">(</span></span></span>
+<span class="r-in"><span><span class="va">dictionary</span> <span class="op">&lt;-</span> <span class="fu">FormattedDataDictionary</span><span class="op">(</span></span></span>
 <span class="r-in"><span>  <span class="va">Labelled</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Diagnosis"</span>, <span class="st">"age"</span>, <span class="st">"sex"</span>, <span class="st">"Genotype"</span>, <span class="st">"AXL"</span>, <span class="st">"Adiponectin"</span><span class="op">)</span><span class="op">]</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
-<div class="gt-table"><div id="bacxifqtei" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Break the table out to the full width of the window</span></span></span>
+<span class="r-in"><span><span class="va">ColumnScreen</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="op">{</span></span></span>
+<span class="r-in"><span>  <span class="fu">htmltools</span><span class="fu">::</span><span class="fu"><a href="https://rstudio.github.io/htmltools/reference/browsable.html" class="external-link">browsable</a></span><span class="op">(</span><span class="fu">htmltools</span><span class="fu">::</span><span class="fu"><a href="https://rstudio.github.io/htmltools/reference/builder.html" class="external-link">div</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>    style <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>      <span class="st">"position: relative;"</span>,</span></span>
+<span class="r-in"><span>      <span class="st">"margin-left: max(-5rem, calc(50% - 50vw));"</span>,</span></span>
+<span class="r-in"><span>      <span class="st">"margin-right: max(-5rem, calc(50% - 50vw));"</span>,</span></span>
+<span class="r-in"><span>      <span class="st">"box-sizing: border-box;"</span>,</span></span>
+<span class="r-in"><span>      <span class="st">"overflow-x: auto;"</span></span></span>
+<span class="r-in"><span>    <span class="op">)</span>,</span></span>
+<span class="r-in"><span>    <span class="fu">htmltools</span><span class="fu">::</span><span class="fu"><a href="https://rstudio.github.io/htmltools/reference/HTML.html" class="external-link">HTML</a></span><span class="op">(</span><span class="fu">gt</span><span class="fu">::</span><span class="fu"><a href="https://gt.rstudio.com/reference/as_raw_html.html" class="external-link">as_raw_html</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span>  <span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">}</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="fu">ColumnScreen</span><span class="op">(</span><span class="va">dictionary</span><span class="op">)</span></span></span>
+<div style="position: relative; margin-left: max(-5rem, calc(50% - 50vw)); margin-right: max(-5rem, calc(50% - 50vw)); box-sizing: border-box; overflow-x: auto;"><div id="oyffdccmiy" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
 
   <table class="table gt_table" data-quarto-disable-processing="false" data-quarto-bootstrap="false" style="-webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji'; display: table; border-collapse: collapse; line-height: normal; margin-left: auto; margin-right: auto; color: #333333; font-size: 16px; font-weight: normal; font-style: normal; background-color: #FFFFFF; width: auto; border-top-style: solid; border-top-width: 2px; border-top-color: #A8A8A8; border-right-style: none; border-right-width: 2px; border-right-color: #D3D3D3; border-bottom-style: solid; border-bottom-width: 2px; border-bottom-color: #A8A8A8; border-left-style: none; border-left-width: 2px; border-left-color: #D3D3D3;" bgcolor="#FFFFFF"><thead style="border-style: none;"><tr class="gt_col_headings" style="border-style: none; border-top-style: solid; border-top-width: 2px; border-top-color: #D3D3D3; border-bottom-style: solid; border-bottom-width: 2px; border-bottom-color: #D3D3D3; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3;"><th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1" style="border-style: none; color: #333333; background-color: #FFFFFF; font-size: 100%; text-transform: inherit; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; vertical-align: bottom; padding-top: 5px; padding-bottom: 6px; padding-left: 5px; padding-right: 5px; overflow-x: hidden; text-align: left; border-bottom-width: 3px; border-bottom-style: solid; border-bottom-color: #000000; font-weight: bold; border-left-width: 0.1px; border-left-style: dashed; border-left-color: grey;" scope="col" id="Variable" bgcolor="#FFFFFF" valign="bottom" align="left">Variable<span class="gt_footnote_marks" style="font-size: 75%; vertical-align: 0.4em; position: initial; white-space: nowrap; font-style: italic; font-weight: normal; line-height: 0;"><sup>1,2</sup></span></th>
       <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1" style="border-style: none; color: #333333; background-color: #FFFFFF; font-size: 100%; text-transform: inherit; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; vertical-align: bottom; padding-top: 5px; padding-bottom: 6px; padding-left: 5px; padding-right: 5px; overflow-x: hidden; text-align: left; border-bottom-width: 3px; border-bottom-style: solid; border-bottom-color: #000000; font-weight: bold; border-left-width: 0.1px; border-left-style: dashed; border-left-color: grey;" scope="col" id="Label" bgcolor="#FFFFFF" valign="bottom" align="left">Label</th>
@@ -203,7 +235,8 @@ is not installed, the function will return an error.</p>
 <td headers="Max" class="gt_row gt_right" style="border-style: none; padding-top: 8px; padding-bottom: 8px; padding-left: 5px; padding-right: 5px; margin: 10px; border-top-style: solid; border-top-width: 1px; border-top-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; vertical-align: middle; overflow-x: hidden; text-align: right; font-variant-numeric: tabular-nums; border-left-width: 0.1px; border-left-style: dashed; border-left-color: grey;" valign="middle" align="right">-3.47</td>
 <td headers="Histogram" class="gt_row gt_left" style="border-style: none; padding-top: 8px; padding-bottom: 8px; padding-left: 5px; padding-right: 5px; margin: 10px; border-top-style: solid; border-top-width: 1px; border-top-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; vertical-align: middle; overflow-x: hidden; text-align: left; border-left-width: 0.1px; border-left-style: dashed; border-left-color: grey;" valign="middle" align="left">▁▅▇▅▁</td></tr></tbody><tfoot style="border-style: none;"><tr class="gt_footnotes" style="border-style: none; color: #333333; background-color: #FFFFFF; border-bottom-style: none; border-bottom-width: 2px; border-bottom-color: #D3D3D3; border-left-style: none; border-left-width: 2px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 2px; border-right-color: #D3D3D3;" bgcolor="#FFFFFF"><td class="gt_footnote" colspan="14" style="border-style: none; margin: 0px; font-size: 90%; padding-top: 4px; padding-bottom: 4px; padding-left: 5px; padding-right: 5px;"><span class="gt_footnote_marks" style="font-size: 75%; vertical-align: 0.4em; position: initial; white-space: nowrap; font-style: italic; font-weight: normal; line-height: 0;"><sup>1</sup></span> Data Frame has 333 rows and 6 columns</td>
     </tr><tr class="gt_footnotes" style="border-style: none; color: #333333; background-color: #FFFFFF; border-bottom-style: none; border-bottom-width: 2px; border-bottom-color: #D3D3D3; border-left-style: none; border-left-width: 2px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 2px; border-right-color: #D3D3D3;" bgcolor="#FFFFFF"><td class="gt_footnote" colspan="14" style="border-style: none; margin: 0px; font-size: 90%; padding-top: 4px; padding-bottom: 4px; padding-left: 5px; padding-right: 5px;"><span class="gt_footnote_marks" style="font-size: 75%; vertical-align: 0.4em; position: initial; white-space: nowrap; font-style: italic; font-weight: normal; line-height: 0;"><sup>2</sup></span> Color indicates type of variable</td>
-    </tr></tfoot></table></div></div><span class="r-in"><span></span></span>
+    </tr></tfoot></table></div></div><span class="r-in"><span><span class="co"># }</span></span></span>
+<span class="r-in"><span></span></span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

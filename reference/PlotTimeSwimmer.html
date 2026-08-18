@@ -13,7 +13,7 @@ events over time."><meta property="og:image" content="https://rdastgh1.github.io
 
     <a class="navbar-brand me-2" href="../index.html">SciDataReportR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">20.22.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">20.24.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -25,6 +25,8 @@ events over time."><meta property="og:image" content="https://rdastgh1.github.io
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/argument-renaming.html">Migration note: argument renaming in 19.15.0</a></li>
+    <li><a class="dropdown-item" href="../articles/BiomarkerPerformance.html">Evaluating candidate biomarkers</a></li>
+    <li><a class="dropdown-item" href="../articles/ClusteringPhenotyping.html">Clustering and clinical phenotyping</a></li>
     <li><a class="dropdown-item" href="../articles/fdr-correction.html">FDR correction scope: matrix-wide vs per-outcome</a></li>
     <li><a class="dropdown-item" href="../articles/getting-started.html">Getting started with SciDataReportR</a></li>
     <li><a class="dropdown-item" href="../articles/MakeComparisonTable.html">Creating comparison tables with MakeComparisonTable()</a></li>
@@ -49,7 +51,7 @@ events over time."><meta property="og:image" content="https://rdastgh1.github.io
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Plot longitudinal swimmer timelines</h1>
-      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/v20.22.0/R/PlotTimeSwimmer.R" class="external-link"><code>R/PlotTimeSwimmer.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/master/R/PlotTimeSwimmer.R" class="external-link"><code>R/PlotTimeSwimmer.R</code></a></small>
       <div class="d-none name"><code>PlotTimeSwimmer.Rd</code></div>
     </div>
 
@@ -206,22 +208,73 @@ first occurrence of a specified event.</p>
 until the next visit (<code>StateInterval = "forward"</code>) or shown only as visit
 points (<code>StateInterval = "point"</code>).</p>
     </div>
+    <div class="section level2">
+    <h2 id="what-the-examples-vary">What the examples vary<a class="anchor" aria-label="anchor" href="#what-the-examples-vary"></a></h2>
+
+
+<p>State paths extend each state to the next visit, and ordering by duration
+puts the longest observed timelines at the top. Visit points instead retain
+only the observed visits, and <code>last_time</code> ranks participants by their most
+recent observed follow-up.</p>
+<p>Event rugs center time on each participant's first flare, so the input
+includes only participants who experienced the selected event; ordering by
+state then groups participants by their initial clinical state.</p>
+    </div>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">df</span> <span class="op">&lt;-</span> <span class="fu">tibble</span><span class="fu">::</span><span class="fu"><a href="https://tibble.tidyverse.org/reference/tibble.html" class="external-link">tibble</a></span><span class="op">(</span></span></span>
-<span class="r-in"><span>  ID <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fl">1</span>,<span class="fl">1</span>,<span class="fl">2</span>,<span class="fl">2</span>,<span class="fl">2</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>  Visit <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>,<span class="fl">6</span>,<span class="fl">12</span>,<span class="fl">0</span>,<span class="fl">6</span>,<span class="fl">12</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>  Cluster <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"A"</span>,<span class="st">"A"</span>,<span class="st">"B"</span>,<span class="st">"B"</span>,<span class="st">"B"</span>,<span class="st">"C"</span><span class="op">)</span></span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">df_swimmer</span> <span class="op">&lt;-</span> <span class="fu">tibble</span><span class="fu">::</span><span class="fu"><a href="https://tibble.tidyverse.org/reference/tibble.html" class="external-link">tibble</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>  ID <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"P01"</span>, <span class="st">"P01"</span>, <span class="st">"P01"</span>, <span class="st">"P02"</span>, <span class="st">"P02"</span>, <span class="st">"P03"</span>, <span class="st">"P03"</span>, <span class="st">"P03"</span>, <span class="st">"P04"</span>, <span class="st">"P04"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  Day <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">90</span>, <span class="fl">365</span>, <span class="fl">0</span>, <span class="fl">270</span>, <span class="fl">0</span>, <span class="fl">180</span>, <span class="fl">540</span>, <span class="fl">0</span>, <span class="fl">120</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  State <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Stable"</span>, <span class="st">"Flare"</span>, <span class="st">"Recovered"</span>, <span class="st">"Stable"</span>, <span class="st">"Stable"</span>,</span></span>
+<span class="r-in"><span>            <span class="st">"Flare"</span>, <span class="st">"Flare"</span>, <span class="st">"Recovered"</span>, <span class="st">"Stable"</span>, <span class="st">"Withdrawn"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  Event <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="cn">FALSE</span>, <span class="cn">TRUE</span>, <span class="cn">FALSE</span>, <span class="cn">FALSE</span>, <span class="cn">FALSE</span>, <span class="cn">TRUE</span>, <span class="cn">FALSE</span>, <span class="cn">FALSE</span>, <span class="cn">FALSE</span>, <span class="cn">TRUE</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  EventType <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="cn">NA</span>, <span class="st">"Flare"</span>, <span class="cn">NA</span>, <span class="cn">NA</span>, <span class="cn">NA</span>, <span class="st">"Flare"</span>, <span class="cn">NA</span>, <span class="cn">NA</span>, <span class="cn">NA</span>, <span class="st">"Withdrawal"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># State paths, ordered by duration</span></span></span>
 <span class="r-in"><span><span class="fu">PlotTimeSwimmer</span><span class="op">(</span></span></span>
-<span class="r-in"><span>  data <span class="op">=</span> <span class="va">df</span>,</span></span>
+<span class="r-in"><span>  data <span class="op">=</span> <span class="va">df_swimmer</span>,</span></span>
 <span class="r-in"><span>  id_var <span class="op">=</span> <span class="st">"ID"</span>,</span></span>
-<span class="r-in"><span>  Time <span class="op">=</span> <span class="st">"Visit"</span>,</span></span>
-<span class="r-in"><span>  State <span class="op">=</span> <span class="st">"Cluster"</span></span></span>
+<span class="r-in"><span>  Time <span class="op">=</span> <span class="st">"Day"</span>,</span></span>
+<span class="r-in"><span>  State <span class="op">=</span> <span class="st">"State"</span>,</span></span>
+<span class="r-in"><span>  Event <span class="op">=</span> <span class="st">"Event"</span>,</span></span>
+<span class="r-in"><span>  EventType <span class="op">=</span> <span class="st">"EventType"</span>,</span></span>
+<span class="r-in"><span>  Format <span class="op">=</span> <span class="st">"state_path"</span>,</span></span>
+<span class="r-in"><span>  SortBy <span class="op">=</span> <span class="st">"duration"</span>,</span></span>
+<span class="r-in"><span>  TimeUnit <span class="op">=</span> <span class="st">"months"</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Removed 7 rows containing missing values or values outside the scale range</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> (`geom_point()`).</span>
 <span class="r-plt img"><img src="PlotTimeSwimmer-1.png" alt="" width="700" height="433"></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Visit points, ordered by last observed follow-up</span></span></span>
+<span class="r-in"><span><span class="fu">PlotTimeSwimmer</span><span class="op">(</span></span></span>
+<span class="r-in"><span>  data <span class="op">=</span> <span class="va">df_swimmer</span>,</span></span>
+<span class="r-in"><span>  id_var <span class="op">=</span> <span class="st">"ID"</span>,</span></span>
+<span class="r-in"><span>  Time <span class="op">=</span> <span class="st">"Day"</span>,</span></span>
+<span class="r-in"><span>  State <span class="op">=</span> <span class="st">"State"</span>,</span></span>
+<span class="r-in"><span>  Format <span class="op">=</span> <span class="st">"visit_points"</span>,</span></span>
+<span class="r-in"><span>  SortBy <span class="op">=</span> <span class="st">"last_time"</span>,</span></span>
+<span class="r-in"><span>  TimeUnit <span class="op">=</span> <span class="st">"months"</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-plt img"><img src="PlotTimeSwimmer-2.png" alt="" width="700" height="433"></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Event rugs, centered on each participant's first flare</span></span></span>
+<span class="r-in"><span><span class="fu">PlotTimeSwimmer</span><span class="op">(</span></span></span>
+<span class="r-in"><span>  data <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/subset.html" class="external-link">subset</a></span><span class="op">(</span><span class="va">df_swimmer</span>, <span class="va">ID</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"P01"</span>, <span class="st">"P03"</span><span class="op">)</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  id_var <span class="op">=</span> <span class="st">"ID"</span>,</span></span>
+<span class="r-in"><span>  Time <span class="op">=</span> <span class="st">"Day"</span>,</span></span>
+<span class="r-in"><span>  State <span class="op">=</span> <span class="st">"State"</span>,</span></span>
+<span class="r-in"><span>  Event <span class="op">=</span> <span class="st">"Event"</span>,</span></span>
+<span class="r-in"><span>  EventType <span class="op">=</span> <span class="st">"EventType"</span>,</span></span>
+<span class="r-in"><span>  TimeScale <span class="op">=</span> <span class="st">"from_event"</span>,</span></span>
+<span class="r-in"><span>  EventReference <span class="op">=</span> <span class="cn">TRUE</span>,</span></span>
+<span class="r-in"><span>  Format <span class="op">=</span> <span class="st">"event_rug"</span>,</span></span>
+<span class="r-in"><span>  SortBy <span class="op">=</span> <span class="st">"state"</span>,</span></span>
+<span class="r-in"><span>  TimeUnit <span class="op">=</span> <span class="st">"months"</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-plt img"><img src="PlotTimeSwimmer-3.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

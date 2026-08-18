@@ -2,8 +2,11 @@
 
 Merging datasets is where many analysis errors are born: silently
 duplicated rows, IDs that never match, and `.x` / `.y` column pairs that
-nobody resolves. SciDataReportR wraps the merge-and-audit cycle into a
-small workflow:
+nobody resolves. The damage is quiet — a join that duplicates rows
+inflates your sample without error, and the analysis that follows is
+wrong in a way no downstream check will catch.
+
+SciDataReportR wraps the merge-and-audit cycle into a small workflow:
 
 - [`safe_merge()`](https://rdastgh1.github.io/SciDataReportR/reference/safe_merge.md)
   performs a left join (exact-key or closest-time) and immediately
@@ -11,10 +14,68 @@ small workflow:
   [`ValidateMerge()`](https://rdastgh1.github.io/SciDataReportR/reference/ValidateMerge.md).
 - [`merge_detail()`](https://rdastgh1.github.io/SciDataReportR/reference/merge_detail.md)
   prints plain-text diagnostic tables for one merge.
+- [`PlotMergeValidation()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotMergeValidation.md)
+  draws the same diagnostics as figures.
 - [`ExploreMergeValidation()`](https://rdastgh1.github.io/SciDataReportR/reference/ExploreMergeValidation.md)
   renders an interactive dashboard for one merge.
 - [`merge_summary_table()`](https://rdastgh1.github.io/SciDataReportR/reference/merge_summary_table.md)
   stacks the one-row logs from many merges into a pipeline-level rollup.
+
+## The workflow
+
+Every merge goes through the same four steps. The point of the workflow
+is that step 2 is never skipped, and that the answer is written down
+rather than eyeballed.
+
+**1. State what you expect before merging.** `expected_relationship` is
+the argument that turns an assumption into a check. If you believe each
+left-hand row matches at most one right-hand row, say `"many-to-one"`;
+the audit then compares that against what actually happened instead of
+leaving you to notice.
+
+**2. Merge and audit in one call.**
+[`safe_merge()`](https://rdastgh1.github.io/SciDataReportR/reference/safe_merge.md)
+joins and validates together, so an unaudited merge is not something you
+can produce by forgetting a line.
+
+**3. Read the log, then drill into whatever it flags.** The one-row
+`$log` is the verdict;
+[`merge_detail()`](https://rdastgh1.github.io/SciDataReportR/reference/merge_detail.md),
+[`PlotMergeValidation()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotMergeValidation.md),
+and
+[`ExploreMergeValidation()`](https://rdastgh1.github.io/SciDataReportR/reference/ExploreMergeValidation.md)
+are three views of the same underlying `$validation` object, for three
+different situations.
+
+**4. Roll the logs up at the end.**
+`merge_summary_table(..., flagged_only = TRUE)` over every merge in the
+pipeline is the gate: an empty table means every merge passed.
+
+### What to check, and what it means
+
+| Check | The question it answers | When to worry |
+|----|----|----|
+| **Row count** (`RowsBefore` / `RowsAfter`) | Did the join duplicate rows? | Any increase you did not intend. This is the silent killer: no error, larger sample, wrong analysis |
+| **Relationship** (`DetectedRelationship`) | Was the join one-to-one, many-to-one, one-to-many? | It disagrees with `expected_relationship` |
+| **Match rate** (`MatchRate`) | What fraction of left-hand keys found a match? | Below what the study design implies — a low rate usually means a key-format problem, not genuinely absent data |
+| **Key types** (`KeyHarmonization`) | Were the keys the same type on both sides? | IDs stored as integer in one file and double or character in another; coercion happened, so check it was the coercion you wanted |
+| **Duplicate keys** (`DuplicateKeyGroups`) | Does the key uniquely identify a row after merging? | Depends entirely on intent: fatal for one-row-per-participant data, expected for longitudinal data |
+| **Unresolved duplicate variables** (`UnresolvedDupVars`) | Did the merge leave `.x` / `.y` column pairs? | Always. Every one is a column whose correct value nobody has decided on |
+| **Value conflicts** | Where a variable came from both sources, do they agree? | Disagreement means the two sources disagree about a fact; find out which is right before analyzing either |
+
+### Choosing a review surface
+
+The three review functions read the same `$validation` object and differ
+only in how they present it:
+
+| Function | Output | Reach for it when |
+|----|----|----|
+| [`merge_detail()`](https://rdastgh1.github.io/SciDataReportR/reference/merge_detail.md) | Static [`knitr::kable()`](https://rdrr.io/pkg/knitr/man/kable.html) tables | The merge is part of a rendered report or log, and the record needs to survive in the document |
+| [`PlotMergeValidation()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotMergeValidation.md) | ggplot figures | Coverage and conflict *patterns* matter more than exact counts, or the result is going in a slide |
+| [`ExploreMergeValidation()`](https://rdastgh1.github.io/SciDataReportR/reference/ExploreMergeValidation.md) | Interactive HTML dashboard | You are working through a problem merge yourself and want to expand, sort, and filter rather than re-run code |
+
+For a merge that passes, the `$log` alone is enough and none of the
+three is needed.
 
 ``` r
 
@@ -335,14 +396,61 @@ demographics + device data: overlapping non-key variables {.table}
 demographics + device data: suspicious duplicate-variable conflicts
 {.table style="width:100%;"}
 
+### The same merge as figures
+
+[`PlotMergeValidation()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotMergeValidation.md)
+renders the identical diagnostics as ggplot figures. `Plot = "All"`
+returns them as a named list, so a report can include only the ones that
+matter for the merge at hand.
+
+``` r
+
+plots_synth <- PlotMergeValidation(
+  m_synth$validation,
+  Plot = "All",
+  interactive = FALSE
+)
+names(plots_synth)
+#> [1] "Checks"    "Coverage"  "JoinAudit" "Agreement" "Conflicts"
+```
+
+The checks figure is the plotted form of the same traffic-light table
+that
+[`merge_detail()`](https://rdastgh1.github.io/SciDataReportR/reference/merge_detail.md)
+prints first:
+
+``` r
+
+plots_synth$Checks
+```
+
+![](merge-qc-workflow_files/figure-html/unnamed-chunk-11-1.png)
+
+Coverage shows where the keys came from — matched on both sides, or
+present in only one. A pattern here is often more diagnostic than the
+counts: keys missing from one side in a block usually points at a
+formatting or provenance problem rather than genuinely absent records.
+
+``` r
+
+plots_synth$Coverage
+```
+
+![](merge-qc-workflow_files/figure-html/unnamed-chunk-12-1.png)
+
 ### Interactive review with ExploreMergeValidation()
 
 For interactive QC sessions, pass the `validation` element to
 [`ExploreMergeValidation()`](https://rdastgh1.github.io/SciDataReportR/reference/ExploreMergeValidation.md).
-The default `Detail = "Compact"` keeps the checks table front and
-center, with the coverage and conflict explorers as click-to-expand
-accordion sections labeled with their item counts. Use `Detail = "Full"`
-to render them expanded.
+This is the same content again, but explorable: the default
+`Detail = "Compact"` keeps the checks table front and center, with the
+coverage and conflict explorers as click-to-expand accordion sections
+labeled with their item counts. Use `Detail = "Full"` to render them
+expanded.
+
+Use this one while you are still working out *what went wrong*; use
+[`merge_detail()`](https://rdastgh1.github.io/SciDataReportR/reference/merge_detail.md)
+once you know, and need the answer written into a report.
 
 ``` r
 
@@ -405,3 +513,56 @@ merge_summary_table(
 An empty table here would mean every merge in the pipeline passed
 cleanly; any row that appears is a merge that still needs review before
 analysis.
+
+## Stating the expectation up front
+
+The single highest-value habit in this workflow is declaring
+`expected_relationship` before the merge runs. Without it, the audit can
+report what happened but not whether that was what you wanted:
+
+``` r
+
+m_declared <- safe_merge(
+  pbc_baseline,
+  pbc_labs,
+  by = "id",
+  name = "pbc, declared as many-to-one",
+  expected_relationship = "many-to-one"
+)
+
+m_declared$log[, c(
+  "ExpectedRelationship", "DetectedRelationship",
+  "RelationshipMatchesExpected"
+)]
+#> # A tibble: 1 × 3
+#>   ExpectedRelationship DetectedRelationship RelationshipMatchesExpected
+#>   <chr>                <chr>                <lgl>                      
+#> 1 many-to-one          one-to-many          FALSE
+```
+
+Here the declaration is wrong and the audit says so: `pbcseq` has many
+rows per patient, so the join is one-to-many, not many-to-one. That
+mismatch is exactly the signal worth having — it is the difference
+between a longitudinal dataset you meant to build and a baseline dataset
+you have accidentally duplicated.
+
+## Summary
+
+1.  Declare `expected_relationship` before merging.
+2.  Merge with
+    [`safe_merge()`](https://rdastgh1.github.io/SciDataReportR/reference/safe_merge.md),
+    which audits in the same call.
+3.  Read `$log`. If it is `PASS`, move on.
+4.  If not, drill in with
+    [`merge_detail()`](https://rdastgh1.github.io/SciDataReportR/reference/merge_detail.md)
+    for a report,
+    [`PlotMergeValidation()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotMergeValidation.md)
+    for the pattern, or
+    [`ExploreMergeValidation()`](https://rdastgh1.github.io/SciDataReportR/reference/ExploreMergeValidation.md)
+    to investigate interactively.
+5.  Gate the pipeline with
+    `merge_summary_table(logs, flagged_only = TRUE)`.
+
+A `FAIL` is not necessarily a bug. It means the merge produced something
+that needs a decision from you — and the value of the workflow is that
+the decision is recorded rather than assumed.

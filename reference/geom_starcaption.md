@@ -15,9 +15,8 @@ geom_starcaption()
 
 ## Value
 
-A [`labs()`](https://ggplot2.tidyverse.org/reference/labs.html) object
-that can be added to a ggplot, especially SciDataReportR heatmaps that
-use star annotations.
+A `labs()` object that can be added to a ggplot, especially
+SciDataReportR heatmaps that use star annotations.
 
 ## Input requirements
 
@@ -30,10 +29,16 @@ or a plot returned by
 ## Examples
 
 ``` r
-library(ggplot2)
+data(SampleData)
+data(SampleVariableTypes)
 
-# Compose the caption onto any ggplot with `+`
-ggplot(mtcars, aes(mpg, wt)) +
-  geom_point() +
-  geom_starcaption()
+df_Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
+
+# Add the caption to a correlation heatmap whose tiles already show stars.
+heatmap <- PlotCorrelationsHeatmap(
+  data = df_Labelled,
+  predictor_vars = c("Ab_42", "p_tau", "tau", "GRO_alpha", "MMP10"),
+  outcome_vars = c("MMP7", "TRAIL_R3", "Ferritin", "Fibrinogen", "MIF")
+)
+heatmap$Unadjusted$plot + geom_starcaption()
 ```

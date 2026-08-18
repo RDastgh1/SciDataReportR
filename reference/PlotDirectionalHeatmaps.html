@@ -19,7 +19,7 @@ into a single square heatmap with raw and FDR-star overlays.
 
     <a class="navbar-brand me-2" href="../index.html">SciDataReportR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">20.22.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">20.24.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -31,6 +31,8 @@ into a single square heatmap with raw and FDR-star overlays.
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/argument-renaming.html">Migration note: argument renaming in 19.15.0</a></li>
+    <li><a class="dropdown-item" href="../articles/BiomarkerPerformance.html">Evaluating candidate biomarkers</a></li>
+    <li><a class="dropdown-item" href="../articles/ClusteringPhenotyping.html">Clustering and clinical phenotyping</a></li>
     <li><a class="dropdown-item" href="../articles/fdr-correction.html">FDR correction scope: matrix-wide vs per-outcome</a></li>
     <li><a class="dropdown-item" href="../articles/getting-started.html">Getting started with SciDataReportR</a></li>
     <li><a class="dropdown-item" href="../articles/MakeComparisonTable.html">Creating comparison tables with MakeComparisonTable()</a></li>
@@ -55,7 +57,7 @@ into a single square heatmap with raw and FDR-star overlays.
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Create directional heatmaps across continuous &amp; binary variables</h1>
-      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/v20.22.0/R/PlotDirectionalHeatmaps.R" class="external-link"><code>R/PlotDirectionalHeatmaps.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/master/R/PlotDirectionalHeatmaps.R" class="external-link"><code>R/PlotDirectionalHeatmaps.R</code></a></small>
       <div class="d-none name"><code>PlotDirectionalHeatmaps.Rd</code></div>
     </div>
 
@@ -71,12 +73,12 @@ into a single square heatmap with raw and FDR-star overlays.</p></li>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">PlotDirectionalHeatmaps</span><span class="op">(</span></span>
 <span>  <span class="va">data</span>,</span>
 <span>  variables <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  yVars <span class="op">=</span> <span class="fu">lifecycle</span><span class="fu">::</span><span class="fu"><a href="https://lifecycle.r-lib.org/reference/deprecated.html" class="external-link">deprecated</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  Relabel <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  Ordinal <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  fdr_scope <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"matrix"</span>, <span class="st">"per_outcome"</span>, <span class="st">"per_predictor"</span><span class="op">)</span>,</span>
 <span>  Data <span class="op">=</span> <span class="fu">lifecycle</span><span class="fu">::</span><span class="fu"><a href="https://lifecycle.r-lib.org/reference/deprecated.html" class="external-link">deprecated</a></span><span class="op">(</span><span class="op">)</span>,</span>
-<span>  xVars <span class="op">=</span> <span class="fu">lifecycle</span><span class="fu">::</span><span class="fu"><a href="https://lifecycle.r-lib.org/reference/deprecated.html" class="external-link">deprecated</a></span><span class="op">(</span><span class="op">)</span></span>
+<span>  xVars <span class="op">=</span> <span class="fu">lifecycle</span><span class="fu">::</span><span class="fu"><a href="https://lifecycle.r-lib.org/reference/deprecated.html" class="external-link">deprecated</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  yVars <span class="op">=</span> <span class="fu">lifecycle</span><span class="fu">::</span><span class="fu"><a href="https://lifecycle.r-lib.org/reference/deprecated.html" class="external-link">deprecated</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -95,17 +97,14 @@ other, so a single variable set defines both axes. If NULL, uses all
 detected continuous + binary vars.</p></dd>
 
 
-<dt id="arg-yvars">yVars<a class="anchor" aria-label="anchor" href="#arg-yvars"></a></dt>
-<dd><p><strong>Deprecated</strong> (since 19.15.0). Use <code>variables</code>
-instead. If supplied, the old rectangular x-by-y display is still honored.</p></dd>
-
-
 <dt id="arg-relabel">Relabel<a class="anchor" aria-label="anchor" href="#arg-relabel"></a></dt>
 <dd><p>Logical; use sjlabelled variable labels if present.</p></dd>
 
 
 <dt id="arg-ordinal">Ordinal<a class="anchor" aria-label="anchor" href="#arg-ordinal"></a></dt>
-<dd><p>Logical; reserved for future use.</p></dd>
+<dd><p>Logical; passed to <code><a href="PlotPointCorrelationsHeatmap.html">PlotPointCorrelationsHeatmap()</a></code> for the
+binary~continuous block, where it controls whether ordinal variables are
+treated as continuous. Defaults to <code>TRUE</code>.</p></dd>
 
 
 <dt id="arg-fdr-scope">fdr_scope<a class="anchor" aria-label="anchor" href="#arg-fdr-scope"></a></dt>
@@ -125,6 +124,11 @@ sub-function's documented outcome orientation applies within its block.</p></dd>
 <dd><p><strong>Deprecated</strong> (since 19.15.0). Use <code>variables</code>
 instead.</p></dd>
 
+
+<dt id="arg-yvars">yVars<a class="anchor" aria-label="anchor" href="#arg-yvars"></a></dt>
+<dd><p><strong>Deprecated</strong> (since 19.15.0). Use <code>variables</code>
+instead. If supplied, the old rectangular x-by-y display is still honored.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
@@ -138,9 +142,9 @@ automatically excluded before computing any tiles.</p>
     <div class="section level2">
     <h2 id="note">Note<a class="anchor" aria-label="anchor" href="#note"></a></h2>
     <p>The analysis covers continuous and binary variables. Multi-level categorical
-variables (more than two levels) are not placed on the heatmap. Ordinal
-handling via the <code>Ordinal</code> argument is reserved for future use and does not
-yet change the tiles that are computed.</p>
+variables (more than two levels) are not placed on the heatmap. <code>Ordinal</code>
+affects only the binary~continuous block, which is the one sub-analysis that
+accepts it.</p>
     </div>
 
     <div class="section level2">

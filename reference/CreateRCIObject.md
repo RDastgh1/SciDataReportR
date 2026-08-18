@@ -123,19 +123,23 @@ Long format is recommended for datasets with more than two visits.
 ## Examples
 
 ``` r
+set.seed(20260803)
 rci_data <- data.frame(
   id = rep(1:30, each = 2),
   visit = rep(c("Baseline", "Followup"), 30),
   Score = round(rnorm(60, mean = 50, sd = 10), 1)
 )
 
+# Use a +/-1 cutoff here so all three change classifications are visible.
+# The default Confidence = 0.95 retains the conventional +/-1.96 cutoff.
 rci <- CreateRCIObject(
   data = rci_data,
   variables = "Score",
   DataFormat = "long",
   id_var = "id",
   VisitColumn = "visit",
-  BaselineVisit = "Baseline"
+  BaselineVisit = "Baseline",
+  Confidence = 0.68
 )
 
 # Individual trajectories across visits

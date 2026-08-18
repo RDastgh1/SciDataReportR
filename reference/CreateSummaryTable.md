@@ -67,3 +67,30 @@ CreateSummaryTable(
 ## Value
 
 A formatted HTML table displaying summary statistics.
+
+## Examples
+
+``` r
+# \donttest{
+data(SampleData)
+data(SampleVariableTypes)
+
+df_Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
+
+# Distribution diagnostics for six biomarkers
+summary_table <- CreateSummaryTable(
+  data = df_Labelled,
+  variables = c("AXL", "Adiponectin", "Ferritin", "MMP7", "tau", "p_tau"),
+  digits = 2,
+  ScrollBoxHeight = "320px"
+)
+#> Warning: no DISPLAY variable so Tk is not available
+
+# `browsable()` is what renders the HTML on this page; printing suffices
+# in Quarto or R Markdown
+htmltools::browsable(htmltools::HTML(as.character(summary_table)))
+
+Descriptive Summary Table. IQR, Skewness, and Kurtosis are highlighted in yellow if they are indicative of a non-normal distribution. Pct.Valid is highlighted in red if over 30% of data is missing
+ 
+   
+```

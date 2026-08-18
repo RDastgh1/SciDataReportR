@@ -28,7 +28,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">SciDataReportR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">20.22.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">20.24.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,8 @@
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
 <li><a class="dropdown-item" href="../articles/argument-renaming.html">Migration note: argument renaming in 19.15.0</a></li>
+    <li><a class="dropdown-item" href="../articles/BiomarkerPerformance.html">Evaluating candidate biomarkers</a></li>
+    <li><a class="dropdown-item" href="../articles/ClusteringPhenotyping.html">Clustering and clinical phenotyping</a></li>
     <li><a class="dropdown-item" href="../articles/fdr-correction.html">FDR correction scope: matrix-wide vs per-outcome</a></li>
     <li><a class="dropdown-item" href="../articles/getting-started.html">Getting started with SciDataReportR</a></li>
     <li><a class="dropdown-item" href="../articles/MakeComparisonTable.html">Creating comparison tables with MakeComparisonTable()</a></li>
@@ -75,7 +77,7 @@
 
 
 
-      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/v20.22.0/vignettes/MakeUnivariateRegressionTable.qmd" class="external-link"><code>vignettes/MakeUnivariateRegressionTable.qmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/master/vignettes/MakeUnivariateRegressionTable.qmd" class="external-link"><code>vignettes/MakeUnivariateRegressionTable.qmd</code></a></small>
       <div class="d-none name"><code></code></div>
     </div>
 
@@ -160,28 +162,28 @@
 </section><section class="level2" data-number="5"><h2 data-number="5" id="formatted-and-detailed-tables">
 <span class="header-section-number">5</span> Formatted and detailed tables<a class="anchor" aria-label="anchor" href="#formatted-and-detailed-tables"></a>
 </h2>
-<p><code>FormattedTable</code> is the report-facing table.</p>
+<p><code>FormattedTable</code> is the report-facing wide table: each outcome has its own column spanner with an estimate (95% CI) and p-value. Significant effects carry stars and are bolded.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">Reg_Obj_Un</span><span class="op">$</span><span class="va">FormattedTable</span></span></code></pre></div>
 <div class="cell-output-display">
-<div id="vmwwqhruct" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
-<style>#vmwwqhruct table {
+<div id="ztncreonaf" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>#ztncreonaf table {
   font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-#vmwwqhruct thead, #vmwwqhruct tbody, #vmwwqhruct tfoot, #vmwwqhruct tr, #vmwwqhruct td, #vmwwqhruct th {
+#ztncreonaf thead, #ztncreonaf tbody, #ztncreonaf tfoot, #ztncreonaf tr, #ztncreonaf td, #ztncreonaf th {
   border-style: none;
 }
 
-#vmwwqhruct p {
+#ztncreonaf p {
   margin: 0;
   padding: 0;
 }
 
-#vmwwqhruct .gt_table {
+#ztncreonaf .gt_table {
   display: table;
   border-collapse: collapse;
   line-height: normal;
@@ -207,12 +209,12 @@
   border-left-color: #D3D3D3;
 }
 
-#vmwwqhruct .gt_caption {
+#ztncreonaf .gt_caption {
   padding-top: 4px;
   padding-bottom: 4px;
 }
 
-#vmwwqhruct .gt_title {
+#ztncreonaf .gt_title {
   color: #333333;
   font-size: 125%;
   font-weight: initial;
@@ -224,7 +226,7 @@
   border-bottom-width: 0;
 }
 
-#vmwwqhruct .gt_subtitle {
+#ztncreonaf .gt_subtitle {
   color: #333333;
   font-size: 85%;
   font-weight: initial;
@@ -236,7 +238,7 @@
   border-top-width: 0;
 }
 
-#vmwwqhruct .gt_heading {
+#ztncreonaf .gt_heading {
   background-color: #FFFFFF;
   text-align: center;
   border-bottom-color: #FFFFFF;
@@ -248,13 +250,13 @@
   border-right-color: #D3D3D3;
 }
 
-#vmwwqhruct .gt_bottom_border {
+#ztncreonaf .gt_bottom_border {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
 }
 
-#vmwwqhruct .gt_col_headings {
+#ztncreonaf .gt_col_headings {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -269,7 +271,7 @@
   border-right-color: #D3D3D3;
 }
 
-#vmwwqhruct .gt_col_heading {
+#ztncreonaf .gt_col_heading {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -289,7 +291,7 @@
   overflow-x: hidden;
 }
 
-#vmwwqhruct .gt_column_spanner_outer {
+#ztncreonaf .gt_column_spanner_outer {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -301,15 +303,15 @@
   padding-right: 4px;
 }
 
-#vmwwqhruct .gt_column_spanner_outer:first-child {
+#ztncreonaf .gt_column_spanner_outer:first-child {
   padding-left: 0;
 }
 
-#vmwwqhruct .gt_column_spanner_outer:last-child {
+#ztncreonaf .gt_column_spanner_outer:last-child {
   padding-right: 0;
 }
 
-#vmwwqhruct .gt_column_spanner {
+#ztncreonaf .gt_column_spanner {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
@@ -321,11 +323,11 @@
   width: 100%;
 }
 
-#vmwwqhruct .gt_spanner_row {
+#ztncreonaf .gt_spanner_row {
   border-bottom-style: hidden;
 }
 
-#vmwwqhruct .gt_group_heading {
+#ztncreonaf .gt_group_heading {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -351,7 +353,7 @@
   text-align: left;
 }
 
-#vmwwqhruct .gt_empty_group_heading {
+#ztncreonaf .gt_empty_group_heading {
   padding: 0.5px;
   color: #333333;
   background-color: #FFFFFF;
@@ -366,15 +368,15 @@
   vertical-align: middle;
 }
 
-#vmwwqhruct .gt_from_md > :first-child {
+#ztncreonaf .gt_from_md > :first-child {
   margin-top: 0;
 }
 
-#vmwwqhruct .gt_from_md > :last-child {
+#ztncreonaf .gt_from_md > :last-child {
   margin-bottom: 0;
 }
 
-#vmwwqhruct .gt_row {
+#ztncreonaf .gt_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -393,7 +395,7 @@
   overflow-x: hidden;
 }
 
-#vmwwqhruct .gt_stub {
+#ztncreonaf .gt_stub {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -406,7 +408,7 @@
   padding-right: 5px;
 }
 
-#vmwwqhruct .gt_stub_row_group {
+#ztncreonaf .gt_stub_row_group {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -420,15 +422,15 @@
   vertical-align: top;
 }
 
-#vmwwqhruct .gt_row_group_first td {
+#ztncreonaf .gt_row_group_first td {
   border-top-width: 2px;
 }
 
-#vmwwqhruct .gt_row_group_first th {
+#ztncreonaf .gt_row_group_first th {
   border-top-width: 2px;
 }
 
-#vmwwqhruct .gt_summary_row {
+#ztncreonaf .gt_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -438,16 +440,16 @@
   padding-right: 5px;
 }
 
-#vmwwqhruct .gt_first_summary_row {
+#ztncreonaf .gt_first_summary_row {
   border-top-style: solid;
   border-top-color: #D3D3D3;
 }
 
-#vmwwqhruct .gt_first_summary_row.thick {
+#ztncreonaf .gt_first_summary_row.thick {
   border-top-width: 2px;
 }
 
-#vmwwqhruct .gt_last_summary_row {
+#ztncreonaf .gt_last_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -457,7 +459,7 @@
   border-bottom-color: #D3D3D3;
 }
 
-#vmwwqhruct .gt_grand_summary_row {
+#ztncreonaf .gt_grand_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -467,7 +469,7 @@
   padding-right: 5px;
 }
 
-#vmwwqhruct .gt_first_grand_summary_row {
+#ztncreonaf .gt_first_grand_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -477,7 +479,7 @@
   border-top-color: #D3D3D3;
 }
 
-#vmwwqhruct .gt_last_grand_summary_row_top {
+#ztncreonaf .gt_last_grand_summary_row_top {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -487,11 +489,11 @@
   border-bottom-color: #D3D3D3;
 }
 
-#vmwwqhruct .gt_striped {
+#ztncreonaf .gt_striped {
   background-color: rgba(128, 128, 128, 0.05);
 }
 
-#vmwwqhruct .gt_table_body {
+#ztncreonaf .gt_table_body {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -500,7 +502,7 @@
   border-bottom-color: #D3D3D3;
 }
 
-#vmwwqhruct .gt_footnotes {
+#ztncreonaf .gt_footnotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -514,7 +516,7 @@
   border-right-color: #D3D3D3;
 }
 
-#vmwwqhruct .gt_footnote {
+#ztncreonaf .gt_footnote {
   margin: 0px;
   font-size: 90%;
   padding-top: 4px;
@@ -523,7 +525,7 @@
   padding-right: 5px;
 }
 
-#vmwwqhruct .gt_sourcenotes {
+#ztncreonaf .gt_sourcenotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -537,7 +539,7 @@
   border-right-color: #D3D3D3;
 }
 
-#vmwwqhruct .gt_sourcenote {
+#ztncreonaf .gt_sourcenote {
   font-size: 90%;
   padding-top: 4px;
   padding-bottom: 4px;
@@ -545,179 +547,164 @@
   padding-right: 5px;
 }
 
-#vmwwqhruct .gt_left {
+#ztncreonaf .gt_left {
   text-align: left;
 }
 
-#vmwwqhruct .gt_center {
+#ztncreonaf .gt_center {
   text-align: center;
 }
 
-#vmwwqhruct .gt_right {
+#ztncreonaf .gt_right {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
 
-#vmwwqhruct .gt_font_normal {
+#ztncreonaf .gt_font_normal {
   font-weight: normal;
 }
 
-#vmwwqhruct .gt_font_bold {
+#ztncreonaf .gt_font_bold {
   font-weight: bold;
 }
 
-#vmwwqhruct .gt_font_italic {
+#ztncreonaf .gt_font_italic {
   font-style: italic;
 }
 
-#vmwwqhruct .gt_super {
+#ztncreonaf .gt_super {
   font-size: 65%;
 }
 
-#vmwwqhruct .gt_footnote_marks {
+#ztncreonaf .gt_footnote_marks {
   font-size: 75%;
   vertical-align: 0.4em;
   position: initial;
 }
 
-#vmwwqhruct .gt_asterisk {
+#ztncreonaf .gt_asterisk {
   font-size: 100%;
   vertical-align: 0;
 }
 
-#vmwwqhruct .gt_indent_1 {
+#ztncreonaf .gt_indent_1 {
   text-indent: 5px;
 }
 
-#vmwwqhruct .gt_indent_2 {
+#ztncreonaf .gt_indent_2 {
   text-indent: 10px;
 }
 
-#vmwwqhruct .gt_indent_3 {
+#ztncreonaf .gt_indent_3 {
   text-indent: 15px;
 }
 
-#vmwwqhruct .gt_indent_4 {
+#ztncreonaf .gt_indent_4 {
   text-indent: 20px;
 }
 
-#vmwwqhruct .gt_indent_5 {
+#ztncreonaf .gt_indent_5 {
   text-indent: 25px;
 }
 
-#vmwwqhruct .katex-display {
+#ztncreonaf .katex-display {
   display: inline-flex !important;
   margin-bottom: 0.75em !important;
 }
 
-#vmwwqhruct div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
+#ztncreonaf div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
   height: 0px !important;
 }
 </style>
 <table class="table gt_table caption-top" data-quarto-bootstrap="false">
-<thead><tr class="gt_col_headings header">
-<th id="TermLabel" class="gt_col_heading gt_columns_bottom_border gt_left" data-quarto-table-cell-role="th" scope="col">Variable</th>
-<th id="EffectType" class="gt_col_heading gt_columns_bottom_border gt_left" data-quarto-table-cell-role="th" scope="col">Effect</th>
-<th id="N" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">N</th>
-<th id="Estimate_CI" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">Estimate (95% CI)</th>
-<th id="P" class="gt_col_heading gt_columns_bottom_border gt_left" data-quarto-table-cell-role="th" scope="col">p-value</th>
-</tr></thead>
+<colgroup>
+<col style="width: 11%">
+<col style="width: 11%">
+<col style="width: 11%">
+<col style="width: 11%">
+<col style="width: 11%">
+<col style="width: 11%">
+<col style="width: 11%">
+<col style="width: 11%">
+<col style="width: 11%">
+</colgroup>
+<thead>
+<tr class="gt_col_headings gt_spanner_row header">
+<th rowspan="2" id="a::stub" class="gt_col_heading gt_columns_bottom_border gt_left" data-quarto-table-cell-role="th" scope="col"></th>
+<th colspan="2" id="Outcome1" class="gt_center gt_columns_top_border gt_column_spanner_outer" data-quarto-table-cell-role="th" scope="colgroup"><div class="gt_column_spanner">
+Calbindin
+</div></th>
+<th colspan="2" id="Outcome2" class="gt_center gt_columns_top_border gt_column_spanner_outer" data-quarto-table-cell-role="th" scope="colgroup"><div class="gt_column_spanner">
+Ferritin
+</div></th>
+<th colspan="2" id="Outcome3" class="gt_center gt_columns_top_border gt_column_spanner_outer" data-quarto-table-cell-role="th" scope="colgroup"><div class="gt_column_spanner">
+Matrix metalloproteinase 7
+</div></th>
+<th colspan="2" id="Outcome4" class="gt_center gt_columns_top_border gt_column_spanner_outer" data-quarto-table-cell-role="th" scope="colgroup"><div class="gt_column_spanner">
+Sortilin
+</div></th>
+</tr>
+<tr class="gt_col_headings even">
+<th id="Outcome1_EffectCI" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">Estimate (95% CI)</th>
+<th id="Outcome1_P" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">p-value</th>
+<th id="Outcome2_EffectCI" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">Estimate (95% CI)</th>
+<th id="Outcome2_P" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">p-value</th>
+<th id="Outcome3_EffectCI" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">Estimate (95% CI)</th>
+<th id="Outcome3_P" class="gt_col_heading gt_columns_bottom_border gt_left" data-quarto-table-cell-role="th" scope="col">p-value</th>
+<th id="Outcome4_EffectCI" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">Estimate (95% CI)</th>
+<th id="Outcome4_P" class="gt_col_heading gt_columns_bottom_border gt_left" data-quarto-table-cell-role="th" scope="col">p-value</th>
+</tr>
+</thead>
 <tbody class="gt_table_body">
-<tr class="gt_group_heading_row odd">
-<th colspan="5" id="Calbindin" class="gt_group_heading" data-quarto-table-cell-role="th" scope="colgroup">Calbindin</th>
-</tr>
-<tr class="gt_row_group_first even">
-<td class="gt_row gt_left" headers="Calbindin  TermLabel">Diagnosis : Impaired</td>
-<td class="gt_row gt_left" headers="Calbindin  EffectType">Estimate</td>
-<td class="gt_row gt_right" headers="Calbindin  N">333</td>
-<td class="gt_row gt_right" headers="Calbindin  Estimate_CI">0.223 (-0.0179, 0.464)</td>
-<td class="gt_row gt_left" headers="Calbindin  P">0.069</td>
-</tr>
 <tr class="odd">
-<td class="gt_row gt_left" headers="Calbindin  TermLabel">Age</td>
-<td class="gt_row gt_left" headers="Calbindin  EffectType">Estimate</td>
-<td class="gt_row gt_right" headers="Calbindin  N">322</td>
-<td class="gt_row gt_right" headers="Calbindin  Estimate_CI">0.0517 (-0.0581, 0.161)</td>
-<td class="gt_row gt_left" headers="Calbindin  P">0.36</td>
-</tr>
-<tr class="gt_group_heading_row even">
-<th colspan="5" id="Ferritin" class="gt_group_heading" data-quarto-table-cell-role="th" scope="colgroup">Ferritin</th>
-</tr>
-<tr class="gt_row_group_first odd">
-<td class="gt_row gt_left" headers="Ferritin  TermLabel">Diagnosis : Impaired</td>
-<td class="gt_row gt_left" headers="Ferritin  EffectType">Estimate</td>
-<td class="gt_row gt_right" headers="Ferritin  N">333</td>
-<td class="gt_row gt_right" headers="Ferritin  Estimate_CI">0.259 (0.0187, 0.5)</td>
-<td class="gt_row gt_left" headers="Ferritin  P" style="font-weight: bold">0.035</td>
+<th id="stub_1_1" class="gt_row gt_left gt_stub" data-quarto-table-cell-role="th" scope="row">Diagnosis : Impaired</th>
+<td class="gt_row gt_right" headers="stub_1_1 Outcome1_EffectCI">0.223 (-0.0179, 0.464)</td>
+<td class="gt_row gt_right" headers="stub_1_1 Outcome1_P">0.069</td>
+<td class="gt_row gt_right" headers="stub_1_1 Outcome2_EffectCI" style="font-weight: bold">0.259 (0.0187, 0.5)*</td>
+<td class="gt_row gt_right" headers="stub_1_1 Outcome2_P" style="font-weight: bold">0.035</td>
+<td class="gt_row gt_right" headers="stub_1_1 Outcome3_EffectCI" style="font-weight: bold">0.551 (0.316, 0.786)****</td>
+<td class="gt_row gt_left" headers="stub_1_1 Outcome3_P" style="font-weight: bold">&lt;0.001</td>
+<td class="gt_row gt_right" headers="stub_1_1 Outcome4_EffectCI" style="font-weight: bold">0.42 (0.182, 0.658)***</td>
+<td class="gt_row gt_left" headers="stub_1_1 Outcome4_P" style="font-weight: bold">&lt;0.001</td>
 </tr>
 <tr class="even">
-<td class="gt_row gt_left" headers="Ferritin  TermLabel">Age</td>
-<td class="gt_row gt_left" headers="Ferritin  EffectType">Estimate</td>
-<td class="gt_row gt_right" headers="Ferritin  N">322</td>
-<td class="gt_row gt_right" headers="Ferritin  Estimate_CI">0.0303 (-0.0799, 0.14)</td>
-<td class="gt_row gt_left" headers="Ferritin  P">0.59</td>
-</tr>
-<tr class="gt_group_heading_row odd">
-<th colspan="5" id="Matrix metalloproteinase 7" class="gt_group_heading" data-quarto-table-cell-role="th" scope="colgroup">Matrix metalloproteinase 7</th>
-</tr>
-<tr class="gt_row_group_first even">
-<td class="gt_row gt_left" headers="Matrix metalloproteinase 7  TermLabel">Diagnosis : Impaired</td>
-<td class="gt_row gt_left" headers="Matrix metalloproteinase 7  EffectType">Estimate</td>
-<td class="gt_row gt_right" headers="Matrix metalloproteinase 7  N">333</td>
-<td class="gt_row gt_right" headers="Matrix metalloproteinase 7  Estimate_CI">0.551 (0.316, 0.786)</td>
-<td class="gt_row gt_left" headers="Matrix metalloproteinase 7  P" style="font-weight: bold">&lt;0.001</td>
-</tr>
-<tr class="odd">
-<td class="gt_row gt_left" headers="Matrix metalloproteinase 7  TermLabel">Age</td>
-<td class="gt_row gt_left" headers="Matrix metalloproteinase 7  EffectType">Estimate</td>
-<td class="gt_row gt_right" headers="Matrix metalloproteinase 7  N">322</td>
-<td class="gt_row gt_right" headers="Matrix metalloproteinase 7  Estimate_CI">-0.0464 (-0.156, 0.0632)</td>
-<td class="gt_row gt_left" headers="Matrix metalloproteinase 7  P">0.41</td>
-</tr>
-<tr class="gt_group_heading_row even">
-<th colspan="5" id="Sortilin" class="gt_group_heading" data-quarto-table-cell-role="th" scope="colgroup">Sortilin</th>
-</tr>
-<tr class="gt_row_group_first odd">
-<td class="gt_row gt_left" headers="Sortilin  TermLabel">Diagnosis : Impaired</td>
-<td class="gt_row gt_left" headers="Sortilin  EffectType">Estimate</td>
-<td class="gt_row gt_right" headers="Sortilin  N">333</td>
-<td class="gt_row gt_right" headers="Sortilin  Estimate_CI">0.42 (0.182, 0.658)</td>
-<td class="gt_row gt_left" headers="Sortilin  P" style="font-weight: bold">&lt;0.001</td>
-</tr>
-<tr class="even">
-<td class="gt_row gt_left" headers="Sortilin  TermLabel">Age</td>
-<td class="gt_row gt_left" headers="Sortilin  EffectType">Estimate</td>
-<td class="gt_row gt_right" headers="Sortilin  N">322</td>
-<td class="gt_row gt_right" headers="Sortilin  Estimate_CI">0.0668 (-0.0433, 0.177)</td>
-<td class="gt_row gt_left" headers="Sortilin  P">0.23</td>
+<th id="stub_1_2" class="gt_row gt_left gt_stub" data-quarto-table-cell-role="th" scope="row">Age</th>
+<td class="gt_row gt_right" headers="stub_1_2 Outcome1_EffectCI">0.0517 (-0.0581, 0.161)</td>
+<td class="gt_row gt_right" headers="stub_1_2 Outcome1_P">0.36</td>
+<td class="gt_row gt_right" headers="stub_1_2 Outcome2_EffectCI">0.0303 (-0.0799, 0.14)</td>
+<td class="gt_row gt_right" headers="stub_1_2 Outcome2_P">0.59</td>
+<td class="gt_row gt_right" headers="stub_1_2 Outcome3_EffectCI">-0.0464 (-0.156, 0.0632)</td>
+<td class="gt_row gt_left" headers="stub_1_2 Outcome3_P">0.41</td>
+<td class="gt_row gt_right" headers="stub_1_2 Outcome4_EffectCI">0.0668 (-0.0433, 0.177)</td>
+<td class="gt_row gt_left" headers="stub_1_2 Outcome4_P">0.23</td>
 </tr>
 </tbody>
 </table>
 </div>
 </div>
 </div>
-<p><code>LargeTable</code> keeps more of the model detail and is useful for QC.</p>
+<p><code>LargeTable</code> uses the same wide outcome layout but keeps N, estimate, standard error, confidence limits, and p-value as separate columns for QC.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">Reg_Obj_Un</span><span class="op">$</span><span class="va">LargeTable</span></span></code></pre></div>
 <div class="cell-output-display">
-<div id="uixkpyqkcn" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
-<style>#uixkpyqkcn table {
+<div id="oiuqtzkfph" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>#oiuqtzkfph table {
   font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-#uixkpyqkcn thead, #uixkpyqkcn tbody, #uixkpyqkcn tfoot, #uixkpyqkcn tr, #uixkpyqkcn td, #uixkpyqkcn th {
+#oiuqtzkfph thead, #oiuqtzkfph tbody, #oiuqtzkfph tfoot, #oiuqtzkfph tr, #oiuqtzkfph td, #oiuqtzkfph th {
   border-style: none;
 }
 
-#uixkpyqkcn p {
+#oiuqtzkfph p {
   margin: 0;
   padding: 0;
 }
 
-#uixkpyqkcn .gt_table {
+#oiuqtzkfph .gt_table {
   display: table;
   border-collapse: collapse;
   line-height: normal;
@@ -743,12 +730,12 @@
   border-left-color: #D3D3D3;
 }
 
-#uixkpyqkcn .gt_caption {
+#oiuqtzkfph .gt_caption {
   padding-top: 4px;
   padding-bottom: 4px;
 }
 
-#uixkpyqkcn .gt_title {
+#oiuqtzkfph .gt_title {
   color: #333333;
   font-size: 125%;
   font-weight: initial;
@@ -760,7 +747,7 @@
   border-bottom-width: 0;
 }
 
-#uixkpyqkcn .gt_subtitle {
+#oiuqtzkfph .gt_subtitle {
   color: #333333;
   font-size: 85%;
   font-weight: initial;
@@ -772,7 +759,7 @@
   border-top-width: 0;
 }
 
-#uixkpyqkcn .gt_heading {
+#oiuqtzkfph .gt_heading {
   background-color: #FFFFFF;
   text-align: center;
   border-bottom-color: #FFFFFF;
@@ -784,13 +771,13 @@
   border-right-color: #D3D3D3;
 }
 
-#uixkpyqkcn .gt_bottom_border {
+#oiuqtzkfph .gt_bottom_border {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
 }
 
-#uixkpyqkcn .gt_col_headings {
+#oiuqtzkfph .gt_col_headings {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -805,7 +792,7 @@
   border-right-color: #D3D3D3;
 }
 
-#uixkpyqkcn .gt_col_heading {
+#oiuqtzkfph .gt_col_heading {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -825,7 +812,7 @@
   overflow-x: hidden;
 }
 
-#uixkpyqkcn .gt_column_spanner_outer {
+#oiuqtzkfph .gt_column_spanner_outer {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -837,15 +824,15 @@
   padding-right: 4px;
 }
 
-#uixkpyqkcn .gt_column_spanner_outer:first-child {
+#oiuqtzkfph .gt_column_spanner_outer:first-child {
   padding-left: 0;
 }
 
-#uixkpyqkcn .gt_column_spanner_outer:last-child {
+#oiuqtzkfph .gt_column_spanner_outer:last-child {
   padding-right: 0;
 }
 
-#uixkpyqkcn .gt_column_spanner {
+#oiuqtzkfph .gt_column_spanner {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
@@ -857,11 +844,11 @@
   width: 100%;
 }
 
-#uixkpyqkcn .gt_spanner_row {
+#oiuqtzkfph .gt_spanner_row {
   border-bottom-style: hidden;
 }
 
-#uixkpyqkcn .gt_group_heading {
+#oiuqtzkfph .gt_group_heading {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -887,7 +874,7 @@
   text-align: left;
 }
 
-#uixkpyqkcn .gt_empty_group_heading {
+#oiuqtzkfph .gt_empty_group_heading {
   padding: 0.5px;
   color: #333333;
   background-color: #FFFFFF;
@@ -902,15 +889,15 @@
   vertical-align: middle;
 }
 
-#uixkpyqkcn .gt_from_md > :first-child {
+#oiuqtzkfph .gt_from_md > :first-child {
   margin-top: 0;
 }
 
-#uixkpyqkcn .gt_from_md > :last-child {
+#oiuqtzkfph .gt_from_md > :last-child {
   margin-bottom: 0;
 }
 
-#uixkpyqkcn .gt_row {
+#oiuqtzkfph .gt_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -929,7 +916,7 @@
   overflow-x: hidden;
 }
 
-#uixkpyqkcn .gt_stub {
+#oiuqtzkfph .gt_stub {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -942,7 +929,7 @@
   padding-right: 5px;
 }
 
-#uixkpyqkcn .gt_stub_row_group {
+#oiuqtzkfph .gt_stub_row_group {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -956,15 +943,15 @@
   vertical-align: top;
 }
 
-#uixkpyqkcn .gt_row_group_first td {
+#oiuqtzkfph .gt_row_group_first td {
   border-top-width: 2px;
 }
 
-#uixkpyqkcn .gt_row_group_first th {
+#oiuqtzkfph .gt_row_group_first th {
   border-top-width: 2px;
 }
 
-#uixkpyqkcn .gt_summary_row {
+#oiuqtzkfph .gt_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -974,16 +961,16 @@
   padding-right: 5px;
 }
 
-#uixkpyqkcn .gt_first_summary_row {
+#oiuqtzkfph .gt_first_summary_row {
   border-top-style: solid;
   border-top-color: #D3D3D3;
 }
 
-#uixkpyqkcn .gt_first_summary_row.thick {
+#oiuqtzkfph .gt_first_summary_row.thick {
   border-top-width: 2px;
 }
 
-#uixkpyqkcn .gt_last_summary_row {
+#oiuqtzkfph .gt_last_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -993,7 +980,7 @@
   border-bottom-color: #D3D3D3;
 }
 
-#uixkpyqkcn .gt_grand_summary_row {
+#oiuqtzkfph .gt_grand_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -1003,7 +990,7 @@
   padding-right: 5px;
 }
 
-#uixkpyqkcn .gt_first_grand_summary_row {
+#oiuqtzkfph .gt_first_grand_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -1013,7 +1000,7 @@
   border-top-color: #D3D3D3;
 }
 
-#uixkpyqkcn .gt_last_grand_summary_row_top {
+#oiuqtzkfph .gt_last_grand_summary_row_top {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -1023,11 +1010,11 @@
   border-bottom-color: #D3D3D3;
 }
 
-#uixkpyqkcn .gt_striped {
+#oiuqtzkfph .gt_striped {
   background-color: rgba(128, 128, 128, 0.05);
 }
 
-#uixkpyqkcn .gt_table_body {
+#oiuqtzkfph .gt_table_body {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -1036,7 +1023,7 @@
   border-bottom-color: #D3D3D3;
 }
 
-#uixkpyqkcn .gt_footnotes {
+#oiuqtzkfph .gt_footnotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -1050,7 +1037,7 @@
   border-right-color: #D3D3D3;
 }
 
-#uixkpyqkcn .gt_footnote {
+#oiuqtzkfph .gt_footnote {
   margin: 0px;
   font-size: 90%;
   padding-top: 4px;
@@ -1059,7 +1046,7 @@
   padding-right: 5px;
 }
 
-#uixkpyqkcn .gt_sourcenotes {
+#oiuqtzkfph .gt_sourcenotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -1073,7 +1060,7 @@
   border-right-color: #D3D3D3;
 }
 
-#uixkpyqkcn .gt_sourcenote {
+#oiuqtzkfph .gt_sourcenote {
   font-size: 90%;
   padding-top: 4px;
   padding-bottom: 4px;
@@ -1081,187 +1068,200 @@
   padding-right: 5px;
 }
 
-#uixkpyqkcn .gt_left {
+#oiuqtzkfph .gt_left {
   text-align: left;
 }
 
-#uixkpyqkcn .gt_center {
+#oiuqtzkfph .gt_center {
   text-align: center;
 }
 
-#uixkpyqkcn .gt_right {
+#oiuqtzkfph .gt_right {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
 
-#uixkpyqkcn .gt_font_normal {
+#oiuqtzkfph .gt_font_normal {
   font-weight: normal;
 }
 
-#uixkpyqkcn .gt_font_bold {
+#oiuqtzkfph .gt_font_bold {
   font-weight: bold;
 }
 
-#uixkpyqkcn .gt_font_italic {
+#oiuqtzkfph .gt_font_italic {
   font-style: italic;
 }
 
-#uixkpyqkcn .gt_super {
+#oiuqtzkfph .gt_super {
   font-size: 65%;
 }
 
-#uixkpyqkcn .gt_footnote_marks {
+#oiuqtzkfph .gt_footnote_marks {
   font-size: 75%;
   vertical-align: 0.4em;
   position: initial;
 }
 
-#uixkpyqkcn .gt_asterisk {
+#oiuqtzkfph .gt_asterisk {
   font-size: 100%;
   vertical-align: 0;
 }
 
-#uixkpyqkcn .gt_indent_1 {
+#oiuqtzkfph .gt_indent_1 {
   text-indent: 5px;
 }
 
-#uixkpyqkcn .gt_indent_2 {
+#oiuqtzkfph .gt_indent_2 {
   text-indent: 10px;
 }
 
-#uixkpyqkcn .gt_indent_3 {
+#oiuqtzkfph .gt_indent_3 {
   text-indent: 15px;
 }
 
-#uixkpyqkcn .gt_indent_4 {
+#oiuqtzkfph .gt_indent_4 {
   text-indent: 20px;
 }
 
-#uixkpyqkcn .gt_indent_5 {
+#oiuqtzkfph .gt_indent_5 {
   text-indent: 25px;
 }
 
-#uixkpyqkcn .katex-display {
+#oiuqtzkfph .katex-display {
   display: inline-flex !important;
   margin-bottom: 0.75em !important;
 }
 
-#uixkpyqkcn div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
+#oiuqtzkfph div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
   height: 0px !important;
 }
 </style>
 <table class="table gt_table caption-top" data-quarto-bootstrap="false">
-<thead><tr class="gt_col_headings header">
-<th id="Outcome" class="gt_col_heading gt_columns_bottom_border gt_left" data-quarto-table-cell-role="th" scope="col">Outcome</th>
-<th id="TermLabel" class="gt_col_heading gt_columns_bottom_border gt_left" data-quarto-table-cell-role="th" scope="col">Variable</th>
-<th id="EffectType" class="gt_col_heading gt_columns_bottom_border gt_left" data-quarto-table-cell-role="th" scope="col">Effect</th>
-<th id="N" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">N</th>
-<th id="Estimate" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">Estimate</th>
-<th id="StdError" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">SE</th>
-<th id="ConfLow" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">95% CI Low</th>
-<th id="ConfHigh" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">95% CI High</th>
-<th id="PValue" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">p-value</th>
-</tr></thead>
+<colgroup>
+<col style="width: 4%">
+<col style="width: 4%">
+<col style="width: 4%">
+<col style="width: 4%">
+<col style="width: 4%">
+<col style="width: 4%">
+<col style="width: 4%">
+<col style="width: 4%">
+<col style="width: 4%">
+<col style="width: 4%">
+<col style="width: 4%">
+<col style="width: 4%">
+<col style="width: 4%">
+<col style="width: 4%">
+<col style="width: 4%">
+<col style="width: 4%">
+<col style="width: 4%">
+<col style="width: 4%">
+<col style="width: 4%">
+<col style="width: 4%">
+<col style="width: 4%">
+<col style="width: 4%">
+<col style="width: 4%">
+<col style="width: 4%">
+<col style="width: 4%">
+</colgroup>
+<thead>
+<tr class="gt_col_headings gt_spanner_row header">
+<th rowspan="2" id="a::stub" class="gt_col_heading gt_columns_bottom_border gt_left" data-quarto-table-cell-role="th" scope="col"></th>
+<th colspan="6" id="Outcome1" class="gt_center gt_columns_top_border gt_column_spanner_outer" data-quarto-table-cell-role="th" scope="colgroup"><div class="gt_column_spanner">
+Calbindin
+</div></th>
+<th colspan="6" id="Outcome2" class="gt_center gt_columns_top_border gt_column_spanner_outer" data-quarto-table-cell-role="th" scope="colgroup"><div class="gt_column_spanner">
+Ferritin
+</div></th>
+<th colspan="6" id="Outcome3" class="gt_center gt_columns_top_border gt_column_spanner_outer" data-quarto-table-cell-role="th" scope="colgroup"><div class="gt_column_spanner">
+Matrix metalloproteinase 7
+</div></th>
+<th colspan="6" id="Outcome4" class="gt_center gt_columns_top_border gt_column_spanner_outer" data-quarto-table-cell-role="th" scope="colgroup"><div class="gt_column_spanner">
+Sortilin
+</div></th>
+</tr>
+<tr class="gt_col_headings even">
+<th id="Outcome1_N" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">N</th>
+<th id="Outcome1_Estimate" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">Estimate</th>
+<th id="Outcome1_StdError" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">SE</th>
+<th id="Outcome1_ConfLow" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">95% CI Low</th>
+<th id="Outcome1_ConfHigh" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">95% CI High</th>
+<th id="Outcome1_PValue" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">p-value</th>
+<th id="Outcome2_N" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">N</th>
+<th id="Outcome2_Estimate" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">Estimate</th>
+<th id="Outcome2_StdError" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">SE</th>
+<th id="Outcome2_ConfLow" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">95% CI Low</th>
+<th id="Outcome2_ConfHigh" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">95% CI High</th>
+<th id="Outcome2_PValue" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">p-value</th>
+<th id="Outcome3_N" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">N</th>
+<th id="Outcome3_Estimate" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">Estimate</th>
+<th id="Outcome3_StdError" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">SE</th>
+<th id="Outcome3_ConfLow" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">95% CI Low</th>
+<th id="Outcome3_ConfHigh" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">95% CI High</th>
+<th id="Outcome3_PValue" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">p-value</th>
+<th id="Outcome4_N" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">N</th>
+<th id="Outcome4_Estimate" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">Estimate</th>
+<th id="Outcome4_StdError" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">SE</th>
+<th id="Outcome4_ConfLow" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">95% CI Low</th>
+<th id="Outcome4_ConfHigh" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">95% CI High</th>
+<th id="Outcome4_PValue" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">p-value</th>
+</tr>
+</thead>
 <tbody class="gt_table_body">
-<tr class="gt_group_heading_row odd">
-<th colspan="9" id="Calbindin" class="gt_group_heading" data-quarto-table-cell-role="th" scope="colgroup">Calbindin</th>
-</tr>
-<tr class="gt_row_group_first even">
-<td class="gt_row gt_left" headers="Calbindin  Outcome">Calbindin</td>
-<td class="gt_row gt_left" headers="Calbindin  TermLabel">Diagnosis : Impaired</td>
-<td class="gt_row gt_left" headers="Calbindin  EffectType">Estimate</td>
-<td class="gt_row gt_right" headers="Calbindin  N">333</td>
-<td class="gt_row gt_right" headers="Calbindin  Estimate">0.223</td>
-<td class="gt_row gt_right" headers="Calbindin  StdError">0.123</td>
-<td class="gt_row gt_right" headers="Calbindin  ConfLow">−0.018</td>
-<td class="gt_row gt_right" headers="Calbindin  ConfHigh">0.464</td>
-<td class="gt_row gt_right" headers="Calbindin  PValue">0.069</td>
-</tr>
 <tr class="odd">
-<td class="gt_row gt_left" headers="Calbindin  Outcome">Calbindin</td>
-<td class="gt_row gt_left" headers="Calbindin  TermLabel">Age</td>
-<td class="gt_row gt_left" headers="Calbindin  EffectType">Estimate</td>
-<td class="gt_row gt_right" headers="Calbindin  N">322</td>
-<td class="gt_row gt_right" headers="Calbindin  Estimate">0.052</td>
-<td class="gt_row gt_right" headers="Calbindin  StdError">0.056</td>
-<td class="gt_row gt_right" headers="Calbindin  ConfLow">−0.058</td>
-<td class="gt_row gt_right" headers="Calbindin  ConfHigh">0.161</td>
-<td class="gt_row gt_right" headers="Calbindin  PValue">0.355</td>
-</tr>
-<tr class="gt_group_heading_row even">
-<th colspan="9" id="Ferritin" class="gt_group_heading" data-quarto-table-cell-role="th" scope="colgroup">Ferritin</th>
-</tr>
-<tr class="gt_row_group_first odd">
-<td class="gt_row gt_left" headers="Ferritin  Outcome">Ferritin</td>
-<td class="gt_row gt_left" headers="Ferritin  TermLabel">Diagnosis : Impaired</td>
-<td class="gt_row gt_left" headers="Ferritin  EffectType">Estimate</td>
-<td class="gt_row gt_right" headers="Ferritin  N">333</td>
-<td class="gt_row gt_right" headers="Ferritin  Estimate">0.259</td>
-<td class="gt_row gt_right" headers="Ferritin  StdError">0.122</td>
-<td class="gt_row gt_right" headers="Ferritin  ConfLow">0.019</td>
-<td class="gt_row gt_right" headers="Ferritin  ConfHigh">0.500</td>
-<td class="gt_row gt_right" headers="Ferritin  PValue">0.035</td>
+<th id="stub_1_1" class="gt_row gt_left gt_stub" data-quarto-table-cell-role="th" scope="row">Diagnosis : Impaired</th>
+<td class="gt_row gt_right" headers="stub_1_1 Outcome1_N">333.000</td>
+<td class="gt_row gt_right" headers="stub_1_1 Outcome1_Estimate">0.223</td>
+<td class="gt_row gt_right" headers="stub_1_1 Outcome1_StdError">0.123</td>
+<td class="gt_row gt_right" headers="stub_1_1 Outcome1_ConfLow">−0.018</td>
+<td class="gt_row gt_right" headers="stub_1_1 Outcome1_ConfHigh">0.464</td>
+<td class="gt_row gt_right" headers="stub_1_1 Outcome1_PValue">0.069</td>
+<td class="gt_row gt_right" headers="stub_1_1 Outcome2_N">333.000</td>
+<td class="gt_row gt_right" headers="stub_1_1 Outcome2_Estimate">0.259</td>
+<td class="gt_row gt_right" headers="stub_1_1 Outcome2_StdError">0.122</td>
+<td class="gt_row gt_right" headers="stub_1_1 Outcome2_ConfLow">0.019</td>
+<td class="gt_row gt_right" headers="stub_1_1 Outcome2_ConfHigh">0.500</td>
+<td class="gt_row gt_right" headers="stub_1_1 Outcome2_PValue">0.035</td>
+<td class="gt_row gt_right" headers="stub_1_1 Outcome3_N">333.000</td>
+<td class="gt_row gt_right" headers="stub_1_1 Outcome3_Estimate">0.551</td>
+<td class="gt_row gt_right" headers="stub_1_1 Outcome3_StdError">0.119</td>
+<td class="gt_row gt_right" headers="stub_1_1 Outcome3_ConfLow">0.316</td>
+<td class="gt_row gt_right" headers="stub_1_1 Outcome3_ConfHigh">0.786</td>
+<td class="gt_row gt_right" headers="stub_1_1 Outcome3_PValue">0.000</td>
+<td class="gt_row gt_right" headers="stub_1_1 Outcome4_N">333.000</td>
+<td class="gt_row gt_right" headers="stub_1_1 Outcome4_Estimate">0.420</td>
+<td class="gt_row gt_right" headers="stub_1_1 Outcome4_StdError">0.121</td>
+<td class="gt_row gt_right" headers="stub_1_1 Outcome4_ConfLow">0.182</td>
+<td class="gt_row gt_right" headers="stub_1_1 Outcome4_ConfHigh">0.658</td>
+<td class="gt_row gt_right" headers="stub_1_1 Outcome4_PValue">0.001</td>
 </tr>
 <tr class="even">
-<td class="gt_row gt_left" headers="Ferritin  Outcome">Ferritin</td>
-<td class="gt_row gt_left" headers="Ferritin  TermLabel">Age</td>
-<td class="gt_row gt_left" headers="Ferritin  EffectType">Estimate</td>
-<td class="gt_row gt_right" headers="Ferritin  N">322</td>
-<td class="gt_row gt_right" headers="Ferritin  Estimate">0.030</td>
-<td class="gt_row gt_right" headers="Ferritin  StdError">0.056</td>
-<td class="gt_row gt_right" headers="Ferritin  ConfLow">−0.080</td>
-<td class="gt_row gt_right" headers="Ferritin  ConfHigh">0.140</td>
-<td class="gt_row gt_right" headers="Ferritin  PValue">0.589</td>
-</tr>
-<tr class="gt_group_heading_row odd">
-<th colspan="9" id="Matrix metalloproteinase 7" class="gt_group_heading" data-quarto-table-cell-role="th" scope="colgroup">Matrix metalloproteinase 7</th>
-</tr>
-<tr class="gt_row_group_first even">
-<td class="gt_row gt_left" headers="Matrix metalloproteinase 7  Outcome">MMP7</td>
-<td class="gt_row gt_left" headers="Matrix metalloproteinase 7  TermLabel">Diagnosis : Impaired</td>
-<td class="gt_row gt_left" headers="Matrix metalloproteinase 7  EffectType">Estimate</td>
-<td class="gt_row gt_right" headers="Matrix metalloproteinase 7  N">333</td>
-<td class="gt_row gt_right" headers="Matrix metalloproteinase 7  Estimate">0.551</td>
-<td class="gt_row gt_right" headers="Matrix metalloproteinase 7  StdError">0.119</td>
-<td class="gt_row gt_right" headers="Matrix metalloproteinase 7  ConfLow">0.316</td>
-<td class="gt_row gt_right" headers="Matrix metalloproteinase 7  ConfHigh">0.786</td>
-<td class="gt_row gt_right" headers="Matrix metalloproteinase 7  PValue">0.000</td>
-</tr>
-<tr class="odd">
-<td class="gt_row gt_left" headers="Matrix metalloproteinase 7  Outcome">MMP7</td>
-<td class="gt_row gt_left" headers="Matrix metalloproteinase 7  TermLabel">Age</td>
-<td class="gt_row gt_left" headers="Matrix metalloproteinase 7  EffectType">Estimate</td>
-<td class="gt_row gt_right" headers="Matrix metalloproteinase 7  N">322</td>
-<td class="gt_row gt_right" headers="Matrix metalloproteinase 7  Estimate">−0.046</td>
-<td class="gt_row gt_right" headers="Matrix metalloproteinase 7  StdError">0.056</td>
-<td class="gt_row gt_right" headers="Matrix metalloproteinase 7  ConfLow">−0.156</td>
-<td class="gt_row gt_right" headers="Matrix metalloproteinase 7  ConfHigh">0.063</td>
-<td class="gt_row gt_right" headers="Matrix metalloproteinase 7  PValue">0.405</td>
-</tr>
-<tr class="gt_group_heading_row even">
-<th colspan="9" id="Sortilin" class="gt_group_heading" data-quarto-table-cell-role="th" scope="colgroup">Sortilin</th>
-</tr>
-<tr class="gt_row_group_first odd">
-<td class="gt_row gt_left" headers="Sortilin  Outcome">Sortilin</td>
-<td class="gt_row gt_left" headers="Sortilin  TermLabel">Diagnosis : Impaired</td>
-<td class="gt_row gt_left" headers="Sortilin  EffectType">Estimate</td>
-<td class="gt_row gt_right" headers="Sortilin  N">333</td>
-<td class="gt_row gt_right" headers="Sortilin  Estimate">0.420</td>
-<td class="gt_row gt_right" headers="Sortilin  StdError">0.121</td>
-<td class="gt_row gt_right" headers="Sortilin  ConfLow">0.182</td>
-<td class="gt_row gt_right" headers="Sortilin  ConfHigh">0.658</td>
-<td class="gt_row gt_right" headers="Sortilin  PValue">0.001</td>
-</tr>
-<tr class="even">
-<td class="gt_row gt_left" headers="Sortilin  Outcome">Sortilin</td>
-<td class="gt_row gt_left" headers="Sortilin  TermLabel">Age</td>
-<td class="gt_row gt_left" headers="Sortilin  EffectType">Estimate</td>
-<td class="gt_row gt_right" headers="Sortilin  N">322</td>
-<td class="gt_row gt_right" headers="Sortilin  Estimate">0.067</td>
-<td class="gt_row gt_right" headers="Sortilin  StdError">0.056</td>
-<td class="gt_row gt_right" headers="Sortilin  ConfLow">−0.043</td>
-<td class="gt_row gt_right" headers="Sortilin  ConfHigh">0.177</td>
-<td class="gt_row gt_right" headers="Sortilin  PValue">0.234</td>
+<th id="stub_1_2" class="gt_row gt_left gt_stub" data-quarto-table-cell-role="th" scope="row">Age</th>
+<td class="gt_row gt_right" headers="stub_1_2 Outcome1_N">322.000</td>
+<td class="gt_row gt_right" headers="stub_1_2 Outcome1_Estimate">0.052</td>
+<td class="gt_row gt_right" headers="stub_1_2 Outcome1_StdError">0.056</td>
+<td class="gt_row gt_right" headers="stub_1_2 Outcome1_ConfLow">−0.058</td>
+<td class="gt_row gt_right" headers="stub_1_2 Outcome1_ConfHigh">0.161</td>
+<td class="gt_row gt_right" headers="stub_1_2 Outcome1_PValue">0.355</td>
+<td class="gt_row gt_right" headers="stub_1_2 Outcome2_N">322.000</td>
+<td class="gt_row gt_right" headers="stub_1_2 Outcome2_Estimate">0.030</td>
+<td class="gt_row gt_right" headers="stub_1_2 Outcome2_StdError">0.056</td>
+<td class="gt_row gt_right" headers="stub_1_2 Outcome2_ConfLow">−0.080</td>
+<td class="gt_row gt_right" headers="stub_1_2 Outcome2_ConfHigh">0.140</td>
+<td class="gt_row gt_right" headers="stub_1_2 Outcome2_PValue">0.589</td>
+<td class="gt_row gt_right" headers="stub_1_2 Outcome3_N">322.000</td>
+<td class="gt_row gt_right" headers="stub_1_2 Outcome3_Estimate">−0.046</td>
+<td class="gt_row gt_right" headers="stub_1_2 Outcome3_StdError">0.056</td>
+<td class="gt_row gt_right" headers="stub_1_2 Outcome3_ConfLow">−0.156</td>
+<td class="gt_row gt_right" headers="stub_1_2 Outcome3_ConfHigh">0.063</td>
+<td class="gt_row gt_right" headers="stub_1_2 Outcome3_PValue">0.405</td>
+<td class="gt_row gt_right" headers="stub_1_2 Outcome4_N">322.000</td>
+<td class="gt_row gt_right" headers="stub_1_2 Outcome4_Estimate">0.067</td>
+<td class="gt_row gt_right" headers="stub_1_2 Outcome4_StdError">0.056</td>
+<td class="gt_row gt_right" headers="stub_1_2 Outcome4_ConfLow">−0.043</td>
+<td class="gt_row gt_right" headers="stub_1_2 Outcome4_ConfHigh">0.177</td>
+<td class="gt_row gt_right" headers="stub_1_2 Outcome4_PValue">0.234</td>
 </tr>
 </tbody>
 </table>
@@ -1351,23 +1351,23 @@
 <span></span>
 <span><span class="va">Reg_Obj_Un_Covar</span><span class="op">$</span><span class="va">FormattedTable</span></span></code></pre></div>
 <div class="cell-output-display">
-<div id="oqufkhebgo" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
-<style>#oqufkhebgo table {
+<div id="isheimacos" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>#isheimacos table {
   font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-#oqufkhebgo thead, #oqufkhebgo tbody, #oqufkhebgo tfoot, #oqufkhebgo tr, #oqufkhebgo td, #oqufkhebgo th {
+#isheimacos thead, #isheimacos tbody, #isheimacos tfoot, #isheimacos tr, #isheimacos td, #isheimacos th {
   border-style: none;
 }
 
-#oqufkhebgo p {
+#isheimacos p {
   margin: 0;
   padding: 0;
 }
 
-#oqufkhebgo .gt_table {
+#isheimacos .gt_table {
   display: table;
   border-collapse: collapse;
   line-height: normal;
@@ -1393,12 +1393,12 @@
   border-left-color: #D3D3D3;
 }
 
-#oqufkhebgo .gt_caption {
+#isheimacos .gt_caption {
   padding-top: 4px;
   padding-bottom: 4px;
 }
 
-#oqufkhebgo .gt_title {
+#isheimacos .gt_title {
   color: #333333;
   font-size: 125%;
   font-weight: initial;
@@ -1410,7 +1410,7 @@
   border-bottom-width: 0;
 }
 
-#oqufkhebgo .gt_subtitle {
+#isheimacos .gt_subtitle {
   color: #333333;
   font-size: 85%;
   font-weight: initial;
@@ -1422,7 +1422,7 @@
   border-top-width: 0;
 }
 
-#oqufkhebgo .gt_heading {
+#isheimacos .gt_heading {
   background-color: #FFFFFF;
   text-align: center;
   border-bottom-color: #FFFFFF;
@@ -1434,13 +1434,13 @@
   border-right-color: #D3D3D3;
 }
 
-#oqufkhebgo .gt_bottom_border {
+#isheimacos .gt_bottom_border {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
 }
 
-#oqufkhebgo .gt_col_headings {
+#isheimacos .gt_col_headings {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -1455,7 +1455,7 @@
   border-right-color: #D3D3D3;
 }
 
-#oqufkhebgo .gt_col_heading {
+#isheimacos .gt_col_heading {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -1475,7 +1475,7 @@
   overflow-x: hidden;
 }
 
-#oqufkhebgo .gt_column_spanner_outer {
+#isheimacos .gt_column_spanner_outer {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -1487,15 +1487,15 @@
   padding-right: 4px;
 }
 
-#oqufkhebgo .gt_column_spanner_outer:first-child {
+#isheimacos .gt_column_spanner_outer:first-child {
   padding-left: 0;
 }
 
-#oqufkhebgo .gt_column_spanner_outer:last-child {
+#isheimacos .gt_column_spanner_outer:last-child {
   padding-right: 0;
 }
 
-#oqufkhebgo .gt_column_spanner {
+#isheimacos .gt_column_spanner {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
@@ -1507,11 +1507,11 @@
   width: 100%;
 }
 
-#oqufkhebgo .gt_spanner_row {
+#isheimacos .gt_spanner_row {
   border-bottom-style: hidden;
 }
 
-#oqufkhebgo .gt_group_heading {
+#isheimacos .gt_group_heading {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -1537,7 +1537,7 @@
   text-align: left;
 }
 
-#oqufkhebgo .gt_empty_group_heading {
+#isheimacos .gt_empty_group_heading {
   padding: 0.5px;
   color: #333333;
   background-color: #FFFFFF;
@@ -1552,15 +1552,15 @@
   vertical-align: middle;
 }
 
-#oqufkhebgo .gt_from_md > :first-child {
+#isheimacos .gt_from_md > :first-child {
   margin-top: 0;
 }
 
-#oqufkhebgo .gt_from_md > :last-child {
+#isheimacos .gt_from_md > :last-child {
   margin-bottom: 0;
 }
 
-#oqufkhebgo .gt_row {
+#isheimacos .gt_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -1579,7 +1579,7 @@
   overflow-x: hidden;
 }
 
-#oqufkhebgo .gt_stub {
+#isheimacos .gt_stub {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -1592,7 +1592,7 @@
   padding-right: 5px;
 }
 
-#oqufkhebgo .gt_stub_row_group {
+#isheimacos .gt_stub_row_group {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -1606,15 +1606,15 @@
   vertical-align: top;
 }
 
-#oqufkhebgo .gt_row_group_first td {
+#isheimacos .gt_row_group_first td {
   border-top-width: 2px;
 }
 
-#oqufkhebgo .gt_row_group_first th {
+#isheimacos .gt_row_group_first th {
   border-top-width: 2px;
 }
 
-#oqufkhebgo .gt_summary_row {
+#isheimacos .gt_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -1624,16 +1624,16 @@
   padding-right: 5px;
 }
 
-#oqufkhebgo .gt_first_summary_row {
+#isheimacos .gt_first_summary_row {
   border-top-style: solid;
   border-top-color: #D3D3D3;
 }
 
-#oqufkhebgo .gt_first_summary_row.thick {
+#isheimacos .gt_first_summary_row.thick {
   border-top-width: 2px;
 }
 
-#oqufkhebgo .gt_last_summary_row {
+#isheimacos .gt_last_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -1643,7 +1643,7 @@
   border-bottom-color: #D3D3D3;
 }
 
-#oqufkhebgo .gt_grand_summary_row {
+#isheimacos .gt_grand_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -1653,7 +1653,7 @@
   padding-right: 5px;
 }
 
-#oqufkhebgo .gt_first_grand_summary_row {
+#isheimacos .gt_first_grand_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -1663,7 +1663,7 @@
   border-top-color: #D3D3D3;
 }
 
-#oqufkhebgo .gt_last_grand_summary_row_top {
+#isheimacos .gt_last_grand_summary_row_top {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -1673,11 +1673,11 @@
   border-bottom-color: #D3D3D3;
 }
 
-#oqufkhebgo .gt_striped {
+#isheimacos .gt_striped {
   background-color: rgba(128, 128, 128, 0.05);
 }
 
-#oqufkhebgo .gt_table_body {
+#isheimacos .gt_table_body {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -1686,7 +1686,7 @@
   border-bottom-color: #D3D3D3;
 }
 
-#oqufkhebgo .gt_footnotes {
+#isheimacos .gt_footnotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -1700,7 +1700,7 @@
   border-right-color: #D3D3D3;
 }
 
-#oqufkhebgo .gt_footnote {
+#isheimacos .gt_footnote {
   margin: 0px;
   font-size: 90%;
   padding-top: 4px;
@@ -1709,7 +1709,7 @@
   padding-right: 5px;
 }
 
-#oqufkhebgo .gt_sourcenotes {
+#isheimacos .gt_sourcenotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -1723,7 +1723,7 @@
   border-right-color: #D3D3D3;
 }
 
-#oqufkhebgo .gt_sourcenote {
+#isheimacos .gt_sourcenote {
   font-size: 90%;
   padding-top: 4px;
   padding-bottom: 4px;
@@ -1731,151 +1731,136 @@
   padding-right: 5px;
 }
 
-#oqufkhebgo .gt_left {
+#isheimacos .gt_left {
   text-align: left;
 }
 
-#oqufkhebgo .gt_center {
+#isheimacos .gt_center {
   text-align: center;
 }
 
-#oqufkhebgo .gt_right {
+#isheimacos .gt_right {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
 
-#oqufkhebgo .gt_font_normal {
+#isheimacos .gt_font_normal {
   font-weight: normal;
 }
 
-#oqufkhebgo .gt_font_bold {
+#isheimacos .gt_font_bold {
   font-weight: bold;
 }
 
-#oqufkhebgo .gt_font_italic {
+#isheimacos .gt_font_italic {
   font-style: italic;
 }
 
-#oqufkhebgo .gt_super {
+#isheimacos .gt_super {
   font-size: 65%;
 }
 
-#oqufkhebgo .gt_footnote_marks {
+#isheimacos .gt_footnote_marks {
   font-size: 75%;
   vertical-align: 0.4em;
   position: initial;
 }
 
-#oqufkhebgo .gt_asterisk {
+#isheimacos .gt_asterisk {
   font-size: 100%;
   vertical-align: 0;
 }
 
-#oqufkhebgo .gt_indent_1 {
+#isheimacos .gt_indent_1 {
   text-indent: 5px;
 }
 
-#oqufkhebgo .gt_indent_2 {
+#isheimacos .gt_indent_2 {
   text-indent: 10px;
 }
 
-#oqufkhebgo .gt_indent_3 {
+#isheimacos .gt_indent_3 {
   text-indent: 15px;
 }
 
-#oqufkhebgo .gt_indent_4 {
+#isheimacos .gt_indent_4 {
   text-indent: 20px;
 }
 
-#oqufkhebgo .gt_indent_5 {
+#isheimacos .gt_indent_5 {
   text-indent: 25px;
 }
 
-#oqufkhebgo .katex-display {
+#isheimacos .katex-display {
   display: inline-flex !important;
   margin-bottom: 0.75em !important;
 }
 
-#oqufkhebgo div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
+#isheimacos div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
   height: 0px !important;
 }
 </style>
 <table class="table gt_table caption-top" data-quarto-bootstrap="false">
-<thead><tr class="gt_col_headings header">
-<th id="TermLabel" class="gt_col_heading gt_columns_bottom_border gt_left" data-quarto-table-cell-role="th" scope="col">Variable</th>
-<th id="EffectType" class="gt_col_heading gt_columns_bottom_border gt_left" data-quarto-table-cell-role="th" scope="col">Effect</th>
-<th id="N" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">N</th>
-<th id="Estimate_CI" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">Estimate (95% CI)</th>
-<th id="P" class="gt_col_heading gt_columns_bottom_border gt_left" data-quarto-table-cell-role="th" scope="col">p-value</th>
-</tr></thead>
+<colgroup>
+<col style="width: 11%">
+<col style="width: 11%">
+<col style="width: 11%">
+<col style="width: 11%">
+<col style="width: 11%">
+<col style="width: 11%">
+<col style="width: 11%">
+<col style="width: 11%">
+<col style="width: 11%">
+</colgroup>
+<thead>
+<tr class="gt_col_headings gt_spanner_row header">
+<th rowspan="2" id="a::stub" class="gt_col_heading gt_columns_bottom_border gt_left" data-quarto-table-cell-role="th" scope="col"></th>
+<th colspan="2" id="Outcome1" class="gt_center gt_columns_top_border gt_column_spanner_outer" data-quarto-table-cell-role="th" scope="colgroup"><div class="gt_column_spanner">
+Calbindin
+</div></th>
+<th colspan="2" id="Outcome2" class="gt_center gt_columns_top_border gt_column_spanner_outer" data-quarto-table-cell-role="th" scope="colgroup"><div class="gt_column_spanner">
+Ferritin
+</div></th>
+<th colspan="2" id="Outcome3" class="gt_center gt_columns_top_border gt_column_spanner_outer" data-quarto-table-cell-role="th" scope="colgroup"><div class="gt_column_spanner">
+Matrix metalloproteinase 7
+</div></th>
+<th colspan="2" id="Outcome4" class="gt_center gt_columns_top_border gt_column_spanner_outer" data-quarto-table-cell-role="th" scope="colgroup"><div class="gt_column_spanner">
+Sortilin
+</div></th>
+</tr>
+<tr class="gt_col_headings even">
+<th id="Outcome1_EffectCI" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">Estimate (95% CI)</th>
+<th id="Outcome1_P" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">p-value</th>
+<th id="Outcome2_EffectCI" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">Estimate (95% CI)</th>
+<th id="Outcome2_P" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">p-value</th>
+<th id="Outcome3_EffectCI" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">Estimate (95% CI)</th>
+<th id="Outcome3_P" class="gt_col_heading gt_columns_bottom_border gt_left" data-quarto-table-cell-role="th" scope="col">p-value</th>
+<th id="Outcome4_EffectCI" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">Estimate (95% CI)</th>
+<th id="Outcome4_P" class="gt_col_heading gt_columns_bottom_border gt_left" data-quarto-table-cell-role="th" scope="col">p-value</th>
+</tr>
+</thead>
 <tbody class="gt_table_body">
-<tr class="gt_group_heading_row odd">
-<th colspan="5" id="Calbindin" class="gt_group_heading" data-quarto-table-cell-role="th" scope="colgroup">Calbindin</th>
-</tr>
-<tr class="gt_row_group_first even">
-<td class="gt_row gt_left" headers="Calbindin  TermLabel">Diagnosis : Impaired</td>
-<td class="gt_row gt_left" headers="Calbindin  EffectType">Estimate</td>
-<td class="gt_row gt_right" headers="Calbindin  N">333</td>
-<td class="gt_row gt_right" headers="Calbindin  Estimate_CI">0.278 (0.0401, 0.516)</td>
-<td class="gt_row gt_left" headers="Calbindin  P" style="font-weight: bold">0.022</td>
-</tr>
 <tr class="odd">
-<td class="gt_row gt_left" headers="Calbindin  TermLabel">Age</td>
-<td class="gt_row gt_left" headers="Calbindin  EffectType">Estimate</td>
-<td class="gt_row gt_right" headers="Calbindin  N">322</td>
-<td class="gt_row gt_right" headers="Calbindin  Estimate_CI">0.0325 (-0.076, 0.141)</td>
-<td class="gt_row gt_left" headers="Calbindin  P">0.56</td>
-</tr>
-<tr class="gt_group_heading_row even">
-<th colspan="5" id="Ferritin" class="gt_group_heading" data-quarto-table-cell-role="th" scope="colgroup">Ferritin</th>
-</tr>
-<tr class="gt_row_group_first odd">
-<td class="gt_row gt_left" headers="Ferritin  TermLabel">Diagnosis : Impaired</td>
-<td class="gt_row gt_left" headers="Ferritin  EffectType">Estimate</td>
-<td class="gt_row gt_right" headers="Ferritin  N">333</td>
-<td class="gt_row gt_right" headers="Ferritin  Estimate_CI">0.22 (-0.0203, 0.46)</td>
-<td class="gt_row gt_left" headers="Ferritin  P">0.073</td>
+<th id="stub_1_1" class="gt_row gt_left gt_stub" data-quarto-table-cell-role="th" scope="row">Diagnosis : Impaired</th>
+<td class="gt_row gt_right" headers="stub_1_1 Outcome1_EffectCI" style="font-weight: bold">0.278 (0.0401, 0.516)*</td>
+<td class="gt_row gt_right" headers="stub_1_1 Outcome1_P" style="font-weight: bold">0.022</td>
+<td class="gt_row gt_right" headers="stub_1_1 Outcome2_EffectCI">0.22 (-0.0203, 0.46)</td>
+<td class="gt_row gt_right" headers="stub_1_1 Outcome2_P">0.073</td>
+<td class="gt_row gt_right" headers="stub_1_1 Outcome3_EffectCI" style="font-weight: bold">0.522 (0.287, 0.758)****</td>
+<td class="gt_row gt_left" headers="stub_1_1 Outcome3_P" style="font-weight: bold">&lt;0.001</td>
+<td class="gt_row gt_right" headers="stub_1_1 Outcome4_EffectCI" style="font-weight: bold">0.429 (0.189, 0.669)***</td>
+<td class="gt_row gt_left" headers="stub_1_1 Outcome4_P" style="font-weight: bold">&lt;0.001</td>
 </tr>
 <tr class="even">
-<td class="gt_row gt_left" headers="Ferritin  TermLabel">Age</td>
-<td class="gt_row gt_left" headers="Ferritin  EffectType">Estimate</td>
-<td class="gt_row gt_right" headers="Ferritin  N">322</td>
-<td class="gt_row gt_right" headers="Ferritin  Estimate_CI">0.0464 (-0.063, 0.156)</td>
-<td class="gt_row gt_left" headers="Ferritin  P">0.4</td>
-</tr>
-<tr class="gt_group_heading_row odd">
-<th colspan="5" id="Matrix metalloproteinase 7" class="gt_group_heading" data-quarto-table-cell-role="th" scope="colgroup">Matrix metalloproteinase 7</th>
-</tr>
-<tr class="gt_row_group_first even">
-<td class="gt_row gt_left" headers="Matrix metalloproteinase 7  TermLabel">Diagnosis : Impaired</td>
-<td class="gt_row gt_left" headers="Matrix metalloproteinase 7  EffectType">Estimate</td>
-<td class="gt_row gt_right" headers="Matrix metalloproteinase 7  N">333</td>
-<td class="gt_row gt_right" headers="Matrix metalloproteinase 7  Estimate_CI">0.522 (0.287, 0.758)</td>
-<td class="gt_row gt_left" headers="Matrix metalloproteinase 7  P" style="font-weight: bold">&lt;0.001</td>
-</tr>
-<tr class="odd">
-<td class="gt_row gt_left" headers="Matrix metalloproteinase 7  TermLabel">Age</td>
-<td class="gt_row gt_left" headers="Matrix metalloproteinase 7  EffectType">Estimate</td>
-<td class="gt_row gt_right" headers="Matrix metalloproteinase 7  N">322</td>
-<td class="gt_row gt_right" headers="Matrix metalloproteinase 7  Estimate_CI">-0.034 (-0.144, 0.0754)</td>
-<td class="gt_row gt_left" headers="Matrix metalloproteinase 7  P">0.54</td>
-</tr>
-<tr class="gt_group_heading_row even">
-<th colspan="5" id="Sortilin" class="gt_group_heading" data-quarto-table-cell-role="th" scope="colgroup">Sortilin</th>
-</tr>
-<tr class="gt_row_group_first odd">
-<td class="gt_row gt_left" headers="Sortilin  TermLabel">Diagnosis : Impaired</td>
-<td class="gt_row gt_left" headers="Sortilin  EffectType">Estimate</td>
-<td class="gt_row gt_right" headers="Sortilin  N">333</td>
-<td class="gt_row gt_right" headers="Sortilin  Estimate_CI">0.429 (0.189, 0.669)</td>
-<td class="gt_row gt_left" headers="Sortilin  P" style="font-weight: bold">&lt;0.001</td>
-</tr>
-<tr class="even">
-<td class="gt_row gt_left" headers="Sortilin  TermLabel">Age</td>
-<td class="gt_row gt_left" headers="Sortilin  EffectType">Estimate</td>
-<td class="gt_row gt_right" headers="Sortilin  N">322</td>
-<td class="gt_row gt_right" headers="Sortilin  Estimate_CI">0.0662 (-0.0446, 0.177)</td>
-<td class="gt_row gt_left" headers="Sortilin  P">0.24</td>
+<th id="stub_1_2" class="gt_row gt_left gt_stub" data-quarto-table-cell-role="th" scope="row">Age</th>
+<td class="gt_row gt_right" headers="stub_1_2 Outcome1_EffectCI">0.0325 (-0.076, 0.141)</td>
+<td class="gt_row gt_right" headers="stub_1_2 Outcome1_P">0.56</td>
+<td class="gt_row gt_right" headers="stub_1_2 Outcome2_EffectCI">0.0464 (-0.063, 0.156)</td>
+<td class="gt_row gt_right" headers="stub_1_2 Outcome2_P">0.4</td>
+<td class="gt_row gt_right" headers="stub_1_2 Outcome3_EffectCI">-0.034 (-0.144, 0.0754)</td>
+<td class="gt_row gt_left" headers="stub_1_2 Outcome3_P">0.54</td>
+<td class="gt_row gt_right" headers="stub_1_2 Outcome4_EffectCI">0.0662 (-0.0446, 0.177)</td>
+<td class="gt_row gt_left" headers="stub_1_2 Outcome4_P">0.24</td>
 </tr>
 </tbody>
 </table>
@@ -1897,23 +1882,23 @@
 <span></span>
 <span><span class="va">Reg_Obj_ManyPredictors</span><span class="op">$</span><span class="va">FormattedTable</span></span></code></pre></div>
 <div class="cell-output-display">
-<div id="xwgwgsnofx" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
-<style>#xwgwgsnofx table {
+<div id="snuxtmjbhh" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>#snuxtmjbhh table {
   font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-#xwgwgsnofx thead, #xwgwgsnofx tbody, #xwgwgsnofx tfoot, #xwgwgsnofx tr, #xwgwgsnofx td, #xwgwgsnofx th {
+#snuxtmjbhh thead, #snuxtmjbhh tbody, #snuxtmjbhh tfoot, #snuxtmjbhh tr, #snuxtmjbhh td, #snuxtmjbhh th {
   border-style: none;
 }
 
-#xwgwgsnofx p {
+#snuxtmjbhh p {
   margin: 0;
   padding: 0;
 }
 
-#xwgwgsnofx .gt_table {
+#snuxtmjbhh .gt_table {
   display: table;
   border-collapse: collapse;
   line-height: normal;
@@ -1939,12 +1924,12 @@
   border-left-color: #D3D3D3;
 }
 
-#xwgwgsnofx .gt_caption {
+#snuxtmjbhh .gt_caption {
   padding-top: 4px;
   padding-bottom: 4px;
 }
 
-#xwgwgsnofx .gt_title {
+#snuxtmjbhh .gt_title {
   color: #333333;
   font-size: 125%;
   font-weight: initial;
@@ -1956,7 +1941,7 @@
   border-bottom-width: 0;
 }
 
-#xwgwgsnofx .gt_subtitle {
+#snuxtmjbhh .gt_subtitle {
   color: #333333;
   font-size: 85%;
   font-weight: initial;
@@ -1968,7 +1953,7 @@
   border-top-width: 0;
 }
 
-#xwgwgsnofx .gt_heading {
+#snuxtmjbhh .gt_heading {
   background-color: #FFFFFF;
   text-align: center;
   border-bottom-color: #FFFFFF;
@@ -1980,13 +1965,13 @@
   border-right-color: #D3D3D3;
 }
 
-#xwgwgsnofx .gt_bottom_border {
+#snuxtmjbhh .gt_bottom_border {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
 }
 
-#xwgwgsnofx .gt_col_headings {
+#snuxtmjbhh .gt_col_headings {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -2001,7 +1986,7 @@
   border-right-color: #D3D3D3;
 }
 
-#xwgwgsnofx .gt_col_heading {
+#snuxtmjbhh .gt_col_heading {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -2021,7 +2006,7 @@
   overflow-x: hidden;
 }
 
-#xwgwgsnofx .gt_column_spanner_outer {
+#snuxtmjbhh .gt_column_spanner_outer {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -2033,15 +2018,15 @@
   padding-right: 4px;
 }
 
-#xwgwgsnofx .gt_column_spanner_outer:first-child {
+#snuxtmjbhh .gt_column_spanner_outer:first-child {
   padding-left: 0;
 }
 
-#xwgwgsnofx .gt_column_spanner_outer:last-child {
+#snuxtmjbhh .gt_column_spanner_outer:last-child {
   padding-right: 0;
 }
 
-#xwgwgsnofx .gt_column_spanner {
+#snuxtmjbhh .gt_column_spanner {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
@@ -2053,11 +2038,11 @@
   width: 100%;
 }
 
-#xwgwgsnofx .gt_spanner_row {
+#snuxtmjbhh .gt_spanner_row {
   border-bottom-style: hidden;
 }
 
-#xwgwgsnofx .gt_group_heading {
+#snuxtmjbhh .gt_group_heading {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -2083,7 +2068,7 @@
   text-align: left;
 }
 
-#xwgwgsnofx .gt_empty_group_heading {
+#snuxtmjbhh .gt_empty_group_heading {
   padding: 0.5px;
   color: #333333;
   background-color: #FFFFFF;
@@ -2098,15 +2083,15 @@
   vertical-align: middle;
 }
 
-#xwgwgsnofx .gt_from_md > :first-child {
+#snuxtmjbhh .gt_from_md > :first-child {
   margin-top: 0;
 }
 
-#xwgwgsnofx .gt_from_md > :last-child {
+#snuxtmjbhh .gt_from_md > :last-child {
   margin-bottom: 0;
 }
 
-#xwgwgsnofx .gt_row {
+#snuxtmjbhh .gt_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -2125,7 +2110,7 @@
   overflow-x: hidden;
 }
 
-#xwgwgsnofx .gt_stub {
+#snuxtmjbhh .gt_stub {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -2138,7 +2123,7 @@
   padding-right: 5px;
 }
 
-#xwgwgsnofx .gt_stub_row_group {
+#snuxtmjbhh .gt_stub_row_group {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -2152,15 +2137,15 @@
   vertical-align: top;
 }
 
-#xwgwgsnofx .gt_row_group_first td {
+#snuxtmjbhh .gt_row_group_first td {
   border-top-width: 2px;
 }
 
-#xwgwgsnofx .gt_row_group_first th {
+#snuxtmjbhh .gt_row_group_first th {
   border-top-width: 2px;
 }
 
-#xwgwgsnofx .gt_summary_row {
+#snuxtmjbhh .gt_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -2170,16 +2155,16 @@
   padding-right: 5px;
 }
 
-#xwgwgsnofx .gt_first_summary_row {
+#snuxtmjbhh .gt_first_summary_row {
   border-top-style: solid;
   border-top-color: #D3D3D3;
 }
 
-#xwgwgsnofx .gt_first_summary_row.thick {
+#snuxtmjbhh .gt_first_summary_row.thick {
   border-top-width: 2px;
 }
 
-#xwgwgsnofx .gt_last_summary_row {
+#snuxtmjbhh .gt_last_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -2189,7 +2174,7 @@
   border-bottom-color: #D3D3D3;
 }
 
-#xwgwgsnofx .gt_grand_summary_row {
+#snuxtmjbhh .gt_grand_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -2199,7 +2184,7 @@
   padding-right: 5px;
 }
 
-#xwgwgsnofx .gt_first_grand_summary_row {
+#snuxtmjbhh .gt_first_grand_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -2209,7 +2194,7 @@
   border-top-color: #D3D3D3;
 }
 
-#xwgwgsnofx .gt_last_grand_summary_row_top {
+#snuxtmjbhh .gt_last_grand_summary_row_top {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -2219,11 +2204,11 @@
   border-bottom-color: #D3D3D3;
 }
 
-#xwgwgsnofx .gt_striped {
+#snuxtmjbhh .gt_striped {
   background-color: rgba(128, 128, 128, 0.05);
 }
 
-#xwgwgsnofx .gt_table_body {
+#snuxtmjbhh .gt_table_body {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -2232,7 +2217,7 @@
   border-bottom-color: #D3D3D3;
 }
 
-#xwgwgsnofx .gt_footnotes {
+#snuxtmjbhh .gt_footnotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -2246,7 +2231,7 @@
   border-right-color: #D3D3D3;
 }
 
-#xwgwgsnofx .gt_footnote {
+#snuxtmjbhh .gt_footnote {
   margin: 0px;
   font-size: 90%;
   padding-top: 4px;
@@ -2255,7 +2240,7 @@
   padding-right: 5px;
 }
 
-#xwgwgsnofx .gt_sourcenotes {
+#snuxtmjbhh .gt_sourcenotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -2269,7 +2254,7 @@
   border-right-color: #D3D3D3;
 }
 
-#xwgwgsnofx .gt_sourcenote {
+#snuxtmjbhh .gt_sourcenote {
   font-size: 90%;
   padding-top: 4px;
   padding-bottom: 4px;
@@ -2277,121 +2262,118 @@
   padding-right: 5px;
 }
 
-#xwgwgsnofx .gt_left {
+#snuxtmjbhh .gt_left {
   text-align: left;
 }
 
-#xwgwgsnofx .gt_center {
+#snuxtmjbhh .gt_center {
   text-align: center;
 }
 
-#xwgwgsnofx .gt_right {
+#snuxtmjbhh .gt_right {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
 
-#xwgwgsnofx .gt_font_normal {
+#snuxtmjbhh .gt_font_normal {
   font-weight: normal;
 }
 
-#xwgwgsnofx .gt_font_bold {
+#snuxtmjbhh .gt_font_bold {
   font-weight: bold;
 }
 
-#xwgwgsnofx .gt_font_italic {
+#snuxtmjbhh .gt_font_italic {
   font-style: italic;
 }
 
-#xwgwgsnofx .gt_super {
+#snuxtmjbhh .gt_super {
   font-size: 65%;
 }
 
-#xwgwgsnofx .gt_footnote_marks {
+#snuxtmjbhh .gt_footnote_marks {
   font-size: 75%;
   vertical-align: 0.4em;
   position: initial;
 }
 
-#xwgwgsnofx .gt_asterisk {
+#snuxtmjbhh .gt_asterisk {
   font-size: 100%;
   vertical-align: 0;
 }
 
-#xwgwgsnofx .gt_indent_1 {
+#snuxtmjbhh .gt_indent_1 {
   text-indent: 5px;
 }
 
-#xwgwgsnofx .gt_indent_2 {
+#snuxtmjbhh .gt_indent_2 {
   text-indent: 10px;
 }
 
-#xwgwgsnofx .gt_indent_3 {
+#snuxtmjbhh .gt_indent_3 {
   text-indent: 15px;
 }
 
-#xwgwgsnofx .gt_indent_4 {
+#snuxtmjbhh .gt_indent_4 {
   text-indent: 20px;
 }
 
-#xwgwgsnofx .gt_indent_5 {
+#snuxtmjbhh .gt_indent_5 {
   text-indent: 25px;
 }
 
-#xwgwgsnofx .katex-display {
+#snuxtmjbhh .katex-display {
   display: inline-flex !important;
   margin-bottom: 0.75em !important;
 }
 
-#xwgwgsnofx div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
+#snuxtmjbhh div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
   height: 0px !important;
 }
 </style>
 <table class="table gt_table caption-top" data-quarto-bootstrap="false">
-<thead><tr class="gt_col_headings header">
-<th id="TermLabel" class="gt_col_heading gt_columns_bottom_border gt_left" data-quarto-table-cell-role="th" scope="col">Variable</th>
-<th id="EffectType" class="gt_col_heading gt_columns_bottom_border gt_left" data-quarto-table-cell-role="th" scope="col">Effect</th>
-<th id="N" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">N</th>
-<th id="Estimate_CI" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">Estimate (95% CI)</th>
-<th id="P" class="gt_col_heading gt_columns_bottom_border gt_left" data-quarto-table-cell-role="th" scope="col">p-value</th>
-</tr></thead>
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="gt_col_headings gt_spanner_row header">
+<th rowspan="2" id="a::stub" class="gt_col_heading gt_columns_bottom_border gt_left" data-quarto-table-cell-role="th" scope="col"></th>
+<th colspan="2" id="Outcome1" class="gt_center gt_columns_top_border gt_column_spanner_outer" data-quarto-table-cell-role="th" scope="colgroup"><div class="gt_column_spanner">
+Sortilin
+</div></th>
+</tr>
+<tr class="gt_col_headings even">
+<th id="Outcome1_EffectCI" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">Estimate (95% CI)</th>
+<th id="Outcome1_P" class="gt_col_heading gt_columns_bottom_border gt_left" data-quarto-table-cell-role="th" scope="col">p-value</th>
+</tr>
+</thead>
 <tbody class="gt_table_body">
-<tr class="gt_group_heading_row odd">
-<th colspan="5" id="Sortilin" class="gt_group_heading" data-quarto-table-cell-role="th" scope="colgroup">Sortilin</th>
-</tr>
-<tr class="gt_row_group_first even">
-<td class="gt_row gt_left" headers="Sortilin  TermLabel">Diagnosis : Impaired</td>
-<td class="gt_row gt_left" headers="Sortilin  EffectType">Estimate</td>
-<td class="gt_row gt_right" headers="Sortilin  N">333</td>
-<td class="gt_row gt_right" headers="Sortilin  Estimate_CI">0.42 (0.182, 0.658)</td>
-<td class="gt_row gt_left" headers="Sortilin  P" style="font-weight: bold">&lt;0.001</td>
-</tr>
 <tr class="odd">
-<td class="gt_row gt_left" headers="Sortilin  TermLabel">Age</td>
-<td class="gt_row gt_left" headers="Sortilin  EffectType">Estimate</td>
-<td class="gt_row gt_right" headers="Sortilin  N">322</td>
-<td class="gt_row gt_right" headers="Sortilin  Estimate_CI">0.0668 (-0.0433, 0.177)</td>
-<td class="gt_row gt_left" headers="Sortilin  P">0.23</td>
+<th id="stub_1_1" class="gt_row gt_left gt_stub" data-quarto-table-cell-role="th" scope="row">Diagnosis : Impaired</th>
+<td class="gt_row gt_right" headers="stub_1_1 Outcome1_EffectCI" style="font-weight: bold">0.42 (0.182, 0.658)***</td>
+<td class="gt_row gt_left" headers="stub_1_1 Outcome1_P" style="font-weight: bold">&lt;0.001</td>
 </tr>
 <tr class="even">
-<td class="gt_row gt_left" headers="Sortilin  TermLabel">Calbindin</td>
-<td class="gt_row gt_left" headers="Sortilin  EffectType">Estimate</td>
-<td class="gt_row gt_right" headers="Sortilin  N">333</td>
-<td class="gt_row gt_right" headers="Sortilin  Estimate_CI">0.484 (0.39, 0.579)</td>
-<td class="gt_row gt_left" headers="Sortilin  P" style="font-weight: bold">&lt;0.001</td>
+<th id="stub_1_2" class="gt_row gt_left gt_stub" data-quarto-table-cell-role="th" scope="row">Age</th>
+<td class="gt_row gt_right" headers="stub_1_2 Outcome1_EffectCI">0.0668 (-0.0433, 0.177)</td>
+<td class="gt_row gt_left" headers="stub_1_2 Outcome1_P">0.23</td>
 </tr>
 <tr class="odd">
-<td class="gt_row gt_left" headers="Sortilin  TermLabel">Ferritin</td>
-<td class="gt_row gt_left" headers="Sortilin  EffectType">Estimate</td>
-<td class="gt_row gt_right" headers="Sortilin  N">333</td>
-<td class="gt_row gt_right" headers="Sortilin  Estimate_CI">0.617 (0.532, 0.702)</td>
-<td class="gt_row gt_left" headers="Sortilin  P" style="font-weight: bold">&lt;0.001</td>
+<th id="stub_1_3" class="gt_row gt_left gt_stub" data-quarto-table-cell-role="th" scope="row">Calbindin</th>
+<td class="gt_row gt_right" headers="stub_1_3 Outcome1_EffectCI" style="font-weight: bold">0.484 (0.39, 0.579)****</td>
+<td class="gt_row gt_left" headers="stub_1_3 Outcome1_P" style="font-weight: bold">&lt;0.001</td>
 </tr>
 <tr class="even">
-<td class="gt_row gt_left" headers="Sortilin  TermLabel">Matrix metalloproteinase 7</td>
-<td class="gt_row gt_left" headers="Sortilin  EffectType">Estimate</td>
-<td class="gt_row gt_right" headers="Sortilin  N">333</td>
-<td class="gt_row gt_right" headers="Sortilin  Estimate_CI">0.175 (0.0689, 0.282)</td>
-<td class="gt_row gt_left" headers="Sortilin  P" style="font-weight: bold">0.0013</td>
+<th id="stub_1_4" class="gt_row gt_left gt_stub" data-quarto-table-cell-role="th" scope="row">Ferritin</th>
+<td class="gt_row gt_right" headers="stub_1_4 Outcome1_EffectCI" style="font-weight: bold">0.617 (0.532, 0.702)****</td>
+<td class="gt_row gt_left" headers="stub_1_4 Outcome1_P" style="font-weight: bold">&lt;0.001</td>
+</tr>
+<tr class="odd">
+<th id="stub_1_5" class="gt_row gt_left gt_stub" data-quarto-table-cell-role="th" scope="row">Matrix metalloproteinase 7</th>
+<td class="gt_row gt_right" headers="stub_1_5 Outcome1_EffectCI" style="font-weight: bold">0.175 (0.0689, 0.282)**</td>
+<td class="gt_row gt_left" headers="stub_1_5 Outcome1_P" style="font-weight: bold">0.0013</td>
 </tr>
 </tbody>
 </table>
@@ -2413,23 +2395,23 @@
 <span></span>
 <span><span class="va">Reg_Obj_Logistic</span><span class="op">$</span><span class="va">FormattedTable</span></span></code></pre></div>
 <div class="cell-output-display">
-<div id="mjrtrcaibx" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
-<style>#mjrtrcaibx table {
+<div id="ezzlsaabif" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>#ezzlsaabif table {
   font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-#mjrtrcaibx thead, #mjrtrcaibx tbody, #mjrtrcaibx tfoot, #mjrtrcaibx tr, #mjrtrcaibx td, #mjrtrcaibx th {
+#ezzlsaabif thead, #ezzlsaabif tbody, #ezzlsaabif tfoot, #ezzlsaabif tr, #ezzlsaabif td, #ezzlsaabif th {
   border-style: none;
 }
 
-#mjrtrcaibx p {
+#ezzlsaabif p {
   margin: 0;
   padding: 0;
 }
 
-#mjrtrcaibx .gt_table {
+#ezzlsaabif .gt_table {
   display: table;
   border-collapse: collapse;
   line-height: normal;
@@ -2455,12 +2437,12 @@
   border-left-color: #D3D3D3;
 }
 
-#mjrtrcaibx .gt_caption {
+#ezzlsaabif .gt_caption {
   padding-top: 4px;
   padding-bottom: 4px;
 }
 
-#mjrtrcaibx .gt_title {
+#ezzlsaabif .gt_title {
   color: #333333;
   font-size: 125%;
   font-weight: initial;
@@ -2472,7 +2454,7 @@
   border-bottom-width: 0;
 }
 
-#mjrtrcaibx .gt_subtitle {
+#ezzlsaabif .gt_subtitle {
   color: #333333;
   font-size: 85%;
   font-weight: initial;
@@ -2484,7 +2466,7 @@
   border-top-width: 0;
 }
 
-#mjrtrcaibx .gt_heading {
+#ezzlsaabif .gt_heading {
   background-color: #FFFFFF;
   text-align: center;
   border-bottom-color: #FFFFFF;
@@ -2496,13 +2478,13 @@
   border-right-color: #D3D3D3;
 }
 
-#mjrtrcaibx .gt_bottom_border {
+#ezzlsaabif .gt_bottom_border {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
 }
 
-#mjrtrcaibx .gt_col_headings {
+#ezzlsaabif .gt_col_headings {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -2517,7 +2499,7 @@
   border-right-color: #D3D3D3;
 }
 
-#mjrtrcaibx .gt_col_heading {
+#ezzlsaabif .gt_col_heading {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -2537,7 +2519,7 @@
   overflow-x: hidden;
 }
 
-#mjrtrcaibx .gt_column_spanner_outer {
+#ezzlsaabif .gt_column_spanner_outer {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -2549,15 +2531,15 @@
   padding-right: 4px;
 }
 
-#mjrtrcaibx .gt_column_spanner_outer:first-child {
+#ezzlsaabif .gt_column_spanner_outer:first-child {
   padding-left: 0;
 }
 
-#mjrtrcaibx .gt_column_spanner_outer:last-child {
+#ezzlsaabif .gt_column_spanner_outer:last-child {
   padding-right: 0;
 }
 
-#mjrtrcaibx .gt_column_spanner {
+#ezzlsaabif .gt_column_spanner {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
@@ -2569,11 +2551,11 @@
   width: 100%;
 }
 
-#mjrtrcaibx .gt_spanner_row {
+#ezzlsaabif .gt_spanner_row {
   border-bottom-style: hidden;
 }
 
-#mjrtrcaibx .gt_group_heading {
+#ezzlsaabif .gt_group_heading {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -2599,7 +2581,7 @@
   text-align: left;
 }
 
-#mjrtrcaibx .gt_empty_group_heading {
+#ezzlsaabif .gt_empty_group_heading {
   padding: 0.5px;
   color: #333333;
   background-color: #FFFFFF;
@@ -2614,15 +2596,15 @@
   vertical-align: middle;
 }
 
-#mjrtrcaibx .gt_from_md > :first-child {
+#ezzlsaabif .gt_from_md > :first-child {
   margin-top: 0;
 }
 
-#mjrtrcaibx .gt_from_md > :last-child {
+#ezzlsaabif .gt_from_md > :last-child {
   margin-bottom: 0;
 }
 
-#mjrtrcaibx .gt_row {
+#ezzlsaabif .gt_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -2641,7 +2623,7 @@
   overflow-x: hidden;
 }
 
-#mjrtrcaibx .gt_stub {
+#ezzlsaabif .gt_stub {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -2654,7 +2636,7 @@
   padding-right: 5px;
 }
 
-#mjrtrcaibx .gt_stub_row_group {
+#ezzlsaabif .gt_stub_row_group {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -2668,15 +2650,15 @@
   vertical-align: top;
 }
 
-#mjrtrcaibx .gt_row_group_first td {
+#ezzlsaabif .gt_row_group_first td {
   border-top-width: 2px;
 }
 
-#mjrtrcaibx .gt_row_group_first th {
+#ezzlsaabif .gt_row_group_first th {
   border-top-width: 2px;
 }
 
-#mjrtrcaibx .gt_summary_row {
+#ezzlsaabif .gt_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -2686,16 +2668,16 @@
   padding-right: 5px;
 }
 
-#mjrtrcaibx .gt_first_summary_row {
+#ezzlsaabif .gt_first_summary_row {
   border-top-style: solid;
   border-top-color: #D3D3D3;
 }
 
-#mjrtrcaibx .gt_first_summary_row.thick {
+#ezzlsaabif .gt_first_summary_row.thick {
   border-top-width: 2px;
 }
 
-#mjrtrcaibx .gt_last_summary_row {
+#ezzlsaabif .gt_last_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -2705,7 +2687,7 @@
   border-bottom-color: #D3D3D3;
 }
 
-#mjrtrcaibx .gt_grand_summary_row {
+#ezzlsaabif .gt_grand_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -2715,7 +2697,7 @@
   padding-right: 5px;
 }
 
-#mjrtrcaibx .gt_first_grand_summary_row {
+#ezzlsaabif .gt_first_grand_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -2725,7 +2707,7 @@
   border-top-color: #D3D3D3;
 }
 
-#mjrtrcaibx .gt_last_grand_summary_row_top {
+#ezzlsaabif .gt_last_grand_summary_row_top {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -2735,11 +2717,11 @@
   border-bottom-color: #D3D3D3;
 }
 
-#mjrtrcaibx .gt_striped {
+#ezzlsaabif .gt_striped {
   background-color: rgba(128, 128, 128, 0.05);
 }
 
-#mjrtrcaibx .gt_table_body {
+#ezzlsaabif .gt_table_body {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -2748,7 +2730,7 @@
   border-bottom-color: #D3D3D3;
 }
 
-#mjrtrcaibx .gt_footnotes {
+#ezzlsaabif .gt_footnotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -2762,7 +2744,7 @@
   border-right-color: #D3D3D3;
 }
 
-#mjrtrcaibx .gt_footnote {
+#ezzlsaabif .gt_footnote {
   margin: 0px;
   font-size: 90%;
   padding-top: 4px;
@@ -2771,7 +2753,7 @@
   padding-right: 5px;
 }
 
-#mjrtrcaibx .gt_sourcenotes {
+#ezzlsaabif .gt_sourcenotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -2785,7 +2767,7 @@
   border-right-color: #D3D3D3;
 }
 
-#mjrtrcaibx .gt_sourcenote {
+#ezzlsaabif .gt_sourcenote {
   font-size: 90%;
   padding-top: 4px;
   padding-bottom: 4px;
@@ -2793,114 +2775,113 @@
   padding-right: 5px;
 }
 
-#mjrtrcaibx .gt_left {
+#ezzlsaabif .gt_left {
   text-align: left;
 }
 
-#mjrtrcaibx .gt_center {
+#ezzlsaabif .gt_center {
   text-align: center;
 }
 
-#mjrtrcaibx .gt_right {
+#ezzlsaabif .gt_right {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
 
-#mjrtrcaibx .gt_font_normal {
+#ezzlsaabif .gt_font_normal {
   font-weight: normal;
 }
 
-#mjrtrcaibx .gt_font_bold {
+#ezzlsaabif .gt_font_bold {
   font-weight: bold;
 }
 
-#mjrtrcaibx .gt_font_italic {
+#ezzlsaabif .gt_font_italic {
   font-style: italic;
 }
 
-#mjrtrcaibx .gt_super {
+#ezzlsaabif .gt_super {
   font-size: 65%;
 }
 
-#mjrtrcaibx .gt_footnote_marks {
+#ezzlsaabif .gt_footnote_marks {
   font-size: 75%;
   vertical-align: 0.4em;
   position: initial;
 }
 
-#mjrtrcaibx .gt_asterisk {
+#ezzlsaabif .gt_asterisk {
   font-size: 100%;
   vertical-align: 0;
 }
 
-#mjrtrcaibx .gt_indent_1 {
+#ezzlsaabif .gt_indent_1 {
   text-indent: 5px;
 }
 
-#mjrtrcaibx .gt_indent_2 {
+#ezzlsaabif .gt_indent_2 {
   text-indent: 10px;
 }
 
-#mjrtrcaibx .gt_indent_3 {
+#ezzlsaabif .gt_indent_3 {
   text-indent: 15px;
 }
 
-#mjrtrcaibx .gt_indent_4 {
+#ezzlsaabif .gt_indent_4 {
   text-indent: 20px;
 }
 
-#mjrtrcaibx .gt_indent_5 {
+#ezzlsaabif .gt_indent_5 {
   text-indent: 25px;
 }
 
-#mjrtrcaibx .katex-display {
+#ezzlsaabif .katex-display {
   display: inline-flex !important;
   margin-bottom: 0.75em !important;
 }
 
-#mjrtrcaibx div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
+#ezzlsaabif div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
   height: 0px !important;
 }
 </style>
 <table class="table gt_table caption-top" data-quarto-bootstrap="false">
-<thead><tr class="gt_col_headings header">
-<th id="TermLabel" class="gt_col_heading gt_columns_bottom_border gt_left" data-quarto-table-cell-role="th" scope="col">Variable</th>
-<th id="EffectType" class="gt_col_heading gt_columns_bottom_border gt_left" data-quarto-table-cell-role="th" scope="col">Effect</th>
-<th id="N" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">N</th>
-<th id="Estimate_CI" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">Estimate (95% CI)</th>
-<th id="P" class="gt_col_heading gt_columns_bottom_border gt_left" data-quarto-table-cell-role="th" scope="col">p-value</th>
-</tr></thead>
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="gt_col_headings gt_spanner_row header">
+<th rowspan="2" id="a::stub" class="gt_col_heading gt_columns_bottom_border gt_left" data-quarto-table-cell-role="th" scope="col"></th>
+<th colspan="2" id="Outcome1" class="gt_center gt_columns_top_border gt_column_spanner_outer" data-quarto-table-cell-role="th" scope="colgroup"><div class="gt_column_spanner">
+Diagnosis
+</div></th>
+</tr>
+<tr class="gt_col_headings even">
+<th id="Outcome1_EffectCI" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">Odds ratio (95% CI)</th>
+<th id="Outcome1_P" class="gt_col_heading gt_columns_bottom_border gt_left" data-quarto-table-cell-role="th" scope="col">p-value</th>
+</tr>
+</thead>
 <tbody class="gt_table_body">
-<tr class="gt_group_heading_row odd">
-<th colspan="5" id="Diagnosis" class="gt_group_heading" data-quarto-table-cell-role="th" scope="colgroup">Diagnosis</th>
-</tr>
-<tr class="gt_row_group_first even">
-<td class="gt_row gt_left" headers="Diagnosis  TermLabel">Age</td>
-<td class="gt_row gt_left" headers="Diagnosis  EffectType">Odds ratio</td>
-<td class="gt_row gt_right" headers="Diagnosis  N">322</td>
-<td class="gt_row gt_right" headers="Diagnosis  Estimate_CI">0.929 (0.728, 1.18)</td>
-<td class="gt_row gt_left" headers="Diagnosis  P">0.55</td>
-</tr>
 <tr class="odd">
-<td class="gt_row gt_left" headers="Diagnosis  TermLabel">Calbindin</td>
-<td class="gt_row gt_left" headers="Diagnosis  EffectType">Odds ratio</td>
-<td class="gt_row gt_right" headers="Diagnosis  N">333</td>
-<td class="gt_row gt_right" headers="Diagnosis  Estimate_CI">1.25 (0.981, 1.6)</td>
-<td class="gt_row gt_left" headers="Diagnosis  P">0.071</td>
+<th id="stub_1_1" class="gt_row gt_left gt_stub" data-quarto-table-cell-role="th" scope="row">Age</th>
+<td class="gt_row gt_right" headers="stub_1_1 Outcome1_EffectCI">0.929 (0.728, 1.18)</td>
+<td class="gt_row gt_left" headers="stub_1_1 Outcome1_P">0.55</td>
 </tr>
 <tr class="even">
-<td class="gt_row gt_left" headers="Diagnosis  TermLabel">Ferritin</td>
-<td class="gt_row gt_left" headers="Diagnosis  EffectType">Odds ratio</td>
-<td class="gt_row gt_right" headers="Diagnosis  N">333</td>
-<td class="gt_row gt_right" headers="Diagnosis  Estimate_CI">1.3 (1.02, 1.66)</td>
-<td class="gt_row gt_left" headers="Diagnosis  P" style="font-weight: bold">0.036</td>
+<th id="stub_1_2" class="gt_row gt_left gt_stub" data-quarto-table-cell-role="th" scope="row">Calbindin</th>
+<td class="gt_row gt_right" headers="stub_1_2 Outcome1_EffectCI">1.25 (0.981, 1.6)</td>
+<td class="gt_row gt_left" headers="stub_1_2 Outcome1_P">0.071</td>
 </tr>
 <tr class="odd">
-<td class="gt_row gt_left" headers="Diagnosis  TermLabel">Matrix metalloproteinase 7</td>
-<td class="gt_row gt_left" headers="Diagnosis  EffectType">Odds ratio</td>
-<td class="gt_row gt_right" headers="Diagnosis  N">333</td>
-<td class="gt_row gt_right" headers="Diagnosis  Estimate_CI">1.8 (1.38, 2.35)</td>
-<td class="gt_row gt_left" headers="Diagnosis  P" style="font-weight: bold">&lt;0.001</td>
+<th id="stub_1_3" class="gt_row gt_left gt_stub" data-quarto-table-cell-role="th" scope="row">Ferritin</th>
+<td class="gt_row gt_right" headers="stub_1_3 Outcome1_EffectCI" style="font-weight: bold">1.3 (1.02, 1.66)*</td>
+<td class="gt_row gt_left" headers="stub_1_3 Outcome1_P" style="font-weight: bold">0.036</td>
+</tr>
+<tr class="even">
+<th id="stub_1_4" class="gt_row gt_left gt_stub" data-quarto-table-cell-role="th" scope="row">Matrix metalloproteinase 7</th>
+<td class="gt_row gt_right" headers="stub_1_4 Outcome1_EffectCI" style="font-weight: bold">1.8 (1.38, 2.35)****</td>
+<td class="gt_row gt_left" headers="stub_1_4 Outcome1_P" style="font-weight: bold">&lt;0.001</td>
 </tr>
 </tbody>
 </table>
@@ -2967,7 +2948,7 @@ attached base packages:
 [1] stats     graphics  grDevices utils     datasets  methods   base
 
 other attached packages:
-[1] dplyr_1.2.1            SciDataReportR_20.22.0
+[1] dplyr_1.2.1            SciDataReportR_20.24.0
 
 loaded via a namespace (and not attached):
  [1] gtable_0.3.6           xfun_0.60              bayestestR_0.18.1
@@ -2979,7 +2960,7 @@ loaded via a namespace (and not attached):
 [19] gt_1.3.0               lifecycle_1.0.5        compiler_4.6.1
 [22] farver_2.1.2           carData_3.0-6          snakecase_0.11.1
 [25] sass_0.4.10            htmltools_0.5.9        yaml_2.3.12
-[28] Formula_1.2-5          pillar_1.11.1          car_3.1-5
+[28] Formula_1.2-6          pillar_1.11.1          car_3.1-5
 [31] tidyr_1.3.2            statsExpressions_2.0.0 abind_1.4-8
 [34] tidyselect_1.2.1       sjlabelled_1.2.0       digest_0.6.39
 [37] mvtnorm_1.4-2          gtsummary_2.5.1        purrr_1.2.2

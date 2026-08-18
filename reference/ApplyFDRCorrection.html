@@ -15,7 +15,7 @@ functions that now delegate to this helper."><meta property="og:image" content="
 
     <a class="navbar-brand me-2" href="../index.html">SciDataReportR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">20.22.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">20.24.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -27,6 +27,8 @@ functions that now delegate to this helper."><meta property="og:image" content="
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/argument-renaming.html">Migration note: argument renaming in 19.15.0</a></li>
+    <li><a class="dropdown-item" href="../articles/BiomarkerPerformance.html">Evaluating candidate biomarkers</a></li>
+    <li><a class="dropdown-item" href="../articles/ClusteringPhenotyping.html">Clustering and clinical phenotyping</a></li>
     <li><a class="dropdown-item" href="../articles/fdr-correction.html">FDR correction scope: matrix-wide vs per-outcome</a></li>
     <li><a class="dropdown-item" href="../articles/getting-started.html">Getting started with SciDataReportR</a></li>
     <li><a class="dropdown-item" href="../articles/MakeComparisonTable.html">Creating comparison tables with MakeComparisonTable()</a></li>
@@ -51,7 +53,7 @@ functions that now delegate to this helper."><meta property="og:image" content="
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Apply multiple-comparison correction across a p-value matrix</h1>
-      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/v20.22.0/R/ApplyFDRCorrection.R" class="external-link"><code>R/ApplyFDRCorrection.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/master/R/ApplyFDRCorrection.R" class="external-link"><code>R/ApplyFDRCorrection.R</code></a></small>
       <div class="d-none name"><code>ApplyFDRCorrection.Rd</code></div>
     </div>
 
@@ -71,7 +73,9 @@ functions that now delegate to this helper.</p>
 <span>  outcome_margin <span class="op">=</span> <span class="fl">2</span>,</span>
 <span>  method <span class="op">=</span> <span class="st">"fdr"</span>,</span>
 <span>  outcome_ids <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  predictor_ids <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  predictor_ids <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  symmetric <span class="op">=</span> <span class="st">"auto"</span>,</span>
+<span>  include_diagonal <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -116,11 +120,60 @@ long-format table functions (for example <code><a href="PlotPhiHeatmap.html">Plo
 predictor each p-value belongs to. Only used - and then required - when
 <code>pmat</code> is a vector and <code>fdr_scope = "per_predictor"</code>.</p></dd>
 
+
+<dt id="arg-symmetric">symmetric<a class="anchor" aria-label="anchor" href="#arg-symmetric"></a></dt>
+<dd><p>How to treat a square matrix whose two triangles hold the
+same p-values. <code>"auto"</code> (default) detects symmetry and corrects each pair
+once; <code>TRUE</code> requires it (and errors if <code>pmat</code> is not symmetric); <code>FALSE</code>
+restores the whole-matrix behavior that counts each pair twice. Ignored
+for vector input. See the Symmetric matrices section.</p></dd>
+
+
+<dt id="arg-include-diagonal">include_diagonal<a class="anchor" aria-label="anchor" href="#arg-include-diagonal"></a></dt>
+<dd><p>Logical; for symmetric input, whether the diagonal
+(self-comparisons) joins the family being corrected. Default <code>FALSE</code>,
+which excludes it and returns <code>NA</code> on the diagonal.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>An object of the same shape as <code>pmat</code> (matrix, data frame, or
 vector) containing adjusted p-values. Non-finite entries remain <code>NA</code>.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="symmetric-matrices">Symmetric matrices<a class="anchor" aria-label="anchor" href="#symmetric-matrices"></a></h2>
+
+
+<p>When a variable set is correlated against itself, the resulting p-value
+matrix is symmetric: every pair appears twice, above and below the diagonal,
+and the diagonal holds self-comparisons that were never tested. Correcting
+across every cell therefore describes a family of <code>n * (n - 1)</code> tests when
+only <code>n * (n - 1) / 2</code> were actually run - 90 instead of 45 for ten
+variables.</p>
+<p>How much that matters depends on the method, and on what sits on the
+diagonal:</p><ul><li><p>Benjamini-Hochberg (<code>method = "fdr"</code>, the default) is invariant to exact
+duplication, because doubling both a p-value's rank and the family size
+cancels out. Adjusted values are unchanged.</p></li>
+<li><p><code>"bonferroni"</code>, <code>"holm"</code>, and <code>"hochberg"</code> are not invariant. Counting
+each pair twice made every adjusted p-value exactly twice as large as it
+should be.</p></li>
+<li><p>A diagonal carrying real values is the damaging case in every method. A
+self-correlation p-value of 0 enters the family as the most significant
+test there is, which drags the whole ranking down and makes the off-diagonal
+results look <em>stronger</em> than they are.</p></li>
+</ul><p><code>symmetric = "auto"</code> (the default) detects symmetry and corrects the unique
+pairs once, then mirrors the adjusted values back into the lower triangle so
+the matrix stays symmetric. The diagonal is excluded from the family and
+returned as <code>NA</code> unless <code>include_diagonal = TRUE</code>. Set <code>symmetric = FALSE</code>
+to force the old whole-matrix behavior, or <code>symmetric = TRUE</code> to require
+symmetric handling and error out if <code>pmat</code> is not symmetric.</p>
+<p>Detection ignores the diagonal, since the heatmap functions routinely blank
+it before correcting, and requires the two triangles to agree on both their
+values and their missing cells. An asymmetric matrix is never affected.</p>
+<p>Under <code>"per_outcome"</code> or <code>"per_predictor"</code> scope each row or column is
+already a family of unique tests, so symmetric input only has its diagonal
+excluded. The result of a per-group correction on a symmetric matrix is not
+itself symmetric.</p>
     </div>
 
     <div class="section level2">
@@ -146,6 +199,36 @@ vector) containing adjusted p-values. Non-finite entries remain <code>NA</code>.
 <span class="r-in"><span>                   fdr_scope <span class="op">=</span> <span class="st">"per_outcome"</span>,</span></span>
 <span class="r-in"><span>                   outcome_ids <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"y1"</span>, <span class="st">"y1"</span>, <span class="st">"y2"</span>, <span class="st">"y2"</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0.02 0.04 0.03 0.03</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># A symmetric matrix: six filled cells, but only three pairs tested</span></span></span>
+<span class="r-in"><span><span class="va">vars</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"mmse"</span>, <span class="st">"trails"</span>, <span class="st">"digit_span"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">pm_sym</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="cn">NA_real_</span>, <span class="fl">3</span>, <span class="fl">3</span>, dimnames <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="va">vars</span>, <span class="va">vars</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">pm_sym</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/lower.tri.html" class="external-link">lower.tri</a></span><span class="op">(</span><span class="va">pm_sym</span><span class="op">)</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.001</span>, <span class="fl">0.020</span>, <span class="fl">0.040</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">pm_sym</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/lower.tri.html" class="external-link">upper.tri</a></span><span class="op">(</span><span class="va">pm_sym</span><span class="op">)</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/t.html" class="external-link">t</a></span><span class="op">(</span><span class="va">pm_sym</span><span class="op">)</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/lower.tri.html" class="external-link">upper.tri</a></span><span class="op">(</span><span class="va">pm_sym</span><span class="op">)</span><span class="op">]</span></span></span>
+<span class="r-in"><span><span class="va">pm_sym</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>             mmse trails digit_span</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> mmse          NA  0.001       0.02</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> trails     0.001     NA       0.04</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> digit_span 0.020  0.040         NA</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Detected automatically: three tests in the family, diagonal excluded</span></span></span>
+<span class="r-in"><span><span class="fu">ApplyFDRCorrection</span><span class="op">(</span><span class="va">pm_sym</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>             mmse trails digit_span</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> mmse          NA  0.003       0.03</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> trails     0.003     NA       0.04</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> digit_span 0.030  0.040         NA</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Bonferroni, corrected once per pair and then against all six cells</span></span></span>
+<span class="r-in"><span><span class="fu">ApplyFDRCorrection</span><span class="op">(</span><span class="va">pm_sym</span>, method <span class="op">=</span> <span class="st">"bonferroni"</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>             mmse trails digit_span</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> mmse          NA  0.003       0.06</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> trails     0.003     NA       0.12</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> digit_span 0.060  0.120         NA</span>
+<span class="r-in"><span><span class="fu">ApplyFDRCorrection</span><span class="op">(</span><span class="va">pm_sym</span>, method <span class="op">=</span> <span class="st">"bonferroni"</span>, symmetric <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>             mmse trails digit_span</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> mmse          NA  0.006       0.12</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> trails     0.006     NA       0.24</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> digit_span 0.120  0.240         NA</span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

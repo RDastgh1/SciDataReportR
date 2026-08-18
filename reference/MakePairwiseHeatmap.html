@@ -5,7 +5,7 @@ before modeling: Z-scores when Parametric = TRUE, and M-scores when
 Parametric = FALSE."><meta property="og:description" content="Build a heatmap of pairwise group contrasts against a required referent
 group. Continuous outcomes are always transformed using the referent group
 before modeling: Z-scores when Parametric = TRUE, and M-scores when
-Parametric = FALSE."><meta property="og:image" content="https://rdastgh1.github.io/SciDataReportR/logo.png"></head><body>
+Parametric = FALSE."><meta property="og:image" content="https://rdastgh1.github.io/SciDataReportR/logo.png"><!-- dependencies from examples --></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -13,7 +13,7 @@ Parametric = FALSE."><meta property="og:image" content="https://rdastgh1.github.
 
     <a class="navbar-brand me-2" href="../index.html">SciDataReportR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">20.22.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">20.24.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -25,6 +25,8 @@ Parametric = FALSE."><meta property="og:image" content="https://rdastgh1.github.
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/argument-renaming.html">Migration note: argument renaming in 19.15.0</a></li>
+    <li><a class="dropdown-item" href="../articles/BiomarkerPerformance.html">Evaluating candidate biomarkers</a></li>
+    <li><a class="dropdown-item" href="../articles/ClusteringPhenotyping.html">Clustering and clinical phenotyping</a></li>
     <li><a class="dropdown-item" href="../articles/fdr-correction.html">FDR correction scope: matrix-wide vs per-outcome</a></li>
     <li><a class="dropdown-item" href="../articles/getting-started.html">Getting started with SciDataReportR</a></li>
     <li><a class="dropdown-item" href="../articles/MakeComparisonTable.html">Creating comparison tables with MakeComparisonTable()</a></li>
@@ -49,7 +51,7 @@ Parametric = FALSE."><meta property="og:image" content="https://rdastgh1.github.
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Make a pairwise referent heatmap</h1>
-      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/v20.22.0/R/MakePairwiseHeatmap.R" class="external-link"><code>R/MakePairwiseHeatmap.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/master/R/MakePairwiseHeatmap.R" class="external-link"><code>R/MakePairwiseHeatmap.R</code></a></small>
       <div class="d-none name"><code>MakePairwiseHeatmap.Rd</code></div>
     </div>
 
@@ -207,21 +209,521 @@ and projected onto the full dataset before modeling. With the defaults,
 adjusted p-values use FDR correction within each group-vs-referent contrast
 across variables.</p>
     </div>
+    <div class="section level2">
+    <h2 id="when-to-use-it">When to use it<a class="anchor" aria-label="anchor" href="#when-to-use-it"></a></h2>
+
+
+<p>This plot earns its keep when the grouping has several levels. With only two
+groups it is a single column of cells and a comparison table says the same
+thing more compactly. A cluster assignment is the typical case: the clusters
+already exist, and the question is what actually distinguishes each one from
+the reference cluster.</p>
+<p>The result is one column per non-referent group and one row per measure, so
+a block structure in the cells <em>is</em> the phenotype definition - each group
+standing apart on its own set of variables, and variables that separate
+nothing left blank across the whole row.</p>
+<p>Every cell is backed by an auditable row in <code>Results</code>: the contrast, the
+model that produced it, the group sizes, the raw and adjusted p-values, and
+the correction that was applied.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="options-that-change-the-estimates">Options that change the estimates<a class="anchor" aria-label="anchor" href="#options-that-change-the-estimates"></a></h2>
+
+
+<p><strong><code>covariates</code></strong> turns each contrast into the group difference that survives
+holding the named variables constant.</p>
+<p><strong><code>Parametric = FALSE</code></strong> switches from Z-scores to M-scores with robust
+(HC3) standard errors, for outcomes with outliers or heavy tails.</p>
+<p><strong><code>adjust_scope</code></strong> decides what counts as one family of tests. The default
+corrects across variables within each group-vs-referent contrast;
+<code>"matrix"</code> corrects across every cell shown, which is stricter and
+appropriate when the whole heatmap is being scanned for anything
+significant.</p>
+<p><strong><code>cluster_rows</code></strong> groups variables that behave alike across contrasts, so
+the blocks can be read straight off the axis.</p>
+    </div>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">SampleData</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">SampleVariableTypes</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">Labelled</span> <span class="op">&lt;-</span> <span class="fu"><a href="RevalueData.html">RevalueData</a></span><span class="op">(</span><span class="va">SampleData</span>, <span class="va">SampleVariableTypes</span><span class="op">)</span><span class="op">$</span><span class="va">RevaluedData</span></span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># \donttest{</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">SimulatedPhenotypeData</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="va">vars_Numeric</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"Var"</span>, <span class="fl">1</span><span class="op">:</span><span class="fl">12</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="va">res</span> <span class="op">&lt;-</span> <span class="fu">MakePairwiseHeatmap</span><span class="op">(</span></span></span>
-<span class="r-in"><span>  data <span class="op">=</span> <span class="va">Labelled</span>,</span></span>
-<span class="r-in"><span>  group_var <span class="op">=</span> <span class="st">"Diagnosis"</span>,</span></span>
-<span class="r-in"><span>  variables <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"AXL"</span>, <span class="st">"Adiponectin"</span>, <span class="st">"Cortisol"</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>  Referent <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/levels.html" class="external-link">levels</a></span><span class="op">(</span><span class="va">Labelled</span><span class="op">$</span><span class="va">Diagnosis</span><span class="op">)</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span></span></span>
+<span class="r-in"><span>  data <span class="op">=</span> <span class="va">SimulatedPhenotypeData</span>,</span></span>
+<span class="r-in"><span>  group_var <span class="op">=</span> <span class="st">"TruthCluster"</span>,</span></span>
+<span class="r-in"><span>  variables <span class="op">=</span> <span class="va">vars_Numeric</span>,</span></span>
+<span class="r-in"><span>  Referent <span class="op">=</span> <span class="st">"Cluster 4"</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># One column per non-referent cluster, one row per measure</span></span></span>
 <span class="r-in"><span><span class="va">res</span><span class="op">$</span><span class="va">Plot</span></span></span>
 <span class="r-plt img"><img src="MakePairwiseHeatmap-1.png" alt="" width="700" height="433"></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># The auditable row behind every cell</span></span></span>
+<span class="r-in"><span><span class="fu">htmltools</span><span class="fu">::</span><span class="fu"><a href="https://rstudio.github.io/htmltools/reference/browsable.html" class="external-link">browsable</a></span><span class="op">(</span><span class="fu">htmltools</span><span class="fu">::</span><span class="fu"><a href="https://rstudio.github.io/htmltools/reference/HTML.html" class="external-link">HTML</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/character.html" class="external-link">as.character</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>  <span class="fu"><a href="FreezeTableHeader.html">FreezeTableHeader</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>    <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>      <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>        <span class="va">res</span><span class="op">$</span><span class="va">Results</span>,</span></span>
+<span class="r-in"><span>        <span class="va">Variable</span>, <span class="va">Group</span>, <span class="va">Referent</span>, <span class="va">NGroup</span>, <span class="va">NReferent</span>,</span></span>
+<span class="r-in"><span>        <span class="va">EstimatedMeanDifference</span>, <span class="va">PValue</span>, <span class="va">AdjustedPValue</span>,</span></span>
+<span class="r-in"><span>        <span class="va">SignificanceLabel</span>, <span class="va">Test</span>, <span class="va">Adjustment</span></span></span>
+<span class="r-in"><span>      <span class="op">)</span>,</span></span>
+<span class="r-in"><span>      <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/across.html" class="external-link">across</a></span><span class="op">(</span><span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://tidyselect.r-lib.org/reference/where.html" class="external-link">where</a></span><span class="op">(</span><span class="va">is.numeric</span><span class="op">)</span>, \<span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">x</span>, <span class="fl">4</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span>    <span class="op">)</span>,</span></span>
+<span class="r-in"><span>    height <span class="op">=</span> <span class="st">"320px"</span>, full_width <span class="op">=</span> <span class="cn">TRUE</span></span></span>
+<span class="r-in"><span>  <span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></span>
+<div style="border: 1px solid #ddd; padding: 0px; overflow-y: scroll; height:320px; "><table class="table table table-striped table-hover table-condensed" style="margin-left: auto; margin-right: auto;"><thead><tr><th style="text-align:left;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> Variable </th>
+   <th style="text-align:left;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> Group </th>
+   <th style="text-align:left;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> Referent </th>
+   <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> NGroup </th>
+   <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> NReferent </th>
+   <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> EstimatedMeanDifference </th>
+   <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> PValue </th>
+   <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> AdjustedPValue </th>
+   <th style="text-align:left;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> SignificanceLabel </th>
+   <th style="text-align:left;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> Test </th>
+   <th style="text-align:left;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> Adjustment </th>
+  </tr></thead><tbody><tr><td style="text-align:left;"> Var1 </td>
+   <td style="text-align:left;"> Cluster 1 </td>
+   <td style="text-align:left;"> Cluster 4 </td>
+   <td style="text-align:right;"> 120 </td>
+   <td style="text-align:right;"> 120 </td>
+   <td style="text-align:right;"> 5.5380 </td>
+   <td style="text-align:right;"> 0.0000 </td>
+   <td style="text-align:right;"> 0.0000 </td>
+   <td style="text-align:left;"> *** </td>
+   <td style="text-align:left;"> Linear model + emmeans referent contrast </td>
+   <td style="text-align:left;"> FDR correction within each group-vs-referent contrast across variables </td>
+  </tr><tr><td style="text-align:left;"> Var1 </td>
+   <td style="text-align:left;"> Cluster 2 </td>
+   <td style="text-align:left;"> Cluster 4 </td>
+   <td style="text-align:right;"> 120 </td>
+   <td style="text-align:right;"> 120 </td>
+   <td style="text-align:right;"> 5.6403 </td>
+   <td style="text-align:right;"> 0.0000 </td>
+   <td style="text-align:right;"> 0.0000 </td>
+   <td style="text-align:left;"> *** </td>
+   <td style="text-align:left;"> Linear model + emmeans referent contrast </td>
+   <td style="text-align:left;"> FDR correction within each group-vs-referent contrast across variables </td>
+  </tr><tr><td style="text-align:left;"> Var1 </td>
+   <td style="text-align:left;"> Cluster 3 </td>
+   <td style="text-align:left;"> Cluster 4 </td>
+   <td style="text-align:right;"> 120 </td>
+   <td style="text-align:right;"> 120 </td>
+   <td style="text-align:right;"> -0.0296 </td>
+   <td style="text-align:right;"> 0.8300 </td>
+   <td style="text-align:right;"> 0.8933 </td>
+   <td style="text-align:left;">  </td>
+   <td style="text-align:left;"> Linear model + emmeans referent contrast </td>
+   <td style="text-align:left;"> FDR correction within each group-vs-referent contrast across variables </td>
+  </tr><tr><td style="text-align:left;"> Var2 </td>
+   <td style="text-align:left;"> Cluster 1 </td>
+   <td style="text-align:left;"> Cluster 4 </td>
+   <td style="text-align:right;"> 120 </td>
+   <td style="text-align:right;"> 120 </td>
+   <td style="text-align:right;"> 5.3980 </td>
+   <td style="text-align:right;"> 0.0000 </td>
+   <td style="text-align:right;"> 0.0000 </td>
+   <td style="text-align:left;"> *** </td>
+   <td style="text-align:left;"> Linear model + emmeans referent contrast </td>
+   <td style="text-align:left;"> FDR correction within each group-vs-referent contrast across variables </td>
+  </tr><tr><td style="text-align:left;"> Var2 </td>
+   <td style="text-align:left;"> Cluster 2 </td>
+   <td style="text-align:left;"> Cluster 4 </td>
+   <td style="text-align:right;"> 120 </td>
+   <td style="text-align:right;"> 120 </td>
+   <td style="text-align:right;"> 5.5175 </td>
+   <td style="text-align:right;"> 0.0000 </td>
+   <td style="text-align:right;"> 0.0000 </td>
+   <td style="text-align:left;"> *** </td>
+   <td style="text-align:left;"> Linear model + emmeans referent contrast </td>
+   <td style="text-align:left;"> FDR correction within each group-vs-referent contrast across variables </td>
+  </tr><tr><td style="text-align:left;"> Var2 </td>
+   <td style="text-align:left;"> Cluster 3 </td>
+   <td style="text-align:left;"> Cluster 4 </td>
+   <td style="text-align:right;"> 120 </td>
+   <td style="text-align:right;"> 120 </td>
+   <td style="text-align:right;"> -0.0181 </td>
+   <td style="text-align:right;"> 0.8933 </td>
+   <td style="text-align:right;"> 0.8933 </td>
+   <td style="text-align:left;">  </td>
+   <td style="text-align:left;"> Linear model + emmeans referent contrast </td>
+   <td style="text-align:left;"> FDR correction within each group-vs-referent contrast across variables </td>
+  </tr><tr><td style="text-align:left;"> Var3 </td>
+   <td style="text-align:left;"> Cluster 1 </td>
+   <td style="text-align:left;"> Cluster 4 </td>
+   <td style="text-align:right;"> 120 </td>
+   <td style="text-align:right;"> 120 </td>
+   <td style="text-align:right;"> 5.0905 </td>
+   <td style="text-align:right;"> 0.0000 </td>
+   <td style="text-align:right;"> 0.0000 </td>
+   <td style="text-align:left;"> *** </td>
+   <td style="text-align:left;"> Linear model + emmeans referent contrast </td>
+   <td style="text-align:left;"> FDR correction within each group-vs-referent contrast across variables </td>
+  </tr><tr><td style="text-align:left;"> Var3 </td>
+   <td style="text-align:left;"> Cluster 2 </td>
+   <td style="text-align:left;"> Cluster 4 </td>
+   <td style="text-align:right;"> 120 </td>
+   <td style="text-align:right;"> 120 </td>
+   <td style="text-align:right;"> 5.1108 </td>
+   <td style="text-align:right;"> 0.0000 </td>
+   <td style="text-align:right;"> 0.0000 </td>
+   <td style="text-align:left;"> *** </td>
+   <td style="text-align:left;"> Linear model + emmeans referent contrast </td>
+   <td style="text-align:left;"> FDR correction within each group-vs-referent contrast across variables </td>
+  </tr><tr><td style="text-align:left;"> Var3 </td>
+   <td style="text-align:left;"> Cluster 3 </td>
+   <td style="text-align:left;"> Cluster 4 </td>
+   <td style="text-align:right;"> 120 </td>
+   <td style="text-align:right;"> 120 </td>
+   <td style="text-align:right;"> -0.0930 </td>
+   <td style="text-align:right;"> 0.4690 </td>
+   <td style="text-align:right;"> 0.5628 </td>
+   <td style="text-align:left;">  </td>
+   <td style="text-align:left;"> Linear model + emmeans referent contrast </td>
+   <td style="text-align:left;"> FDR correction within each group-vs-referent contrast across variables </td>
+  </tr><tr><td style="text-align:left;"> Var4 </td>
+   <td style="text-align:left;"> Cluster 1 </td>
+   <td style="text-align:left;"> Cluster 4 </td>
+   <td style="text-align:right;"> 120 </td>
+   <td style="text-align:right;"> 120 </td>
+   <td style="text-align:right;"> 5.2024 </td>
+   <td style="text-align:right;"> 0.0000 </td>
+   <td style="text-align:right;"> 0.0000 </td>
+   <td style="text-align:left;"> *** </td>
+   <td style="text-align:left;"> Linear model + emmeans referent contrast </td>
+   <td style="text-align:left;"> FDR correction within each group-vs-referent contrast across variables </td>
+  </tr><tr><td style="text-align:left;"> Var4 </td>
+   <td style="text-align:left;"> Cluster 2 </td>
+   <td style="text-align:left;"> Cluster 4 </td>
+   <td style="text-align:right;"> 120 </td>
+   <td style="text-align:right;"> 120 </td>
+   <td style="text-align:right;"> 0.0388 </td>
+   <td style="text-align:right;"> 0.7388 </td>
+   <td style="text-align:right;"> 0.7388 </td>
+   <td style="text-align:left;">  </td>
+   <td style="text-align:left;"> Linear model + emmeans referent contrast </td>
+   <td style="text-align:left;"> FDR correction within each group-vs-referent contrast across variables </td>
+  </tr><tr><td style="text-align:left;"> Var4 </td>
+   <td style="text-align:left;"> Cluster 3 </td>
+   <td style="text-align:left;"> Cluster 4 </td>
+   <td style="text-align:right;"> 120 </td>
+   <td style="text-align:right;"> 120 </td>
+   <td style="text-align:right;"> 5.1590 </td>
+   <td style="text-align:right;"> 0.0000 </td>
+   <td style="text-align:right;"> 0.0000 </td>
+   <td style="text-align:left;"> *** </td>
+   <td style="text-align:left;"> Linear model + emmeans referent contrast </td>
+   <td style="text-align:left;"> FDR correction within each group-vs-referent contrast across variables </td>
+  </tr><tr><td style="text-align:left;"> Var5 </td>
+   <td style="text-align:left;"> Cluster 1 </td>
+   <td style="text-align:left;"> Cluster 4 </td>
+   <td style="text-align:right;"> 120 </td>
+   <td style="text-align:right;"> 120 </td>
+   <td style="text-align:right;"> 5.4429 </td>
+   <td style="text-align:right;"> 0.0000 </td>
+   <td style="text-align:right;"> 0.0000 </td>
+   <td style="text-align:left;"> *** </td>
+   <td style="text-align:left;"> Linear model + emmeans referent contrast </td>
+   <td style="text-align:left;"> FDR correction within each group-vs-referent contrast across variables </td>
+  </tr><tr><td style="text-align:left;"> Var5 </td>
+   <td style="text-align:left;"> Cluster 2 </td>
+   <td style="text-align:left;"> Cluster 4 </td>
+   <td style="text-align:right;"> 120 </td>
+   <td style="text-align:right;"> 120 </td>
+   <td style="text-align:right;"> -0.2632 </td>
+   <td style="text-align:right;"> 0.0545 </td>
+   <td style="text-align:right;"> 0.0654 </td>
+   <td style="text-align:left;">  </td>
+   <td style="text-align:left;"> Linear model + emmeans referent contrast </td>
+   <td style="text-align:left;"> FDR correction within each group-vs-referent contrast across variables </td>
+  </tr><tr><td style="text-align:left;"> Var5 </td>
+   <td style="text-align:left;"> Cluster 3 </td>
+   <td style="text-align:left;"> Cluster 4 </td>
+   <td style="text-align:right;"> 120 </td>
+   <td style="text-align:right;"> 120 </td>
+   <td style="text-align:right;"> 5.2524 </td>
+   <td style="text-align:right;"> 0.0000 </td>
+   <td style="text-align:right;"> 0.0000 </td>
+   <td style="text-align:left;"> *** </td>
+   <td style="text-align:left;"> Linear model + emmeans referent contrast </td>
+   <td style="text-align:left;"> FDR correction within each group-vs-referent contrast across variables </td>
+  </tr><tr><td style="text-align:left;"> Var6 </td>
+   <td style="text-align:left;"> Cluster 1 </td>
+   <td style="text-align:left;"> Cluster 4 </td>
+   <td style="text-align:right;"> 120 </td>
+   <td style="text-align:right;"> 120 </td>
+   <td style="text-align:right;"> 5.6743 </td>
+   <td style="text-align:right;"> 0.0000 </td>
+   <td style="text-align:right;"> 0.0000 </td>
+   <td style="text-align:left;"> *** </td>
+   <td style="text-align:left;"> Linear model + emmeans referent contrast </td>
+   <td style="text-align:left;"> FDR correction within each group-vs-referent contrast across variables </td>
+  </tr><tr><td style="text-align:left;"> Var6 </td>
+   <td style="text-align:left;"> Cluster 2 </td>
+   <td style="text-align:left;"> Cluster 4 </td>
+   <td style="text-align:right;"> 120 </td>
+   <td style="text-align:right;"> 120 </td>
+   <td style="text-align:right;"> -0.1369 </td>
+   <td style="text-align:right;"> 0.3178 </td>
+   <td style="text-align:right;"> 0.3467 </td>
+   <td style="text-align:left;">  </td>
+   <td style="text-align:left;"> Linear model + emmeans referent contrast </td>
+   <td style="text-align:left;"> FDR correction within each group-vs-referent contrast across variables </td>
+  </tr><tr><td style="text-align:left;"> Var6 </td>
+   <td style="text-align:left;"> Cluster 3 </td>
+   <td style="text-align:left;"> Cluster 4 </td>
+   <td style="text-align:right;"> 120 </td>
+   <td style="text-align:right;"> 120 </td>
+   <td style="text-align:right;"> 5.5785 </td>
+   <td style="text-align:right;"> 0.0000 </td>
+   <td style="text-align:right;"> 0.0000 </td>
+   <td style="text-align:left;"> *** </td>
+   <td style="text-align:left;"> Linear model + emmeans referent contrast </td>
+   <td style="text-align:left;"> FDR correction within each group-vs-referent contrast across variables </td>
+  </tr><tr><td style="text-align:left;"> Var7 </td>
+   <td style="text-align:left;"> Cluster 1 </td>
+   <td style="text-align:left;"> Cluster 4 </td>
+   <td style="text-align:right;"> 120 </td>
+   <td style="text-align:right;"> 120 </td>
+   <td style="text-align:right;"> -0.1587 </td>
+   <td style="text-align:right;"> 0.1859 </td>
+   <td style="text-align:right;"> 0.2231 </td>
+   <td style="text-align:left;">  </td>
+   <td style="text-align:left;"> Linear model + emmeans referent contrast </td>
+   <td style="text-align:left;"> FDR correction within each group-vs-referent contrast across variables </td>
+  </tr><tr><td style="text-align:left;"> Var7 </td>
+   <td style="text-align:left;"> Cluster 2 </td>
+   <td style="text-align:left;"> Cluster 4 </td>
+   <td style="text-align:right;"> 120 </td>
+   <td style="text-align:right;"> 120 </td>
+   <td style="text-align:right;"> -5.4248 </td>
+   <td style="text-align:right;"> 0.0000 </td>
+   <td style="text-align:right;"> 0.0000 </td>
+   <td style="text-align:left;"> *** </td>
+   <td style="text-align:left;"> Linear model + emmeans referent contrast </td>
+   <td style="text-align:left;"> FDR correction within each group-vs-referent contrast across variables </td>
+  </tr><tr><td style="text-align:left;"> Var7 </td>
+   <td style="text-align:left;"> Cluster 3 </td>
+   <td style="text-align:left;"> Cluster 4 </td>
+   <td style="text-align:right;"> 120 </td>
+   <td style="text-align:right;"> 120 </td>
+   <td style="text-align:right;"> -5.1362 </td>
+   <td style="text-align:right;"> 0.0000 </td>
+   <td style="text-align:right;"> 0.0000 </td>
+   <td style="text-align:left;"> *** </td>
+   <td style="text-align:left;"> Linear model + emmeans referent contrast </td>
+   <td style="text-align:left;"> FDR correction within each group-vs-referent contrast across variables </td>
+  </tr><tr><td style="text-align:left;"> Var8 </td>
+   <td style="text-align:left;"> Cluster 1 </td>
+   <td style="text-align:left;"> Cluster 4 </td>
+   <td style="text-align:right;"> 120 </td>
+   <td style="text-align:right;"> 120 </td>
+   <td style="text-align:right;"> 0.0332 </td>
+   <td style="text-align:right;"> 0.8205 </td>
+   <td style="text-align:right;"> 0.8205 </td>
+   <td style="text-align:left;">  </td>
+   <td style="text-align:left;"> Linear model + emmeans referent contrast </td>
+   <td style="text-align:left;"> FDR correction within each group-vs-referent contrast across variables </td>
+  </tr><tr><td style="text-align:left;"> Var8 </td>
+   <td style="text-align:left;"> Cluster 2 </td>
+   <td style="text-align:left;"> Cluster 4 </td>
+   <td style="text-align:right;"> 120 </td>
+   <td style="text-align:right;"> 120 </td>
+   <td style="text-align:right;"> -6.2000 </td>
+   <td style="text-align:right;"> 0.0000 </td>
+   <td style="text-align:right;"> 0.0000 </td>
+   <td style="text-align:left;"> *** </td>
+   <td style="text-align:left;"> Linear model + emmeans referent contrast </td>
+   <td style="text-align:left;"> FDR correction within each group-vs-referent contrast across variables </td>
+  </tr><tr><td style="text-align:left;"> Var8 </td>
+   <td style="text-align:left;"> Cluster 3 </td>
+   <td style="text-align:left;"> Cluster 4 </td>
+   <td style="text-align:right;"> 120 </td>
+   <td style="text-align:right;"> 120 </td>
+   <td style="text-align:right;"> -6.1580 </td>
+   <td style="text-align:right;"> 0.0000 </td>
+   <td style="text-align:right;"> 0.0000 </td>
+   <td style="text-align:left;"> *** </td>
+   <td style="text-align:left;"> Linear model + emmeans referent contrast </td>
+   <td style="text-align:left;"> FDR correction within each group-vs-referent contrast across variables </td>
+  </tr><tr><td style="text-align:left;"> Var9 </td>
+   <td style="text-align:left;"> Cluster 1 </td>
+   <td style="text-align:left;"> Cluster 4 </td>
+   <td style="text-align:right;"> 120 </td>
+   <td style="text-align:right;"> 120 </td>
+   <td style="text-align:right;"> 0.1735 </td>
+   <td style="text-align:right;"> 0.1606 </td>
+   <td style="text-align:right;"> 0.2141 </td>
+   <td style="text-align:left;">  </td>
+   <td style="text-align:left;"> Linear model + emmeans referent contrast </td>
+   <td style="text-align:left;"> FDR correction within each group-vs-referent contrast across variables </td>
+  </tr><tr><td style="text-align:left;"> Var9 </td>
+   <td style="text-align:left;"> Cluster 2 </td>
+   <td style="text-align:left;"> Cluster 4 </td>
+   <td style="text-align:right;"> 120 </td>
+   <td style="text-align:right;"> 120 </td>
+   <td style="text-align:right;"> -5.1434 </td>
+   <td style="text-align:right;"> 0.0000 </td>
+   <td style="text-align:right;"> 0.0000 </td>
+   <td style="text-align:left;"> *** </td>
+   <td style="text-align:left;"> Linear model + emmeans referent contrast </td>
+   <td style="text-align:left;"> FDR correction within each group-vs-referent contrast across variables </td>
+  </tr><tr><td style="text-align:left;"> Var9 </td>
+   <td style="text-align:left;"> Cluster 3 </td>
+   <td style="text-align:left;"> Cluster 4 </td>
+   <td style="text-align:right;"> 120 </td>
+   <td style="text-align:right;"> 120 </td>
+   <td style="text-align:right;"> -5.2210 </td>
+   <td style="text-align:right;"> 0.0000 </td>
+   <td style="text-align:right;"> 0.0000 </td>
+   <td style="text-align:left;"> *** </td>
+   <td style="text-align:left;"> Linear model + emmeans referent contrast </td>
+   <td style="text-align:left;"> FDR correction within each group-vs-referent contrast across variables </td>
+  </tr><tr><td style="text-align:left;"> Var10 </td>
+   <td style="text-align:left;"> Cluster 1 </td>
+   <td style="text-align:left;"> Cluster 4 </td>
+   <td style="text-align:right;"> 120 </td>
+   <td style="text-align:right;"> 120 </td>
+   <td style="text-align:right;"> -0.0913 </td>
+   <td style="text-align:right;"> 0.4643 </td>
+   <td style="text-align:right;"> 0.5065 </td>
+   <td style="text-align:left;">  </td>
+   <td style="text-align:left;"> Linear model + emmeans referent contrast </td>
+   <td style="text-align:left;"> FDR correction within each group-vs-referent contrast across variables </td>
+  </tr><tr><td style="text-align:left;"> Var10 </td>
+   <td style="text-align:left;"> Cluster 2 </td>
+   <td style="text-align:left;"> Cluster 4 </td>
+   <td style="text-align:right;"> 120 </td>
+   <td style="text-align:right;"> 120 </td>
+   <td style="text-align:right;"> -0.3300 </td>
+   <td style="text-align:right;"> 0.0084 </td>
+   <td style="text-align:right;"> 0.0125 </td>
+   <td style="text-align:left;"> ** </td>
+   <td style="text-align:left;"> Linear model + emmeans referent contrast </td>
+   <td style="text-align:left;"> FDR correction within each group-vs-referent contrast across variables </td>
+  </tr><tr><td style="text-align:left;"> Var10 </td>
+   <td style="text-align:left;"> Cluster 3 </td>
+   <td style="text-align:left;"> Cluster 4 </td>
+   <td style="text-align:right;"> 120 </td>
+   <td style="text-align:right;"> 120 </td>
+   <td style="text-align:right;"> -0.1618 </td>
+   <td style="text-align:right;"> 0.1949 </td>
+   <td style="text-align:right;"> 0.2599 </td>
+   <td style="text-align:left;">  </td>
+   <td style="text-align:left;"> Linear model + emmeans referent contrast </td>
+   <td style="text-align:left;"> FDR correction within each group-vs-referent contrast across variables </td>
+  </tr><tr><td style="text-align:left;"> Var11 </td>
+   <td style="text-align:left;"> Cluster 1 </td>
+   <td style="text-align:left;"> Cluster 4 </td>
+   <td style="text-align:right;"> 120 </td>
+   <td style="text-align:right;"> 120 </td>
+   <td style="text-align:right;"> -0.1887 </td>
+   <td style="text-align:right;"> 0.1376 </td>
+   <td style="text-align:right;"> 0.2074 </td>
+   <td style="text-align:left;">  </td>
+   <td style="text-align:left;"> Linear model + emmeans referent contrast </td>
+   <td style="text-align:left;"> FDR correction within each group-vs-referent contrast across variables </td>
+  </tr><tr><td style="text-align:left;"> Var11 </td>
+   <td style="text-align:left;"> Cluster 2 </td>
+   <td style="text-align:left;"> Cluster 4 </td>
+   <td style="text-align:right;"> 120 </td>
+   <td style="text-align:right;"> 120 </td>
+   <td style="text-align:right;"> -0.3958 </td>
+   <td style="text-align:right;"> 0.0019 </td>
+   <td style="text-align:right;"> 0.0033 </td>
+   <td style="text-align:left;"> ** </td>
+   <td style="text-align:left;"> Linear model + emmeans referent contrast </td>
+   <td style="text-align:left;"> FDR correction within each group-vs-referent contrast across variables </td>
+  </tr><tr><td style="text-align:left;"> Var11 </td>
+   <td style="text-align:left;"> Cluster 3 </td>
+   <td style="text-align:left;"> Cluster 4 </td>
+   <td style="text-align:right;"> 120 </td>
+   <td style="text-align:right;"> 120 </td>
+   <td style="text-align:right;"> -0.2384 </td>
+   <td style="text-align:right;"> 0.0609 </td>
+   <td style="text-align:right;"> 0.0914 </td>
+   <td style="text-align:left;">  </td>
+   <td style="text-align:left;"> Linear model + emmeans referent contrast </td>
+   <td style="text-align:left;"> FDR correction within each group-vs-referent contrast across variables </td>
+  </tr><tr><td style="text-align:left;"> Var12 </td>
+   <td style="text-align:left;"> Cluster 1 </td>
+   <td style="text-align:left;"> Cluster 4 </td>
+   <td style="text-align:right;"> 115 </td>
+   <td style="text-align:right;"> 120 </td>
+   <td style="text-align:right;"> -0.1843 </td>
+   <td style="text-align:right;"> 0.1383 </td>
+   <td style="text-align:right;"> 0.2074 </td>
+   <td style="text-align:left;">  </td>
+   <td style="text-align:left;"> Linear model + emmeans referent contrast </td>
+   <td style="text-align:left;"> FDR correction within each group-vs-referent contrast across variables </td>
+  </tr><tr><td style="text-align:left;"> Var12 </td>
+   <td style="text-align:left;"> Cluster 2 </td>
+   <td style="text-align:left;"> Cluster 4 </td>
+   <td style="text-align:right;"> 120 </td>
+   <td style="text-align:right;"> 120 </td>
+   <td style="text-align:right;"> -0.3162 </td>
+   <td style="text-align:right;"> 0.0103 </td>
+   <td style="text-align:right;"> 0.0138 </td>
+   <td style="text-align:left;"> * </td>
+   <td style="text-align:left;"> Linear model + emmeans referent contrast </td>
+   <td style="text-align:left;"> FDR correction within each group-vs-referent contrast across variables </td>
+  </tr><tr><td style="text-align:left;"> Var12 </td>
+   <td style="text-align:left;"> Cluster 3 </td>
+   <td style="text-align:left;"> Cluster 4 </td>
+   <td style="text-align:right;"> 120 </td>
+   <td style="text-align:right;"> 120 </td>
+   <td style="text-align:right;"> -0.2718 </td>
+   <td style="text-align:right;"> 0.0274 </td>
+   <td style="text-align:right;"> 0.0469 </td>
+   <td style="text-align:left;"> * </td>
+   <td style="text-align:left;"> Linear model + emmeans referent contrast </td>
+   <td style="text-align:left;"> FDR correction within each group-vs-referent contrast across variables </td>
+  </tr></tbody></table></div><span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Adjusted for a covariate</span></span></span>
+<span class="r-in"><span><span class="fu">MakePairwiseHeatmap</span><span class="op">(</span></span></span>
+<span class="r-in"><span>  data <span class="op">=</span> <span class="va">SimulatedPhenotypeData</span>,</span></span>
+<span class="r-in"><span>  group_var <span class="op">=</span> <span class="st">"TruthCluster"</span>,</span></span>
+<span class="r-in"><span>  variables <span class="op">=</span> <span class="va">vars_Numeric</span>,</span></span>
+<span class="r-in"><span>  Referent <span class="op">=</span> <span class="st">"Cluster 4"</span>,</span></span>
+<span class="r-in"><span>  covariates <span class="op">=</span> <span class="st">"DensityX"</span></span></span>
+<span class="r-in"><span><span class="op">)</span><span class="op">$</span><span class="va">Plot</span></span></span>
+<span class="r-plt img"><img src="MakePairwiseHeatmap-2.png" alt="" width="700" height="433"></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># M-scores with robust (HC3) standard errors</span></span></span>
+<span class="r-in"><span><span class="fu">MakePairwiseHeatmap</span><span class="op">(</span></span></span>
+<span class="r-in"><span>  data <span class="op">=</span> <span class="va">SimulatedPhenotypeData</span>,</span></span>
+<span class="r-in"><span>  group_var <span class="op">=</span> <span class="st">"TruthCluster"</span>,</span></span>
+<span class="r-in"><span>  variables <span class="op">=</span> <span class="va">vars_Numeric</span>,</span></span>
+<span class="r-in"><span>  Referent <span class="op">=</span> <span class="st">"Cluster 4"</span>,</span></span>
+<span class="r-in"><span>  Parametric <span class="op">=</span> <span class="cn">FALSE</span></span></span>
+<span class="r-in"><span><span class="op">)</span><span class="op">$</span><span class="va">Plot</span></span></span>
+<span class="r-plt img"><img src="MakePairwiseHeatmap-3.png" alt="" width="700" height="433"></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Correct across every cell shown, rather than within each contrast</span></span></span>
+<span class="r-in"><span><span class="fu">MakePairwiseHeatmap</span><span class="op">(</span></span></span>
+<span class="r-in"><span>  data <span class="op">=</span> <span class="va">SimulatedPhenotypeData</span>,</span></span>
+<span class="r-in"><span>  group_var <span class="op">=</span> <span class="st">"TruthCluster"</span>,</span></span>
+<span class="r-in"><span>  variables <span class="op">=</span> <span class="va">vars_Numeric</span>,</span></span>
+<span class="r-in"><span>  Referent <span class="op">=</span> <span class="st">"Cluster 4"</span>,</span></span>
+<span class="r-in"><span>  adjust_scope <span class="op">=</span> <span class="st">"matrix"</span></span></span>
+<span class="r-in"><span><span class="op">)</span><span class="op">$</span><span class="va">Plot</span></span></span>
+<span class="r-plt img"><img src="MakePairwiseHeatmap-4.png" alt="" width="700" height="433"></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Group variables that behave alike across contrasts</span></span></span>
+<span class="r-in"><span><span class="fu">MakePairwiseHeatmap</span><span class="op">(</span></span></span>
+<span class="r-in"><span>  data <span class="op">=</span> <span class="va">SimulatedPhenotypeData</span>,</span></span>
+<span class="r-in"><span>  group_var <span class="op">=</span> <span class="st">"TruthCluster"</span>,</span></span>
+<span class="r-in"><span>  variables <span class="op">=</span> <span class="va">vars_Numeric</span>,</span></span>
+<span class="r-in"><span>  Referent <span class="op">=</span> <span class="st">"Cluster 4"</span>,</span></span>
+<span class="r-in"><span>  cluster_rows <span class="op">=</span> <span class="cn">TRUE</span></span></span>
+<span class="r-in"><span><span class="op">)</span><span class="op">$</span><span class="va">Plot</span></span></span>
+<span class="r-plt img"><img src="MakePairwiseHeatmap-5.png" alt="" width="700" height="433"></span>
+<span class="r-in"><span><span class="co"># }</span></span></span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

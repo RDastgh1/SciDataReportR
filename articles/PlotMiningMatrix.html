@@ -28,7 +28,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">SciDataReportR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">20.22.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">20.24.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,8 @@
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
 <li><a class="dropdown-item" href="../articles/argument-renaming.html">Migration note: argument renaming in 19.15.0</a></li>
+    <li><a class="dropdown-item" href="../articles/BiomarkerPerformance.html">Evaluating candidate biomarkers</a></li>
+    <li><a class="dropdown-item" href="../articles/ClusteringPhenotyping.html">Clustering and clinical phenotyping</a></li>
     <li><a class="dropdown-item" href="../articles/fdr-correction.html">FDR correction scope: matrix-wide vs per-outcome</a></li>
     <li><a class="dropdown-item" href="../articles/getting-started.html">Getting started with SciDataReportR</a></li>
     <li><a class="dropdown-item" href="../articles/MakeComparisonTable.html">Creating comparison tables with MakeComparisonTable()</a></li>
@@ -75,7 +77,7 @@
 
 
 
-      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/v20.22.0/vignettes/PlotMiningMatrix.qmd" class="external-link"><code>vignettes/PlotMiningMatrix.qmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/master/vignettes/PlotMiningMatrix.qmd" class="external-link"><code>vignettes/PlotMiningMatrix.qmd</code></a></small>
       <div class="d-none name"><code></code></div>
     </div>
 
@@ -287,10 +289,10 @@
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 6 × 11
   XVar      YVar             p EffectSize Test         p_adj stars XLabel YLabel
-  &lt;chr&gt;     &lt;chr&gt;        &lt;dbl&gt;      &lt;dbl&gt; &lt;chr&gt;        &lt;dbl&gt; &lt;chr&gt; &lt;fct&gt;  &lt;fct&gt;
-1 AXL       Calbindin 1.09e-24   0.522    Correlat… 1.15e-23 ****  AXL r… Calbi…
+  &lt;chr&gt;     &lt;chr&gt;        &lt;dbl&gt;      &lt;dbl&gt; &lt;chr&gt;        &lt;dbl&gt; &lt;fct&gt; &lt;fct&gt;  &lt;fct&gt;
+1 AXL       Calbindin 1.09e-24   0.522    Correlat… 1.15e-23 ***   AXL r… Calbi…
 2 AXL       Diagnosis 2.62e- 1   0.004    ANOVA     3.67e- 1 ns    AXL r… Diagn…
-3 AXL       Ferritin  1.60e-29   0.565    Correlat… 3.37e-28 ****  AXL r… Ferri…
+3 AXL       Ferritin  1.60e-29   0.565    Correlat… 3.37e-28 ***   AXL r… Ferri…
 4 AXL       MMP7      6.56e- 3   0.149    Correlat… 1.72e- 2 **    AXL r… Matri…
 5 AXL       sex       6.52e- 1   0.000616 ANOVA     6.74e- 1 ns    AXL r… Sex
 6 Calbindin Diagnosis 6.9 e- 2   0.01     ANOVA     1.20e- 1 ns    Calbi… Diagn…
@@ -431,7 +433,7 @@ attached base packages:
 
 other attached packages:
 [1] plotly_4.12.1          ggplot2_4.0.3          dplyr_1.2.1
-[4] SciDataReportR_20.22.0
+[4] SciDataReportR_20.24.0
 
 loaded via a namespace (and not attached):
  [1] gtable_0.3.6           xfun_0.60              bayestestR_0.18.1
@@ -442,23 +444,23 @@ loaded via a namespace (and not attached):
 [16] RColorBrewer_1.1-3     correlation_0.8.8      S7_0.2.2
 [19] RcppParallel_6.2.0     lifecycle_1.0.5        compiler_4.6.1
 [22] farver_2.1.2           snakecase_0.11.1       carData_3.0-6
-[25] htmltools_0.5.9        yaml_2.3.12            Formula_1.2-5
+[25] htmltools_0.5.9        yaml_2.3.12            Formula_1.2-6
 [28] pillar_1.11.1          car_3.1-5              tidyr_1.3.2
-[31] viridis_0.6.5          statsExpressions_2.0.0 abind_1.4-8
-[34] tidyselect_1.2.1       sjlabelled_1.2.0       digest_0.6.39
-[37] mvtnorm_1.4-2          gtsummary_2.5.1        purrr_1.2.2
-[40] rematch2_2.1.2         labeling_0.4.3         forcats_1.0.1
-[43] ggstatsplot_1.0.0      labelled_2.16.0        fastmap_1.2.0
-[46] grid_4.6.1             cli_3.6.6              magrittr_2.0.5
-[49] patchwork_1.3.2        utf8_1.2.6             dichromat_2.0-1
-[52] broom_1.0.13           withr_3.0.3            scales_1.4.0
-[55] backports_1.5.1        estimability_2.0.0     httr_1.4.8
-[58] rmarkdown_2.31         emmeans_2.0.4          otel_0.2.0
-[61] gridExtra_2.3.1        hms_1.1.4              coda_0.19-4.1
-[64] evaluate_1.0.5         knitr_1.51             haven_2.5.5
-[67] parameters_0.29.2      viridisLite_0.4.3      rstantools_2.7.0
-[70] rlang_1.3.0            xtable_1.8-8           glue_1.8.1
-[73] jsonlite_2.0.0         effectsize_1.0.3       R6_2.6.1              </code></pre>
+[31] statsExpressions_2.0.0 abind_1.4-8            tidyselect_1.2.1
+[34] sjlabelled_1.2.0       digest_0.6.39          mvtnorm_1.4-2
+[37] gtsummary_2.5.1        purrr_1.2.2            rematch2_2.1.2
+[40] labeling_0.4.3         forcats_1.0.1          ggstatsplot_1.0.0
+[43] labelled_2.16.0        fastmap_1.2.0          grid_4.6.1
+[46] cli_3.6.6              magrittr_2.0.5         patchwork_1.3.2
+[49] utf8_1.2.6             dichromat_2.0-1        broom_1.0.13
+[52] withr_3.0.3            scales_1.4.0           backports_1.5.1
+[55] estimability_2.0.0     httr_1.4.8             rmarkdown_2.31
+[58] emmeans_2.0.4          otel_0.2.0             hms_1.1.4
+[61] coda_0.19-4.1          evaluate_1.0.5         knitr_1.51
+[64] haven_2.5.5            parameters_0.29.2      viridisLite_0.4.3
+[67] rstantools_2.7.0       rlang_1.3.0            xtable_1.8-8
+[70] glue_1.8.1             jsonlite_2.0.0         effectsize_1.0.3
+[73] R6_2.6.1              </code></pre>
 </div>
 </div>
 </section><script id="quarto-html-after-body" type="application/javascript">

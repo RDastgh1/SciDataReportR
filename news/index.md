@@ -1,5 +1,304 @@
 # Changelog
 
+## SciDataReportR 20.24.0
+
+### Clustering API is standardized around fitted pipelines and one projector
+
+- **Breaking unreleased clustering-output cleanup.** Finalized fits and
+  projections now return `DataWithClusters` (formerly
+  `df_with_clusters`) and `ClusterVariableName` (formerly
+  `ClusterName`). The mistyped `ModelInfo_Mclust`, public
+  `complete_rows`, `CandidateAudit`, and injected `.scidr_rowid` columns
+  have been removed. `ModelInfo_MClust` is the canonical Mclust-specific
+  layer; `ModelInfo` remains the generic compatibility alias.
+
+- SOM + Mclust now reports `MinProfileNodeN`/`MaxProfileNodeN` alongside
+  their explicit proportions, and `BLRTStatistic`/`BLRTPValue`. The
+  candidate plot includes an unselected BLRT p-value panel with a
+  neutral 0.05 reference line.
+
+- Clustering constructors now use
+  `CreateClusterModel_<reduction>_<method>()`, for example
+  [`CreateClusterModel_PCA_MClust()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateClusterModel_PCA_MClust.md)
+  and
+  [`CreateClusterModel_SOM_HDBSCAN()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateClusterModel_SOM_HDBSCAN.md).
+  Fitted objects use matching `Pipeline_<reduction>_<method>` classes.
+
+- `ProjectCluster(object, new_df)` is the single public projection
+  interface. It dispatches from the fitted pipeline class and retains
+  each method’s frozen preprocessing, reduction, support checks, and
+  projection diagnostics.
+
+- [`CreateSOMClusterModel()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateClusterModel_SOM_MClust.md),
+  [`ProjectSOMCluster()`](https://rdastgh1.github.io/SciDataReportR/reference/ProjectCluster.md),
+  [`Pipeline_SOMClust()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateClusterModel_SOM_MClust.md),
+  and
+  [`Project_SOMClust()`](https://rdastgh1.github.io/SciDataReportR/reference/ProjectCluster.md)
+  remain for established SOM compatibility. The first two emit lifecycle
+  deprecation warnings and delegate to the canonical API.
+
+### The SciData palette is now the default categorical color scheme
+
+- Every plot the package produces now draws categorical color from
+  [`SciDataPalette()`](https://rdastgh1.github.io/SciDataReportR/reference/SciDataPalette.md).
+  Previously each function chose its own: some fell back to ggplot2’s
+  default hue palette, others hardcoded a tableau-style vector, an
+  [`hcl.colors()`](https://rdrr.io/r/grDevices/palettes.html) name, or a
+  `paletteer` string. Clusters, groups, cohorts, and category levels now
+  look like one system across the whole package.
+
+- **Only categorical color changed.** Continuous and diverging scales
+  (correlation and effect-size heatmaps, the p-value scales) are
+  untouched, as are the meaning-carrying scales: PASS/WARNING/FAIL
+  status, the signed significance ladders, RCI classification, volcano
+  significance tiers, the grey used for missing data, and the grey
+  reserved for the density-based `Noise` cluster.
+
+- **Fixes a latent failure.**
+  [`CreatePCATable()`](https://rdastgh1.github.io/SciDataReportR/reference/CreatePCAObject.md)
+  and
+  [`CreateZScorePlot()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotZScore.md)
+  shared a 20-color vector that went straight into
+  [`scale_color_manual()`](https://ggplot2.tidyverse.org/reference/scale_manual.html),
+  so both failed with `Insufficient values in manual scale` once a plot
+  had more than 20 variable categories. Package plots now extend the
+  palette instead of erroring, however many categories a variable has.
+
+- Labels drawn inside filled shapes now pick black or white by
+  background luminance.
+  [`PlotCategoricalDistributions()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotCategoricalDistributions.md)
+  draws its labels inside the bars, and the palette’s darker colors
+  would have made them unreadable.
+
+- Palette arguments keep their existing signatures.
+  `PlotClusterBoxplot(Palette)`, `PlotSplitViolin(color_palette)`,
+  `PlotSpiderChart(Palette)` and `Plot2GroupStats(palette)` all still
+  accept exactly what they accepted before; only the default changed.
+  [`PlotSpiderChart()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotSpiderChart.md)
+  and
+  [`Plot2GroupStats()`](https://rdastgh1.github.io/SciDataReportR/reference/Plot2GroupStats.md)
+  now default to `NULL`, meaning “use the package palette” - passing
+  `"Dark 3"` or `"pals::alphabet"` explicitly works as it always did.
+
+- [`SciDataPalette()`](https://rdastgh1.github.io/SciDataReportR/reference/SciDataPalette.md)
+  itself is unchanged, including erroring when asked for more than its
+  34 colors.
+
+### Cluster occupancy figures removed from the clustering pipelines
+
+- The `occupancy` bar chart is no longer attached to `ModelInfo$plots`
+  by
+  [`CreateClusterModel_MClust()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateClusterModel_MClust.md),
+  [`CreateClusterModel_KMeans()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateClusterModel_KMeans.md),
+  [`CreateClusterModel_PCA_MClust()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateClusterModel_PCA_MClust.md),
+  [`CreateClusterModel_PCA_KMeans()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateClusterModel_PCA_KMeans.md),
+  [`CreateClusterModel_HDBSCAN()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateClusterModel_HDBSCAN.md),
+  [`CreateClusterModel_Gower_PAM()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateClusterModel_Gower_PAM.md),
+  [`CreateClusterModel_LatentClass()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateClusterModel_LatentClass.md),
+  [`CreateClusterModel_MCA_MClust()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateClusterModel_MCA_MClust.md),
+  or
+  [`CreateSOMClusterModel()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateClusterModel_SOM_MClust.md).
+  Cluster sizes are already reported in the fit tables and in
+  `ProbFit$individual`, so the figure added a panel without adding
+  information.
+
+- `PlotClusterOccupancy()` is unchanged and still exported, so the plot
+  can still be drawn directly from a model’s `DataWithClusters`.
+
+- The training-versus-projected occupancy comparison in the `Project*`
+  functions is unaffected: it compares two distributions rather than
+  describing one, which is a projection-quality check rather than a
+  restatement of the cluster sizes.
+
+### Symmetric p-value matrices are corrected once per pair
+
+- [`ApplyFDRCorrection()`](https://rdastgh1.github.io/SciDataReportR/reference/ApplyFDRCorrection.md)
+  treated a symmetric matrix - the shape produced whenever a variable
+  set is correlated against itself, as
+  [`PlotCorrelationsHeatmap()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotCorrelationsHeatmap.md)
+  does when `outcome_vars` is left `NULL` - as a family of `n * (n - 1)`
+  tests, when only `n * (n - 1) / 2` were run. New `symmetric` argument,
+  defaulting to `"auto"`, detects the case and corrects each pair once,
+  mirroring the adjusted values back so the matrix stays symmetric. Pass
+  `symmetric = FALSE` for the old behavior or `symmetric = TRUE` to
+  require it.
+
+- Benjamini-Hochberg is invariant to exact duplication, so
+  `method = "fdr"` results - the default, and what every plotting
+  function uses - are unchanged. `"bonferroni"`, `"holm"` and
+  `"hochberg"` were coming out exactly twice as large as they should
+  have been, and are now correct.
+
+- The diagonal of a symmetric matrix holds self-comparisons that were
+  never tested. It is now excluded from the family and returned as `NA`;
+  set `include_diagonal = TRUE` to keep the old behavior. This was the
+  damaging case: where the diagonal carried real values, a
+  self-correlation p-value of 0 entered the family as the most
+  significant test in it and pulled every off-diagonal result down,
+  making findings look stronger than they were.
+
+### Misspelled variables are now an error instead of a silent result change
+
+- The matrix and heatmap functions used to handle an unknown variable
+  name five different ways.
+  [`PlotCorrelationsHeatmap()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotCorrelationsHeatmap.md),
+  [`PlotAnovaRelationshipsMatrix()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotAnovaRelationshipsMatrix.md),
+  [`PlotChiSqCovar()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotChiSqCovar.md),
+  [`PlotMiningMatrix()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotMiningMatrix.md),
+  [`PlotNumInteractionEffectsMatrix()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotNumInteractionEffectsMatrix.md)
+  and
+  [`PlotCatInteractionEffectsMatrix()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotCatInteractionEffectsMatrix.md)
+  dropped the name silently, returning a smaller results matrix with no
+  warning that anything had gone missing;
+  [`PlotPhiHeatmap()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotPhiHeatmap.md)
+  and
+  [`PlotPointCorrelationsHeatmap()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotPointCorrelationsHeatmap.md)
+  failed with base R’s `"undefined columns selected"`, which never named
+  the offending variable; and
+  [`PlotDirectionalHeatmaps()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotDirectionalHeatmaps.md)
+  and
+  [`PlotSpiderChart()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotSpiderChart.md)
+  each raised their own differently worded error. All of them now stop
+  with one message that names both the variable and the argument it was
+  supplied to, for example
+  `Variables not found in`data`: NOPE (supplied to`predictor_vars`)`.
+
+- **A misspelled covariate was the more serious case.**
+  [`PlotCorrelationsHeatmap()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotCorrelationsHeatmap.md),
+  [`PlotChiSqCovar()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotChiSqCovar.md),
+  [`PlotAnovaRelationshipsMatrix()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotAnovaRelationshipsMatrix.md),
+  [`PlotMiningMatrix()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotMiningMatrix.md)
+  and
+  [`PlotNumInteractionEffectsMatrix()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotNumInteractionEffectsMatrix.md)
+  silently ignored a covariate that did not match a column, so the
+  function computed and reported **unadjusted** statistics while the
+  caller believed they were adjusted. Unknown covariates now error.
+
+- Validation happens against the data frame as supplied, before ordinal
+  handling renames anything, so variables legitimately removed by
+  `TreatOrdinalAs` are unaffected. Auto-detected variable sets
+  (`variables = NULL`) still work as before, and
+  [`PlotCorrelationsHeatmap()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotCorrelationsHeatmap.md)
+  still reports covariates dropped by ordinal handling through
+  `CovariatesMissing`.
+
+- New internal helpers `ScidrValidateVariables()` and
+  `ScidrValidateVariable()` provide the single message format, replacing
+  the `unique(intersect(as.character(vars), names(Data)))` idiom that
+  caused the silent dropping.
+
+### Significance stars agree across the package
+
+- Six separate star implementations disagreed on whether the cut points
+  were inclusive: a p-value of exactly 0.001 earned `***` in
+  [`MultivariableRegressionTable()`](https://rdastgh1.github.io/SciDataReportR/reference/MultivariableRegressionTable.md)
+  and
+  [`PlotInteractionEffectsMatrix()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotInteractionEffectsMatrix.md)
+  but only `**` in
+  [`PlotSplitViolin()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotSplitViolin.md),
+  while every plot caption stated the strict `<` form regardless. All of
+  them now route through one `ScidrPValueStars()` using inclusive upper
+  bounds (`p <= 0.05` is `*`), which matches
+  [`rstatix::add_significance()`](https://rpkgs.datanovia.com/rstatix/reference/add_significance.html)
+  — already used by
+  [`PlotPhiHeatmap()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotPhiHeatmap.md),
+  [`PlotPointCorrelationsHeatmap()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotPointCorrelationsHeatmap.md)
+  and
+  [`PlotAnovaRelationshipsMatrix()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotAnovaRelationshipsMatrix.md)
+  — and is verified against it at every boundary.
+
+- Captions and legend labels now state `<=` to match the thresholds
+  actually applied. This affects
+  [`geom_starcaption()`](https://rdastgh1.github.io/SciDataReportR/reference/geom_starcaption.md),
+  [`MakePairwiseHeatmap()`](https://rdastgh1.github.io/SciDataReportR/reference/MakePairwiseHeatmap.md)
+  captions,
+  [`PlotMiningMatrix()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotMiningMatrix.md)
+  legend labels, and the
+  [`Plot2GroupStats()`](https://rdastgh1.github.io/SciDataReportR/reference/Plot2GroupStats.md)
+  shape legend (whose `cut(right = TRUE)` breaks were always inclusive
+  despite reading `<`).
+
+### Other fixes
+
+- [`PlotDirectionalHeatmaps()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotDirectionalHeatmaps.md)
+  had the deprecated `yVars` in formal position 3, so
+  `PlotDirectionalHeatmaps(df, vars, TRUE)` bound `TRUE` to `yVars`
+  rather than `Relabel`. All deprecated formals are now trailing, as
+  elsewhere in the package.
+
+- [`PlotDirectionalHeatmaps()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotDirectionalHeatmaps.md)’s
+  `Ordinal` argument was documented as “reserved for future use” and as
+  not affecting the computed tiles, but it is passed to
+  [`PlotPointCorrelationsHeatmap()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotPointCorrelationsHeatmap.md)
+  and does change how ordinal variables are treated in the
+  binary~continuous block. The documentation now describes what it
+  actually does.
+
+## SciDataReportR 20.23.0
+
+- Clustering pipelines no longer return a flat `plots` list. Figures are
+  stored beside the object they describe, following the layout
+  [`CreateSOMClusterModel()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateClusterModel_SOM_MClust.md)
+  already used: `fit_plot` reviews candidates, `ModelInfo$plots`
+  describes the selected solution, `ModelInfo$FitDiagnostics$plots`
+  describes how individual training cases sit inside it, `ProbFit$plots`
+  describes membership confidence, `Stability$plots` describes bootstrap
+  reproducibility, and `ProjectionFit$plots` describes projected cases
+  against the frozen training reference. The previous `plots` list mixed
+  aliases, duplicated entries under two names, and stored interactive
+  widgets alongside `ggplot` objects; it has been removed.
+
+- Every method now carries figures appropriate to that method rather
+  than a shared lowest common denominator. K-means and Gower/PAM gain
+  per-participant silhouette profiles, elbow and average-silhouette
+  curves; Mclust gains BIC, ICL, entropy, and classification-uncertainty
+  maps; HDBSCAN gains density-grid review and per-cluster persistence;
+  latent class analysis gains item response profiles; and the PCA/MCA
+  pipelines lead with scree and loadings. All methods gain a frozen
+  two-dimensional review map, cluster centre profiles, and a distance
+  histogram/boxplot/ECDF triad against a frozen high-distance cutoff.
+
+- `Project*Cluster()` results gain `ProjectionFit`, which triages every
+  projected case against the frozen training reference into `Good fit`,
+  `Uncertain membership`, `Poor fit to training structure`, or
+  `Potential novel phenotype`, and adds `Projection_Fit_Class` to
+  `DataWithClusters`. This extends the triage
+  [`ProjectSOMCluster()`](https://rdastgh1.github.io/SciDataReportR/reference/ProjectCluster.md)
+  already performed to all clustering methods.
+
+- [`CreateSOMClusterModel()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateClusterModel_SOM_MClust.md)
+  and
+  [`ProjectSOMCluster()`](https://rdastgh1.github.io/SciDataReportR/reference/ProjectCluster.md)
+  keep their existing figures unchanged. The SOM model gains
+  `ModelInfo_SOM$plots$occupancy` and `Stability$plots`; the projection
+  exposes its diagnostics as `ProjectionFit` (still also available as
+  `SOMProj`) and gains `som_grid_map`.
+
+- `CreateSOMClusterModel(method = "finalize", stability_resamples > 0)`
+  now refits through the exploratory path by a direct recursive call
+  rather than evaluating a reconstructed call in the caller’s frame,
+  which failed when arguments were supplied as local variables.
+
+- Bootstrap stability resamples now preserve observed factor levels, and
+  the MCA pipeline freezes its reduction on observed categories only.
+  Previously every MCA stability replicate could fail when a resample
+  dropped a rare category, and a declared-but-unobserved factor level
+  made projection fail outright.
+  [`ProjectCluster()`](https://rdastgh1.github.io/SciDataReportR/reference/ProjectCluster.md)
+  now warns and treats categories absent from the training model as
+  incomplete cases instead of erroring.
+
+- New exported figure helpers: `PlotClusterOccupancy()`,
+  [`PlotClusterMap()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotClusterMap.md),
+  [`PlotClusterSilhouette()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotClusterSilhouette.md),
+  [`PlotClusterCentreHeatmap()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotClusterCentreHeatmap.md),
+  [`PlotClusterCentreProfile()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotClusterCentreHeatmap.md),
+  [`PlotClusterComposition()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotClusterComposition.md),
+  and
+  [`PlotClusterDiagnostic()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotClusterDiagnostic.md).
+  `PlotProjectionDiagnostics()` has been renamed to
+  [`PlotClusterDiagnostic()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotClusterDiagnostic.md).
+
 ## SciDataReportR 20.22.0
 
 ## SciDataReportR 20.21.0
@@ -182,12 +481,12 @@
   [`PlotPathway_KT()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotPathway_KT.md),
   [`MakeDataDictionary()`](https://rdastgh1.github.io/SciDataReportR/reference/MakeDataDictionary.md),
   [`ProjectZScore()`](https://rdastgh1.github.io/SciDataReportR/reference/ProjectZScore.md),
-  [`ProjectSOMCluster()`](https://rdastgh1.github.io/SciDataReportR/reference/ProjectSOMCluster.md),
+  [`ProjectSOMCluster()`](https://rdastgh1.github.io/SciDataReportR/reference/ProjectCluster.md),
   [`CreateZScoreObject()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateZScoreObject.md),
   [`CreateMScoreObject()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateMScoreObject.md),
   [`CreateNormativeTScoreModel()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateNormativeTScoreModel.md),
   and
-  [`CreateSOMClusterModel()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateSOMClusterModel.md).
+  [`CreateSOMClusterModel()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateClusterModel_SOM_MClust.md).
 - Preserved backward compatibility: the older public names remain
   exported as wrappers and do not emit lifecycle warnings.
 - Documented

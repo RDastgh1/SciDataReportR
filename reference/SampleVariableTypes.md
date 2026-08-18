@@ -66,23 +66,59 @@ A data frame with 11 columns and 138 rows:
 Exported from CreateVariableTypes(SampleData, "SampleData.csv") and
 modified in Excel.
 
+## Details
+
+This is what an edited codebook looks like in practice. It began as the
+output of
+[`CreateVariableTypesTemplate()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateVariableTypesTemplate.md)
+run on
+[SampleData](https://rdastgh1.github.io/SciDataReportR/reference/SampleData.md),
+and was then filled in by hand: labels written for the columns that
+needed them, `sex` marked for recoding with its `Code` mapping, a
+missing code recorded where one applies, and `Category` / `Subcategory`
+/ `Include` used to group variables for later selection.
+
+Most rows are left mostly blank, and that is normal. Of 138 variables
+only a handful carry a recode or a missing code; the rest simply need a
+readable label. A codebook is a place to record the exceptions, not a
+form to complete.
+
+Passing it with
+[SampleData](https://rdastgh1.github.io/SciDataReportR/reference/SampleData.md)
+to
+[`RevalueData()`](https://rdastgh1.github.io/SciDataReportR/reference/RevalueData.md)
+is the first step of nearly every example in this package.
+
+## See also
+
+[SampleData](https://rdastgh1.github.io/SciDataReportR/reference/SampleData.md)
+for the data it describes,
+[`CreateVariableTypesTemplate()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateVariableTypesTemplate.md)
+to generate one for your own data, and
+[`RevalueData()`](https://rdastgh1.github.io/SciDataReportR/reference/RevalueData.md)
+to apply it.
+
 ## Examples
 
 ``` r
 data(SampleVariableTypes)
-head(SampleVariableTypes)
-#>    Variable          Label        Type Category Recode                 Code
-#> 1 Diagnosis      Diagnosis Categorical     <NA>   <NA>                 <NA>
-#> 2       age            Age      Double     <NA>   <NA>                 <NA>
-#> 3       sex            Sex Categorical     <NA>    yes 0 = Female; 1 = Male
-#> 4     Group          Group Categorical     <NA>   <NA>                 <NA>
-#> 5      Race           Race Categorical     <NA>   <NA>                 <NA>
-#> 6   Marital Marital Status Categorical     <NA>   <NA>                 <NA>
-#>   Notes Exclude Subcategory Include MissingCode
-#> 1    NA      NA                   1          NA
-#> 2    NA      NA                   1         999
-#> 3    NA      NA                   1          NA
-#> 4    NA      NA                  NA          NA
-#> 5    NA      NA                  NA          NA
-#> 6    NA      NA                  NA          NA
+
+dim(SampleVariableTypes)
+#> [1] 138  11
+table(SampleVariableTypes$Type)
+#> 
+#> Categorical      Double 
+#>           8         130 
+
+# \donttest{
+# The whole codebook: one row per variable in SampleData
+htmltools::browsable(htmltools::HTML(as.character(
+  FreezeTableHeader(
+    SampleVariableTypes,
+    height = "420px", full_width = TRUE
+  )
+)))
+
+
+ Variable 
 ```

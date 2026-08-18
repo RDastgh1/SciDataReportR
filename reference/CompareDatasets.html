@@ -7,7 +7,7 @@ dataset updates."><meta property="og:description" content="Compare an old datase
 This function identifies record-level, variable-level, and cell-level changes
 between dataset versions. It is useful when reviewing updated data extracts,
 revised REDCap exports, cleaned spreadsheet versions, or vendor-delivered
-dataset updates."><meta property="og:image" content="https://rdastgh1.github.io/SciDataReportR/logo.png"></head><body>
+dataset updates."><meta property="og:image" content="https://rdastgh1.github.io/SciDataReportR/logo.png"><!-- dependencies from examples --></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -15,7 +15,7 @@ dataset updates."><meta property="og:image" content="https://rdastgh1.github.io/
 
     <a class="navbar-brand me-2" href="../index.html">SciDataReportR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">20.22.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">20.24.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -27,6 +27,8 @@ dataset updates."><meta property="og:image" content="https://rdastgh1.github.io/
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/argument-renaming.html">Migration note: argument renaming in 19.15.0</a></li>
+    <li><a class="dropdown-item" href="../articles/BiomarkerPerformance.html">Evaluating candidate biomarkers</a></li>
+    <li><a class="dropdown-item" href="../articles/ClusteringPhenotyping.html">Clustering and clinical phenotyping</a></li>
     <li><a class="dropdown-item" href="../articles/fdr-correction.html">FDR correction scope: matrix-wide vs per-outcome</a></li>
     <li><a class="dropdown-item" href="../articles/getting-started.html">Getting started with SciDataReportR</a></li>
     <li><a class="dropdown-item" href="../articles/MakeComparisonTable.html">Creating comparison tables with MakeComparisonTable()</a></li>
@@ -51,7 +53,7 @@ dataset updates."><meta property="og:image" content="https://rdastgh1.github.io/
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Compare two versions of a dataset</h1>
-      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/v20.22.0/R/CompareDatasets.R" class="external-link"><code>R/CompareDatasets.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/master/R/CompareDatasets.R" class="external-link"><code>R/CompareDatasets.R</code></a></small>
       <div class="d-none name"><code>CompareDatasets.Rd</code></div>
     </div>
 
@@ -167,19 +169,39 @@ cell-level comparison is performed only for key combinations that are unique
 in both datasets. Duplicate keys are returned separately and flagged in
 <code>Checks</code>.</p>
     </div>
+    <div class="section level2">
+    <h2 id="reading-the-result">Reading the result<a class="anchor" aria-label="anchor" href="#reading-the-result"></a></h2>
+
+
+<p>Start with <code>Checks</code>, the traffic-light table. Everything that changed
+between the two extracts is classified, counted, and explained there, so a
+release can be signed off - or stopped - without reading any raw data.
+<code>Summary</code> carries the same story as headline metrics, one row per measure.</p>
+<p>From there, <code>ModifiedValues</code> drills down to the individual cells that moved,
+with the old and new value side by side and each change classified;
+<code>VariableChangeSummary</code> rolls those up per variable, which is usually what
+gets circulated to collaborators. <code>SummaryText</code> is a plain-text version of
+the whole comparison, for a log or an email.</p>
+    </div>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">SampleData</span><span class="op">)</span></span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># \donttest{</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">SampleData</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Add a stable participant key, then create a revised data extract.</span></span></span>
+<span class="r-in"><span><span class="co"># A revised extract: corrected ages, lost values, dropped rows, a new column</span></span></span>
 <span class="r-in"><span><span class="va">df_OldData</span> <span class="op">&lt;-</span> <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span></span></span>
 <span class="r-in"><span>  <span class="va">SampleData</span>,</span></span>
 <span class="r-in"><span>  ParticipantID <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_len</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">SampleData</span><span class="op">)</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>  .before <span class="op">=</span> <span class="fl">1</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">4</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">df_NewData</span> <span class="op">&lt;-</span> <span class="va">df_OldData</span></span></span>
 <span class="r-in"><span><span class="va">df_NewData</span><span class="op">$</span><span class="va">age</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">5</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="va">df_NewData</span><span class="op">$</span><span class="va">age</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">5</span><span class="op">]</span> <span class="op">+</span> <span class="fl">1</span></span></span>
+<span class="r-in"><span><span class="va">df_NewData</span><span class="op">$</span><span class="va">MMP7</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2</span>, <span class="fl">9</span>, <span class="fl">14</span><span class="op">)</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="cn">NA</span></span></span>
+<span class="r-in"><span><span class="va">df_NewData</span><span class="op">$</span><span class="va">NewBiomarker</span> <span class="op">&lt;-</span> <span class="fu">stats</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">df_NewData</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">df_NewData</span> <span class="op">&lt;-</span> <span class="va">df_NewData</span><span class="op">[</span><span class="op">-</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">3</span>, <span class="fl">7</span><span class="op">)</span>, <span class="op">]</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="va">comparison</span> <span class="op">&lt;-</span> <span class="fu">CompareDatasets</span><span class="op">(</span></span></span>
 <span class="r-in"><span>  OldData <span class="op">=</span> <span class="va">df_OldData</span>,</span></span>
@@ -187,29 +209,310 @@ in both datasets. Duplicate keys are returned separately and flagged in
 <span class="r-in"><span>  keys <span class="op">=</span> <span class="st">"ParticipantID"</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Review the high-level QA metrics and the individual changed cells.</span></span></span>
-<span class="r-in"><span><span class="va">comparison</span><span class="op">$</span><span class="va">Summary</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 1 × 31</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   OldRows NewRows RowDifference OldColumns NewColumns ColumnDifference</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>            <span style="color: #949494; font-style: italic;">&lt;int&gt;</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span>     333     333             0        132        132                0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># ℹ 25 more variables: OldUniqueKeys &lt;int&gt;, NewUniqueKeys &lt;int&gt;,</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;">#   MatchingKeys &lt;int&gt;, OldMatchRate &lt;dbl&gt;, NewMatchRate &lt;dbl&gt;,</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;">#   AddedRecords &lt;int&gt;, RemovedRecords &lt;int&gt;, AddedVariables &lt;int&gt;,</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;">#   RemovedVariables &lt;int&gt;, SchemaChangeCount &lt;int&gt;,</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;">#   NameRepairDifferences &lt;int&gt;, VariablesSkippedFromCellComparison &lt;int&gt;,</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;">#   CommonVariablesMapped &lt;int&gt;, CommonVariablesCompared &lt;int&gt;,</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;">#   ComparedKeys &lt;int&gt;, ComparedCells &lt;int&gt;, DuplicateKeyGroups_Old &lt;int&gt;, …</span></span>
-<span class="r-in"><span><span class="va">comparison</span><span class="op">$</span><span class="va">ModifiedValues</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 5 × 9</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   ParticipantID Variable OldVariable NewVariable OldValue NewValue OldClass</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> 1             age      age         age         52       53       numeric </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span> 2             age      age         age         61       62       numeric </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">3</span> 3             age      age         age         77       78       numeric </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">4</span> 4             age      age         age         97       98       numeric </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">5</span> 5             age      age         age         73       74       numeric </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># ℹ 2 more variables: NewClass &lt;chr&gt;, ChangeType &lt;chr&gt;</span></span>
+<span class="r-in"><span><span class="va">ShowTable</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">x</span>, <span class="va">height</span> <span class="op">=</span> <span class="st">"300px"</span><span class="op">)</span> <span class="op">{</span></span></span>
+<span class="r-in"><span>  <span class="fu">htmltools</span><span class="fu">::</span><span class="fu"><a href="https://rstudio.github.io/htmltools/reference/browsable.html" class="external-link">browsable</a></span><span class="op">(</span><span class="fu">htmltools</span><span class="fu">::</span><span class="fu"><a href="https://rstudio.github.io/htmltools/reference/HTML.html" class="external-link">HTML</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/character.html" class="external-link">as.character</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>    <span class="fu"><a href="FreezeTableHeader.html">FreezeTableHeader</a></span><span class="op">(</span><span class="va">x</span>, height <span class="op">=</span> <span class="va">height</span>, full_width <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
+<span class="r-in"><span>  <span class="op">)</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">}</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># The traffic-light checks</span></span></span>
+<span class="r-in"><span><span class="fu">ShowTable</span><span class="op">(</span><span class="va">comparison</span><span class="op">$</span><span class="va">Checks</span>, height <span class="op">=</span> <span class="st">"360px"</span><span class="op">)</span></span></span>
+<div style="border: 1px solid #ddd; padding: 0px; overflow-y: scroll; height:360px; "><table class="table table table-striped table-hover table-condensed" style="margin-left: auto; margin-right: auto;"><thead><tr><th style="text-align:left;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> Check </th>
+   <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> Count </th>
+   <th style="text-align:left;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> Status </th>
+   <th style="text-align:left;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> Details </th>
+  </tr></thead><tbody><tr><td style="text-align:left;"> Key Types </td>
+   <td style="text-align:right;"> 0 </td>
+   <td style="text-align:left;"> PASS </td>
+   <td style="text-align:left;"> Key storage classes match across dataset versions. </td>
+  </tr><tr><td style="text-align:left;"> Duplicate Keys </td>
+   <td style="text-align:right;"> 0 </td>
+   <td style="text-align:left;"> PASS </td>
+   <td style="text-align:left;"> No duplicate key combinations detected. </td>
+  </tr><tr><td style="text-align:left;"> Records Added </td>
+   <td style="text-align:right;"> 0 </td>
+   <td style="text-align:left;"> PASS </td>
+   <td style="text-align:left;"> No added records detected. </td>
+  </tr><tr><td style="text-align:left;"> Records Removed </td>
+   <td style="text-align:right;"> 2 </td>
+   <td style="text-align:left;"> WARNING </td>
+   <td style="text-align:left;"> Some key combinations are present in OldData but not NewData. </td>
+  </tr><tr><td style="text-align:left;"> Variables Added </td>
+   <td style="text-align:right;"> 1 </td>
+   <td style="text-align:left;"> WARNING </td>
+   <td style="text-align:left;"> NewData contains variables not present in OldData after ignoring tibble-style name-repair suffixes. </td>
+  </tr><tr><td style="text-align:left;"> Variables Removed </td>
+   <td style="text-align:right;"> 0 </td>
+   <td style="text-align:left;"> PASS </td>
+   <td style="text-align:left;"> No removed variables detected after ignoring tibble-style name-repair suffixes. </td>
+  </tr><tr><td style="text-align:left;"> Name Repair Differences </td>
+   <td style="text-align:right;"> 0 </td>
+   <td style="text-align:left;"> PASS </td>
+   <td style="text-align:left;"> No tibble-style name-repair differences detected among common variables. </td>
+  </tr><tr><td style="text-align:left;"> Variables Skipped From Cell Comparison </td>
+   <td style="text-align:right;"> 0 </td>
+   <td style="text-align:left;"> PASS </td>
+   <td style="text-align:left;"> No variables were skipped because of ambiguous normalized names. </td>
+  </tr><tr><td style="text-align:left;"> Class Changes </td>
+   <td style="text-align:right;"> 0 </td>
+   <td style="text-align:left;"> PASS </td>
+   <td style="text-align:left;"> No class changes detected among compared variables. </td>
+  </tr><tr><td style="text-align:left;"> Values Modified </td>
+   <td style="text-align:right;"> 7 </td>
+   <td style="text-align:left;"> WARNING </td>
+   <td style="text-align:left;"> At least one cell-level value changed among compared records. </td>
+  </tr><tr><td style="text-align:left;"> Suspicious Changes </td>
+   <td style="text-align:right;"> 0 </td>
+   <td style="text-align:left;"> PASS </td>
+   <td style="text-align:left;"> No high change-rate or class-change variables detected. </td>
+  </tr><tr><td style="text-align:left;"> Duplicate Keys Excluded From Cell Comparison </td>
+   <td style="text-align:right;"> 0 </td>
+   <td style="text-align:left;"> PASS </td>
+   <td style="text-align:left;"> No duplicate matching keys were excluded from cell comparison. </td>
+  </tr></tbody></table></div><span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># The headline metrics</span></span></span>
+<span class="r-in"><span><span class="fu">ShowTable</span><span class="op">(</span></span></span>
+<span class="r-in"><span>  <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>    Metric <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">comparison</span><span class="op">$</span><span class="va">Summary</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>    Value <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">vapply</a></span><span class="op">(</span><span class="va">comparison</span><span class="op">$</span><span class="va">Summary</span>, <span class="va">format</span>, <span class="fu"><a href="https://rdrr.io/r/base/character.html" class="external-link">character</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span>, trim <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>    row.names <span class="op">=</span> <span class="cn">NULL</span></span></span>
+<span class="r-in"><span>  <span class="op">)</span>,</span></span>
+<span class="r-in"><span>  height <span class="op">=</span> <span class="st">"300px"</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<div style="border: 1px solid #ddd; padding: 0px; overflow-y: scroll; height:300px; "><table class="table table table-striped table-hover table-condensed" style="margin-left: auto; margin-right: auto;"><thead><tr><th style="text-align:left;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> Metric </th>
+   <th style="text-align:left;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> Value </th>
+  </tr></thead><tbody><tr><td style="text-align:left;"> OldRows </td>
+   <td style="text-align:left;"> 333 </td>
+  </tr><tr><td style="text-align:left;"> NewRows </td>
+   <td style="text-align:left;"> 331 </td>
+  </tr><tr><td style="text-align:left;"> RowDifference </td>
+   <td style="text-align:left;"> -2 </td>
+  </tr><tr><td style="text-align:left;"> OldColumns </td>
+   <td style="text-align:left;"> 132 </td>
+  </tr><tr><td style="text-align:left;"> NewColumns </td>
+   <td style="text-align:left;"> 133 </td>
+  </tr><tr><td style="text-align:left;"> ColumnDifference </td>
+   <td style="text-align:left;"> 1 </td>
+  </tr><tr><td style="text-align:left;"> OldUniqueKeys </td>
+   <td style="text-align:left;"> 333 </td>
+  </tr><tr><td style="text-align:left;"> NewUniqueKeys </td>
+   <td style="text-align:left;"> 331 </td>
+  </tr><tr><td style="text-align:left;"> MatchingKeys </td>
+   <td style="text-align:left;"> 331 </td>
+  </tr><tr><td style="text-align:left;"> OldMatchRate </td>
+   <td style="text-align:left;"> 99.4 </td>
+  </tr><tr><td style="text-align:left;"> NewMatchRate </td>
+   <td style="text-align:left;"> 100 </td>
+  </tr><tr><td style="text-align:left;"> AddedRecords </td>
+   <td style="text-align:left;"> 0 </td>
+  </tr><tr><td style="text-align:left;"> RemovedRecords </td>
+   <td style="text-align:left;"> 2 </td>
+  </tr><tr><td style="text-align:left;"> AddedVariables </td>
+   <td style="text-align:left;"> 1 </td>
+  </tr><tr><td style="text-align:left;"> RemovedVariables </td>
+   <td style="text-align:left;"> 0 </td>
+  </tr><tr><td style="text-align:left;"> SchemaChangeCount </td>
+   <td style="text-align:left;"> 1 </td>
+  </tr><tr><td style="text-align:left;"> NameRepairDifferences </td>
+   <td style="text-align:left;"> 0 </td>
+  </tr><tr><td style="text-align:left;"> VariablesSkippedFromCellComparison </td>
+   <td style="text-align:left;"> 0 </td>
+  </tr><tr><td style="text-align:left;"> CommonVariablesMapped </td>
+   <td style="text-align:left;"> 131 </td>
+  </tr><tr><td style="text-align:left;"> CommonVariablesCompared </td>
+   <td style="text-align:left;"> 131 </td>
+  </tr><tr><td style="text-align:left;"> ComparedKeys </td>
+   <td style="text-align:left;"> 331 </td>
+  </tr><tr><td style="text-align:left;"> ComparedCells </td>
+   <td style="text-align:left;"> 43361 </td>
+  </tr><tr><td style="text-align:left;"> DuplicateKeyGroups_Old </td>
+   <td style="text-align:left;"> 0 </td>
+  </tr><tr><td style="text-align:left;"> DuplicateKeyGroups_New </td>
+   <td style="text-align:left;"> 0 </td>
+  </tr><tr><td style="text-align:left;"> ExcludedDuplicateKeys </td>
+   <td style="text-align:left;"> 0 </td>
+  </tr><tr><td style="text-align:left;"> KeyTypeMismatches </td>
+   <td style="text-align:left;"> 0 </td>
+  </tr><tr><td style="text-align:left;"> ClassChanges </td>
+   <td style="text-align:left;"> 0 </td>
+  </tr><tr><td style="text-align:left;"> ModifiedValues </td>
+   <td style="text-align:left;"> 7 </td>
+  </tr><tr><td style="text-align:left;"> PercentValuesModified </td>
+   <td style="text-align:left;"> 0.016 </td>
+  </tr><tr><td style="text-align:left;"> VariablesChanged </td>
+   <td style="text-align:left;"> 2 </td>
+  </tr><tr><td style="text-align:left;"> SuspiciousChanges </td>
+   <td style="text-align:left;"> 0 </td>
+  </tr></tbody></table></div><span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># The individual cells that moved</span></span></span>
+<span class="r-in"><span><span class="fu">ShowTable</span><span class="op">(</span><span class="va">comparison</span><span class="op">$</span><span class="va">ModifiedValues</span><span class="op">)</span></span></span>
+<div style="border: 1px solid #ddd; padding: 0px; overflow-y: scroll; height:300px; "><table class="table table table-striped table-hover table-condensed" style="margin-left: auto; margin-right: auto;"><thead><tr><th style="text-align:left;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> ParticipantID </th>
+   <th style="text-align:left;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> Variable </th>
+   <th style="text-align:left;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> OldVariable </th>
+   <th style="text-align:left;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> NewVariable </th>
+   <th style="text-align:left;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> OldValue </th>
+   <th style="text-align:left;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> NewValue </th>
+   <th style="text-align:left;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> OldClass </th>
+   <th style="text-align:left;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> NewClass </th>
+   <th style="text-align:left;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> ChangeType </th>
+  </tr></thead><tbody><tr><td style="text-align:left;"> 2 </td>
+   <td style="text-align:left;"> MMP7 </td>
+   <td style="text-align:left;"> MMP7 </td>
+   <td style="text-align:left;"> MMP7 </td>
+   <td style="text-align:left;"> -5.968190729 </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:left;"> numeric </td>
+   <td style="text-align:left;"> numeric </td>
+   <td style="text-align:left;"> Old present, New missing </td>
+  </tr><tr><td style="text-align:left;"> 9 </td>
+   <td style="text-align:left;"> MMP7 </td>
+   <td style="text-align:left;"> MMP7 </td>
+   <td style="text-align:left;"> MMP7 </td>
+   <td style="text-align:left;"> -5.844645406 </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:left;"> numeric </td>
+   <td style="text-align:left;"> numeric </td>
+   <td style="text-align:left;"> Old present, New missing </td>
+  </tr><tr><td style="text-align:left;"> 14 </td>
+   <td style="text-align:left;"> MMP7 </td>
+   <td style="text-align:left;"> MMP7 </td>
+   <td style="text-align:left;"> MMP7 </td>
+   <td style="text-align:left;"> -1.380617019 </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:left;"> numeric </td>
+   <td style="text-align:left;"> numeric </td>
+   <td style="text-align:left;"> Old present, New missing </td>
+  </tr><tr><td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> age </td>
+   <td style="text-align:left;"> age </td>
+   <td style="text-align:left;"> age </td>
+   <td style="text-align:left;"> 52 </td>
+   <td style="text-align:left;"> 53 </td>
+   <td style="text-align:left;"> numeric </td>
+   <td style="text-align:left;"> numeric </td>
+   <td style="text-align:left;"> Different non-missing values </td>
+  </tr><tr><td style="text-align:left;"> 2 </td>
+   <td style="text-align:left;"> age </td>
+   <td style="text-align:left;"> age </td>
+   <td style="text-align:left;"> age </td>
+   <td style="text-align:left;"> 61 </td>
+   <td style="text-align:left;"> 62 </td>
+   <td style="text-align:left;"> numeric </td>
+   <td style="text-align:left;"> numeric </td>
+   <td style="text-align:left;"> Different non-missing values </td>
+  </tr><tr><td style="text-align:left;"> 4 </td>
+   <td style="text-align:left;"> age </td>
+   <td style="text-align:left;"> age </td>
+   <td style="text-align:left;"> age </td>
+   <td style="text-align:left;"> 97 </td>
+   <td style="text-align:left;"> 98 </td>
+   <td style="text-align:left;"> numeric </td>
+   <td style="text-align:left;"> numeric </td>
+   <td style="text-align:left;"> Different non-missing values </td>
+  </tr><tr><td style="text-align:left;"> 5 </td>
+   <td style="text-align:left;"> age </td>
+   <td style="text-align:left;"> age </td>
+   <td style="text-align:left;"> age </td>
+   <td style="text-align:left;"> 73 </td>
+   <td style="text-align:left;"> 74 </td>
+   <td style="text-align:left;"> numeric </td>
+   <td style="text-align:left;"> numeric </td>
+   <td style="text-align:left;"> Different non-missing values </td>
+  </tr></tbody></table></div><span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># A per-variable roll-up</span></span></span>
+<span class="r-in"><span><span class="fu">ShowTable</span><span class="op">(</span><span class="va">comparison</span><span class="op">$</span><span class="va">VariableChangeSummary</span>, height <span class="op">=</span> <span class="st">"220px"</span><span class="op">)</span></span></span>
+<div style="border: 1px solid #ddd; padding: 0px; overflow-y: scroll; height:220px; "><table class="table table table-striped table-hover table-condensed" style="margin-left: auto; margin-right: auto;"><thead><tr><th style="text-align:left;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> Variable </th>
+   <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> Changes </th>
+   <th style="text-align:left;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> OldVariable </th>
+   <th style="text-align:left;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> NewVariable </th>
+   <th style="text-align:left;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> OldClass </th>
+   <th style="text-align:left;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> NewClass </th>
+   <th style="text-align:left;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> ClassChanged </th>
+   <th style="text-align:left;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> NameChanged </th>
+   <th style="text-align:left;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> Compared </th>
+   <th style="text-align:left;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> SkipReason </th>
+   <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> ComparedRecords </th>
+   <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> PercentChanged </th>
+  </tr></thead><tbody><tr><td style="text-align:left;"> age </td>
+   <td style="text-align:right;"> 4 </td>
+   <td style="text-align:left;"> age </td>
+   <td style="text-align:left;"> age </td>
+   <td style="text-align:left;"> numeric </td>
+   <td style="text-align:left;"> numeric </td>
+   <td style="text-align:left;"> FALSE </td>
+   <td style="text-align:left;"> FALSE </td>
+   <td style="text-align:left;"> TRUE </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:right;"> 331 </td>
+   <td style="text-align:right;"> 1.2 </td>
+  </tr><tr><td style="text-align:left;"> MMP7 </td>
+   <td style="text-align:right;"> 3 </td>
+   <td style="text-align:left;"> MMP7 </td>
+   <td style="text-align:left;"> MMP7 </td>
+   <td style="text-align:left;"> numeric </td>
+   <td style="text-align:left;"> numeric </td>
+   <td style="text-align:left;"> FALSE </td>
+   <td style="text-align:left;"> FALSE </td>
+   <td style="text-align:left;"> TRUE </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:right;"> 331 </td>
+   <td style="text-align:right;"> 0.9 </td>
+  </tr></tbody></table></div><span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># A plain-text version, for a log or an email</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="va">comparison</span><span class="op">$</span><span class="va">SummaryText</span>, sep <span class="op">=</span> <span class="st">"\n"</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> DATASET COMPARISON SUMMARY</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Keys:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ParticipantID</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Rows:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Old: 333</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> New: 331</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Difference: -2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Columns:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Old: 132</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> New: 133</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Difference: 1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Unique Key Combinations:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Old: 333</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> New: 331</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Matching: 331</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Old Match Rate: 99.4%</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> New Match Rate: 100%</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Records:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Added: 0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Removed: 2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Variables:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Added: 1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Removed: 0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Schema Change Count: 1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Name Repair Differences: 0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Variables Skipped From Cell Comparison: 0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Added Variables: NewBiomarker</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Removed Variables: None</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Key Type Mismatches:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> None</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Duplicate Key Groups:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Old: 0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> New: 0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Excluded Matching Keys: 0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Cell-Level Changes:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Compared Cells: 43361</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Modified Values: 7</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Percent Values Modified: 0.016%</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Variables Changed: 2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Most Changed Variables: age (4; 1.2%), MMP7 (3; 0.9%)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Suspicious Changes:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> None</span>
+<span class="r-in"><span><span class="co"># }</span></span></span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

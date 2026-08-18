@@ -143,5 +143,6 @@ data(SampleVariableTypes)
 
 Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
 
-PlotSplitViolin(Labelled, Var = "AXL", group_var = "Diagnosis")
+# Ab_42 has a clear Diagnosis-group difference in the bundled teaching data.
+PlotSplitViolin(Labelled, Var = "Ab_42", group_var = "Diagnosis")
 ```

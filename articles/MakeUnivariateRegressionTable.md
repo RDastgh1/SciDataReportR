@@ -88,49 +88,27 @@ Reg_Obj_Un <- MakeUnivariateRegressionTable(
 
 ## 5 Formatted and detailed tables
 
-`FormattedTable` is the report-facing table.
+`FormattedTable` is the report-facing wide table: each outcome has its
+own column spanner with an estimate (95% CI) and p-value. Significant
+effects carry stars and are bolded.
 
 ``` r
 
 Reg_Obj_Un$FormattedTable
 ```
 
-| Variable                   | Effect   | N   | Estimate (95% CI)        | p-value |
-|----------------------------|----------|-----|--------------------------|---------|
-| Calbindin                  |          |     |                          |         |
-| Diagnosis : Impaired       | Estimate | 333 | 0.223 (-0.0179, 0.464)   | 0.069   |
-| Age                        | Estimate | 322 | 0.0517 (-0.0581, 0.161)  | 0.36    |
-| Ferritin                   |          |     |                          |         |
-| Diagnosis : Impaired       | Estimate | 333 | 0.259 (0.0187, 0.5)      | 0.035   |
-| Age                        | Estimate | 322 | 0.0303 (-0.0799, 0.14)   | 0.59    |
-| Matrix metalloproteinase 7 |          |     |                          |         |
-| Diagnosis : Impaired       | Estimate | 333 | 0.551 (0.316, 0.786)     | \<0.001 |
-| Age                        | Estimate | 322 | -0.0464 (-0.156, 0.0632) | 0.41    |
-| Sortilin                   |          |     |                          |         |
-| Diagnosis : Impaired       | Estimate | 333 | 0.42 (0.182, 0.658)      | \<0.001 |
-| Age                        | Estimate | 322 | 0.0668 (-0.0433, 0.177)  | 0.23    |
+[TABLE]
 
-`LargeTable` keeps more of the model detail and is useful for QC.
+`LargeTable` uses the same wide outcome layout but keeps N, estimate,
+standard error, confidence limits, and p-value as separate columns for
+QC.
 
 ``` r
 
 Reg_Obj_Un$LargeTable
 ```
 
-| Outcome | Variable | Effect | N | Estimate | SE | 95% CI Low | 95% CI High | p-value |
-|----|----|----|----|----|----|----|----|----|
-| Calbindin |  |  |  |  |  |  |  |  |
-| Calbindin | Diagnosis : Impaired | Estimate | 333 | 0.223 | 0.123 | −0.018 | 0.464 | 0.069 |
-| Calbindin | Age | Estimate | 322 | 0.052 | 0.056 | −0.058 | 0.161 | 0.355 |
-| Ferritin |  |  |  |  |  |  |  |  |
-| Ferritin | Diagnosis : Impaired | Estimate | 333 | 0.259 | 0.122 | 0.019 | 0.500 | 0.035 |
-| Ferritin | Age | Estimate | 322 | 0.030 | 0.056 | −0.080 | 0.140 | 0.589 |
-| Matrix metalloproteinase 7 |  |  |  |  |  |  |  |  |
-| MMP7 | Diagnosis : Impaired | Estimate | 333 | 0.551 | 0.119 | 0.316 | 0.786 | 0.000 |
-| MMP7 | Age | Estimate | 322 | −0.046 | 0.056 | −0.156 | 0.063 | 0.405 |
-| Sortilin |  |  |  |  |  |  |  |  |
-| Sortilin | Diagnosis : Impaired | Estimate | 333 | 0.420 | 0.121 | 0.182 | 0.658 | 0.001 |
-| Sortilin | Age | Estimate | 322 | 0.067 | 0.056 | −0.043 | 0.177 | 0.234 |
+[TABLE]
 
 ## 6 Tidy results dataframe
 
@@ -221,20 +199,7 @@ Reg_Obj_Un_Covar <- MakeUnivariateRegressionTable(
 Reg_Obj_Un_Covar$FormattedTable
 ```
 
-| Variable                   | Effect   | N   | Estimate (95% CI)       | p-value |
-|----------------------------|----------|-----|-------------------------|---------|
-| Calbindin                  |          |     |                         |         |
-| Diagnosis : Impaired       | Estimate | 333 | 0.278 (0.0401, 0.516)   | 0.022   |
-| Age                        | Estimate | 322 | 0.0325 (-0.076, 0.141)  | 0.56    |
-| Ferritin                   |          |     |                         |         |
-| Diagnosis : Impaired       | Estimate | 333 | 0.22 (-0.0203, 0.46)    | 0.073   |
-| Age                        | Estimate | 322 | 0.0464 (-0.063, 0.156)  | 0.4     |
-| Matrix metalloproteinase 7 |          |     |                         |         |
-| Diagnosis : Impaired       | Estimate | 333 | 0.522 (0.287, 0.758)    | \<0.001 |
-| Age                        | Estimate | 322 | -0.034 (-0.144, 0.0754) | 0.54    |
-| Sortilin                   |          |     |                         |         |
-| Diagnosis : Impaired       | Estimate | 333 | 0.429 (0.189, 0.669)    | \<0.001 |
-| Age                        | Estimate | 322 | 0.0662 (-0.0446, 0.177) | 0.24    |
+[TABLE]
 
 ## 8 Many predictors for one outcome
 
@@ -253,14 +218,7 @@ Reg_Obj_ManyPredictors <- MakeUnivariateRegressionTable(
 Reg_Obj_ManyPredictors$FormattedTable
 ```
 
-| Variable                   | Effect   | N   | Estimate (95% CI)       | p-value |
-|----------------------------|----------|-----|-------------------------|---------|
-| Sortilin                   |          |     |                         |         |
-| Diagnosis : Impaired       | Estimate | 333 | 0.42 (0.182, 0.658)     | \<0.001 |
-| Age                        | Estimate | 322 | 0.0668 (-0.0433, 0.177) | 0.23    |
-| Calbindin                  | Estimate | 333 | 0.484 (0.39, 0.579)     | \<0.001 |
-| Ferritin                   | Estimate | 333 | 0.617 (0.532, 0.702)    | \<0.001 |
-| Matrix metalloproteinase 7 | Estimate | 333 | 0.175 (0.0689, 0.282)   | 0.0013  |
+[TABLE]
 
 ## 9 Logistic outcomes
 
@@ -279,13 +237,7 @@ Reg_Obj_Logistic <- MakeUnivariateRegressionTable(
 Reg_Obj_Logistic$FormattedTable
 ```
 
-| Variable                   | Effect     | N   | Estimate (95% CI)   | p-value |
-|----------------------------|------------|-----|---------------------|---------|
-| Diagnosis                  |            |     |                     |         |
-| Age                        | Odds ratio | 322 | 0.929 (0.728, 1.18) | 0.55    |
-| Calbindin                  | Odds ratio | 333 | 1.25 (0.981, 1.6)   | 0.071   |
-| Ferritin                   | Odds ratio | 333 | 1.3 (1.02, 1.66)    | 0.036   |
-| Matrix metalloproteinase 7 | Odds ratio | 333 | 1.8 (1.38, 2.35)    | \<0.001 |
+[TABLE]
 
 Always check the metadata for logistic models. It records the reference
 level and event level.
@@ -353,7 +305,7 @@ print(sessionInfo())
     [1] stats     graphics  grDevices utils     datasets  methods   base
 
     other attached packages:
-    [1] dplyr_1.2.1            SciDataReportR_20.22.0
+    [1] dplyr_1.2.1            SciDataReportR_20.24.0
 
     loaded via a namespace (and not attached):
      [1] gtable_0.3.6           xfun_0.60              bayestestR_0.18.1
@@ -365,7 +317,7 @@ print(sessionInfo())
     [19] gt_1.3.0               lifecycle_1.0.5        compiler_4.6.1
     [22] farver_2.1.2           carData_3.0-6          snakecase_0.11.1
     [25] sass_0.4.10            htmltools_0.5.9        yaml_2.3.12
-    [28] Formula_1.2-5          pillar_1.11.1          car_3.1-5
+    [28] Formula_1.2-6          pillar_1.11.1          car_3.1-5
     [31] tidyr_1.3.2            statsExpressions_2.0.0 abind_1.4-8
     [34] tidyselect_1.2.1       sjlabelled_1.2.0       digest_0.6.39
     [37] mvtnorm_1.4-2          gtsummary_2.5.1        purrr_1.2.2

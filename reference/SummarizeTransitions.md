@@ -84,6 +84,8 @@ A list with:
 
 - `condition_summary`: one-row tibble with overall counts
 
+- `Plots`: figures for the two summaries, described below
+
 ## Details
 
 Transition rules are:
@@ -108,6 +110,38 @@ The returned condition-level summary includes:
 
 - number sustained after resolution
 
+## Figures
+
+`condition_summary` is a single row of six counts, which is exactly the
+shape a table reads worst: the numbers are related to each other, and
+the relationship is the point. `Plots` renders them so the relationship
+is visible:
+
+- `Plots$ConditionCascade` shows the counts as a cascade - the whole
+  cohort, the part of it ever affected, the transitions that occurred
+  within that part, and how many of those persisted - with each bar
+  labelled by its count and its share of the cohort.
+
+- `Plots$TransitionPatterns` classifies every participant into one
+  mutually exclusive longitudinal pattern (never positive, positive
+  throughout, developed only, resolved only, developed and resolved) and
+  plots the counts. The indicator columns in `participant_summary`
+  overlap, so this is the view that shows what the cohort is actually
+  made of.
+
+The two agree by construction: the pattern counts sum to
+`n_participants`, and everything except "never positive" sums to
+`n_ever_positive`.
+
+For the per-participant trajectories behind these counts, use
+[`PlotSwimmerTransitions()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotSwimmerTransitions.md),
+which prepares its data the same way.
+
+## See also
+
+[`PlotSwimmerTransitions()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotSwimmerTransitions.md)
+for the participant-level swimmer plot.
+
 ## Examples
 
 ``` r
@@ -123,7 +157,7 @@ toy_df <- tibble::tibble(
   )
 )
 
-SummarizeTransitions(
+transitions <- SummarizeTransitions(
   data = toy_df,
   id_var = ParticipantID,
   time_var = VisitOrder,
@@ -132,28 +166,46 @@ SummarizeTransitions(
   x_axis_type = "time_from_baseline",
   time_from_baseline_unit = "months"
 )
-#> $participant_summary
-#> # A tibble: 4 × 23
-#>   .plot_id n_rows n_visits n_positive pct_positive ever_positive
-#>   <chr>     <int>    <int>      <int>        <dbl> <lgl>        
-#> 1 P2            4        4          2          0.5 TRUE         
-#> 2 P4            4        4          4          1   TRUE         
-#> 3 P1            4        4          2          0.5 TRUE         
-#> 4 P3            4        4          0          0   FALSE        
-#> # ℹ 17 more variables: developed_condition <lgl>, resolved_condition <lgl>,
-#> #   first_positive_time <dbl>, first_positive_date <date>,
-#> #   first_transition_time <dbl>, first_transition_date <date>,
-#> #   first_developed_time <dbl>, first_resolved_time <dbl>,
-#> #   first_developed_date <date>, first_resolved_date <date>,
-#> #   baseline_date <date>, input_order <int>, sustained_after_development <lgl>,
-#> #   sustained_after_resolution <lgl>, .order_group <dbl>, .order_value <dbl>, …
-#> 
-#> $condition_summary
+
+transitions$condition_summary
 #> # A tibble: 1 × 6
 #>   n_participants n_ever_positive n_developed_condition n_resolved_condition
 #>            <int>           <int>                 <int>                <int>
 #> 1              4               3                     1                    1
 #> # ℹ 2 more variables: n_sustained_after_development <int>,
 #> #   n_sustained_after_resolution <int>
-#> 
+
+# \donttest{
+# A larger cohort, where a positive visit tends to be followed by another
+set.seed(9)
+n_participants <- 60
+
+df_Longitudinal <- do.call(rbind, lapply(seq_len(n_participants), function(i) {
+  n_visits <- sample(3:5, 1)
+  status <- numeric(n_visits)
+  status[1] <- stats::rbinom(1, 1, 0.3)
+  for (j in seq_len(n_visits)[-1]) {
+    status[j] <- stats::rbinom(1, 1, if (status[j - 1] == 1) 0.8 else 0.25)
+  }
+  data.frame(
+    ParticipantID = sprintf("P%02d", i),
+    VisitOrder = seq_len(n_visits),
+    MetSBinary = status
+  )
+}))
+
+transitions <- SummarizeTransitions(
+  data = df_Longitudinal,
+  id_var = ParticipantID,
+  time_var = VisitOrder,
+  status_var = MetSBinary
+)
+
+# Six counts in one row
+htmltools::browsable(htmltools::HTML(as.character(
+  FreezeTableHeader(transitions$condition_summary, full_width = TRUE)
+)))
+
+
+ n_participants 
 ```

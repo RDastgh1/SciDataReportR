@@ -5,7 +5,7 @@ In addition to the standard codebook fields, named values supplied through
 the codebook (with NA for existing rows) and produces a warning."><meta property="og:description" content="Adds one variable entry to a codebook while preserving its existing schema.
 In addition to the standard codebook fields, named values supplied through
 ... populate user-defined columns. A new named ... column is added to
-the codebook (with NA for existing rows) and produces a warning."><meta property="og:image" content="https://rdastgh1.github.io/SciDataReportR/logo.png"></head><body>
+the codebook (with NA for existing rows) and produces a warning."><meta property="og:image" content="https://rdastgh1.github.io/SciDataReportR/logo.png"><!-- dependencies from examples --></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -13,7 +13,7 @@ the codebook (with NA for existing rows) and produces a warning."><meta property
 
     <a class="navbar-brand me-2" href="../index.html">SciDataReportR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">20.22.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">20.24.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -25,6 +25,8 @@ the codebook (with NA for existing rows) and produces a warning."><meta property
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/argument-renaming.html">Migration note: argument renaming in 19.15.0</a></li>
+    <li><a class="dropdown-item" href="../articles/BiomarkerPerformance.html">Evaluating candidate biomarkers</a></li>
+    <li><a class="dropdown-item" href="../articles/ClusteringPhenotyping.html">Clustering and clinical phenotyping</a></li>
     <li><a class="dropdown-item" href="../articles/fdr-correction.html">FDR correction scope: matrix-wide vs per-outcome</a></li>
     <li><a class="dropdown-item" href="../articles/getting-started.html">Getting started with SciDataReportR</a></li>
     <li><a class="dropdown-item" href="../articles/MakeComparisonTable.html">Creating comparison tables with MakeComparisonTable()</a></li>
@@ -49,7 +51,7 @@ the codebook (with NA for existing rows) and produces a warning."><meta property
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Add a new variable to a codebook</h1>
-      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/v20.22.0/R/AddToCodebook.R" class="external-link"><code>R/AddToCodebook.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/master/R/AddToCodebook.R" class="external-link"><code>R/AddToCodebook.R</code></a></small>
       <div class="d-none name"><code>AddToCodebook.Rd</code></div>
     </div>
 
@@ -148,46 +150,116 @@ and R may promote the column type while binding the new row.</p>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">codebook</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span></span>
-<span class="r-in"><span>  Variable <span class="op">=</span> <span class="st">"sex"</span>, Label <span class="op">=</span> <span class="st">"Sex assigned at birth"</span>, Type <span class="op">=</span> <span class="st">"Categorical"</span>,</span></span>
-<span class="r-in"><span>  Category <span class="op">=</span> <span class="st">"Demographics"</span>, Recode <span class="op">=</span> <span class="fl">1</span>, Code <span class="op">=</span> <span class="st">"0 = Female; 1 = Male"</span>,</span></span>
-<span class="r-in"><span>  Exclude <span class="op">=</span> <span class="cn">FALSE</span>, Notes <span class="op">=</span> <span class="cn">NA_character_</span>, Domain <span class="op">=</span> <span class="st">"Clinical"</span></span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># \donttest{</span></span></span>
+<span class="r-in"><span><span class="co"># An existing codebook, including the user-defined `Domain` column</span></span></span>
+<span class="r-in"><span><span class="va">codebook</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>  Variable <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"sex"</span>, <span class="st">"visit"</span>, <span class="st">"mmse"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  Label <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Sex assigned at birth"</span>, <span class="st">"Study visit"</span>, <span class="st">"MMSE total score"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  Type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Categorical"</span>, <span class="st">"Categorical"</span>, <span class="st">"Double"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  Category <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Demographics"</span>, <span class="st">"Design"</span>, <span class="st">"Cognition"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  Recode <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">0</span>, <span class="fl">0</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  Code <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"0 = Female; 1 = Male"</span>, <span class="st">"1 = Baseline; 2 = Follow-up"</span>, <span class="cn">NA</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  Exclude <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="cn">FALSE</span>, <span class="cn">FALSE</span>, <span class="cn">FALSE</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  Notes <span class="op">=</span> <span class="cn">NA_character_</span>,</span></span>
+<span class="r-in"><span>  Domain <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Clinical"</span>, <span class="st">"Study"</span>, <span class="st">"Clinical"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Populate an existing user-defined column.</span></span></span>
-<span class="r-in"><span><span class="fu">AddToCodebook</span><span class="op">(</span></span></span>
+<span class="r-in"><span><span class="co"># Each call returns the updated codebook, so entries chain</span></span></span>
+<span class="r-in"><span><span class="va">codebook</span> <span class="op">&lt;-</span> <span class="fu">AddToCodebook</span><span class="op">(</span></span></span>
 <span class="r-in"><span>  <span class="va">codebook</span>, <span class="st">"age"</span>, <span class="st">"Age at enrollment"</span>, <span class="st">"Double"</span>, <span class="st">"Demographics"</span>,</span></span>
 <span class="r-in"><span>  Domain <span class="op">=</span> <span class="st">"Clinical"</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>`Type` has not previously appeared in this column.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   Variable                 Label        Type     Category Recode</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1      sex Sex assigned at birth Categorical Demographics      1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2      age     Age at enrollment      Double Demographics     NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                   Code Exclude Notes   Domain</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1 0 = Female; 1 = Male   FALSE  &lt;NA&gt; Clinical</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2                 &lt;NA&gt;      NA  &lt;NA&gt; Clinical</span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># This adds `Source` and warns because it is a new column.</span></span></span>
-<span class="r-in"><span><span class="fu">AddToCodebook</span><span class="op">(</span><span class="va">codebook</span>, <span class="st">"site"</span>, Source <span class="op">=</span> <span class="st">"REDCap"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="co"># `Source` is a new column: created with a warning, back-filled with NA</span></span></span>
+<span class="r-in"><span><span class="va">codebook</span> <span class="op">&lt;-</span> <span class="fu">AddToCodebook</span><span class="op">(</span></span></span>
+<span class="r-in"><span>  <span class="va">codebook</span>, <span class="st">"site"</span>, <span class="st">"Enrolling site"</span>, <span class="st">"Categorical"</span>, <span class="st">"Design"</span>,</span></span>
+<span class="r-in"><span>  Source <span class="op">=</span> <span class="st">"REDCap"</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>`Source` is not an existing codebook column; adding it with NA for existing rows.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   Variable                 Label        Type     Category Recode</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1      sex Sex assigned at birth Categorical Demographics      1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2     site                  site        &lt;NA&gt;         &lt;NA&gt;     NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                   Code Exclude Notes   Domain Source</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1 0 = Female; 1 = Male   FALSE  &lt;NA&gt; Clinical   &lt;NA&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2                 &lt;NA&gt;      NA  &lt;NA&gt;     &lt;NA&gt; REDCap</span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># These values are retained but warn because they conflict with the old schema.</span></span></span>
-<span class="r-in"><span><span class="fu">AddToCodebook</span><span class="op">(</span><span class="va">codebook</span>, <span class="st">"participant_id"</span>, VariableRecode <span class="op">=</span> <span class="fl">4</span>,</span></span>
-<span class="r-in"><span>              VariableExclude <span class="op">=</span> <span class="fl">3</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="co"># Kept, but warned about: they conflict with the established schema</span></span></span>
+<span class="r-in"><span><span class="va">codebook</span> <span class="op">&lt;-</span> <span class="fu">AddToCodebook</span><span class="op">(</span></span></span>
+<span class="r-in"><span>  <span class="va">codebook</span>, <span class="st">"participant_id"</span>, <span class="st">"Participant identifier"</span>,</span></span>
+<span class="r-in"><span>  VariableRecode <span class="op">=</span> <span class="fl">4</span>, VariableExclude <span class="op">=</span> <span class="fl">3</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>`Recode` has not previously appeared in this column.</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>`Exclude` has not previously appeared in this column and has a different storage type or class from existing values.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>         Variable                 Label        Type     Category Recode</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1            sex Sex assigned at birth Categorical Demographics      1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2 participant_id        participant_id        &lt;NA&gt;         &lt;NA&gt;      4</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                   Code Exclude Notes   Domain</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1 0 = Female; 1 = Male       0  &lt;NA&gt; Clinical</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2                 &lt;NA&gt;       3  &lt;NA&gt;     &lt;NA&gt;</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># The result as a formatted table</span></span></span>
+<span class="r-in"><span><span class="fu">htmltools</span><span class="fu">::</span><span class="fu"><a href="https://rstudio.github.io/htmltools/reference/browsable.html" class="external-link">browsable</a></span><span class="op">(</span><span class="fu">htmltools</span><span class="fu">::</span><span class="fu"><a href="https://rstudio.github.io/htmltools/reference/HTML.html" class="external-link">HTML</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/character.html" class="external-link">as.character</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>  <span class="fu"><a href="FreezeTableHeader.html">FreezeTableHeader</a></span><span class="op">(</span><span class="va">codebook</span>, height <span class="op">=</span> <span class="st">"320px"</span>, full_width <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></span>
+<div style="border: 1px solid #ddd; padding: 0px; overflow-y: scroll; height:320px; "><table class="table table table-striped table-hover table-condensed" style="margin-left: auto; margin-right: auto;"><thead><tr><th style="text-align:left;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> Variable </th>
+   <th style="text-align:left;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> Label </th>
+   <th style="text-align:left;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> Type </th>
+   <th style="text-align:left;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> Category </th>
+   <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> Recode </th>
+   <th style="text-align:left;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> Code </th>
+   <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> Exclude </th>
+   <th style="text-align:left;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> Notes </th>
+   <th style="text-align:left;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> Domain </th>
+   <th style="text-align:left;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> Source </th>
+  </tr></thead><tbody><tr><td style="text-align:left;"> sex </td>
+   <td style="text-align:left;"> Sex assigned at birth </td>
+   <td style="text-align:left;"> Categorical </td>
+   <td style="text-align:left;"> Demographics </td>
+   <td style="text-align:right;"> 1 </td>
+   <td style="text-align:left;"> 0 = Female; 1 = Male </td>
+   <td style="text-align:right;"> 0 </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:left;"> Clinical </td>
+   <td style="text-align:left;"> NA </td>
+  </tr><tr><td style="text-align:left;"> visit </td>
+   <td style="text-align:left;"> Study visit </td>
+   <td style="text-align:left;"> Categorical </td>
+   <td style="text-align:left;"> Design </td>
+   <td style="text-align:right;"> 0 </td>
+   <td style="text-align:left;"> 1 = Baseline; 2 = Follow-up </td>
+   <td style="text-align:right;"> 0 </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:left;"> Study </td>
+   <td style="text-align:left;"> NA </td>
+  </tr><tr><td style="text-align:left;"> mmse </td>
+   <td style="text-align:left;"> MMSE total score </td>
+   <td style="text-align:left;"> Double </td>
+   <td style="text-align:left;"> Cognition </td>
+   <td style="text-align:right;"> 0 </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:right;"> 0 </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:left;"> Clinical </td>
+   <td style="text-align:left;"> NA </td>
+  </tr><tr><td style="text-align:left;"> age </td>
+   <td style="text-align:left;"> Age at enrollment </td>
+   <td style="text-align:left;"> Double </td>
+   <td style="text-align:left;"> Demographics </td>
+   <td style="text-align:right;"> NA </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:right;"> NA </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:left;"> Clinical </td>
+   <td style="text-align:left;"> NA </td>
+  </tr><tr><td style="text-align:left;"> site </td>
+   <td style="text-align:left;"> Enrolling site </td>
+   <td style="text-align:left;"> Categorical </td>
+   <td style="text-align:left;"> Design </td>
+   <td style="text-align:right;"> NA </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:right;"> NA </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:left;"> REDCap </td>
+  </tr><tr><td style="text-align:left;"> participant_id </td>
+   <td style="text-align:left;"> Participant identifier </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:right;"> 4 </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:right;"> 3 </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:left;"> NA </td>
+  </tr></tbody></table></div><span class="r-in"><span><span class="co"># }</span></span></span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

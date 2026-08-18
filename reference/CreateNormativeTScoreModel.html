@@ -23,7 +23,7 @@ backwards-compatible alias and returns the same reusable normative model."><meta
 
     <a class="navbar-brand me-2" href="../index.html">SciDataReportR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">20.22.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">20.24.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -35,6 +35,8 @@ backwards-compatible alias and returns the same reusable normative model."><meta
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/argument-renaming.html">Migration note: argument renaming in 19.15.0</a></li>
+    <li><a class="dropdown-item" href="../articles/BiomarkerPerformance.html">Evaluating candidate biomarkers</a></li>
+    <li><a class="dropdown-item" href="../articles/ClusteringPhenotyping.html">Clustering and clinical phenotyping</a></li>
     <li><a class="dropdown-item" href="../articles/fdr-correction.html">FDR correction scope: matrix-wide vs per-outcome</a></li>
     <li><a class="dropdown-item" href="../articles/getting-started.html">Getting started with SciDataReportR</a></li>
     <li><a class="dropdown-item" href="../articles/MakeComparisonTable.html">Creating comparison tables with MakeComparisonTable()</a></li>
@@ -59,7 +61,7 @@ backwards-compatible alias and returns the same reusable normative model."><meta
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Create normative T-scores from a regression model</h1>
-      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/v20.22.0/R/CreateNormativeTScores.R" class="external-link"><code>R/CreateNormativeTScores.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/master/R/CreateNormativeTScores.R" class="external-link"><code>R/CreateNormativeTScores.R</code></a></small>
       <div class="d-none name"><code>CreateNormativeTScoreModel.Rd</code></div>
     </div>
 
@@ -217,22 +219,29 @@ available visits in the reference group are used.</p>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">df</span> <span class="op">&lt;-</span> <span class="fu">tibble</span><span class="fu">::</span><span class="fu"><a href="https://tibble.tidyverse.org/reference/tibble.html" class="external-link">tibble</a></span><span class="op">(</span></span></span>
-<span class="r-in"><span>  Group <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span></span>
-<span class="r-in"><span>    <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="st">"Reference"</span>, <span class="fl">8</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>    <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="st">"Clinical"</span>, <span class="fl">2</span><span class="op">)</span></span></span>
-<span class="r-in"><span>  <span class="op">)</span>,</span></span>
-<span class="r-in"><span>  Age <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">30</span>, <span class="fl">34</span>, <span class="fl">38</span>, <span class="fl">42</span>, <span class="fl">46</span>, <span class="fl">50</span>, <span class="fl">54</span>, <span class="fl">58</span>, <span class="fl">40</span>, <span class="fl">52</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>  Education <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span></span>
-<span class="r-in"><span>    <span class="st">"College"</span>, <span class="st">"College"</span>, <span class="st">"Graduate"</span>, <span class="st">"Graduate"</span>,</span></span>
-<span class="r-in"><span>    <span class="st">"College"</span>, <span class="st">"Graduate"</span>, <span class="st">"College"</span>, <span class="st">"Graduate"</span>,</span></span>
-<span class="r-in"><span>    <span class="st">"College"</span>, <span class="st">"Graduate"</span></span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># A reference sample large enough to estimate the covariate effects</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">4127</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">n_Reference</span> <span class="op">&lt;-</span> <span class="fl">240</span></span></span>
+<span class="r-in"><span><span class="va">n_Clinical</span> <span class="op">&lt;-</span> <span class="fl">60</span></span></span>
+<span class="r-in"><span><span class="va">n_Total</span> <span class="op">&lt;-</span> <span class="va">n_Reference</span> <span class="op">+</span> <span class="va">n_Clinical</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="va">df</span> <span class="op">&lt;-</span> <span class="fu">tibble</span><span class="fu">::</span><span class="fu"><a href="https://tibble.tidyverse.org/reference/tibble.html" class="external-link">tibble</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>  Group <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="st">"Reference"</span>, <span class="va">n_Reference</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="st">"Clinical"</span>, <span class="va">n_Clinical</span><span class="op">)</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  Age <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="fu">stats</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">n_Total</span>, mean <span class="op">=</span> <span class="fl">55</span>, sd <span class="op">=</span> <span class="fl">12</span><span class="op">)</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  Education <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sample.html" class="external-link">sample</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>    <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"High School"</span>, <span class="st">"College"</span>, <span class="st">"Graduate"</span><span class="op">)</span>, <span class="va">n_Total</span>, replace <span class="op">=</span> <span class="cn">TRUE</span></span></span>
 <span class="r-in"><span>  <span class="op">)</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>  Sex <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span></span>
-<span class="r-in"><span>    <span class="st">"F"</span>, <span class="st">"M"</span>, <span class="st">"F"</span>, <span class="st">"M"</span>, <span class="st">"F"</span>, <span class="st">"M"</span>, <span class="st">"F"</span>, <span class="st">"M"</span>, <span class="st">"F"</span>, <span class="st">"M"</span></span></span>
-<span class="r-in"><span>  <span class="op">)</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>  Visit <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">1</span>, <span class="fl">1</span>, <span class="fl">1</span>, <span class="fl">2</span>, <span class="fl">2</span>, <span class="fl">2</span>, <span class="fl">2</span>, <span class="fl">1</span>, <span class="fl">2</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>  TrailsA <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">35</span>, <span class="fl">38</span>, <span class="fl">40</span>, <span class="fl">43</span>, <span class="fl">36</span>, <span class="fl">39</span>, <span class="fl">41</span>, <span class="fl">44</span>, <span class="fl">47</span>, <span class="fl">49</span><span class="op">)</span> <span class="op">*</span> <span class="fl">1000</span></span></span>
+<span class="r-in"><span>  Sex <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sample.html" class="external-link">sample</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"F"</span>, <span class="st">"M"</span><span class="op">)</span>, <span class="va">n_Total</span>, replace <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  Visit <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sample.html" class="external-link">sample</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="fl">3</span>, <span class="va">n_Total</span>, replace <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Trail Making A: slower with age, faster with practice, slower if impaired</span></span></span>
+<span class="r-in"><span><span class="va">df</span><span class="op">$</span><span class="va">TrailsA</span> <span class="op">&lt;-</span> <span class="fl">1000</span> <span class="op">*</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>  <span class="fl">3.35</span> <span class="op">+</span></span></span>
+<span class="r-in"><span>    <span class="fl">0.011</span> <span class="op">*</span> <span class="op">(</span><span class="va">df</span><span class="op">$</span><span class="va">Age</span> <span class="op">-</span> <span class="fl">55</span><span class="op">)</span> <span class="op">-</span></span></span>
+<span class="r-in"><span>    <span class="fl">0.04</span> <span class="op">*</span> <span class="op">(</span><span class="va">df</span><span class="op">$</span><span class="va">Visit</span> <span class="op">-</span> <span class="fl">1</span><span class="op">)</span> <span class="op">+</span></span></span>
+<span class="r-in"><span>    <span class="fl">0.30</span> <span class="op">*</span> <span class="op">(</span><span class="va">df</span><span class="op">$</span><span class="va">Group</span> <span class="op">==</span> <span class="st">"Clinical"</span><span class="op">)</span> <span class="op">+</span></span></span>
+<span class="r-in"><span>    <span class="fu">stats</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">n_Total</span>, sd <span class="op">=</span> <span class="fl">0.16</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="va">out</span> <span class="op">&lt;-</span> <span class="fu">CreateNormativeTScoreModel</span><span class="op">(</span></span></span>
@@ -250,19 +259,20 @@ available visits in the reference group are used.</p>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="va">out</span><span class="op">$</span><span class="va">data</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 10 × 12</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    Group       Age Education Sex   Visit TrailsA NormRaw NormCount NormScaled</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 1</span> Reference    30 College   F         1   <span style="text-decoration: underline;">35</span>000   <span style="text-decoration: underline;">35</span>000         1      -<span style="color: #BB0000;">1.54</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 2</span> Reference    34 College   M         1   <span style="text-decoration: underline;">38</span>000   <span style="text-decoration: underline;">38</span>000         1      -<span style="color: #BB0000;">1.58</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 3</span> Reference    38 Graduate  F         1   <span style="text-decoration: underline;">40</span>000   <span style="text-decoration: underline;">40</span>000         1      -<span style="color: #BB0000;">1.60</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 4</span> Reference    42 Graduate  M         1   <span style="text-decoration: underline;">43</span>000   <span style="text-decoration: underline;">43</span>000         1      -<span style="color: #BB0000;">1.63</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 5</span> Reference    46 College   F         2   <span style="text-decoration: underline;">36</span>000   <span style="text-decoration: underline;">36</span>000         2      -<span style="color: #BB0000;">1.56</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 6</span> Reference    50 Graduate  M         2   <span style="text-decoration: underline;">39</span>000   <span style="text-decoration: underline;">39</span>000         2      -<span style="color: #BB0000;">1.59</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 7</span> Reference    54 College   F         2   <span style="text-decoration: underline;">41</span>000   <span style="text-decoration: underline;">41</span>000         2      -<span style="color: #BB0000;">1.61</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 8</span> Reference    58 Graduate  M         2   <span style="text-decoration: underline;">44</span>000   <span style="text-decoration: underline;">44</span>000         2      -<span style="color: #BB0000;">1.64</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 9</span> Clinical     40 College   F         1   <span style="text-decoration: underline;">47</span>000   <span style="text-decoration: underline;">47</span>000         1      -<span style="color: #BB0000;">1.67</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">10</span> Clinical     52 Graduate  M         2   <span style="text-decoration: underline;">49</span>000   <span style="text-decoration: underline;">49</span>000         2      -<span style="color: #BB0000;">1.69</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 300 × 12</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    Group       Age Education   Sex   Visit TrailsA NormRaw NormCount NormScaled</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span> <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 1</span> Reference    41 College     F         3  <span style="text-decoration: underline;">17</span>342.  <span style="text-decoration: underline;">17</span>342.         3      -<span style="color: #BB0000;">1.24</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 2</span> Reference    67 College     F         3  <span style="text-decoration: underline;">37</span>218.  <span style="text-decoration: underline;">37</span>218.         3      -<span style="color: #BB0000;">1.57</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 3</span> Reference    39 Graduate    M         1  <span style="text-decoration: underline;">27</span>135.  <span style="text-decoration: underline;">27</span>135.         1      -<span style="color: #BB0000;">1.43</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 4</span> Reference    44 College     F         1  <span style="text-decoration: underline;">21</span>339.  <span style="text-decoration: underline;">21</span>339.         1      -<span style="color: #BB0000;">1.33</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 5</span> Reference    52 High School M         3  <span style="text-decoration: underline;">25</span>994.  <span style="text-decoration: underline;">25</span>994.         3      -<span style="color: #BB0000;">1.41</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 6</span> Reference    55 College     F         2  <span style="text-decoration: underline;">35</span>301.  <span style="text-decoration: underline;">35</span>301.         2      -<span style="color: #BB0000;">1.55</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 7</span> Reference    48 Graduate    M         2  <span style="text-decoration: underline;">25</span>963.  <span style="text-decoration: underline;">25</span>963.         2      -<span style="color: #BB0000;">1.41</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 8</span> Reference    65 High School F         1  <span style="text-decoration: underline;">28</span>792.  <span style="text-decoration: underline;">28</span>792.         1      -<span style="color: #BB0000;">1.46</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 9</span> Reference    51 Graduate    F         1  <span style="text-decoration: underline;">26</span>848.  <span style="text-decoration: underline;">26</span>848.         1      -<span style="color: #BB0000;">1.43</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">10</span> Reference    51 College     F         3  <span style="text-decoration: underline;">19</span>637.  <span style="text-decoration: underline;">19</span>637.         3      -<span style="color: #BB0000;">1.29</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># ℹ 290 more rows</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># ℹ 3 more variables: NormPredicted &lt;dbl&gt;, NormZ &lt;dbl&gt;, NormT &lt;dbl&gt;</span></span>
 <span class="r-in"><span><span class="va">out</span><span class="op">$</span><span class="va">model</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
@@ -270,10 +280,10 @@ available visits in the reference group are used.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> stats::lm(formula = model_formula, data = training_data)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Coefficients:</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>       (Intercept)                Age  EducationGraduate               SexM  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>        -1.4384063         -0.0068747         -0.0002786         -0.0055008  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>             Visit  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>         0.0989387  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>          (Intercept)                   Age     EducationGraduate  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>            -1.198621             -0.004948             -0.008704  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> EducationHigh School                  SexM                 Visit  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>            -0.004038             -0.005448              0.021899  </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Raw, transformed, and normed score distributions</span></span></span>

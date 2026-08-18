@@ -18,6 +18,30 @@
   : Compare two versions of a dataset
 - [`ConvertOrdinalToNumeric()`](https://rdastgh1.github.io/SciDataReportR/reference/ConvertOrdinalToNumeric.md)
   : Prepare ordinal variables for analysis
+- [`CreateClusterModel_Gower_PAM()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateClusterModel_Gower_PAM.md)
+  : Fit a projectable Gower-distance PAM model for mixed clinical data
+- [`CreateClusterModel_HDBSCAN()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateClusterModel_HDBSCAN.md)
+  : Fit a projectable HDBSCAN model
+- [`CreateClusterModel_KMeans()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateClusterModel_KMeans.md)
+  : Fit a projectable K-means clustering model
+- [`CreateClusterModel_LatentClass()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateClusterModel_LatentClass.md)
+  : Fit a projectable latent class model for categorical measures
+- [`CreateClusterModel_MCA_MClust()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateClusterModel_MCA_MClust.md)
+  : Fit MCA followed by Mclust for nominal categorical data
+- [`CreateClusterModel_MClust()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateClusterModel_MClust.md)
+  : Fit a projectable Gaussian-mixture clustering model
+- [`CreateClusterModel_PCA_KMeans()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateClusterModel_PCA_KMeans.md)
+  : Fit PCA followed by K-means
+- [`CreateClusterModel_PCA_MClust()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateClusterModel_PCA_MClust.md)
+  : Fit PCA followed by Mclust
+- [`CreateClusterModel_SOM_HDBSCAN()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateClusterModel_SOM_HDBSCAN.md)
+  : Fit HDBSCAN clusters on a frozen self-organizing map
+- [`CreateClusterModel_SOM_MClust()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateClusterModel_SOM_MClust.md)
+  [`Pipeline_SOM_MClust()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateClusterModel_SOM_MClust.md)
+  [`Pipeline_SOMClust()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateClusterModel_SOM_MClust.md)
+  [`CreateSOMClusterModel()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateClusterModel_SOM_MClust.md)
+  : SOM + latent profile clustering pipeline (with AHP and distance
+  baselines)
 - [`CreateMCAObject()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateMCAObject.md)
   [`CreateMCATable()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateMCAObject.md)
   : Create a reusable MCA object and visualizations
@@ -34,10 +58,6 @@
   : Create Project Folder Structure
 - [`CreateRCIObject()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateRCIObject.md)
   : Create a Reliable Change Index (RCI) object
-- [`CreateSOMClusterModel()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateSOMClusterModel.md)
-  [`Pipeline_SOMClust()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateSOMClusterModel.md)
-  : SOM + latent profile clustering pipeline (with AHP and distance
-  baselines)
 - [`CreateStatisticsTable()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateStatisticsTable.md)
   : Create Statistics Table
 - [`CreateSummaryTable()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateSummaryTable.md)
@@ -49,7 +69,10 @@
   : Calculate Z-scores (or standardized scores) and return data +
   parameters
 - [`DeriveFreesurferVolumes()`](https://rdastgh1.github.io/SciDataReportR/reference/DeriveFreesurferVolumes.md)
-  : Derive Freesurfer bilateral totals and ICV-adjusted measures
+  : Derive Freesurfer bilateral measures and optional ICV-adjusted
+  ratios
+- [`EvaluateBiomarkerPerformance()`](https://rdastgh1.github.io/SciDataReportR/reference/EvaluateBiomarkerPerformance.md)
+  : Evaluate biomarker performance
 - [`ExploreDatasetComparison()`](https://rdastgh1.github.io/SciDataReportR/reference/ExploreDatasetComparison.md)
   : Explore dataset comparison results interactively
 - [`ExploreMergeValidation()`](https://rdastgh1.github.io/SciDataReportR/reference/ExploreMergeValidation.md)
@@ -113,6 +136,22 @@
   stratified by covariates)
 - [`PlotClusterBoxplot()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotClusterBoxplot.md)
   : Plot cluster boxplots by variable
+- [`PlotClusterCentreHeatmap()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotClusterCentreHeatmap.md)
+  [`PlotClusterCentreProfile()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotClusterCentreHeatmap.md)
+  : Plot cluster centre profiles as a heatmap
+- [`PlotClusterComposition()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotClusterComposition.md)
+  : Plot categorical composition by cluster
+- [`PlotClusterDiagnostic()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotClusterDiagnostic.md)
+  : Plot a per-cluster diagnostic value
+- [`PlotClusterFitReview()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotClusterFitReview.md)
+  : Plot cluster fit-review metrics
+- [`PlotClusterMap()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotClusterMap.md)
+  [`PlotClusterAssignment()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotClusterMap.md)
+  : Plot a two-dimensional cluster review map
+- [`PlotClusterProfiles()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotClusterProfiles.md)
+  : Plot labelled numeric profiles by cluster
+- [`PlotClusterSilhouette()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotClusterSilhouette.md)
+  : Plot a per-participant silhouette profile
 - [`PlotContinuousDistributions()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotContinuousDistributions.md)
   : Plot Continuous Distributions
 - [`PlotCorrelationsHeatmap()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotCorrelationsHeatmap.md)
@@ -169,13 +208,14 @@
   : Prepare numeric data safely for analysis
 - [`PrepSPSS()`](https://rdastgh1.github.io/SciDataReportR/reference/PrepSPSS.md)
   : Prepare a data frame for SPSS export
+- [`ProjectCluster()`](https://rdastgh1.github.io/SciDataReportR/reference/ProjectCluster.md)
+  [`Project_SOMClust()`](https://rdastgh1.github.io/SciDataReportR/reference/ProjectCluster.md)
+  [`ProjectSOMCluster()`](https://rdastgh1.github.io/SciDataReportR/reference/ProjectCluster.md)
+  : Project cases through a fitted clustering model
 - [`ProjectPCA()`](https://rdastgh1.github.io/SciDataReportR/reference/ProjectPCA.md)
   : Project PCA scores onto new data
 - [`ProjectRCI()`](https://rdastgh1.github.io/SciDataReportR/reference/ProjectRCI.md)
   : Project a trained RCI object onto new data
-- [`ProjectSOMCluster()`](https://rdastgh1.github.io/SciDataReportR/reference/ProjectSOMCluster.md)
-  [`Project_SOMClust()`](https://rdastgh1.github.io/SciDataReportR/reference/ProjectSOMCluster.md)
-  : Project new data onto an existing SOM clinical phenotype space
 - [`ProjectZScore()`](https://rdastgh1.github.io/SciDataReportR/reference/ProjectZScore.md)
   [`Project_ZScore()`](https://rdastgh1.github.io/SciDataReportR/reference/ProjectZScore.md)
   : Project standardized scores onto new data using external parameters
@@ -193,6 +233,12 @@
   : SampleData for practicing SciDataReportR functions
 - [`SampleVariableTypes`](https://rdastgh1.github.io/SciDataReportR/reference/SampleVariableTypes.md)
   : Example Dataset: SampleVariableTypes
+- [`SciDataPalette()`](https://rdastgh1.github.io/SciDataReportR/reference/SciDataPalette.md)
+  : SciDataReportR qualitative color palette
+- [`ScreenBiomarkerPerformance()`](https://rdastgh1.github.io/SciDataReportR/reference/ScreenBiomarkerPerformance.md)
+  : Screen biomarker performance across outcomes
+- [`SimulatedPhenotypeData`](https://rdastgh1.github.io/SciDataReportR/reference/SimulatedPhenotypeData.md)
+  : Neutral simulated clustering and phenotyping benchmark
 - [`SummarizeTransitions()`](https://rdastgh1.github.io/SciDataReportR/reference/SummarizeTransitions.md)
   : Summarize participant transitions for a binary longitudinal
   condition
@@ -202,6 +248,8 @@
   : Update an existing data dictionary with new variables and types
 - [`ValidateMerge()`](https://rdastgh1.github.io/SciDataReportR/reference/ValidateMerge.md)
   : Validate a merge between two source data frames and a merged result
+- [`add_biomarker_values()`](https://rdastgh1.github.io/SciDataReportR/reference/add_biomarker_values.md)
+  : Add values to a biomarker performance heatmap
 - [`add_r_and_stars()`](https://rdastgh1.github.io/SciDataReportR/reference/add_r_and_stars.md)
   : Add r-values and significance stars to a correlations heatmap
 - [`calculate_pathway_results()`](https://rdastgh1.github.io/SciDataReportR/reference/calculate_pathway_results.md)
@@ -238,8 +286,12 @@
   : Reverse Levels of Categorical Factors
 - [`safe_merge()`](https://rdastgh1.github.io/SciDataReportR/reference/safe_merge.md)
   : Safely merge two data frames with relationship-aware validation
+- [`scale_color_SciData()`](https://rdastgh1.github.io/SciDataReportR/reference/scale_color_SciData.md)
+  : SciDataReportR discrete color scale
 - [`scale_color_pvalue()`](https://rdastgh1.github.io/SciDataReportR/reference/scale_color_pvalue.md)
   : Apply an evidence-aware p-value color scale
+- [`scale_fill_SciData()`](https://rdastgh1.github.io/SciDataReportR/reference/scale_fill_SciData.md)
+  : SciDataReportR discrete fill scale
 - [`scale_fill_pvalue()`](https://rdastgh1.github.io/SciDataReportR/reference/scale_fill_pvalue.md)
   : Apply an evidence-aware p-value fill scale
 - [`use_EDATemplate()`](https://rdastgh1.github.io/SciDataReportR/reference/use_EDATemplate.md)

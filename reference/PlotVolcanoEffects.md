@@ -155,9 +155,15 @@ data(SampleVariableTypes)
 # Attach labels and factor levels for readable point labels
 Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
 
-predictors <- c("Alpha_1_Antitrypsin", "Alpha_2_Macroglobulin",
-                "Apolipoprotein_A1", "Apolipoprotein_B", "C_Reactive_Protein",
-                "Cortisol", "Insulin", "Leptin")
+predictors <- c(
+  "ACE_CD143_Angiotensin_Converti", "ACTH_Adrenocorticotropic_Hormon",
+  "Adiponectin", "Alpha_1_Antichymotrypsin", "Alpha_1_Antitrypsin",
+  "Alpha_2_Macroglobulin", "Apolipoprotein_A1", "Apolipoprotein_B",
+  "B_Lymphocyte_Chemoattractant_BL", "C_Reactive_Protein", "Cortisol",
+  "Eotaxin_3", "Ferritin", "Fibrinogen", "GRO_alpha", "IGF_BP_2", "MIF",
+  "MMP10", "MMP7", "NT_proBNP", "PAI_1", "Resistin", "TRAIL_R3", "VEGF",
+  "Ab_42", "p_tau", "tau"
+)
 
 # Continuous outcome, adjusted for age
 cont <- PlotVolcanoEffects(

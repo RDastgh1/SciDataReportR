@@ -19,7 +19,7 @@ return an interactive radar chart using plotly."><meta property="og:image" conte
 
     <a class="navbar-brand me-2" href="../index.html">SciDataReportR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">20.22.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">20.24.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -31,6 +31,8 @@ return an interactive radar chart using plotly."><meta property="og:image" conte
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/argument-renaming.html">Migration note: argument renaming in 19.15.0</a></li>
+    <li><a class="dropdown-item" href="../articles/BiomarkerPerformance.html">Evaluating candidate biomarkers</a></li>
+    <li><a class="dropdown-item" href="../articles/ClusteringPhenotyping.html">Clustering and clinical phenotyping</a></li>
     <li><a class="dropdown-item" href="../articles/fdr-correction.html">FDR correction scope: matrix-wide vs per-outcome</a></li>
     <li><a class="dropdown-item" href="../articles/getting-started.html">Getting started with SciDataReportR</a></li>
     <li><a class="dropdown-item" href="../articles/MakeComparisonTable.html">Creating comparison tables with MakeComparisonTable()</a></li>
@@ -55,7 +57,7 @@ return an interactive radar chart using plotly."><meta property="og:image" conte
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Plot a spider chart across continuous and binary variables</h1>
-      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/v20.22.0/R/PlotSpiderChart.R" class="external-link"><code>R/PlotSpiderChart.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/master/R/PlotSpiderChart.R" class="external-link"><code>R/PlotSpiderChart.R</code></a></small>
       <div class="d-none name"><code>PlotSpiderChart.Rd</code></div>
     </div>
 
@@ -84,7 +86,7 @@ return an interactive radar chart using plotly.</p>
 <span>  VariableOrder <span class="op">=</span> <span class="st">"input"</span>,</span>
 <span>  VariableCategories <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  BinaryPositiveValue <span class="op">=</span> <span class="fl">1</span>,</span>
-<span>  Palette <span class="op">=</span> <span class="st">"Dark 3"</span>,</span>
+<span>  Palette <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  LineSize <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  PointSize <span class="op">=</span> <span class="fl">2</span>,</span>
 <span>  ShowPoints <span class="op">=</span> <span class="cn">FALSE</span>,</span>
@@ -177,8 +179,9 @@ level is used.</p></dd>
 
 
 <dt id="arg-palette">Palette<a class="anchor" aria-label="anchor" href="#arg-palette"></a></dt>
-<dd><p>Character name of an <code><a href="https://rdrr.io/r/grDevices/palettes.html" class="external-link">hcl.colors()</a></code> palette. Defaults to
-<code>"Dark 3"</code>.</p></dd>
+<dd><p>Optional character name of an <code><a href="https://rdrr.io/r/grDevices/palettes.html" class="external-link">hcl.colors()</a></code> palette. When
+<code>NULL</code> (the default), the SciDataReportR palette is used. Passing a name
+such as <code>"Dark 3"</code> still works exactly as before.</p></dd>
 
 
 <dt id="arg-linesize">LineSize<a class="anchor" aria-label="anchor" href="#arg-linesize"></a></dt>
@@ -315,23 +318,72 @@ htmlwidget.</p>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="va">Labelled</span> <span class="op">&lt;-</span> <span class="fu"><a href="RevalueData.html">RevalueData</a></span><span class="op">(</span><span class="va">SampleData</span>, <span class="va">SampleVariableTypes</span><span class="op">)</span><span class="op">$</span><span class="va">RevaluedData</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Static spider chart</span></span></span>
+<span class="r-in"><span><span class="va">vars_biomarkers</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>  <span class="st">"Ab_42"</span>, <span class="st">"p_tau"</span>, <span class="st">"tau"</span>, <span class="st">"GRO_alpha"</span>, <span class="st">"MMP10"</span>, <span class="st">"MMP7"</span>, <span class="st">"TRAIL_R3"</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">categories_biomarkers</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>  <span class="st">"Neurodegeneration"</span>, <span class="st">"Neurodegeneration"</span>, <span class="st">"Neurodegeneration"</span>,</span></span>
+<span class="r-in"><span>  <span class="st">"Inflammation"</span>, <span class="st">"Inflammation"</span>, <span class="st">"Matrix remodeling"</span>, <span class="st">"TNF signaling"</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Input order preserves the supplied clinical/domain sequence.</span></span></span>
 <span class="r-in"><span><span class="fu">PlotSpiderChart</span><span class="op">(</span></span></span>
-<span class="r-in"><span>  <span class="va">Labelled</span>,</span></span>
-<span class="r-in"><span>  variables <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"age"</span>, <span class="st">"AXL"</span>, <span class="st">"Adiponectin"</span>, <span class="st">"Alpha_1_Antitrypsin"</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>  group_var <span class="op">=</span> <span class="st">"Diagnosis"</span></span></span>
+<span class="r-in"><span>  data <span class="op">=</span> <span class="va">Labelled</span>,</span></span>
+<span class="r-in"><span>  variables <span class="op">=</span> <span class="va">vars_biomarkers</span>,</span></span>
+<span class="r-in"><span>  group_var <span class="op">=</span> <span class="st">"Diagnosis"</span>,</span></span>
+<span class="r-in"><span>  VariableOrder <span class="op">=</span> <span class="st">"input"</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-plt img"><img src="PlotSpiderChart-1.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Interactive (plotly) version of the same chart</span></span></span>
+<span class="r-in"><span><span class="co"># Discrimination puts the largest between-group differences next to each other.</span></span></span>
 <span class="r-in"><span><span class="fu">PlotSpiderChart</span><span class="op">(</span></span></span>
-<span class="r-in"><span>  <span class="va">Labelled</span>,</span></span>
-<span class="r-in"><span>  variables <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"age"</span>, <span class="st">"AXL"</span>, <span class="st">"Adiponectin"</span>, <span class="st">"Alpha_1_Antitrypsin"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  data <span class="op">=</span> <span class="va">Labelled</span>,</span></span>
+<span class="r-in"><span>  variables <span class="op">=</span> <span class="va">vars_biomarkers</span>,</span></span>
 <span class="r-in"><span>  group_var <span class="op">=</span> <span class="st">"Diagnosis"</span>,</span></span>
+<span class="r-in"><span>  VariableOrder <span class="op">=</span> <span class="st">"discrimination"</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-plt img"><img src="PlotSpiderChart-2.png" alt="" width="700" height="433"></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Hierarchical order groups biomarkers with similar Diagnosis profiles.</span></span></span>
+<span class="r-in"><span><span class="fu">PlotSpiderChart</span><span class="op">(</span></span></span>
+<span class="r-in"><span>  data <span class="op">=</span> <span class="va">Labelled</span>,</span></span>
+<span class="r-in"><span>  variables <span class="op">=</span> <span class="va">vars_biomarkers</span>,</span></span>
+<span class="r-in"><span>  group_var <span class="op">=</span> <span class="st">"Diagnosis"</span>,</span></span>
+<span class="r-in"><span>  VariableOrder <span class="op">=</span> <span class="st">"hierarchical"</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-plt img"><img src="PlotSpiderChart-3.png" alt="" width="700" height="433"></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Greedy order places consecutive spokes with maximally different profiles.</span></span></span>
+<span class="r-in"><span><span class="fu">PlotSpiderChart</span><span class="op">(</span></span></span>
+<span class="r-in"><span>  data <span class="op">=</span> <span class="va">Labelled</span>,</span></span>
+<span class="r-in"><span>  variables <span class="op">=</span> <span class="va">vars_biomarkers</span>,</span></span>
+<span class="r-in"><span>  group_var <span class="op">=</span> <span class="st">"Diagnosis"</span>,</span></span>
+<span class="r-in"><span>  VariableOrder <span class="op">=</span> <span class="st">"greedy"</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-plt img"><img src="PlotSpiderChart-4.png" alt="" width="700" height="433"></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Category/discrimination order keeps domains together, then ranks the</span></span></span>
+<span class="r-in"><span><span class="co"># biomarkers within each domain by their between-group difference.</span></span></span>
+<span class="r-in"><span><span class="fu">PlotSpiderChart</span><span class="op">(</span></span></span>
+<span class="r-in"><span>  data <span class="op">=</span> <span class="va">Labelled</span>,</span></span>
+<span class="r-in"><span>  variables <span class="op">=</span> <span class="va">vars_biomarkers</span>,</span></span>
+<span class="r-in"><span>  group_var <span class="op">=</span> <span class="st">"Diagnosis"</span>,</span></span>
+<span class="r-in"><span>  VariableOrder <span class="op">=</span> <span class="st">"category_discrimination"</span>,</span></span>
+<span class="r-in"><span>  VariableCategories <span class="op">=</span> <span class="va">categories_biomarkers</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-plt img"><img src="PlotSpiderChart-5.png" alt="" width="700" height="433"></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Interactive (plotly) version of the category-aware chart.</span></span></span>
+<span class="r-in"><span><span class="fu">PlotSpiderChart</span><span class="op">(</span></span></span>
+<span class="r-in"><span>  data <span class="op">=</span> <span class="va">Labelled</span>,</span></span>
+<span class="r-in"><span>  variables <span class="op">=</span> <span class="va">vars_biomarkers</span>,</span></span>
+<span class="r-in"><span>  group_var <span class="op">=</span> <span class="st">"Diagnosis"</span>,</span></span>
+<span class="r-in"><span>  VariableOrder <span class="op">=</span> <span class="st">"category_discrimination"</span>,</span></span>
+<span class="r-in"><span>  VariableCategories <span class="op">=</span> <span class="va">categories_biomarkers</span>,</span></span>
 <span class="r-in"><span>  interactive <span class="op">=</span> <span class="cn">TRUE</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
-<div id="htmlwidget-1fb4450895fe099f74a1" style="width:700px;height:432.632880098888px;" class="plotly html-widget"></div>
-<script type="application/json" data-for="htmlwidget-1fb4450895fe099f74a1">{"x":{"visdat":{"227e73e2e4bf":["function () ","plotlyVisDat"]},"cur_data":"227e73e2e4bf","attrs":{"227e73e2e4bf":{"alpha_stroke":1,"sizes":[10,100],"spans":[1,20],"type":"scatterpolar","mode":"lines","r":[0.020574656921525235,-0.037764082196990657,-0.066786105495183712,-0.12628285475807199,0.020574656921525235],"theta":["Age","AXL receptor tyrosine<br />kinase","Adiponectin","Alpha-1-antitrypsin","Age"],"name":"Control","line":{"color":"#E16A86","width":2},"marker":{"color":"#E16A86","size":6},"fill":"none","fillcolor":"#E16A8633","text":["Diagnosis: Control<br>Variable: Age<br>Raw name: age<br>Value:  0.02","Diagnosis: Control<br>Variable: AXL receptor tyrosine<br />kinase<br>Raw name: AXL<br>Value: -0.04","Diagnosis: Control<br>Variable: Adiponectin<br>Raw name: Adiponectin<br>Value: -0.07","Diagnosis: Control<br>Variable: Alpha-1-antitrypsin<br>Raw name: Alpha_1_Antitrypsin<br>Value: -0.13","Diagnosis: Control<br>Variable: Age<br>Raw name: age<br>Value:  0.02"],"hoverinfo":"text","inherit":true},"227e73e2e4bf.1":{"alpha_stroke":1,"sizes":[10,100],"spans":[1,20],"type":"scatterpolar","mode":"lines","r":[-0.053036893397709839,0.10042755924914015,0.17760700582235767,0.33582913023575273,-0.053036893397709839],"theta":["Age","AXL receptor tyrosine<br />kinase","Adiponectin","Alpha-1-antitrypsin","Age"],"name":"Impaired","line":{"color":"#00AD9A","width":2},"marker":{"color":"#00AD9A","size":6},"fill":"none","fillcolor":"#00AD9A33","text":["Diagnosis: Impaired<br>Variable: Age<br>Raw name: age<br>Value: -0.05","Diagnosis: Impaired<br>Variable: AXL receptor tyrosine<br />kinase<br>Raw name: AXL<br>Value:  0.10","Diagnosis: Impaired<br>Variable: Adiponectin<br>Raw name: Adiponectin<br>Value:  0.18","Diagnosis: Impaired<br>Variable: Alpha-1-antitrypsin<br>Raw name: Alpha_1_Antitrypsin<br>Value:  0.34","Diagnosis: Impaired<br>Variable: Age<br>Raw name: age<br>Value: -0.05"],"hoverinfo":"text","inherit":true}},"layout":{"margin":{"b":40,"l":60,"t":25,"r":10},"title":{"text":""},"polar":{"radialaxis":{"visible":true,"range":[-1,1.1000000000000001]},"angularaxis":{"direction":"clockwise","rotation":90,"categoryorder":"array","categoryarray":["Age","AXL receptor tyrosine<br />kinase","Adiponectin","Alpha-1-antitrypsin"],"tickfont":{"size":12}}},"legend":{"title":{"text":"Diagnosis"},"orientation":"v"},"hovermode":"closest","showlegend":true},"source":"A","config":{"modeBarButtonsToAdd":["hoverclosest","hovercompare"],"showSendToCloud":false},"data":[{"type":"scatterpolar","mode":"lines+markers","r":[0.020574656921525235,-0.037764082196990657,-0.066786105495183712,-0.12628285475807199,0.020574656921525235],"theta":["Age","AXL receptor tyrosine<br />kinase","Adiponectin","Alpha-1-antitrypsin","Age"],"name":"Control","line":{"color":"#E16A86","width":2},"marker":{"color":"#E16A86","size":6,"line":{"color":"rgba(31,119,180,1)"}},"fill":"none","fillcolor":"#E16A8633","text":["Diagnosis: Control<br>Variable: Age<br>Raw name: age<br>Value:  0.02","Diagnosis: Control<br>Variable: AXL receptor tyrosine<br />kinase<br>Raw name: AXL<br>Value: -0.04","Diagnosis: Control<br>Variable: Adiponectin<br>Raw name: Adiponectin<br>Value: -0.07","Diagnosis: Control<br>Variable: Alpha-1-antitrypsin<br>Raw name: Alpha_1_Antitrypsin<br>Value: -0.13","Diagnosis: Control<br>Variable: Age<br>Raw name: age<br>Value:  0.02"],"hoverinfo":["text","text","text","text","text"],"frame":null},{"type":"scatterpolar","mode":"lines+markers","r":[-0.053036893397709839,0.10042755924914015,0.17760700582235767,0.33582913023575273,-0.053036893397709839],"theta":["Age","AXL receptor tyrosine<br />kinase","Adiponectin","Alpha-1-antitrypsin","Age"],"name":"Impaired","line":{"color":"#00AD9A","width":2},"marker":{"color":"#00AD9A","size":6,"line":{"color":"rgba(255,127,14,1)"}},"fill":"none","fillcolor":"#00AD9A33","text":["Diagnosis: Impaired<br>Variable: Age<br>Raw name: age<br>Value: -0.05","Diagnosis: Impaired<br>Variable: AXL receptor tyrosine<br />kinase<br>Raw name: AXL<br>Value:  0.10","Diagnosis: Impaired<br>Variable: Adiponectin<br>Raw name: Adiponectin<br>Value:  0.18","Diagnosis: Impaired<br>Variable: Alpha-1-antitrypsin<br>Raw name: Alpha_1_Antitrypsin<br>Value:  0.34","Diagnosis: Impaired<br>Variable: Age<br>Raw name: age<br>Value: -0.05"],"hoverinfo":["text","text","text","text","text"],"frame":null}],"highlight":{"on":"plotly_click","persistent":false,"dynamic":false,"selectize":false,"opacityDim":0.20000000000000001,"selected":{"opacity":1},"debounce":0},"shinyEvents":["plotly_hover","plotly_click","plotly_selected","plotly_relayout","plotly_brushed","plotly_brushing","plotly_clickannotation","plotly_doubleclick","plotly_deselect","plotly_afterplot","plotly_sunburstclick"],"base_url":"https://plot.ly"},"evals":[],"jsHooks":[]}</script></code></pre></div>
+<div id="htmlwidget-e5c8c404fe174e4c81bd" style="width:700px;height:432.632880098888px;" class="plotly html-widget"></div>
+<script type="application/json" data-for="htmlwidget-e5c8c404fe174e4c81bd">{"x":{"visdat":{"24b62ccd0ec2":["function () ","plotlyVisDat"]},"cur_data":"24b62ccd0ec2","attrs":{"24b62ccd0ec2":{"alpha_stroke":1,"sizes":[10,100],"spans":[1,20],"type":"scatterpolar","mode":"lines","r":[0.28368409270840433,-0.23869554746228758,-0.21267843354168886,-0.20034930721817537,-0.19239788626634546,-0.15054765460683786,-0.1820385545890647,0.28368409270840433],"theta":["Amyloid beta 42","Tau protein","Phosphorylated tau<br />protein","Growth-regulated alpha<br />protein","Matrix<br />metalloproteinase 10","Matrix<br />metalloproteinase 7","TNF-related<br />apoptosis-inducing<br />ligand receptor 3","Amyloid beta 42"],"name":"Control","line":{"color":"#0B1F5E","width":2},"marker":{"color":"#0B1F5E","size":6},"fill":"none","fillcolor":"#0B1F5E33","text":["Diagnosis: Control<br>Variable: Amyloid beta 42<br>Raw name: Ab_42<br>Value:  0.28","Diagnosis: Control<br>Variable: Tau protein<br>Raw name: tau<br>Value: -0.24","Diagnosis: Control<br>Variable: Phosphorylated tau<br />protein<br>Raw name: p_tau<br>Value: -0.21","Diagnosis: Control<br>Variable: Growth-regulated alpha<br />protein<br>Raw name: GRO_alpha<br>Value: -0.20","Diagnosis: Control<br>Variable: Matrix<br />metalloproteinase 10<br>Raw name: MMP10<br>Value: -0.19","Diagnosis: Control<br>Variable: Matrix<br />metalloproteinase 7<br>Raw name: MMP7<br>Value: -0.15","Diagnosis: Control<br>Variable: TNF-related<br />apoptosis-inducing<br />ligand receptor 3<br>Raw name: TRAIL_R3<br>Value: -0.18","Diagnosis: Control<br>Variable: Amyloid beta 42<br>Raw name: Ab_42<br>Value:  0.28"],"hoverinfo":"text","inherit":true},"24b62ccd0ec2.1":{"alpha_stroke":1,"sizes":[10,100],"spans":[1,20],"type":"scatterpolar","mode":"lines","r":[-0.70285909536709201,0.70394958065149327,0.56558440568229151,0.53279705875603434,0.51165152171929296,0.40035749906433782,0.48410252978630425,-0.70285909536709201],"theta":["Amyloid beta 42","Tau protein","Phosphorylated tau<br />protein","Growth-regulated alpha<br />protein","Matrix<br />metalloproteinase 10","Matrix<br />metalloproteinase 7","TNF-related<br />apoptosis-inducing<br />ligand receptor 3","Amyloid beta 42"],"name":"Impaired","line":{"color":"#E87400","width":2},"marker":{"color":"#E87400","size":6},"fill":"none","fillcolor":"#E8740033","text":["Diagnosis: Impaired<br>Variable: Amyloid beta 42<br>Raw name: Ab_42<br>Value: -0.70","Diagnosis: Impaired<br>Variable: Tau protein<br>Raw name: tau<br>Value:  0.70","Diagnosis: Impaired<br>Variable: Phosphorylated tau<br />protein<br>Raw name: p_tau<br>Value:  0.57","Diagnosis: Impaired<br>Variable: Growth-regulated alpha<br />protein<br>Raw name: GRO_alpha<br>Value:  0.53","Diagnosis: Impaired<br>Variable: Matrix<br />metalloproteinase 10<br>Raw name: MMP10<br>Value:  0.51","Diagnosis: Impaired<br>Variable: Matrix<br />metalloproteinase 7<br>Raw name: MMP7<br>Value:  0.40","Diagnosis: Impaired<br>Variable: TNF-related<br />apoptosis-inducing<br />ligand receptor 3<br>Raw name: TRAIL_R3<br>Value:  0.48","Diagnosis: Impaired<br>Variable: Amyloid beta 42<br>Raw name: Ab_42<br>Value: -0.70"],"hoverinfo":"text","inherit":true}},"layout":{"margin":{"b":40,"l":60,"t":25,"r":10},"title":{"text":""},"polar":{"radialaxis":{"visible":true,"range":[-1,1.1000000000000001]},"angularaxis":{"direction":"clockwise","rotation":90,"categoryorder":"array","categoryarray":["Amyloid beta 42","Tau protein","Phosphorylated tau<br />protein","Growth-regulated alpha<br />protein","Matrix<br />metalloproteinase 10","Matrix<br />metalloproteinase 7","TNF-related<br />apoptosis-inducing<br />ligand receptor 3"],"tickfont":{"size":12}}},"legend":{"title":{"text":"Diagnosis"},"orientation":"v"},"hovermode":"closest","showlegend":true},"source":"A","config":{"modeBarButtonsToAdd":["hoverclosest","hovercompare"],"showSendToCloud":false},"data":[{"type":"scatterpolar","mode":"lines+markers","r":[0.28368409270840433,-0.23869554746228758,-0.21267843354168886,-0.20034930721817537,-0.19239788626634546,-0.15054765460683786,-0.1820385545890647,0.28368409270840433],"theta":["Amyloid beta 42","Tau protein","Phosphorylated tau<br />protein","Growth-regulated alpha<br />protein","Matrix<br />metalloproteinase 10","Matrix<br />metalloproteinase 7","TNF-related<br />apoptosis-inducing<br />ligand receptor 3","Amyloid beta 42"],"name":"Control","line":{"color":"#0B1F5E","width":2},"marker":{"color":"#0B1F5E","size":6,"line":{"color":"rgba(31,119,180,1)"}},"fill":"none","fillcolor":"#0B1F5E33","text":["Diagnosis: Control<br>Variable: Amyloid beta 42<br>Raw name: Ab_42<br>Value:  0.28","Diagnosis: Control<br>Variable: Tau protein<br>Raw name: tau<br>Value: -0.24","Diagnosis: Control<br>Variable: Phosphorylated tau<br />protein<br>Raw name: p_tau<br>Value: -0.21","Diagnosis: Control<br>Variable: Growth-regulated alpha<br />protein<br>Raw name: GRO_alpha<br>Value: -0.20","Diagnosis: Control<br>Variable: Matrix<br />metalloproteinase 10<br>Raw name: MMP10<br>Value: -0.19","Diagnosis: Control<br>Variable: Matrix<br />metalloproteinase 7<br>Raw name: MMP7<br>Value: -0.15","Diagnosis: Control<br>Variable: TNF-related<br />apoptosis-inducing<br />ligand receptor 3<br>Raw name: TRAIL_R3<br>Value: -0.18","Diagnosis: Control<br>Variable: Amyloid beta 42<br>Raw name: Ab_42<br>Value:  0.28"],"hoverinfo":["text","text","text","text","text","text","text","text"],"frame":null},{"type":"scatterpolar","mode":"lines+markers","r":[-0.70285909536709201,0.70394958065149327,0.56558440568229151,0.53279705875603434,0.51165152171929296,0.40035749906433782,0.48410252978630425,-0.70285909536709201],"theta":["Amyloid beta 42","Tau protein","Phosphorylated tau<br />protein","Growth-regulated alpha<br />protein","Matrix<br />metalloproteinase 10","Matrix<br />metalloproteinase 7","TNF-related<br />apoptosis-inducing<br />ligand receptor 3","Amyloid beta 42"],"name":"Impaired","line":{"color":"#E87400","width":2},"marker":{"color":"#E87400","size":6,"line":{"color":"rgba(255,127,14,1)"}},"fill":"none","fillcolor":"#E8740033","text":["Diagnosis: Impaired<br>Variable: Amyloid beta 42<br>Raw name: Ab_42<br>Value: -0.70","Diagnosis: Impaired<br>Variable: Tau protein<br>Raw name: tau<br>Value:  0.70","Diagnosis: Impaired<br>Variable: Phosphorylated tau<br />protein<br>Raw name: p_tau<br>Value:  0.57","Diagnosis: Impaired<br>Variable: Growth-regulated alpha<br />protein<br>Raw name: GRO_alpha<br>Value:  0.53","Diagnosis: Impaired<br>Variable: Matrix<br />metalloproteinase 10<br>Raw name: MMP10<br>Value:  0.51","Diagnosis: Impaired<br>Variable: Matrix<br />metalloproteinase 7<br>Raw name: MMP7<br>Value:  0.40","Diagnosis: Impaired<br>Variable: TNF-related<br />apoptosis-inducing<br />ligand receptor 3<br>Raw name: TRAIL_R3<br>Value:  0.48","Diagnosis: Impaired<br>Variable: Amyloid beta 42<br>Raw name: Ab_42<br>Value: -0.70"],"hoverinfo":["text","text","text","text","text","text","text","text"],"frame":null}],"highlight":{"on":"plotly_click","persistent":false,"dynamic":false,"selectize":false,"opacityDim":0.20000000000000001,"selected":{"opacity":1},"debounce":0},"shinyEvents":["plotly_hover","plotly_click","plotly_selected","plotly_relayout","plotly_brushed","plotly_brushing","plotly_clickannotation","plotly_doubleclick","plotly_deselect","plotly_afterplot","plotly_sunburstclick"],"base_url":"https://plot.ly"},"evals":[],"jsHooks":[]}</script></code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>

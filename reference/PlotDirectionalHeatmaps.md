@@ -15,12 +15,12 @@ Combines:
 PlotDirectionalHeatmaps(
   data,
   variables = NULL,
-  yVars = lifecycle::deprecated(),
   Relabel = TRUE,
   Ordinal = TRUE,
   fdr_scope = c("matrix", "per_outcome", "per_predictor"),
   Data = lifecycle::deprecated(),
-  xVars = lifecycle::deprecated()
+  xVars = lifecycle::deprecated(),
+  yVars = lifecycle::deprecated()
 )
 ```
 
@@ -37,18 +37,16 @@ PlotDirectionalHeatmaps(
   so a single variable set defines both axes. If NULL, uses all detected
   continuous + binary vars.
 
-- yVars:
-
-  **Deprecated** (since 19.15.0). Use `variables` instead. If supplied,
-  the old rectangular x-by-y display is still honored.
-
 - Relabel:
 
   Logical; use sjlabelled variable labels if present.
 
 - Ordinal:
 
-  Logical; reserved for future use.
+  Logical; passed to
+  [`PlotPointCorrelationsHeatmap()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotPointCorrelationsHeatmap.md)
+  for the binary~continuous block, where it controls whether ordinal
+  variables are treated as continuous. Defaults to `TRUE`.
 
 - fdr_scope:
 
@@ -70,6 +68,11 @@ PlotDirectionalHeatmaps(
 
   **Deprecated** (since 19.15.0). Use `variables` instead.
 
+- yVars:
+
+  **Deprecated** (since 19.15.0). Use `variables` instead. If supplied,
+  the old rectangular x-by-y display is still honored.
+
 ## Value
 
 list(Unadjusted, FDRCorrected, Relabel, BinaryMapping, Excluded)
@@ -83,8 +86,8 @@ excluded before computing any tiles.
 
 The analysis covers continuous and binary variables. Multi-level
 categorical variables (more than two levels) are not placed on the
-heatmap. Ordinal handling via the `Ordinal` argument is reserved for
-future use and does not yet change the tiles that are computed.
+heatmap. `Ordinal` affects only the binary~continuous block, which is
+the one sub-analysis that accepts it.
 
 ## Examples
 

@@ -83,21 +83,23 @@ data(SampleVariableTypes)
 
 Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
 
-# CatVars must be binary (exactly two unique non-NA values)
+# CatVars must be binary (exactly two unique non-NA values). These markers
+# separate on Diagnosis (Ab_42, tau, p_tau) or on sex (Leptin, PAI_1,
+# NT_proBNP), so both rows of the heatmap carry signal in both directions.
 result <- PlotPointCorrelationsHeatmap(
   Labelled,
   CatVars = c("Diagnosis", "sex"),
-  ContVars = c("age", "AXL", "Adiponectin")
+  ContVars = c("Ab_42", "tau", "p_tau", "Leptin", "PAI_1", "NT_proBNP")
 )
 
 # Raw p-value point-biserial heatmap
 result$Unadjusted$plot
-#> Warning: Removed 5 rows containing missing values or values outside the scale range
+#> Warning: Removed 4 rows containing missing values or values outside the scale range
 #> (`geom_text()`).
 
 
 # FDR-adjusted point-biserial heatmap
 result$FDRCorrected$plot
-#> Warning: Removed 6 rows containing missing values or values outside the scale range
+#> Warning: Removed 4 rows containing missing values or values outside the scale range
 #> (`geom_text()`).
 ```

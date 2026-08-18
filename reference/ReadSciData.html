@@ -13,7 +13,7 @@ metadata rows, unnamed columns, duplicate column names, and formatting."><meta p
 
     <a class="navbar-brand me-2" href="../index.html">SciDataReportR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">20.22.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">20.24.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -25,6 +25,8 @@ metadata rows, unnamed columns, duplicate column names, and formatting."><meta p
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/argument-renaming.html">Migration note: argument renaming in 19.15.0</a></li>
+    <li><a class="dropdown-item" href="../articles/BiomarkerPerformance.html">Evaluating candidate biomarkers</a></li>
+    <li><a class="dropdown-item" href="../articles/ClusteringPhenotyping.html">Clustering and clinical phenotyping</a></li>
     <li><a class="dropdown-item" href="../articles/fdr-correction.html">FDR correction scope: matrix-wide vs per-outcome</a></li>
     <li><a class="dropdown-item" href="../articles/getting-started.html">Getting started with SciDataReportR</a></li>
     <li><a class="dropdown-item" href="../articles/MakeComparisonTable.html">Creating comparison tables with MakeComparisonTable()</a></li>
@@ -49,7 +51,7 @@ metadata rows, unnamed columns, duplicate column names, and formatting."><meta p
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Read a scientific data file with optional inspection</h1>
-      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/v20.22.0/R/ReadSciData.R" class="external-link"><code>R/ReadSciData.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/master/R/ReadSciData.R" class="external-link"><code>R/ReadSciData.R</code></a></small>
       <div class="d-none name"><code>ReadSciData.Rd</code></div>
     </div>
 
@@ -161,7 +163,194 @@ difficult or impossible to use in tidyverse workflows. Blank or <code>NA</code> 
 renamed to <code>...unnamed_POSITION</code>, and duplicate names are made unique only when
 needed. Existing valid names are preserved.</p>
     </div>
+    <div class="section level2">
+    <h2 id="formats-and-what-the-examples-show">Formats, and what the examples show<a class="anchor" aria-label="anchor" href="#formats-and-what-the-examples-show"></a></h2>
 
+
+<p>The file extension decides the reader, so one call covers CSV, Excel, SPSS,
+Stata, SAS, Parquet, Feather, JSON, and R's own formats.</p>
+<p><strong>Excel.</strong> Real workbooks have more than one sheet, and the data is rarely
+on the first one, so <code>sheet</code> is usually needed. Exported sheets also tend to
+carry a title and an export stamp above the real column names; read naively
+those become the header and every column arrives as text. With
+<code>inspect = TRUE</code> (the default) the real header row is detected and used, and
+what inspection found is attached as the <code>scidata_inspection</code> attribute so
+the import stays auditable. <code>header_row</code> overrides the guess when detection
+gets it wrong.</p>
+<p><strong>SPSS.</strong> <code>.sav</code> files carry variable labels and value labels, and those are
+the reason to import them directly rather than converting to CSV first - a
+CSV export drops both. Because the labels survive the round trip, the
+codebook template arrives pre-filled: <code>Label</code> comes from the variable
+labels, and <code>Recode</code>/<code>Code</code> from the value labels, so coded SPSS variables
+need no manual transcription.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
+    <div class="dont-index"><p><code><a href="InspectFile.html">InspectFile()</a></code> to inspect a file without importing it,
+<code><a href="CreateVariableTypesTemplate.html">CreateVariableTypesTemplate()</a></code> to build a codebook from the imported
+frame, and <code><a href="RevalueData.html">RevalueData()</a></code> to apply it.</p></div>
+    </div>
+
+    <div class="section level2">
+    <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># \donttest{</span></span></span>
+<span class="r-in"><span><span class="co"># Written to a temporary directory so the example is self-contained</span></span></span>
+<span class="r-in"><span><span class="va">dir_Example</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="va">df_Study</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>  subj_id <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">8</span>,</span></span>
+<span class="r-in"><span>  age <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">58</span>, <span class="fl">61</span>, <span class="fl">47</span>, <span class="fl">72</span>, <span class="fl">66</span>, <span class="fl">54</span>, <span class="fl">69</span>, <span class="fl">43</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  sex <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">1</span>, <span class="fl">1</span>, <span class="fl">0</span>, <span class="fl">1</span>, <span class="fl">0</span>, <span class="fl">1</span>, <span class="fl">0</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  mmse <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">29</span>, <span class="fl">24</span>, <span class="fl">30</span>, <span class="fl">18</span>, <span class="fl">26</span>, <span class="fl">27</span>, <span class="fl">21</span>, <span class="fl">28</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># CSV</span></span></span>
+<span class="r-in"><span><span class="va">path_Csv</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">dir_Example</span>, <span class="st">"study_data.csv"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">utils</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/utils/write.table.html" class="external-link">write.csv</a></span><span class="op">(</span><span class="va">df_Study</span>, <span class="va">path_Csv</span>, row.names <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="va">df_FromCsv</span> <span class="op">&lt;-</span> <span class="fu">ReadSciData</span><span class="op">(</span><span class="va">path_Csv</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">df_FromCsv</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 8 × 4</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   subj_id   age   sex  mmse</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;int&gt;</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span>       1    58     0    29</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span>       2    61     1    24</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">3</span>       3    47     1    30</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">4</span>       4    72     0    18</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">5</span>       5    66     1    26</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">6</span>       6    54     0    27</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">7</span>       7    69     1    21</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">8</span>       8    43     0    28</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Excel: a workbook with more than one sheet</span></span></span>
+<span class="r-in"><span><span class="va">path_Excel</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">dir_Example</span>, <span class="st">"study_data.xlsx"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">openxlsx</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/openxlsx/man/write.xlsx.html" class="external-link">write.xlsx</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>  <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>    ReadMe <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>Note <span class="op">=</span> <span class="st">"Exported by the lab core"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>    Measurements <span class="op">=</span> <span class="va">df_Study</span></span></span>
+<span class="r-in"><span>  <span class="op">)</span>,</span></span>
+<span class="r-in"><span>  <span class="va">path_Excel</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="va">df_FromExcel</span> <span class="op">&lt;-</span> <span class="fu">ReadSciData</span><span class="op">(</span><span class="va">path_Excel</span>, sheet <span class="op">=</span> <span class="st">"Measurements"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">df_FromExcel</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 8 × 4</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   subj_id   age   sex  mmse</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span>       1    58     0    29</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span>       2    61     1    24</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">3</span>       3    47     1    30</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">4</span>       4    72     0    18</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">5</span>       5    66     1    26</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">6</span>       6    54     0    27</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">7</span>       7    69     1    21</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">8</span>       8    43     0    28</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># A sheet with a title and export stamp above the real column names</span></span></span>
+<span class="r-in"><span><span class="va">path_Messy</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">dir_Example</span>, <span class="st">"messy_export.xlsx"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">openxlsx</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/openxlsx/man/write.xlsx.html" class="external-link">write.xlsx</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>  <span class="fu"><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">rbind</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>    <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Study XYZ biomarker export"</span>, <span class="cn">NA</span>, <span class="cn">NA</span>, <span class="cn">NA</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>    <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Exported 2026-01-05 by lab core"</span>, <span class="cn">NA</span>, <span class="cn">NA</span>, <span class="cn">NA</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>    <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"subj_id"</span>, <span class="st">"age"</span>, <span class="st">"sex"</span>, <span class="st">"mmse"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>    <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"1"</span>, <span class="st">"58"</span>, <span class="st">"0"</span>, <span class="st">"29"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>    <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"2"</span>, <span class="st">"61"</span>, <span class="st">"1"</span>, <span class="st">"24"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>    <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"3"</span>, <span class="st">"47"</span>, <span class="st">"1"</span>, <span class="st">"30"</span><span class="op">)</span></span></span>
+<span class="r-in"><span>  <span class="op">)</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  <span class="va">path_Messy</span>,</span></span>
+<span class="r-in"><span>  colNames <span class="op">=</span> <span class="cn">FALSE</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Without inspection</span></span></span>
+<span class="r-in"><span><span class="fu">ReadSciData</span><span class="op">(</span><span class="va">path_Messy</span>, inspect <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> ReadSciData(): 3 unnamed columns renamed to ...unnamed_2, ...unnamed_3, ...unnamed_4.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 5 × 4</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   `Study XYZ biomarker export`    ...unnamed_2 ...unnamed_3 ...unnamed_4</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                           <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> Exported 2026-01-05 by lab core <span style="color: #BB0000;">NA</span>           <span style="color: #BB0000;">NA</span>           <span style="color: #BB0000;">NA</span>          </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span> subj_id                         age          sex          mmse        </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">3</span> 1                               58           0            29          </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">4</span> 2                               61           1            24          </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">5</span> 3                               47           1            30          </span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># With inspection (the default)</span></span></span>
+<span class="r-in"><span><span class="va">df_Fixed</span> <span class="op">&lt;-</span> <span class="fu">ReadSciData</span><span class="op">(</span><span class="va">path_Messy</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">df_Fixed</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 3 × 4</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   subj_id age   sex   mmse </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> 1       58    0     29   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span> 2       61    1     24   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">3</span> 3       47    1     30   </span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># What inspection found, kept with the data</span></span></span>
+<span class="r-in"><span><span class="va">inspection</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">df_Fixed</span>, <span class="st">"scidata_inspection"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">inspection</span><span class="op">$</span><span class="va">probable_header_row</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 3</span>
+<span class="r-in"><span><span class="va">inspection</span><span class="op">$</span><span class="va">issues</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Probable header row appears to be row 3, not row 1."</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Overriding the detected header row</span></span></span>
+<span class="r-in"><span><span class="fu">ReadSciData</span><span class="op">(</span><span class="va">path_Messy</span>, header_row <span class="op">=</span> <span class="fl">3</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 3 × 4</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   subj_id age   sex   mmse </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> 1       58    0     29   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span> 2       61    1     24   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">3</span> 3       47    1     30   </span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># SPSS, with variable labels and value labels</span></span></span>
+<span class="r-in"><span><span class="va">df_Labelled</span> <span class="op">&lt;-</span> <span class="va">df_Study</span></span></span>
+<span class="r-in"><span><span class="va">df_Labelled</span><span class="op">$</span><span class="va">sex</span> <span class="op">&lt;-</span> <span class="fu">haven</span><span class="fu">::</span><span class="fu"><a href="https://haven.tidyverse.org/reference/labelled.html" class="external-link">labelled</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>  <span class="va">df_Labelled</span><span class="op">$</span><span class="va">sex</span>,</span></span>
+<span class="r-in"><span>  labels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>Female <span class="op">=</span> <span class="fl">0</span>, Male <span class="op">=</span> <span class="fl">1</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  label <span class="op">=</span> <span class="st">"Sex assigned at birth"</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">df_Labelled</span><span class="op">$</span><span class="va">age</span>, <span class="st">"label"</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="st">"Age at visit (years)"</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">df_Labelled</span><span class="op">$</span><span class="va">mmse</span>, <span class="st">"label"</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="st">"MMSE total score"</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="va">path_Spss</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">dir_Example</span>, <span class="st">"study_data.sav"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">haven</span><span class="fu">::</span><span class="fu"><a href="https://haven.tidyverse.org/reference/read_spss.html" class="external-link">write_sav</a></span><span class="op">(</span><span class="va">df_Labelled</span>, <span class="va">path_Spss</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="va">df_FromSpss</span> <span class="op">&lt;-</span> <span class="fu">ReadSciData</span><span class="op">(</span><span class="va">path_Spss</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">df_FromSpss</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 8 × 4</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   subj_id   age sex         mmse</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl+lbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span>       1    58 0<span style="color: #949494;"> [Female]</span>    29</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span>       2    61 1<span style="color: #949494;"> [Male]</span>      24</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">3</span>       3    47 1<span style="color: #949494;"> [Male]</span>      30</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">4</span>       4    72 0<span style="color: #949494;"> [Female]</span>    18</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">5</span>       5    66 1<span style="color: #949494;"> [Male]</span>      26</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">6</span>       6    54 0<span style="color: #949494;"> [Female]</span>    27</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">7</span>       7    69 1<span style="color: #949494;"> [Male]</span>      21</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">8</span>       8    43 0<span style="color: #949494;"> [Female]</span>    28</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># The labels survive the round trip</span></span></span>
+<span class="r-in"><span><span class="fu">sjlabelled</span><span class="fu">::</span><span class="fu"><a href="https://strengejacke.github.io/sjlabelled/reference/get_label.html" class="external-link">get_label</a></span><span class="op">(</span><span class="va">df_FromSpss</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                 subj_id                     age                     sex </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                      ""  "Age at visit (years)" "Sex assigned at birth" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                    mmse </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      "MMSE total score" </span>
+<span class="r-in"><span><span class="fu">sjlabelled</span><span class="fu">::</span><span class="fu"><a href="https://strengejacke.github.io/sjlabelled/reference/get_labels.html" class="external-link">get_labels</a></span><span class="op">(</span><span class="va">df_FromSpss</span><span class="op">$</span><span class="va">sex</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Female" "Male"  </span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># So the codebook template arrives pre-filled</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="CreateVariableTypesTemplate.html">CreateVariableTypesTemplate</a></span><span class="op">(</span><span class="va">df_FromSpss</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>         Variable                 Label        Type Category Recode</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> subj_id  subj_id               subj_id      Double       NA     NA</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> age          age  Age at visit (years)      Double       NA     NA</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> sex          sex Sex assigned at birth Categorical       NA      1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> mmse        mmse      MMSE total score      Double       NA     NA</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                     Code Notes Exclude MissingCode</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> subj_id             &lt;NA&gt;            NA            </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> age                 &lt;NA&gt;            NA            </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> sex     0=Female; 1=Male            NA            </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> mmse                &lt;NA&gt;            NA            </span>
+<span class="r-in"><span><span class="co"># }</span></span></span>
+<span class="r-in"><span></span></span>
+</code></pre></div>
+    </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>
 

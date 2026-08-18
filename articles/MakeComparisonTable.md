@@ -67,10 +67,8 @@ tbl_basic
 
 [TABLE]
 
-Comparison table (display: mean (SD)). Global p-values: unadjusted (no
-covariates). Categorical global test: auto; adjusted multi-category:
-multinomial_LR. Pairwise: not included (p-adjust: bonferroni). {.table
-.gt_table .caption-top quarto-bootstrap="false"}
+Comparison by Diagnosis (values: mean (SD)). {.table .gt_table
+.caption-top quarto-bootstrap="false"}
 
 The resulting table contains:
 
@@ -106,13 +104,7 @@ tbl_effectsize
 
 [TABLE]
 
-Comparison table (display: mean (SD)). Global p-values: unadjusted (no
-covariates). Categorical global test: auto; adjusted multi-category:
-multinomial_LR. Pairwise: not included (p-adjust: bonferroni). Effect
-sizes: \|d\|: 0.2/0.5/0.8 indicate small/medium/large effects; Cramer’s
-V: 0.1/0.3/0.5 are small/medium/large heuristics only for 2x2 tables;
-larger tables depend on their dimensions. Thresholds are conventional
-heuristics, not clinical-importance cutoffs. {.table .gt_table
+Comparison by Diagnosis (values: mean (SD)). {.table .gt_table
 .caption-top style="width:100%;" quarto-bootstrap="false"}
 
 When reporting group differences, effect sizes should generally be
@@ -128,10 +120,11 @@ the number of groups:
   Cohen’s (f) is calculated from the Type II ANCOVA group effect.
 
 Cohen’s (d) and Cohen’s (f) are not numerically equivalent. In a
-balanced two-group design only, (d 2f). When effect sizes are requested,
-the table caption lists the scales that are present and provides
-conventional magnitude guides. These guides are heuristics rather than
-thresholds for clinical importance.
+balanced two-group design only, (d 2f). Interpret each effect-size scale
+in its methodological context; conventional magnitude guides are
+heuristics, not thresholds for clinical importance. The generated table
+caption and methods footnote remain focused on the summaries and
+hypothesis tests used.
 
 ## 6 Nonparametric analyses
 
@@ -161,15 +154,8 @@ tbl_nonparametric
 
 [TABLE]
 
-Comparison table (display: median \[IQR\]). Global p-values: unadjusted
-(no covariates). Categorical global test: auto; adjusted multi-category:
-multinomial_LR. Pairwise: not included (p-adjust: bonferroni). Effect
-sizes: epsilon-squared: 0.01/0.06/0.14 are heuristic small/medium/large
-thresholds; Cramer’s V: 0.1/0.3/0.5 are small/medium/large heuristics
-only for 2x2 tables; larger tables depend on their dimensions.
-Thresholds are conventional heuristics, not clinical-importance cutoffs.
-{.table .gt_table .caption-top style="width:100%;"
-quarto-bootstrap="false"}
+Comparison by Diagnosis (values: median \[IQR\]). {.table .gt_table
+.caption-top style="width:100%;" quarto-bootstrap="false"}
 
 ## 7 Including Covariates
 
@@ -199,14 +185,9 @@ tbl_covariate
 
 [TABLE]
 
-Comparison table (display: mean (SD)). Global p-values: adjusted (ANCOVA
-Type II / LR). Categorical global test: auto; adjusted multi-category:
-multinomial_LR. Pairwise: not included (p-adjust: bonferroni). Effect
-sizes: \|d\|: 0.2/0.5/0.8 indicate small/medium/large effects; Cramer’s
-V: 0.1/0.3/0.5 are small/medium/large heuristics only for 2x2 tables;
-larger tables depend on their dimensions. Thresholds are conventional
-heuristics, not clinical-importance cutoffs. {.table .gt_table
-.caption-top style="width:100%;" quarto-bootstrap="false"}
+Comparison by Diagnosis (values: mean (SD)). p-values adjusted for Age.
+{.table .gt_table .caption-top style="width:100%;"
+quarto-bootstrap="false"}
 
 Covariate adjustment can help determine whether observed group
 differences persist after controlling for potential confounding factors.
@@ -239,14 +220,9 @@ tbl_pairwise
 
 [TABLE]
 
-Comparison table (display: mean (SD)). Global p-values: unadjusted (no
-covariates). Categorical global test: auto; adjusted multi-category:
-multinomial_LR. Pairwise: included (p-adjust: bonferroni). Effect sizes:
-Cohen’s f: 0.1/0.25/0.4 indicate small/medium/large effects; Cramer’s V:
-0.1/0.3/0.5 are small/medium/large heuristics only for 2x2 tables;
-larger tables depend on their dimensions. Thresholds are conventional
-heuristics, not clinical-importance cutoffs. {.table .gt_table
-.caption-top style="width:100%;" quarto-bootstrap="false"}
+Comparison by Genotype (values: mean (SD)). Pairwise p-values are
+bonferroni-adjusted within outcome. {.table .gt_table .caption-top
+style="width:100%;" quarto-bootstrap="false"}
 
 You can also choose a referent and compare only to that
 
@@ -274,14 +250,9 @@ tbl_pairwise_referent
 
 [TABLE]
 
-Comparison table (display: mean (SD)). Global p-values: unadjusted (no
-covariates). Categorical global test: auto; adjusted multi-category:
-multinomial_LR. Pairwise: included (p-adjust: bonferroni). Effect sizes:
-Cohen’s f: 0.1/0.25/0.4 indicate small/medium/large effects; Cramer’s V:
-0.1/0.3/0.5 are small/medium/large heuristics only for 2x2 tables;
-larger tables depend on their dimensions. Thresholds are conventional
-heuristics, not clinical-importance cutoffs. {.table .gt_table
-.caption-top quarto-bootstrap="false"}
+Comparison by Genotype (values: mean (SD)). Pairwise p-values are
+bonferroni-adjusted within outcome. {.table .gt_table .caption-top
+quarto-bootstrap="false"}
 
 ## 9 Summary
 
@@ -333,7 +304,7 @@ sessionInfo()
     [1] stats     graphics  grDevices utils     datasets  methods   base
 
     other attached packages:
-    [1] dplyr_1.2.1            SciDataReportR_20.22.0
+    [1] dplyr_1.2.1            SciDataReportR_20.24.0
 
     loaded via a namespace (and not attached):
       [1] Exact_3.3              ggstatsplot_1.0.0      sjlabelled_1.2.0
@@ -357,9 +328,9 @@ sessionInfo()
      [55] readxl_1.5.0           gld_2.6.8              proxy_0.4-29
      [58] effectsize_1.0.3       cellranger_1.1.0       base64enc_0.1-6
      [61] vctrs_0.7.3            Matrix_1.7-5           boot_1.3-32
-     [64] sandwich_3.1-2         jsonlite_2.0.0         carData_3.0-6
+     [64] sandwich_3.1-3         jsonlite_2.0.0         carData_3.0-6
      [67] car_3.1-5              litedown_0.10          hms_1.1.4
-     [70] patchwork_1.3.2        rstatix_1.1.0          Formula_1.2-5
+     [70] patchwork_1.3.2        rstatix_1.1.0          Formula_1.2-6
      [73] correlation_0.8.8      tidyr_1.3.2            glue_1.8.1
      [76] rematch2_2.1.2         gtable_0.3.6           tibble_3.3.1
      [79] pillar_1.11.1          htmltools_0.5.9        R6_2.6.1

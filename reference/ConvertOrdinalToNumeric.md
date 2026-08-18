@@ -59,68 +59,51 @@ ConvertOrdinalToNumeric(
 A transformed data frame, or a metadata list when
 `ReturnMetadata = TRUE`.
 
+## The four policies
+
+`"Continuous"` replaces each level with its rank. `"Categorical"` and
+`"Exclude"` both leave the values alone; they differ in whether the
+variable is offered to the analysis at all. `"Both"` produces one column
+of each.
+
+With `ReturnMetadata = TRUE` the derived column names come back
+alongside the data, so downstream functions know which column carries
+which treatment without having to guess from the naming convention.
+
 ## Examples
 
 ``` r
+# \donttest{
 df <- data.frame(
-  id = 1:5,
-  likert = factor(c("1", "2", "3", "2", "1"),
-                  levels = c("1", "2", "3"), ordered = TRUE),
-  grade = factor(c("A", "B", "A", "C", "B"),
-                 levels = c("A", "B", "C"), ordered = TRUE)
+  id = 1:6,
+  Severity = factor(
+    c("None", "Mild", "Severe", "Mild", "Moderate", "None"),
+    levels = c("None", "Mild", "Moderate", "Severe"), ordered = TRUE
+  ),
+  Education = factor(
+    c("HighSchool", "College", "Graduate", "College", "Graduate", "HighSchool"),
+    levels = c("HighSchool", "College", "Graduate"), ordered = TRUE
+  )
 )
 
-# Convert ordinal ranks to numeric scores.
-ConvertOrdinalToNumeric(df)
-#>   id likert grade
-#> 1  1      1     1
-#> 2  2      2     2
-#> 3  3      3     1
-#> 4  4      2     3
-#> 5  5      1     2
+# The four policies, applied to the same ordinal variable
+df_Both <- ConvertOrdinalToNumeric(df, TreatOrdinalAs = "Both")
 
-# Keep both categorical and continuous versions for a summary table.
-ConvertOrdinalToNumeric(df, TreatOrdinalAs = "Both", ReturnMetadata = TRUE)
-#> $data
-#>   id likert grade .scidr_ordinal_categorical_likert
-#> 1  1      1     A                                 1
-#> 2  2      2     B                                 2
-#> 3  3      3     A                                 3
-#> 4  4      2     C                                 2
-#> 5  5      1     B                                 1
-#>   .scidr_ordinal_continuous_likert .scidr_ordinal_categorical_grade
-#> 1                                1                                A
-#> 2                                2                                B
-#> 3                                3                                A
-#> 4                                2                                C
-#> 5                                1                                B
-#>   .scidr_ordinal_continuous_grade
-#> 1                               1
-#> 2                               2
-#> 3                               1
-#> 4                               3
-#> 5                               2
-#> 
-#> $variables
-#> [1] "id"                                ".scidr_ordinal_categorical_likert"
-#> [3] ".scidr_ordinal_continuous_likert"  ".scidr_ordinal_categorical_grade" 
-#> [5] ".scidr_ordinal_continuous_grade"  
-#> 
-#> $ordinal_variables
-#> [1] "likert" "grade" 
-#> 
-#> $variable_map
-#> $variable_map$id
-#> [1] "id"
-#> 
-#> $variable_map$likert
-#> [1] ".scidr_ordinal_categorical_likert" ".scidr_ordinal_continuous_likert" 
-#> 
-#> $variable_map$grade
-#> [1] ".scidr_ordinal_categorical_grade" ".scidr_ordinal_continuous_grade" 
-#> 
-#> 
-#> $treatment
-#> [1] "Both"
-#> 
+df_Policies <- data.frame(
+  id = df$id,
+  Original = as.character(df$Severity),
+  Continuous = ConvertOrdinalToNumeric(df, TreatOrdinalAs = "Continuous")$Severity,
+  Categorical = as.character(
+    ConvertOrdinalToNumeric(df, TreatOrdinalAs = "Categorical")$Severity
+  ),
+  Both_Categorical = as.character(df_Both$.scidr_ordinal_categorical_Severity),
+  Both_Continuous = df_Both$.scidr_ordinal_continuous_Severity
+)
+
+htmltools::browsable(htmltools::HTML(as.character(
+  FreezeTableHeader(df_Policies, full_width = TRUE)
+)))
+
+
+ id 
 ```

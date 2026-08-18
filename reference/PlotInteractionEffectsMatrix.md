@@ -191,7 +191,6 @@ results <- PlotInteractionEffectsMatrix(
   outcome_vars = outcomes,
   predictor_vars = predictors
 )
-#> Warning: Ignoring unknown aesthetics: text
 
 # With a continuous interaction variable (age)
 results_cont <- PlotInteractionEffectsMatrix(
@@ -200,7 +199,6 @@ results_cont <- PlotInteractionEffectsMatrix(
   outcome_vars = setdiff(outcomes, "age"),
   predictor_vars = predictors
 )
-#> Warning: Ignoring unknown aesthetics: text
 
 # Raw p-value interaction matrix
 results$Unadjusted$plot

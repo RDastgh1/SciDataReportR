@@ -15,7 +15,7 @@ If you need true covariate adjustment, use regression-based models (logistic/mul
 
     <a class="navbar-brand me-2" href="../index.html">SciDataReportR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">20.22.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">20.24.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -27,6 +27,8 @@ If you need true covariate adjustment, use regression-based models (logistic/mul
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/argument-renaming.html">Migration note: argument renaming in 19.15.0</a></li>
+    <li><a class="dropdown-item" href="../articles/BiomarkerPerformance.html">Evaluating candidate biomarkers</a></li>
+    <li><a class="dropdown-item" href="../articles/ClusteringPhenotyping.html">Clustering and clinical phenotyping</a></li>
     <li><a class="dropdown-item" href="../articles/fdr-correction.html">FDR correction scope: matrix-wide vs per-outcome</a></li>
     <li><a class="dropdown-item" href="../articles/getting-started.html">Getting started with SciDataReportR</a></li>
     <li><a class="dropdown-item" href="../articles/MakeComparisonTable.html">Creating comparison tables with MakeComparisonTable()</a></li>
@@ -51,7 +53,7 @@ If you need true covariate adjustment, use regression-based models (logistic/mul
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Plot Chi-Square Tests for Categorical Associations (optionally stratified by covariates)</h1>
-      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/v20.22.0/R/PlotChiSqCovar.R" class="external-link"><code>R/PlotChiSqCovar.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/master/R/PlotChiSqCovar.R" class="external-link"><code>R/PlotChiSqCovar.R</code></a></small>
       <div class="d-none name"><code>PlotChiSqCovar.Rd</code></div>
     </div>
 
@@ -163,16 +165,28 @@ outcome: outcomes are the y-axis variables (<code>outcome_vars</code>).</p></dd>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="va">Labelled</span> <span class="op">&lt;-</span> <span class="fu"><a href="RevalueData.html">RevalueData</a></span><span class="op">(</span><span class="va">SampleData</span>, <span class="va">SampleVariableTypes</span><span class="op">)</span><span class="op">$</span><span class="va">RevaluedData</span></span></span>
 <span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Derive a few more categorical variables so the matrix has off-diagonal</span></span></span>
+<span class="r-in"><span><span class="co"># structure to read; self-associations are dropped.</span></span></span>
+<span class="r-in"><span><span class="va">Labelled</span><span class="op">$</span><span class="va">APOE4</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/ifelse.html" class="external-link">ifelse</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>  <span class="fu"><a href="https://rdrr.io/r/base/grep.html" class="external-link">grepl</a></span><span class="op">(</span><span class="st">"E4"</span>, <span class="fu"><a href="https://rdrr.io/r/base/character.html" class="external-link">as.character</a></span><span class="op">(</span><span class="va">Labelled</span><span class="op">$</span><span class="va">Genotype</span><span class="op">)</span><span class="op">)</span>, <span class="st">"Carrier"</span>, <span class="st">"Non-carrier"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">Labelled</span><span class="op">$</span><span class="va">AgeGroup</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/cut.html" class="external-link">cut</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>  <span class="va">Labelled</span><span class="op">$</span><span class="va">age</span>, breaks <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">-</span><span class="cn">Inf</span>, <span class="fl">65</span>, <span class="fl">80</span>, <span class="cn">Inf</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  labels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"&lt;65"</span>, <span class="st">"65-79"</span>, <span class="st">"80+"</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">Labelled</span><span class="op">$</span><span class="va">TauTertile</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/cut.html" class="external-link">cut</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>  <span class="va">Labelled</span><span class="op">$</span><span class="va">tau</span>,</span></span>
+<span class="r-in"><span>  breaks <span class="op">=</span> <span class="fu">stats</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/stats/quantile.html" class="external-link">quantile</a></span><span class="op">(</span><span class="va">Labelled</span><span class="op">$</span><span class="va">tau</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">1</span> <span class="op">/</span> <span class="fl">3</span>, <span class="fl">2</span> <span class="op">/</span> <span class="fl">3</span>, <span class="fl">1</span><span class="op">)</span>, na.rm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  labels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Low"</span>, <span class="st">"Middle"</span>, <span class="st">"High"</span><span class="op">)</span>, include.lowest <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu">PlotChiSqCovar</span><span class="op">(</span></span></span>
 <span class="r-in"><span>  <span class="va">Labelled</span>,</span></span>
-<span class="r-in"><span>  predictor_vars <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Diagnosis"</span>, <span class="st">"Genotype"</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>  outcome_vars <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Diagnosis"</span>, <span class="st">"Genotype"</span><span class="op">)</span></span></span>
+<span class="r-in"><span>  predictor_vars <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Diagnosis"</span>, <span class="st">"sex"</span>, <span class="st">"APOE4"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  outcome_vars <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Genotype"</span>, <span class="st">"AgeGroup"</span>, <span class="st">"TauTertile"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>There were 3 warnings in `dplyr::summarise()`.</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> The first warning was:</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> In argument: `test = list(tryCatch(stats::chisq.test(XVal, YVal), error =</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span>   function(e) NULL))`.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> In group 2: `XVar = "Diagnosis"`, `YVar = "Genotype"`.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> In group 2: `XVar = "APOE4"`, `YVar = "Genotype"`.</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> Caused by warning in `stats::chisq.test()`:</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> Chi-squared approximation may be incorrect</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Run `dplyr::last_dplyr_warnings()` to see the 2 remaining warnings.</span>

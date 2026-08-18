@@ -72,6 +72,10 @@ Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
 PlotPValueComparisons(
   Labelled,
   group_var = "Diagnosis",
-  variables = c("age", "AXL", "Adiponectin")
+  variables = c(
+    "age", "AXL", "Adiponectin", "Alpha_1_Antitrypsin", "Cortisol",
+    "Ferritin", "GRO_alpha", "MMP10", "MMP7", "NT_proBNP", "PAI_1",
+    "TRAIL_R3", "VEGF", "Ab_42", "p_tau", "tau"
+  )
 )
 ```

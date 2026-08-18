@@ -46,11 +46,13 @@ A list of scatterplot objects for significant correlations.
 
 ``` r
 # \donttest{
-# Build a correlation heatmap, then plot the significant pairs
+# Build a correlation heatmap, then plot the significant pairs. Keep the
+# predictor and outcome sets disjoint so no variable is correlated with
+# itself.
 ch <- PlotCorrelationsHeatmap(
   mtcars,
-  predictor_vars = c("mpg", "wt", "hp"),
-  outcome_vars = c("mpg", "wt", "hp")
+  predictor_vars = c("wt", "hp", "disp"),
+  outcome_vars = c("mpg", "qsec")
 )
 
 plots <- plotSigCorrelations(mtcars, ch)

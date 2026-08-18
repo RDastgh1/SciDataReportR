@@ -3,7 +3,7 @@
 It optionally merges using one or more matching variables (e.g., IDs).
 The resulting merged data frame contains the closest time matches and time differences."><meta property="og:description" content="This function merges two data frames based on the closest time in the specified time columns.
 It optionally merges using one or more matching variables (e.g., IDs).
-The resulting merged data frame contains the closest time matches and time differences."><meta property="og:image" content="https://rdastgh1.github.io/SciDataReportR/logo.png"></head><body>
+The resulting merged data frame contains the closest time matches and time differences."><meta property="og:image" content="https://rdastgh1.github.io/SciDataReportR/logo.png"><!-- dependencies from examples --></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -11,7 +11,7 @@ The resulting merged data frame contains the closest time matches and time diffe
 
     <a class="navbar-brand me-2" href="../index.html">SciDataReportR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">20.22.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">20.24.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -23,6 +23,8 @@ The resulting merged data frame contains the closest time matches and time diffe
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/argument-renaming.html">Migration note: argument renaming in 19.15.0</a></li>
+    <li><a class="dropdown-item" href="../articles/BiomarkerPerformance.html">Evaluating candidate biomarkers</a></li>
+    <li><a class="dropdown-item" href="../articles/ClusteringPhenotyping.html">Clustering and clinical phenotyping</a></li>
     <li><a class="dropdown-item" href="../articles/fdr-correction.html">FDR correction scope: matrix-wide vs per-outcome</a></li>
     <li><a class="dropdown-item" href="../articles/getting-started.html">Getting started with SciDataReportR</a></li>
     <li><a class="dropdown-item" href="../articles/MakeComparisonTable.html">Creating comparison tables with MakeComparisonTable()</a></li>
@@ -47,7 +49,7 @@ The resulting merged data frame contains the closest time matches and time diffe
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Merge Two Data Frames by Closest Time</h1>
-      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/v20.22.0/R/Merge_ByClosestTime.R" class="external-link"><code>R/Merge_ByClosestTime.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/master/R/Merge_ByClosestTime.R" class="external-link"><code>R/Merge_ByClosestTime.R</code></a></small>
       <div class="d-none name"><code>Merge_ByClosestTime.Rd</code></div>
     </div>
 
@@ -113,24 +115,90 @@ Must exist in BOTH data frames and be in the same order.</p></dd>
 <dd><p>Vector of time differences</p></dd>
 
 </dl></div>
+    <div class="section level2">
+    <h2 id="checking-the-match">Checking the match<a class="anchor" aria-label="anchor" href="#checking-the-match"></a></h2>
+
+
+<p>A merge like this always produces a match, however far away it had to reach,
+so the time gaps are what decide whether a match is usable. The sign gives
+the direction: positive means the second record came after the first.</p>
+<p>In the example, three participants are matched within two weeks, while the
+fourth has only a lab predating the visit by more than seven months - that
+row should be dropped rather than analyzed as if the two measurements were
+contemporaneous. Always inspect <code>time_differences</code> before using the merged
+data.</p>
+    </div>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># Clinic visits with blood pressure</span></span></span>
 <span class="r-in"><span><span class="va">visits</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span></span>
-<span class="r-in"><span>  id         <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"A"</span>, <span class="st">"B"</span>, <span class="st">"C"</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>  visit_date <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"2024-03-01"</span>, <span class="st">"2024-05-20"</span>, <span class="st">"2024-02-10"</span><span class="op">)</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>  sbp        <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">120</span>, <span class="fl">135</span>, <span class="fl">128</span><span class="op">)</span></span></span>
+<span class="r-in"><span>  id         <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"A"</span>, <span class="st">"B"</span>, <span class="st">"C"</span>, <span class="st">"D"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  visit_date <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"2024-03-01"</span>, <span class="st">"2024-05-20"</span>, <span class="st">"2024-02-10"</span>,</span></span>
+<span class="r-in"><span>                         <span class="st">"2024-04-01"</span><span class="op">)</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  sbp        <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">120</span>, <span class="fl">135</span>, <span class="fl">128</span>, <span class="fl">142</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Lab draws (multiple per participant, on different dates)</span></span></span>
 <span class="r-in"><span><span class="va">labs</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span></span>
-<span class="r-in"><span>  id         <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"A"</span>, <span class="st">"A"</span>, <span class="st">"B"</span>, <span class="st">"B"</span>, <span class="st">"C"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  id         <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"A"</span>, <span class="st">"A"</span>, <span class="st">"B"</span>, <span class="st">"B"</span>, <span class="st">"C"</span>, <span class="st">"D"</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>  lab_date   <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"2024-01-05"</span>, <span class="st">"2024-03-10"</span>, <span class="st">"2024-01-20"</span>,</span></span>
-<span class="r-in"><span>                         <span class="st">"2024-06-01"</span>, <span class="st">"2024-02-15"</span><span class="op">)</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>  creatinine <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.9</span>, <span class="fl">1.1</span>, <span class="fl">0.8</span>, <span class="fl">1.0</span>, <span class="fl">1.2</span><span class="op">)</span></span></span>
+<span class="r-in"><span>                         <span class="st">"2024-06-01"</span>, <span class="st">"2024-02-15"</span>, <span class="st">"2023-08-15"</span><span class="op">)</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  creatinine <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.9</span>, <span class="fl">1.1</span>, <span class="fl">0.8</span>, <span class="fl">1.0</span>, <span class="fl">1.2</span>, <span class="fl">1.4</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="va">ShowTable</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">x</span>, <span class="va">caption</span> <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span> <span class="op">{</span></span></span>
+<span class="r-in"><span>  <span class="fu">htmltools</span><span class="fu">::</span><span class="fu"><a href="https://rstudio.github.io/htmltools/reference/browsable.html" class="external-link">browsable</a></span><span class="op">(</span><span class="fu">htmltools</span><span class="fu">::</span><span class="fu"><a href="https://rstudio.github.io/htmltools/reference/HTML.html" class="external-link">HTML</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/character.html" class="external-link">as.character</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>    <span class="fu">kableExtra</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/kableExtra/man/kable_styling.html" class="external-link">kable_styling</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>      <span class="fu">knitr</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/knitr/man/kable.html" class="external-link">kable</a></span><span class="op">(</span><span class="va">x</span>, format <span class="op">=</span> <span class="st">"html"</span>, caption <span class="op">=</span> <span class="va">caption</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>      bootstrap_options <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"striped"</span>, <span class="st">"hover"</span>, <span class="st">"condensed"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>      full_width <span class="op">=</span> <span class="cn">FALSE</span></span></span>
+<span class="r-in"><span>    <span class="op">)</span></span></span>
+<span class="r-in"><span>  <span class="op">)</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">}</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># The two tables do not line up</span></span></span>
+<span class="r-in"><span><span class="fu">ShowTable</span><span class="op">(</span><span class="va">visits</span>, <span class="st">"Clinic visits"</span><span class="op">)</span></span></span>
+<table class="table table table-striped table-hover table-condensed" style="width: auto !important; margin-left: auto; margin-right: auto;"><caption>Clinic visits</caption>
+ <thead><tr><th style="text-align:left;"> id </th>
+   <th style="text-align:left;"> visit_date </th>
+   <th style="text-align:right;"> sbp </th>
+  </tr></thead><tbody><tr><td style="text-align:left;"> A </td>
+   <td style="text-align:left;"> 2024-03-01 </td>
+   <td style="text-align:right;"> 120 </td>
+  </tr><tr><td style="text-align:left;"> B </td>
+   <td style="text-align:left;"> 2024-05-20 </td>
+   <td style="text-align:right;"> 135 </td>
+  </tr><tr><td style="text-align:left;"> C </td>
+   <td style="text-align:left;"> 2024-02-10 </td>
+   <td style="text-align:right;"> 128 </td>
+  </tr><tr><td style="text-align:left;"> D </td>
+   <td style="text-align:left;"> 2024-04-01 </td>
+   <td style="text-align:right;"> 142 </td>
+  </tr></tbody></table><span class="r-in"><span><span class="fu">ShowTable</span><span class="op">(</span><span class="va">labs</span>, <span class="st">"Lab draws"</span><span class="op">)</span></span></span>
+<table class="table table table-striped table-hover table-condensed" style="width: auto !important; margin-left: auto; margin-right: auto;"><caption>Lab draws</caption>
+ <thead><tr><th style="text-align:left;"> id </th>
+   <th style="text-align:left;"> lab_date </th>
+   <th style="text-align:right;"> creatinine </th>
+  </tr></thead><tbody><tr><td style="text-align:left;"> A </td>
+   <td style="text-align:left;"> 2024-01-05 </td>
+   <td style="text-align:right;"> 0.9 </td>
+  </tr><tr><td style="text-align:left;"> A </td>
+   <td style="text-align:left;"> 2024-03-10 </td>
+   <td style="text-align:right;"> 1.1 </td>
+  </tr><tr><td style="text-align:left;"> B </td>
+   <td style="text-align:left;"> 2024-01-20 </td>
+   <td style="text-align:right;"> 0.8 </td>
+  </tr><tr><td style="text-align:left;"> B </td>
+   <td style="text-align:left;"> 2024-06-01 </td>
+   <td style="text-align:right;"> 1.0 </td>
+  </tr><tr><td style="text-align:left;"> C </td>
+   <td style="text-align:left;"> 2024-02-15 </td>
+   <td style="text-align:right;"> 1.2 </td>
+  </tr><tr><td style="text-align:left;"> D </td>
+   <td style="text-align:left;"> 2023-08-15 </td>
+   <td style="text-align:right;"> 1.4 </td>
+  </tr></tbody></table><span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># For each visit, attach the lab drawn closest in time (within participant)</span></span></span>
 <span class="r-in"><span><span class="va">res</span> <span class="op">&lt;-</span> <span class="fu">Merge_ByClosestTime</span><span class="op">(</span></span></span>
 <span class="r-in"><span>  <span class="va">visits</span>, <span class="va">labs</span>,</span></span>
@@ -140,16 +208,61 @@ Must exist in BOTH data frames and be in the same order.</p></dd>
 <span class="r-in"><span>  is_date <span class="op">=</span> <span class="cn">TRUE</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="va">res</span><span class="op">$</span><span class="va">merged_dataframe</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 3 × 5</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   id    visit_date   sbp lab_date   creatinine</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> A     2024-03-01   120 2024-03-10        1.1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span> B     2024-05-20   135 2024-06-01        1  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">3</span> C     2024-02-10   128 2024-02-15        1.2</span>
-<span class="r-in"><span><span class="va">res</span><span class="op">$</span><span class="va">time_differences</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1]  9 12  5</span>
-<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># One row per visit, with the nearest lab attached</span></span></span>
+<span class="r-in"><span><span class="fu">ShowTable</span><span class="op">(</span><span class="va">res</span><span class="op">$</span><span class="va">merged_dataframe</span>, <span class="st">"Visits with nearest lab"</span><span class="op">)</span></span></span>
+<table class="table table table-striped table-hover table-condensed" style="width: auto !important; margin-left: auto; margin-right: auto;"><caption>Visits with nearest lab</caption>
+ <thead><tr><th style="text-align:left;"> id </th>
+   <th style="text-align:left;"> visit_date </th>
+   <th style="text-align:right;"> sbp </th>
+   <th style="text-align:left;"> lab_date </th>
+   <th style="text-align:right;"> creatinine </th>
+  </tr></thead><tbody><tr><td style="text-align:left;"> A </td>
+   <td style="text-align:left;"> 2024-03-01 </td>
+   <td style="text-align:right;"> 120 </td>
+   <td style="text-align:left;"> 2024-03-10 </td>
+   <td style="text-align:right;"> 1.1 </td>
+  </tr><tr><td style="text-align:left;"> B </td>
+   <td style="text-align:left;"> 2024-05-20 </td>
+   <td style="text-align:right;"> 135 </td>
+   <td style="text-align:left;"> 2024-06-01 </td>
+   <td style="text-align:right;"> 1.0 </td>
+  </tr><tr><td style="text-align:left;"> C </td>
+   <td style="text-align:left;"> 2024-02-10 </td>
+   <td style="text-align:right;"> 128 </td>
+   <td style="text-align:left;"> 2024-02-15 </td>
+   <td style="text-align:right;"> 1.2 </td>
+  </tr><tr><td style="text-align:left;"> D </td>
+   <td style="text-align:left;"> 2024-04-01 </td>
+   <td style="text-align:right;"> 142 </td>
+   <td style="text-align:left;"> 2023-08-15 </td>
+   <td style="text-align:right;"> 1.4 </td>
+  </tr></tbody></table><span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># The gap for each match, which decides whether it is usable</span></span></span>
+<span class="r-in"><span><span class="fu">ShowTable</span><span class="op">(</span></span></span>
+<span class="r-in"><span>  <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>    id <span class="op">=</span> <span class="va">res</span><span class="op">$</span><span class="va">merged_dataframe</span><span class="op">$</span><span class="va">id</span>,</span></span>
+<span class="r-in"><span>    visit_date <span class="op">=</span> <span class="va">res</span><span class="op">$</span><span class="va">merged_dataframe</span><span class="op">$</span><span class="va">visit_date</span>,</span></span>
+<span class="r-in"><span>    DaysToNearestLab <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="va">res</span><span class="op">$</span><span class="va">time_differences</span><span class="op">)</span></span></span>
+<span class="r-in"><span>  <span class="op">)</span>,</span></span>
+<span class="r-in"><span>  <span class="st">"Time gap between each visit and its matched lab"</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<table class="table table table-striped table-hover table-condensed" style="width: auto !important; margin-left: auto; margin-right: auto;"><caption>Time gap between each visit and its matched lab</caption>
+ <thead><tr><th style="text-align:left;"> id </th>
+   <th style="text-align:left;"> visit_date </th>
+   <th style="text-align:right;"> DaysToNearestLab </th>
+  </tr></thead><tbody><tr><td style="text-align:left;"> A </td>
+   <td style="text-align:left;"> 2024-03-01 </td>
+   <td style="text-align:right;"> 9 </td>
+  </tr><tr><td style="text-align:left;"> B </td>
+   <td style="text-align:left;"> 2024-05-20 </td>
+   <td style="text-align:right;"> 12 </td>
+  </tr><tr><td style="text-align:left;"> C </td>
+   <td style="text-align:left;"> 2024-02-10 </td>
+   <td style="text-align:right;"> 5 </td>
+  </tr><tr><td style="text-align:left;"> D </td>
+   <td style="text-align:left;"> 2024-04-01 </td>
+   <td style="text-align:right;"> -230 </td>
+  </tr></tbody></table><span class="r-in"><span></span></span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

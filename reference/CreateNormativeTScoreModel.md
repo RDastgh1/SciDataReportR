@@ -160,22 +160,29 @@ all available visits in the reference group are used.
 ## Examples
 
 ``` r
+# A reference sample large enough to estimate the covariate effects
+set.seed(4127)
+n_Reference <- 240
+n_Clinical <- 60
+n_Total <- n_Reference + n_Clinical
+
 df <- tibble::tibble(
-  Group = c(
-    rep("Reference", 8),
-    rep("Clinical", 2)
-  ),
-  Age = c(30, 34, 38, 42, 46, 50, 54, 58, 40, 52),
-  Education = factor(c(
-    "College", "College", "Graduate", "Graduate",
-    "College", "Graduate", "College", "Graduate",
-    "College", "Graduate"
+  Group = c(rep("Reference", n_Reference), rep("Clinical", n_Clinical)),
+  Age = round(stats::rnorm(n_Total, mean = 55, sd = 12)),
+  Education = factor(sample(
+    c("High School", "College", "Graduate"), n_Total, replace = TRUE
   )),
-  Sex = factor(c(
-    "F", "M", "F", "M", "F", "M", "F", "M", "F", "M"
-  )),
-  Visit = c(1, 1, 1, 1, 2, 2, 2, 2, 1, 2),
-  TrailsA = c(35, 38, 40, 43, 36, 39, 41, 44, 47, 49) * 1000
+  Sex = factor(sample(c("F", "M"), n_Total, replace = TRUE)),
+  Visit = sample(1:3, n_Total, replace = TRUE)
+)
+
+# Trail Making A: slower with age, faster with practice, slower if impaired
+df$TrailsA <- 1000 * exp(
+  3.35 +
+    0.011 * (df$Age - 55) -
+    0.04 * (df$Visit - 1) +
+    0.30 * (df$Group == "Clinical") +
+    stats::rnorm(n_Total, sd = 0.16)
 )
 
 out <- CreateNormativeTScoreModel(
@@ -193,19 +200,20 @@ out <- CreateNormativeTScoreModel(
 )
 
 out$data
-#> # A tibble: 10 × 12
-#>    Group       Age Education Sex   Visit TrailsA NormRaw NormCount NormScaled
-#>    <chr>     <dbl> <fct>     <fct> <dbl>   <dbl>   <dbl>     <dbl>      <dbl>
-#>  1 Reference    30 College   F         1   35000   35000         1      -1.54
-#>  2 Reference    34 College   M         1   38000   38000         1      -1.58
-#>  3 Reference    38 Graduate  F         1   40000   40000         1      -1.60
-#>  4 Reference    42 Graduate  M         1   43000   43000         1      -1.63
-#>  5 Reference    46 College   F         2   36000   36000         2      -1.56
-#>  6 Reference    50 Graduate  M         2   39000   39000         2      -1.59
-#>  7 Reference    54 College   F         2   41000   41000         2      -1.61
-#>  8 Reference    58 Graduate  M         2   44000   44000         2      -1.64
-#>  9 Clinical     40 College   F         1   47000   47000         1      -1.67
-#> 10 Clinical     52 Graduate  M         2   49000   49000         2      -1.69
+#> # A tibble: 300 × 12
+#>    Group       Age Education   Sex   Visit TrailsA NormRaw NormCount NormScaled
+#>    <chr>     <dbl> <fct>       <fct> <int>   <dbl>   <dbl>     <int>      <dbl>
+#>  1 Reference    41 College     F         3  17342.  17342.         3      -1.24
+#>  2 Reference    67 College     F         3  37218.  37218.         3      -1.57
+#>  3 Reference    39 Graduate    M         1  27135.  27135.         1      -1.43
+#>  4 Reference    44 College     F         1  21339.  21339.         1      -1.33
+#>  5 Reference    52 High School M         3  25994.  25994.         3      -1.41
+#>  6 Reference    55 College     F         2  35301.  35301.         2      -1.55
+#>  7 Reference    48 Graduate    M         2  25963.  25963.         2      -1.41
+#>  8 Reference    65 High School F         1  28792.  28792.         1      -1.46
+#>  9 Reference    51 Graduate    F         1  26848.  26848.         1      -1.43
+#> 10 Reference    51 College     F         3  19637.  19637.         3      -1.29
+#> # ℹ 290 more rows
 #> # ℹ 3 more variables: NormPredicted <dbl>, NormZ <dbl>, NormT <dbl>
 out$model
 #> 
@@ -213,10 +221,10 @@ out$model
 #> stats::lm(formula = model_formula, data = training_data)
 #> 
 #> Coefficients:
-#>       (Intercept)                Age  EducationGraduate               SexM  
-#>        -1.4384063         -0.0068747         -0.0002786         -0.0055008  
-#>             Visit  
-#>         0.0989387  
+#>          (Intercept)                   Age     EducationGraduate  
+#>            -1.198621             -0.004948             -0.008704  
+#> EducationHigh School                  SexM                 Visit  
+#>            -0.004038             -0.005448              0.021899  
 #> 
 
 # Raw, transformed, and normed score distributions

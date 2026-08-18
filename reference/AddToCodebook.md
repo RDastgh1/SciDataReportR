@@ -93,44 +93,46 @@ binding the new row.
 ## Examples
 
 ``` r
+# \donttest{
+# An existing codebook, including the user-defined `Domain` column
 codebook <- data.frame(
-  Variable = "sex", Label = "Sex assigned at birth", Type = "Categorical",
-  Category = "Demographics", Recode = 1, Code = "0 = Female; 1 = Male",
-  Exclude = FALSE, Notes = NA_character_, Domain = "Clinical"
+  Variable = c("sex", "visit", "mmse"),
+  Label = c("Sex assigned at birth", "Study visit", "MMSE total score"),
+  Type = c("Categorical", "Categorical", "Double"),
+  Category = c("Demographics", "Design", "Cognition"),
+  Recode = c(1, 0, 0),
+  Code = c("0 = Female; 1 = Male", "1 = Baseline; 2 = Follow-up", NA),
+  Exclude = c(FALSE, FALSE, FALSE),
+  Notes = NA_character_,
+  Domain = c("Clinical", "Study", "Clinical")
 )
 
-# Populate an existing user-defined column.
-AddToCodebook(
+# Each call returns the updated codebook, so entries chain
+codebook <- AddToCodebook(
   codebook, "age", "Age at enrollment", "Double", "Demographics",
   Domain = "Clinical"
 )
-#> Warning: `Type` has not previously appeared in this column.
-#>   Variable                 Label        Type     Category Recode
-#> 1      sex Sex assigned at birth Categorical Demographics      1
-#> 2      age     Age at enrollment      Double Demographics     NA
-#>                   Code Exclude Notes   Domain
-#> 1 0 = Female; 1 = Male   FALSE  <NA> Clinical
-#> 2                 <NA>      NA  <NA> Clinical
 
-# This adds `Source` and warns because it is a new column.
-AddToCodebook(codebook, "site", Source = "REDCap")
+# `Source` is a new column: created with a warning, back-filled with NA
+codebook <- AddToCodebook(
+  codebook, "site", "Enrolling site", "Categorical", "Design",
+  Source = "REDCap"
+)
 #> Warning: `Source` is not an existing codebook column; adding it with NA for existing rows.
-#>   Variable                 Label        Type     Category Recode
-#> 1      sex Sex assigned at birth Categorical Demographics      1
-#> 2     site                  site        <NA>         <NA>     NA
-#>                   Code Exclude Notes   Domain Source
-#> 1 0 = Female; 1 = Male   FALSE  <NA> Clinical   <NA>
-#> 2                 <NA>      NA  <NA>     <NA> REDCap
 
-# These values are retained but warn because they conflict with the old schema.
-AddToCodebook(codebook, "participant_id", VariableRecode = 4,
-              VariableExclude = 3)
+# Kept, but warned about: they conflict with the established schema
+codebook <- AddToCodebook(
+  codebook, "participant_id", "Participant identifier",
+  VariableRecode = 4, VariableExclude = 3
+)
 #> Warning: `Recode` has not previously appeared in this column.
 #> Warning: `Exclude` has not previously appeared in this column and has a different storage type or class from existing values.
-#>         Variable                 Label        Type     Category Recode
-#> 1            sex Sex assigned at birth Categorical Demographics      1
-#> 2 participant_id        participant_id        <NA>         <NA>      4
-#>                   Code Exclude Notes   Domain
-#> 1 0 = Female; 1 = Male       0  <NA> Clinical
-#> 2                 <NA>       3  <NA>     <NA>
+
+# The result as a formatted table
+htmltools::browsable(htmltools::HTML(as.character(
+  FreezeTableHeader(codebook, height = "320px", full_width = TRUE)
+)))
+
+
+ Variable 
 ```

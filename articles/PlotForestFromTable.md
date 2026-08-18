@@ -189,13 +189,7 @@ Reg_Obj_Logistic <- MakeUnivariateRegressionTable(
 Reg_Obj_Logistic$FormattedTable
 ```
 
-| Variable                   | Effect     | N   | Estimate (95% CI)   | p-value |
-|----------------------------|------------|-----|---------------------|---------|
-| Diagnosis                  |            |     |                     |         |
-| Age                        | Odds ratio | 322 | 0.929 (0.728, 1.18) | 0.55    |
-| Calbindin                  | Odds ratio | 333 | 1.25 (0.981, 1.6)   | 0.071   |
-| Ferritin                   | Odds ratio | 333 | 1.3 (1.02, 1.66)    | 0.036   |
-| Matrix metalloproteinase 7 | Odds ratio | 333 | 1.8 (1.38, 2.35)    | \<0.001 |
+[TABLE]
 
 ``` r
 
@@ -245,7 +239,7 @@ print(sessionInfo())
     [1] stats     graphics  grDevices utils     datasets  methods   base
 
     other attached packages:
-    [1] dplyr_1.2.1            SciDataReportR_20.22.0
+    [1] dplyr_1.2.1            SciDataReportR_20.24.0
 
     loaded via a namespace (and not attached):
      [1] gtable_0.3.6           xfun_0.60              bayestestR_0.18.1
@@ -257,7 +251,7 @@ print(sessionInfo())
     [19] gt_1.3.0               lifecycle_1.0.5        compiler_4.6.1
     [22] farver_2.1.2           carData_3.0-6          snakecase_0.11.1
     [25] sass_0.4.10            htmltools_0.5.9        yaml_2.3.12
-    [28] Formula_1.2-5          pillar_1.11.1          car_3.1-5
+    [28] Formula_1.2-6          pillar_1.11.1          car_3.1-5
     [31] tidyr_1.3.2            statsExpressions_2.0.0 abind_1.4-8
     [34] tidyselect_1.2.1       sjlabelled_1.2.0       digest_0.6.39
     [37] mvtnorm_1.4-2          gtsummary_2.5.1        purrr_1.2.2

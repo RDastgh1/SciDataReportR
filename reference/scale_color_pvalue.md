@@ -83,22 +83,43 @@ A continuous ggplot2 color scale.
 ## Examples
 
 ``` r
-example_data <- data.frame(
-  effect = seq(-2, 2, length.out = 100),
-  evidence = seq(0, 8, length.out = 100)
+# \donttest{
+data(SampleData)
+data(SampleVariableTypes)
+
+Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
+
+# Four outcomes by six predictors: 24 standardized associations.
+screen <- MakeUnivariateRegressionTable(
+  data = Labelled,
+  outcome_vars = c("tau", "p_tau", "AXL", "Ferritin"),
+  predictor_vars = c(
+    "age", "sex", "Adiponectin", "Cortisol", "Insulin", "Leptin"
+  ),
+  Standardize = TRUE
 )
 
-example_data$p_value <- 10^(-example_data$evidence)
-
+# A volcano plot is the natural home for this scale: effect size on x,
+# evidence on y, and the colour reinforcing where the thresholds fall so
+# the eye is not left to judge distance along a log axis.
 ggplot2::ggplot(
-  example_data,
+  screen$Results,
   ggplot2::aes(
-    x = effect,
-    y = evidence,
-    color = p_value
+    x = Estimate,
+    y = -log10(PValue),
+    color = PValue
   )
 ) +
-  ggplot2::geom_point(size = 2) +
-  scale_color_pvalue()
+  ggplot2::geom_point(size = 2.5) +
+  ggplot2::geom_hline(yintercept = -log10(0.05), linetype = "dashed") +
+  ggplot2::geom_vline(xintercept = 0, linetype = "dotted") +
+  scale_color_pvalue() +
+  ggplot2::labs(
+    title = "Standardized associations across four outcomes",
+    subtitle = "Dashed line: p = 0.05. Dotted line: no effect.",
+    x = "Estimate per SD", y = expression(-log[10](p))
+  ) +
+  ggplot2::theme_bw()
 
+# }
 ```

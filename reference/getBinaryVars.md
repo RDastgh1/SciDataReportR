@@ -39,3 +39,37 @@ getBinaryVars(
 ## Value
 
 A character vector containing the names of binary variables.
+
+## See also
+
+[`createBinaryMapping()`](https://rdastgh1.github.io/SciDataReportR/reference/createBinaryMapping.md)
+to fix which level counts as positive, and
+[`getCatVars()`](https://rdastgh1.github.io/SciDataReportR/reference/getCatVars.md)
+/
+[`getNumVars()`](https://rdastgh1.github.io/SciDataReportR/reference/getNumVars.md)
+for the other partitions.
+
+## Examples
+
+``` r
+data(SampleData)
+data(SampleVariableTypes)
+
+Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
+
+# Two-level factors, which are the ones that can be modelled as 0/1
+vars_Binary <- getBinaryVars(Labelled)
+vars_Binary
+#> [1] "Diagnosis" "sex"      
+
+# `Revalued = FALSE` looks for any column with two distinct values instead
+# of two factor levels, for frames that have not been through RevalueData().
+getBinaryVars(SampleData, Revalued = FALSE)
+#> [1] "Diagnosis" "sex"      
+
+# Which level each one is scored against
+createBinaryMapping(Labelled, vars_Binary)
+#>    Variable     Label PositiveLevel NegativeLevel
+#> 1 Diagnosis Diagnosis      Impaired       Control
+#> 2       sex       Sex          Male        Female
+```

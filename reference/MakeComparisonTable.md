@@ -136,12 +136,12 @@ MakeComparisonTable(
 
 - ShowNotes:
 
-  Whether to show Notes column. One of `"auto"`, `"always"`, or
-  `"never"`.
+  Whether to show the Analysis notes column. One of `"auto"`,
+  `"always"`, or `"never"`.
 
 - NotesPosition:
 
-  Notes column position. One of `"last"`, `"after_test"`, or
+  Analysis notes column position. One of `"last"`, `"after_test"`, or
   `"before_pairwise"`.
 
 - Relabel:
@@ -211,6 +211,41 @@ with covariates are tested using multinomial likelihood-ratio tests.
 Pairwise comparisons preserve non-standard group labels and variable
 names.
 
+## Choosing the options
+
+The defaults produce one test per variable, chosen from that variable's
+type: a t-test for continuous variables, a chi-squared test for
+categorical ones. The remaining arguments each answer a specific
+question the default table cannot.
+
+**`AddEffectSize`** adds the standardized magnitude beside the p-value.
+A p-value says whether a difference is detectable, not whether it is
+large, and effect sizes are what make two significant rows comparable to
+each other.
+
+**`AddPairwise`** matters as soon as there are more than two groups. The
+omnibus test only says "these groups are not all the same"; it never
+says which pair differs. Pairwise contrasts answer that, corrected
+across the contrasts so that hunting through them does not inflate the
+error rate. `PairwiseMethod` selects the correction - Bonferroni by
+default, `"fdr"` when there are many contrasts, `"none"` for exploratory
+work. `Referent` compares every group against one reference level
+instead of against each other, which is usually what a control group is
+for.
+
+**`covariates`** replaces the simple test with a model-based one that
+holds the named variables constant. An unadjusted group difference in a
+biomarker may only reflect that the groups differ in age or sex;
+adjusting reports the group difference that remains.
+
+**`Parametric = FALSE`** switches continuous comparisons to rank-based
+tests (Wilcoxon, or Kruskal-Wallis for more than two groups), which is
+the right choice for skewed measures or small, uneven groups.
+
+**`IncludeOverallN`** and **`IncludeMissing`** add an overall column and
+explicit missing-value counts, for a table that has to stand on its own
+in a manuscript.
+
 ## References
 
 This function wraps gtsummary. Please cite:
@@ -223,25 +258,24 @@ Journal*, 13(1), 570-580.
 ## Examples
 
 ``` r
+# \donttest{
 data(SampleData)
 data(SampleVariableTypes)
 
-# Attach labels and factor levels so the table shows readable output
 Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
 
-# Compare variables across Diagnosis groups with effect sizes and
-# pairwise contrasts
+vars_Compare <- c("age", "sex", "AXL", "Adiponectin", "tau", "p_tau")
+
+# Two groups, default tests
 MakeComparisonTable(
   data = Labelled,
   group_var = "Diagnosis",
-  variables = c("age", "sex", "AXL", "Adiponectin"),
-  AddEffectSize = TRUE,
-  AddPairwise = TRUE
+  variables = vars_Compare
 )
 
 
   
-Comparison table (display: mean (SD)). Global p-values: unadjusted (no covariates). Categorical global test: auto; adjusted multi-category: multinomial_LR. Pairwise: included (p-adjust: bonferroni). Effect sizes: |d|: 0.2/0.5/0.8 indicate small/medium/large effects; Cramer’s V: 0.1/0.3/0.5 are small/medium/large heuristics only for 2x2 tables; larger tables depend on their dimensions. Thresholds are conventional heuristics, not clinical-importance cutoffs.
+Comparison by Diagnosis (values: mean (SD)).
 
   
 Characteristic

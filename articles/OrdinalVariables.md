@@ -57,10 +57,8 @@ tbl_Categorical
 
 [TABLE]
 
-Comparison table (display: mean (SD)). Global p-values: unadjusted (no
-covariates). Categorical global test: auto; adjusted multi-category:
-multinomial_LR. Pairwise: not included (p-adjust: bonferroni). {.table
-.gt_table .caption-top quarto-bootstrap="false"}
+Comparison by Participant group (values: mean (SD)). {.table .gt_table
+.caption-top quarto-bootstrap="false"}
 
 ``` r
 
@@ -76,10 +74,8 @@ tbl_Continuous
 
 [TABLE]
 
-Comparison table (display: mean (SD)). Global p-values: unadjusted (no
-covariates). Categorical global test: auto; adjusted multi-category:
-multinomial_LR. Pairwise: not included (p-adjust: bonferroni). {.table
-.gt_table .caption-top quarto-bootstrap="false"}
+Comparison by Participant group (values: mean (SD)). {.table .gt_table
+.caption-top quarto-bootstrap="false"}
 
 ``` r
 
@@ -95,10 +91,8 @@ tbl_Both
 
 [TABLE]
 
-Comparison table (display: mean (SD)). Global p-values: unadjusted (no
-covariates). Categorical global test: auto; adjusted multi-category:
-multinomial_LR. Pairwise: not included (p-adjust: bonferroni). {.table
-.gt_table .caption-top quarto-bootstrap="false"}
+Comparison by Participant group (values: mean (SD)). {.table .gt_table
+.caption-top quarto-bootstrap="false"}
 
 With `TreatOrdinalAs = "Both"`, the original data are not changed. The
 table uses temporary analysis columns and displays them as **Symptom

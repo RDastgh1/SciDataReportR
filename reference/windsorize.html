@@ -13,7 +13,7 @@ range (robust to skewed distributions)."><meta property="og:image" content="http
 
     <a class="navbar-brand me-2" href="../index.html">SciDataReportR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">20.22.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">20.24.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -25,6 +25,8 @@ range (robust to skewed distributions)."><meta property="og:image" content="http
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/argument-renaming.html">Migration note: argument renaming in 19.15.0</a></li>
+    <li><a class="dropdown-item" href="../articles/BiomarkerPerformance.html">Evaluating candidate biomarkers</a></li>
+    <li><a class="dropdown-item" href="../articles/ClusteringPhenotyping.html">Clustering and clinical phenotyping</a></li>
     <li><a class="dropdown-item" href="../articles/fdr-correction.html">FDR correction scope: matrix-wide vs per-outcome</a></li>
     <li><a class="dropdown-item" href="../articles/getting-started.html">Getting started with SciDataReportR</a></li>
     <li><a class="dropdown-item" href="../articles/MakeComparisonTable.html">Creating comparison tables with MakeComparisonTable()</a></li>
@@ -49,7 +51,7 @@ range (robust to skewed distributions)."><meta property="og:image" content="http
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Winsorize a numeric vector using SD or IQR thresholds</h1>
-      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/v20.22.0/R/windsorize.R" class="external-link"><code>R/windsorize.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/master/R/windsorize.R" class="external-link"><code>R/windsorize.R</code></a></small>
       <div class="d-none name"><code>windsorize.Rd</code></div>
     </div>
 
@@ -121,53 +123,56 @@ Mathematical Statistics</em>, 33(1), 1-67. <a href="https://doi.org/10.1214/aoms
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># SD-based winsorization</span></span></span>
 <span class="r-in"><span><span class="fu">windsorize</span><span class="op">(</span><span class="va">x</span>, method <span class="op">=</span> <span class="st">"sd"</span>, sdlim <span class="op">=</span> <span class="fl">2.5</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   [1]  0.609996541 -1.095720589 -0.086880289 -0.467032116 -0.198470682</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   [6]  0.748168528 -0.379906361 -1.542796961  0.544144501  0.443726297</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [11]  0.835608454 -0.289657352 -0.550534916  0.194222034  1.998376399</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [16] -0.137923175 -0.853814398 -2.591133289 -0.692715894 -0.315631545</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [21] -0.459876820  0.089198132 -0.080633540  0.340769115 -0.008257906</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [26]  1.571428502 -0.409596987 -0.301478813  0.395054457 -0.595236302</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [31]  1.893824910 -0.056627324 -0.680579015 -1.298496001 -0.189737210</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [36]  0.498595657  0.276169603 -0.175747774  0.639139078 -0.914278603</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [41] -0.759582570 -0.164117502  1.276754886 -0.131387834 -1.382509590</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [46] -0.494431142  0.971682365 -1.721934135 -0.032492757 -2.364609048</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [51] -0.749479370 -0.096079198  0.024409192 -0.791149391 -0.098692346</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [56] -0.170913302 -1.758703501 -1.645349576 -1.324402538 -0.993901371</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [61] -0.388928127  0.738527947 -0.076932442 -0.671862312 -0.908052285</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [66]  0.217315420  1.317197056 -0.283807239 -0.960399000  0.741116538</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [71]  0.031334319 -0.063206104 -0.524516678  0.380639054 -1.671511371</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [76] -1.501237627  0.727867477 -0.989464103  0.254849570  1.595667140</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [81] -1.927738017  0.276319937 -0.151877985 -0.010967372 -0.821258403</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [86]  0.691245925 -0.497975407  0.985494560  0.042463701 -0.380926864</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [91] -0.486110616 -0.864881658  1.576573561 -0.799783737  1.702113048</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [96]  0.423103056  1.471057078  0.024319341  0.297111046  0.798915206</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [101]  5.800377607  5.800377607 -5.846774438</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   [1]  0.0968195374  0.4588994227 -0.8434092783  0.1949260009  0.3814395393</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   [6] -1.1214472931  0.5952928841  0.5489146231 -0.0828646888 -0.6385080477</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [11]  0.6162607797 -2.6606591412  1.1698111541 -0.5854162953 -1.5007808580</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [16]  0.8230885736 -0.1676762727 -2.3356750300  1.3292741055 -0.1602746149</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [21]  2.1509256051 -0.9759003821 -0.8448510787 -1.0170626478  1.3793267548</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [26] -0.2420102012  1.3800954600  0.4991264585 -0.9994087484  0.4280966897</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [31] -0.8632281441 -0.3793070927  0.0505452560  0.0366660855 -0.7738859611</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [36]  1.7725224343 -0.3566235590 -0.0140912392 -1.8822419905 -0.1261046205</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [41] -0.4565938459  1.0356174827 -0.0297037624  1.6610913780  0.2169206438</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [46] -0.0006072952  1.1305228606 -0.6878356064 -1.0938794120  0.5688288101</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [51] -0.4970397064 -1.6687636438 -0.4382744890  0.5883581738 -0.6031577054</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [56]  0.8200094909  0.2506613862 -1.1309857172  0.5082037473 -1.3209182314</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [61] -0.4707902063 -0.6446786487  1.3174701681 -1.4125209598  0.8418432484</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [66] -1.5668632907 -1.8916294382 -1.8821154209  1.3505177018 -0.0237826475</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [71]  0.2994772470  0.0300292602 -0.3545861429  1.2182758796 -1.3866949801</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [76] -0.3446927213  2.1961544341  1.4730082271 -0.1564961077 -3.0382515144</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [81]  0.7997282147 -0.2117759552  0.0805471762 -1.2729235361  1.2762207793</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [86] -0.9729867876  0.7794430123 -0.9927239884 -1.7994482393  0.0948182133</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [91]  0.1748617077 -1.0354283710 -0.4499560481 -0.7541600329 -0.0802208439</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [96]  0.6183656944 -1.7119516099  0.7613269130 -0.9408779229  0.4397209569</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [101]  5.9431351839  5.9431351839 -5.9907213556</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># IQR-based winsorization</span></span></span>
 <span class="r-in"><span><span class="fu">windsorize</span><span class="op">(</span><span class="va">x</span>, method <span class="op">=</span> <span class="st">"iqr"</span>, iqrlim <span class="op">=</span> <span class="fl">1.5</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   [1]  0.609996541 -1.095720589 -0.086880289 -0.467032116 -0.198470682</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   [6]  0.748168528 -0.379906361 -1.542796961  0.544144501  0.443726297</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [11]  0.835608454 -0.289657352 -0.550534916  0.194222034  1.998376399</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [16] -0.137923175 -0.853814398 -2.416362216 -0.692715894 -0.315631545</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [21] -0.459876820  0.089198132 -0.080633540  0.340769115 -0.008257906</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [26]  1.571428502 -0.409596987 -0.301478813  0.395054457 -0.595236302</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [31]  1.893824910 -0.056627324 -0.680579015 -1.298496001 -0.189737210</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [36]  0.498595657  0.276169603 -0.175747774  0.639139078 -0.914278603</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [41] -0.759582570 -0.164117502  1.276754886 -0.131387834 -1.382509590</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [46] -0.494431142  0.971682365 -1.721934135 -0.032492757 -2.364609048</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [51] -0.749479370 -0.096079198  0.024409192 -0.791149391 -0.098692346</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [56] -0.170913302 -1.758703501 -1.645349576 -1.324402538 -0.993901371</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [61] -0.388928127  0.738527947 -0.076932442 -0.671862312 -0.908052285</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [66]  0.217315420  1.317197056 -0.283807239 -0.960399000  0.741116538</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [71]  0.031334319 -0.063206104 -0.524516678  0.380639054 -1.671511371</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [76] -1.501237627  0.727867477 -0.989464103  0.254849570  1.595667140</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [81] -1.927738017  0.276319937 -0.151877985 -0.010967372 -0.821258403</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [86]  0.691245925 -0.497975407  0.985494560  0.042463701 -0.380926864</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [91] -0.486110616 -0.864881658  1.576573561 -0.799783737  1.702113048</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [96]  0.423103056  1.471057078  0.024319341  0.297111046  0.798915206</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [101]  2.104343341  2.104343341 -2.416362216</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   [1]  0.0968195374  0.4588994227 -0.8434092783  0.1949260009  0.3814395393</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   [6] -1.1214472931  0.5952928841  0.5489146231 -0.0828646888 -0.6385080477</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [11]  0.6162607797 -2.6606591412  1.1698111541 -0.5854162953 -1.5007808580</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [16]  0.8230885736 -0.1676762727 -2.3356750300  1.3292741055 -0.1602746149</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [21]  2.1509256051 -0.9759003821 -0.8448510787 -1.0170626478  1.3793267548</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [26] -0.2420102012  1.3800954600  0.4991264585 -0.9994087484  0.4280966897</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [31] -0.8632281441 -0.3793070927  0.0505452560  0.0366660855 -0.7738859611</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [36]  1.7725224343 -0.3566235590 -0.0140912392 -1.8822419905 -0.1261046205</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [41] -0.4565938459  1.0356174827 -0.0297037624  1.6610913780  0.2169206438</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [46] -0.0006072952  1.1305228606 -0.6878356064 -1.0938794120  0.5688288101</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [51] -0.4970397064 -1.6687636438 -0.4382744890  0.5883581738 -0.6031577054</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [56]  0.8200094909  0.2506613862 -1.1309857172  0.5082037473 -1.3209182314</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [61] -0.4707902063 -0.6446786487  1.3174701681 -1.4125209598  0.8418432484</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [66] -1.5668632907 -1.8916294382 -1.8821154209  1.3505177018 -0.0237826475</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [71]  0.2994772470  0.0300292602 -0.3545861429  1.2182758796 -1.3866949801</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [76] -0.3446927213  2.1961544341  1.4730082271 -0.1564961077 -3.0382515144</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [81]  0.7997282147 -0.2117759552  0.0805471762 -1.2729235361  1.2762207793</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [86] -0.9729867876  0.7794430123 -0.9927239884 -1.7994482393  0.0948182133</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [91]  0.1748617077 -1.0354283710 -0.4499560481 -0.7541600329 -0.0802208439</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [96]  0.6183656944 -1.7119516099  0.7613269130 -0.9408779229  0.4397209569</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [101]  2.8326433726  2.8326433726 -3.1428708771</span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Compare the distribution before and after winsorization</span></span></span>
+<span class="r-in"><span><span class="co"># Compare the distribution before and after winsorization. Both panels are</span></span></span>
+<span class="r-in"><span><span class="co"># drawn on the raw data's x range, because free scales would rescale the</span></span></span>
+<span class="r-in"><span><span class="co"># winsorized panel to its own narrower range and hide the very thing being</span></span></span>
+<span class="r-in"><span><span class="co"># demonstrated.</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">42</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">x</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fl">200</span>, mean <span class="op">=</span> <span class="fl">10</span>, sd <span class="op">=</span> <span class="fl">2</span><span class="op">)</span>, <span class="fl">30</span>, <span class="fl">32</span>, <span class="op">-</span><span class="fl">8</span>, <span class="op">-</span><span class="fl">10</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">compare_df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span></span>
@@ -175,8 +180,38 @@ Mathematical Statistics</em>, 33(1), 1-67. <a href="https://doi.org/10.1214/aoms
 <span class="r-in"><span>  winsorized <span class="op">=</span> <span class="fu">windsorize</span><span class="op">(</span><span class="va">x</span>, method <span class="op">=</span> <span class="st">"iqr"</span>, iqrlim <span class="op">=</span> <span class="fl">1.5</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="fu"><a href="PlotContinuousDistributions.html">PlotContinuousDistributions</a></span><span class="op">(</span><span class="va">compare_df</span>, variables <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"raw"</span>, <span class="st">"winsorized"</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">df_Compare</span> <span class="op">&lt;-</span> <span class="fu">tidyr</span><span class="fu">::</span><span class="fu"><a href="https://tidyr.tidyverse.org/reference/pivot_longer.html" class="external-link">pivot_longer</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>  <span class="va">compare_df</span>,</span></span>
+<span class="r-in"><span>  cols <span class="op">=</span> <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://tidyselect.r-lib.org/reference/everything.html" class="external-link">everything</a></span><span class="op">(</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  names_to <span class="op">=</span> <span class="st">"Version"</span>,</span></span>
+<span class="r-in"><span>  values_to <span class="op">=</span> <span class="st">"Value"</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">df_Compare</span><span class="op">$</span><span class="va">Version</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>  <span class="va">df_Compare</span><span class="op">$</span><span class="va">Version</span>,</span></span>
+<span class="r-in"><span>  levels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"raw"</span>, <span class="st">"winsorized"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  labels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Raw"</span>, <span class="st">"Winsorized"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="va">df_Compare</span>, <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x <span class="op">=</span> <span class="va">Value</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span></span>
+<span class="r-in"><span>  <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_histogram.html" class="external-link">geom_histogram</a></span><span class="op">(</span>bins <span class="op">=</span> <span class="fl">40</span>, na.rm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span> <span class="op">+</span></span></span>
+<span class="r-in"><span>  <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/facet_wrap.html" class="external-link">facet_wrap</a></span><span class="op">(</span><span class="op">~</span> <span class="va">Version</span>, ncol <span class="op">=</span> <span class="fl">1</span><span class="op">)</span> <span class="op">+</span></span></span>
+<span class="r-in"><span>  <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/coord_cartesian.html" class="external-link">coord_cartesian</a></span><span class="op">(</span>xlim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/range.html" class="external-link">range</a></span><span class="op">(</span><span class="va">compare_df</span><span class="op">$</span><span class="va">raw</span>, na.rm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span></span>
+<span class="r-in"><span>  <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>    title <span class="op">=</span> <span class="st">"Winsorization pulls outliers to the limits"</span>,</span></span>
+<span class="r-in"><span>    subtitle <span class="op">=</span> <span class="st">"Both panels share the raw data's x range"</span>,</span></span>
+<span class="r-in"><span>    x <span class="op">=</span> <span class="st">"Value"</span>, y <span class="op">=</span> <span class="st">"Count"</span></span></span>
+<span class="r-in"><span>  <span class="op">)</span> <span class="op">+</span></span></span>
+<span class="r-in"><span>  <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_bw</a></span><span class="op">(</span><span class="op">)</span></span></span>
 <span class="r-plt img"><img src="windsorize-1.png" alt="" width="700" height="433"></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># The four extreme values are gone from the tails and have reappeared as</span></span></span>
+<span class="r-in"><span><span class="co"># taller bars at the winsorized limits; nothing was dropped.</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/range.html" class="external-link">range</a></span><span class="op">(</span><span class="va">compare_df</span><span class="op">$</span><span class="va">raw</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] -10  32</span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/range.html" class="external-link">range</a></span><span class="op">(</span><span class="va">compare_df</span><span class="op">$</span><span class="va">winsorized</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1]  4.985675 15.049195</span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">compare_df</span><span class="op">$</span><span class="va">raw</span><span class="op">)</span> <span class="op">==</span> <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">compare_df</span><span class="op">$</span><span class="va">winsorized</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] TRUE</span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

@@ -1,12 +1,19 @@
-# Derive Freesurfer bilateral totals and ICV-adjusted measures
+# Derive Freesurfer bilateral measures and optional ICV-adjusted ratios
 
-Automatically derives bilateral Freesurfer volume measures from ASEG and
-DKT outputs, then creates intracranial-volume-adjusted ratios.
+Automatically derives bilateral Freesurfer measures from ASEG and DKT
+outputs, using either sums or means, and can create
+intracranial-volume-adjusted ratios.
 
 ## Usage
 
 ``` r
-DeriveFreesurferVolumes(data, verbose = TRUE)
+DeriveFreesurferVolumes(
+  data,
+  icv_var = NULL,
+  derive_icv_ratios = TRUE,
+  bilateral_method = c("sum", "mean"),
+  verbose = TRUE
+)
 ```
 
 ## Arguments
@@ -14,6 +21,22 @@ DeriveFreesurferVolumes(data, verbose = TRUE)
 - data:
 
   A data frame containing Freesurfer ASEG and/or DKT variables.
+
+- icv_var:
+
+  Optional single character string naming the intracranial volume column
+  to use for ratios. When `NULL` and ratios are requested,
+  `EstimatedTotalIntraCranialVol` or `eTIV` is detected automatically.
+
+- derive_icv_ratios:
+
+  Logical. If `TRUE`, derive ICV-adjusted ratios. Default is `TRUE`.
+
+- bilateral_method:
+
+  Character string specifying whether matched left/right measures are
+  combined using a `"sum"` or `"mean"`. Default is `"sum"`. Output names
+  retain the `_total` suffix for compatibility.
 
 - verbose:
 
@@ -49,7 +72,12 @@ Supported DKT-style bilateral cortical pairs include names such as:
 
 - `rh_fusiform_volume`
 
-Supported intracranial volume columns are:
+- `lh_fusiform_thickness`
+
+- `rh_fusiform_thickness`
+
+When ICV ratios are requested and `icv_var` is `NULL`, supported
+intracranial volume columns are:
 
 - `EstimatedTotalIntraCranialVol`
 
@@ -60,9 +88,13 @@ function checks that they are equivalent before deriving ICV-adjusted
 variables. If the two columns differ, the function stops and asks the
 user to resolve which intracranial volume variable should be used.
 
-Bilateral totals are computed as:
+Bilateral sums are computed as:
 
 `left + right`
+
+Bilateral means are computed as:
+
+`(left + right) / 2`
 
 ICV-adjusted ratios are computed as:
 
@@ -84,6 +116,12 @@ data. This makes it convenient to append the derived columns with
 ``` r
 if (FALSE) { # \dontrun{
 fs_derived <- DeriveFreesurferVolumes(df_freesurfer)
+
+thickness_derived <- DeriveFreesurferVolumes(
+  df_Thickness,
+  derive_icv_ratios = FALSE,
+  bilateral_method = "mean"
+)
 
 df_freesurfer <- dplyr::bind_cols(
   df_freesurfer,

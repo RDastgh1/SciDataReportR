@@ -5,6 +5,12 @@
 - [Migration note: argument renaming in
   19.15.0](https://rdastgh1.github.io/SciDataReportR/articles/argument-renaming.md):
 
+- [Evaluating candidate
+  biomarkers](https://rdastgh1.github.io/SciDataReportR/articles/BiomarkerPerformance.md):
+
+- [Clustering and clinical
+  phenotyping](https://rdastgh1.github.io/SciDataReportR/articles/ClusteringPhenotyping.md):
+
 - [FDR correction scope: matrix-wide vs
   per-outcome](https://rdastgh1.github.io/SciDataReportR/articles/fdr-correction.md):
 

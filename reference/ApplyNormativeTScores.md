@@ -68,27 +68,53 @@ This function is designed to work with the output of
 It uses the saved model and preprocessing settings to score new
 observations consistently.
 
+## What the example shows
+
+The example builds a cohort with a healthy reference group and a
+clinical group tested on Trail Making A. Times are recorded in
+milliseconds, get slower with age, and improve a little each time the
+test is repeated. The norms are fitted on the reference group only,
+adjusting for demographics and for practice across visits, and then
+everyone is scored through that same model.
+
+The two density plots are the payoff. Raw completion times are
+right-skewed and in test-specific units, and whether 40 seconds is
+unusual depends on who the participant is, so the groups are hard to
+compare by eye. T-scores put everyone on one interpretable scale: the
+reference group is centered at 50 with a standard deviation of 10 by
+construction, so the clinical group's shift can be read straight off the
+axis - here about 1.7 SD below expectation for their age, education,
+sex, and visit number.
+
 ## Examples
 
 ``` r
-df <- tibble::tibble(
-  Group = c(
-    rep("Reference", 8),
-    rep("Clinical", 2)
-  ),
-  Age = c(30, 34, 38, 42, 46, 50, 54, 58, 40, 52),
-  Education = factor(c(
-    "College", "College", "Graduate", "Graduate",
-    "College", "Graduate", "College", "Graduate",
-    "College", "Graduate"
-  )),
-  Sex = factor(c(
-    "F", "M", "F", "M", "F", "M", "F", "M", "F", "M"
-  )),
-  Visit = c(1, 1, 1, 1, 2, 2, 2, 2, 1, 2),
-  TrailsA = c(35, 38, 40, 43, 36, 39, 41, 44, 47, 49) * 1000
-)
+# A reference group and a clinical group tested on Trail Making A
+set.seed(206)
+n_reference <- 220
+n_clinical <- 80
 
+df <- tibble::tibble(
+  Group = c(rep("Reference", n_reference), rep("Clinical", n_clinical)),
+  Age = round(c(
+    stats::rnorm(n_reference, 52, 12),
+    stats::rnorm(n_clinical, 58, 12)
+  )),
+  Education = factor(sample(
+    c("HighSchool", "College", "Graduate"), n_reference + n_clinical,
+    replace = TRUE
+  )),
+  Sex = factor(sample(c("F", "M"), n_reference + n_clinical, replace = TRUE)),
+  Visit = sample(1:3, n_reference + n_clinical, replace = TRUE)
+)
+df$TrailsA <- round(1000 * exp(stats::rnorm(
+  nrow(df),
+  mean = log(28) + 0.011 * (df$Age - 52) - 0.05 * (df$Visit - 1) +
+    ifelse(df$Group == "Clinical", 0.35, 0),
+  sd = 0.22
+)))
+
+# Fit the norms on the reference group only
 norm_obj <- CreateNormativeTScoreModel(
   data = df,
   test_var = "TrailsA",
@@ -103,8 +129,28 @@ norm_obj <- CreateNormativeTScoreModel(
   return_plots = FALSE
 )
 
+# Score everyone through the same model
 scored_df <- ApplyNormativeTScores(
   data = df,
   normative_obj = norm_obj
 )
+
+# Before: raw completion times, grouped by clinical status
+attr(scored_df$NormRaw, "label") <- "Trail Making A completion time (ms)"
+PlotContinuousDistributions(
+  scored_df, variables = "NormRaw", Fill = "Group", ncol = 1
+)
+#> Registered S3 methods overwritten by 'ggpp':
+#>   method                  from   
+#>   heightDetails.titleGrob ggplot2
+#>   widthDetails.titleGrob  ggplot2
+
+
+# After: demographically adjusted T-scores. The reference group is centered
+# near 50, and the clinical shift is now directly interpretable in SD units.
+attr(scored_df$NormT, "label") <- "Demographically adjusted Trail Making A T-score"
+PlotContinuousDistributions(
+  scored_df, variables = "NormT", Fill = "Group", ncol = 1
+)
+
 ```

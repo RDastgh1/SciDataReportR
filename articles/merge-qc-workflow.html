@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">SciDataReportR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">20.22.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">20.24.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -39,6 +39,8 @@
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
 <li><a class="dropdown-item" href="../articles/argument-renaming.html">Migration note: argument renaming in 19.15.0</a></li>
+    <li><a class="dropdown-item" href="../articles/BiomarkerPerformance.html">Evaluating candidate biomarkers</a></li>
+    <li><a class="dropdown-item" href="../articles/ClusteringPhenotyping.html">Clustering and clinical phenotyping</a></li>
     <li><a class="dropdown-item" href="../articles/fdr-correction.html">FDR correction scope: matrix-wide vs per-outcome</a></li>
     <li><a class="dropdown-item" href="../articles/getting-started.html">Getting started with SciDataReportR</a></li>
     <li><a class="dropdown-item" href="../articles/MakeComparisonTable.html">Creating comparison tables with MakeComparisonTable()</a></li>
@@ -75,7 +77,7 @@
       <img src="../logo.png" class="logo" alt=""><h1>Merge QC workflow</h1>
             
       
-      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/v20.22.0/vignettes/merge-qc-workflow.Rmd" class="external-link"><code>vignettes/merge-qc-workflow.Rmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/master/vignettes/merge-qc-workflow.Rmd" class="external-link"><code>vignettes/merge-qc-workflow.Rmd</code></a></small>
       <div class="d-none name"><code>merge-qc-workflow.Rmd</code></div>
     </div>
 
@@ -83,8 +85,12 @@
     
 <p>Merging datasets is where many analysis errors are born: silently
 duplicated rows, IDs that never match, and <code>.x</code> /
-<code>.y</code> column pairs that nobody resolves. SciDataReportR wraps
-the merge-and-audit cycle into a small workflow:</p>
+<code>.y</code> column pairs that nobody resolves. The damage is quiet —
+a join that duplicates rows inflates your sample without error, and the
+analysis that follows is wrong in a way no downstream check will
+catch.</p>
+<p>SciDataReportR wraps the merge-and-audit cycle into a small
+workflow:</p>
 <ul>
 <li>
 <code><a href="../reference/safe_merge.html">safe_merge()</a></code> performs a left join (exact-key or
@@ -94,15 +100,155 @@ closest-time) and immediately audits the result with
 <code><a href="../reference/merge_detail.html">merge_detail()</a></code> prints plain-text diagnostic tables for
 one merge.</li>
 <li>
+<code><a href="../reference/PlotMergeValidation.html">PlotMergeValidation()</a></code> draws the same diagnostics as
+figures.</li>
+<li>
 <code><a href="../reference/ExploreMergeValidation.html">ExploreMergeValidation()</a></code> renders an interactive
 dashboard for one merge.</li>
 <li>
 <code><a href="../reference/merge_summary_table.html">merge_summary_table()</a></code> stacks the one-row logs from many
 merges into a pipeline-level rollup.</li>
 </ul>
+<div class="section level2">
+<h2 id="the-workflow">The workflow<a class="anchor" aria-label="anchor" href="#the-workflow"></a>
+</h2>
+<p>Every merge goes through the same four steps. The point of the
+workflow is that step 2 is never skipped, and that the answer is written
+down rather than eyeballed.</p>
+<p><strong>1. State what you expect before merging.</strong>
+<code>expected_relationship</code> is the argument that turns an
+assumption into a check. If you believe each left-hand row matches at
+most one right-hand row, say <code>"many-to-one"</code>; the audit then
+compares that against what actually happened instead of leaving you to
+notice.</p>
+<p><strong>2. Merge and audit in one call.</strong>
+<code><a href="../reference/safe_merge.html">safe_merge()</a></code> joins and validates together, so an unaudited
+merge is not something you can produce by forgetting a line.</p>
+<p><strong>3. Read the log, then drill into whatever it flags.</strong>
+The one-row <code>$log</code> is the verdict;
+<code><a href="../reference/merge_detail.html">merge_detail()</a></code>, <code><a href="../reference/PlotMergeValidation.html">PlotMergeValidation()</a></code>, and
+<code><a href="../reference/ExploreMergeValidation.html">ExploreMergeValidation()</a></code> are three views of the same
+underlying <code>$validation</code> object, for three different
+situations.</p>
+<p><strong>4. Roll the logs up at the end.</strong>
+<code>merge_summary_table(..., flagged_only = TRUE)</code> over every
+merge in the pipeline is the gate: an empty table means every merge
+passed.</p>
+<div class="section level3">
+<h3 id="what-to-check-and-what-it-means">What to check, and what it means<a class="anchor" aria-label="anchor" href="#what-to-check-and-what-it-means"></a>
+</h3>
+<table class="table">
+<colgroup>
+<col width="33%">
+<col width="33%">
+<col width="33%">
+</colgroup>
+<thead><tr class="header">
+<th>Check</th>
+<th>The question it answers</th>
+<th>When to worry</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td>
+<strong>Row count</strong> (<code>RowsBefore</code> /
+<code>RowsAfter</code>)</td>
+<td>Did the join duplicate rows?</td>
+<td>Any increase you did not intend. This is the silent killer: no
+error, larger sample, wrong analysis</td>
+</tr>
+<tr class="even">
+<td>
+<strong>Relationship</strong>
+(<code>DetectedRelationship</code>)</td>
+<td>Was the join one-to-one, many-to-one, one-to-many?</td>
+<td>It disagrees with <code>expected_relationship</code>
+</td>
+</tr>
+<tr class="odd">
+<td>
+<strong>Match rate</strong> (<code>MatchRate</code>)</td>
+<td>What fraction of left-hand keys found a match?</td>
+<td>Below what the study design implies — a low rate usually means a
+key-format problem, not genuinely absent data</td>
+</tr>
+<tr class="even">
+<td>
+<strong>Key types</strong> (<code>KeyHarmonization</code>)</td>
+<td>Were the keys the same type on both sides?</td>
+<td>IDs stored as integer in one file and double or character in
+another; coercion happened, so check it was the coercion you wanted</td>
+</tr>
+<tr class="odd">
+<td>
+<strong>Duplicate keys</strong>
+(<code>DuplicateKeyGroups</code>)</td>
+<td>Does the key uniquely identify a row after merging?</td>
+<td>Depends entirely on intent: fatal for one-row-per-participant data,
+expected for longitudinal data</td>
+</tr>
+<tr class="even">
+<td>
+<strong>Unresolved duplicate variables</strong>
+(<code>UnresolvedDupVars</code>)</td>
+<td>Did the merge leave <code>.x</code> / <code>.y</code> column
+pairs?</td>
+<td>Always. Every one is a column whose correct value nobody has decided
+on</td>
+</tr>
+<tr class="odd">
+<td><strong>Value conflicts</strong></td>
+<td>Where a variable came from both sources, do they agree?</td>
+<td>Disagreement means the two sources disagree about a fact; find out
+which is right before analyzing either</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section level3">
+<h3 id="choosing-a-review-surface">Choosing a review surface<a class="anchor" aria-label="anchor" href="#choosing-a-review-surface"></a>
+</h3>
+<p>The three review functions read the same <code>$validation</code>
+object and differ only in how they present it:</p>
+<table class="table">
+<colgroup>
+<col width="33%">
+<col width="33%">
+<col width="33%">
+</colgroup>
+<thead><tr class="header">
+<th>Function</th>
+<th>Output</th>
+<th>Reach for it when</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td><code><a href="../reference/merge_detail.html">merge_detail()</a></code></td>
+<td>Static <code><a href="https://rdrr.io/pkg/knitr/man/kable.html" class="external-link">knitr::kable()</a></code> tables</td>
+<td>The merge is part of a rendered report or log, and the record needs
+to survive in the document</td>
+</tr>
+<tr class="even">
+<td><code><a href="../reference/PlotMergeValidation.html">PlotMergeValidation()</a></code></td>
+<td>ggplot figures</td>
+<td>Coverage and conflict <em>patterns</em> matter more than exact
+counts, or the result is going in a slide</td>
+</tr>
+<tr class="odd">
+<td><code><a href="../reference/ExploreMergeValidation.html">ExploreMergeValidation()</a></code></td>
+<td>Interactive HTML dashboard</td>
+<td>You are working through a problem merge yourself and want to expand,
+sort, and filter rather than re-run code</td>
+</tr>
+</tbody>
+</table>
+<p>For a merge that passes, the <code>$log</code> alone is enough and
+none of the three is needed.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/RDastgh1/SciDataReportR" class="external-link">SciDataReportR</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/therneau/survival" class="external-link">survival</a></span><span class="op">)</span></span></code></pre></div>
+</div>
+</div>
 <div class="section level2">
 <h2 id="example-1-a-real-longitudinal-merge-survivalpbc-pbcseq">Example 1: a real longitudinal merge (survival::pbc + pbcseq)<a class="anchor" aria-label="anchor" href="#example-1-a-real-longitudinal-merge-survivalpbc-pbcseq"></a>
 </h2>
@@ -906,15 +1052,47 @@ conflicts</caption>
 </tr></tbody>
 </table>
 <div class="section level3">
+<h3 id="the-same-merge-as-figures">The same merge as figures<a class="anchor" aria-label="anchor" href="#the-same-merge-as-figures"></a>
+</h3>
+<p><code><a href="../reference/PlotMergeValidation.html">PlotMergeValidation()</a></code> renders the identical diagnostics
+as ggplot figures. <code>Plot = "All"</code> returns them as a named
+list, so a report can include only the ones that matter for the merge at
+hand.</p>
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">plots_synth</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/PlotMergeValidation.html">PlotMergeValidation</a></span><span class="op">(</span></span>
+<span>  <span class="va">m_synth</span><span class="op">$</span><span class="va">validation</span>,</span>
+<span>  Plot <span class="op">=</span> <span class="st">"All"</span>,</span>
+<span>  interactive <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">plots_synth</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] "Checks"    "Coverage"  "JoinAudit" "Agreement" "Conflicts"</span></span></code></pre></div>
+<p>The checks figure is the plotted form of the same traffic-light table
+that <code><a href="../reference/merge_detail.html">merge_detail()</a></code> prints first:</p>
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">plots_synth</span><span class="op">$</span><span class="va">Checks</span></span></code></pre></div>
+<p><img src="merge-qc-workflow_files/figure-html/unnamed-chunk-11-1.png" class="r-plt" alt="" width="672"></p>
+<p>Coverage shows where the keys came from — matched on both sides, or
+present in only one. A pattern here is often more diagnostic than the
+counts: keys missing from one side in a block usually points at a
+formatting or provenance problem rather than genuinely absent
+records.</p>
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">plots_synth</span><span class="op">$</span><span class="va">Coverage</span></span></code></pre></div>
+<p><img src="merge-qc-workflow_files/figure-html/unnamed-chunk-12-1.png" class="r-plt" alt="" width="672"></p>
+</div>
+<div class="section level3">
 <h3 id="interactive-review-with-exploremergevalidation">Interactive review with ExploreMergeValidation()<a class="anchor" aria-label="anchor" href="#interactive-review-with-exploremergevalidation"></a>
 </h3>
 <p>For interactive QC sessions, pass the <code>validation</code> element
-to <code><a href="../reference/ExploreMergeValidation.html">ExploreMergeValidation()</a></code>. The default
-<code>Detail = "Compact"</code> keeps the checks table front and center,
-with the coverage and conflict explorers as click-to-expand accordion
-sections labeled with their item counts. Use
-<code>Detail = "Full"</code> to render them expanded.</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+to <code><a href="../reference/ExploreMergeValidation.html">ExploreMergeValidation()</a></code>. This is the same content
+again, but explorable: the default <code>Detail = "Compact"</code> keeps
+the checks table front and center, with the coverage and conflict
+explorers as click-to-expand accordion sections labeled with their item
+counts. Use <code>Detail = "Full"</code> to render them expanded.</p>
+<p>Use this one while you are still working out <em>what went
+wrong</em>; use <code><a href="../reference/merge_detail.html">merge_detail()</a></code> once you know, and need the
+answer written into a report.</p>
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/ExploreMergeValidation.html">ExploreMergeValidation</a></span><span class="op">(</span></span>
 <span>  <span class="va">m_synth</span><span class="op">$</span><span class="va">validation</span>,</span>
 <span>  Title <span class="op">=</span> <span class="st">"Demographics + device data"</span>,</span>
@@ -1053,7 +1231,7 @@ sections labeled with their item counts. Use
 <p>After a sequence of merges, stack the logs into a single table. With
 <code>flagged_only = TRUE</code>, only merges whose worst check status
 is not <code>PASS</code> remain — an end-of-pipeline QC gate:</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/merge_summary_table.html">merge_summary_table</a></span><span class="op">(</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="va">m_pbc</span><span class="op">$</span><span class="va">log</span>, <span class="va">m_closest</span><span class="op">$</span><span class="va">log</span>, <span class="va">m_synth</span><span class="op">$</span><span class="va">log</span><span class="op">)</span>,</span>
 <span>  flagged_only <span class="op">=</span> <span class="cn">TRUE</span></span>
@@ -1074,6 +1252,54 @@ is not <code>PASS</code> remain — an end-of-pipeline QC gate:</p>
 <p>An empty table here would mean every merge in the pipeline passed
 cleanly; any row that appears is a merge that still needs review before
 analysis.</p>
+</div>
+<div class="section level2">
+<h2 id="stating-the-expectation-up-front">Stating the expectation up front<a class="anchor" aria-label="anchor" href="#stating-the-expectation-up-front"></a>
+</h2>
+<p>The single highest-value habit in this workflow is declaring
+<code>expected_relationship</code> before the merge runs. Without it,
+the audit can report what happened but not whether that was what you
+wanted:</p>
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">m_declared</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/safe_merge.html">safe_merge</a></span><span class="op">(</span></span>
+<span>  <span class="va">pbc_baseline</span>,</span>
+<span>  <span class="va">pbc_labs</span>,</span>
+<span>  by <span class="op">=</span> <span class="st">"id"</span>,</span>
+<span>  name <span class="op">=</span> <span class="st">"pbc, declared as many-to-one"</span>,</span>
+<span>  expected_relationship <span class="op">=</span> <span class="st">"many-to-one"</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">m_declared</span><span class="op">$</span><span class="va">log</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
+<span>  <span class="st">"ExpectedRelationship"</span>, <span class="st">"DetectedRelationship"</span>,</span>
+<span>  <span class="st">"RelationshipMatchesExpected"</span></span>
+<span><span class="op">)</span><span class="op">]</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 1 × 3</span></span></span>
+<span><span class="co">#&gt;   ExpectedRelationship DetectedRelationship RelationshipMatchesExpected</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                <span style="color: #949494; font-style: italic;">&lt;lgl&gt;</span>                      </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> many-to-one          one-to-many          FALSE</span></span></code></pre></div>
+<p>Here the declaration is wrong and the audit says so:
+<code>pbcseq</code> has many rows per patient, so the join is
+one-to-many, not many-to-one. That mismatch is exactly the signal worth
+having — it is the difference between a longitudinal dataset you meant
+to build and a baseline dataset you have accidentally duplicated.</p>
+</div>
+<div class="section level2">
+<h2 id="summary">Summary<a class="anchor" aria-label="anchor" href="#summary"></a>
+</h2>
+<ol style="list-style-type: decimal">
+<li>Declare <code>expected_relationship</code> before merging.</li>
+<li>Merge with <code><a href="../reference/safe_merge.html">safe_merge()</a></code>, which audits in the same
+call.</li>
+<li>Read <code>$log</code>. If it is <code>PASS</code>, move on.</li>
+<li>If not, drill in with <code><a href="../reference/merge_detail.html">merge_detail()</a></code> for a report,
+<code><a href="../reference/PlotMergeValidation.html">PlotMergeValidation()</a></code> for the pattern, or
+<code><a href="../reference/ExploreMergeValidation.html">ExploreMergeValidation()</a></code> to investigate interactively.</li>
+<li>Gate the pipeline with
+<code>merge_summary_table(logs, flagged_only = TRUE)</code>.</li>
+</ol>
+<p>A <code>FAIL</code> is not necessarily a bug. It means the merge
+produced something that needs a decision from you — and the value of the
+workflow is that the decision is recorded rather than assumed.</p>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>

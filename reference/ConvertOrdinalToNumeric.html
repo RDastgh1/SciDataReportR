@@ -3,7 +3,7 @@
 score mappings recorded by RevalueData() are used when available;
 otherwise ordered-factor ranks are used."><meta property="og:description" content="Applies a consistent ordinal-treatment policy to selected variables. Ordinal
 score mappings recorded by RevalueData() are used when available;
-otherwise ordered-factor ranks are used."><meta property="og:image" content="https://rdastgh1.github.io/SciDataReportR/logo.png"></head><body>
+otherwise ordered-factor ranks are used."><meta property="og:image" content="https://rdastgh1.github.io/SciDataReportR/logo.png"><!-- dependencies from examples --></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -11,7 +11,7 @@ otherwise ordered-factor ranks are used."><meta property="og:image" content="htt
 
     <a class="navbar-brand me-2" href="../index.html">SciDataReportR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">20.22.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">20.24.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -23,6 +23,8 @@ otherwise ordered-factor ranks are used."><meta property="og:image" content="htt
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/argument-renaming.html">Migration note: argument renaming in 19.15.0</a></li>
+    <li><a class="dropdown-item" href="../articles/BiomarkerPerformance.html">Evaluating candidate biomarkers</a></li>
+    <li><a class="dropdown-item" href="../articles/ClusteringPhenotyping.html">Clustering and clinical phenotyping</a></li>
     <li><a class="dropdown-item" href="../articles/fdr-correction.html">FDR correction scope: matrix-wide vs per-outcome</a></li>
     <li><a class="dropdown-item" href="../articles/getting-started.html">Getting started with SciDataReportR</a></li>
     <li><a class="dropdown-item" href="../articles/MakeComparisonTable.html">Creating comparison tables with MakeComparisonTable()</a></li>
@@ -47,7 +49,7 @@ otherwise ordered-factor ranks are used."><meta property="og:image" content="htt
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Prepare ordinal variables for analysis</h1>
-      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/v20.22.0/R/ConvertOrdinalToNumeric.R" class="external-link"><code>R/ConvertOrdinalToNumeric.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/master/R/ConvertOrdinalToNumeric.R" class="external-link"><code>R/ConvertOrdinalToNumeric.R</code></a></small>
       <div class="d-none name"><code>ConvertOrdinalToNumeric.Rd</code></div>
     </div>
 
@@ -112,70 +114,129 @@ selected variables, ordinal variables, variable map, and treatment.</p></dd>
     <p>A transformed data frame, or a metadata list when
 <code>ReturnMetadata = TRUE</code>.</p>
     </div>
+    <div class="section level2">
+    <h2 id="the-four-policies">The four policies<a class="anchor" aria-label="anchor" href="#the-four-policies"></a></h2>
+
+
+<p><code>"Continuous"</code> replaces each level with its rank. <code>"Categorical"</code> and
+<code>"Exclude"</code> both leave the values alone; they differ in whether the variable
+is offered to the analysis at all. <code>"Both"</code> produces one column of each.</p>
+<p>With <code>ReturnMetadata = TRUE</code> the derived column names come back alongside
+the data, so downstream functions know which column carries which treatment
+without having to guess from the naming convention.</p>
+    </div>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span></span>
-<span class="r-in"><span>  id <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">5</span>,</span></span>
-<span class="r-in"><span>  likert <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"1"</span>, <span class="st">"2"</span>, <span class="st">"3"</span>, <span class="st">"2"</span>, <span class="st">"1"</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>                  levels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"1"</span>, <span class="st">"2"</span>, <span class="st">"3"</span><span class="op">)</span>, ordered <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>  grade <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"A"</span>, <span class="st">"B"</span>, <span class="st">"A"</span>, <span class="st">"C"</span>, <span class="st">"B"</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>                 levels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"A"</span>, <span class="st">"B"</span>, <span class="st">"C"</span><span class="op">)</span>, ordered <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># \donttest{</span></span></span>
+<span class="r-in"><span><span class="va">df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>  id <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">6</span>,</span></span>
+<span class="r-in"><span>  Severity <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>    <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"None"</span>, <span class="st">"Mild"</span>, <span class="st">"Severe"</span>, <span class="st">"Mild"</span>, <span class="st">"Moderate"</span>, <span class="st">"None"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>    levels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"None"</span>, <span class="st">"Mild"</span>, <span class="st">"Moderate"</span>, <span class="st">"Severe"</span><span class="op">)</span>, ordered <span class="op">=</span> <span class="cn">TRUE</span></span></span>
+<span class="r-in"><span>  <span class="op">)</span>,</span></span>
+<span class="r-in"><span>  Education <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>    <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"HighSchool"</span>, <span class="st">"College"</span>, <span class="st">"Graduate"</span>, <span class="st">"College"</span>, <span class="st">"Graduate"</span>, <span class="st">"HighSchool"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>    levels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"HighSchool"</span>, <span class="st">"College"</span>, <span class="st">"Graduate"</span><span class="op">)</span>, ordered <span class="op">=</span> <span class="cn">TRUE</span></span></span>
+<span class="r-in"><span>  <span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Convert ordinal ranks to numeric scores.</span></span></span>
-<span class="r-in"><span><span class="fu">ConvertOrdinalToNumeric</span><span class="op">(</span><span class="va">df</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   id likert grade</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1  1      1     1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2  2      2     2</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3  3      3     1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4  4      2     3</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5  5      1     2</span>
+<span class="r-in"><span><span class="co"># The four policies, applied to the same ordinal variable</span></span></span>
+<span class="r-in"><span><span class="va">df_Both</span> <span class="op">&lt;-</span> <span class="fu">ConvertOrdinalToNumeric</span><span class="op">(</span><span class="va">df</span>, TreatOrdinalAs <span class="op">=</span> <span class="st">"Both"</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Keep both categorical and continuous versions for a summary table.</span></span></span>
-<span class="r-in"><span><span class="fu">ConvertOrdinalToNumeric</span><span class="op">(</span><span class="va">df</span>, TreatOrdinalAs <span class="op">=</span> <span class="st">"Both"</span>, ReturnMetadata <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> $data</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   id likert grade .scidr_ordinal_categorical_likert</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1  1      1     A                                 1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2  2      2     B                                 2</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3  3      3     A                                 3</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4  4      2     C                                 2</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5  5      1     B                                 1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   .scidr_ordinal_continuous_likert .scidr_ordinal_categorical_grade</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1                                1                                A</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2                                2                                B</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3                                3                                A</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4                                2                                C</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5                                1                                B</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   .scidr_ordinal_continuous_grade</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1                               1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2                               2</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3                               1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4                               3</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5                               2</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> $variables</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "id"                                ".scidr_ordinal_categorical_likert"</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [3] ".scidr_ordinal_continuous_likert"  ".scidr_ordinal_categorical_grade" </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [5] ".scidr_ordinal_continuous_grade"  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> $ordinal_variables</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "likert" "grade" </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> $variable_map</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> $variable_map$id</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "id"</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> $variable_map$likert</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] ".scidr_ordinal_categorical_likert" ".scidr_ordinal_continuous_likert" </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> $variable_map$grade</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] ".scidr_ordinal_categorical_grade" ".scidr_ordinal_continuous_grade" </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> $treatment</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Both"</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-in"><span><span class="va">df_Policies</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>  id <span class="op">=</span> <span class="va">df</span><span class="op">$</span><span class="va">id</span>,</span></span>
+<span class="r-in"><span>  Original <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/character.html" class="external-link">as.character</a></span><span class="op">(</span><span class="va">df</span><span class="op">$</span><span class="va">Severity</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  Continuous <span class="op">=</span> <span class="fu">ConvertOrdinalToNumeric</span><span class="op">(</span><span class="va">df</span>, TreatOrdinalAs <span class="op">=</span> <span class="st">"Continuous"</span><span class="op">)</span><span class="op">$</span><span class="va">Severity</span>,</span></span>
+<span class="r-in"><span>  Categorical <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/character.html" class="external-link">as.character</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>    <span class="fu">ConvertOrdinalToNumeric</span><span class="op">(</span><span class="va">df</span>, TreatOrdinalAs <span class="op">=</span> <span class="st">"Categorical"</span><span class="op">)</span><span class="op">$</span><span class="va">Severity</span></span></span>
+<span class="r-in"><span>  <span class="op">)</span>,</span></span>
+<span class="r-in"><span>  Both_Categorical <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/character.html" class="external-link">as.character</a></span><span class="op">(</span><span class="va">df_Both</span><span class="op">$</span><span class="va">.scidr_ordinal_categorical_Severity</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  Both_Continuous <span class="op">=</span> <span class="va">df_Both</span><span class="op">$</span><span class="va">.scidr_ordinal_continuous_Severity</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="fu">htmltools</span><span class="fu">::</span><span class="fu"><a href="https://rstudio.github.io/htmltools/reference/browsable.html" class="external-link">browsable</a></span><span class="op">(</span><span class="fu">htmltools</span><span class="fu">::</span><span class="fu"><a href="https://rstudio.github.io/htmltools/reference/HTML.html" class="external-link">HTML</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/character.html" class="external-link">as.character</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>  <span class="fu"><a href="FreezeTableHeader.html">FreezeTableHeader</a></span><span class="op">(</span><span class="va">df_Policies</span>, full_width <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></span>
+<table class="table table table-striped table-hover table-condensed" style="margin-left: auto; margin-right: auto;"><thead><tr><th style="text-align:right;position: sticky; top:0; background-color: white;"> id </th>
+   <th style="text-align:left;position: sticky; top:0; background-color: white;"> Original </th>
+   <th style="text-align:right;position: sticky; top:0; background-color: white;"> Continuous </th>
+   <th style="text-align:left;position: sticky; top:0; background-color: white;"> Categorical </th>
+   <th style="text-align:left;position: sticky; top:0; background-color: white;"> Both_Categorical </th>
+   <th style="text-align:right;position: sticky; top:0; background-color: white;"> Both_Continuous </th>
+  </tr></thead><tbody><tr><td style="text-align:right;"> 1 </td>
+   <td style="text-align:left;"> None </td>
+   <td style="text-align:right;"> 1 </td>
+   <td style="text-align:left;"> None </td>
+   <td style="text-align:left;"> None </td>
+   <td style="text-align:right;"> 1 </td>
+  </tr><tr><td style="text-align:right;"> 2 </td>
+   <td style="text-align:left;"> Mild </td>
+   <td style="text-align:right;"> 2 </td>
+   <td style="text-align:left;"> Mild </td>
+   <td style="text-align:left;"> Mild </td>
+   <td style="text-align:right;"> 2 </td>
+  </tr><tr><td style="text-align:right;"> 3 </td>
+   <td style="text-align:left;"> Severe </td>
+   <td style="text-align:right;"> 4 </td>
+   <td style="text-align:left;"> Severe </td>
+   <td style="text-align:left;"> Severe </td>
+   <td style="text-align:right;"> 4 </td>
+  </tr><tr><td style="text-align:right;"> 4 </td>
+   <td style="text-align:left;"> Mild </td>
+   <td style="text-align:right;"> 2 </td>
+   <td style="text-align:left;"> Mild </td>
+   <td style="text-align:left;"> Mild </td>
+   <td style="text-align:right;"> 2 </td>
+  </tr><tr><td style="text-align:right;"> 5 </td>
+   <td style="text-align:left;"> Moderate </td>
+   <td style="text-align:right;"> 3 </td>
+   <td style="text-align:left;"> Moderate </td>
+   <td style="text-align:left;"> Moderate </td>
+   <td style="text-align:right;"> 3 </td>
+  </tr><tr><td style="text-align:right;"> 6 </td>
+   <td style="text-align:left;"> None </td>
+   <td style="text-align:right;"> 1 </td>
+   <td style="text-align:left;"> None </td>
+   <td style="text-align:left;"> None </td>
+   <td style="text-align:right;"> 1 </td>
+  </tr></tbody></table><span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># The derived column names, returned alongside the data</span></span></span>
+<span class="r-in"><span><span class="va">metadata</span> <span class="op">&lt;-</span> <span class="fu">ConvertOrdinalToNumeric</span><span class="op">(</span></span></span>
+<span class="r-in"><span>  <span class="va">df</span>, TreatOrdinalAs <span class="op">=</span> <span class="st">"Both"</span>, ReturnMetadata <span class="op">=</span> <span class="cn">TRUE</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="va">df_Map</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>  Variable <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">metadata</span><span class="op">$</span><span class="va">variable_map</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>                 <span class="fu"><a href="https://rdrr.io/r/base/lengths.html" class="external-link">lengths</a></span><span class="op">(</span><span class="va">metadata</span><span class="op">$</span><span class="va">variable_map</span><span class="op">)</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  DerivedColumn <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/unlist.html" class="external-link">unlist</a></span><span class="op">(</span><span class="va">metadata</span><span class="op">$</span><span class="va">variable_map</span>, use.names <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  IsOrdinal <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">metadata</span><span class="op">$</span><span class="va">variable_map</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>                  <span class="fu"><a href="https://rdrr.io/r/base/lengths.html" class="external-link">lengths</a></span><span class="op">(</span><span class="va">metadata</span><span class="op">$</span><span class="va">variable_map</span><span class="op">)</span><span class="op">)</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span></span></span>
+<span class="r-in"><span>    <span class="va">metadata</span><span class="op">$</span><span class="va">ordinal_variables</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="fu">htmltools</span><span class="fu">::</span><span class="fu"><a href="https://rstudio.github.io/htmltools/reference/browsable.html" class="external-link">browsable</a></span><span class="op">(</span><span class="fu">htmltools</span><span class="fu">::</span><span class="fu"><a href="https://rstudio.github.io/htmltools/reference/HTML.html" class="external-link">HTML</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/character.html" class="external-link">as.character</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>  <span class="fu"><a href="FreezeTableHeader.html">FreezeTableHeader</a></span><span class="op">(</span><span class="va">df_Map</span>, full_width <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></span>
+<table class="table table table-striped table-hover table-condensed" style="margin-left: auto; margin-right: auto;"><thead><tr><th style="text-align:left;position: sticky; top:0; background-color: white;"> Variable </th>
+   <th style="text-align:left;position: sticky; top:0; background-color: white;"> DerivedColumn </th>
+   <th style="text-align:left;position: sticky; top:0; background-color: white;"> IsOrdinal </th>
+  </tr></thead><tbody><tr><td style="text-align:left;"> id </td>
+   <td style="text-align:left;"> id </td>
+   <td style="text-align:left;"> FALSE </td>
+  </tr><tr><td style="text-align:left;"> Severity </td>
+   <td style="text-align:left;"> .scidr_ordinal_categorical_Severity </td>
+   <td style="text-align:left;"> TRUE </td>
+  </tr><tr><td style="text-align:left;"> Severity </td>
+   <td style="text-align:left;"> .scidr_ordinal_continuous_Severity </td>
+   <td style="text-align:left;"> TRUE </td>
+  </tr><tr><td style="text-align:left;"> Education </td>
+   <td style="text-align:left;"> .scidr_ordinal_categorical_Education </td>
+   <td style="text-align:left;"> TRUE </td>
+  </tr><tr><td style="text-align:left;"> Education </td>
+   <td style="text-align:left;"> .scidr_ordinal_continuous_Education </td>
+   <td style="text-align:left;"> TRUE </td>
+  </tr></tbody></table><span class="r-in"><span><span class="co"># }</span></span></span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

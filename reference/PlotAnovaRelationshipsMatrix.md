@@ -90,6 +90,27 @@ A list containing three ggplot objects: p (scatter plot without multiple
 comparison correction), p_FDR (scatter plot with FDR correction), and
 pvaltable (data frame of p-values and significance).
 
+## Parametric and non-parametric tests
+
+ANOVA assumes roughly normal residuals and similar variance across
+groups. Biomarker concentrations are often right-skewed, and group sizes
+are often uneven, both of which make the F-test unreliable.
+
+`Parametric = FALSE` switches to Kruskal-Wallis, which compares ranks
+rather than means and assumes neither normality nor equal variance. The
+matrix is built and read exactly the same way.
+
+Comparing the two p-value tables shows which conclusions depended on the
+choice of test. Relationships that hold under both are the ones to
+trust. Where they disagree, the direction is informative: significant
+only under ANOVA suggests the result is being carried by skew or a few
+extreme values, while significant only under Kruskal-Wallis suggests a
+real shift in the bulk of the distribution that outliers were masking
+from the mean-based test.
+
+Kruskal-Wallis is a rank test and has no ANCOVA form, so `covariates`
+requires `Parametric = TRUE`.
+
 ## Examples
 
 ``` r
@@ -116,4 +137,47 @@ result$Unadjusted$plot
 # FDR-adjusted associations
 result$FDRCorrected$plot
 #> Warning: Using size for a discrete variable is not advised.
+
+
+# The same matrix using Kruskal-Wallis instead of ANOVA
+result_NonParametric <- PlotAnovaRelationshipsMatrix(
+  Labelled,
+  CatVars = c("Diagnosis", "sex", "Genotype"),
+  ContVars = c("age", "ACE_CD143_Angiotensin_Converti",
+               "ACTH_Adrenocorticotropic_Hormon", "AXL", "Adiponectin",
+               "Alpha_1_Antichymotrypsin", "Alpha_1_Antitrypsin",
+               "Alpha_1_Microglobulin", "Alpha_2_Macroglobulin",
+               "Apolipoprotein_A1"),
+  Parametric = FALSE
+)
+
+result_NonParametric$Unadjusted$plot
+
+result_NonParametric$FDRCorrected$plot
+#> Warning: Using size for a discrete variable is not advised.
+
+
+# Where the two tests disagree
+cols_Key <- c("CategoricalVariable", "ContinuousVariable", "p")
+df_Compare <- merge(
+  result$Unadjusted$PvalTable[, cols_Key],
+  result_NonParametric$Unadjusted$PvalTable[, cols_Key],
+  by = c("CategoricalVariable", "ContinuousVariable"),
+  suffixes = c("_ANOVA", "_KruskalWallis")
+)
+df_Compare$AgreesAt05 <-
+  (df_Compare$p_ANOVA < 0.05) == (df_Compare$p_KruskalWallis < 0.05)
+
+htmltools::browsable(htmltools::HTML(as.character(
+  FreezeTableHeader(
+    dplyr::mutate(
+      df_Compare,
+      dplyr::across(dplyr::where(is.numeric), \(x) signif(x, 3))
+    ),
+    height = "320px", full_width = TRUE
+  )
+)))
+
+
+ CategoricalVariable 
 ```

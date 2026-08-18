@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">SciDataReportR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">20.22.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">20.24.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -19,6 +19,8 @@
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/argument-renaming.html">Migration note: argument renaming in 19.15.0</a></li>
+    <li><a class="dropdown-item" href="../articles/BiomarkerPerformance.html">Evaluating candidate biomarkers</a></li>
+    <li><a class="dropdown-item" href="../articles/ClusteringPhenotyping.html">Clustering and clinical phenotyping</a></li>
     <li><a class="dropdown-item" href="../articles/fdr-correction.html">FDR correction scope: matrix-wide vs per-outcome</a></li>
     <li><a class="dropdown-item" href="../articles/getting-started.html">Getting started with SciDataReportR</a></li>
     <li><a class="dropdown-item" href="../articles/MakeComparisonTable.html">Creating comparison tables with MakeComparisonTable()</a></li>
@@ -43,7 +45,7 @@
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Plot Bland-Altman Agreement Plot</h1>
-      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/v20.22.0/R/PlotBlandAltman.R" class="external-link"><code>R/PlotBlandAltman.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/master/R/PlotBlandAltman.R" class="external-link"><code>R/PlotBlandAltman.R</code></a></small>
       <div class="d-none name"><code>PlotBlandAltman.Rd</code></div>
     </div>
 
@@ -92,15 +94,86 @@
 
 </dl></div>
     <div class="section level2">
+    <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
+    <p>Use this when two methods measure the <em>same quantity in the same units</em> and
+the question is whether one can be substituted for the other: a new assay
+against an established one, a wearable against a clinical monitor, an
+automated segmentation against a manual trace, or the same rater twice.</p>
+<p>The plot draws the difference between the two measurements against their
+mean, one point per subject, with three horizontal reference lines: the mean
+difference (the <strong>bias</strong>, or systematic offset between the methods) and the
+<strong>95% limits of agreement</strong>, at bias +/- 1.96 SD of the differences. Those
+limits are the useful output. They say that for about 95% of subjects, the
+two methods differ by no more than that much - and whether that is
+acceptable is a clinical judgment, not a statistical one, made by comparing
+the interval against the difference that would change a decision.</p>
+    </div>
+    <div class="section level2">
     <h2 id="note">Note<a class="anchor" aria-label="anchor" href="#note"></a></h2>
     <p>This function is adapted from code written by Eran Shorer.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="why-not-correlation">Why not correlation<a class="anchor" aria-label="anchor" href="#why-not-correlation"></a></h2>
+
+
+<p>Bland and Altman introduced this plot specifically because correlation
+coefficients are the wrong tool for method comparison, and it remains the
+most common mistake in agreement studies. A high <code>r</code> only means the two
+measurements move together, which they must, since both track the same
+underlying quantity. It is unchanged if one method reads systematically
+twice as high, or ten units too high, in every subject - the points still
+fall on a straight line. Correlation also inflates as the range of measured
+values widens, so the same pair of methods can look better simply by
+recruiting a more heterogeneous sample. Agreement asks whether the <em>actual
+numbers</em> match, which is what substituting one method for another requires.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="what-the-example-shows">What the example shows<a class="anchor" aria-label="anchor" href="#what-the-example-shows"></a></h2>
+
+
+<p>The worked example builds two devices that measure the same underlying
+quantity, one carrying a small constant offset. The reported bias recovers
+that offset (its sign depends on which measurement is subtracted from
+which), and the limits of agreement say how far apart the two devices can be
+expected to fall for an individual sample.</p>
+<p>Their correlation is near-perfect, and would be just as high if the offset
+were 200 units instead of 2 - which is precisely why agreement is assessed
+this way rather than with a correlation coefficient.</p>
+<p>The third device has essentially no bias but poor precision. Its correlation
+with the first is still respectable, yet its limits of agreement are roughly
+three times wider: on any individual sample the two may differ by more than
+20 units. That is the failure this plot exposes and a summary coefficient
+does not.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="reading-the-plot">Reading the plot<a class="anchor" aria-label="anchor" href="#reading-the-plot"></a></h2>
+
+
+<ul><li><p><strong>Bias far from zero</strong> - one method reads consistently high or low. A
+constant offset can often be corrected by recalibration.</p></li>
+<li><p><strong>Wide limits of agreement</strong> - the methods disagree unpredictably in
+individual subjects, even if the bias is near zero. This is the failure
+that a correlation coefficient hides.</p></li>
+<li><p><strong>A funnel shape</strong>, spread growing with the mean - the disagreement is
+proportional rather than constant, and the analysis is usually redone on
+log-transformed values or reported as percentage differences.</p></li>
+<li><p><strong>A slope in the cloud</strong> - the bias depends on the magnitude being
+measured, so a single bias figure does not describe the methods.</p></li>
+</ul><p>Both measurements must be on the same scale for any of this to be
+meaningful. Two different quantities, or the same quantity in different
+units, produce a plot that renders but means nothing.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>
+    <p>Bland JM, Altman DG. Statistical methods for assessing agreement between two
+methods of clinical measurement. <em>The Lancet</em>. 1986;327(8476):307-310.</p>
+<p>Bland JM, Altman DG. Measuring agreement in method comparison studies.
+<em>Statistical Methods in Medical Research</em>. 1999;8(2):135-160.</p>
     </div>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># Bland-Altman compares two measurements of the SAME quantity on the same</span></span></span>
-<span class="r-in"><span><span class="co"># scale. Here two devices measure the same underlying value, with device B</span></span></span>
-<span class="r-in"><span><span class="co"># carrying a small constant bias plus noise.</span></span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># Two devices measuring the same quantity; device B carries a 2-unit bias</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">101</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">n</span> <span class="op">&lt;-</span> <span class="fl">80</span></span></span>
 <span class="r-in"><span><span class="va">truth</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">n</span>, mean <span class="op">=</span> <span class="fl">100</span>, sd <span class="op">=</span> <span class="fl">15</span><span class="op">)</span></span></span>
@@ -116,9 +189,29 @@
 <span class="r-in"><span><span class="va">result</span><span class="op">$</span><span class="va">plot</span></span></span>
 <span class="r-plt img"><img src="PlotBlandAltman-1.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Underlying statistics</span></span></span>
+<span class="r-in"><span><span class="co"># Bias and limits of agreement</span></span></span>
 <span class="r-in"><span><span class="va">result</span><span class="op">$</span><span class="va">stats</span><span class="op">$</span><span class="va">mean.diffs</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] -2.400073</span>
+<span class="r-in"><span><span class="va">result</span><span class="op">$</span><span class="va">stats</span><span class="op">$</span><span class="va">lines</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> lower.limit  mean.diffs upper.limit </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  -10.119574   -2.400073    5.319428 </span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Correlation for the same pair, which the offset does not affect</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/stats/cor.html" class="external-link">cor</a></span><span class="op">(</span><span class="va">method_data</span><span class="op">$</span><span class="va">DeviceA</span>, <span class="va">method_data</span><span class="op">$</span><span class="va">DeviceB</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0.9636358</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># A device with no bias but poor precision</span></span></span>
+<span class="r-in"><span><span class="va">method_data</span><span class="op">$</span><span class="va">DeviceC</span> <span class="op">&lt;-</span> <span class="va">truth</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">n</span>, <span class="fl">0</span>, <span class="fl">12</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">noisy</span> <span class="op">&lt;-</span> <span class="fu">PlotBlandAltman</span><span class="op">(</span><span class="va">method_data</span>, <span class="st">"DeviceA"</span>, <span class="st">"DeviceC"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">noisy</span><span class="op">$</span><span class="va">plot</span></span></span>
+<span class="r-plt img"><img src="PlotBlandAltman-2.png" alt="" width="700" height="433"></span>
+<span class="r-in"><span><span class="va">noisy</span><span class="op">$</span><span class="va">stats</span><span class="op">$</span><span class="va">mean.diffs</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 1.583964</span>
+<span class="r-in"><span><span class="va">noisy</span><span class="op">$</span><span class="va">stats</span><span class="op">$</span><span class="va">lines</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> lower.limit  mean.diffs upper.limit </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  -20.374642    1.583964   23.542571 </span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/stats/cor.html" class="external-link">cor</a></span><span class="op">(</span><span class="va">method_data</span><span class="op">$</span><span class="va">DeviceA</span>, <span class="va">method_data</span><span class="op">$</span><span class="va">DeviceC</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0.7368161</span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

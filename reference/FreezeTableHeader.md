@@ -98,22 +98,27 @@ the table renders normally without a frozen header.
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
+# \donttest{
 data(SampleData)
 data(SampleVariableTypes)
 
 Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
 
-tbl <- MakeComparisonTable(
+# Repeat the full comparison table to make scrolling and the frozen header
+# obvious on the reference page.
+tbl_Base <- MakeComparisonTable(
   data = Labelled,
   group_var = "Diagnosis",
-  variables = c("age", "sex", "AXL", "Adiponectin")
+  variables = setdiff(names(Labelled), "Diagnosis")
 )
 
-# Header sticks while the page scrolls
-FreezeTableHeader(tbl)
+tbl_All <- dplyr::bind_rows(rep(list(tbl_Base$table_body), 8))
 
-# Header frozen inside a fixed-height scroll box
-FreezeTableHeader(tbl, height = "400px")
-} # }
+# Inside a fixed-height vertical scroll box
+htmltools::browsable(htmltools::HTML(as.character(
+  FreezeTableHeader(tbl_All, height = "450px", width = "100%")
+)))
+
+
+ variable 
 ```

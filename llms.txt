@@ -53,7 +53,7 @@ rather than alphabetical utilities.
 | Association and regression mining | [`PlotAssociations()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotAssociations.md), [`PlotCorrelationsHeatmap()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotCorrelationsHeatmap.md), [`PlotDirectionalHeatmaps()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotDirectionalHeatmaps.md), [`MakeUnivariateRegressionTable()`](https://rdastgh1.github.io/SciDataReportR/reference/MakeUnivariateRegressionTable.md), [`PlotForestFromTable()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotForestFromTable.md) |
 | Dimensionality reduction and projection | [`CreatePCAObject()`](https://rdastgh1.github.io/SciDataReportR/reference/CreatePCAObject.md), [`plotPCA()`](https://rdastgh1.github.io/SciDataReportR/reference/plotPCA.md), [`ExtractPCAComponentSummary()`](https://rdastgh1.github.io/SciDataReportR/reference/ExtractPCAComponentSummary.md), [`ProjectPCA()`](https://rdastgh1.github.io/SciDataReportR/reference/ProjectPCA.md), [`CreateZScoreObject()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateZScoreObject.md), [`ProjectZScore()`](https://rdastgh1.github.io/SciDataReportR/reference/ProjectZScore.md) |
 | Normative modeling | [`CreateNormativeTScoreModel()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateNormativeTScoreModel.md), [`ApplyNormativeTScores()`](https://rdastgh1.github.io/SciDataReportR/reference/ApplyNormativeTScores.md) |
-| Clustering and cohort projection | [`CreateSOMClusterModel()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateSOMClusterModel.md), [`ProjectSOMCluster()`](https://rdastgh1.github.io/SciDataReportR/reference/ProjectSOMCluster.md) |
+| Clustering and cohort projection | [`CreateClusterModel_SOM_MClust()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateClusterModel_SOM_MClust.md), [`ProjectCluster()`](https://rdastgh1.github.io/SciDataReportR/reference/ProjectCluster.md) |
 | Longitudinal and temporal workflows | [`Merge_ByClosestTime()`](https://rdastgh1.github.io/SciDataReportR/reference/Merge_ByClosestTime.md), [`SummarizeTransitions()`](https://rdastgh1.github.io/SciDataReportR/reference/SummarizeTransitions.md), [`PlotSwimmerTransitions()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotSwimmerTransitions.md) |
 | Reporting | [`CreateSummaryTable()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateSummaryTable.md), [`CreateStatisticsTable()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateStatisticsTable.md), [`use_EDATemplate()`](https://rdastgh1.github.io/SciDataReportR/reference/use_EDATemplate.md) |
 
@@ -70,7 +70,7 @@ they need.
 | Group comparison | [`PlotZScore()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotZScore.md), [`Plot2GroupStats()`](https://rdastgh1.github.io/SciDataReportR/reference/Plot2GroupStats.md), [`PlotPValueComparisons()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotPValueComparisons.md), [`PlotSplitViolin()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotSplitViolin.md) |
 | Association and correlation | [`PlotCorrelationsHeatmap()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotCorrelationsHeatmap.md), [`PlotPhiHeatmap()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotPhiHeatmap.md), [`PlotPointCorrelationsHeatmap()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotPointCorrelationsHeatmap.md), [`PlotDirectionalHeatmaps()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotDirectionalHeatmaps.md), [`PlotAssociations()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotAssociations.md), [`plotSigCorrelations()`](https://rdastgh1.github.io/SciDataReportR/reference/plotSigCorrelations.md), [`plotSigAssociations()`](https://rdastgh1.github.io/SciDataReportR/reference/plotSigAssociations.md) |
 | Regression and interaction | [`PlotPartialRegressionScatter()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotPartialRegressionScatter.md), [`PlotForestFromTable()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotForestFromTable.md), [`PlotInteractionEffectsContinuous()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotInteractionEffectsContinuous.md), [`PlotInteractionEffectsMatrix()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotInteractionEffectsMatrix.md), [`PlotCatInteractionEffectsMatrix()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotCatInteractionEffectsMatrix.md), [`PlotNumInteractionEffectsMatrix()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotNumInteractionEffectsMatrix.md) |
-| Dimensionality reduction and clustering | [`plotPCA()`](https://rdastgh1.github.io/SciDataReportR/reference/plotPCA.md), plots produced from [`CreateSOMClusterModel()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateSOMClusterModel.md) workflows |
+| Dimensionality reduction and clustering | [`plotPCA()`](https://rdastgh1.github.io/SciDataReportR/reference/plotPCA.md), plots produced from [`CreateClusterModel_SOM_MClust()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateClusterModel_SOM_MClust.md) workflows |
 | Longitudinal and temporal | [`PlotTimeDistribution()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotTimeDistribution.md), [`PlotSwimmerTransitions()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotSwimmerTransitions.md) |
 | Specialized scientific plots | [`PlotBlandAltman()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotBlandAltman.md), [`PlotSpiderChart()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotSpiderChart.md), [`PlotPathway_KT()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotPathway_KT.md) |
 
@@ -115,7 +115,7 @@ better describes the reusable PCA object returned by that workflow.
 | [`ApplyNormativeTScores()`](https://rdastgh1.github.io/SciDataReportR/reference/ApplyNormativeTScores.md) | New data and normative scoring object | [`CreateNormativeTScoreModel()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateNormativeTScoreModel.md) | Applied normative T-scores | Score future cohorts with the same model |
 | [`ProjectZScore()`](https://rdastgh1.github.io/SciDataReportR/reference/ProjectZScore.md) | New data and z-score parameters | [`CreateZScoreObject()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateZScoreObject.md) | Projected standardized scores | Apply a prior standardization to new data |
 | [`ProjectPCA()`](https://rdastgh1.github.io/SciDataReportR/reference/ProjectPCA.md) | New data and PCA object | [`CreatePCAObject()`](https://rdastgh1.github.io/SciDataReportR/reference/CreatePCAObject.md) | Projected PCA scores | Compare new samples in an existing PCA space |
-| [`ProjectSOMCluster()`](https://rdastgh1.github.io/SciDataReportR/reference/ProjectSOMCluster.md) | New data and SOM cluster solution | [`CreateSOMClusterModel()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateSOMClusterModel.md) | Projected SOM/cluster assignments | Apply an existing cluster solution to future cohorts |
+| [`ProjectCluster()`](https://rdastgh1.github.io/SciDataReportR/reference/ProjectCluster.md) | New data and fitted cluster solution | `CreateClusterModel_*()` | Projected cluster assignments | Apply an existing cluster solution to future cohorts |
 | [`ProjectRCI()`](https://rdastgh1.github.io/SciDataReportR/reference/ProjectRCI.md) | New data and RCI object | [`CreateRCIObject()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateRCIObject.md) | Projected reliable change metrics | Apply an existing change model |
 
 ## Flagship Workflow Examples
@@ -232,6 +232,30 @@ Contributions, bug reports, and workflow ideas are welcome through
   : Compare two versions of a dataset
 - [`ConvertOrdinalToNumeric()`](https://rdastgh1.github.io/SciDataReportR/reference/ConvertOrdinalToNumeric.md)
   : Prepare ordinal variables for analysis
+- [`CreateClusterModel_Gower_PAM()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateClusterModel_Gower_PAM.md)
+  : Fit a projectable Gower-distance PAM model for mixed clinical data
+- [`CreateClusterModel_HDBSCAN()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateClusterModel_HDBSCAN.md)
+  : Fit a projectable HDBSCAN model
+- [`CreateClusterModel_KMeans()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateClusterModel_KMeans.md)
+  : Fit a projectable K-means clustering model
+- [`CreateClusterModel_LatentClass()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateClusterModel_LatentClass.md)
+  : Fit a projectable latent class model for categorical measures
+- [`CreateClusterModel_MCA_MClust()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateClusterModel_MCA_MClust.md)
+  : Fit MCA followed by Mclust for nominal categorical data
+- [`CreateClusterModel_MClust()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateClusterModel_MClust.md)
+  : Fit a projectable Gaussian-mixture clustering model
+- [`CreateClusterModel_PCA_KMeans()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateClusterModel_PCA_KMeans.md)
+  : Fit PCA followed by K-means
+- [`CreateClusterModel_PCA_MClust()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateClusterModel_PCA_MClust.md)
+  : Fit PCA followed by Mclust
+- [`CreateClusterModel_SOM_HDBSCAN()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateClusterModel_SOM_HDBSCAN.md)
+  : Fit HDBSCAN clusters on a frozen self-organizing map
+- [`CreateClusterModel_SOM_MClust()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateClusterModel_SOM_MClust.md)
+  [`Pipeline_SOM_MClust()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateClusterModel_SOM_MClust.md)
+  [`Pipeline_SOMClust()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateClusterModel_SOM_MClust.md)
+  [`CreateSOMClusterModel()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateClusterModel_SOM_MClust.md)
+  : SOM + latent profile clustering pipeline (with AHP and distance
+  baselines)
 - [`CreateMCAObject()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateMCAObject.md)
   [`CreateMCATable()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateMCAObject.md)
   : Create a reusable MCA object and visualizations
@@ -248,10 +272,6 @@ Contributions, bug reports, and workflow ideas are welcome through
   : Create Project Folder Structure
 - [`CreateRCIObject()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateRCIObject.md)
   : Create a Reliable Change Index (RCI) object
-- [`CreateSOMClusterModel()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateSOMClusterModel.md)
-  [`Pipeline_SOMClust()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateSOMClusterModel.md)
-  : SOM + latent profile clustering pipeline (with AHP and distance
-  baselines)
 - [`CreateStatisticsTable()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateStatisticsTable.md)
   : Create Statistics Table
 - [`CreateSummaryTable()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateSummaryTable.md)
@@ -263,7 +283,10 @@ Contributions, bug reports, and workflow ideas are welcome through
   : Calculate Z-scores (or standardized scores) and return data +
   parameters
 - [`DeriveFreesurferVolumes()`](https://rdastgh1.github.io/SciDataReportR/reference/DeriveFreesurferVolumes.md)
-  : Derive Freesurfer bilateral totals and ICV-adjusted measures
+  : Derive Freesurfer bilateral measures and optional ICV-adjusted
+  ratios
+- [`EvaluateBiomarkerPerformance()`](https://rdastgh1.github.io/SciDataReportR/reference/EvaluateBiomarkerPerformance.md)
+  : Evaluate biomarker performance
 - [`ExploreDatasetComparison()`](https://rdastgh1.github.io/SciDataReportR/reference/ExploreDatasetComparison.md)
   : Explore dataset comparison results interactively
 - [`ExploreMergeValidation()`](https://rdastgh1.github.io/SciDataReportR/reference/ExploreMergeValidation.md)
@@ -327,6 +350,22 @@ Contributions, bug reports, and workflow ideas are welcome through
   stratified by covariates)
 - [`PlotClusterBoxplot()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotClusterBoxplot.md)
   : Plot cluster boxplots by variable
+- [`PlotClusterCentreHeatmap()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotClusterCentreHeatmap.md)
+  [`PlotClusterCentreProfile()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotClusterCentreHeatmap.md)
+  : Plot cluster centre profiles as a heatmap
+- [`PlotClusterComposition()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotClusterComposition.md)
+  : Plot categorical composition by cluster
+- [`PlotClusterDiagnostic()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotClusterDiagnostic.md)
+  : Plot a per-cluster diagnostic value
+- [`PlotClusterFitReview()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotClusterFitReview.md)
+  : Plot cluster fit-review metrics
+- [`PlotClusterMap()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotClusterMap.md)
+  [`PlotClusterAssignment()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotClusterMap.md)
+  : Plot a two-dimensional cluster review map
+- [`PlotClusterProfiles()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotClusterProfiles.md)
+  : Plot labelled numeric profiles by cluster
+- [`PlotClusterSilhouette()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotClusterSilhouette.md)
+  : Plot a per-participant silhouette profile
 - [`PlotContinuousDistributions()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotContinuousDistributions.md)
   : Plot Continuous Distributions
 - [`PlotCorrelationsHeatmap()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotCorrelationsHeatmap.md)
@@ -383,13 +422,14 @@ Contributions, bug reports, and workflow ideas are welcome through
   : Prepare numeric data safely for analysis
 - [`PrepSPSS()`](https://rdastgh1.github.io/SciDataReportR/reference/PrepSPSS.md)
   : Prepare a data frame for SPSS export
+- [`ProjectCluster()`](https://rdastgh1.github.io/SciDataReportR/reference/ProjectCluster.md)
+  [`Project_SOMClust()`](https://rdastgh1.github.io/SciDataReportR/reference/ProjectCluster.md)
+  [`ProjectSOMCluster()`](https://rdastgh1.github.io/SciDataReportR/reference/ProjectCluster.md)
+  : Project cases through a fitted clustering model
 - [`ProjectPCA()`](https://rdastgh1.github.io/SciDataReportR/reference/ProjectPCA.md)
   : Project PCA scores onto new data
 - [`ProjectRCI()`](https://rdastgh1.github.io/SciDataReportR/reference/ProjectRCI.md)
   : Project a trained RCI object onto new data
-- [`ProjectSOMCluster()`](https://rdastgh1.github.io/SciDataReportR/reference/ProjectSOMCluster.md)
-  [`Project_SOMClust()`](https://rdastgh1.github.io/SciDataReportR/reference/ProjectSOMCluster.md)
-  : Project new data onto an existing SOM clinical phenotype space
 - [`ProjectZScore()`](https://rdastgh1.github.io/SciDataReportR/reference/ProjectZScore.md)
   [`Project_ZScore()`](https://rdastgh1.github.io/SciDataReportR/reference/ProjectZScore.md)
   : Project standardized scores onto new data using external parameters
@@ -407,6 +447,12 @@ Contributions, bug reports, and workflow ideas are welcome through
   : SampleData for practicing SciDataReportR functions
 - [`SampleVariableTypes`](https://rdastgh1.github.io/SciDataReportR/reference/SampleVariableTypes.md)
   : Example Dataset: SampleVariableTypes
+- [`SciDataPalette()`](https://rdastgh1.github.io/SciDataReportR/reference/SciDataPalette.md)
+  : SciDataReportR qualitative color palette
+- [`ScreenBiomarkerPerformance()`](https://rdastgh1.github.io/SciDataReportR/reference/ScreenBiomarkerPerformance.md)
+  : Screen biomarker performance across outcomes
+- [`SimulatedPhenotypeData`](https://rdastgh1.github.io/SciDataReportR/reference/SimulatedPhenotypeData.md)
+  : Neutral simulated clustering and phenotyping benchmark
 - [`SummarizeTransitions()`](https://rdastgh1.github.io/SciDataReportR/reference/SummarizeTransitions.md)
   : Summarize participant transitions for a binary longitudinal
   condition
@@ -416,6 +462,8 @@ Contributions, bug reports, and workflow ideas are welcome through
   : Update an existing data dictionary with new variables and types
 - [`ValidateMerge()`](https://rdastgh1.github.io/SciDataReportR/reference/ValidateMerge.md)
   : Validate a merge between two source data frames and a merged result
+- [`add_biomarker_values()`](https://rdastgh1.github.io/SciDataReportR/reference/add_biomarker_values.md)
+  : Add values to a biomarker performance heatmap
 - [`add_r_and_stars()`](https://rdastgh1.github.io/SciDataReportR/reference/add_r_and_stars.md)
   : Add r-values and significance stars to a correlations heatmap
 - [`calculate_pathway_results()`](https://rdastgh1.github.io/SciDataReportR/reference/calculate_pathway_results.md)
@@ -452,8 +500,12 @@ Contributions, bug reports, and workflow ideas are welcome through
   : Reverse Levels of Categorical Factors
 - [`safe_merge()`](https://rdastgh1.github.io/SciDataReportR/reference/safe_merge.md)
   : Safely merge two data frames with relationship-aware validation
+- [`scale_color_SciData()`](https://rdastgh1.github.io/SciDataReportR/reference/scale_color_SciData.md)
+  : SciDataReportR discrete color scale
 - [`scale_color_pvalue()`](https://rdastgh1.github.io/SciDataReportR/reference/scale_color_pvalue.md)
   : Apply an evidence-aware p-value color scale
+- [`scale_fill_SciData()`](https://rdastgh1.github.io/SciDataReportR/reference/scale_fill_SciData.md)
+  : SciDataReportR discrete fill scale
 - [`scale_fill_pvalue()`](https://rdastgh1.github.io/SciDataReportR/reference/scale_fill_pvalue.md)
   : Apply an evidence-aware p-value fill scale
 - [`use_EDATemplate()`](https://rdastgh1.github.io/SciDataReportR/reference/use_EDATemplate.md)
@@ -469,6 +521,12 @@ Contributions, bug reports, and workflow ideas are welcome through
 
 - [Migration note: argument renaming in
   19.15.0](https://rdastgh1.github.io/SciDataReportR/articles/argument-renaming.md):
+
+- [Evaluating candidate
+  biomarkers](https://rdastgh1.github.io/SciDataReportR/articles/BiomarkerPerformance.md):
+
+- [Clustering and clinical
+  phenotyping](https://rdastgh1.github.io/SciDataReportR/articles/ClusteringPhenotyping.md):
 
 - [FDR correction scope: matrix-wide vs
   per-outcome](https://rdastgh1.github.io/SciDataReportR/articles/fdr-correction.md):

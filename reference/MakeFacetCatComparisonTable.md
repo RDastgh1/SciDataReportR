@@ -181,3 +181,58 @@ clarity.
 ## Details
 
 MakeFacetCatComparisonTable
+
+Use this when the same set of measures needs to be compared across
+several different groupings at once - by diagnosis, and by sex, and by
+APOE status - and those comparisons belong in one table rather than
+three.
+
+Running
+[`MakeComparisonTable()`](https://rdastgh1.github.io/SciDataReportR/reference/MakeComparisonTable.md)
+once per grouping produces tables that are each correct but cannot be
+read against each other: the variables are listed three times, and
+spotting that a biomarker separates diagnosis groups but not sexes means
+looking back and forth between pages. Merging them puts one row per
+variable and one column block per grouping, so that comparison is a
+left-to-right read.
+
+Facet variables that are not categorical are dropped automatically, so a
+vector of candidate groupings can be passed without pre-filtering it.
+
+Every argument that controls the individual tables - `AddPairwise`,
+`covariates`, `Parametric`, and the rest - is passed through to each
+facet, so the blocks stay consistent with one another.
+
+## See also
+
+[`MakeComparisonTable()`](https://rdastgh1.github.io/SciDataReportR/reference/MakeComparisonTable.md)
+for a single grouping, and
+[`MakeTable1()`](https://rdastgh1.github.io/SciDataReportR/reference/MakeTable1.md)
+for a plain descriptive table with no grouping at all.
+
+## Examples
+
+``` r
+# \donttest{
+data(SampleData)
+data(SampleVariableTypes)
+
+Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
+
+vars_Compare <- c("age", "AXL", "Adiponectin", "tau", "p_tau")
+
+# The same five measures compared across two groupings at once
+MakeFacetCatComparisonTable(
+  data = Labelled,
+  FacetVariables = c("Diagnosis", "sex"),
+  variables = vars_Compare
+)
+
+
+  
+Comparison by Diagnosis (values: mean (SD)).
+
+  
+
+Characteristic
+```

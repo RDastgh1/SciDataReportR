@@ -83,26 +83,44 @@ A continuous ggplot2 fill scale.
 ## Examples
 
 ``` r
-example_data <- expand.grid(
-  x = seq_len(10),
-  y = seq_len(10)
+# \donttest{
+data(SampleData)
+data(SampleVariableTypes)
+
+Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
+
+# A univariate screen: each biomarker against diagnosis, standardized so the
+# effect sizes are comparable.
+screen <- MakeUnivariateRegressionTable(
+  data = Labelled,
+  outcome_vars = "Diagnosis",
+  predictor_vars = c(
+    "age", "sex", "AXL", "Adiponectin", "Cortisol",
+    "Ferritin", "Insulin", "Leptin", "tau", "p_tau"
+  ),
+  Standardize = TRUE
 )
 
-example_data$p_value <- 10^seq(
-  from = 0,
-  to = -8,
-  length.out = nrow(example_data)
-)
-
+# Bar length is the effect, fill is the evidence for it. Reading the two
+# together is the point: a long pale bar is a large estimate nobody should
+# rely on, and a short dark bar is a small effect that is real.
 ggplot2::ggplot(
-  example_data,
+  screen$Results,
   ggplot2::aes(
-    x = x,
-    y = y,
-    fill = p_value
+    x = Estimate,
+    y = stats::reorder(TermLabel, Estimate),
+    fill = PValue
   )
 ) +
-  ggplot2::geom_tile() +
-  scale_fill_pvalue()
+  ggplot2::geom_col() +
+  ggplot2::geom_vline(xintercept = 1, linetype = "dashed") +
+  scale_fill_pvalue() +
+  ggplot2::labs(
+    title = "Association with impairment, per standard deviation",
+    subtitle = "Dashed line: odds ratio of 1, no association",
+    x = "Odds ratio per SD", y = NULL
+  ) +
+  ggplot2::theme_bw()
 
+# }
 ```
