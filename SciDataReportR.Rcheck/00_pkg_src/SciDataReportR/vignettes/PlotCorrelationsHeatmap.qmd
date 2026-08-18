@@ -68,16 +68,16 @@ biomarkers <- c(
   "Ferritin",
   "MMP7",
   "MMP10",
-  "NFL",
-  "GFAP",
-  "IL6",
-  "VCAM1",
-  "ICAM1",
-  "CRP",
-  "TNFa",
-  "MCP1",
-  "YKL40",
-  "Tau"
+  "IL_6",
+  "VCAM_1",
+  "ICAM_1",
+  "C_Reactive_Protein",
+  "TNF_RII",
+  "MCP_1",
+  "tau",
+  "p_tau",
+  "Cystatin_C",
+  "Adiponectin"
 )
 ```
 

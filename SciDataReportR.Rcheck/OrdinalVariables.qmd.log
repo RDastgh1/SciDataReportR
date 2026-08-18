@@ -1,0 +1,31 @@
+
+> library(SciDataReportR)
+
+> library(dplyr)
+
+Attaching package: ‘dplyr’
+
+The following objects are masked from ‘package:stats’:
+
+    filter, lag
+
+The following objects are masked from ‘package:base’:
+
+    intersect, setdiff, setequal, union
+
+
+> set.seed(20260802)
+
+> df_Raw <- data.frame(Group = factor(rep(c("Control", 
++     "Disease"), each = 45)), SymptomSeverity = c(sample(0:3, 
++     45, replace = TRUE, prob .... [TRUNCATED] 
+
+> VariableTypes <- data.frame(Variable = c("Group", 
++     "SymptomSeverity", "Age"), Label = c("Participant group", 
++     "Symptom Severity", "Age ( ..." ... [TRUNCATED] 
+
+> df_Revalued <- RevalueData(df_Raw, VariableTypes)$RevaluedData
+
+  When sourcing ‘OrdinalVariables.R’:
+Error: cannot open file '/Users/rahad/Library/CloudStorage/Dropbox/Coding/Package Development/SciDataReportR/SciDataReportR.Rcheck/SciDataReportR/R/SciDataReportR.rdb': No such file or directory
+Execution halted

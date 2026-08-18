@@ -273,12 +273,6 @@ CreatePCAObject <- function(data,
     stop("minThresh must be a single numeric value greater than 0 and less than or equal to 1.")
   }
 
-  classcolors <- c(
-    paletteer::paletteer_d("calecopal::superbloom2"),
-    paletteer::paletteer_d("calecopal::vermillion"),
-    paletteer::paletteer_d("fishualize::Antennarius_commerson"),
-    paletteer::paletteer_d("fishualize::Bodianus_rufus")
-  )
 
   # Validate inputs
 
@@ -893,7 +887,7 @@ CreatePCAObject <- function(data,
       loadings_raw <- sweep(
         fit_raw$rotation,
         2,
-        fit_raw$sdev,
+        fit_raw$sdev[seq_len(ncol(fit_raw$rotation))],
         FUN = "*"
       )
 
@@ -1009,7 +1003,12 @@ CreatePCAObject <- function(data,
 
   CombinedData <- cbind(Data, Scores)
 
-  rc_cols <- names(LoadingTable)[grepl("^RC", names(LoadingTable))]
+  # psych names unrotated components PC1, PC2, ... and rotated components
+  # RC1, RC2, .... Both are valid PCA loading columns.
+  rc_cols <- names(LoadingTable)[grepl("^(PC|RC)[0-9]+$", names(LoadingTable))]
+  if (!length(rc_cols)) {
+    stop("PCA loading table contains no component-loading columns.")
+  }
 
   meltedLoading <- LoadingTable %>%
     tidyr::pivot_longer(cols = dplyr::all_of(rc_cols))
@@ -1051,7 +1050,7 @@ CreatePCAObject <- function(data,
       ggplot2::aes(
         x = PlotLabel,
         y = value,
-        alpha = TopContributor,
+        alpha = as.numeric(TopContributor),
         color = color
       )
     ) +
@@ -1077,6 +1076,7 @@ CreatePCAObject <- function(data,
         axis.title.y = ggplot2::element_blank()
       ) +
       ggplot2::geom_point() +
+      ggplot2::scale_alpha_continuous(range = c(0.4, 1), guide = "none") +
       ggplot2::scale_color_manual(values = c("black"))
   } else {
     p <- ggplot2::ggplot(
@@ -1084,7 +1084,7 @@ CreatePCAObject <- function(data,
       ggplot2::aes(
         x = PlotLabel,
         y = value,
-        alpha = TopContributor,
+        alpha = as.numeric(TopContributor),
         color = color
       )
     ) +
@@ -1110,7 +1110,8 @@ CreatePCAObject <- function(data,
         axis.title.y = ggplot2::element_blank()
       ) +
       ggplot2::geom_point() +
-      ggplot2::scale_color_manual(values = classcolors)
+      ggplot2::scale_alpha_continuous(range = c(0.4, 1), guide = "none") +
+      .SciDataColourScale()
   }
 
   ScaleParams <- list(
@@ -1173,28 +1174,11 @@ CreatePCAObject <- function(data,
   ))
 }
 
-#' Create PCA table and visualization
-#'
-#' Compatibility alias for [CreatePCAObject()]. Prefer `CreatePCAObject()` in
-#' new code because this workflow returns a reusable PCA object, not only a
-#' static table.
-#'
+#' @description `CreatePCATable()` has been superseded by
+#'   `CreatePCAObject()`. It remains available as a backwards-compatible alias
+#'   and returns the same reusable PCA object.
+#' @rdname CreatePCAObject
 #' @param ... Arguments passed to [CreatePCAObject()].
-#'
-#' @return The same object returned by [CreatePCAObject()].
-#'
-#' @seealso [CreatePCAObject()] for the canonical function and full examples.
-#'
-#' @examples
-#' PCA <- CreatePCATable(
-#'   data = mtcars,
-#'   VarsToReduce = names(mtcars),
-#'   numComponents = 3
-#' )
-#'
-#' # Display the scree plot from the returned object
-#' PCA$p_scree
-#'
 #' @export
 CreatePCATable <- function(...) {
   CreatePCAObject(...)

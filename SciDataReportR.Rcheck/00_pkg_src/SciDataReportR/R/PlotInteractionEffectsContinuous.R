@@ -50,7 +50,7 @@
 #'   predictor_var = "age"
 #' )
 #' @export
-#' @importFrom ggplot2 ggplot aes geom_point geom_smooth scale_color_manual scale_fill_manual scale_color_brewer scale_fill_brewer
+#' @importFrom ggplot2 ggplot aes geom_point geom_smooth scale_color_manual scale_fill_manual
 #' @importFrom ggplot2 labs theme_minimal theme element_text element_blank
 #' @importFrom dplyr mutate case_when
 #' @importFrom stats lm coef sd quantile
@@ -180,7 +180,7 @@ PlotInteractionEffectsContinuous <- function(data,
     if (n_lines == 3) {
       # Create three groups: Low (-1SD), Medium (mean), High (+1SD)
       plot_data <- plot_data %>%
-        mutate(
+        dplyr::mutate(
           mod_group = case_when(
             moderator <= (mod_mean - mod_sd) ~ paste0(inter_label, " = ", round(mod_mean - mod_sd, 1), " (-1 SD)"),
             moderator >= (mod_mean + mod_sd) ~ paste0(inter_label, " = ", round(mod_mean + mod_sd, 1), " (+1 SD)"),
@@ -196,7 +196,7 @@ PlotInteractionEffectsContinuous <- function(data,
       # Create quantile-based groups
       quantiles <- quantile(plot_data$moderator, probs = seq(0, 1, length.out = n_lines + 1))
       plot_data <- plot_data %>%
-        mutate(
+        dplyr::mutate(
           mod_group = cut(moderator, breaks = quantiles, include.lowest = TRUE,
                           labels = paste0(inter_label, " Q", 1:n_lines))
         )
@@ -236,23 +236,10 @@ PlotInteractionEffectsContinuous <- function(data,
       geom_smooth(method = "lm", se = TRUE, alpha = 0.2)
 
     # Apply categorical color scheme
-    if (use_paletteer) {
-      if (n_groups <= 4) {
-        colors <- paletteer::paletteer_d("colorBlindness::paletteMartin")[1:n_groups]
-      } else if (n_groups <= 8) {
-        colors <- paletteer::paletteer_d("rcartocolor::Vivid")[1:n_groups]
-      } else {
-        colors <- paletteer::paletteer_d("pals::polychrome")[1:n_groups]
-      }
-      p <- p +
-        scale_color_manual(values = colors, name = inter_label) +
-        scale_fill_manual(values = colors, name = inter_label)
-    } else {
-      # Fallback to Set1 if paletteer not available
-      p <- p +
-        scale_color_brewer(palette = "Set1", name = inter_label) +
-        scale_fill_brewer(palette = "Set1", name = inter_label)
-    }
+    colors <- .SciDataColorValues(n_groups)
+    p <- p +
+      scale_color_manual(values = colors, name = inter_label) +
+      scale_fill_manual(values = colors, name = inter_label)
   }
 
   # Add labels and theme

@@ -9,6 +9,7 @@ RevalueData(
   codebook,
   missingVal = -999,
   splitchar = ";",
+  on_error = c("stop", "warn"),
   DatatoRevalue = lifecycle::deprecated(),
   VarTypes = lifecycle::deprecated()
 )
@@ -24,6 +25,9 @@ Variable, Recode, Code, Type, Label, MissingCode. Only Variable is required.
 
 \item{splitchar}{Separator used in VarTypes$Code between pairs (default ";").}
 
+\item{on_error}{Whether to stop at the first variable-level error (the default)
+or continue and record errors in the returned object.}
+
 \item{DatatoRevalue}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
 
 \item{VarTypes}{\strong{Deprecated} (since 19.15.0). Use \code{codebook} instead.}
@@ -31,30 +35,94 @@ Variable, Recode, Code, Type, Label, MissingCode. Only Variable is required.
 \value{
 A list with:
 RevaluedData (data), warninglist (character), recodedvars (character),
-not_in_data (character).
+not_in_data (character), and errors (data frame with \code{Variable} and
+\code{Error} columns). In the default \code{on_error = "stop"} mode, an error names
+the offending variable and preserves the underlying message.
 }
 \description{
 Revalues variables in a dataset using a VarTypes codebook.
 }
+\section{What changes}{
+
+In the raw extract \code{sex} is a bare 0/1 column and nothing carries a label.
+Afterwards it is a factor with real levels, and the labels are attached for
+every downstream table and plot to pick up automatically - which is what
+makes output readable without renaming anything by hand.
+
+Anything the codebook could not act on is reported in \code{warninglist} rather
+than silently skipped, so a mistyped variable name or an unparseable \code{Code}
+string is visible instead of quietly leaving a variable unrecoded.
+}
+
 \examples{
 data(SampleData)
 data(SampleVariableTypes)
 
-# Before: no variable labels and coded factors are still raw
-# (e.g. sex is stored as 0/1 with no label)
+# Before: no labels, and sex is stored as 0/1
 sjlabelled::get_label(SampleData$age)   # NULL
 class(SampleData$sex)                    # "integer"
 
-# Revalue using the codebook: attach labels and recode coded factors
+# Revalue using the codebook
 revalued <- RevalueData(SampleData, SampleVariableTypes)
 Labelled <- revalued$RevaluedData
 
-# After: labels are attached and sex is a labelled factor
+# After: labels attached, sex is a labelled factor
 sjlabelled::get_label(Labelled$age)     # "Age"
 levels(Labelled$sex)                     # "Female" "Male"
 
-# Variables that were recoded, and any codebook entries not found in the data
+# Recoded variables, and codebook entries not found in the data
 revalued$recodedvars
 revalued$not_in_data
+
+\donttest{
+# A side-by-side view of what changed
+vars_Show <- c("Diagnosis", "age", "sex", "Genotype", "AXL")
+
+df_Before <- utils::head(SampleData[, vars_Show], 6)
+df_After <- utils::head(Labelled[, vars_Show], 6)
+
+ShowTable <- function(x, caption) {
+  htmltools::browsable(htmltools::HTML(as.character(
+    kableExtra::kable_styling(
+      knitr::kable(x, format = "html", caption = caption, row.names = FALSE),
+      bootstrap_options = c("striped", "hover", "condensed"),
+      full_width = FALSE
+    )
+  )))
+}
+
+ShowTable(df_Before, "Before: raw codes as imported")
+ShowTable(df_After, "After: recoded and labelled")
+
+# The labels the codebook attached
+df_Labels <- data.frame(
+  Variable = vars_Show,
+  Label = vapply(
+    vars_Show,
+    function(v) {
+      lab <- sjlabelled::get_label(Labelled[[v]])
+      if (is.null(lab) || is.na(lab)) v else lab
+    },
+    character(1)
+  ),
+  Class = vapply(vars_Show, function(v) class(Labelled[[v]])[1], character(1)),
+  Levels = vapply(
+    vars_Show,
+    function(v) {
+      lv <- levels(Labelled[[v]])
+      if (is.null(lv)) "" else paste(lv, collapse = ", ")
+    },
+    character(1)
+  ),
+  row.names = NULL
+)
+
+htmltools::browsable(htmltools::HTML(as.character(
+  FreezeTableHeader(df_Labels, full_width = TRUE)
+)))
+
+# Anything the codebook could not act on
+revalued$warninglist
+}
 
 }

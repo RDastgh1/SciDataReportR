@@ -16,8 +16,62 @@
 #'   \item{Include}{Optional for filtering: whether or not this variable should be included.}
 #'   \item{MissingCode}{Optional: if a value should be considered NA.}
 #' }
+#' @details
+#' This is what an edited codebook looks like in practice. It began as the
+#' output of [CreateVariableTypesTemplate()] run on [SampleData], and was then
+#' filled in by hand: labels written for the columns that needed them, `sex`
+#' marked for recoding with its `Code` mapping, a missing code recorded where
+#' one applies, and `Category` / `Subcategory` / `Include` used to group
+#' variables for later selection.
+#'
+#' Most rows are left mostly blank, and that is normal. Of 138 variables only a
+#' handful carry a recode or a missing code; the rest simply need a readable
+#' label. A codebook is a place to record the exceptions, not a form to
+#' complete.
+#'
+#' Passing it with [SampleData] to [RevalueData()] is the first step of nearly
+#' every example in this package.
+#'
+#' @seealso [SampleData] for the data it describes,
+#'   [CreateVariableTypesTemplate()] to generate one for your own data, and
+#'   [RevalueData()] to apply it.
+#'
 #' @source Exported from CreateVariableTypes(SampleData, "SampleData.csv") and modified in Excel.
 #' @examples
 #' data(SampleVariableTypes)
-#' head(SampleVariableTypes)
+#'
+#' dim(SampleVariableTypes)
+#' table(SampleVariableTypes$Type)
+#'
+#' \donttest{
+#' # The whole codebook: one row per variable in SampleData
+#' htmltools::browsable(htmltools::HTML(as.character(
+#'   FreezeTableHeader(
+#'     SampleVariableTypes,
+#'     height = "420px", full_width = TRUE
+#'   )
+#' )))
+#'
+#' # Only the rows carrying an instruction
+#' rows_WithRules <- !is.na(SampleVariableTypes$Code) |
+#'   (!is.na(SampleVariableTypes$MissingCode) & SampleVariableTypes$MissingCode != "")
+#'
+#' htmltools::browsable(htmltools::HTML(as.character(
+#'   FreezeTableHeader(
+#'     SampleVariableTypes[
+#'       rows_WithRules,
+#'       c("Variable", "Label", "Type", "Recode", "Code", "MissingCode")
+#'     ],
+#'     full_width = TRUE
+#'   )
+#' )))
+#'
+#' # The grouping columns define variable sets
+#' vars_Labs <- SampleVariableTypes$Variable[
+#'   !is.na(SampleVariableTypes$Category) &
+#'     SampleVariableTypes$Category == "Lab Measures"
+#' ]
+#' length(vars_Labs)
+#' utils::head(vars_Labs)
+#' }
 "SampleVariableTypes"

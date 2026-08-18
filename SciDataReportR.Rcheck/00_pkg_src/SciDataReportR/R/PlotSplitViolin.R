@@ -34,8 +34,12 @@
 #' @param covars \strong{Deprecated} (since 19.15.0). Use \code{covariates} instead.
 #' @examples
 #' data(SampleData)
+#' data(SampleVariableTypes)
 #'
-#' PlotSplitViolin(SampleData, Var = "AXL", group_var = "Diagnosis")
+#' Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
+#'
+#' # Ab_42 has a clear Diagnosis-group difference in the bundled teaching data.
+#' PlotSplitViolin(Labelled, Var = "Ab_42", group_var = "Diagnosis")
 #' @export
 PlotSplitViolin <- function(data,
     Var,
@@ -109,8 +113,8 @@ PlotSplitViolin <- function(data,
   present_groups <- na.omit(c(g_left, g_right))
 
   if (is.null(color_palette)) {
-    base_cols <- c("#E8A007", "#8C1A45")
-    color_palette <- stats::setNames(base_cols[seq_along(present_groups)], present_groups)
+    color_palette <- stats::setNames(
+      .SciDataColorValues(length(present_groups)), present_groups)
   }
 
   if (show_n && n_position == "legend") {
@@ -123,12 +127,12 @@ PlotSplitViolin <- function(data,
 
   # ---- p-value
   stars_from_p <- function(p) {
-    if (is.na(p)) return(if (show_ns) "ns" else "")
-    if (p < 0.001) "***"
-    else if (p < 0.01) "**"
-    else if (p < 0.05) "*"
-    else if (show_ns) "ns"
-    else ""
+    ScidrPValueStars(
+      p,
+      tiers = ScidrStarTiersThree,
+      ns_label = if (show_ns) "ns" else "",
+      na_label = if (show_ns) "ns" else ""
+    )
   }
 
   if (is.null(annotation_text) && !is.null(g_right)) {

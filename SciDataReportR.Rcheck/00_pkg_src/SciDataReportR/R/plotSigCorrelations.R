@@ -13,11 +13,13 @@
 #' @param DataFrame \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
 #' @examples
 #' \donttest{
-#' # Build a correlation heatmap, then plot the significant pairs
+#' # Build a correlation heatmap, then plot the significant pairs. Keep the
+#' # predictor and outcome sets disjoint so no variable is correlated with
+#' # itself.
 #' ch <- PlotCorrelationsHeatmap(
 #'   mtcars,
-#'   predictor_vars = c("mpg", "wt", "hp"),
-#'   outcome_vars = c("mpg", "wt", "hp")
+#'   predictor_vars = c("wt", "hp", "disp"),
+#'   outcome_vars = c("mpg", "qsec")
 #' )
 #'
 #' plots <- plotSigCorrelations(mtcars, ch)
@@ -43,7 +45,7 @@ plotSigCorrelations <- function(data,
 
   # Extract relevant data from the Plot object
   Relabeled <- Plot$Relabel
-  SigVarCombos <- Plot$Unadjusted$plot$data %>% filter(!!sym(PVar) < Pthresh)
+  SigVarCombos <- Plot$Unadjusted$plot$data %>% dplyr::filter(!!rlang::sym(PVar) < Pthresh)
 
   # Initialize list to store scatterplot objects
   plist <- list()
@@ -69,15 +71,15 @@ plotSigCorrelations <- function(data,
       if (!Relabeled) {
         p$labels$caption <- paste("Adjusted for", paste(covars, collapse = ", "))
       } else {
-        covarlabels <- sjlabelled::get_label(DataFrame %>% select(all_of(covars)), def.value = covars)
+        covarlabels <- sjlabelled::get_label(DataFrame %>% dplyr::select(dplyr::all_of(covars)), def.value = covars)
         p$labels$caption <- paste("Adjusted for", paste(covarlabels, collapse = ", "))
       }
     }
 
     # Change labels if Relabel is TRUE
     if (Relabeled) {
-      p$labels$x <- sjlabelled::get_label(DataFrame %>% select(all_of(SigVarCombos$XVar[i])), def.value = SigVarCombos$XVar[i])[[1]]
-      p$labels$y <- sjlabelled::get_label(DataFrame %>% select(all_of(SigVarCombos$YVar[i])), def.value = SigVarCombos$YVar[i])[[1]]
+      p$labels$x <- sjlabelled::get_label(DataFrame %>% dplyr::select(dplyr::all_of(SigVarCombos$XVar[i])), def.value = SigVarCombos$XVar[i])[[1]]
+      p$labels$y <- sjlabelled::get_label(DataFrame %>% dplyr::select(dplyr::all_of(SigVarCombos$YVar[i])), def.value = SigVarCombos$YVar[i])[[1]]
     }
 
     # Add scatterplot object to the list

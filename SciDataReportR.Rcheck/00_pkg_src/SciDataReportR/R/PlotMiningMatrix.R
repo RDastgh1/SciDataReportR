@@ -7,6 +7,8 @@
 #' @param predictor_vars Predictor variables. If NULL, uses OutcomeVars.
 #' @param covariates Optional covariates (reserved for future use).
 #' @param Relabel Use labels instead of names.
+#' @param TreatOrdinalAs How ordinal variables are handled: `"Categorical"`,
+#' `"Continuous"`, `"Both"`, or `"Exclude"`.
 #' @param Parametric Use parametric tests.
 #'
 #' @return List with tables and plots.
@@ -62,11 +64,12 @@ PlotMiningMatrix <- function(data,
     predictor_vars = NULL,
     covariates = NULL,
     Relabel = TRUE,
+    TreatOrdinalAs = "Categorical",
     Parametric = TRUE,
     Data = lifecycle::deprecated(),
     OutcomeVars = lifecycle::deprecated(),
     PredictorVars = lifecycle::deprecated(),
-    fdr_scope = c("matrix", "per_outcome"),
+    fdr_scope = c("matrix", "per_outcome", "per_predictor"),
     Covariates = lifecycle::deprecated()) {
   # Deprecated argument shims (SciDataReportR 19.15.0)
   if (lifecycle::is_present(Data)) {
@@ -94,12 +97,15 @@ PlotMiningMatrix <- function(data,
 
   method <- ifelse(Parametric, "pearson", "spearman")
 
-  OutcomeVars <- unique(intersect(as.character(OutcomeVars), names(Data)))
+  # Supplied names must exist. Intersecting them away silently shrank the matrix
+  # and, for covariates, produced unadjusted tests reported as adjusted.
+  OutcomeVars <- ScidrValidateVariables(Data, OutcomeVars, "outcome_vars")
+  ScidrValidateVariables(Data, Covariates, "covariates")
 
   if (is.null(PredictorVars)) {
     PredictorVars <- OutcomeVars
   } else {
-    PredictorVars <- unique(intersect(as.character(PredictorVars), names(Data)))
+    PredictorVars <- ScidrValidateVariables(Data, PredictorVars, "predictor_vars")
   }
 
   if (length(OutcomeVars) == 0 || length(PredictorVars) == 0) {
@@ -109,6 +115,14 @@ PlotMiningMatrix <- function(data,
       Unadjusted = list(PvalTable = empty, plot = p0)
     ))
   }
+
+  ordinal <- ConvertOrdinalToNumeric(
+    Data, unique(c(OutcomeVars, PredictorVars)), TreatOrdinalAs = TreatOrdinalAs,
+    Relabel = Relabel, ReturnMetadata = TRUE
+  )
+  Data <- ordinal$data
+  OutcomeVars <- unique(unlist(ordinal$variable_map[OutcomeVars], use.names = FALSE))
+  PredictorVars <- unique(unlist(ordinal$variable_map[PredictorVars], use.names = FALSE))
 
   coalesce_p <- function(df) {
     out <- rep(NA_real_, nrow(df))
@@ -130,12 +144,7 @@ PlotMiningMatrix <- function(data,
     out
   }
 
-  # FORCE LABEL COMPLETENESS
-  labels <- sjlabelled::get_label(Data)
-  names(labels) <- names(Data)
-
-  missing_idx <- is.na(labels) | labels == ""
-  labels[missing_idx] <- names(labels)[missing_idx]
+  labels <- ScidrDisplayLabels(Data, names(Data), Relabel)
 
   # SAFE LOOKUP FUNCTION (never returns NA)
   safe_lookup <- function(vars, labels) {
@@ -290,7 +299,8 @@ PlotMiningMatrix <- function(data,
   results$p_adj <- ApplyFDRCorrection(
     results$p,
     fdr_scope = fdr_scope,
-    outcome_ids = results$XVar
+    outcome_ids = results$XVar,
+    predictor_ids = results$YVar
   )
 
   results <- results %>%
@@ -318,25 +328,37 @@ PlotMiningMatrix <- function(data,
 
   results$EffectSizeAbs <- abs(results$EffectSize)
 
-  size_map  <- c("ns" = 2, "*" = 3, "**" = 4, "***" = 5)
+  # rstatix also emits "****"; fold it into "***" so every band has a shape and
+  # the legend matches the four documented cutpoints.
+  results$stars <- as.character(results$stars)
+  results$stars[results$stars == "****"] <- "***"
+  results$stars <- factor(results$stars, levels = c("ns", "*", "**", "***"))
+
+  # Sizes are compensated for the differing apparent area of shapes 15-18 so
+  # that the marker grows monotonically with significance.
+  size_map  <- c("ns" = 2, "*" = 3.5, "**" = 4, "***" = 6)
   shape_map <- c("ns" = 16, "*" = 17, "**" = 15, "***" = 18)
 
   results$size_val <- size_map[as.character(results$stars)]
 
   shape_labels <- c(
     "ns" = "ns (p >= 0.05)",
-    "*"  = "* (p < 0.05)",
-    "**" = "** (p < 0.01)",
-    "***"= "*** (p < 0.001)"
+    "*"  = "* (p <= 0.05)",
+    "**" = "** (p <= 0.01)",
+    "***"= "*** (p <= 0.001)"
   )
 
   p <- ggplot2::ggplot(results, ggplot2::aes(x = XLabel, y = YLabel)) +
     ggplot2::geom_point(
       ggplot2::aes(colour = EffectSizeAbs, size = size_val, shape = stars)
     ) +
-    viridis::scale_color_viridis(option = "plasma", limits = c(0,1), name = "Effect Size", direction = -1) +
-    ggplot2::scale_shape_manual(values = shape_map, labels = shape_labels, name = "Significance") +
-    ggplot2::scale_size_continuous(range = c(2, 5), guide = "none") +
+    ggplot2::scale_colour_gradient(
+      low = "grey85", high = "#841B37", limits = c(0, NA),
+      name = "Effect size", na.value = "grey70") +
+    ggplot2::scale_shape_manual(
+      values = shape_map, labels = shape_labels, name = "Significance",
+      drop = FALSE) +
+    ggplot2::scale_size_continuous(range = c(2, 6), guide = "none") +
     ggplot2::theme_bw() +
     ggplot2::theme(
       axis.text.x = ggplot2::element_text(angle = 45, hjust = 1),
@@ -344,7 +366,11 @@ PlotMiningMatrix <- function(data,
     )
 
   out <- list(
-    Unadjusted = list(PvalTable = results, plot = p)
+    Unadjusted = list(PvalTable = results, plot = p),
+    Metadata = list(
+      TreatOrdinalAs = TreatOrdinalAs,
+      DisplayLabels = labels[unique(c(OutcomeVars, PredictorVars))]
+    )
   )
   # Standardized p-value element alias (old name kept)
   out$p <- out$Unadjusted

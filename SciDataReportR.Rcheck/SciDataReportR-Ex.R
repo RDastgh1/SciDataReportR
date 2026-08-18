@@ -1,18 +1,6 @@
 pkgname <- "SciDataReportR"
 source(file.path(R.home("share"), "R", "examples-header.R"))
 options(warn = 1)
-base::assign(".ExTimings", "SciDataReportR-Ex.timings", pos = 'CheckExEnv')
-base::cat("name\tuser\tsystem\telapsed\n", file=base::get(".ExTimings", pos = 'CheckExEnv'))
-base::assign(".format_ptime",
-function(x) {
-  if(!is.na(x[4L])) x[1L] <- x[1L] + x[4L]
-  if(!is.na(x[5L])) x[2L] <- x[2L] + x[5L]
-  options(OutDec = '.')
-  format(x[1L:3L], digits = 7L)
-},
-pos = 'CheckExEnv')
-
-### * </HEADER>
 library('SciDataReportR')
 
 base::assign(".oldSearch", base::search(), pos = 'CheckExEnv')
@@ -23,34 +11,22 @@ nameEx("AddToCodebook")
 
 flush(stderr()); flush(stdout())
 
-base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 ### Name: AddToCodebook
 ### Title: Add a new variable to a codebook
 ### Aliases: AddToCodebook
 
 ### ** Examples
 
-# Create an empty codebook
-codebook <- data.frame(Variable = character(0), Label = character(0),
-                       Type = character(0), Category = character(0),
-                       Recode = character(0), Code = character(0),
-                       Exclude = logical(0), Notes = character(0))
-
-# Add a new variable to the codebook
-codebook <- AddToCodebook(codebook, "Age", "Age of participants", "numeric", "Demographics")
 
 
 
 
-base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-base::cat("AddToCodebook", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 cleanEx()
 nameEx("ApplyFDRCorrection")
 ### * ApplyFDRCorrection
 
 flush(stderr()); flush(stdout())
 
-base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 ### Name: ApplyFDRCorrection
 ### Title: Apply multiple-comparison correction across a p-value matrix
 ### Aliases: ApplyFDRCorrection
@@ -72,42 +48,61 @@ ApplyFDRCorrection(c(0.01, 0.04, 0.02, 0.03),
                    fdr_scope = "per_outcome",
                    outcome_ids = c("y1", "y1", "y2", "y2"))
 
+# A symmetric matrix: six filled cells, but only three pairs tested
+vars <- c("mmse", "trails", "digit_span")
+pm_sym <- matrix(NA_real_, 3, 3, dimnames = list(vars, vars))
+pm_sym[lower.tri(pm_sym)] <- c(0.001, 0.020, 0.040)
+pm_sym[upper.tri(pm_sym)] <- t(pm_sym)[upper.tri(pm_sym)]
+pm_sym
+
+# Detected automatically: three tests in the family, diagonal excluded
+ApplyFDRCorrection(pm_sym)
+
+# Bonferroni, corrected once per pair and then against all six cells
+ApplyFDRCorrection(pm_sym, method = "bonferroni")
+ApplyFDRCorrection(pm_sym, method = "bonferroni", symmetric = FALSE)
 
 
 
-base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-base::cat("ApplyFDRCorrection", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
+
 cleanEx()
 nameEx("ApplyNormativeTScores")
 ### * ApplyNormativeTScores
 
 flush(stderr()); flush(stdout())
 
-base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 ### Name: ApplyNormativeTScores
 ### Title: Apply a normative T-score model to new data
 ### Aliases: ApplyNormativeTScores
 
 ### ** Examples
 
-df <- tibble::tibble(
-  Group = c(
-    rep("Reference", 8),
-    rep("Clinical", 2)
-  ),
-  Age = c(30, 34, 38, 42, 46, 50, 54, 58, 40, 52),
-  Education = factor(c(
-    "College", "College", "Graduate", "Graduate",
-    "College", "Graduate", "College", "Graduate",
-    "College", "Graduate"
-  )),
-  Sex = factor(c(
-    "F", "M", "F", "M", "F", "M", "F", "M", "F", "M"
-  )),
-  Visit = c(1, 1, 1, 1, 2, 2, 2, 2, 1, 2),
-  TrailsA = c(35, 38, 40, 43, 36, 39, 41, 44, 47, 49) * 1000
-)
+# A reference group and a clinical group tested on Trail Making A
+set.seed(206)
+n_reference <- 220
+n_clinical <- 80
 
+df <- tibble::tibble(
+  Group = c(rep("Reference", n_reference), rep("Clinical", n_clinical)),
+  Age = round(c(
+    stats::rnorm(n_reference, 52, 12),
+    stats::rnorm(n_clinical, 58, 12)
+  )),
+  Education = factor(sample(
+    c("HighSchool", "College", "Graduate"), n_reference + n_clinical,
+    replace = TRUE
+  )),
+  Sex = factor(sample(c("F", "M"), n_reference + n_clinical, replace = TRUE)),
+  Visit = sample(1:3, n_reference + n_clinical, replace = TRUE)
+)
+df$TrailsA <- round(1000 * exp(stats::rnorm(
+  nrow(df),
+  mean = log(28) + 0.011 * (df$Age - 52) - 0.05 * (df$Visit - 1) +
+    ifelse(df$Group == "Clinical", 0.35, 0),
+  sd = 0.22
+)))
+
+# Fit the norms on the reference group only
 norm_obj <- CreateNormativeTScoreModel(
   data = df,
   test_var = "TrailsA",
@@ -122,57 +117,68 @@ norm_obj <- CreateNormativeTScoreModel(
   return_plots = FALSE
 )
 
+# Score everyone through the same model
 scored_df <- ApplyNormativeTScores(
   data = df,
   normative_obj = norm_obj
 )
 
+# Before: raw completion times, grouped by clinical status
+attr(scored_df$NormRaw, "label") <- "Trail Making A completion time (ms)"
+PlotContinuousDistributions(
+  scored_df, variables = "NormRaw", Fill = "Group", ncol = 1
+)
+
+# After: demographically adjusted T-scores. The reference group is centered
+# near 50, and the clinical shift is now directly interpretable in SD units.
+attr(scored_df$NormT, "label") <- "Demographically adjusted Trail Making A T-score"
+PlotContinuousDistributions(
+  scored_df, variables = "NormT", Fill = "Group", ncol = 1
+)
 
 
 
-base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-base::cat("ApplyNormativeTScores", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
+
 cleanEx()
 nameEx("AssemblePlots")
 ### * AssemblePlots
 
 flush(stderr()); flush(stdout())
 
-base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 ### Name: AssemblePlots
 ### Title: Assemble ggplot objects into a unified multi-panel figure
 ### Aliases: AssemblePlots
 
 ### ** Examples
 
-library(ggplot2)
+data(SampleData)
+data(SampleVariableTypes)
 
-p1 <- ggplot(mtcars, aes(mpg, wt)) +
-  geom_point()
+df_Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
 
-p2 <- ggplot(mtcars, aes(hp, wt)) +
-  geom_point()
+p_Categorical <- PlotAssociations(df_Labelled, "Diagnosis", "Genotype")
+p_Continuous <- PlotAssociations(df_Labelled, "age", "AXL")
 
-AssemblePlots(list(p1, p2))
-
+# Keep each association plot's own statistical annotation and legend.
 AssemblePlots(
-  list(MPG = p1, Horsepower = p2),
-  UseNamesAsTitles = TRUE,
-  LegendPosition = "top"
+  list(
+    "Diagnosis and genotype" = p_Categorical,
+    "Age and AXL" = p_Continuous
+  ),
+  ncol = 2,
+  CollectLegend = FALSE,
+  Labels = c("A", "B")
 )
 
 
 
 
-base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-base::cat("AssemblePlots", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 cleanEx()
 nameEx("CodebookMergeApp")
 ### * CodebookMergeApp
 
 flush(stderr()); flush(stdout())
 
-base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 ### Name: CodebookMergeApp
 ### Title: Interactive codebook harmonization dashboard
 ### Aliases: CodebookMergeApp
@@ -196,118 +202,241 @@ base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 
 
 
-base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-base::cat("CodebookMergeApp", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
+cleanEx()
+nameEx("CompareDatasets")
+### * CompareDatasets
+
+flush(stderr()); flush(stdout())
+
+### Name: CompareDatasets
+### Title: Compare two versions of a dataset
+### Aliases: CompareDatasets
+
+### ** Examples
+
+
+
+
+
 cleanEx()
 nameEx("ConvertOrdinalToNumeric")
 ### * ConvertOrdinalToNumeric
 
 flush(stderr()); flush(stdout())
 
-base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 ### Name: ConvertOrdinalToNumeric
-### Title: Convert ordinal variables to numeric
+### Title: Prepare ordinal variables for analysis
 ### Aliases: ConvertOrdinalToNumeric
 
 ### ** Examples
 
-# An ordered factor with numeric levels, and one with non-numeric levels
-df <- data.frame(
-  id     = 1:5,
-  likert = factor(c("1", "2", "3", "2", "1"),
-                  levels = c("1", "2", "3"), ordered = TRUE),
-  grade  = factor(c("A", "B", "A", "C", "B"),
-                  levels = c("A", "B", "C"), ordered = TRUE)
-)
-
-out <- ConvertOrdinalToNumeric(df)
-
-# likert becomes numeric; grade stays an ordered factor (levels are not numeric)
-sapply(out, class)
 
 
 
 
-base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-base::cat("ConvertOrdinalToNumeric", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
+cleanEx()
+nameEx("CreateClusterModel_Gower_PAM")
+### * CreateClusterModel_Gower_PAM
+
+flush(stderr()); flush(stdout())
+
+### Name: CreateClusterModel_Gower_PAM
+### Title: Fit a projectable Gower-distance PAM model for mixed clinical
+###   data
+### Aliases: CreateClusterModel_Gower_PAM
+
+### ** Examples
+
+
+
+
+cleanEx()
+nameEx("CreateClusterModel_HDBSCAN")
+### * CreateClusterModel_HDBSCAN
+
+flush(stderr()); flush(stdout())
+
+### Name: CreateClusterModel_HDBSCAN
+### Title: Fit a projectable HDBSCAN model
+### Aliases: CreateClusterModel_HDBSCAN
+
+### ** Examples
+
+
+
+
+cleanEx()
+nameEx("CreateClusterModel_KMeans")
+### * CreateClusterModel_KMeans
+
+flush(stderr()); flush(stdout())
+
+### Name: CreateClusterModel_KMeans
+### Title: Fit a projectable K-means clustering model
+### Aliases: CreateClusterModel_KMeans
+
+### ** Examples
+
+
+
+
+cleanEx()
+nameEx("CreateClusterModel_LatentClass")
+### * CreateClusterModel_LatentClass
+
+flush(stderr()); flush(stdout())
+
+### Name: CreateClusterModel_LatentClass
+### Title: Fit a projectable latent class model for categorical measures
+### Aliases: CreateClusterModel_LatentClass
+
+### ** Examples
+
+
+
+
+cleanEx()
+nameEx("CreateClusterModel_MCA_MClust")
+### * CreateClusterModel_MCA_MClust
+
+flush(stderr()); flush(stdout())
+
+### Name: CreateClusterModel_MCA_MClust
+### Title: Fit MCA followed by Mclust for nominal categorical data
+### Aliases: CreateClusterModel_MCA_MClust
+
+### ** Examples
+
+
+
+
+cleanEx()
+nameEx("CreateClusterModel_MClust")
+### * CreateClusterModel_MClust
+
+flush(stderr()); flush(stdout())
+
+### Name: CreateClusterModel_MClust
+### Title: Fit a projectable Gaussian-mixture clustering model
+### Aliases: CreateClusterModel_MClust
+
+### ** Examples
+
+
+
+
+cleanEx()
+nameEx("CreateClusterModel_PCA_KMeans")
+### * CreateClusterModel_PCA_KMeans
+
+flush(stderr()); flush(stdout())
+
+### Name: CreateClusterModel_PCA_KMeans
+### Title: Fit PCA followed by K-means
+### Aliases: CreateClusterModel_PCA_KMeans
+
+### ** Examples
+
+
+
+
+cleanEx()
+nameEx("CreateClusterModel_PCA_MClust")
+### * CreateClusterModel_PCA_MClust
+
+flush(stderr()); flush(stdout())
+
+### Name: CreateClusterModel_PCA_MClust
+### Title: Fit PCA followed by Mclust
+### Aliases: CreateClusterModel_PCA_MClust
+
+### ** Examples
+
+
+
+
+cleanEx()
+nameEx("CreateClusterModel_SOM_MClust")
+### * CreateClusterModel_SOM_MClust
+
+flush(stderr()); flush(stdout())
+
+### Name: CreateClusterModel_SOM_MClust
+### Title: SOM + latent profile clustering pipeline (with AHP and distance
+###   baselines)
+### Aliases: CreateClusterModel_SOM_MClust Pipeline_SOM_MClust
+###   Pipeline_SOMClust CreateSOMClusterModel
+
+### ** Examples
+
+
+
+
 cleanEx()
 nameEx("CreateMCAObject")
 ### * CreateMCAObject
 
 flush(stderr()); flush(stdout())
 
-base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 ### Name: CreateMCAObject
 ### Title: Create a reusable MCA object and visualizations
-### Aliases: CreateMCAObject
+### Aliases: CreateMCAObject CreateMCATable
 
 ### ** Examples
 
 data(SampleData)
+data(SampleVariableTypes)
+
+Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
 
 mca <- CreateMCAObject(
-  SampleData,
+  Labelled,
   VarsToReduce = c("Diagnosis", "Genotype")
 )
 
-# Display the scree plot from the returned object
+# Variance explained by MCA dimensions
 mca$p_scree
 
-
-
-base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-base::cat("CreateMCAObject", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
-cleanEx()
-nameEx("CreateMCATable")
-### * CreateMCATable
-
-flush(stderr()); flush(stdout())
-
-base::assign(".ptime", proc.time(), pos = "CheckExEnv")
-### Name: CreateMCATable
-### Title: Create MCA table and visualization
-### Aliases: CreateMCATable
-
-### ** Examples
-
-data(SampleData)
-
-mca <- CreateMCATable(SampleData, VarsToReduce = c("Diagnosis", "Genotype"))
-mca$p_scree
+# Variable loadings across MCA dimensions
+mca$Lollipop
 
 
 
-base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-base::cat("CreateMCATable", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 cleanEx()
 nameEx("CreateNormativeTScoreModel")
 ### * CreateNormativeTScoreModel
 
 flush(stderr()); flush(stdout())
 
-base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 ### Name: CreateNormativeTScoreModel
 ### Title: Create normative T-scores from a regression model
-### Aliases: CreateNormativeTScoreModel
+### Aliases: CreateNormativeTScoreModel CreateNormativeTScores
 
 ### ** Examples
 
+# A reference sample large enough to estimate the covariate effects
+set.seed(4127)
+n_Reference <- 240
+n_Clinical <- 60
+n_Total <- n_Reference + n_Clinical
+
 df <- tibble::tibble(
-  Group = c(
-    rep("Reference", 8),
-    rep("Clinical", 2)
-  ),
-  Age = c(30, 34, 38, 42, 46, 50, 54, 58, 40, 52),
-  Education = factor(c(
-    "College", "College", "Graduate", "Graduate",
-    "College", "Graduate", "College", "Graduate",
-    "College", "Graduate"
+  Group = c(rep("Reference", n_Reference), rep("Clinical", n_Clinical)),
+  Age = round(stats::rnorm(n_Total, mean = 55, sd = 12)),
+  Education = factor(sample(
+    c("High School", "College", "Graduate"), n_Total, replace = TRUE
   )),
-  Sex = factor(c(
-    "F", "M", "F", "M", "F", "M", "F", "M", "F", "M"
-  )),
-  Visit = c(1, 1, 1, 1, 2, 2, 2, 2, 1, 2),
-  TrailsA = c(35, 38, 40, 43, 36, 39, 41, 44, 47, 49) * 1000
+  Sex = factor(sample(c("F", "M"), n_Total, replace = TRUE)),
+  Visit = sample(1:3, n_Total, replace = TRUE)
+)
+
+# Trail Making A: slower with age, faster with practice, slower if impaired
+df$TrailsA <- 1000 * exp(
+  3.35 +
+    0.011 * (df$Age - 55) -
+    0.04 * (df$Visit - 1) +
+    0.30 * (df$Group == "Clinical") +
+    stats::rnorm(n_Total, sd = 0.16)
 )
 
 out <- CreateNormativeTScoreModel(
@@ -327,58 +456,29 @@ out <- CreateNormativeTScoreModel(
 out$data
 out$model
 
-# Display the fitted T-score plot from the returned object
+# Raw, transformed, and normed score distributions
+out$plots$raw
+out$plots$scaled
 out$plots$tscore
 
-
-
-base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-base::cat("CreateNormativeTScoreModel", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
-cleanEx()
-nameEx("CreateNormativeTScores")
-### * CreateNormativeTScores
-
-flush(stderr()); flush(stdout())
-
-base::assign(".ptime", proc.time(), pos = "CheckExEnv")
-### Name: CreateNormativeTScores
-### Title: Create normative T-scores from a regression model
-### Aliases: CreateNormativeTScores
-
-### ** Examples
-
-df <- tibble::tibble(
-  Group = c(rep("Reference", 8), rep("Clinical", 2)),
-  Age = c(30, 34, 38, 42, 46, 50, 54, 58, 40, 52),
-  Visit = c(1, 1, 1, 1, 2, 2, 2, 2, 1, 2),
-  TrailsA = c(35, 38, 40, 43, 36, 39, 41, 44, 47, 49)
-)
-
-out <- CreateNormativeTScores(
-  data = df,
-  test_var = "TrailsA",
-  count_var = "Visit",
-  covariates = "Age",
-  reference_var = "Group",
-  reference_value = "Reference",
-  return_plots = TRUE
-)
-out$plots$tscore
+# T-score diagnostics by reference group, practice count, and covariates
+out$plots$reference
+out$plots$practice
+out$plots$Age
+out$plots$Education
+out$plots$Sex
 
 
 
-base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-base::cat("CreateNormativeTScores", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 cleanEx()
 nameEx("CreatePCAObject")
 ### * CreatePCAObject
 
 flush(stderr()); flush(stdout())
 
-base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 ### Name: CreatePCAObject
 ### Title: Create a reusable PCA object and visualizations
-### Aliases: CreatePCAObject
+### Aliases: CreatePCAObject CreatePCATable
 
 ### ** Examples
 
@@ -433,193 +533,143 @@ PCA_grouped$Lollipop
 
 
 
-base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-base::cat("CreatePCAObject", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
-cleanEx()
-nameEx("CreatePCATable")
-### * CreatePCATable
-
-flush(stderr()); flush(stdout())
-
-base::assign(".ptime", proc.time(), pos = "CheckExEnv")
-### Name: CreatePCATable
-### Title: Create PCA table and visualization
-### Aliases: CreatePCATable
-
-### ** Examples
-
-PCA <- CreatePCATable(
-  data = mtcars,
-  VarsToReduce = names(mtcars),
-  numComponents = 3
-)
-
-# Display the scree plot from the returned object
-PCA$p_scree
-
-
-
-
-base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-base::cat("CreatePCATable", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
-cleanEx()
-nameEx("CreatePathwayPlot_KT")
-### * CreatePathwayPlot_KT
-
-flush(stderr()); flush(stdout())
-
-base::assign(".ptime", proc.time(), pos = "CheckExEnv")
-### Name: CreatePathwayPlot_KT
-### Title: Create Kynurenine-Tryptophan Pathway Plot
-### Aliases: CreatePathwayPlot_KT
-
-### ** Examples
-
-results <- data.frame(
-  Metabolite = c("Tryptophan", "Kynurenine", "Quinolinic Acid"),
-  correlation = c(0.3, 0.1, 0.45),
-  p_value = c(0.01, 0.5, 0.008),
-  p_adj = c(0.05, 0.7, 0.03)
-)
-
-CreatePathwayPlot_KT(results, "Kynurenine pathway")
-
-
-
-base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-base::cat("CreatePathwayPlot_KT", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 cleanEx()
 nameEx("CreateRCIObject")
 ### * CreateRCIObject
 
 flush(stderr()); flush(stdout())
 
-base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 ### Name: CreateRCIObject
 ### Title: Create a Reliable Change Index (RCI) object
 ### Aliases: CreateRCIObject
 
 ### ** Examples
 
-set.seed(1)
+set.seed(20260803)
 rci_data <- data.frame(
   id = rep(1:30, each = 2),
   visit = rep(c("Baseline", "Followup"), 30),
   Score = round(rnorm(60, mean = 50, sd = 10), 1)
 )
 
+# Use a +/-1 cutoff here so all three change classifications are visible.
+# The default Confidence = 0.95 retains the conventional +/-1.96 cutoff.
 rci <- CreateRCIObject(
   data = rci_data,
   variables = "Score",
   DataFormat = "long",
   id_var = "id",
   VisitColumn = "visit",
-  BaselineVisit = "Baseline"
+  BaselineVisit = "Baseline",
+  Confidence = 0.68
 )
 
-# Display a spaghetti plot from the returned object
+# Individual trajectories across visits
 rci$Plots$Spaghetti$Score
 
+# Participant-level reliable-change values
+rci$Plots$Waterfall$Score
+
+# Baseline values relative to reliable change
+rci$Plots$Quadrant$Score
 
 
-base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-base::cat("CreateRCIObject", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
+
 cleanEx()
-nameEx("CreateSOMClusterModel")
-### * CreateSOMClusterModel
+nameEx("CreateStatisticsTable")
+### * CreateStatisticsTable
 
 flush(stderr()); flush(stdout())
 
-base::assign(".ptime", proc.time(), pos = "CheckExEnv")
-### Name: CreateSOMClusterModel
-### Title: SOM + latent profile clustering pipeline (with AHP and distance
-###   baselines)
-### Aliases: CreateSOMClusterModel
+### Name: CreateStatisticsTable
+### Title: Create Statistics Table
+### Aliases: CreateStatisticsTable
 
 ### ** Examples
 
-## Not run: 
-##D # NOTE: This example is kept in \dontrun{} because the function currently
-##D # errors with "could not find function 'get_data'": tidyLPA::get_data()
-##D # fails to dispatch under this call path (tracked bug, possibly a tidyLPA
-##D # version pin issue). The reduced settings below (k_range = 2:4, models = 1)
-##D # are otherwise fast enough to run once the bug is resolved.
-##D data(SampleData)
-##D 
-##D model <- CreateSOMClusterModel(
-##D   data = SampleData,
-##D   variables = c("age", "AXL", "Adiponectin", "Alpha_1_Antitrypsin"),
-##D   method = "exploratory",
-##D   k_range = 2:4,
-##D   models = 1
-##D )
-##D model$plots$cluster_fit_summary_plot
-## End(Not run)
 
 
 
-base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-base::cat("CreateSOMClusterModel", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
+cleanEx()
+nameEx("CreateSummaryTable")
+### * CreateSummaryTable
+
+flush(stderr()); flush(stdout())
+
+### Name: CreateSummaryTable
+### Title: Create Summary Table
+### Aliases: CreateSummaryTable
+
+### ** Examples
+
+
+
+
 cleanEx()
 nameEx("CreateVariableTypesTemplate")
 ### * CreateVariableTypesTemplate
 
 flush(stderr()); flush(stdout())
 
-base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 ### Name: CreateVariableTypesTemplate
 ### Title: Create a Template for Variable Types
 ### Aliases: CreateVariableTypesTemplate
 
 ### ** Examples
 
-df <- data.frame(
-  num = c(1.1, 2.2),
-  int = c(1L, 2L),
-  fact = factor(c("A", "B")),
-  char = c("a", "b"),
-  date = as.Date(c("2021-01-01", "2021-01-02"))
-)
-CreateVariableTypesTemplate(df)
-CreateVariableTypesTemplate(df, file.path(tempdir(), "variable_types.csv"))
 
 
 
 
-base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-base::cat("CreateVariableTypesTemplate", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 cleanEx()
-nameEx("CreateZScorePlot")
-### * CreateZScorePlot
+nameEx("CreateZScoreObject")
+### * CreateZScoreObject
 
 flush(stderr()); flush(stdout())
 
-base::assign(".ptime", proc.time(), pos = "CheckExEnv")
-### Name: CreateZScorePlot
-### Title: Create a Z-score plot with statistical significance
-### Aliases: CreateZScorePlot
+### Name: CreateZScoreObject
+### Title: Calculate Z-scores (or standardized scores) and return data +
+###   parameters
+### Aliases: CreateZScoreObject CalcZScore
 
 ### ** Examples
 
-data(SampleData)
-
-CreateZScorePlot(
-  SampleData,
-  TargetVar = "Diagnosis",
-  variables = c("age", "AXL", "Adiponectin")
-)
 
 
 
-base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-base::cat("CreateZScorePlot", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
+
+cleanEx()
+nameEx("DeriveFreesurferVolumes")
+### * DeriveFreesurferVolumes
+
+flush(stderr()); flush(stdout())
+
+### Name: DeriveFreesurferVolumes
+### Title: Derive Freesurfer bilateral totals and ICV-adjusted measures
+### Aliases: DeriveFreesurferVolumes
+
+### ** Examples
+
+## Not run: 
+##D fs_derived <- DeriveFreesurferVolumes(df_freesurfer)
+##D 
+##D df_freesurfer <- dplyr::bind_cols(
+##D   df_freesurfer,
+##D   DeriveFreesurferVolumes(df_freesurfer)
+##D )
+##D 
+##D attr(fs_derived, "Freesurfer_derivation_log")
+## End(Not run)
+
+
+
+
 cleanEx()
 nameEx("ExploreDatasetComparison")
 ### * ExploreDatasetComparison
 
 flush(stderr()); flush(stdout())
 
-base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 ### Name: ExploreDatasetComparison
 ### Title: Explore dataset comparison results interactively
 ### Aliases: ExploreDatasetComparison
@@ -629,25 +679,29 @@ base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 data(SampleData)
 
 old_data <- cbind(id = seq_len(nrow(SampleData)), SampleData)
-new_data <- old_data
-new_data$age[1:5] <- new_data$age[1:5] + 1
+new_data <- old_data[-c(1, 2), ]
+new_data$MMP7[1:12] <- new_data$MMP7[1:12] * 1.15
+new_data$tau[20:35] <- new_data$tau[20:35] + 5
+new_data$QualityReview <- ifelse(seq_len(nrow(new_data)) %% 3 == 0, "Review", "Pass")
+new_data$Smoker <- NULL
+new_data <- rbind(
+  new_data,
+  transform(new_data[1, ], id = max(old_data$id) + 1, QualityReview = "New record")
+)
 
 comparison <- CompareDatasets(old_data, new_data, keys = "id")
 
-# Produce the interactive comparison dashboard
-ExploreDatasetComparison(comparison)
+# Render the dashboard in an HTML report, Shiny app, Viewer, or HTML file
+dashboard <- ExploreDatasetComparison(comparison, TopN = 8)
 
 
 
-base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-base::cat("ExploreDatasetComparison", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 cleanEx()
 nameEx("ExploreMergeValidation")
 ### * ExploreMergeValidation
 
 flush(stderr()); flush(stdout())
 
-base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 ### Name: ExploreMergeValidation
 ### Title: Explore merge validation results interactively
 ### Aliases: ExploreMergeValidation
@@ -661,83 +715,66 @@ merged <- merge(left, right, by = "id")
 
 validation <- ValidateMerge(left, right, merged, keys = "id")
 
-# Produce the interactive merge-validation dashboard
-ExploreMergeValidation(validation)
+# Render the interactive dashboard in an HTML report, Shiny app, Viewer,
+# or standalone HTML file.
+dashboard <- ExploreMergeValidation(validation)
 
 
 
-base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-base::cat("ExploreMergeValidation", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 cleanEx()
 nameEx("ExtractPCAComponentSummary")
 ### * ExtractPCAComponentSummary
 
 flush(stderr()); flush(stdout())
 
-base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 ### Name: ExtractPCAComponentSummary
 ### Title: Extract PCA component summaries
 ### Aliases: ExtractPCAComponentSummary
 
 ### ** Examples
 
-## No test: 
-if (requireNamespace("gt", quietly = TRUE)) {
-  pca_obj <- CreatePCAObject(
-    data = mtcars,
-    VarsToReduce = colnames(mtcars)
-  )
-
-  summary_obj <- ExtractPCAComponentSummary(pca_obj)
-
-  summary_obj$LongTable
-  summary_obj$FormattedSummaryTable
-  summary_obj$FormattedSummaryTableLines
-}
-## End(No test)
 
 
 
 
-base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-base::cat("ExtractPCAComponentSummary", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 cleanEx()
 nameEx("FormattedDataDictionary")
 ### * FormattedDataDictionary
 
 flush(stderr()); flush(stdout())
 
-base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 ### Name: FormattedDataDictionary
 ### Title: Create a formatted data dictionary table
 ### Aliases: FormattedDataDictionary
 
 ### ** Examples
 
-data(SampleData)
-data(SampleVariableTypes)
-
-# Attach variable labels and factor levels first so the dictionary shows
-# human-readable labels and correct variable types.
-Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
-
-# Formatted data dictionary for a subset of variables
-FormattedDataDictionary(
-  Labelled[, c("Diagnosis", "age", "sex", "Genotype", "AXL", "Adiponectin")]
-)
 
 
 
 
-base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-base::cat("FormattedDataDictionary", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
+cleanEx()
+nameEx("FreezeTableHeader")
+### * FreezeTableHeader
+
+flush(stderr()); flush(stdout())
+
+### Name: FreezeTableHeader
+### Title: Freeze the header row of a long table when scrolling
+### Aliases: FreezeTableHeader
+
+### ** Examples
+
+
+
+
+
 cleanEx()
 nameEx("IQROutliers")
 ### * IQROutliers
 
 flush(stderr()); flush(stdout())
 
-base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 ### Name: IQROutliers
 ### Title: Detect outliers using the Tukey IQR rule and visualize results
 ### Aliases: IQROutliers
@@ -772,15 +809,12 @@ result_all$outlierdf
 
 
 
-base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-base::cat("IQROutliers", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 cleanEx()
 nameEx("InspectCategoricalSummary")
 ### * InspectCategoricalSummary
 
 flush(stderr()); flush(stdout())
 
-base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 ### Name: InspectCategoricalSummary
 ### Title: Inspect categorical variables
 ### Aliases: InspectCategoricalSummary
@@ -801,15 +835,64 @@ plot_result$Plot
 
 
 
-base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-base::cat("InspectCategoricalSummary", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
+cleanEx()
+nameEx("KeepEnv")
+### * KeepEnv
+
+flush(stderr()); flush(stdout())
+
+### Name: KeepEnv
+### Title: Keep selected objects in an environment and remove everything
+###   else
+### Aliases: KeepEnv
+
+### ** Examples
+
+# An analysis environment: a few results among many intermediates
+env_Analysis <- new.env()
+local({
+  df_Raw <- data.frame(id = 1:5, value = rnorm(5))
+  df_Clean <- df_Raw[!is.na(df_Raw$value), ]
+  tmp_merge <- df_Clean
+  i <- 3
+  scratch_vector <- 1:100
+  model_Final <- lm(value ~ id, data = df_Clean)
+  df_Results <- data.frame(term = "id", estimate = coef(model_Final)[2])
+}, envir = env_Analysis)
+
+ls(env_Analysis)
+
+# Check what would go, before anything is removed
+preview <- KeepEnv(
+  Keep = c("df_Results", "model_Final"),
+  Env = env_Analysis,
+  DryRun = TRUE
+)
+preview$removed
+
+# Then do it for real, and save a workspace holding only what matters
+KeepEnv(c("df_Results", "model_Final"), Env = env_Analysis)
+ls(env_Analysis)
+
+save(list = ls(env_Analysis), envir = env_Analysis,
+     file = file.path(tempdir(), "analysis_results.RData"))
+
+# `Invert = TRUE`: drop the objects named, keep the rest
+env_Other <- new.env()
+assign("df_Huge", data.frame(x = 1:10), envir = env_Other)
+assign("df_Small", data.frame(x = 1:2), envir = env_Other)
+KeepEnv("df_Huge", Env = env_Other, Invert = TRUE)
+ls(env_Other)
+
+
+
+
 cleanEx()
 nameEx("MakeComparisonTable")
 ### * MakeComparisonTable
 
 flush(stderr()); flush(stdout())
 
-base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 ### Name: MakeComparisonTable
 ### Title: Make comparison table with covariate adjustment, effect sizes,
 ###   and pairwise contrasts
@@ -817,37 +900,19 @@ base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 
 ### ** Examples
 
-data(SampleData)
-data(SampleVariableTypes)
-
-# Attach labels and factor levels so the table shows readable output
-Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
-
-# Compare variables across Diagnosis groups with effect sizes and
-# pairwise contrasts
-MakeComparisonTable(
-  data = Labelled,
-  group_var = "Diagnosis",
-  variables = c("age", "sex", "AXL", "Adiponectin"),
-  AddEffectSize = TRUE,
-  AddPairwise = TRUE
-)
 
 
 
 
-base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-base::cat("MakeComparisonTable", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 cleanEx()
 nameEx("MakeDataDictionary")
 ### * MakeDataDictionary
 
 flush(stderr()); flush(stdout())
 
-base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 ### Name: MakeDataDictionary
 ### Title: Create a data dictionary for a data frame
-### Aliases: MakeDataDictionary
+### Aliases: MakeDataDictionary Make_DataDictionary
 
 ### ** Examples
 
@@ -861,15 +926,45 @@ if (requireNamespace("codebook", quietly = TRUE)) {
 
 
 
-base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-base::cat("MakeDataDictionary", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
+cleanEx()
+nameEx("MakeFacetCatComparisonTable")
+### * MakeFacetCatComparisonTable
+
+flush(stderr()); flush(stdout())
+
+### Name: MakeFacetCatComparisonTable
+### Title: Create a merged gtsummary table by faceting comparisons across
+###   multiple categorical variables
+### Aliases: MakeFacetCatComparisonTable
+
+### ** Examples
+
+
+
+
+
+cleanEx()
+nameEx("MakePairwiseHeatmap")
+### * MakePairwiseHeatmap
+
+flush(stderr()); flush(stdout())
+
+### Name: MakePairwiseHeatmap
+### Title: Make a pairwise referent heatmap
+### Aliases: MakePairwiseHeatmap
+
+### ** Examples
+
+
+
+
+
 cleanEx()
 nameEx("MakeTable1")
 ### * MakeTable1
 
 flush(stderr()); flush(stdout())
 
-base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 ### Name: MakeTable1
 ### Title: Create Summary Table using gtsummary
 ### Aliases: MakeTable1
@@ -895,15 +990,28 @@ MakeTable1(Labelled, variables = vars)
 
 
 
-base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-base::cat("MakeTable1", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
+cleanEx()
+nameEx("MakeUnivariateRegressionTable")
+### * MakeUnivariateRegressionTable
+
+flush(stderr()); flush(stdout())
+
+### Name: MakeUnivariateRegressionTable
+### Title: Univariate Regression Table
+### Aliases: MakeUnivariateRegressionTable UnivariateRegressionTable
+
+### ** Examples
+
+
+
+
+
 cleanEx()
 nameEx("MergeCodebooks")
 ### * MergeCodebooks
 
 flush(stderr()); flush(stdout())
 
-base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 ### Name: MergeCodebooks
 ### Title: Merge multiple codebooks using harmonization rules
 ### Aliases: MergeCodebooks
@@ -927,15 +1035,12 @@ base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 
 
 
-base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-base::cat("MergeCodebooks", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 cleanEx()
 nameEx("Merge_ByClosestTime")
 ### * Merge_ByClosestTime
 
 flush(stderr()); flush(stdout())
 
-base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 ### Name: Merge_ByClosestTime
 ### Title: Merge Two Data Frames by Closest Time
 ### Aliases: Merge_ByClosestTime
@@ -944,18 +1049,33 @@ base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 
 # Clinic visits with blood pressure
 visits <- data.frame(
-  id         = c("A", "B", "C"),
-  visit_date = as.Date(c("2024-03-01", "2024-05-20", "2024-02-10")),
-  sbp        = c(120, 135, 128)
+  id         = c("A", "B", "C", "D"),
+  visit_date = as.Date(c("2024-03-01", "2024-05-20", "2024-02-10",
+                         "2024-04-01")),
+  sbp        = c(120, 135, 128, 142)
 )
 
 # Lab draws (multiple per participant, on different dates)
 labs <- data.frame(
-  id         = c("A", "A", "B", "B", "C"),
+  id         = c("A", "A", "B", "B", "C", "D"),
   lab_date   = as.Date(c("2024-01-05", "2024-03-10", "2024-01-20",
-                         "2024-06-01", "2024-02-15")),
-  creatinine = c(0.9, 1.1, 0.8, 1.0, 1.2)
+                         "2024-06-01", "2024-02-15", "2023-08-15")),
+  creatinine = c(0.9, 1.1, 0.8, 1.0, 1.2, 1.4)
 )
+
+ShowTable <- function(x, caption = NULL) {
+  htmltools::browsable(htmltools::HTML(as.character(
+    kableExtra::kable_styling(
+      knitr::kable(x, format = "html", caption = caption),
+      bootstrap_options = c("striped", "hover", "condensed"),
+      full_width = FALSE
+    )
+  )))
+}
+
+# The two tables do not line up
+ShowTable(visits, "Clinic visits")
+ShowTable(labs, "Lab draws")
 
 # For each visit, attach the lab drawn closest in time (within participant)
 res <- Merge_ByClosestTime(
@@ -966,83 +1086,43 @@ res <- Merge_ByClosestTime(
   is_date = TRUE
 )
 
-res$merged_dataframe
-res$time_differences
+# One row per visit, with the nearest lab attached
+ShowTable(res$merged_dataframe, "Visits with nearest lab")
+
+# The gap for each match, which decides whether it is usable
+ShowTable(
+  data.frame(
+    id = res$merged_dataframe$id,
+    visit_date = res$merged_dataframe$visit_date,
+    DaysToNearestLab = as.numeric(res$time_differences)
+  ),
+  "Time gap between each visit and its matched lab"
+)
 
 
 
 
-base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-base::cat("Merge_ByClosestTime", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 cleanEx()
 nameEx("MultivariableRegressionTable")
 ### * MultivariableRegressionTable
 
 flush(stderr()); flush(stdout())
 
-base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 ### Name: MultivariableRegressionTable
 ### Title: Multivariable regression table
 ### Aliases: MultivariableRegressionTable
 
 ### ** Examples
 
-## No test: 
-data(SampleData)
-
-result <- MultivariableRegressionTable(
-  SampleData,
-  outcome_vars = "AXL",
-  predictor_vars = c("Adiponectin", "Alpha_1_Antitrypsin", "Alpha_2_Macroglobulin"),
-  covariates = "age"
-)
-
-# Display the regression coefficient matrix plot
-result$Plots$RegressionMatrix
-## End(No test)
 
 
 
-base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-base::cat("MultivariableRegressionTable", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
-cleanEx()
-nameEx("Pipeline_SOMClust")
-### * Pipeline_SOMClust
-
-flush(stderr()); flush(stdout())
-
-base::assign(".ptime", proc.time(), pos = "CheckExEnv")
-### Name: Pipeline_SOMClust
-### Title: SOM + latent profile clustering pipeline (with AHP and distance
-###   baselines)
-### Aliases: Pipeline_SOMClust
-
-### ** Examples
-
-## Not run: 
-##D # NOTE: Not run - see CreateSOMClusterModel() for the tracked get_data() bug.
-##D data(SampleData)
-##D 
-##D Pipeline_SOMClust(
-##D   data = SampleData,
-##D   variables = c("age", "AXL", "Adiponectin", "Alpha_1_Antitrypsin"),
-##D   method = "exploratory",
-##D   k_range = 2:4,
-##D   models = 1
-##D )
-## End(Not run)
-
-
-
-base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-base::cat("Pipeline_SOMClust", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 cleanEx()
 nameEx("Plot2GroupStats")
 ### * Plot2GroupStats
 
 flush(stderr()); flush(stdout())
 
-base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 ### Name: Plot2GroupStats
 ### Title: Plot & Summarize Group Stats via MakeComparisonTable (BH q from
 ###   p; SHAPE by p; COLOR by Category (vector or data frame); stable point
@@ -1051,49 +1131,15 @@ base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 
 ### ** Examples
 
-## No test: 
-data(SampleData)
-data(SampleVariableTypes)
-
-# Attach labels and factor levels for readable output
-Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
-
-# Compare 30 analytes between Diagnosis groups
-vars <- c(
-  "age", "ACE_CD143_Angiotensin_Converti", "ACTH_Adrenocorticotropic_Hormon",
-  "AXL", "Adiponectin", "Alpha_1_Antichymotrypsin", "Alpha_1_Antitrypsin",
-  "Alpha_1_Microglobulin", "Alpha_2_Macroglobulin", "Angiopoietin_2_ANG_2",
-  "Angiotensinogen", "Apolipoprotein_A_IV", "Apolipoprotein_A1",
-  "Apolipoprotein_A2", "Apolipoprotein_B", "Apolipoprotein_CI",
-  "Apolipoprotein_CIII", "Apolipoprotein_D", "Apolipoprotein_E",
-  "Apolipoprotein_H", "B_Lymphocyte_Chemoattractant_BL", "BMP_6",
-  "Beta_2_Microglobulin", "Betacellulin", "C_Reactive_Protein", "CD40",
-  "CD5L", "Calbindin", "Calcitonin", "CgA"
-)
-
-result <- Plot2GroupStats(
-  Labelled,
-  variables = vars,
-  group_var = "Diagnosis",
-  impClust = "Impaired",
-  normalClust = "Control"
-)
-
-# Display the group-comparison plot
-result$plot
-## End(No test)
 
 
 
-base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-base::cat("Plot2GroupStats", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 cleanEx()
 nameEx("PlotAnovaRelationshipsMatrix")
 ### * PlotAnovaRelationshipsMatrix
 
 flush(stderr()); flush(stdout())
 
-base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 ### Name: PlotAnovaRelationshipsMatrix
 ### Title: Plot ANOVA Relationships Matrix
 ### Aliases: PlotAnovaRelationshipsMatrix
@@ -1116,19 +1162,64 @@ result <- PlotAnovaRelationshipsMatrix(
                "Apolipoprotein_A1")
 )
 
+# Raw p-value associations
 result$Unadjusted$plot
 
+# FDR-adjusted associations
+result$FDRCorrected$plot
+
+# The same matrix using Kruskal-Wallis instead of ANOVA
+result_NonParametric <- PlotAnovaRelationshipsMatrix(
+  Labelled,
+  CatVars = c("Diagnosis", "sex", "Genotype"),
+  ContVars = c("age", "ACE_CD143_Angiotensin_Converti",
+               "ACTH_Adrenocorticotropic_Hormon", "AXL", "Adiponectin",
+               "Alpha_1_Antichymotrypsin", "Alpha_1_Antitrypsin",
+               "Alpha_1_Microglobulin", "Alpha_2_Macroglobulin",
+               "Apolipoprotein_A1"),
+  Parametric = FALSE
+)
+
+result_NonParametric$Unadjusted$plot
+result_NonParametric$FDRCorrected$plot
+
+# Where the two tests disagree
+cols_Key <- c("CategoricalVariable", "ContinuousVariable", "p")
+df_Compare <- merge(
+  result$Unadjusted$PvalTable[, cols_Key],
+  result_NonParametric$Unadjusted$PvalTable[, cols_Key],
+  by = c("CategoricalVariable", "ContinuousVariable"),
+  suffixes = c("_ANOVA", "_KruskalWallis")
+)
+df_Compare$AgreesAt05 <-
+  (df_Compare$p_ANOVA < 0.05) == (df_Compare$p_KruskalWallis < 0.05)
+
+htmltools::browsable(htmltools::HTML(as.character(
+  FreezeTableHeader(
+    dplyr::mutate(
+      df_Compare,
+      dplyr::across(dplyr::where(is.numeric), \(x) signif(x, 3))
+    ),
+    height = "320px", full_width = TRUE
+  )
+)))
+
+# Covariate adjustment (parametric only)
+PlotAnovaRelationshipsMatrix(
+  Labelled,
+  CatVars = c("Diagnosis", "sex"),
+  ContVars = c("AXL", "Adiponectin", "Alpha_1_Antitrypsin"),
+  covariates = "age"
+)$FDRCorrected$plot
 
 
-base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-base::cat("PlotAnovaRelationshipsMatrix", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
+
 cleanEx()
 nameEx("PlotAssociations")
 ### * PlotAssociations
 
 flush(stderr()); flush(stdout())
 
-base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 ### Name: PlotAssociations
 ### Title: Plot Associations
 ### Aliases: PlotAssociations
@@ -1136,36 +1227,34 @@ base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 ### ** Examples
 
 data(SampleData)
+data(SampleVariableTypes)
+
+Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
 
 # Two categorical variables (grouped bar chart)
-PlotAssociations(SampleData, "Diagnosis", "Genotype")
+PlotAssociations(Labelled, "Diagnosis", "Genotype")
 
 # Two continuous variables (scatter plot with correlation)
-PlotAssociations(SampleData, "age", "AXL")
+PlotAssociations(Labelled, "age", "AXL")
 
 # One continuous and one categorical variable (box/violin plot)
-PlotAssociations(SampleData, "Diagnosis", "AXL")
+PlotAssociations(Labelled, "Diagnosis", "AXL")
 
 
 
-base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-base::cat("PlotAssociations", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 cleanEx()
 nameEx("PlotBlandAltman")
 ### * PlotBlandAltman
 
 flush(stderr()); flush(stdout())
 
-base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 ### Name: PlotBlandAltman
 ### Title: Plot Bland-Altman Agreement Plot
 ### Aliases: PlotBlandAltman
 
 ### ** Examples
 
-# Bland-Altman compares two measurements of the SAME quantity on the same
-# scale. Here two devices measure the same underlying value, with device B
-# carrying a small constant bias plus noise.
+# Two devices measuring the same quantity; device B carries a 2-unit bias
 set.seed(101)
 n <- 80
 truth <- rnorm(n, mean = 100, sd = 15)
@@ -1180,20 +1269,29 @@ result <- PlotBlandAltman(method_data, "DeviceA", "DeviceB")
 # Agreement plot: mean difference (bias) and 95% limits of agreement
 result$plot
 
-# Underlying statistics
+# Bias and limits of agreement
 result$stats$mean.diffs
+result$stats$lines
+
+# Correlation for the same pair, which the offset does not affect
+cor(method_data$DeviceA, method_data$DeviceB)
+
+# A device with no bias but poor precision
+method_data$DeviceC <- truth + rnorm(n, 0, 12)
+noisy <- PlotBlandAltman(method_data, "DeviceA", "DeviceC")
+noisy$plot
+noisy$stats$mean.diffs
+noisy$stats$lines
+cor(method_data$DeviceA, method_data$DeviceC)
 
 
 
-base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-base::cat("PlotBlandAltman", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 cleanEx()
 nameEx("PlotCatInteractionEffectsMatrix")
 ### * PlotCatInteractionEffectsMatrix
 
 flush(stderr()); flush(stdout())
 
-base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 ### Name: PlotCatInteractionEffectsMatrix
 ### Title: Plot Categorical Interaction Effects Matrix
 ### Aliases: PlotCatInteractionEffectsMatrix
@@ -1220,19 +1318,20 @@ result <- PlotCatInteractionEffectsMatrix(
   interVar = "Diagnosis"
 )
 
+# Raw p-value interaction matrix
 result$p
 
+# FDR-adjusted interaction matrix
+result$p_FDR
 
 
-base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-base::cat("PlotCatInteractionEffectsMatrix", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
+
 cleanEx()
 nameEx("PlotCategoricalDistributions")
 ### * PlotCategoricalDistributions
 
 flush(stderr()); flush(stdout())
 
-base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 ### Name: PlotCategoricalDistributions
 ### Title: Plot categorical distributions
 ### Aliases: PlotCategoricalDistributions
@@ -1240,23 +1339,23 @@ base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 ### ** Examples
 
 data(SampleData)
+data(SampleVariableTypes)
+
+Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
 
 PlotCategoricalDistributions(
-  SampleData,
+  Labelled,
   variables = c("Diagnosis", "Genotype")
 )
 
 
 
-base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-base::cat("PlotCategoricalDistributions", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 cleanEx()
 nameEx("PlotChiSqCovar")
 ### * PlotChiSqCovar
 
 flush(stderr()); flush(stdout())
 
-base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 ### Name: PlotChiSqCovar
 ### Title: Plot Chi-Square Tests for Categorical Associations (optionally
 ###   stratified by covariates)
@@ -1265,26 +1364,42 @@ base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 ### ** Examples
 
 data(SampleData)
+data(SampleVariableTypes)
+
+Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
+
+# Derive a few more categorical variables so the matrix has off-diagonal
+# structure to read; self-associations are dropped.
+Labelled$APOE4 <- ifelse(
+  grepl("E4", as.character(Labelled$Genotype)), "Carrier", "Non-carrier")
+Labelled$AgeGroup <- cut(
+  Labelled$age, breaks = c(-Inf, 65, 80, Inf),
+  labels = c("<65", "65-79", "80+"))
+Labelled$TauTertile <- cut(
+  Labelled$tau,
+  breaks = stats::quantile(Labelled$tau, c(0, 1 / 3, 2 / 3, 1), na.rm = TRUE),
+  labels = c("Low", "Middle", "High"), include.lowest = TRUE)
 
 result <- PlotChiSqCovar(
-  SampleData,
-  predictor_vars = c("Diagnosis", "Genotype"),
-  outcome_vars = c("Diagnosis", "Genotype")
+  Labelled,
+  predictor_vars = c("Diagnosis", "sex", "APOE4"),
+  outcome_vars = c("Genotype", "AgeGroup", "TauTertile")
 )
 
+# Raw p-value associations
 result$p
 
+# FDR-adjusted associations
+result$p_FDR
 
 
-base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-base::cat("PlotChiSqCovar", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
+
 cleanEx()
 nameEx("PlotClusterBoxplot")
 ### * PlotClusterBoxplot
 
 flush(stderr()); flush(stdout())
 
-base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 ### Name: PlotClusterBoxplot
 ### Title: Plot cluster boxplots by variable
 ### Aliases: PlotClusterBoxplot
@@ -1309,15 +1424,117 @@ PlotClusterBoxplot(
 
 
 
-base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-base::cat("PlotClusterBoxplot", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
+cleanEx()
+nameEx("PlotClusterCentreHeatmap")
+### * PlotClusterCentreHeatmap
+
+flush(stderr()); flush(stdout())
+
+### Name: PlotClusterCentreHeatmap
+### Title: Plot cluster centre profiles as a heatmap
+### Aliases: PlotClusterCentreHeatmap PlotClusterCentreProfile
+
+### ** Examples
+
+
+
+
+cleanEx()
+nameEx("PlotClusterComposition")
+### * PlotClusterComposition
+
+flush(stderr()); flush(stdout())
+
+### Name: PlotClusterComposition
+### Title: Plot categorical composition by cluster
+### Aliases: PlotClusterComposition
+
+### ** Examples
+
+
+
+
+cleanEx()
+nameEx("PlotClusterDiagnostic")
+### * PlotClusterDiagnostic
+
+flush(stderr()); flush(stdout())
+
+### Name: PlotClusterDiagnostic
+### Title: Plot a per-cluster diagnostic value
+### Aliases: PlotClusterDiagnostic
+
+### ** Examples
+
+
+
+
+cleanEx()
+nameEx("PlotClusterFitReview")
+### * PlotClusterFitReview
+
+flush(stderr()); flush(stdout())
+
+### Name: PlotClusterFitReview
+### Title: Plot cluster fit-review metrics
+### Aliases: PlotClusterFitReview
+
+### ** Examples
+
+
+
+
+cleanEx()
+nameEx("PlotClusterMap")
+### * PlotClusterMap
+
+flush(stderr()); flush(stdout())
+
+### Name: PlotClusterMap
+### Title: Plot a two-dimensional cluster review map
+### Aliases: PlotClusterMap PlotClusterAssignment
+
+### ** Examples
+
+
+
+
+cleanEx()
+nameEx("PlotClusterProfiles")
+### * PlotClusterProfiles
+
+flush(stderr()); flush(stdout())
+
+### Name: PlotClusterProfiles
+### Title: Plot labelled numeric profiles by cluster
+### Aliases: PlotClusterProfiles
+
+### ** Examples
+
+
+
+
+cleanEx()
+nameEx("PlotClusterSilhouette")
+### * PlotClusterSilhouette
+
+flush(stderr()); flush(stdout())
+
+### Name: PlotClusterSilhouette
+### Title: Plot a per-participant silhouette profile
+### Aliases: PlotClusterSilhouette
+
+### ** Examples
+
+
+
+
 cleanEx()
 nameEx("PlotContinuousDistributions")
 ### * PlotContinuousDistributions
 
 flush(stderr()); flush(stdout())
 
-base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 ### Name: PlotContinuousDistributions
 ### Title: Plot Continuous Distributions
 ### Aliases: PlotContinuousDistributions
@@ -1325,23 +1542,34 @@ base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 ### ** Examples
 
 data(SampleData)
+data(SampleVariableTypes)
 
+Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
+
+# Eight variables across three columns show wrapped labels and multi-row facets.
 PlotContinuousDistributions(
-  SampleData,
-  variables = c("age", "AXL", "Adiponectin")
+  data = Labelled,
+  variables = c("AXL", "Adiponectin", "Alpha_1_Antitrypsin", "Ferritin",
+                "Gamma_Interferon_induced_Monokin", "MMP7", "tau", "p_tau"),
+  ncol = 3
+)
+
+# Grouped rain-clouds use the Diagnosis fill to compare distributions.
+PlotContinuousDistributions(
+  data = Labelled,
+  variables = c("Ab_42", "p_tau", "tau", "GRO_alpha", "MMP10", "TRAIL_R3"),
+  Fill = "Diagnosis",
+  ncol = 3
 )
 
 
 
-base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-base::cat("PlotContinuousDistributions", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 cleanEx()
 nameEx("PlotCorrelationsHeatmap")
 ### * PlotCorrelationsHeatmap
 
 flush(stderr()); flush(stdout())
 
-base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 ### Name: PlotCorrelationsHeatmap
 ### Title: Plot correlations heatmap
 ### Aliases: PlotCorrelationsHeatmap
@@ -1378,15 +1606,12 @@ rectangular$Unadjusted$plot
 
 
 
-base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-base::cat("PlotCorrelationsHeatmap", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 cleanEx()
 nameEx("PlotDatasetComparison")
 ### * PlotDatasetComparison
 
 flush(stderr()); flush(stdout())
 
-base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 ### Name: PlotDatasetComparison
 ### Title: Plot dataset comparison diagnostics
 ### Aliases: PlotDatasetComparison
@@ -1395,27 +1620,43 @@ base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 
 data(SampleData)
 
-# Build two versions of a keyed dataset to compare
+# Build two versions of a keyed dataset that differ in records, variables,
+# and values, so every diagnostic panel has something to show.
 old_data <- cbind(id = seq_len(nrow(SampleData)), SampleData)
-new_data <- old_data
-new_data$age[1:5] <- new_data$age[1:5] + 1
+
+new_data <- old_data[-(1:8), ]
+new_data <- rbind(
+  new_data,
+  transform(old_data[1:3, ], id = max(old_data$id) + 1:3)
+)
+new_data$Cohort <- "Wave2"
+new_data$Genotype <- NULL
+new_data$age[1:25] <- new_data$age[1:25] + 1
+new_data$Cortisol[1:15] <- new_data$Cortisol[1:15] * 1.2
 
 comparison <- CompareDatasets(old_data, new_data, keys = "id")
 
-# Display a single diagnostic plot
-PlotDatasetComparison(comparison, Plot = "Checks")
+diagnostics <- PlotDatasetComparison(
+  comparison,
+  Plot = "All",
+  interactive = FALSE
+)
+
+# Check status, summary metrics, structural, value-change, and top-change views
+diagnostics$Checks
+diagnostics$SummaryMetrics
+diagnostics$StructureChanges
+diagnostics$VariableChanges
+diagnostics$TopChangedVariables
 
 
 
-base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-base::cat("PlotDatasetComparison", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 cleanEx()
 nameEx("PlotDirectionalHeatmaps")
 ### * PlotDirectionalHeatmaps
 
 flush(stderr()); flush(stdout())
 
-base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 ### Name: PlotDirectionalHeatmaps
 ### Title: Create directional heatmaps across continuous & binary variables
 ### Aliases: PlotDirectionalHeatmaps
@@ -1437,55 +1678,38 @@ result <- PlotDirectionalHeatmaps(
                 "Insulin", "Leptin")
 )
 
+# Raw p-value directional heatmap
 result$Unadjusted$plot
+
+# FDR-adjusted directional heatmap
+result$FDRCorrected$plot
 
 # How binary variables were coded (which level counts as the positive one)
 result$BinaryMapping
 
 
 
-base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-base::cat("PlotDirectionalHeatmaps", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 cleanEx()
 nameEx("PlotForestFromTable")
 ### * PlotForestFromTable
 
 flush(stderr()); flush(stdout())
 
-base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 ### Name: PlotForestFromTable
 ### Title: Create a Forest Plot from Univariate Regression Tables
 ### Aliases: PlotForestFromTable plotForestFromTable
 
 ### ** Examples
 
-## No test: 
-data(SampleData)
-
-# Build univariate regression tables to plot
-urt <- MakeUnivariateRegressionTable(
-  data = SampleData,
-  outcome_vars = "AXL",
-  predictor_vars = c("age", "Adiponectin", "Alpha_1_Antitrypsin")
-)
-
-PlotForestFromTable(urt)
-
-# Or plot a filtered subset of the results
-PlotForestFromTable(subset(urt$Results, Predictor != "age"))
-## End(No test)
 
 
 
-base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-base::cat("PlotForestFromTable", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 cleanEx()
 nameEx("PlotInteractionEffectsContinuous")
 ### * PlotInteractionEffectsContinuous
 
 flush(stderr()); flush(stdout())
 
-base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 ### Name: PlotInteractionEffectsContinuous
 ### Title: Plot Single Interaction Effect
 ### Aliases: PlotInteractionEffectsContinuous
@@ -1516,69 +1740,28 @@ PlotInteractionEffectsContinuous(
 
 
 
-base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-base::cat("PlotInteractionEffectsContinuous", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 cleanEx()
 nameEx("PlotInteractionEffectsMatrix")
 ### * PlotInteractionEffectsMatrix
 
 flush(stderr()); flush(stdout())
 
-base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 ### Name: PlotInteractionEffectsMatrix
 ### Title: Plot Interaction Effects Matrix
 ### Aliases: PlotInteractionEffectsMatrix
 
 ### ** Examples
 
-## No test: 
-data(SampleData)
-data(SampleVariableTypes)
-
-# Attach labels and factor levels for readable axes
-Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
-
-outcomes <- c("age", "ACE_CD143_Angiotensin_Converti",
-              "ACTH_Adrenocorticotropic_Hormon", "AXL", "Adiponectin",
-              "Alpha_1_Antichymotrypsin", "Alpha_1_Antitrypsin",
-              "Alpha_1_Microglobulin")
-predictors <- c("Alpha_2_Macroglobulin", "Angiopoietin_2_ANG_2",
-                "Apolipoprotein_A_IV", "Apolipoprotein_A1",
-                "Apolipoprotein_A2", "Apolipoprotein_B", "Apolipoprotein_CI",
-                "Apolipoprotein_CIII", "Apolipoprotein_D", "Apolipoprotein_E")
-
-# With a categorical interaction variable (Diagnosis)
-results <- PlotInteractionEffectsMatrix(
-  data = Labelled,
-  interVar = "Diagnosis",
-  outcome_vars = outcomes,
-  predictor_vars = predictors
-)
-
-# With a continuous interaction variable (age)
-results_cont <- PlotInteractionEffectsMatrix(
-  data = Labelled,
-  interVar = "age",
-  outcome_vars = setdiff(outcomes, "age"),
-  predictor_vars = predictors
-)
-
-# Display the plot (colored tiles mark significant interactions)
-results$Unadjusted$plot
-## End(No test)
 
 
 
 
-base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-base::cat("PlotInteractionEffectsMatrix", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 cleanEx()
 nameEx("PlotMergeValidation")
 ### * PlotMergeValidation
 
 flush(stderr()); flush(stdout())
 
-base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 ### Name: PlotMergeValidation
 ### Title: Plot merge validation diagnostics
 ### Aliases: PlotMergeValidation
@@ -1586,26 +1769,43 @@ base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 ### ** Examples
 
 set.seed(1)
-left  <- data.frame(id = 1:50, x = rnorm(50))
-right <- data.frame(id = 1:50, y = rnorm(50))
+
+# `site` comes from both sources and disagrees, leaving a site.x/site.y pair
+left <- data.frame(
+  id = 1:50,
+  site = sample(c("A", "B"), 50, replace = TRUE),
+  x = rnorm(50)
+)
+right <- data.frame(
+  id = c(1:45, 101:105),
+  site = sample(c("A", "B"), 50, replace = TRUE),
+  y = rnorm(50)
+)
 merged <- merge(left, right, by = "id")
 
 validation <- ValidateMerge(left, right, merged, keys = "id")
 
-# Display a single diagnostic plot
-PlotMergeValidation(validation, Plot = "Checks")
+diagnostics <- PlotMergeValidation(
+  validation,
+  Plot = "All",
+  interactive = FALSE
+)
+
+# Merge-check status, key coverage, join audit, agreement, and conflicts
+diagnostics$Checks
+diagnostics$Coverage
+diagnostics$JoinAudit
+diagnostics$Agreement
+diagnostics$Conflicts
 
 
 
-base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-base::cat("PlotMergeValidation", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 cleanEx()
 nameEx("PlotMiningMatrix")
 ### * PlotMiningMatrix
 
 flush(stderr()); flush(stdout())
 
-base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 ### Name: PlotMiningMatrix
 ### Title: PlotMiningMatrix
 ### Aliases: PlotMiningMatrix
@@ -1651,15 +1851,12 @@ if (requireNamespace("plotly", quietly = TRUE)) {
 
 
 
-base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-base::cat("PlotMiningMatrix", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 cleanEx()
 nameEx("PlotMissingData")
 ### * PlotMissingData
 
 flush(stderr()); flush(stdout())
 
-base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 ### Name: PlotMissingData
 ### Title: Plot Missing Data
 ### Aliases: PlotMissingData
@@ -1667,13 +1864,16 @@ base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 ### ** Examples
 
 data(SampleData)
+data(SampleVariableTypes)
 
-# SampleData has real missingness in several assays
+Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
+
+# The revalued data includes missingness defined in the codebook
 vars <- c("age", "AXL", "Angiotensinogen", "BMP_6", "IL_6",
           "Fetuin_A", "NT_proBNP", "ENA_78")
 
 PlotMissingData(
-  SampleData,
+  Labelled,
   variables = vars,
   HoverVars = "Diagnosis"
 )
@@ -1681,15 +1881,12 @@ PlotMissingData(
 
 
 
-base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-base::cat("PlotMissingData", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 cleanEx()
 nameEx("PlotNumInteractionEffectsMatrix")
 ### * PlotNumInteractionEffectsMatrix
 
 flush(stderr()); flush(stdout())
 
-base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 ### Name: PlotNumInteractionEffectsMatrix
 ### Title: Plot Numerical Interaction Effects Matrix
 ### Aliases: PlotNumInteractionEffectsMatrix
@@ -1716,19 +1913,20 @@ result <- PlotNumInteractionEffectsMatrix(
   interVar = "age"
 )
 
+# Raw p-value interaction matrix
 result$p
 
+# FDR-adjusted interaction matrix
+result$p_FDR
 
 
-base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-base::cat("PlotNumInteractionEffectsMatrix", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
+
 cleanEx()
 nameEx("PlotPValueComparisons")
 ### * PlotPValueComparisons
 
 flush(stderr()); flush(stdout())
 
-base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 ### Name: PlotPValueComparisons
 ### Title: Plot P-Value Comparisons
 ### Aliases: PlotPValueComparisons
@@ -1736,24 +1934,28 @@ base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 ### ** Examples
 
 data(SampleData)
+data(SampleVariableTypes)
+
+Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
 
 PlotPValueComparisons(
-  SampleData,
+  Labelled,
   group_var = "Diagnosis",
-  variables = c("age", "AXL", "Adiponectin")
+  variables = c(
+    "age", "AXL", "Adiponectin", "Alpha_1_Antitrypsin", "Cortisol",
+    "Ferritin", "GRO_alpha", "MMP10", "MMP7", "NT_proBNP", "PAI_1",
+    "TRAIL_R3", "VEGF", "Ab_42", "p_tau", "tau"
+  )
 )
 
 
 
-base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-base::cat("PlotPValueComparisons", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 cleanEx()
 nameEx("PlotPartialRegressionScatter")
 ### * PlotPartialRegressionScatter
 
 flush(stderr()); flush(stdout())
 
-base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 ### Name: PlotPartialRegressionScatter
 ### Title: Partial Regression Plot
 ### Aliases: PlotPartialRegressionScatter
@@ -1761,9 +1963,12 @@ base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 ### ** Examples
 
 data(SampleData)
+data(SampleVariableTypes)
+
+Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
 
 result <- PlotPartialRegressionScatter(
-  SampleData,
+  Labelled,
   IndepVar = "age",
   DepVar = "AXL",
   covariates = "Adiponectin"
@@ -1773,18 +1978,15 @@ result$plot
 
 
 
-base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-base::cat("PlotPartialRegressionScatter", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 cleanEx()
 nameEx("PlotPathway_KT")
 ### * PlotPathway_KT
 
 flush(stderr()); flush(stdout())
 
-base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 ### Name: PlotPathway_KT
 ### Title: Plot the kynurenine-tryptophan pathway
-### Aliases: PlotPathway_KT
+### Aliases: PlotPathway_KT CreatePathwayPlot_KT
 
 ### ** Examples
 
@@ -1809,15 +2011,12 @@ PlotPathway_KT(results, "Kynurenine pathway", use_fdr = TRUE)
 
 
 
-base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-base::cat("PlotPathway_KT", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 cleanEx()
 nameEx("PlotPhiHeatmap")
 ### * PlotPhiHeatmap
 
 flush(stderr()); flush(stdout())
 
-base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 ### Name: PlotPhiHeatmap
 ### Title: Plot Phi Correlations Between Binary Variables
 ### Aliases: PlotPhiHeatmap
@@ -1825,23 +2024,39 @@ base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 ### ** Examples
 
 data(SampleData)
+data(SampleVariableTypes)
 
-# CatVars must be binary (exactly two unique non-NA values)
-result <- PlotPhiHeatmap(SampleData, CatVars = c("Diagnosis", "sex"))
+Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
 
+# CatVars must be binary (exactly two unique non-NA values). Derive a few
+# more binary indicators so the matrix has off-diagonal structure to read;
+# self-associations on the diagonal are masked out.
+Labelled$APOE4 <- ifelse(
+  grepl("E4", as.character(Labelled$Genotype)), "Carrier", "Non-carrier")
+Labelled$HighTau <- ifelse(
+  Labelled$tau > stats::median(Labelled$tau, na.rm = TRUE), "High", "Low")
+Labelled$LowAbeta <- ifelse(
+  Labelled$Ab_42 < stats::median(Labelled$Ab_42, na.rm = TRUE), "Low", "High")
+
+result <- PlotPhiHeatmap(
+  Labelled,
+  CatVars = c("Diagnosis", "sex", "APOE4", "HighTau", "LowAbeta")
+)
+
+# Raw p-value phi heatmap
 result$Unadjusted$plot
 
+# FDR-adjusted phi heatmap
+result$FDRCorrected$plot
 
 
-base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-base::cat("PlotPhiHeatmap", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
+
 cleanEx()
 nameEx("PlotPointCorrelationsHeatmap")
 ### * PlotPointCorrelationsHeatmap
 
 flush(stderr()); flush(stdout())
 
-base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 ### Name: PlotPointCorrelationsHeatmap
 ### Title: Plot Point-Biserial Correlations Between Binary and Continuous
 ###   Variables
@@ -1850,27 +2065,33 @@ base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 ### ** Examples
 
 data(SampleData)
+data(SampleVariableTypes)
 
-# CatVars must be binary (exactly two unique non-NA values)
+Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
+
+# CatVars must be binary (exactly two unique non-NA values). These markers
+# separate on Diagnosis (Ab_42, tau, p_tau) or on sex (Leptin, PAI_1,
+# NT_proBNP), so both rows of the heatmap carry signal in both directions.
 result <- PlotPointCorrelationsHeatmap(
-  SampleData,
+  Labelled,
   CatVars = c("Diagnosis", "sex"),
-  ContVars = c("age", "AXL", "Adiponectin")
+  ContVars = c("Ab_42", "tau", "p_tau", "Leptin", "PAI_1", "NT_proBNP")
 )
 
+# Raw p-value point-biserial heatmap
 result$Unadjusted$plot
 
+# FDR-adjusted point-biserial heatmap
+result$FDRCorrected$plot
 
 
-base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-base::cat("PlotPointCorrelationsHeatmap", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
+
 cleanEx()
 nameEx("PlotSpiderChart")
 ### * PlotSpiderChart
 
 flush(stderr()); flush(stdout())
 
-base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 ### Name: PlotSpiderChart
 ### Title: Plot a spider chart across continuous and binary variables
 ### Aliases: PlotSpiderChart
@@ -1878,33 +2099,78 @@ base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 ### ** Examples
 
 data(SampleData)
+data(SampleVariableTypes)
 
-# Static spider chart
-PlotSpiderChart(
-  SampleData,
-  variables = c("age", "AXL", "Adiponectin", "Alpha_1_Antitrypsin"),
-  group_var = "Diagnosis"
+Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
+
+vars_biomarkers <- c(
+  "Ab_42", "p_tau", "tau", "GRO_alpha", "MMP10", "MMP7", "TRAIL_R3"
+)
+categories_biomarkers <- c(
+  "Neurodegeneration", "Neurodegeneration", "Neurodegeneration",
+  "Inflammation", "Inflammation", "Matrix remodeling", "TNF signaling"
 )
 
-# Interactive (plotly) version of the same chart
+# Input order preserves the supplied clinical/domain sequence.
 PlotSpiderChart(
-  SampleData,
-  variables = c("age", "AXL", "Adiponectin", "Alpha_1_Antitrypsin"),
+  data = Labelled,
+  variables = vars_biomarkers,
   group_var = "Diagnosis",
+  VariableOrder = "input"
+)
+
+# Discrimination puts the largest between-group differences next to each other.
+PlotSpiderChart(
+  data = Labelled,
+  variables = vars_biomarkers,
+  group_var = "Diagnosis",
+  VariableOrder = "discrimination"
+)
+
+# Hierarchical order groups biomarkers with similar Diagnosis profiles.
+PlotSpiderChart(
+  data = Labelled,
+  variables = vars_biomarkers,
+  group_var = "Diagnosis",
+  VariableOrder = "hierarchical"
+)
+
+# Greedy order places consecutive spokes with maximally different profiles.
+PlotSpiderChart(
+  data = Labelled,
+  variables = vars_biomarkers,
+  group_var = "Diagnosis",
+  VariableOrder = "greedy"
+)
+
+# Category/discrimination order keeps domains together, then ranks the
+# biomarkers within each domain by their between-group difference.
+PlotSpiderChart(
+  data = Labelled,
+  variables = vars_biomarkers,
+  group_var = "Diagnosis",
+  VariableOrder = "category_discrimination",
+  VariableCategories = categories_biomarkers
+)
+
+# Interactive (plotly) version of the category-aware chart.
+PlotSpiderChart(
+  data = Labelled,
+  variables = vars_biomarkers,
+  group_var = "Diagnosis",
+  VariableOrder = "category_discrimination",
+  VariableCategories = categories_biomarkers,
   interactive = TRUE
 )
 
 
 
-base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-base::cat("PlotSpiderChart", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 cleanEx()
 nameEx("PlotSplitViolin")
 ### * PlotSplitViolin
 
 flush(stderr()); flush(stdout())
 
-base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 ### Name: PlotSplitViolin
 ### Title: Split violin with aligned half-boxplots, significance label,
 ###   sample sizes, and label-aware title
@@ -1913,20 +2179,21 @@ base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 ### ** Examples
 
 data(SampleData)
+data(SampleVariableTypes)
 
-PlotSplitViolin(SampleData, Var = "AXL", group_var = "Diagnosis")
+Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
+
+# Ab_42 has a clear Diagnosis-group difference in the bundled teaching data.
+PlotSplitViolin(Labelled, Var = "Ab_42", group_var = "Diagnosis")
 
 
 
-base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-base::cat("PlotSplitViolin", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 cleanEx()
 nameEx("PlotSwimmerTransitions")
 ### * PlotSwimmerTransitions
 
 flush(stderr()); flush(stdout())
 
-base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 ### Name: PlotSwimmerTransitions
 ### Title: Plot swimmer-style transitions for a binary condition over
 ###   repeated visits
@@ -1934,68 +2201,15 @@ base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 
 ### ** Examples
 
-## No test: 
-# Build a swimmer-shaped dataset from the survival::colon data: each subject
-# contributes a variable number of follow-up visits and a binary condition
-# (recurrence) that can develop over time.
-if (requireNamespace("survival", quietly = TRUE)) {
-  set.seed(2024)
-
-  subjects <- survival::colon |>
-    dplyr::filter(etype == 1) |>
-    dplyr::distinct(id, .keep_all = TRUE) |>
-    dplyr::slice_sample(n = 40) |>
-    dplyr::transmute(
-      SubjectID = paste0("P", id),
-      n_visits  = pmin(pmax(round(time / 400) + 2, 2), 6),
-      onset     = purrr::map_int(n_visits, ~ sample(0:.x, 1))
-    )
-
-  swimmer_df <- subjects |>
-    dplyr::mutate(Visit = purrr::map(n_visits, seq_len)) |>
-    tidyr::unnest(Visit) |>
-    dplyr::group_by(SubjectID) |>
-    dplyr::mutate(
-      VisitDate  = as.Date("2020-01-01") +
-        cumsum(c(0, sample(60:200, dplyr::n() - 1, TRUE))),
-      Recurrence = as.integer(onset > 0 & Visit >= onset)
-    ) |>
-    dplyr::ungroup() |>
-    dplyr::select(SubjectID, Visit, VisitDate, Recurrence)
-
-  # Aligned by visit number, ordered by when the condition first develops
-  PlotSwimmerTransitions(
-    data = swimmer_df,
-    id_var = SubjectID,
-    time_var = Visit,
-    status_var = Recurrence,
-    order_participants_by = "first_transition"
-  )
-
-  # Positioned by elapsed time from each participant's baseline visit
-  PlotSwimmerTransitions(
-    data = swimmer_df,
-    id_var = SubjectID,
-    time_var = Visit,
-    status_var = Recurrence,
-    date_var = VisitDate,
-    x_axis_type = "time_from_baseline",
-    time_from_baseline_unit = "months"
-  )
-}
-## End(No test)
 
 
 
-base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-base::cat("PlotSwimmerTransitions", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 cleanEx()
 nameEx("PlotTimeDistribution")
 ### * PlotTimeDistribution
 
 flush(stderr()); flush(stdout())
 
-base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 ### Name: PlotTimeDistribution
 ### Title: Plot Time Distribution
 ### Aliases: PlotTimeDistribution
@@ -2011,46 +2225,75 @@ PlotTimeDistribution(df, DateVariable = "Date")
 
 
 
-base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-base::cat("PlotTimeDistribution", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 cleanEx()
 nameEx("PlotTimeSwimmer")
 ### * PlotTimeSwimmer
 
 flush(stderr()); flush(stdout())
 
-base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 ### Name: PlotTimeSwimmer
 ### Title: Plot longitudinal swimmer timelines
 ### Aliases: PlotTimeSwimmer
 
 ### ** Examples
 
-df <- tibble::tibble(
-  ID = c(1,1,1,2,2,2),
-  Visit = c(0,6,12,0,6,12),
-  Cluster = c("A","A","B","B","B","C")
+df_swimmer <- tibble::tibble(
+  ID = c("P01", "P01", "P01", "P02", "P02", "P03", "P03", "P03", "P04", "P04"),
+  Day = c(0, 90, 365, 0, 270, 0, 180, 540, 0, 120),
+  State = c("Stable", "Flare", "Recovered", "Stable", "Stable",
+            "Flare", "Flare", "Recovered", "Stable", "Withdrawn"),
+  Event = c(FALSE, TRUE, FALSE, FALSE, FALSE, TRUE, FALSE, FALSE, FALSE, TRUE),
+  EventType = c(NA, "Flare", NA, NA, NA, "Flare", NA, NA, NA, "Withdrawal")
 )
 
+# State paths, ordered by duration
 PlotTimeSwimmer(
-  data = df,
+  data = df_swimmer,
   id_var = "ID",
-  Time = "Visit",
-  State = "Cluster"
+  Time = "Day",
+  State = "State",
+  Event = "Event",
+  EventType = "EventType",
+  Format = "state_path",
+  SortBy = "duration",
+  TimeUnit = "months"
+)
+
+# Visit points, ordered by last observed follow-up
+PlotTimeSwimmer(
+  data = df_swimmer,
+  id_var = "ID",
+  Time = "Day",
+  State = "State",
+  Format = "visit_points",
+  SortBy = "last_time",
+  TimeUnit = "months"
+)
+
+# Event rugs, centered on each participant's first flare
+PlotTimeSwimmer(
+  data = subset(df_swimmer, ID %in% c("P01", "P03")),
+  id_var = "ID",
+  Time = "Day",
+  State = "State",
+  Event = "Event",
+  EventType = "EventType",
+  TimeScale = "from_event",
+  EventReference = TRUE,
+  Format = "event_rug",
+  SortBy = "state",
+  TimeUnit = "months"
 )
 
 
 
 
-base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-base::cat("PlotTimeSwimmer", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 cleanEx()
 nameEx("PlotVolcanoEffects")
 ### * PlotVolcanoEffects
 
 flush(stderr()); flush(stdout())
 
-base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 ### Name: PlotVolcanoEffects
 ### Title: Plot volcano-style association effects
 ### Aliases: PlotVolcanoEffects
@@ -2063,9 +2306,15 @@ data(SampleVariableTypes)
 # Attach labels and factor levels for readable point labels
 Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
 
-predictors <- c("Alpha_1_Antitrypsin", "Alpha_2_Macroglobulin",
-                "Apolipoprotein_A1", "Apolipoprotein_B", "C_Reactive_Protein",
-                "Cortisol", "Insulin", "Leptin")
+predictors <- c(
+  "ACE_CD143_Angiotensin_Converti", "ACTH_Adrenocorticotropic_Hormon",
+  "Adiponectin", "Alpha_1_Antichymotrypsin", "Alpha_1_Antitrypsin",
+  "Alpha_2_Macroglobulin", "Apolipoprotein_A1", "Apolipoprotein_B",
+  "B_Lymphocyte_Chemoattractant_BL", "C_Reactive_Protein", "Cortisol",
+  "Eotaxin_3", "Ferritin", "Fibrinogen", "GRO_alpha", "IGF_BP_2", "MIF",
+  "MMP10", "MMP7", "NT_proBNP", "PAI_1", "Resistin", "TRAIL_R3", "VEGF",
+  "Ab_42", "p_tau", "tau"
+)
 
 # Continuous outcome, adjusted for age
 cont <- PlotVolcanoEffects(
@@ -2077,7 +2326,9 @@ cont <- PlotVolcanoEffects(
   LabelMode = "top_n",
   TopN = 3
 )
+# Raw and FDR-adjusted continuous-outcome volcano plots
 cont$RawPPlot
+cont$FDRPlot
 
 # Categorical outcome (Diagnosis), Cohen's d effect metric
 cat_res <- PlotVolcanoEffects(
@@ -2089,22 +2340,21 @@ cat_res <- PlotVolcanoEffects(
   LabelMode = "top_n",
   TopN = 3
 )
+# Raw and FDR-adjusted categorical-outcome volcano plots
 cat_res$RawPPlot
+cat_res$FDRPlot
 
 
 
-base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-base::cat("PlotVolcanoEffects", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 cleanEx()
 nameEx("PlotZScore")
 ### * PlotZScore
 
 flush(stderr()); flush(stdout())
 
-base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 ### Name: PlotZScore
 ### Title: Plot Z-score group differences with statistical significance
-### Aliases: PlotZScore
+### Aliases: PlotZScore CreateZScorePlot
 
 ### ** Examples
 
@@ -2136,15 +2386,12 @@ if (requireNamespace("plotly", quietly = TRUE)) {
 
 
 
-base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-base::cat("PlotZScore", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 cleanEx()
 nameEx("PrepNumericData")
 ### * PrepNumericData
 
 flush(stderr()); flush(stdout())
 
-base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 ### Name: PrepNumericData
 ### Title: Prepare numeric data safely for analysis
 ### Aliases: PrepNumericData
@@ -2162,15 +2409,27 @@ PrepNumericData(df)
 
 
 
-base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-base::cat("PrepNumericData", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
+cleanEx()
+nameEx("ProjectCluster")
+### * ProjectCluster
+
+flush(stderr()); flush(stdout())
+
+### Name: ProjectCluster
+### Title: Project cases through a fitted clustering model
+### Aliases: ProjectCluster Project_SOMClust ProjectSOMCluster
+
+### ** Examples
+
+
+
+
 cleanEx()
 nameEx("ProjectRCI")
 ### * ProjectRCI
 
 flush(stderr()); flush(stdout())
 
-base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 ### Name: ProjectRCI
 ### Title: Project a trained RCI object onto new data
 ### Aliases: ProjectRCI
@@ -2202,109 +2461,73 @@ base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 
 
 
-base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-base::cat("ProjectRCI", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 cleanEx()
-nameEx("ProjectSOMCluster")
-### * ProjectSOMCluster
+nameEx("ReadSciData")
+### * ReadSciData
 
 flush(stderr()); flush(stdout())
 
-base::assign(".ptime", proc.time(), pos = "CheckExEnv")
-### Name: ProjectSOMCluster
-### Title: Project new data onto an existing SOM clinical phenotype space
-### Aliases: ProjectSOMCluster
+### Name: ReadSciData
+### Title: Read a scientific data file with optional inspection
+### Aliases: ReadSciData
 
 ### ** Examples
 
-## Not run: 
-##D # NOTE: Not run - projection requires a trained SOM model, and
-##D # CreateSOMClusterModel() currently errors on the tracked get_data() bug
-##D # (see CreateSOMClusterModel() for details).
-##D data(SampleData)
-##D 
-##D model <- CreateSOMClusterModel(
-##D   data = SampleData,
-##D   variables = c("age", "AXL", "Adiponectin", "Alpha_1_Antitrypsin"),
-##D   method = "finalize",
-##D   final_k = 3,
-##D   final_model = 1
-##D )
-##D 
-##D projected <- ProjectSOMCluster(object = model, new_df = SampleData)
-## End(Not run)
 
 
 
-base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-base::cat("ProjectSOMCluster", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
-cleanEx()
-nameEx("Project_SOMClust")
-### * Project_SOMClust
 
-flush(stderr()); flush(stdout())
-
-base::assign(".ptime", proc.time(), pos = "CheckExEnv")
-### Name: Project_SOMClust
-### Title: Project new data onto an existing SOM clinical phenotype space
-### Aliases: Project_SOMClust
-
-### ** Examples
-
-## Not run: 
-##D # NOTE: Not run - see ProjectSOMCluster() and CreateSOMClusterModel() for the
-##D # tracked get_data() bug that blocks the SOM workflow.
-##D Project_SOMClust(object = model, new_df = SampleData)
-## End(Not run)
-
-
-
-base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-base::cat("Project_SOMClust", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 cleanEx()
 nameEx("ReplaceMissingCode")
 ### * ReplaceMissingCode
 
 flush(stderr()); flush(stdout())
 
-base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 ### Name: ReplaceMissingCode
 ### Title: Replace Missing Codes with NA
 ### Aliases: ReplaceMissingCode
 
 ### ** Examples
 
-# A data frame that uses sentinel values to encode missingness
+# `age` uses three different codes to record three different reasons
 df <- data.frame(
-  id    = 1:6,
-  age   = c(34, 999, 52, 999, 41, 29),
-  score = c(10, -9, -9, 15, 20, 12)
+  id     = 1:6,
+  age    = c(34, 999, 52, -7, 41, -8),
+  score  = c(10, -9, -9, 15, 20, 12),
+  status = c("Active", "Unknown", "Active", "Withdrawn", "Unknown", "Active")
 )
 
-# A codebook mapping each variable to its missing code(s)
+# Several markers for one variable go in one cell
 codebook <- data.frame(
-  Variable    = c("age", "score"),
-  MissingCode = c("999", "-9")
+  Variable    = c("age", "score", "status"),
+  MissingCode = c("999, -7, -8", "-9", "Unknown")
 )
 
-# Before: sentinel codes still present
+# Before: the sentinels are averaged in as if they were ages
 df
+mean(df$age)
 
-# After: sentinel codes replaced with NA
-ReplaceMissingCode(df, codebook)
+# After: every listed code becomes NA
+cleaned <- ReplaceMissingCode(df, codebook)
+cleaned
+mean(cleaned$age, na.rm = TRUE)
+colSums(is.na(cleaned))
+
+# Blank codes are skipped
+ReplaceMissingCode(
+  df,
+  data.frame(Variable = c("id", "age"), MissingCode = c(NA, "999, -7, -8"))
+)
 
 
 
 
-base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-base::cat("ReplaceMissingCode", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 cleanEx()
 nameEx("ReplaceMissingLabels")
 ### * ReplaceMissingLabels
 
 flush(stderr()); flush(stdout())
 
-base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 ### Name: ReplaceMissingLabels
 ### Title: Replace Missing Labels in Dataframe Columns
 ### Aliases: ReplaceMissingLabels
@@ -2329,15 +2552,12 @@ sapply(filled, function(x) sjlabelled::get_label(x))
 
 
 
-base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-base::cat("ReplaceMissingLabels", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 cleanEx()
 nameEx("RevalueData")
 ### * RevalueData
 
 flush(stderr()); flush(stdout())
 
-base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 ### Name: RevalueData
 ### Title: Revalue Data
 ### Aliases: RevalueData
@@ -2347,35 +2567,61 @@ base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 data(SampleData)
 data(SampleVariableTypes)
 
-# Before: no variable labels and coded factors are still raw
-# (e.g. sex is stored as 0/1 with no label)
+# Before: no labels, and sex is stored as 0/1
 sjlabelled::get_label(SampleData$age)   # NULL
 class(SampleData$sex)                    # "integer"
 
-# Revalue using the codebook: attach labels and recode coded factors
+# Revalue using the codebook
 revalued <- RevalueData(SampleData, SampleVariableTypes)
 Labelled <- revalued$RevaluedData
 
-# After: labels are attached and sex is a labelled factor
+# After: labels attached, sex is a labelled factor
 sjlabelled::get_label(Labelled$age)     # "Age"
 levels(Labelled$sex)                     # "Female" "Male"
 
-# Variables that were recoded, and any codebook entries not found in the data
+# Recoded variables, and codebook entries not found in the data
 revalued$recodedvars
 revalued$not_in_data
 
 
 
 
-base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-base::cat("RevalueData", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
+
+cleanEx()
+nameEx("SampleData")
+### * SampleData
+
+flush(stderr()); flush(stdout())
+
+### Name: SampleData
+### Title: SampleData for practicing SciDataReportR functions
+### Aliases: SampleData
+### Keywords: datasets
+
+### ** Examples
+
+data(SampleData)
+
+# 333 participants, 131 columns, two diagnosis groups.
+dim(SampleData)
+table(SampleData$Diagnosis)
+
+# The first columns are demographics; the rest are biomarkers.
+names(SampleData)[1:10]
+
+# As shipped, it is unlabelled and `sex` is still a bare numeric code.
+str(SampleData[, c("Diagnosis", "age", "sex", "Genotype", "AXL")])
+sjlabelled::get_label(SampleData$age)
+
+
+
+
 cleanEx()
 nameEx("SampleVariableTypes")
 ### * SampleVariableTypes
 
 flush(stderr()); flush(stdout())
 
-base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 ### Name: SampleVariableTypes
 ### Title: Example Dataset: SampleVariableTypes
 ### Aliases: SampleVariableTypes
@@ -2384,19 +2630,60 @@ base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 ### ** Examples
 
 data(SampleVariableTypes)
-head(SampleVariableTypes)
+
+dim(SampleVariableTypes)
+table(SampleVariableTypes$Type)
 
 
 
-base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-base::cat("SampleVariableTypes", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
+
+cleanEx()
+nameEx("SciDataPalette")
+### * SciDataPalette
+
+flush(stderr()); flush(stdout())
+
+### Name: SciDataPalette
+### Title: SciDataReportR qualitative color palette
+### Aliases: SciDataPalette
+
+### ** Examples
+
+SciDataPalette(3)
+SciDataPalette(8)
+SciDataPalette()
+
+
+
+
+cleanEx()
+nameEx("SimulatedPhenotypeData")
+### * SimulatedPhenotypeData
+
+flush(stderr()); flush(stdout())
+
+### Name: SimulatedPhenotypeData
+### Title: Neutral simulated clustering and phenotyping benchmark
+### Aliases: SimulatedPhenotypeData SimulatedPhenotypeVariableTypes
+
+### ** Examples
+
+data(SimulatedPhenotypeData)
+
+# 480 participants, with the truth clusters balanced across both cohorts
+dim(SimulatedPhenotypeData)
+table(SimulatedPhenotypeData$Cohort, SimulatedPhenotypeData$TruthCluster)
+
+
+
+
+
 cleanEx()
 nameEx("SummarizeTransitions")
 ### * SummarizeTransitions
 
 flush(stderr()); flush(stdout())
 
-base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 ### Name: SummarizeTransitions
 ### Title: Summarize participant transitions for a binary longitudinal
 ###   condition
@@ -2416,7 +2703,7 @@ toy_df <- tibble::tibble(
   )
 )
 
-SummarizeTransitions(
+transitions <- SummarizeTransitions(
   data = toy_df,
   id_var = ParticipantID,
   time_var = VisitOrder,
@@ -2426,17 +2713,55 @@ SummarizeTransitions(
   time_from_baseline_unit = "months"
 )
 
+transitions$condition_summary
 
 
-base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-base::cat("SummarizeTransitions", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
+
+
+cleanEx()
+nameEx("ValidateMerge")
+### * ValidateMerge
+
+flush(stderr()); flush(stdout())
+
+### Name: ValidateMerge
+### Title: Validate a merge between two source data frames and a merged
+###   result
+### Aliases: ValidateMerge
+
+### ** Examples
+
+left <- data.frame(
+  record_id = c(1, 1, 2, 2),
+  visit_type = c(1, 2, 1, 2),
+  age = c(40, 40, 55, 55)
+)
+
+right <- data.frame(
+  record_id = c(1, 2),
+  imaging_score = c(0.4, 0.8)
+)
+
+merged <- dplyr::left_join(left, right, by = "record_id")
+
+validation <- ValidateMerge(
+  LeftData = left,
+  RightData = right,
+  MergedData = merged,
+  keys = "record_id",
+  expected_relationship = "many-to-one"
+)
+
+validation$Summary
+
+
+
 cleanEx()
 nameEx("calculate_pathway_results")
 ### * calculate_pathway_results
 
 flush(stderr()); flush(stdout())
 
-base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 ### Name: calculate_pathway_results
 ### Title: Calculate Pathway Results for Metabolite Comparisons
 ### Aliases: calculate_pathway_results
@@ -2455,39 +2780,177 @@ base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 
 
 
-base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-base::cat("calculate_pathway_results", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
+cleanEx()
+nameEx("createBinaryMapping")
+### * createBinaryMapping
+
+flush(stderr()); flush(stdout())
+
+### Name: createBinaryMapping
+### Title: Create a Mapping Table for Binary Variables
+### Aliases: createBinaryMapping
+
+### ** Examples
+
+
+
+
+
+cleanEx()
+nameEx("createFacetLabels")
+### * createFacetLabels
+
+flush(stderr()); flush(stdout())
+
+### Name: createFacetLabels
+### Title: Create facet labels for ggplot2 based on variable labels in a
+###   data frame
+### Aliases: createFacetLabels
+
+### ** Examples
+
+data(SampleData)
+data(SampleVariableTypes)
+
+Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
+vars_Show <- c("AXL", "Adiponectin", "tau", "p_tau")
+
+# Column name on the first line, attached label on the second
+labels_Facet <- createFacetLabels(Labelled[vars_Show])
+labels_Facet
+
+
+
+
+
 cleanEx()
 nameEx("geom_starcaption")
 ### * geom_starcaption
 
 flush(stderr()); flush(stdout())
 
-base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 ### Name: geom_starcaption
 ### Title: Add a Caption Explaining Star Annotations
 ### Aliases: geom_starcaption
 
 ### ** Examples
 
-library(ggplot2)
+data(SampleData)
+data(SampleVariableTypes)
 
-# Compose the caption onto any ggplot with `+`
-ggplot(mtcars, aes(mpg, wt)) +
-  geom_point() +
-  geom_starcaption()
+df_Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
+
+# Add the caption to a correlation heatmap whose tiles already show stars.
+heatmap <- PlotCorrelationsHeatmap(
+  data = df_Labelled,
+  predictor_vars = c("Ab_42", "p_tau", "tau", "GRO_alpha", "MMP10"),
+  outcome_vars = c("MMP7", "TRAIL_R3", "Ferritin", "Fibrinogen", "MIF")
+)
+heatmap$Unadjusted$plot + geom_starcaption()
 
 
 
-base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-base::cat("geom_starcaption", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
+cleanEx()
+nameEx("getBinaryVars")
+### * getBinaryVars
+
+flush(stderr()); flush(stdout())
+
+### Name: getBinaryVars
+### Title: Identify Binary Variables
+### Aliases: getBinaryVars
+
+### ** Examples
+
+data(SampleData)
+data(SampleVariableTypes)
+
+Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
+
+# Two-level factors, which are the ones that can be modelled as 0/1
+vars_Binary <- getBinaryVars(Labelled)
+vars_Binary
+
+# `Revalued = FALSE` looks for any column with two distinct values instead
+# of two factor levels, for frames that have not been through RevalueData().
+getBinaryVars(SampleData, Revalued = FALSE)
+
+# Which level each one is scored against
+createBinaryMapping(Labelled, vars_Binary)
+
+
+
+
+cleanEx()
+nameEx("getCatVars")
+### * getCatVars
+
+flush(stderr()); flush(stdout())
+
+### Name: getCatVars
+### Title: Get Categorical Variables
+### Aliases: getCatVars
+
+### ** Examples
+
+data(SampleData)
+data(SampleVariableTypes)
+
+Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
+
+# Every factor in the frame
+getCatVars(Labelled)
+
+# `Ordinal = FALSE` drops ordered factors, which is what you want when the
+# ordered variables are going to be analyzed on their numeric scale instead.
+getCatVars(Labelled, Ordinal = FALSE)
+
+# Only meaningful after RevalueData(): in the raw extract `sex` is still a
+# bare 0/1 numeric column and is not detected as categorical.
+getCatVars(SampleData)
+
+
+
+
+cleanEx()
+nameEx("getNumVars")
+### * getNumVars
+
+flush(stderr()); flush(stdout())
+
+### Name: getNumVars
+### Title: Get Numeric Variables
+### Aliases: getNumVars
+
+### ** Examples
+
+data(SampleData)
+data(SampleVariableTypes)
+
+Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
+
+# 128 numeric columns: age plus the biomarker panel
+vars_Numeric <- getNumVars(Labelled)
+length(vars_Numeric)
+utils::head(vars_Numeric)
+
+# Ordinal variables are excluded by default; include them when they should
+# be modelled on their numeric scale.
+length(getNumVars(Labelled, Ordinal = TRUE))
+
+# The point of deriving the set: it feeds straight into an analysis without
+# a hand-typed vector that can fall out of date.
+MakeTable1(Labelled, variables = utils::head(vars_Numeric, 5))
+
+
+
+
 cleanEx()
 nameEx("merge_detail")
 ### * merge_detail
 
 flush(stderr()); flush(stdout())
 
-base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 ### Name: merge_detail
 ### Title: Print a plain-text detail report for one safe_merge result
 ### Aliases: merge_detail
@@ -2502,15 +2965,12 @@ merge_detail(m)
 
 
 
-base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-base::cat("merge_detail", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 cleanEx()
 nameEx("merge_summary_table")
 ### * merge_summary_table
 
 flush(stderr()); flush(stdout())
 
-base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 ### Name: merge_summary_table
 ### Title: Combine safe_merge logs into a single summary table
 ### Aliases: merge_summary_table
@@ -2527,124 +2987,215 @@ merge_summary_table(list(m1$log, m2$log))
 
 
 
-base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-base::cat("merge_summary_table", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 cleanEx()
 nameEx("plotPCA")
 ### * plotPCA
 
 flush(stderr()); flush(stdout())
 
-base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 ### Name: plotPCA
 ### Title: Plot PCA scores
 ### Aliases: plotPCA
 
 ### ** Examples
 
-## No test: 
-# Build a PCA object to plot
-PCAObj <- CreatePCAObject(
-  data = mtcars,
-  VarsToReduce = names(mtcars),
-  numComponents = 3
-)
-
-# Default 3D scatter of the first three components
-plotPCA(PCAObj)
-
-# 2D scatter colored by a variable in the data
-plotPCA(
-  PCAObj,
-  Components = c("RC1", "RC2"),
-  Mode = "2D",
-  Var = "cyl",
-  ColorType = "factor"
-)
-
-# Add hover information
-plotPCA(
-  PCAObj,
-  Components = c("RC1", "RC2"),
-  Mode = "2D",
-  HoverVars = c("mpg", "hp")
-)
-## End(No test)
 
 
 
 
-base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-base::cat("plotPCA", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 cleanEx()
 nameEx("plotSigAssociations")
 ### * plotSigAssociations
 
 flush(stderr()); flush(stdout())
 
-base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 ### Name: plotSigAssociations
 ### Title: Plot Significant Associations
 ### Aliases: plotSigAssociations
 
 ### ** Examples
 
-## No test: 
-# Build an ANOVA relationships matrix, then plot the significant pairs
-av <- PlotAnovaRelationshipsMatrix(
-  mtcars,
-  CatVars = c("cyl", "gear"),
-  ContVars = c("mpg", "wt", "hp")
-)
-
-plots <- plotSigAssociations(mtcars, av)
-
-# Display the first significant-association plot
-plots[[1]]
-## End(No test)
 
 
 
-base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-base::cat("plotSigAssociations", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 cleanEx()
 nameEx("plotSigCorrelations")
 ### * plotSigCorrelations
 
 flush(stderr()); flush(stdout())
 
-base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 ### Name: plotSigCorrelations
 ### Title: Plot Significant Correlations
 ### Aliases: plotSigCorrelations
 
 ### ** Examples
 
-## No test: 
-# Build a correlation heatmap, then plot the significant pairs
-ch <- PlotCorrelationsHeatmap(
-  mtcars,
-  predictor_vars = c("mpg", "wt", "hp"),
-  outcome_vars = c("mpg", "wt", "hp")
+
+
+
+cleanEx()
+nameEx("removeString")
+### * removeString
+
+flush(stderr()); flush(stdout())
+
+### Name: removeString
+### Title: Remove Strings from a Vector
+### Aliases: removeString
+
+### ** Examples
+
+data(SampleData)
+data(SampleVariableTypes)
+
+Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
+
+# Every numeric column, including ones that are not really measurements
+vars_Numeric <- getNumVars(Labelled)
+length(vars_Numeric)
+
+# Drop the ones that should not be screened as biomarkers
+vars_Biomarkers <- removeString(vars_Numeric, c("age", "tau", "p_tau"))
+length(vars_Biomarkers)
+utils::head(vars_Biomarkers, 4)
+
+# Names that are not present are ignored, so an over-broad exclusion list
+# is harmless
+removeString(c("age", "sex", "AXL"), c("sex", "not_a_column"))
+
+# Unlike setdiff(), duplicates in the original are kept
+removeString(c("a", "a", "b", "c"), "b")
+setdiff(c("a", "a", "b", "c"), "b")
+
+
+
+
+cleanEx()
+nameEx("safe_merge")
+### * safe_merge
+
+flush(stderr()); flush(stdout())
+
+### Name: safe_merge
+### Title: Safely merge two data frames with relationship-aware validation
+### Aliases: safe_merge
+
+### ** Examples
+
+left <- data.frame(
+  record_id = c(1, 1, 2, 2),
+  visit_type = c(1, 2, 1, 2),
+  age = c(40, 40, 55, 55)
 )
 
-plots <- plotSigCorrelations(mtcars, ch)
+right <- data.frame(
+  record_id = c(1, 2),
+  imaging_score = c(0.4, 0.8)
+)
 
-# Display the first significant-correlation scatterplot
-plots[[1]]
-## End(No test)
+m <- safe_merge(
+  df_before = left,
+  df_add = right,
+  by = "record_id",
+  name = "Example imaging merge",
+  expected_relationship = "many-to-one"
+)
+
+m$log
 
 
 
-base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-base::cat("plotSigCorrelations", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
+
+cleanEx()
+nameEx("scale_color_SciData")
+### * scale_color_SciData
+
+flush(stderr()); flush(stdout())
+
+### Name: scale_color_SciData
+### Title: SciDataReportR discrete color scale
+### Aliases: scale_color_SciData
+
+### ** Examples
+
+ggplot2::ggplot(
+  iris,
+  ggplot2::aes(
+    x = Sepal.Length,
+    y = Sepal.Width,
+    color = Species
+  )
+) +
+  ggplot2::geom_point() +
+  scale_color_SciData()
+
+
+
+
+cleanEx()
+nameEx("scale_color_pvalue")
+### * scale_color_pvalue
+
+flush(stderr()); flush(stdout())
+
+### Name: scale_color_pvalue
+### Title: Apply an evidence-aware p-value color scale
+### Aliases: scale_color_pvalue
+
+### ** Examples
+
+
+
+
+
+cleanEx()
+nameEx("scale_fill_SciData")
+### * scale_fill_SciData
+
+flush(stderr()); flush(stdout())
+
+### Name: scale_fill_SciData
+### Title: SciDataReportR discrete fill scale
+### Aliases: scale_fill_SciData
+
+### ** Examples
+
+ggplot2::ggplot(
+  iris,
+  ggplot2::aes(
+    x = Species,
+    y = Sepal.Length,
+    fill = Species
+  )
+) +
+  ggplot2::geom_boxplot() +
+  scale_fill_SciData()
+
+
+
+
+cleanEx()
+nameEx("scale_fill_pvalue")
+### * scale_fill_pvalue
+
+flush(stderr()); flush(stdout())
+
+### Name: scale_fill_pvalue
+### Title: Apply an evidence-aware p-value fill scale
+### Aliases: scale_fill_pvalue
+
+### ** Examples
+
+
+
+
+
 cleanEx()
 nameEx("windsorize")
 ### * windsorize
 
 flush(stderr()); flush(stdout())
 
-base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 ### Name: windsorize
 ### Title: Winsorize a numeric vector using SD or IQR thresholds
 ### Aliases: windsorize
@@ -2659,7 +3210,10 @@ windsorize(x, method = "sd", sdlim = 2.5)
 # IQR-based winsorization
 windsorize(x, method = "iqr", iqrlim = 1.5)
 
-# Compare the distribution before and after winsorization
+# Compare the distribution before and after winsorization. Both panels are
+# drawn on the raw data's x range, because free scales would rescale the
+# winsorized panel to its own narrower range and hide the very thing being
+# demonstrated.
 set.seed(42)
 x <- c(rnorm(200, mean = 10, sd = 2), 30, 32, -8, -10)
 compare_df <- data.frame(
@@ -2667,13 +3221,38 @@ compare_df <- data.frame(
   winsorized = windsorize(x, method = "iqr", iqrlim = 1.5)
 )
 
-PlotContinuousDistributions(compare_df, variables = c("raw", "winsorized"))
+df_Compare <- tidyr::pivot_longer(
+  compare_df,
+  cols = dplyr::everything(),
+  names_to = "Version",
+  values_to = "Value"
+)
+df_Compare$Version <- factor(
+  df_Compare$Version,
+  levels = c("raw", "winsorized"),
+  labels = c("Raw", "Winsorized")
+)
+
+ggplot2::ggplot(df_Compare, ggplot2::aes(x = Value)) +
+  ggplot2::geom_histogram(bins = 40, na.rm = TRUE) +
+  ggplot2::facet_wrap(~ Version, ncol = 1) +
+  ggplot2::coord_cartesian(xlim = range(compare_df$raw, na.rm = TRUE)) +
+  ggplot2::labs(
+    title = "Winsorization pulls outliers to the limits",
+    subtitle = "Both panels share the raw data's x range",
+    x = "Value", y = "Count"
+  ) +
+  ggplot2::theme_bw()
+
+# The four extreme values are gone from the tails and have reappeared as
+# taller bars at the winsorized limits; nothing was dropped.
+range(compare_df$raw)
+range(compare_df$winsorized)
+length(compare_df$raw) == length(compare_df$winsorized)
 
 
 
 
-base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-base::cat("windsorize", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 ### * <FOOTER>
 ###
 cleanEx()

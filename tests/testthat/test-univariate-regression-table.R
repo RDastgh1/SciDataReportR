@@ -32,6 +32,113 @@ test_that("MakeUnivariateRegressionTable fits linear and logistic outcomes", {
   expect_true(all(logistic_results$Estimate > 0, na.rm = TRUE))
 })
 
+test_that("MakeUnivariateRegressionTable restores wide formatted and detail tables", {
+  set.seed(926)
+  x_signal <- rnorm(120)
+  df <- data.frame(
+    y_linear = 2 * x_signal + rnorm(120, sd = 0.1),
+    y_binary = factor(
+      ifelse(0.7 * x_signal + rnorm(120) > 0, "Case", "Control"),
+      levels = c("Control", "Case")
+    ),
+    x_signal = x_signal,
+    x_null = rnorm(120)
+  )
+  attr(df$y_linear, "label") <- "Linear outcome"
+  attr(df$y_binary, "label") <- "Binary outcome"
+  attr(df$x_signal, "label") <- "Signal marker"
+
+  res <- MakeUnivariateRegressionTable(
+    data = df,
+    outcome_vars = c("y_linear", "y_binary"),
+    predictor_vars = c("x_signal", "x_null")
+  )
+
+  formatted_data <- res$FormattedTable[["_data"]]
+  detail_data <- res$LargeTable[["_data"]]
+  formatted_spanners <- res$FormattedTable[["_spanners"]]
+  detail_spanners <- res$LargeTable[["_spanners"]]
+  formatted_styles <- res$FormattedTable[["_styles"]]
+
+  expect_equal(unlist(formatted_spanners$spanner_label), c("Linear outcome", "Binary outcome"))
+  expect_equal(unlist(detail_spanners$spanner_label), c("Linear outcome", "Binary outcome"))
+  expect_true(all(c("Outcome1_EffectCI", "Outcome1_P", "Outcome2_EffectCI", "Outcome2_P") %in% names(formatted_data)))
+  expect_true(all(c("Outcome1_N", "Outcome1_Estimate", "Outcome1_StdError", "Outcome1_ConfLow", "Outcome1_ConfHigh", "Outcome1_PValue") %in% names(detail_data)))
+  expect_equal(
+    grepl("\\*$", formatted_data$Outcome1_EffectCI),
+    res$Results$Significant[res$Results$Outcome == "y_linear"]
+  )
+  expect_equal(
+    grepl("\\*$", formatted_data$Outcome2_EffectCI),
+    res$Results$Significant[res$Results$Outcome == "y_binary"]
+  )
+  expect_equal(nrow(formatted_styles), 2 * sum(res$Results$Significant))
+  expect_true(all(vapply(
+    formatted_styles$styles,
+    function(style) style$cell_text$weight,
+    character(1)
+  ) == "bold"))
+  expect_true(all(formatted_styles$colname %in% c("Outcome1_EffectCI", "Outcome1_P", "Outcome2_EffectCI", "Outcome2_P")))
+  expect_true(all(grepl("Odds ratio", res$LargeTable[["_boxhead"]]$column_label[res$LargeTable[["_boxhead"]]$var == "Outcome2_Estimate"])))
+  expect_equal(res$Results$Significant, res$Results$PValue < 0.05)
+})
+
+test_that("MakeUnivariateRegressionTable supports non-syntactic variable names", {
+  set.seed(923)
+  df <- data.frame(
+    "Global Mean T" = rnorm(90),
+    "Global Mean T change" = rnorm(90),
+    "log AB-38 CSF" = rnorm(90),
+    "log IL-12/IL-23p40 Plasma" = rnorm(90),
+    "Age-years" = rnorm(90),
+    check.names = FALSE
+  )
+
+  res <- MakeUnivariateRegressionTable(
+    data = df,
+    outcome_vars = c("Global Mean T", "Global Mean T change"),
+    predictor_vars = c("log AB-38 CSF", "log IL-12/IL-23p40 Plasma"),
+    covariates = "Age-years",
+    ReturnModels = TRUE
+  )
+
+  expect_equal(nrow(res$Results), 4)
+  expect_setequal(res$Results$Outcome, c("Global Mean T", "Global Mean T change"))
+  expect_setequal(
+    res$Results$Predictor,
+    c("log AB-38 CSF", "log IL-12/IL-23p40 Plasma")
+  )
+  expect_equal(
+    all.vars(stats::formula(
+      res$ModelSummaries[["Global Mean T"]][["log IL-12/IL-23p40 Plasma"]]
+    )),
+    c("Global Mean T", "log IL-12/IL-23p40 Plasma", "Age-years")
+  )
+})
+
+test_that("MakeUnivariateRegressionTable labels factor levels with non-syntactic names", {
+  set.seed(924)
+  df <- data.frame(
+    "Global Mean T" = rnorm(80),
+    "Treatment Arm/Group" = factor(
+      rep(c("Placebo", "Active"), each = 40),
+      levels = c("Placebo", "Active")
+    ),
+    check.names = FALSE
+  )
+  attr(df[["Treatment Arm/Group"]], "label") <- "Treatment group"
+
+  res <- MakeUnivariateRegressionTable(
+    data = df,
+    outcome_vars = "Global Mean T",
+    predictor_vars = "Treatment Arm/Group"
+  )
+
+  expect_equal(res$Results$Term, "`Treatment Arm/Group`Active")
+  expect_equal(res$Results$Level, "Active")
+  expect_equal(res$Results$TermLabel, "Treatment group : Active")
+})
+
 test_that("MakeUnivariateRegressionTable skips model objects by default", {
   set.seed(908)
   df <- data.frame(

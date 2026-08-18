@@ -1,0 +1,31 @@
+
+> library(SciDataReportR)
+
+> library(dplyr)
+
+Attaching package: ‘dplyr’
+
+The following objects are masked from ‘package:stats’:
+
+    filter, lag
+
+The following objects are masked from ‘package:base’:
+
+    intersect, setdiff, setequal, union
+
+
+> library(ggplot2)
+
+> data("SimulatedPhenotypeData", package = "SciDataReportR")
+Warning in data("SimulatedPhenotypeData", package = "SciDataReportR") :
+  data set ‘SimulatedPhenotypeData’ not found
+
+> data("SimulatedPhenotypeVariableTypes", package = "SciDataReportR")
+Warning in data("SimulatedPhenotypeVariableTypes", package = "SciDataReportR") :
+  data set ‘SimulatedPhenotypeVariableTypes’ not found
+
+> df_Raw <- SimulatedPhenotypeData
+
+  When sourcing ‘ClusteringPhenotyping.R’:
+Error: object 'SimulatedPhenotypeData' not found
+Execution halted

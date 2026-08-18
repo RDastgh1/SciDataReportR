@@ -41,7 +41,13 @@
 #' @return A named list with `RawPPlot`, `FDRPlot`, and `ResultsTable`.
 #'   `RawPPlot` uses `-log10(PValue)` on the y-axis. `FDRPlot` uses
 #'   `-log10(FDR)` on the y-axis. `ResultsTable` is a tibble with one row per
-#'   analyzed predictor.
+#'   analyzed predictor. For continuous outcomes it includes `R` (the zero-order
+#'   Pearson correlation between the predictor and outcome) and `AdjustedR` (the
+#'   covariate-adjusted partial correlation, `NA` when no covariates are given).
+#'   For two-group categorical outcomes it includes `Group1Level`, `Group2Level`,
+#'   `Group1Mean`, and `Group2Mean` (the raw predictor means within each outcome
+#'   group). These values are also surfaced in the `Tooltip` column used by
+#'   `plotly::ggplotly(tooltip = "text")`.
 #' @examples
 #' data(SampleData)
 #' data(SampleVariableTypes)
@@ -49,9 +55,15 @@
 #' # Attach labels and factor levels for readable point labels
 #' Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
 #'
-#' predictors <- c("Alpha_1_Antitrypsin", "Alpha_2_Macroglobulin",
-#'                 "Apolipoprotein_A1", "Apolipoprotein_B", "C_Reactive_Protein",
-#'                 "Cortisol", "Insulin", "Leptin")
+#' predictors <- c(
+#'   "ACE_CD143_Angiotensin_Converti", "ACTH_Adrenocorticotropic_Hormon",
+#'   "Adiponectin", "Alpha_1_Antichymotrypsin", "Alpha_1_Antitrypsin",
+#'   "Alpha_2_Macroglobulin", "Apolipoprotein_A1", "Apolipoprotein_B",
+#'   "B_Lymphocyte_Chemoattractant_BL", "C_Reactive_Protein", "Cortisol",
+#'   "Eotaxin_3", "Ferritin", "Fibrinogen", "GRO_alpha", "IGF_BP_2", "MIF",
+#'   "MMP10", "MMP7", "NT_proBNP", "PAI_1", "Resistin", "TRAIL_R3", "VEGF",
+#'   "Ab_42", "p_tau", "tau"
+#' )
 #'
 #' # Continuous outcome, adjusted for age
 #' cont <- PlotVolcanoEffects(
@@ -63,7 +75,9 @@
 #'   LabelMode = "top_n",
 #'   TopN = 3
 #' )
+#' # Raw and FDR-adjusted continuous-outcome volcano plots
 #' cont$RawPPlot
+#' cont$FDRPlot
 #'
 #' # Categorical outcome (Diagnosis), Cohen's d effect metric
 #' cat_res <- PlotVolcanoEffects(
@@ -75,7 +89,9 @@
 #'   LabelMode = "top_n",
 #'   TopN = 3
 #' )
+#' # Raw and FDR-adjusted categorical-outcome volcano plots
 #' cat_res$RawPPlot
+#' cat_res$FDRPlot
 #' @param Data \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
 #' @param xVars \strong{Deprecated} (since 19.15.0). Use \code{predictor_vars} instead.
 #' @param yVar \strong{Deprecated} (since 19.15.0). Use \code{outcome_var} instead.
@@ -404,6 +420,24 @@ PlotVolcanoEffects <- function(data,
       effect <- unname(coefficient_table[".volcano_x_scaled", "Estimate"])
       p_value <- unname(coefficient_table[".volcano_x_scaled", "Pr(>|t|)"])
 
+      # Zero-order Pearson correlation between the raw predictor and outcome.
+      pearson_r <- tryCatch(
+        stats::cor(model_data[[this_var]], model_data[[yVar]], use = "complete.obs"),
+        error = function(e) NA_real_
+      )
+
+      # Adjusted (partial) correlation of the predictor with the outcome, holding
+      # the covariates constant. Derived from the predictor's t-statistic so no
+      # extra package is required. NA when there are no covariates.
+      adjusted_r <- NA_real_
+      if (!is.null(Covariates)) {
+        t_val <- unname(coefficient_table[".volcano_x_scaled", "t value"])
+        df_resid <- stats::df.residual(model_fit)
+        if (is.finite(t_val) && is.finite(df_resid) && df_resid > 0) {
+          adjusted_r <- unname(t_val / sqrt(t_val^2 + df_resid))
+        }
+      }
+
       return(
         tibble::tibble(
           Variable = this_var,
@@ -414,6 +448,8 @@ PlotVolcanoEffects <- function(data,
           EffectType = "Standardized beta",
           PValue = p_value,
           N = final_n,
+          R = pearson_r,
+          AdjustedR = adjusted_r,
           Note = NA_character_
         )
       )
@@ -555,6 +591,15 @@ PlotVolcanoEffects <- function(data,
     effect <- unname(coefficient_table[group_coef, "Estimate"])
     p_value <- unname(coefficient_table[group_coef, "Pr(>|t|)"])
 
+    # Group means of the raw predictor within each outcome level. outcome_levels
+    # is length-2 and sorted, so Group1 is the first level and Group2 the second.
+    group_means <- tapply(
+      model_data[[this_var]],
+      model_data$.volcano_group,
+      mean,
+      na.rm = TRUE
+    )
+
     tibble::tibble(
       Variable = this_var,
       Label = unname(label_lookup[[this_var]]),
@@ -568,11 +613,49 @@ PlotVolcanoEffects <- function(data,
       ),
       PValue = p_value,
       N = final_n,
+      Group1Level = outcome_levels[1],
+      Group2Level = outcome_levels[2],
+      Group1Mean = unname(group_means[[outcome_levels[1]]]),
+      Group2Mean = unname(group_means[[outcome_levels[2]]]),
       Note = NA_character_
     )
   })
 
   # Build outputs
+
+  # Guarantee the metric columns exist even when every model of a given type
+  # failed (purrr::map_dfr only creates a column when at least one row supplies
+  # it). Continuous runs carry R/AdjustedR; categorical runs carry group means.
+  ensure_col <- function(df, col, default) {
+    if (!col %in% names(df)) df[[col]] <- default
+    df
+  }
+  results <- results %>%
+    ensure_col("R", NA_real_) %>%
+    ensure_col("AdjustedR", NA_real_) %>%
+    ensure_col("Group1Level", NA_character_) %>%
+    ensure_col("Group2Level", NA_character_) %>%
+    ensure_col("Group1Mean", NA_real_) %>%
+    ensure_col("Group2Mean", NA_real_)
+
+  # Extra tooltip lines depend on the outcome type, which is constant for the
+  # whole call: correlations for continuous outcomes, group means for
+  # categorical ones.
+  if (OutcomeType == "continuous") {
+    tooltip_extra <- paste0(
+      "<br>r: ", ifelse(is.na(results$R), "NA", signif(results$R, 3)),
+      ifelse(
+        is.na(results$AdjustedR),
+        "",
+        paste0("<br>Adjusted r: ", signif(results$AdjustedR, 3))
+      )
+    )
+  } else {
+    tooltip_extra <- paste0(
+      "<br>", results$Group1Level, " mean: ", signif(results$Group1Mean, 3),
+      "<br>", results$Group2Level, " mean: ", signif(results$Group2Mean, 3)
+    )
+  }
 
   results <- results %>%
     dplyr::mutate(
@@ -598,6 +681,7 @@ PlotVolcanoEffects <- function(data,
         "<br>Outcome: ", .data$Outcome,
         "<br>Effect type: ", .data$EffectType,
         "<br>Effect: ", round(.data$Effect, 3),
+        tooltip_extra,
         "<br>P: ", signif(.data$PValue, 3),
         "<br>FDR: ", signif(.data$FDR, 3),
         "<br>N: ", .data$N

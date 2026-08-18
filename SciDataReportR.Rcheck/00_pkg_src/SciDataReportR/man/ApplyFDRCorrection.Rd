@@ -6,17 +6,20 @@
 \usage{
 ApplyFDRCorrection(
   pmat,
-  fdr_scope = c("matrix", "per_outcome"),
+  fdr_scope = c("matrix", "per_outcome", "per_predictor"),
   outcome_margin = 2,
   method = "fdr",
-  outcome_ids = NULL
+  outcome_ids = NULL,
+  predictor_ids = NULL,
+  symmetric = "auto",
+  include_diagonal = FALSE
 )
 }
 \arguments{
 \item{pmat}{A numeric matrix or data frame of p-values, or a plain numeric
 vector. Matrices and data frames keep their dimensions and dimnames.}
 
-\item{fdr_scope}{Either \code{"matrix"} (default) or \code{"per_outcome"}.
+\item{fdr_scope}{Either \code{"matrix"} (default), \code{"per_outcome"}, or \code{"per_predictor"}.
 \code{"matrix"} corrects across all p-values at once (one family).
 \code{"per_outcome"} corrects separately within each outcome's p-values:
 for matrix input, groups run along \code{outcome_margin}; for vector input,
@@ -34,6 +37,20 @@ outcome each p-value belongs to. Only used - and then required - when
 \code{pmat} is a vector and \code{fdr_scope = "per_outcome"}. This is how the
 long-format table functions (for example \code{\link[=PlotPhiHeatmap]{PlotPhiHeatmap()}} or
 \code{\link[=PlotChiSqCovar]{PlotChiSqCovar()}}) group their p-values by outcome.}
+
+\item{predictor_ids}{Optional vector (same length as \code{pmat}) identifying the
+predictor each p-value belongs to. Only used - and then required - when
+\code{pmat} is a vector and \code{fdr_scope = "per_predictor"}.}
+
+\item{symmetric}{How to treat a square matrix whose two triangles hold the
+same p-values. \code{"auto"} (default) detects symmetry and corrects each pair
+once; \code{TRUE} requires it (and errors if \code{pmat} is not symmetric); \code{FALSE}
+restores the whole-matrix behavior that counts each pair twice. Ignored
+for vector input. See the Symmetric matrices section.}
+
+\item{include_diagonal}{Logical; for symmetric input, whether the diagonal
+(self-comparisons) joins the family being corrected. Default \code{FALSE},
+which excludes it and returns \code{NA} on the diagonal.}
 }
 \value{
 An object of the same shape as \code{pmat} (matrix, data frame, or
@@ -46,6 +63,47 @@ All non-finite p-values (\code{NA}, \code{NaN}) are left untouched and excluded 
 the correction, matching the long-standing behavior of the plotting
 functions that now delegate to this helper.
 }
+\section{Symmetric matrices}{
+
+When a variable set is correlated against itself, the resulting p-value
+matrix is symmetric: every pair appears twice, above and below the diagonal,
+and the diagonal holds self-comparisons that were never tested. Correcting
+across every cell therefore describes a family of \code{n * (n - 1)} tests when
+only \code{n * (n - 1) / 2} were actually run - 90 instead of 45 for ten
+variables.
+
+How much that matters depends on the method, and on what sits on the
+diagonal:
+\itemize{
+\item Benjamini-Hochberg (\code{method = "fdr"}, the default) is invariant to exact
+duplication, because doubling both a p-value's rank and the family size
+cancels out. Adjusted values are unchanged.
+\item \code{"bonferroni"}, \code{"holm"}, and \code{"hochberg"} are not invariant. Counting
+each pair twice made every adjusted p-value exactly twice as large as it
+should be.
+\item A diagonal carrying real values is the damaging case in every method. A
+self-correlation p-value of 0 enters the family as the most significant
+test there is, which drags the whole ranking down and makes the off-diagonal
+results look \emph{stronger} than they are.
+}
+
+\code{symmetric = "auto"} (the default) detects symmetry and corrects the unique
+pairs once, then mirrors the adjusted values back into the lower triangle so
+the matrix stays symmetric. The diagonal is excluded from the family and
+returned as \code{NA} unless \code{include_diagonal = TRUE}. Set \code{symmetric = FALSE}
+to force the old whole-matrix behavior, or \code{symmetric = TRUE} to require
+symmetric handling and error out if \code{pmat} is not symmetric.
+
+Detection ignores the diagonal, since the heatmap functions routinely blank
+it before correcting, and requires the two triangles to agree on both their
+values and their missing cells. An asymmetric matrix is never affected.
+
+Under \code{"per_outcome"} or \code{"per_predictor"} scope each row or column is
+already a family of unique tests, so symmetric input only has its diagonal
+excluded. The result of a per-group correction on a symmetric matrix is not
+itself symmetric.
+}
+
 \examples{
 pm <- matrix(c(0.01, 0.02, 0.03, 0.04, 0.05, 0.06),
              nrow = 2,
@@ -61,5 +119,19 @@ ApplyFDRCorrection(pm, fdr_scope = "per_outcome", outcome_margin = 2)
 ApplyFDRCorrection(c(0.01, 0.04, 0.02, 0.03),
                    fdr_scope = "per_outcome",
                    outcome_ids = c("y1", "y1", "y2", "y2"))
+
+# A symmetric matrix: six filled cells, but only three pairs tested
+vars <- c("mmse", "trails", "digit_span")
+pm_sym <- matrix(NA_real_, 3, 3, dimnames = list(vars, vars))
+pm_sym[lower.tri(pm_sym)] <- c(0.001, 0.020, 0.040)
+pm_sym[upper.tri(pm_sym)] <- t(pm_sym)[upper.tri(pm_sym)]
+pm_sym
+
+# Detected automatically: three tests in the family, diagonal excluded
+ApplyFDRCorrection(pm_sym)
+
+# Bonferroni, corrected once per pair and then against all six cells
+ApplyFDRCorrection(pm_sym, method = "bonferroni")
+ApplyFDRCorrection(pm_sym, method = "bonferroni", symmetric = FALSE)
 
 }

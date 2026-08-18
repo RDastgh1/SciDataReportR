@@ -11,6 +11,60 @@
 #' @param prefer Optional named character vector of explicit positive levels,
 #'   e.g., c(STATUS = "PWH", Smoker = "Yes"). This overrides other rules.
 #' @return A data.frame with columns: Variable, Label, PositiveLevel, NegativeLevel.
+#' @details
+#' Modelling a two-level variable means scoring one level against the other,
+#' and which level counts as "positive" decides the sign of every coefficient
+#' and odds ratio that follows. This resolves that choice once, explicitly, and
+#' returns it as a table so it can be checked rather than assumed.
+#'
+#' The rules are applied in order: an explicit `prefer` entry always wins; an
+#' ordered factor uses its highest level; otherwise a short list of
+#' conventional affirmative labels ("Yes", "Present", "Case", and similar) is
+#' consulted, then the larger of two numbers, and finally the second level in
+#' sorted order. The heuristics deliberately exclude race, sex, and serostatus
+#' terms, because there is no defensible default "positive" level for those -
+#' name them through `prefer`.
+#'
+#' @seealso [getBinaryVars()] to find the candidates.
+#'
+#' @examples
+#' \donttest{
+#' data(SampleData)
+#' data(SampleVariableTypes)
+#'
+#' Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
+#' vars_Binary <- getBinaryVars(Labelled)
+#'
+#' # One row per variable, naming the level scored as positive
+#' mapping <- createBinaryMapping(Labelled, vars_Binary)
+#'
+#' htmltools::browsable(htmltools::HTML(as.character(
+#'   FreezeTableHeader(mapping, full_width = TRUE)
+#' )))
+#'
+#' # `prefer` overrides the choice, which is how to set a direction the
+#' # heuristics will not guess at - `sex` is exactly that case.
+#' createBinaryMapping(
+#'   Labelled, vars_Binary,
+#'   prefer = c(Diagnosis = "Control", sex = "Female")
+#' )
+#'
+#' # The rules on constructed variables: an ordered factor takes its highest
+#' # level, a logical takes TRUE, a 0/1 numeric takes the larger number, and a
+#' # conventional affirmative label is recognised.
+#' df_Rules <- data.frame(
+#'   Severity = factor(c("Mild", "Severe"), levels = c("Mild", "Severe"),
+#'                     ordered = TRUE),
+#'   Responded = c(TRUE, FALSE),
+#'   Coded01 = c(0, 1),
+#'   Smoker = c("Yes", "No")
+#' )
+#'
+#' createBinaryMapping(
+#'   df_Rules, c("Severity", "Responded", "Coded01", "Smoker")
+#' )
+#' }
+#'
 #' @param Data \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
 #' @export
 createBinaryMapping <- function(data,

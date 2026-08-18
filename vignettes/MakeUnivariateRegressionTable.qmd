@@ -90,14 +90,17 @@ Reg_Obj_Un <- MakeUnivariateRegressionTable(
 
 ## Formatted and detailed tables
 
-`FormattedTable` is the report-facing table.
+`FormattedTable` is the report-facing wide table: each outcome has its own
+column spanner with an estimate (95% CI) and p-value. Significant effects carry
+stars and are bolded.
 
 ```{r}
 #| label: DisplayFormattedTable
 Reg_Obj_Un$FormattedTable
 ```
 
-`LargeTable` keeps more of the model detail and is useful for QC.
+`LargeTable` uses the same wide outcome layout but keeps N, estimate, standard
+error, confidence limits, and p-value as separate columns for QC.
 
 ```{r}
 #| label: DisplayLargeTable

@@ -103,7 +103,7 @@ MergeFragmentedRecords <- function(data,
     df <- df %>%
       dplyr::mutate(
         dplyr::across(
-          where(is.character),
+          dplyr::where(is.character),
           ~ dplyr::na_if(.x, "")
         )
       )

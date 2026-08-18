@@ -18,7 +18,7 @@ Plot2GroupStats(
   x_axis = c("signed_logp", "signed_effect", "effect", "logp"),
   sort_by = c("q", "p", "effect", "signed_logp", "signed_effect", "none"),
   mct_args = list(),
-  palette = "pals::alphabet",
+  palette = NULL,
   point_size = 3.5,
   Data = lifecycle::deprecated(),
   Variables = lifecycle::deprecated(),
@@ -52,7 +52,9 @@ Plot2GroupStats(
 
 \item{mct_args}{list of extra args to SciDataReportR::MakeComparisonTable(); e.g., AddEffectSize=TRUE}
 
-\item{palette}{paletteer palette string for category colors (default "pals::alphabet")}
+\item{palette}{Optional paletteer palette string for category colors. When
+\code{NULL} (the default), the SciDataReportR palette is used. Passing a
+paletteer string such as \code{"pals::alphabet"} still works as before.}
 
 \item{point_size}{numeric constant for point size (default 3.5)}
 
@@ -77,7 +79,7 @@ data(SampleVariableTypes)
 # Attach labels and factor levels for readable output
 Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
 
-# Compare 30 analytes between Diagnosis groups
+# A broad biomarker panel compared between Diagnosis groups
 vars <- c(
   "age", "ACE_CD143_Angiotensin_Converti", "ACTH_Adrenocorticotropic_Hormon",
   "AXL", "Adiponectin", "Alpha_1_Antichymotrypsin", "Alpha_1_Antitrypsin",
@@ -87,7 +89,8 @@ vars <- c(
   "Apolipoprotein_CIII", "Apolipoprotein_D", "Apolipoprotein_E",
   "Apolipoprotein_H", "B_Lymphocyte_Chemoattractant_BL", "BMP_6",
   "Beta_2_Microglobulin", "Betacellulin", "C_Reactive_Protein", "CD40",
-  "CD5L", "Calbindin", "Calcitonin", "CgA"
+  "CD5L", "Calbindin", "Calcitonin", "CgA", "GRO_alpha", "MMP10", "MMP7",
+  "NT_proBNP", "PAI_1", "TRAIL_R3", "VEGF", "Ab_42", "p_tau", "tau"
 )
 
 result <- Plot2GroupStats(
@@ -95,10 +98,14 @@ result <- Plot2GroupStats(
   variables = vars,
   group_var = "Diagnosis",
   impClust = "Impaired",
-  normalClust = "Control"
+  normalClust = "Control",
+  label_q = 0.0001
 )
 
-# Display the group-comparison plot
-result$plot
+# Compact y-axis labels; full results stay in result$pvaltable
+result$plot + ggplot2::theme(
+  axis.text.y = ggplot2::element_text(size = 6),
+  plot.margin = ggplot2::margin(t = 20, r = 10, b = 10, l = 10)
+)
 }
 }

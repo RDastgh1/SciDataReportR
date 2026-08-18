@@ -14,7 +14,11 @@ ReplaceMissingCode(
 \arguments{
 \item{data}{A data frame containing the data.}
 
-\item{codebook}{A data frame containing the variable codebook. It should have columns \code{Variable} and \code{MissingCode}, where \code{Variable} specifies the variable name in the data frame and \code{MissingCode} specifies the code to be replaced with \code{NA}.}
+\item{codebook}{A data frame containing the variable codebook. It must have
+columns \code{Variable} and \code{MissingCode}. \code{Variable} names the column in
+\code{data}; \code{MissingCode} holds the code, or several codes separated by commas
+or semicolons, to replace with \code{NA}. Rows with a missing or blank
+\code{MissingCode} are skipped.}
 
 \item{DataFrame}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
 
@@ -26,24 +30,77 @@ A data frame with specified missing codes replaced by \code{NA}.
 \description{
 This function replaces specified missing codes in a data frame with \code{NA} values based on a given variable codebook.
 }
+\details{
+Study databases rarely leave missing values empty. They record \emph{why} the
+value is missing, using sentinel numbers outside the plausible range - \code{-7}
+for "not applicable", \code{-8} for "refused", \code{-9} for "not asked", \code{999} for
+"unknown". Left in place, those codes are read as real measurements: a mean
+age climbs into the hundreds, and a variable coded \code{-7}/\code{-8} gets a negative
+mean that no one notices until much later.
+
+This converts every code listed in the codebook to \code{NA}, so the values are
+excluded from statistics and counted as missing.
+}
+\section{Several markers for one variable}{
+
+A variable usually has more than one missing code, since the whole point of
+sentinels is to distinguish reasons. List them all in a single
+\code{MissingCode} cell, separated by commas or semicolons:
+
+\if{html}{\out{<div class="sourceCode">}}\preformatted{Variable   MissingCode
+age        -7, -8, -9
+income     999; 9999
+}\if{html}{\out{</div>}}
+
+Whitespace around the separators is ignored, so \verb{-7,-8} and \verb{-7, -8} behave
+identically. When a codebook is assembled in R rather than read from a
+spreadsheet, \code{MissingCode} may also be a list-column of vectors.
+
+Codes are matched on the column's own scale: numerically for numeric
+columns, and as text for character and factor columns, so markers like
+\code{"Refused"} or \code{"Unknown"} work. When such a marker is a factor level, the
+level is removed along with the values, so it does not linger as an empty
+category in later tables.
+
+Variables whose \code{MissingCode} is blank are left untouched, and a codebook
+naming variables that are not in \code{data} warns rather than failing - a
+codebook usually describes more columns than any one analysis selects.
+}
+
 \examples{
-# A data frame that uses sentinel values to encode missingness
+# `age` uses three different codes to record three different reasons
 df <- data.frame(
-  id    = 1:6,
-  age   = c(34, 999, 52, 999, 41, 29),
-  score = c(10, -9, -9, 15, 20, 12)
+  id     = 1:6,
+  age    = c(34, 999, 52, -7, 41, -8),
+  score  = c(10, -9, -9, 15, 20, 12),
+  status = c("Active", "Unknown", "Active", "Withdrawn", "Unknown", "Active")
 )
 
-# A codebook mapping each variable to its missing code(s)
+# Several markers for one variable go in one cell
 codebook <- data.frame(
-  Variable    = c("age", "score"),
-  MissingCode = c("999", "-9")
+  Variable    = c("age", "score", "status"),
+  MissingCode = c("999, -7, -8", "-9", "Unknown")
 )
 
-# Before: sentinel codes still present
+# Before: the sentinels are averaged in as if they were ages
 df
+mean(df$age)
 
-# After: sentinel codes replaced with NA
-ReplaceMissingCode(df, codebook)
+# After: every listed code becomes NA
+cleaned <- ReplaceMissingCode(df, codebook)
+cleaned
+mean(cleaned$age, na.rm = TRUE)
+colSums(is.na(cleaned))
 
+# Blank codes are skipped
+ReplaceMissingCode(
+  df,
+  data.frame(Variable = c("id", "age"), MissingCode = c(NA, "999, -7, -8"))
+)
+
+}
+\seealso{
+\code{\link[=CreateVariableTypesTemplate]{CreateVariableTypesTemplate()}}, which generates a codebook with a
+\code{MissingCode} column ready to fill in, and \code{\link[=RevalueData]{RevalueData()}}, which applies
+missing codes as part of the full relabelling workflow.
 }

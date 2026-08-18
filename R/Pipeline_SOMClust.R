@@ -22,20 +22,16 @@
 #' phenotype structure in a training cohort, then project new cohorts into the
 #' fixed phenotype space without reclustering.
 #'
+#' Ideal use: correlated continuous clinical or biomarker measures where a
+#' topology-preserving map is clinically informative before model-based profiles.
+#'
 #' Missing data:
 #' - SOM and clustering are fit only on rows with complete Z-scores.
-#' - The returned \code{df_with_clusters} has the full original data with
-#'   \code{.scidr_rowid} and a single cluster column appended; rows not used
-#'   in SOM/LPA get NA.
+#' - The returned \code{DataWithClusters} has exactly the original rows and
+#'   columns plus one cluster column; rows not used in SOM/LPA get NA.
 #' - The returned \code{ProbFit$individual} is also full length, preserving
 #'   one row per input row with NA posterior probabilities for rows excluded
 #'   from SOM/LPA.
-#'
-#' Stable row id:
-#' - \code{.scidr_rowid} is added to the input data and carried into
-#'   \code{df_with_clusters} and \code{ProbFit$individual}.
-#' - \code{ProbFit$individual$RowID} is set equal to \code{.scidr_rowid} so
-#'   merges do not rely on row order.
 #'
 #' Z-score behavior:
 #' - \code{ZScoreType = "Center and Scale"/"Center Only"/"Scale Only"} computes
@@ -57,13 +53,13 @@
 #'   recommended solution. In \code{"finalize"}, the user must specify
 #'   \code{final_k} and \code{final_model}.
 #' @param k_range Integer vector of numbers of clusters/profiles to consider
-#'   in exploratory mode. Default \code{2:15}.
+#'   in exploratory mode. Default \code{2:10}.
 #' @param models Integer vector of model specifications for tidyLPA
 #'   (mclust backend). Default \code{c(1, 2, 3)}.
 #' @param final_k Integer; number of profiles for \code{method = "finalize"}.
 #' @param final_model Integer; model specification for \code{method = "finalize"}
 #'   (should be one of \code{models}).
-#' @param ClusterName Name of the cluster column in the output. Defaults to
+#' @param ClusterVariableName Name of the cluster column in the output. Defaults to
 #'   \code{"Cluster"}. If this column already exists in \code{df}, it is
 #'   overwritten (with a message).
 #' @param ZScoreType One of:
@@ -116,8 +112,44 @@
 #'   is \code{0.95}.
 #' @param low_prob_threshold Numeric posterior probability threshold used to
 #'   flag uncertain phenotype membership. Default is \code{0.70}.
+#' @param stability_resamples Number of 80% participant subsample refits used
+#'   to assess reproducibility for every successful exploratory candidate.
+#'   Subsamples are drawn without replacement. Defaults to \code{0} (disabled);
+#'   use \code{50} for an exploratory stability screen.
+#' @param stability_seed Integer seed for participant subsampling.
+#' @param stability_progress Logical; if TRUE, print subsample progress messages.
 #'
 #' @details
+#' `ModelInfo_MClust$fit_table` uses the fit indices returned by tidyLPA's
+#' mclust backend. AIC, AWE, BIC, CAIC, CLC, KIC, SABIC, and ICL are
+#' likelihood/information criteria, for which lower values are preferred when
+#' comparing candidate fits estimated on the same data. Entropy summarizes
+#' classification separation (higher is better). `MinProfileNodeN` and
+#' `MaxProfileNodeN` are integer SOM-node counts in the smallest and largest
+#' profile; the corresponding `*Proportion` fields divide those counts by the
+#' total number of SOM nodes. `BLRTStatistic` and `BLRTPValue` compare a
+#' k-profile model with k - 1 profiles under the same covariance model. A
+#' small p-value supports the added profile's statistical fit, but does not
+#' establish clinical meaning or reproducibility; it is unavailable for k = 1.
+#' The raw \code{BLRTPValue} remains in the table. Its candidate-review panel
+#' displays \code{-log10(BLRTPValue)} with a dashed \code{0.05} p-value
+#' reference at \code{-log10(0.05)}.
+#'
+#' Lifecycle settings are intentionally strict: \code{k_range} and
+#' \code{models} are exploratory-only, while \code{final_k} and
+#' \code{final_model} are finalize-only. Supplying settings from both modes is
+#' an error, even when an exploratory setting equals its default.
+#'
+#' Stability is assessed by refitting the full SOM/LPA pipeline on independent
+#' 80% participant subsamples drawn without replacement.
+#' `StabilityARI_Mean` is the mean adjusted Rand index across successful
+#' refits and can be negative when agreement is worse than chance.
+#' `StabilityJaccard_Mean` is the mean label-matched, per-profile Jaccard
+#' recovery. `ReproducibilityScore` is the mean of their finite values;
+#' `StabilitySuccessRate` is reported separately. `Reproducibility_scaled` is
+#' the candidate-table min-max rescaling used only by the AHP index and is not
+#' an independently interpretable reproducibility measure.
+#'
 #' The AHP-style index is computed by:
 #' \enumerate{
 #'   \item Scaling AIC, BIC, and Entropy across candidate solutions
@@ -153,14 +185,37 @@
 #' \code{method = "finalize"}, \code{final_k}, and \code{final_model} to create
 #' the reusable model for projection.
 #'
-#' @return A list of class \code{"Pipeline_SOMClust"} with components:
+#' Set \code{stability_resamples} to a positive value to assess internal
+#' reproducibility. Each 80% subsample refits the same candidate SOM/LPA solution
+#' and projects the original participants back into it. Mean adjusted Rand
+#' index summarizes whole-partition agreement; cluster-wise Jaccard recovery
+#' identifies phenotypes that dissolve despite good overall agreement. This is
+#' internal reproducibility, not independent-cohort validation.
+#'
+#' @section Reviewing the candidates:
+#' Exploratory mode fits every combination of `k` and model family, so the
+#' comparison is made once, on one table, rather than by refitting by hand.
+#' `ModelInfo_MClust$fit_table` holds every candidate solution with its
+#' information criteria, entropy, subsample reproducibility, and the combined
+#' AHP index side by side.
+#'
+#' A candidate missing from that table is never a mystery:
+#' `ModelInfo_MClust$diagnostics$lpa_fit_diagnostics` records each fit's
+#' status, runtime, warnings, and errors, so model families that fail to
+#' converge or exceed the fit timeout show up there.
+#'
+#' Once a solution is chosen, refit it on its own with `method = "finalize"` to
+#' get the reusable, projectable model.
+#'
+#' @inheritSection cluster-stability-output Stability output
+#' @return A list of class \code{"Pipeline_SOM_MClust"} with components:
 #'   \itemize{
 #'     \item \code{method}, \code{vars_used}, \code{ZScoreType},
-#'           \code{ZScoreObject}, \code{ZScoreVars}, \code{ClusterName}
-#'     \item \code{complete_rows}: logical vector (rows used for SOM/LPA)
-#'     \item \code{df_with_clusters}: original \code{df} with \code{.scidr_rowid}
-#'           and only the cluster column appended
-#'     \item \code{fit_plot}: ggplot of AIC/BIC/Entropy vs k and model
+#'           \code{ZScoreObject}, \code{ZScoreVars}, \code{ClusterVariableName}
+#'     \item \code{DataWithClusters}: original \code{df} with only the
+#'           cluster column appended
+#'     \item \code{fit_plot}: ggplot of AIC/BIC/Entropy/BLRT p-value vs k and model
+#'           (plus reproducibility when subsample stability is enabled)
 #'     \item \code{ModelInfo_SOM}: list with \code{som_model},
 #'           \code{som_codes}, \code{som_grid}, \code{training_variable_summary},
 #'           \code{SOMFit} (distance diagnostics, baselines, and per-cluster
@@ -168,62 +223,105 @@
 #'     \item \code{ModelInfo_MClust}: list with \code{lpa_models},
 #'           \code{fit_table}, \code{AHP} information, and \code{diagnostics}
 #'           for LPA warnings, failures, runtimes, and preprocessing
+#'     \item \code{ModelInfo_MClust$Stability}: subsample replicate, cluster
+#'           recovery, and summary tables when \code{stability_resamples > 0}
 #'     \item \code{ProbFit}: list with \code{node} (node-level posterior
 #'           probabilities), \code{individual} (full-length per-person mapping
-#'           and probabilities, including \code{.scidr_rowid}), and probability plots
+#'           and probabilities), and probability plots
 #'   }
 #'
 #' @references
 #' Saaty TL. \emph{The Analytic Hierarchy Process}. McGraw-Hill, 1980.
+#' Kohonen T. Self-organized formation of topologically correct feature maps.
+#' \emph{Biological Cybernetics}. 1982;43:59-69. Scrucca L, Fop M, Murphy TB,
+#' Raftery AE. mclust 5. \emph{J Stat Softw}. 2016;71(11):1-29.
+#' Celeux G, Soromenho G. An entropy criterion for assessing the number of
+#' clusters in a mixture model. \emph{J Classification}. 1996;13:195-212.
+#' Cavanaugh JE. A large-sample model selection criterion based on Kullback's
+#' symmetric divergence. \emph{Stat Methodol}. 1999;61:165-180. Sclove SL.
+#' Application of model-selection criteria to some problems in multivariate
+#' analysis. \emph{Psychometrika}. 1987;52:333-343. Nylund KL, Asparouhov T,
+#' Muthen BO. Deciding on the number of classes in latent class analysis and
+#' growth mixture modeling. \emph{Struct Equ Modeling}. 2007;14:535-569.
+#' Akogul S, Erisoglu M. An approach for determining the number of clusters in
+#' a model-based cluster analysis. \emph{Entropy}. 2017;19:452.
 #'
 #' @param df \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
 #' @param id_col \strong{Deprecated} (since 19.15.0). Use \code{id_var} instead.
+#' @param .NodeClusterFn Internal. A function taking the SOM codebook matrix and
+#'   returning a list with a \code{node_cluster} integer vector (one label per
+#'   SOM node) and, optionally, \code{fit_table}, \code{ahp_best_row},
+#'   \code{recommendation}, \code{best_fit_name}, and \code{fit_plot}. When
+#'   supplied, the SOM codebook is clustered by that function and the
+#'   latent-profile grid is not fitted. Used by
+#'   [CreateClusterModel_SOM_HDBSCAN()]; not part of the user-facing API.
 #' @examples
 #' \donttest{
-#' data(SampleData)
-#' data(SampleVariableTypes)
+#' data("SimulatedPhenotypeData")
+#' df_Training <- dplyr::filter(SimulatedPhenotypeData, .data$Cohort == "Training")
+#' vars_Numeric <- paste0("Var", 1:12)
 #'
-#' df_Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
+#' # Example-only display helper (not exported by SciDataReportR): round the
+#' # numeric columns and add a frozen header.
+#' ShowFitTable <- function(x, height = "320px") {
+#'   x <- dplyr::mutate(
+#'     dplyr::as_tibble(x),
+#'     dplyr::across(dplyr::where(is.numeric), \(v) round(v, 3))
+#'   )
+#'   htmltools::browsable(htmltools::HTML(as.character(
+#'     FreezeTableHeader(x, height = height, full_width = TRUE)
+#'   )))
+#' }
 #'
-#' model <- CreateSOMClusterModel(
-#'   data = df_Labelled,
-#'   variables = c("age", "AXL", "Adiponectin", "Alpha_1_Antitrypsin"),
+#' # Exploratory mode: every combination of k and model family. Model 2 is
+#' # omitted here because it is the slowest to fit and, on this data, reaches
+#' # the fit timeout at every k without contributing a candidate.
+#' review <- CreateClusterModel_SOM_MClust(
+#'   data = df_Training,
+#'   variables = vars_Numeric,
 #'   method = "exploratory",
-#'   k_range = 2:4,
-#'   models = 1
+#'   k_range = 2:5,
+#'   models = c(1, 3),
+#'   som_xdim = 5,
+#'   som_ydim = 5,
+#'   stability_resamples = 2,
+#'   stability_seed = 20260805,
+#'   Relabel = FALSE,
+#'   min_nodes_per_cluster = NULL
 #' )
 #'
-#' # Compare candidate model fit and use the recommendation as a starting point.
-#' model$ModelInfo_MClust$fit_table
-#' model$ModelInfo_MClust$AHP$recommendation
-#' model$fit_plot
+#' # Every candidate solution
+#' ShowFitTable(review$ModelInfo_MClust$fit_table)
 #'
-#' # Explore feature patterns and topology in the interactive SOM widgets.
-#' model$ModelInfo_SOM$plots$Circular
-#' model$ModelInfo_SOM$plots$Line
-#' model$ModelInfo_SOM$plots$Cloud
+#' # Status, runtime, warnings, and errors for every attempted fit
+#' ShowFitTable(
+#'   review$ModelInfo_MClust$diagnostics$lpa_fit_diagnostics,
+#'   height = "260px"
+#' )
 #'
-#' # Review map representation and high-distance training cases.
-#' model$ModelInfo_SOM$SOMFit$plots$distance_hist
-#' model$ModelInfo_SOM$SOMFit$plots$distance_by_cluster_box
-#' model$ModelInfo_SOM$PhenotypeReference$plots$distance_ecdf
-#' model$ModelInfo_SOM$PhenotypeReference$plots$cluster_fit_summary_plot
+#' review$ModelInfo_MClust$AHP$recommendation
+#' ShowFitTable(review$Stability$summary, height = "260px")
+#' review$fit_plot
+#' review$fit_plot
 #'
-#' # Assess node- and individual-level membership confidence.
-#' model$ProbFit$plots$node_MaxProbBoxplot
-#' model$ProbFit$plots$node_ProbAssignedDensity
-#' model$ProbFit$plots$individual_MaxProbBoxplot
-#' model$ProbFit$plots$individual_ProbAssignedDensity
+#' # Refit the chosen solution to get the projectable model
+#' model <- CreateClusterModel_SOM_MClust(
+#'   data = df_Training, variables = vars_Numeric, method = "finalize",
+#'   final_k = 4, final_model = 1, som_xdim = 5, som_ydim = 5,
+#'   stability_resamples = 2, Relabel = FALSE,
+#'   min_nodes_per_cluster = NULL
+#' )
+#' ShowFitTable(model$ModelInfo_MClust$fit_table, height = "160px")
 #' }
 #' @export
-CreateSOMClusterModel <- function(data,
+CreateClusterModel_SOM_MClust <- function(data,
     variables = NULL,
-    method = c("exploratory", "finalize"),
-    k_range = 2:15,
+    method = c("exploratory", "finalize", "explore"),
+    k_range = 2:10,
     models = c(1, 2, 3),
     final_k = NULL,
     final_model = NULL,
-    ClusterName = "Cluster",
+    ClusterVariableName = "Cluster",
     ZScoreType = c("Center and Scale", "Center Only", "Scale Only", "ZScoreObj", "PreZScored"),
     ZScoreObject = NULL,
     som_xdim = NULL,
@@ -247,22 +345,30 @@ CreateSOMClusterModel <- function(data,
     min_nodes_per_cluster = 5,
     high_dist_quantile = 0.95,
     low_prob_threshold = 0.7,
+    stability_resamples = 0L,
+    stability_seed = 934522L,
+    stability_progress = FALSE,
     df = lifecycle::deprecated(),
-    id_col = lifecycle::deprecated()) {
+    id_col = lifecycle::deprecated(),
+    .NodeClusterFn = NULL) {
+  supplied <- list(k_range = !missing(k_range), models = !missing(models),
+    final_k = !missing(final_k), final_model = !missing(final_model))
   # Deprecated argument shims (SciDataReportR 19.15.0)
   if (lifecycle::is_present(df)) {
-    lifecycle::deprecate_warn("19.15.0", "CreateSOMClusterModel(df)", "CreateSOMClusterModel(data)")
+    lifecycle::deprecate_warn("19.15.0", "CreateClusterModel_SOM_MClust(df)", "CreateClusterModel_SOM_MClust(data)")
     data <- df
   }
   if (!missing(data)) df <- data
   if (lifecycle::is_present(id_col)) {
-    lifecycle::deprecate_warn("19.15.0", "CreateSOMClusterModel(id_col)", "CreateSOMClusterModel(id_var)")
+    lifecycle::deprecate_warn("19.15.0", "CreateClusterModel_SOM_MClust(id_col)", "CreateClusterModel_SOM_MClust(id_var)")
     id_var <- id_col
   }
   id_col <- id_var
 
 
-  method     <- match.arg(method)
+  method     <- .ClusterMethod(method)
+  .ValidateClusterLifecycle(method, supplied[c("k_range", "models")],
+    supplied[c("final_k", "final_model")])
   ZScoreType <- match.arg(ZScoreType)
 
   if (!requireNamespace("SciDataReportR", quietly = TRUE)) {
@@ -274,7 +380,8 @@ CreateSOMClusterModel <- function(data,
   if (!requireNamespace("aweSOM", quietly = TRUE)) {
     stop("Package 'aweSOM' is required.")
   }
-  if (!requireNamespace("tidyLPA", quietly = TRUE)) {
+  if (!suppressPackageStartupMessages(
+    requireNamespace("tidyLPA", quietly = TRUE))) {
     stop("Package 'tidyLPA' is required.")
   }
   if ((!is.null(lpa_em_itmax) || !is.null(lpa_em_tol)) &&
@@ -293,6 +400,17 @@ CreateSOMClusterModel <- function(data,
 
   if (!is.logical(lpa_progress) || length(lpa_progress) != 1) {
     stop("lpa_progress must be TRUE or FALSE.")
+  }
+  if (!is.numeric(stability_resamples) || length(stability_resamples) != 1 ||
+      is.na(stability_resamples) || stability_resamples < 0 ||
+      stability_resamples != as.integer(stability_resamples)) {
+    stop("stability_resamples must be a single non-negative integer.")
+  }
+  if (!is.numeric(stability_seed) || length(stability_seed) != 1 || is.na(stability_seed)) {
+    stop("stability_seed must be a single numeric value.")
+  }
+  if (!is.logical(stability_progress) || length(stability_progress) != 1) {
+    stop("stability_progress must be TRUE or FALSE.")
   }
   if (!is.logical(lpa_drop_zero_sd) || length(lpa_drop_zero_sd) != 1) {
     stop("lpa_drop_zero_sd must be TRUE or FALSE.")
@@ -338,11 +456,43 @@ CreateSOMClusterModel <- function(data,
       is.na(low_prob_threshold) || low_prob_threshold < 0 || low_prob_threshold > 1) {
     stop("low_prob_threshold must be a single numeric value between 0 and 1.")
   }
+  if (method == "finalize" && (is.null(final_k) || is.null(final_model))) {
+    stop("For method = 'finalize', final_k and final_model must be supplied.")
+  }
+  # Stability is estimated by refitting candidates, which only the exploratory
+  # path does. Rather than silently dropping the request, refit the single
+  # finalized candidate through that path and relabel the result. Recursing on
+  # the evaluated arguments keeps this correct when the caller passed locals or
+  # unevaluated promises.
+  if (method == "finalize" && stability_resamples > 0L) {
+    stable_model <- Recall(
+      data = data, variables = variables, method = "exploratory",
+      k_range = final_k, models = final_model,
+      ClusterVariableName = ClusterVariableName, ZScoreType = ZScoreType,
+      ZScoreObject = ZScoreObject, ZScorePrefix = ZScorePrefix,
+      ZScoreVars = ZScoreVars, id_var = id_var,
+      som_xdim = som_xdim, som_ydim = som_ydim, som_topo = som_topo,
+      som_neigh = som_neigh, seed_som = seed_som, seed_lpa = seed_lpa,
+      Relabel = Relabel, lpa_progress = lpa_progress,
+      lpa_em_itmax = lpa_em_itmax, lpa_em_tol = lpa_em_tol,
+      lpa_timeout_seconds = lpa_timeout_seconds,
+      lpa_drop_zero_sd = lpa_drop_zero_sd,
+      lpa_zero_sd_tol = lpa_zero_sd_tol,
+      skip_model_after_n_failures = skip_model_after_n_failures,
+      slow_fit_seconds = slow_fit_seconds,
+      min_nodes_per_cluster = min_nodes_per_cluster,
+      high_dist_quantile = high_dist_quantile,
+      low_prob_threshold = low_prob_threshold,
+      stability_resamples = stability_resamples,
+      stability_seed = stability_seed,
+      stability_progress = stability_progress)
+    stable_model$method <- "finalize"
+    return(stable_model)
+  }
 
   # Stable row id ----------------------------------------------------------
 
-  df_scidr <- df %>%
-    dplyr::mutate(.scidr_rowid = dplyr::row_number())
+  df_scidr <- df
 
   if (!is.null(id_col)) {
     if (!id_col %in% names(df_scidr)) {
@@ -633,463 +783,851 @@ CreateSOMClusterModel <- function(data,
     Cloud    = CloudPlot
   )
 
-  # LPA / mclust on SOM codes ----------------------------------------------
+  # Clustering the SOM codebook ---------------------------------------------
 
-  X <- som_codes
+  # The default node clustering is the latent-profile grid below. A caller that
+  # clusters the codebook another way supplies .NodeClusterFn and the grid is
+  # never fitted: SOM + HDBSCAN, for instance, used to pay for every LPA
+  # candidate and then discard all of them in favour of its own node labels.
+  if (is.null(.NodeClusterFn)) {
+    # LPA / mclust on SOM codes ----------------------------------------------
 
-  if (is.null(colnames(X))) {
-    colnames(X) <- paste0("V", seq_len(ncol(X)))
-  }
+    X <- som_codes
 
-  dropped_lpa_vars <- character(0)
-  if (lpa_drop_zero_sd) {
-    lpa_sd <- apply(X, 2, stats::sd, na.rm = TRUE)
-    keep_lpa_vars <- is.finite(lpa_sd) & lpa_sd > lpa_zero_sd_tol
-    dropped_lpa_vars <- colnames(X)[!keep_lpa_vars]
-
-    if (length(dropped_lpa_vars) > 0) {
-      warning(
-        "Dropping near-zero SD SOM code dimensions before LPA: ",
-        paste(dropped_lpa_vars, collapse = ", ")
-      )
-      X <- X[, keep_lpa_vars, drop = FALSE]
+    if (is.null(colnames(X))) {
+      colnames(X) <- paste0("V", seq_len(ncol(X)))
     }
 
-    if (ncol(X) == 0) {
-      stop("No SOM code dimensions with non-zero variance are available for LPA.")
-    }
-  }
+    dropped_lpa_vars <- character(0)
+    if (lpa_drop_zero_sd) {
+      lpa_sd <- apply(X, 2, stats::sd, na.rm = TRUE)
+      keep_lpa_vars <- is.finite(lpa_sd) & lpa_sd > lpa_zero_sd_tol
+      dropped_lpa_vars <- colnames(X)[!keep_lpa_vars]
 
-  X <- as.data.frame(X)
-  set.seed(seed_lpa)
-
-  lpa_control <- NULL
-  if (!is.null(lpa_em_itmax) || !is.null(lpa_em_tol)) {
-    lpa_control <- mclust::emControl(
-      itmax = if (is.null(lpa_em_itmax)) NULL else as.integer(lpa_em_itmax),
-      tol   = if (is.null(lpa_em_tol)) NULL else lpa_em_tol
-    )
-  }
-
-  # This helper is intentionally kept inside the function because it isolates
-  # warning capture, runtime tracking, and failed-fit handling for one fragile step.
-  safe_lpa_fit <- function(X, k, model, lpa_control = NULL, lpa_timeout_seconds = NULL) {
-
-    warnings_vec <- character(0)
-    error_msg    <- NA_character_
-    start_time   <- Sys.time()
-
-    fit_expr <- function() {
-      if (is.null(lpa_control)) {
-        tidyLPA::estimate_profiles(
-          X,
-          n_profiles = k,
-          models     = model
+      if (length(dropped_lpa_vars) > 0) {
+        warning(
+          "Dropping near-zero SD SOM code dimensions before LPA: ",
+          paste(dropped_lpa_vars, collapse = ", ")
         )
-      } else {
-        tidyLPA::estimate_profiles(
-          X,
-          n_profiles = k,
-          models     = model,
-          control    = lpa_control
-        )
+        X <- X[, keep_lpa_vars, drop = FALSE]
+      }
+
+      if (ncol(X) == 0) {
+        stop("No SOM code dimensions with non-zero variance are available for LPA.")
       }
     }
 
-    fit <- withCallingHandlers(
-      tryCatch(
-        {
-          if (is.null(lpa_timeout_seconds)) {
-            fit_expr()
-          } else {
-            R.utils::withTimeout(
-              fit_expr(),
-              timeout = lpa_timeout_seconds,
-              onTimeout = "error"
+    X <- as.data.frame(X)
+    set.seed(seed_lpa)
+
+    lpa_control <- NULL
+    if (!is.null(lpa_em_itmax) || !is.null(lpa_em_tol)) {
+      lpa_control <- mclust::emControl(
+        itmax = if (is.null(lpa_em_itmax)) NULL else as.integer(lpa_em_itmax),
+        tol   = if (is.null(lpa_em_tol)) NULL else lpa_em_tol
+      )
+    }
+
+    # This helper is intentionally kept inside the function because it isolates
+    # warning capture, runtime tracking, and failed-fit handling for one fragile step.
+    safe_lpa_fit <- function(X, k, model, lpa_control = NULL, lpa_timeout_seconds = NULL) {
+
+      warnings_vec <- character(0)
+      error_msg    <- NA_character_
+      start_time   <- Sys.time()
+
+      fit_expr <- function() {
+        if (is.null(lpa_control)) {
+          tidyLPA::estimate_profiles(
+            X,
+            n_profiles = k,
+            models     = model
+          )
+        } else {
+          tidyLPA::estimate_profiles(
+            X,
+            n_profiles = k,
+            models     = model,
+            control    = lpa_control
+          )
+        }
+      }
+
+      fit <- withCallingHandlers(
+        tryCatch(
+          suppressMessages({
+            if (is.null(lpa_timeout_seconds)) {
+              fit_expr()
+            } else {
+              R.utils::withTimeout(
+                fit_expr(),
+                timeout = lpa_timeout_seconds,
+                onTimeout = "error"
+              )
+            }
+          }),
+          TimeoutException = function(e) {
+            error_msg <<- paste0("Timed out after ", lpa_timeout_seconds, " seconds.")
+            NULL
+          },
+          error = function(e) {
+            error_msg <<- conditionMessage(e)
+            NULL
+          }
+        ),
+        warning = function(w) {
+          warnings_vec <<- c(warnings_vec, conditionMessage(w))
+          invokeRestart("muffleWarning")
+        }
+      )
+
+      runtime_seconds <- as.numeric(difftime(Sys.time(), start_time, units = "secs"))
+      slow_fit <- !is.null(slow_fit_seconds) && runtime_seconds > slow_fit_seconds
+
+      fit_info <- NULL
+      fit_error_msg <- NA_character_
+      if (!is.null(fit)) {
+        fit_info <- tryCatch(
+          tidyLPA::get_fit(fit),
+          error = function(e) {
+            fit_error_msg <<- conditionMessage(e)
+            NULL
+          }
+        )
+      }
+
+      if (is.null(fit_info)) {
+        if (is.na(error_msg) && !is.na(fit_error_msg)) {
+          error_msg <- fit_error_msg
+        }
+        status <- "failed"
+      } else {
+        status <- "success"
+      }
+
+      diagnostics <- dplyr::tibble(
+        Model           = as.integer(model),
+        Classes         = as.integer(k),
+        status          = status,
+        runtime_seconds = runtime_seconds,
+        slow_fit        = slow_fit,
+        n_warnings      = length(warnings_vec),
+        warnings        = paste(unique(warnings_vec), collapse = " | "),
+        error           = error_msg
+      )
+
+      if (!is.null(fit_info)) {
+        fit_info <- as.data.frame(fit_info)
+        fit_info$Model <- as.integer(model)
+        fit_info$Classes <- as.integer(k)
+      }
+
+      list(
+        fit         = fit,
+        fit_info    = fit_info,
+        diagnostics = diagnostics
+      )
+    }
+
+    # This helper prevents one available model from getting all of the AHP weight
+    # simply because there is no variation in a fit index.
+    scale_for_ahp <- function(x, higher_is_better = TRUE) {
+      if (!higher_is_better) {
+        x <- -x
+      }
+
+      finite_x <- x[is.finite(x)]
+      if (length(finite_x) < 2 || stats::sd(finite_x) == 0) {
+        return(rep(0, length(x)))
+      }
+      as.numeric(scale(x))
+    }
+
+    get_profile_assignments <- function(lpa_fit) {
+      profile <- if (inherits(lpa_fit, "tidyLPA")) {
+        if (length(lpa_fit) != 1) {
+          stop("An LPA candidate must contain exactly one profile.")
+        }
+        lpa_fit[[1]]
+      } else {
+        lpa_fit
+      }
+
+      profile_data <- tidyLPA::get_data(profile)
+      if (!"Class" %in% names(profile_data)) {
+        stop("The LPA candidate does not contain class assignments.")
+      }
+      as.integer(profile_data$Class)
+    }
+
+    cluster_jaccard <- function(reference, resampled) {
+      reference <- as.integer(reference)
+      resampled <- as.integer(resampled)
+      valid <- !is.na(reference) & !is.na(resampled)
+      reference <- reference[valid]
+      resampled <- resampled[valid]
+
+      if (length(reference) == 0) {
+        return(dplyr::tibble(Cluster = integer(), Jaccard = numeric()))
+      }
+
+      dplyr::bind_rows(lapply(sort(unique(reference)), function(cluster) {
+        reference_members <- reference == cluster
+        candidates <- sort(unique(resampled))
+        jaccard <- vapply(candidates, function(candidate) {
+          candidate_members <- resampled == candidate
+          sum(reference_members & candidate_members) /
+            sum(reference_members | candidate_members)
+        }, numeric(1))
+
+        dplyr::tibble(
+          Cluster = cluster,
+          Jaccard = max(jaccard)
+        )
+      }))
+    }
+
+    Stability <- NULL
+    if (method == "exploratory") {
+
+      lpa_models <- list()
+      fit_rows   <- list()
+      diag_rows  <- list()
+
+      model_grid <- expand.grid(
+        Model   = models,
+        Classes = k_range,
+        KEEP.OUT.ATTRS = FALSE
+      )
+
+      total_fits <- nrow(model_grid)
+      model_problem_counts <- stats::setNames(rep(0L, length(unique(models))), unique(models))
+
+      for (i in seq_len(total_fits)) {
+
+        this_model <- model_grid$Model[i]
+        this_k     <- model_grid$Classes[i]
+        fit_name   <- paste0("model_", this_model, "_class_", this_k)
+
+        if (!is.null(min_nodes_per_cluster) && nrow(X) / this_k < min_nodes_per_cluster) {
+          warning(
+            "Model ", this_model, ", k = ", this_k,
+            " has fewer than ", min_nodes_per_cluster,
+            " SOM nodes per requested profile on average. Interpret cautiously."
+          )
+        }
+
+        if (!is.null(skip_model_after_n_failures) &&
+            model_problem_counts[as.character(this_model)] >= skip_model_after_n_failures) {
+
+          if (lpa_progress) {
+            message(
+              "Skipping LPA fit ", i, "/", total_fits,
+              ": model ", this_model,
+              ", k = ", this_k,
+              " after repeated failed or slow fits."
             )
           }
-        },
-        TimeoutException = function(e) {
-          error_msg <<- paste0("Timed out after ", lpa_timeout_seconds, " seconds.")
-          NULL
-        },
-        error = function(e) {
-          error_msg <<- conditionMessage(e)
-          NULL
+
+          diag_rows[[fit_name]] <- dplyr::tibble(
+            Model           = as.integer(this_model),
+            Classes         = as.integer(this_k),
+            status          = "skipped_model_family",
+            runtime_seconds = NA_real_,
+            slow_fit        = NA,
+            n_warnings      = 0L,
+            warnings        = NA_character_,
+            error           = paste0(
+              "Skipped after ", skip_model_after_n_failures,
+              " failed or slow fits for model ", this_model, "."
+            )
+          )
+          next
         }
-      ),
-      warning = function(w) {
-        warnings_vec <<- c(warnings_vec, conditionMessage(w))
-        invokeRestart("muffleWarning")
-      }
-    )
-
-    runtime_seconds <- as.numeric(difftime(Sys.time(), start_time, units = "secs"))
-    slow_fit <- !is.null(slow_fit_seconds) && runtime_seconds > slow_fit_seconds
-
-    fit_info <- NULL
-    fit_error_msg <- NA_character_
-    if (!is.null(fit)) {
-      fit_info <- tryCatch(
-        tidyLPA::get_fit(fit),
-        error = function(e) {
-          fit_error_msg <<- conditionMessage(e)
-          NULL
-        }
-      )
-    }
-
-    if (is.null(fit_info)) {
-      if (is.na(error_msg) && !is.na(fit_error_msg)) {
-        error_msg <- fit_error_msg
-      }
-      status <- "failed"
-    } else {
-      status <- "success"
-    }
-
-    diagnostics <- dplyr::tibble(
-      Model           = as.integer(model),
-      Classes         = as.integer(k),
-      status          = status,
-      runtime_seconds = runtime_seconds,
-      slow_fit        = slow_fit,
-      n_warnings      = length(warnings_vec),
-      warnings        = paste(unique(warnings_vec), collapse = " | "),
-      error           = error_msg
-    )
-
-    if (!is.null(fit_info)) {
-      fit_info <- as.data.frame(fit_info)
-      fit_info$Model <- as.integer(model)
-      fit_info$Classes <- as.integer(k)
-    }
-
-    list(
-      fit         = fit,
-      fit_info    = fit_info,
-      diagnostics = diagnostics
-    )
-  }
-
-  # This helper prevents one available model from getting all of the AHP weight
-  # simply because there is no variation in a fit index.
-  scale_for_ahp <- function(x, higher_is_better = TRUE) {
-    if (!higher_is_better) {
-      x <- -x
-    }
-
-    finite_x <- x[is.finite(x)]
-    if (length(finite_x) < 2 || stats::sd(finite_x) == 0) {
-      return(rep(0, length(x)))
-    }
-    as.numeric(scale(x))
-  }
-
-  if (method == "exploratory") {
-
-    lpa_models <- list()
-    fit_rows   <- list()
-    diag_rows  <- list()
-
-    model_grid <- expand.grid(
-      Model   = models,
-      Classes = k_range,
-      KEEP.OUT.ATTRS = FALSE
-    )
-
-    total_fits <- nrow(model_grid)
-    model_problem_counts <- stats::setNames(rep(0L, length(unique(models))), unique(models))
-
-    for (i in seq_len(total_fits)) {
-
-      this_model <- model_grid$Model[i]
-      this_k     <- model_grid$Classes[i]
-      fit_name   <- paste0("model_", this_model, "_class_", this_k)
-
-      if (!is.null(min_nodes_per_cluster) && nrow(X) / this_k < min_nodes_per_cluster) {
-        warning(
-          "Model ", this_model, ", k = ", this_k,
-          " has fewer than ", min_nodes_per_cluster,
-          " SOM nodes per requested profile on average. Interpret cautiously."
-        )
-      }
-
-      if (!is.null(skip_model_after_n_failures) &&
-          model_problem_counts[as.character(this_model)] >= skip_model_after_n_failures) {
 
         if (lpa_progress) {
           message(
-            "Skipping LPA fit ", i, "/", total_fits,
+            "LPA fit ", i, "/", total_fits,
             ": model ", this_model,
-            ", k = ", this_k,
-            " after repeated failed or slow fits."
+            ", k = ", this_k
           )
         }
 
-        diag_rows[[fit_name]] <- dplyr::tibble(
-          Model           = as.integer(this_model),
-          Classes         = as.integer(this_k),
-          status          = "skipped_model_family",
-          runtime_seconds = NA_real_,
-          slow_fit        = NA,
-          n_warnings      = 0L,
-          warnings        = NA_character_,
-          error           = paste0(
-            "Skipped after ", skip_model_after_n_failures,
-            " failed or slow fits for model ", this_model, "."
-          )
+        fit_res <- safe_lpa_fit(
+          X           = X,
+          k           = this_k,
+          model       = this_model,
+          lpa_control = lpa_control,
+          lpa_timeout_seconds = lpa_timeout_seconds
         )
-        next
+
+        diag_rows[[fit_name]] <- fit_res$diagnostics
+
+        if (fit_res$diagnostics$status != "success" || isTRUE(fit_res$diagnostics$slow_fit)) {
+          model_problem_counts[as.character(this_model)] <- model_problem_counts[as.character(this_model)] + 1L
+        }
+
+        if (!is.null(fit_res$fit) && !is.null(fit_res$fit_info)) {
+          lpa_models[[fit_name]] <- fit_res$fit
+          fit_rows[[fit_name]]   <- fit_res$fit_info
+        }
+      }
+
+      lpa_diagnostics <- dplyr::bind_rows(diag_rows)
+      failed_fits <- lpa_diagnostics %>%
+        dplyr::filter(status != "success")
+
+      warning_fits <- lpa_diagnostics %>%
+        dplyr::filter(status == "success", n_warnings > 0)
+
+      if (length(fit_rows) == 0) {
+        stop(
+          "No LPA models were successfully estimated. Inspect ModelInfo_MClust$diagnostics if available; ",
+          "try fewer variables, smaller k_range, excluding unstable models, or increasing lpa_em_itmax."
+        )
+      }
+
+      fit_table <- dplyr::bind_rows(fit_rows) %>%
+        dplyr::mutate(
+          Model = as.integer(Model),
+          Classes = as.integer(Classes)
+        )
+
+      profile_sizes <- dplyr::bind_rows(lapply(names(lpa_models), function(fit_name) {
+        assignment <- get_profile_assignments(lpa_models[[fit_name]])
+        counts <- tabulate(assignment, nbins = as.integer(sub("^.*_class_([0-9]+)$", "\\1", fit_name)))
+        dplyr::tibble(
+          Model = as.integer(sub("^model_([0-9]+)_class_.*$", "\\1", fit_name)),
+          Classes = as.integer(sub("^.*_class_([0-9]+)$", "\\1", fit_name)),
+          MinProfileNodeN = min(counts), MaxProfileNodeN = max(counts),
+          MinProfileNodeProportion = min(counts) / length(assignment),
+          MaxProfileNodeProportion = max(counts) / length(assignment)
+        )
+      }))
+      fit_table <- fit_table %>%
+        dplyr::rename_with(~ c(n_min = "MinProfileNodeProportion",
+          n_max = "MaxProfileNodeProportion", BLRT_val = "BLRTStatistic",
+          BLRT_p = "BLRTPValue")[.x], dplyr::any_of(c("n_min", "n_max", "BLRT_val", "BLRT_p"))) %>%
+        dplyr::select(-dplyr::any_of(c("MinProfileNodeProportion", "MaxProfileNodeProportion"))) %>%
+        dplyr::left_join(profile_sizes, by = c("Model", "Classes"))
+
+      if (!"AIC" %in% names(fit_table)) fit_table$AIC <- NA_real_
+      if (!"BIC" %in% names(fit_table)) fit_table$BIC <- NA_real_
+      if (!"Entropy" %in% names(fit_table)) fit_table$Entropy <- NA_real_
+
+      Stability <- NULL
+      if (stability_resamples > 0) {
+        reference_rows <- which(complete_rows)
+        replicate_rows <- list()
+        cluster_rows <- list()
+        assignment_rows <- list()
+        candidate_rows <- list()
+        candidate_index <- 0L
+
+        for (fit_name in names(lpa_models)) {
+          candidate_index <- candidate_index + 1L
+          candidate_fit <- lpa_models[[fit_name]]
+          candidate_info <- fit_table %>%
+            dplyr::filter(
+              Model == as.integer(sub("^model_([0-9]+)_class_.*$", "\\1", fit_name)),
+              Classes == as.integer(sub("^.*_class_([0-9]+)$", "\\1", fit_name))
+            )
+          candidate_model <- candidate_info$Model[[1]]
+          candidate_k <- candidate_info$Classes[[1]]
+          reference_assignment <- get_profile_assignments(candidate_fit)[som_model$unit.classif]
+
+          for (replicate in seq_len(stability_resamples)) {
+            if (stability_progress) {
+              message(
+                "Stability candidate ", candidate_index, "/", length(lpa_models),
+                ", subsample ", replicate, "/", stability_resamples,
+                ": model ", candidate_model, ", k = ", candidate_k
+              )
+            }
+
+            set.seed(as.integer(stability_seed + candidate_index * 100000L + replicate))
+            subsample_rows <- sample(reference_rows,
+              max(2L, floor(length(reference_rows) * 0.80)), replace = FALSE)
+            df_subsample <- df[subsample_rows, , drop = FALSE]
+
+            subsample_result <- tryCatch(
+              CreateClusterModel_SOM_MClust(
+                data = df_subsample,
+                variables = vars_used,
+                method = "finalize",
+                final_k = candidate_k,
+                final_model = candidate_model,
+                ClusterVariableName = ".scidr_stability_cluster",
+                ZScoreType = ZScoreType,
+                ZScoreObject = ZScoreObject,
+                som_xdim = som_xdim,
+                som_ydim = som_ydim,
+                som_topo = som_topo,
+                som_neigh = som_neigh,
+                seed_som = as.integer(seed_som + candidate_index * 100000L + replicate),
+                seed_lpa = as.integer(seed_lpa + candidate_index * 100000L + replicate),
+                Relabel = FALSE,
+                ZScorePrefix = ZScorePrefix,
+                ZScoreVars = ZScoreVars_used,
+                lpa_progress = FALSE,
+                lpa_em_itmax = lpa_em_itmax,
+                lpa_em_tol = lpa_em_tol,
+                lpa_timeout_seconds = lpa_timeout_seconds,
+                lpa_drop_zero_sd = lpa_drop_zero_sd,
+                lpa_zero_sd_tol = lpa_zero_sd_tol,
+                skip_model_after_n_failures = skip_model_after_n_failures,
+                slow_fit_seconds = slow_fit_seconds,
+                min_nodes_per_cluster = min_nodes_per_cluster,
+                high_dist_quantile = high_dist_quantile,
+                low_prob_threshold = low_prob_threshold,
+                stability_resamples = 0L
+              ),
+              error = function(e) e
+            )
+
+            if (inherits(subsample_result, "error")) {
+              replicate_rows[[length(replicate_rows) + 1L]] <- dplyr::tibble(
+                Model = candidate_model,
+                Classes = candidate_k,
+                Replicate = replicate,
+                Status = "failed",
+                ARI = NA_real_,
+                Error = conditionMessage(subsample_result)
+              )
+              next
+            }
+
+            projection_result <- tryCatch(
+              suppressWarnings(ProjectCluster(
+                object = subsample_result,
+                new_df = df,
+                ClusterVariableName = ".scidr_stability_cluster",
+                high_dist_quantile = high_dist_quantile,
+                low_prob_threshold = low_prob_threshold
+              )),
+              error = function(e) e
+            )
+
+            if (inherits(projection_result, "error")) {
+              replicate_rows[[length(replicate_rows) + 1L]] <- dplyr::tibble(
+                Model = candidate_model,
+                Classes = candidate_k,
+                Replicate = replicate,
+                Status = "failed",
+                ARI = NA_real_,
+                Error = conditionMessage(projection_result)
+              )
+              next
+            }
+
+            resampled_assignment <- projection_result$ProbFit$individual$Cluster[reference_rows]
+            valid <- !is.na(reference_assignment) & !is.na(resampled_assignment)
+            ari <- if (sum(valid) > 1) {
+              mclust::adjustedRandIndex(reference_assignment[valid], resampled_assignment[valid])
+            } else {
+              NA_real_
+            }
+            partition_metrics <- .ClusterPartitionMetrics(
+              reference_assignment[valid], resampled_assignment[valid])
+            jaccard <- cluster_jaccard(reference_assignment, resampled_assignment) %>%
+              dplyr::mutate(
+                Model = candidate_model,
+                Classes = candidate_k,
+                Replicate = replicate
+              )
+
+            replicate_rows[[length(replicate_rows) + 1L]] <- dplyr::tibble(
+              Model = candidate_model,
+              Classes = candidate_k,
+              Replicate = replicate,
+              Status = "success",
+              ARI = ari,
+              VI = partition_metrics[["VI"]],
+              NMI = partition_metrics[["NMI"]],
+              FowlkesMallows = partition_metrics[["FowlkesMallows"]],
+              Error = NA_character_
+            )
+            cluster_rows[[length(cluster_rows) + 1L]] <- jaccard
+            assignment_rows[[length(assignment_rows) + 1L]] <- list(
+              Model = candidate_model, Classes = candidate_k,
+              reference = reference_assignment, assignment = resampled_assignment)
+          }
+
+          candidate_replicates <- dplyr::bind_rows(replicate_rows) %>%
+            dplyr::filter(Model == candidate_model, Classes == candidate_k)
+          candidate_clusters <- if (length(cluster_rows) > 0) {
+            dplyr::bind_rows(cluster_rows) %>%
+              dplyr::filter(Model == candidate_model, Classes == candidate_k)
+          } else {
+            dplyr::tibble(Cluster = integer(), Jaccard = numeric())
+          }
+          cluster_summary <- if (nrow(candidate_clusters) > 0) {
+            candidate_clusters %>%
+              dplyr::group_by(Cluster) %>%
+              dplyr::summarise(MeanJaccard = mean(Jaccard, na.rm = TRUE), .groups = "drop")
+          } else {
+            dplyr::tibble(Cluster = integer(), MeanJaccard = numeric())
+          }
+
+          success_rate <- mean(candidate_replicates$Status == "success")
+          mean_ari <- mean(candidate_replicates$ARI, na.rm = TRUE)
+          ari_lower <- if (sum(!is.na(candidate_replicates$ARI)) > 0) {
+            as.numeric(stats::quantile(candidate_replicates$ARI, 0.05, na.rm = TRUE))
+          } else {
+            NA_real_
+          }
+          mean_jaccard <- if (nrow(cluster_summary) > 0) mean(cluster_summary$MeanJaccard) else NA_real_
+          min_jaccard <- if (nrow(cluster_summary) > 0) min(cluster_summary$MeanJaccard) else NA_real_
+          reproducibility_score <- mean(c(mean_ari, mean_jaccard), na.rm = TRUE)
+          if (is.nan(reproducibility_score)) reproducibility_score <- NA_real_
+
+          candidate_rows[[length(candidate_rows) + 1L]] <- dplyr::tibble(
+            Model = candidate_model,
+            Classes = candidate_k,
+            StabilitySuccessRate = success_rate,
+            StabilityARI_Mean = mean_ari,
+            StabilityARI_P05 = ari_lower,
+            StabilityJaccard_Mean = mean_jaccard,
+            StabilityJaccard_Min = min_jaccard,
+            ReproducibilityScore = reproducibility_score
+          )
+        }
+
+        stability_summary <- dplyr::bind_rows(candidate_rows)
+        stability_replicates <- dplyr::bind_rows(replicate_rows)
+        stability_clusters <- if (length(cluster_rows) > 0) {
+          dplyr::bind_rows(cluster_rows)
+        } else {
+          dplyr::tibble(
+            Cluster = integer(), Jaccard = numeric(), Model = integer(),
+            Classes = integer(), Replicate = integer()
+          )
+        }
+        fit_table <- fit_table %>%
+          dplyr::left_join(stability_summary, by = c("Model", "Classes"))
+        diagnostics <- lapply(split(assignment_rows, vapply(assignment_rows,
+          function(x) paste(x$Model, x$Classes, sep = "_"), character(1))), function(rows) {
+          .ClusterStabilityDiagnostics(rows[[1]]$reference,
+            lapply(rows, `[[`, "assignment"), seq_along(rows[[1]]$reference))
+        })
+        diagnostic_keys <- names(diagnostics)
+        participant_inclusion <- dplyr::bind_rows(lapply(seq_along(diagnostics), function(i) {
+          key <- strsplit(diagnostic_keys[[i]], "_", fixed = TRUE)[[1]]
+          dplyr::mutate(diagnostics[[i]]$participant_inclusion,
+            Model = as.integer(key[[1]]), Classes = as.integer(key[[2]]))
+        }))
+        cluster_inclusion <- dplyr::bind_rows(lapply(seq_along(diagnostics), function(i) {
+          key <- strsplit(diagnostic_keys[[i]], "_", fixed = TRUE)[[1]]
+          dplyr::mutate(diagnostics[[i]]$cluster_inclusion,
+            Model = as.integer(key[[1]]), Classes = as.integer(key[[2]]))
+        }))
+        Stability <- list(
+          settings = list(
+            resamples = as.integer(stability_resamples),
+            seed = stability_seed,
+            refit_scope = "full_pipeline",
+            resample_type = "subsample_without_replacement",
+            resample_fraction = 0.80,
+            coassignment_limit = 2000L,
+            noise_policy = "all clusters included"
+          ),
+          replicates = stability_replicates,
+          cluster_recovery = stability_clusters,
+          summary = stability_summary,
+          failures = stability_replicates %>% dplyr::filter(Status != "success"),
+          participant_inclusion = participant_inclusion,
+          cluster_inclusion = cluster_inclusion,
+          coassignment = lapply(diagnostics, `[[`, "coassignment")
+        )
+      }
+
+      fit_table <- fit_table %>%
+        dplyr::mutate(
+          AIC_scaled = scale_for_ahp(AIC, higher_is_better = FALSE),
+          BIC_scaled = scale_for_ahp(BIC, higher_is_better = FALSE),
+          Entropy_scaled = scale_for_ahp(Entropy, higher_is_better = TRUE)
+        )
+
+      if (stability_resamples > 0) {
+        fit_table <- fit_table %>%
+          dplyr::mutate(
+            Reproducibility_scaled = scale_for_ahp(ReproducibilityScore),
+            ahp_index = rowMeans(
+              cbind(AIC_scaled, BIC_scaled, Entropy_scaled, Reproducibility_scaled),
+              na.rm = TRUE
+            )
+          )
+      } else {
+        fit_table <- fit_table %>%
+          dplyr::mutate(
+            ahp_index = rowMeans(
+              cbind(AIC_scaled, BIC_scaled, Entropy_scaled),
+              na.rm = TRUE
+            )
+          )
+      }
+
+      if (all(is.na(fit_table$ahp_index))) {
+        stop("LPA models were estimated, but AHP could not be computed because fit indices are missing.")
+      }
+
+      best_idx     <- which.max(fit_table$ahp_index)
+      ahp_best_row <- fit_table[best_idx, ]
+      best_model   <- as.integer(ahp_best_row$Model)
+      best_k       <- as.integer(ahp_best_row$Classes)
+      best_name    <- paste0("model_", best_model, "_class_", best_k)
+      best_fit_name <- best_name
+      best_lpa     <- lpa_models[[best_name]]
+
+      recommendation_txt <- paste0(
+        "AHP (AIC, BIC, Entropy", if (stability_resamples > 0) ", reproducibility" else "", ") recommends Model ",
+        best_model, " with k = ", best_k, " profiles."
+      )
+
+      mdata_wide <- fit_table
+
+    } else {
+
+      if (is.null(final_k) || is.null(final_model)) {
+        stop("For method = 'finalize', final_k and final_model must be supplied.")
       }
 
       if (lpa_progress) {
         message(
-          "LPA fit ", i, "/", total_fits,
-          ": model ", this_model,
-          ", k = ", this_k
+          "LPA finalize fit: model ", final_model,
+          ", k = ", final_k
         )
       }
 
       fit_res <- safe_lpa_fit(
         X           = X,
-        k           = this_k,
-        model       = this_model,
-        lpa_control = lpa_control,
-        lpa_timeout_seconds = lpa_timeout_seconds
+        k           = final_k,
+        model       = final_model,
+        lpa_control = lpa_control
       )
 
-      diag_rows[[fit_name]] <- fit_res$diagnostics
+      lpa_diagnostics <- fit_res$diagnostics
+      failed_fits <- lpa_diagnostics %>%
+        dplyr::filter(status != "success")
+      warning_fits <- lpa_diagnostics %>%
+        dplyr::filter(status == "success", n_warnings > 0)
 
-      if (fit_res$diagnostics$status != "success" || isTRUE(fit_res$diagnostics$slow_fit)) {
-        model_problem_counts[as.character(this_model)] <- model_problem_counts[as.character(this_model)] + 1L
-      }
-
-      if (!is.null(fit_res$fit) && !is.null(fit_res$fit_info)) {
-        lpa_models[[fit_name]] <- fit_res$fit
-        fit_rows[[fit_name]]   <- fit_res$fit_info
-      }
-    }
-
-    lpa_diagnostics <- dplyr::bind_rows(diag_rows)
-    failed_fits <- lpa_diagnostics %>%
-      dplyr::filter(status != "success")
-
-    warning_fits <- lpa_diagnostics %>%
-      dplyr::filter(status == "success", n_warnings > 0)
-
-    if (length(fit_rows) == 0) {
-      stop(
-        "No LPA models were successfully estimated. Inspect ModelInfo_MClust$diagnostics if available; ",
-        "try fewer variables, smaller k_range, excluding unstable models, or increasing lpa_em_itmax."
-      )
-    }
-
-    fit_table <- dplyr::bind_rows(fit_rows) %>%
-      dplyr::mutate(
-        Model = as.integer(Model),
-        Classes = as.integer(Classes)
-      )
-
-    if (!"AIC" %in% names(fit_table)) fit_table$AIC <- NA_real_
-    if (!"BIC" %in% names(fit_table)) fit_table$BIC <- NA_real_
-    if (!"Entropy" %in% names(fit_table)) fit_table$Entropy <- NA_real_
-
-    fit_table <- fit_table %>%
-      dplyr::mutate(
-        AIC_scaled     = scale_for_ahp(AIC, higher_is_better = FALSE),
-        BIC_scaled     = scale_for_ahp(BIC, higher_is_better = FALSE),
-        Entropy_scaled = scale_for_ahp(Entropy, higher_is_better = TRUE),
-        ahp_index      = rowMeans(
-          cbind(AIC_scaled, BIC_scaled, Entropy_scaled),
-          na.rm = TRUE
+      if (is.null(fit_res$fit) || is.null(fit_res$fit_info)) {
+        stop(
+          "The requested final LPA model could not be estimated: model ",
+          final_model, ", k = ", final_k, "."
         )
+      }
+
+      lpa_models <- fit_res$fit
+      best_lpa   <- lpa_models
+      best_fit_name <- paste0("model_", final_model, "_class_", final_k)
+
+      fit_table <- as.data.frame(fit_res$fit_info) %>%
+        dplyr::mutate(
+          Classes        = final_k,
+          Model          = final_model,
+          AIC_scaled     = NA_real_,
+          BIC_scaled     = NA_real_,
+          Entropy_scaled = NA_real_,
+          ahp_index      = NA_real_
+        )
+
+      ahp_best_row       <- fit_table[1, ]
+      best_model         <- final_model
+      best_k             <- final_k
+      recommendation_txt <- paste0(
+        "User-specified Model ", final_model,
+        " with k = ", final_k, " profiles."
       )
 
-    if (all(is.na(fit_table$ahp_index))) {
-      stop("LPA models were estimated, but AHP could not be computed because fit indices are missing.")
+      mdata_wide <- fit_table
     }
 
-    best_idx     <- which.max(fit_table$ahp_index)
-    ahp_best_row <- fit_table[best_idx, ]
-    best_model   <- as.integer(ahp_best_row$Model)
-    best_k       <- as.integer(ahp_best_row$Classes)
-    best_name    <- paste0("model_", best_model, "_class_", best_k)
-    best_fit_name <- best_name
-    best_lpa     <- lpa_models[[best_name]]
-
-    recommendation_txt <- paste0(
-      "AHP (AIC, BIC, Entropy) recommends Model ",
-      best_model, " with k = ", best_k, " profiles."
-    )
-
+    if (any(c("n_min", "n_max", "BLRT_val", "BLRT_p") %in% names(fit_table))) {
+      fit_table <- fit_table %>%
+        dplyr::rename_with(~ c(n_min = "MinProfileNodeProportion",
+          n_max = "MaxProfileNodeProportion", BLRT_val = "BLRTStatistic",
+          BLRT_p = "BLRTPValue")[.x], dplyr::any_of(c("n_min", "n_max", "BLRT_val", "BLRT_p")))
+    }
+    if (!all(c("MinProfileNodeN", "MaxProfileNodeN") %in% names(fit_table))) {
+      assignment <- get_profile_assignments(best_lpa)
+      counts <- tabulate(assignment, nbins = best_k)
+      fit_table <- fit_table %>%
+        dplyr::mutate(
+          MinProfileNodeN = min(counts), MaxProfileNodeN = max(counts),
+          MinProfileNodeProportion = min(counts) / length(assignment),
+          MaxProfileNodeProportion = max(counts) / length(assignment)
+        )
+    }
     mdata_wide <- fit_table
 
-  } else {
+    # Fit plot ---------------------------------------------------------------
 
-    if (is.null(final_k) || is.null(final_model)) {
-      stop("For method = 'finalize', final_k and final_model must be supplied.")
-    }
-
-    if (lpa_progress) {
-      message(
-        "LPA finalize fit: model ", final_model,
-        ", k = ", final_k
-      )
-    }
-
-    fit_res <- safe_lpa_fit(
-      X           = X,
-      k           = final_k,
-      model       = final_model,
-      lpa_control = lpa_control
+    mdata_cols <- intersect(
+      c("AIC", "BIC", "Entropy", "ReproducibilityScore", "BLRTPValue"),
+      names(mdata_wide)
     )
 
-    lpa_diagnostics <- fit_res$diagnostics
-    failed_fits <- lpa_diagnostics %>%
-      dplyr::filter(status != "success")
-    warning_fits <- lpa_diagnostics %>%
-      dplyr::filter(status == "success", n_warnings > 0)
-
-    if (is.null(fit_res$fit) || is.null(fit_res$fit_info)) {
-      stop(
-        "The requested final LPA model could not be estimated: model ",
-        final_model, ", k = ", final_k, "."
+    if (length(mdata_cols) == 0) {
+      mdata <- dplyr::tibble(
+        Classes = integer(0),
+        Model   = integer(0),
+        name    = character(0),
+        value   = numeric(0)
       )
+    } else {
+      mdata <- mdata_wide %>%
+        tidyr::pivot_longer(
+          cols      = dplyr::all_of(mdata_cols),
+          names_to  = "name",
+          values_to = "value"
+        )
     }
-
-    lpa_models <- fit_res$fit
-    best_lpa   <- lpa_models
-    best_fit_name <- paste0("model_", final_model, "_class_", final_k)
-
-    fit_table <- as.data.frame(fit_res$fit_info) %>%
+    blrt_label <- "Bootstrap likelihood-ratio test p-value (\u2212log10 scale)"
+    mdata <- mdata %>%
       dplyr::mutate(
-        Classes        = final_k,
-        Model          = final_model,
-        AIC_scaled     = NA_real_,
-        BIC_scaled     = NA_real_,
-        Entropy_scaled = NA_real_,
-        ahp_index      = NA_real_
-      )
+        PlotValue = dplyr::if_else(
+          .data$name == "BLRTPValue",
+          -log10(pmax(.data$value, .Machine$double.xmin)), .data$value),
+        name = dplyr::recode(.data$name, BLRTPValue = blrt_label),
+        name = factor(.data$name, levels = c(
+          "AIC", "BIC", "Entropy", "ReproducibilityScore", blrt_label)))
 
-    ahp_best_row       <- fit_table[1, ]
-    best_model         <- final_model
-    best_k             <- final_k
-    recommendation_txt <- paste0(
-      "User-specified Model ", final_model,
-      " with k = ", final_k, " profiles."
+    model_levels <- sort(unique(c(1, 2, 3, models, final_model)))
+    model_levels <- model_levels[!is.na(model_levels)]
+    model_labels <- as.character(model_levels)
+    model_labels[model_levels == 1] <- "1:Equal variance, cov = 0"
+    model_labels[model_levels == 2] <- "2:Varying variance, cov = 0"
+    model_labels[model_levels == 3] <- "3:Equal variance, equal cov"
+
+    mdata$Model <- factor(
+      mdata$Model,
+      levels = model_levels,
+      labels = model_labels
     )
 
-    mdata_wide <- fit_table
-  }
-
-  # Fit plot ---------------------------------------------------------------
-
-  mdata_cols <- intersect(c("AIC", "BIC", "Entropy"), names(mdata_wide))
-
-  if (length(mdata_cols) == 0) {
-    mdata <- dplyr::tibble(
-      Classes = integer(0),
-      Model   = integer(0),
-      name    = character(0),
-      value   = numeric(0)
+    # Model family is a plain category, so it takes the package palette. Colours
+    # are assigned over the full set of families, not the subset present, so a
+    # family keeps the same colour whether or not the others converged.
+    model_families <- c(
+      "1:Equal variance, cov = 0",
+      "2:Varying variance, cov = 0",
+      "3:Equal variance, equal cov"
     )
-  } else {
-    mdata <- mdata_wide %>%
-      tidyr::pivot_longer(
-        cols      = dplyr::all_of(mdata_cols),
-        names_to  = "name",
-        values_to = "value"
-      )
-  }
+    pal_cols <- stats::setNames(
+      .SciDataColorValues(length(model_families)), model_families)
+    pal_cols <- pal_cols[names(pal_cols) %in% levels(mdata$Model)]
 
-  model_levels <- sort(unique(c(1, 2, 3, models, final_model)))
-  model_levels <- model_levels[!is.na(model_levels)]
-  model_labels <- as.character(model_levels)
-  model_labels[model_levels == 1] <- "1:Equal variance, cov = 0"
-  model_labels[model_levels == 2] <- "2:Varying variance, cov = 0"
-  model_labels[model_levels == 3] <- "3:Equal variance, equal cov"
+    fit_plot <- ggplot2::ggplot(
+      mdata,
+      ggplot2::aes(x = Classes, y = PlotValue, color = Model)
+    ) +
+      ggplot2::geom_point() +
+      ggplot2::geom_line() +
+      ggplot2::facet_wrap(~name, scales = "free_y", ncol = 1) +
+      ggplot2::theme_bw() +
+      ggplot2::theme(legend.position = "top") +
+      ggplot2::labs(x = "Number of clusters", y = "Fit index value")
 
-  mdata$Model <- factor(
-    mdata$Model,
-    levels = model_levels,
-    labels = model_labels
-  )
-
-  pal_cols <- c(
-    "1:Equal variance, cov = 0"      = "#50427B",
-    "2:Varying variance, cov = 0"    = "#A5C660",
-    "3:Equal variance, equal cov"    = "#F16A33"
-  )
-  pal_cols <- pal_cols[names(pal_cols) %in% levels(mdata$Model)]
-
-  fit_plot <- ggplot2::ggplot(
-    mdata,
-    ggplot2::aes(x = Classes, y = value, color = Model)
-  ) +
-    ggplot2::geom_point() +
-    ggplot2::geom_line() +
-    ggplot2::facet_wrap(~name, scales = "free_y", ncol = 1) +
-    ggplot2::theme_bw() +
-    ggplot2::theme(legend.position = "top") +
-    ggplot2::labs(
-      x = "Number of clusters",
-      y = "Fit index value"
-    )
-
-  if (length(pal_cols) > 0) {
-    fit_plot <- fit_plot + ggplot2::scale_color_manual(values = pal_cols)
-  }
-
-  # Node-level cluster and posteriors --------------------------------------
-
-  # tidyLPA::get_data.tidyLPA() dispatches through an unqualified generic in
-  # tidyLPA 2.0.2. Extracting the selected tidyProfile first avoids that
-  # dispatch path while preserving the model data used for node assignment.
-  best_profile <- if (inherits(best_lpa, "tidyLPA")) {
-    if (length(best_lpa) != 1) {
-      stop("The selected LPA solution must contain exactly one profile.")
+    if (length(pal_cols) > 0) {
+      fit_plot <- fit_plot + ggplot2::scale_color_manual(values = pal_cols)
     }
-    best_lpa[[1]]
-  } else {
-    best_lpa
-  }
+    if ("BLRTPValue" %in% mdata_cols) {
+      fit_plot <- fit_plot + ggplot2::geom_hline(
+        data = dplyr::tibble(name = factor(blrt_label, levels = levels(mdata$name)),
+          PlotValue = -log10(0.05)),
+        ggplot2::aes(yintercept = PlotValue), inherit.aes = FALSE,
+        linetype = "dashed", color = "grey35")
+    }
 
-  best_data <- tidyLPA::get_data(best_profile)
+    # Node-level cluster and posteriors --------------------------------------
 
-  node_df <- best_data %>%
-    dplyr::mutate(NodeID = dplyr::row_number()) %>%
-    dplyr::rename(Cluster = Class)
+    # tidyLPA::get_data.tidyLPA() dispatches through an unqualified generic in
+    # tidyLPA 2.0.2. Extracting the selected tidyProfile first avoids that
+    # dispatch path while preserving the model data used for node assignment.
+    best_profile <- if (inherits(best_lpa, "tidyLPA")) {
+      if (length(best_lpa) != 1) {
+        stop("The selected LPA solution must contain exactly one profile.")
+      }
+      best_lpa[[1]]
+    } else {
+      best_lpa
+    }
 
-  prob_cols <- grep("^CPROB", names(node_df), value = TRUE)
-  for (i in seq_along(prob_cols)) {
-    names(node_df)[names(node_df) == prob_cols[i]] <- paste0("prob_", i)
-  }
-  prob_cols_new <- grep("^prob_", names(node_df), value = TRUE)
+    best_data <- tidyLPA::get_data(best_profile)
 
-  if (length(prob_cols_new) > 0) {
-    node_df <- node_df %>%
-      dplyr::rowwise() %>%
-      dplyr::mutate(
-        max_prob      = max(dplyr::c_across(dplyr::all_of(prob_cols_new)), na.rm = TRUE),
-        prob_assigned = dplyr::c_across(dplyr::all_of(prob_cols_new))[Cluster],
-        uncertainty   = 1 - max_prob
-      ) %>%
-      dplyr::ungroup()
-  } else {
+    node_df <- best_data %>%
+      dplyr::mutate(NodeID = dplyr::row_number()) %>%
+      dplyr::rename(Cluster = Class)
+
+    prob_cols <- grep("^CPROB", names(node_df), value = TRUE)
+    for (i in seq_along(prob_cols)) {
+      names(node_df)[names(node_df) == prob_cols[i]] <- paste0("prob_", i)
+    }
+    prob_cols_new <- grep("^prob_", names(node_df), value = TRUE)
+
+    if (length(prob_cols_new) > 0) {
+      node_df <- node_df %>%
+        dplyr::rowwise() %>%
+        dplyr::mutate(
+          max_prob      = max(dplyr::c_across(dplyr::all_of(prob_cols_new)), na.rm = TRUE),
+          prob_assigned = dplyr::c_across(dplyr::all_of(prob_cols_new))[Cluster],
+          uncertainty   = 1 - max_prob
+        ) %>%
+        dplyr::ungroup()
+    } else {
+      node_df <- node_df %>%
+        dplyr::mutate(
+          max_prob      = NA_real_,
+          prob_assigned = NA_real_,
+          uncertainty   = NA_real_
+        )
+    }
+
     node_df <- node_df %>%
       dplyr::mutate(
-        max_prob      = NA_real_,
-        prob_assigned = NA_real_,
-        uncertainty   = NA_real_
+        NodeID = as.integer(NodeID),
+        Cluster = as.integer(Cluster)
       )
-  }
+  } else {
 
-  node_df <- node_df %>%
-    dplyr::mutate(
-      NodeID = as.integer(NodeID),
-      Cluster = as.integer(Cluster)
+    node_clustering <- .NodeClusterFn(som_codes)
+    if (!is.list(node_clustering) || is.null(node_clustering$node_cluster)) {
+      stop(".NodeClusterFn must return a list with a `node_cluster` element.")
+    }
+    if (length(node_clustering$node_cluster) != nrow(som_codes)) {
+      stop(".NodeClusterFn must return one cluster per SOM node.")
+    }
+
+    X <- as.data.frame(som_codes)
+    dropped_lpa_vars <- character(0)
+
+    # No latent-profile model was fitted, so there are no posterior
+    # probabilities to report. The columns are kept so that everything
+    # downstream still sees one node table with one shape.
+    node_df <- dplyr::tibble(
+      NodeID        = seq_len(nrow(som_codes)),
+      Cluster       = as.integer(node_clustering$node_cluster),
+      max_prob      = NA_real_,
+      prob_assigned = NA_real_,
+      uncertainty   = NA_real_
     )
+
+    lpa_models         <- NULL
+    best_lpa           <- NULL
+    best_fit_name      <- if (is.null(node_clustering$best_fit_name)) {
+      "supplied_node_clustering"
+    } else node_clustering$best_fit_name
+    fit_table          <- node_clustering$fit_table
+    ahp_best_row       <- node_clustering$ahp_best_row
+    recommendation_txt <- node_clustering$recommendation
+    fit_plot           <- node_clustering$fit_plot
+    lpa_diagnostics    <- dplyr::tibble()
+    failed_fits        <- dplyr::tibble()
+    warning_fits       <- dplyr::tibble()
+    Stability          <- NULL
+  }
 
   # Map nodes to individuals -----------------------------------------------
 
@@ -1101,8 +1639,6 @@ CreateSOMClusterModel <- function(data,
   Cluster_full[complete_rows] <- patient_clust
 
   individual_tbl <- dplyr::tibble(
-    .scidr_rowid = df_scidr$.scidr_rowid,
-    RowID        = df_scidr$.scidr_rowid,
     SOM_Node     = SOM_Node_full,
     SOM_Distance = SOM_Dist_full
   ) %>%
@@ -1118,19 +1654,16 @@ CreateSOMClusterModel <- function(data,
   if (nrow(individual_tbl) != nrow(df_scidr)) {
     stop("Internal row alignment error: ProbFit$individual does not match the number of rows in df.")
   }
-  if (!identical(individual_tbl$.scidr_rowid, df_scidr$.scidr_rowid)) {
-    stop("Internal row alignment error: .scidr_rowid shifted during posterior probability mapping.")
+
+  # DataWithClusters: only cluster label -----------------------------------
+
+  DataWithClusters <- df_scidr
+
+  if (ClusterVariableName %in% names(DataWithClusters)) {
+    message("Column '", ClusterVariableName, "' already exists and will be overwritten.")
   }
 
-  # df_with_clusters: only cluster label -----------------------------------
-
-  df_with_clusters <- df_scidr
-
-  if (ClusterName %in% names(df_with_clusters)) {
-    message("Column '", ClusterName, "' already exists and will be overwritten.")
-  }
-
-  df_with_clusters[[ClusterName]] <- individual_tbl$Cluster
+  DataWithClusters[[ClusterVariableName]] <- individual_tbl$Cluster
 
   # SOMFit diagnostics and distance baselines (training) -------------------
 
@@ -1230,11 +1763,6 @@ CreateSOMClusterModel <- function(data,
 
   som_fit_non_na <- som_fit_tbl[!is.na(som_fit_tbl$SOM_Distance), ]
 
-  cluster_occupancy <- som_fit_non_na %>%
-    dplyr::filter(!is.na(.data$Cluster)) %>%
-    dplyr::count(.data$Cluster, name = "n") %>%
-    dplyr::mutate(prop = .data$n / sum(.data$n))
-
   training_cluster_fit_summary <- som_fit_non_na %>%
     dplyr::filter(!is.na(.data$Cluster)) %>%
     dplyr::group_by(.data$Cluster) %>%
@@ -1268,43 +1796,7 @@ CreateSOMClusterModel <- function(data,
       y     = "Count"
     )
 
-  p_dist_box <- ggplot2::ggplot(
-    som_fit_non_na,
-    ggplot2::aes(x = factor(Cluster), y = SOM_Distance)
-  ) +
-    ggplot2::geom_boxplot() +
-    ggplot2::theme_bw() +
-    ggplot2::labs(
-      title = "SOM distances by cluster (training data)",
-      x     = "Cluster",
-      y     = "Distance to BMU"
-    )
-
-  p_dist_ecdf <- ggplot2::ggplot(
-    som_fit_non_na,
-    ggplot2::aes(x = .data$SOM_Distance)
-  ) +
-    ggplot2::stat_ecdf() +
-    ggplot2::theme_bw() +
-    ggplot2::labs(
-      title = "Training SOM distance ECDF",
-      x = "Distance to BMU",
-      y = "Empirical cumulative probability"
-    )
-
-  p_cluster_fit_summary <- ggplot2::ggplot(
-    training_cluster_fit_summary,
-    ggplot2::aes(x = factor(.data$Cluster), y = .data$prop_high_distance)
-  ) +
-    ggplot2::geom_col() +
-    ggplot2::theme_bw() +
-    ggplot2::labs(
-      title = "High-distance training cases by cluster",
-      x = "Cluster",
-      y = "Proportion"
-    )
-
-  PhenotypeReference <- list(
+  ProjectionReference <- list(
     training_variable_summary = training_variable_summary,
     distance_reference = list(
       mean = overall_mean,
@@ -1317,42 +1809,17 @@ CreateSOMClusterModel <- function(data,
       high_dist_cutoff = overall_high_cutoff
     ),
     node_occupancy = som_node_occupancy,
-    cluster_occupancy = cluster_occupancy,
     projection_thresholds = list(
       high_dist_quantile = high_dist_quantile,
       low_prob_threshold = low_prob_threshold
     ),
-    Health = list(
-      n_training = nrow(df_scidr),
-      n_complete = sum(complete_rows),
-      n_excluded = sum(!complete_rows),
-      prop_excluded = mean(!complete_rows),
+    MapHealth = list(
+      n_training = nrow(df_scidr), n_complete = sum(complete_rows),
+      n_excluded = sum(!complete_rows), prop_excluded = mean(!complete_rows),
       mean_distance = overall_mean,
-      median_distance = stats::median(dist_train, na.rm = TRUE),
       node_utilization = mean(som_node_occupancy$n > 0),
       empty_nodes = sum(som_node_occupancy$n == 0),
-      singleton_nodes = sum(som_node_occupancy$n == 1),
-      mean_node_occupancy = mean(som_node_occupancy$n),
-      median_node_occupancy = stats::median(som_node_occupancy$n)
-    ),
-    FitDiagnostics = list(
-      overall_fit_summary = dplyr::tibble(
-        n = nrow(som_fit_non_na),
-        mean_distance = overall_mean,
-        median_distance = stats::median(dist_train, na.rm = TRUE),
-        sd_distance = overall_sd,
-        high_distance_cutoff = overall_high_cutoff,
-        prop_high_distance = mean(som_fit_non_na$Flag_SOMDist_overallHigh, na.rm = TRUE),
-        prop_low_probability = mean(som_fit_non_na$prob_assigned < low_prob_threshold, na.rm = TRUE),
-        prop_poor_fit = mean(som_fit_non_na$Projection_Fit_Class == "Poor SOM fit", na.rm = TRUE),
-        prop_potential_novel = mean(som_fit_non_na$Projection_Fit_Class == "Potential novel phenotype", na.rm = TRUE)
-      ),
-      cluster_fit_summary = training_cluster_fit_summary,
-      potential_novel_cases = potential_novel_cases
-    ),
-    plots = list(
-      distance_ecdf = p_dist_ecdf,
-      cluster_fit_summary_plot = p_cluster_fit_summary
+      singleton_nodes = sum(som_node_occupancy$n == 1)
     )
   )
 
@@ -1367,10 +1834,7 @@ CreateSOMClusterModel <- function(data,
     node_occupancy    = som_node_occupancy,
     occupancy_summary = som_occupancy_summary,
     table             = som_fit_tbl,
-    plots             = list(
-      distance_hist           = p_dist_hist,
-      distance_by_cluster_box = p_dist_box
-    )
+    plots             = list(distance_hist = p_dist_hist)
   )
 
   ModelInfo_SOM <- list(
@@ -1378,7 +1842,7 @@ CreateSOMClusterModel <- function(data,
     som_codes = som_codes,
     som_grid  = som_grid,
     training_variable_summary = training_variable_summary,
-    PhenotypeReference = PhenotypeReference,
+    ProjectionReference = ProjectionReference,
     som_grid_info = list(
       som_xdim_initial = som_grid_initial_xdim,
       som_ydim_initial = som_grid_initial_ydim,
@@ -1394,25 +1858,19 @@ CreateSOMClusterModel <- function(data,
 
   node_non_na <- node_df
 
-  node_MaxProbBoxplot <- ggplot2::ggplot(
-    node_non_na,
-    ggplot2::aes(x = factor(Cluster), y = max_prob)
-  ) +
-    ggplot2::geom_boxplot() +
-    ggplot2::theme_bw() +
-    ggplot2::labs(
-      title = "Node-level max posterior probability by class",
-      x     = "Cluster",
-      y     = "Max posterior probability"
-    )
+  # A node clustering that carries no posterior probabilities has nothing for
+  # these two densities to show, and geom_density() on an all-NA column fails
+  # at draw time rather than returning an empty panel.
+  has_posterior <- any(is.finite(node_df$prob_assigned))
 
-  node_ProbAssignedDensity <- ggplot2::ggplot(
+  node_ProbAssignedDensity <- if (!has_posterior) NULL else ggplot2::ggplot(
     node_non_na,
     ggplot2::aes(x = prob_assigned)
   ) +
     ggplot2::geom_density(fill = "grey40", alpha = 0.7) +
     ggplot2::facet_wrap(~Cluster, scales = "free_y", nrow = 1) +
     ggplot2::theme_bw() +
+    ggplot2::scale_x_continuous(limits = c(0, 1)) +
     ggplot2::labs(
       title = "Density of node prob_assigned by class",
       x     = "prob_assigned",
@@ -1422,19 +1880,7 @@ CreateSOMClusterModel <- function(data,
   indiv_non_na <- som_fit_tbl[!is.na(som_fit_tbl$max_prob), ]
   indiv_non_na$Cluster <- factor(indiv_non_na$Cluster)
 
-  individual_MaxProbBoxplot <- ggplot2::ggplot(
-    indiv_non_na,
-    ggplot2::aes(x = Cluster, y = max_prob)
-  ) +
-    ggplot2::geom_boxplot() +
-    ggplot2::theme_bw() +
-    ggplot2::labs(
-      title = "Individual max posterior probability (training)",
-      x     = "Cluster",
-      y     = "Max posterior probability"
-    )
-
-  individual_ProbAssignedDensity <- ggplot2::ggplot(
+  individual_ProbAssignedDensity <- if (!has_posterior) NULL else ggplot2::ggplot(
     indiv_non_na,
     ggplot2::aes(x = prob_assigned)
   ) +
@@ -1452,9 +1898,7 @@ CreateSOMClusterModel <- function(data,
     node       = node_df,
     individual = som_fit_tbl,
     plots      = list(
-      node_MaxProbBoxplot            = node_MaxProbBoxplot,
       node_ProbAssignedDensity       = node_ProbAssignedDensity,
-      individual_MaxProbBoxplot      = individual_MaxProbBoxplot,
       individual_ProbAssignedDensity = individual_ProbAssignedDensity
     )
   )
@@ -1487,6 +1931,7 @@ CreateSOMClusterModel <- function(data,
       ahp_best_row   = ahp_best_row,
       recommendation = recommendation_txt
     ),
+    Stability = Stability,
     diagnostics = list(
       lpa_fit_diagnostics = lpa_diagnostics,
       failed_fits         = failed_fits,
@@ -1495,31 +1940,58 @@ CreateSOMClusterModel <- function(data,
     )
   )
 
+  if (!is.null(Stability)) Stability$plots <- .ClusterStabilityPlots(Stability)
+
   out <- list(
     method           = method,
     vars_used        = vars_used,
     ZScoreType       = ZScoreType,
     ZScoreObject     = ZScoreObject_used,
     ZScoreVars       = ZScoreVars_used,
-    ClusterName      = ClusterName,
-    complete_rows    = complete_rows,
-    df_with_clusters = df_with_clusters,
+    ClusterVariableName      = ClusterVariableName,
+    DataWithClusters = DataWithClusters,
     fit_plot         = fit_plot,
+    ModelInfo        = ModelInfo_MClust,
     ModelInfo_SOM    = ModelInfo_SOM,
     ModelInfo_MClust = ModelInfo_MClust,
-    ProbFit          = ProbFit
+    ProbFit          = ProbFit,
+    Stability        = Stability
   )
 
-  class(out) <- c("Pipeline_SOMClust", class(out))
+  out$Specification <- .ClusterSpecification(
+    "SOM + Mclust", vars_used,
+    list(seed_som = seed_som, seed_lpa = seed_lpa, stability_seed = stability_seed),
+    list(ZScoreType = ZScoreType, ZScoreObject = ZScoreObject_used,
+      ZScoreVars = ZScoreVars_used, SOM = ModelInfo_SOM$som_grid_info),
+    ModelInfo_MClust$fit_table,
+    list(k = final_k, model = final_model), complete_rows,
+    list(distance_metric = "distance to frozen SOM best-matching unit"))
+
+  class(out) <- c("Pipeline_SOM_MClust", class(out))
   out
 }
 
-#' @description `Pipeline_SOMClust()` has been superseded by
-#'   `CreateSOMClusterModel()`. It remains available as a backwards-compatible
-#'   alias and returns the same reusable SOM clustering model.
-#' @rdname CreateSOMClusterModel
-#' @param ... Arguments passed to [CreateSOMClusterModel()].
+#' @description Readable SOM + Mclust workflow wrapper for
+#'   [CreateClusterModel_SOM_MClust()].
+#' @rdname CreateClusterModel_SOM_MClust
+#' @param ... Arguments passed to [CreateClusterModel_SOM_MClust()].
+#' @export
+Pipeline_SOM_MClust <- function(...) {
+  CreateClusterModel_SOM_MClust(...)
+}
+
+#' @description Compatibility wrapper for [Pipeline_SOM_MClust()].
+#' @rdname CreateClusterModel_SOM_MClust
 #' @export
 Pipeline_SOMClust <- function(...) {
-  CreateSOMClusterModel(...)
+  Pipeline_SOM_MClust(...)
+}
+
+#' @description Deprecated alias for [CreateClusterModel_SOM_MClust()].
+#' @rdname CreateClusterModel_SOM_MClust
+#' @export
+CreateSOMClusterModel <- function(...) {
+  lifecycle::deprecate_warn("20.25.0", "CreateSOMClusterModel()",
+    "CreateClusterModel_SOM_MClust()")
+  CreateClusterModel_SOM_MClust(...)
 }

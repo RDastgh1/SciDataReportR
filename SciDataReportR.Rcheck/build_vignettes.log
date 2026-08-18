@@ -1,0 +1,404 @@
+--- re-building ‘ClusteringPhenotyping.qmd’ using html
+
+
+processing file: ClusteringPhenotyping.qmd
+Error:
+! object 'SimulatedPhenotypeData' not found
+
+Quitting from ClusteringPhenotyping.qmd:101-119 [LoadData]
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+<error/rlang_error>
+Error:
+! object 'SimulatedPhenotypeData' not found
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Execution halted
+WARN: Error encountered when rendering files
+Error: processing vignette 'ClusteringPhenotyping.qmd' failed with diagnostics:
+! Error running quarto CLI from R.
+Caused by error in `quarto_render()`:
+✖ Error returned by quarto CLI.
+  -----------------------------
+  
+  
+  processing file: ClusteringPhenotyping.qmd
+  Error:
+  ! object 'SimulatedPhenotypeData' not found
+  
+  Quitting from ClusteringPhenotyping.qmd:101-119 [LoadData]
+  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  <error/rlang_error>
+  Error:
+  ! object 'SimulatedPhenotypeData' not found
+  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  
+  Execution halted
+  WARN: Error encountered when rendering files
+  
+Caused by error in `processx::run()`:
+! System command 'quarto' failed
+--- failed re-building ‘ClusteringPhenotyping.qmd’
+
+--- re-building ‘getting-started.qmd’ using html
+
+
+processing file: getting-started.qmd
+output file: getting-started.knit.md
+
+pandoc 
+  to: html
+  output-file: getting-started.html
+  standalone: true
+  embed-resources: true
+  wrap: none
+  default-image-extension: png
+  css:
+    - >-
+      /Library/Frameworks/R.framework/Versions/4.5-arm64/Resources/library/quarto/rmarkdown/template/quarto_vignette/resources/vignette.css
+  toc: true
+  toc-depth: 2
+  variables: {}
+  
+metadata
+  document-css: false
+  lang: en
+  engines:
+    - path: /Applications/quarto/share/extension-subtrees/julia-engine/_extensions/julia-engine/julia-engine.js
+  minimal: true
+  theme: none
+  title: Getting started with SciDataReportR
+  vignette: |
+    %\VignetteIndexEntry{Getting started with SciDataReportR} %\VignetteEngine{quarto::html} %\VignetteEncoding{UTF-8}
+  
+Output created: getting-started.html
+
+--- finished re-building ‘getting-started.qmd’
+
+--- re-building ‘MakeComparisonTable.qmd’ using html
+
+
+processing file: MakeComparisonTable.qmd
+output file: MakeComparisonTable.knit.md
+
+pandoc 
+  to: html
+  output-file: MakeComparisonTable.html
+  standalone: true
+  embed-resources: true
+  wrap: none
+  default-image-extension: png
+  css:
+    - >-
+      /Library/Frameworks/R.framework/Versions/4.5-arm64/Resources/library/quarto/rmarkdown/template/quarto_vignette/resources/vignette.css
+  toc: true
+  number-sections: true
+  variables: {}
+  
+metadata
+  document-css: false
+  lang: en
+  engines:
+    - path: /Applications/quarto/share/extension-subtrees/julia-engine/_extensions/julia-engine/julia-engine.js
+  minimal: true
+  theme: none
+  title: Creating comparison tables with MakeComparisonTable()
+  description: Generate publication-ready comparison tables with effect sizes, covariate adjustment, and pairwise comparisons.
+  vignette: |
+    %\VignetteIndexEntry{Creating comparison tables with MakeComparisonTable()} %\VignetteEngine{quarto::html} %\VignetteEncoding{UTF-8}
+  
+Output created: MakeComparisonTable.html
+
+--- finished re-building ‘MakeComparisonTable.qmd’
+
+--- re-building ‘MakeUnivariateRegressionTable.qmd’ using html
+
+
+processing file: MakeUnivariateRegressionTable.qmd
+output file: MakeUnivariateRegressionTable.knit.md
+
+pandoc 
+  to: html
+  output-file: MakeUnivariateRegressionTable.html
+  standalone: true
+  embed-resources: true
+  wrap: none
+  default-image-extension: png
+  css:
+    - >-
+      /Library/Frameworks/R.framework/Versions/4.5-arm64/Resources/library/quarto/rmarkdown/template/quarto_vignette/resources/vignette.css
+  toc: true
+  number-sections: true
+  variables: {}
+  
+metadata
+  document-css: false
+  lang: en
+  engines:
+    - path: /Applications/quarto/share/extension-subtrees/julia-engine/_extensions/julia-engine/julia-engine.js
+  minimal: true
+  theme: none
+  title: Screening Outcomes and Predictors with MakeUnivariateRegressionTable()
+  description: Create label-aware univariate regression tables across multiple outcomes and predictors.
+  vignette: |
+    %\VignetteIndexEntry{Screening Outcomes and Predictors with MakeUnivariateRegressionTable()} %\VignetteEngine{quarto::html} %\VignetteEncoding{UTF-8}
+  
+Output created: MakeUnivariateRegressionTable.html
+
+--- finished re-building ‘MakeUnivariateRegressionTable.qmd’
+
+--- re-building ‘OrdinalVariables.qmd’ using html
+
+
+processing file: OrdinalVariables.qmd
+Error in `MakeComparisonTable()`:
+! Variable(s) not found: Categorical
+Backtrace:
+    ▆
+ 1. └─SciDataReportR::MakeComparisonTable(...)
+
+Quitting from OrdinalVariables.qmd:95-105 [CategoricalComparisonTable]
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+<error/rlang_error>
+Error in `MakeComparisonTable()`:
+! Variable(s) not found: Categorical
+---
+Backtrace:
+    ▆
+ 1. └─SciDataReportR::MakeComparisonTable(...)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Execution halted
+WARN: Error encountered when rendering files
+Error: processing vignette 'OrdinalVariables.qmd' failed with diagnostics:
+! Error running quarto CLI from R.
+Caused by error in `quarto_render()`:
+✖ Error returned by quarto CLI.
+  -----------------------------
+  
+  
+  processing file: OrdinalVariables.qmd
+  Error in `MakeComparisonTable()`:
+  ! Variable(s) not found: Categorical
+  Backtrace:
+  ▆
+  1. └─SciDataReportR::MakeComparisonTable(...)
+  
+  Quitting from OrdinalVariables.qmd:95-105 [CategoricalComparisonTable]
+  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  <error/rlang_error>
+  Error in `MakeComparisonTable()`:
+  ! Variable(s) not found: Categorical
+  ---
+  Backtrace:
+  ▆
+  1. └─SciDataReportR::MakeComparisonTable(...)
+  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  
+  Execution halted
+  WARN: Error encountered when rendering files
+  
+Caused by error in `processx::run()`:
+! System command 'quarto' failed
+--- failed re-building ‘OrdinalVariables.qmd’
+
+--- re-building ‘PlotCorrelationsHeatmap.qmd’ using html
+
+
+processing file: PlotCorrelationsHeatmap.qmd
+output file: PlotCorrelationsHeatmap.knit.md
+
+pandoc 
+  to: html
+  output-file: PlotCorrelationsHeatmap.html
+  standalone: true
+  embed-resources: true
+  wrap: none
+  default-image-extension: png
+  css:
+    - >-
+      /Library/Frameworks/R.framework/Versions/4.5-arm64/Resources/library/quarto/rmarkdown/template/quarto_vignette/resources/vignette.css
+  toc: true
+  number-sections: true
+  variables: {}
+  
+metadata
+  document-css: false
+  lang: en
+  engines:
+    - path: /Applications/quarto/share/extension-subtrees/julia-engine/_extensions/julia-engine/julia-engine.js
+  minimal: true
+  theme: none
+  title: Exploring associations with PlotCorrelationsHeatmap()
+  description: Create correlation heatmaps, perform FDR correction, adjust for covariates, and investigate significant associations.
+  knitr:
+    opts_chunk:
+      fig.retina: 1
+  vignette: |
+    %\VignetteIndexEntry{Exploring associations with PlotCorrelationsHeatmap()} %\VignetteEngine{quarto::html} %\VignetteEncoding{UTF-8}
+  
+Output created: PlotCorrelationsHeatmap.html
+
+--- finished re-building ‘PlotCorrelationsHeatmap.qmd’
+
+--- re-building ‘PlotForestFromTable.qmd’ using html
+
+
+processing file: PlotForestFromTable.qmd
+output file: PlotForestFromTable.knit.md
+
+pandoc 
+  to: html
+  output-file: PlotForestFromTable.html
+  standalone: true
+  embed-resources: true
+  wrap: none
+  default-image-extension: png
+  css:
+    - >-
+      /Library/Frameworks/R.framework/Versions/4.5-arm64/Resources/library/quarto/rmarkdown/template/quarto_vignette/resources/vignette.css
+  toc: true
+  number-sections: true
+  variables: {}
+  
+metadata
+  document-css: false
+  lang: en
+  engines:
+    - path: /Applications/quarto/share/extension-subtrees/julia-engine/_extensions/julia-engine/julia-engine.js
+  minimal: true
+  theme: none
+  title: Forest Plots from Univariate Regression Tables
+  description: Visualize estimates from MakeUnivariateRegressionTable() with PlotForestFromTable().
+  vignette: |
+    %\VignetteIndexEntry{Forest Plots from Univariate Regression Tables} %\VignetteEngine{quarto::html} %\VignetteEncoding{UTF-8}
+  
+Output created: PlotForestFromTable.html
+
+--- finished re-building ‘PlotForestFromTable.qmd’
+
+--- re-building ‘PlotMiningMatrix.qmd’ using html
+
+
+processing file: PlotMiningMatrix.qmd
+output file: PlotMiningMatrix.knit.md
+
+pandoc 
+  to: html
+  output-file: PlotMiningMatrix.html
+  standalone: true
+  embed-resources: true
+  wrap: none
+  default-image-extension: png
+  css:
+    - >-
+      /Library/Frameworks/R.framework/Versions/4.5-arm64/Resources/library/quarto/rmarkdown/template/quarto_vignette/resources/vignette.css
+  toc: true
+  number-sections: true
+  variables: {}
+  
+metadata
+  document-css: false
+  lang: en
+  engines:
+    - path: /Applications/quarto/share/extension-subtrees/julia-engine/_extensions/julia-engine/julia-engine.js
+  minimal: true
+  theme: none
+  title: Exploratory discovery with PlotMiningMatrix()
+  description: Rapidly identify patterns, anomalies, covariates, and candidate hypotheses across an entire dataset.
+  knitr:
+    opts_chunk:
+      fig.retina: 1
+  vignette: |
+    %\VignetteIndexEntry{Exploratory discovery with PlotMiningMatrix()} %\VignetteEngine{quarto::html} %\VignetteEncoding{UTF-8}
+  
+Output created: PlotMiningMatrix.html
+
+--- finished re-building ‘PlotMiningMatrix.qmd’
+
+--- re-building ‘UnivariateRegressions.qmd’ using html
+
+
+processing file: UnivariateRegressions.qmd
+output file: UnivariateRegressions.knit.md
+
+pandoc 
+  to: html
+  output-file: UnivariateRegressions.html
+  standalone: true
+  embed-resources: true
+  wrap: none
+  default-image-extension: png
+  css:
+    - >-
+      /Library/Frameworks/R.framework/Versions/4.5-arm64/Resources/library/quarto/rmarkdown/template/quarto_vignette/resources/vignette.css
+  toc: true
+  number-sections: true
+  variables: {}
+  
+metadata
+  document-css: false
+  lang: en
+  engines:
+    - path: /Applications/quarto/share/extension-subtrees/julia-engine/_extensions/julia-engine/julia-engine.js
+  minimal: true
+  theme: none
+  title: Screening predictors with MakeUnivariateRegressionTable()
+  description: Generate publication-ready regression tables and forest plots across multiple outcomes and predictors.
+  vignette: |
+    %\VignetteIndexEntry{Screening predictors with MakeUnivariateRegressionTable()} %\VignetteEngine{quarto::html} %\VignetteEncoding{UTF-8}
+  
+Output created: UnivariateRegressions.html
+
+--- finished re-building ‘UnivariateRegressions.qmd’
+
+--- re-building ‘argument-renaming.Rmd’ using rmarkdown
+Pandoc is required to build R Markdown vignettes but not available. Please make sure it is installed.
+--- finished re-building ‘argument-renaming.Rmd’
+
+--- re-building ‘fdr-correction.Rmd’ using rmarkdown
+Pandoc is required to build R Markdown vignettes but not available. Please make sure it is installed.
+--- finished re-building ‘fdr-correction.Rmd’
+
+--- re-building ‘merge-qc-workflow.Rmd’ using rmarkdown
+Pandoc is required to build R Markdown vignettes but not available. Please make sure it is installed.
+
+Quitting from merge-qc-workflow.Rmd:243-245 [unnamed-chunk-11]
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+<error/rlang_error>
+Error in `path.expand()`:
+! invalid 'path' argument
+---
+Backtrace:
+    ▆
+ 1. ├─base::withVisible(knit_print(x, ...))
+ 2. └─knitr::knit_print(x, ...)
+ 3.   └─knitr:::html_screenshot(x)
+ 4.     ├─knitr:::in_dir(...)
+ 5.     └─base::normalizePath(f3)
+ 6.       └─base::path.expand(path)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Error: processing vignette 'merge-qc-workflow.Rmd' failed with diagnostics:
+invalid 'path' argument
+--- failed re-building ‘merge-qc-workflow.Rmd’
+
+--- re-building ‘PValueColorScales.Rmd’ using rmarkdown
+Pandoc is required to build R Markdown vignettes but not available. Please make sure it is installed.
+
+Quitting from PValueColorScales.Rmd:56-72 [BasicColorScale]
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+<error/rlang_error>
+Error in `scale_color_pvalue()`:
+! could not find function "scale_color_pvalue"
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Error: processing vignette 'PValueColorScales.Rmd' failed with diagnostics:
+could not find function "scale_color_pvalue"
+--- failed re-building ‘PValueColorScales.Rmd’
+
+SUMMARY: processing the following files failed:
+  ‘ClusteringPhenotyping.qmd’ ‘OrdinalVariables.qmd’
+  ‘merge-qc-workflow.Rmd’ ‘PValueColorScales.Rmd’
+
+Error: Vignette re-building failed.
+Execution halted

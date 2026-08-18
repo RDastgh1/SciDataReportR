@@ -1,0 +1,26 @@
+
+> knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+
+> has_survival <- requireNamespace("survival", quietly = TRUE)
+
+> has_widgets <- requireNamespace("reactable", quietly = TRUE) && 
++     requireNamespace("htmltools", quietly = TRUE)
+
+> knitr::opts_chunk$set(eval = has_survival)
+
+> library(SciDataReportR)
+
+> library(survival)
+
+> pbc_baseline <- pbc[, c("id", "age", "sex", "trt", 
++     "stage")]
+
+> pbc_labs <- pbcseq[, c("id", "day", "bili", "albumin", 
++     "platelet")]
+
+> m_pbc <- safe_merge(pbc_baseline, pbc_labs, by = "id", 
++     name = "pbc baseline + follow-up labs")
+
+  When sourcing ‘merge-qc-workflow.R’:
+Error: cannot open file '/Users/rahad/Library/CloudStorage/Dropbox/Coding/Package Development/SciDataReportR/SciDataReportR.Rcheck/SciDataReportR/R/SciDataReportR.rdb': No such file or directory
+Execution halted

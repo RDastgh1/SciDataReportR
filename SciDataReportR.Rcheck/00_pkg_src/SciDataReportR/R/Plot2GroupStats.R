@@ -14,7 +14,9 @@
 #' @param x_axis one of c("signed_logp","signed_effect","effect","logp")
 #' @param sort_by one of c("q","p","effect","signed_logp","signed_effect","none")
 #' @param mct_args list of extra args to SciDataReportR::MakeComparisonTable(); e.g., AddEffectSize=TRUE
-#' @param palette paletteer palette string for category colors (default "pals::alphabet")
+#' @param palette Optional paletteer palette string for category colors. When
+#'   `NULL` (the default), the SciDataReportR palette is used. Passing a
+#'   paletteer string such as `"pals::alphabet"` still works as before.
 #' @param point_size numeric constant for point size (default 3.5)
 #'
 #' @return list(plot=ggplot, table=gtsummary, pvaltable=data.frame, data_used=tibble)
@@ -29,7 +31,7 @@
 #' # Attach labels and factor levels for readable output
 #' Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
 #'
-#' # Compare 30 analytes between Diagnosis groups
+#' # A broad biomarker panel compared between Diagnosis groups
 #' vars <- c(
 #'   "age", "ACE_CD143_Angiotensin_Converti", "ACTH_Adrenocorticotropic_Hormon",
 #'   "AXL", "Adiponectin", "Alpha_1_Antichymotrypsin", "Alpha_1_Antitrypsin",
@@ -39,7 +41,8 @@
 #'   "Apolipoprotein_CIII", "Apolipoprotein_D", "Apolipoprotein_E",
 #'   "Apolipoprotein_H", "B_Lymphocyte_Chemoattractant_BL", "BMP_6",
 #'   "Beta_2_Microglobulin", "Betacellulin", "C_Reactive_Protein", "CD40",
-#'   "CD5L", "Calbindin", "Calcitonin", "CgA"
+#'   "CD5L", "Calbindin", "Calcitonin", "CgA", "GRO_alpha", "MMP10", "MMP7",
+#'   "NT_proBNP", "PAI_1", "TRAIL_R3", "VEGF", "Ab_42", "p_tau", "tau"
 #' )
 #'
 #' result <- Plot2GroupStats(
@@ -47,11 +50,15 @@
 #'   variables = vars,
 #'   group_var = "Diagnosis",
 #'   impClust = "Impaired",
-#'   normalClust = "Control"
+#'   normalClust = "Control",
+#'   label_q = 0.0001
 #' )
 #'
-#' # Display the group-comparison plot
-#' result$plot
+#' # Compact y-axis labels; full results stay in result$pvaltable
+#' result$plot + ggplot2::theme(
+#'   axis.text.y = ggplot2::element_text(size = 6),
+#'   plot.margin = ggplot2::margin(t = 20, r = 10, b = 10, l = 10)
+#' )
 #' }
 #' @export
 #' @import dplyr ggplot2 gtsummary
@@ -67,7 +74,7 @@ Plot2GroupStats <- function(data,
     x_axis = c("signed_logp", "signed_effect", "effect", "logp"),
     sort_by = c("q", "p", "effect", "signed_logp", "signed_effect", "none"),
     mct_args = list(),
-    palette = "pals::alphabet",
+    palette = NULL,
     point_size = 3.5,
     Data = lifecycle::deprecated(),
     Variables = lifecycle::deprecated(),
@@ -144,14 +151,14 @@ Plot2GroupStats <- function(data,
   # ---- working data ---------------------------------------------------------
   tData <- Data
   tData$GroupVar <- Data[[GroupVar]]
-  tData <- tData |>
-    dplyr::select(GroupVar, dplyr::all_of(Variables)) |>
+  tData <- tData %>%
+    dplyr::select(GroupVar, dplyr::all_of(Variables)) %>%
     dplyr::filter(GroupVar %in% c(normalClust, impClust))
   if (!all(c(normalClust, impClust) %in% unique(tData$GroupVar))) {
     stop("After filtering, one of the groups is missing. Check `impClust` / `normalClust` and data.")
   }
   tData$GroupVar <- factor(tData$GroupVar, levels = c(normalClust, impClust))
-  tData <- tData |> dplyr::mutate(dplyr::across(where(is.character), factor))
+  tData <- tData %>% dplyr::mutate(dplyr::across(dplyr::where(is.character), factor))
 
   # ---- pruning --------------------------------------------------------------
   miss_prop <- colMeans(is.na(tData))
@@ -208,8 +215,8 @@ Plot2GroupStats <- function(data,
   if (!all(c("row_type","variable") %in% names(tb))) {
     stop("Unexpected structure from MakeComparisonTable$table_body (needs `row_type` and `variable`).")
   }
-  pvaltable <- tb |>
-    dplyr::filter(.data$row_type == "label") |>
+  pvaltable <- tb %>%
+    dplyr::filter(.data$row_type == "label") %>%
     dplyr::select(dplyr::any_of(c("variable","label","p.value","effect_size","es_method")))
   if (!"p.value" %in% names(pvaltable)) {
     stop("`p.value` is missing in MakeComparisonTable output.")
@@ -246,16 +253,31 @@ Plot2GroupStats <- function(data,
   pvaltable$signed_logp <- pvaltable$logp * pvaltable$effect_sign
   pvaltable$signed_es   <- pvaltable$effect_abs * pvaltable$effect_sign
 
-  brks_p <- c(-Inf, 0.001, 0.01, 0.05, Inf); labs_p <- c("p<0.001","p<0.01","p<0.05","ns")
+  # `right = TRUE` makes each break an inclusive upper bound, so the labels read
+  # "<=" to match the cut points actually applied (package-wide star convention).
+  brks_p <- c(-Inf, 0.001, 0.01, 0.05, Inf); labs_p <- c("p<=0.001","p<=0.01","p<=0.05","ns")
   pvaltable$SigP <- cut(pvaltable$p.value, breaks = brks_p, labels = labs_p, right = TRUE)
 
-  brks_q <- c(-Inf, 0.001, 0.01, 0.05, Inf); labs_q <- c("q<0.001","q<0.01","q<0.05","ns")
+  brks_q <- c(-Inf, 0.001, 0.01, 0.05, Inf); labs_q <- c("q<=0.001","q<=0.01","q<=0.05","ns")
   pvaltable$SigQ <- cut(pvaltable$q.value, breaks = brks_q, labels = labs_q, right = TRUE)
 
   vars_present <- as.character(pvaltable$variable)
   cat_vec <- resolve_categories(VariableCategories, variables_arg = Variables,
                                 vars_present = vars_present)
   pvaltable$Category <- unname(cat_vec[vars_present])
+
+  # Make every human-facing plot label come from the labelled input or the
+  # comparison-table label column, never from a truncated variable name.
+  data_labels <- sjlabelled::get_label(tData[vars_present], def.value = vars_present)
+  label_lookup <- stats::setNames(as.character(data_labels), vars_present)
+  pvaltable$display_label <- if ("label" %in% names(pvaltable)) {
+    as.character(pvaltable$label)
+  } else {
+    unname(label_lookup[pvaltable$variable])
+  }
+  missing_labels <- is.na(pvaltable$display_label) | !nzchar(pvaltable$display_label)
+  pvaltable$display_label[missing_labels] <- unname(
+    label_lookup[pvaltable$variable[missing_labels]])
 
   order_key <- switch(
     sort_by,
@@ -268,7 +290,8 @@ Plot2GroupStats <- function(data,
   )
   ord <- order(order_key, na.last = TRUE)
   pvaltable <- pvaltable[ord, , drop = FALSE]
-  pvaltable$variable <- factor(pvaltable$variable, levels = rev(pvaltable$variable))
+  pvaltable$display_label <- factor(
+    pvaltable$display_label, levels = rev(pvaltable$display_label))
 
   x_map <- switch(
     x_axis,
@@ -287,7 +310,7 @@ Plot2GroupStats <- function(data,
 
   p <- ggplot2::ggplot(
     pvaltable,
-    ggplot2::aes(x = xvar, y = variable, shape = SigP)
+    ggplot2::aes(x = .data$xvar, y = .data$display_label, shape = .data$SigP)
   ) +
     aes_color +
     { if (isTRUE(x_map$signed)) ggplot2::annotate("rect", xmin = 0, xmax = Inf, ymin = -Inf, ymax = Inf, alpha = 0.08) else NULL } +
@@ -296,7 +319,7 @@ Plot2GroupStats <- function(data,
     ggplot2::scale_y_discrete(drop = FALSE) +
     ggplot2::scale_shape_manual(
       name   = "Significance (p)",
-      values = c("p<0.001" = 17, "p<0.01" = 15, "p<0.05" = 16, "ns" = 1)
+      values = c("p<=0.001" = 17, "p<=0.01" = 15, "p<=0.05" = 16, "ns" = 1)
     ) +
     ggplot2::xlab(x_map$lab) +
     ggplot2::ylab(NULL) +
@@ -310,14 +333,16 @@ Plot2GroupStats <- function(data,
     n_cat <- length(ucat)
     cols <- NULL
 
-    if (requireNamespace("paletteer", quietly = TRUE)) {
+    if (is.null(palette)) {
+      cols <- .SciDataColorValues(n_cat)
+    } else if (requireNamespace("paletteer", quietly = TRUE)) {
       cols <- tryCatch(
         as.character(paletteer::paletteer_d(palette, n = n_cat)),
         error = function(e) NULL
       )
     }
     if (is.null(cols) || length(cols) < n_cat) {
-      cols <- grDevices::hcl.colors(n_cat, palette = "Okabe-Ito")
+      cols <- .SciDataColorValues(n_cat)
     }
     names(cols) <- ucat
     p <- p + ggplot2::scale_color_manual(name = "Category", values = cols, drop = FALSE)
@@ -326,12 +351,12 @@ Plot2GroupStats <- function(data,
   if (nrow(label_df) > 0) {
     if (requireNamespace("ggrepel", quietly = TRUE)) {
       p <- p + ggrepel::geom_text_repel(
-        data = label_df, ggplot2::aes(label = variable),
+        data = label_df, ggplot2::aes(label = .data$display_label),
         max.overlaps = 30, min.segment.length = 0
       )
     } else {
       p <- p + ggplot2::geom_text(
-        data = label_df, ggplot2::aes(label = variable),
+        data = label_df, ggplot2::aes(label = .data$display_label),
         hjust = -0.05, size = 3
       )
     }

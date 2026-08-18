@@ -2,43 +2,107 @@
 % Please edit documentation in R/ConvertOrdinalToNumeric.R
 \name{ConvertOrdinalToNumeric}
 \alias{ConvertOrdinalToNumeric}
-\title{Convert ordinal variables to numeric}
+\title{Prepare ordinal variables for analysis}
 \usage{
 ConvertOrdinalToNumeric(
   data,
   variables = NULL,
+  TreatOrdinalAs = c("Continuous", "Categorical", "Both", "Exclude"),
+  Relabel = TRUE,
+  ReturnMetadata = FALSE,
   Data = lifecycle::deprecated(),
   Variables = lifecycle::deprecated()
 )
 }
 \arguments{
-\item{data}{The dataframe containing the variables.}
+\item{data}{The data frame containing the variables.}
 
-\item{variables}{A character vector specifying the names of variables to consider. If NULL, all columns of the dataframe will be considered.}
+\item{variables}{Character vector of variables to consider. If \code{NULL}, all
+columns are considered.}
+
+\item{TreatOrdinalAs}{How ordinal variables are handled: \code{"Continuous"},
+\code{"Categorical"}, \code{"Both"}, or \code{"Exclude"}.}
+
+\item{Relabel}{Logical; when \code{TreatOrdinalAs = "Both"}, apply descriptive
+labels to the derived categorical and continuous variables.}
+
+\item{ReturnMetadata}{Logical; if \code{FALSE} (default), return only the
+transformed data frame. If \code{TRUE}, return a list containing the data,
+selected variables, ordinal variables, variable map, and treatment.}
 
 \item{Data}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
 
 \item{Variables}{\strong{Deprecated} (since 19.15.0). Use \code{variables} instead.}
 }
 \value{
-The dataframe with ordinal variables potentially converted to numeric.
+A transformed data frame, or a metadata list when
+\code{ReturnMetadata = TRUE}.
 }
 \description{
-Convert ordinal variables in a dataframe to numeric if they contain numeric values in their character representation.
+Applies a consistent ordinal-treatment policy to selected variables. Ordinal
+score mappings recorded by \code{\link[=RevalueData]{RevalueData()}} are used when available;
+otherwise ordered-factor ranks are used.
 }
+\section{The four policies}{
+
+\code{"Continuous"} replaces each level with its rank. \code{"Categorical"} and
+\code{"Exclude"} both leave the values alone; they differ in whether the variable
+is offered to the analysis at all. \code{"Both"} produces one column of each.
+
+With \code{ReturnMetadata = TRUE} the derived column names come back alongside
+the data, so downstream functions know which column carries which treatment
+without having to guess from the naming convention.
+}
+
 \examples{
-# An ordered factor with numeric levels, and one with non-numeric levels
+\donttest{
 df <- data.frame(
-  id     = 1:5,
-  likert = factor(c("1", "2", "3", "2", "1"),
-                  levels = c("1", "2", "3"), ordered = TRUE),
-  grade  = factor(c("A", "B", "A", "C", "B"),
-                  levels = c("A", "B", "C"), ordered = TRUE)
+  id = 1:6,
+  Severity = factor(
+    c("None", "Mild", "Severe", "Mild", "Moderate", "None"),
+    levels = c("None", "Mild", "Moderate", "Severe"), ordered = TRUE
+  ),
+  Education = factor(
+    c("HighSchool", "College", "Graduate", "College", "Graduate", "HighSchool"),
+    levels = c("HighSchool", "College", "Graduate"), ordered = TRUE
+  )
 )
 
-out <- ConvertOrdinalToNumeric(df)
+# The four policies, applied to the same ordinal variable
+df_Both <- ConvertOrdinalToNumeric(df, TreatOrdinalAs = "Both")
 
-# likert becomes numeric; grade stays an ordered factor (levels are not numeric)
-sapply(out, class)
+df_Policies <- data.frame(
+  id = df$id,
+  Original = as.character(df$Severity),
+  Continuous = ConvertOrdinalToNumeric(df, TreatOrdinalAs = "Continuous")$Severity,
+  Categorical = as.character(
+    ConvertOrdinalToNumeric(df, TreatOrdinalAs = "Categorical")$Severity
+  ),
+  Both_Categorical = as.character(df_Both$.scidr_ordinal_categorical_Severity),
+  Both_Continuous = df_Both$.scidr_ordinal_continuous_Severity
+)
+
+htmltools::browsable(htmltools::HTML(as.character(
+  FreezeTableHeader(df_Policies, full_width = TRUE)
+)))
+
+# The derived column names, returned alongside the data
+metadata <- ConvertOrdinalToNumeric(
+  df, TreatOrdinalAs = "Both", ReturnMetadata = TRUE
+)
+
+df_Map <- data.frame(
+  Variable = rep(names(metadata$variable_map),
+                 lengths(metadata$variable_map)),
+  DerivedColumn = unlist(metadata$variable_map, use.names = FALSE),
+  IsOrdinal = rep(names(metadata$variable_map),
+                  lengths(metadata$variable_map)) \%in\%
+    metadata$ordinal_variables
+)
+
+htmltools::browsable(htmltools::HTML(as.character(
+  FreezeTableHeader(df_Map, full_width = TRUE)
+)))
+}
 
 }

@@ -15,7 +15,7 @@ PlotChiSqCovar(
   Data = lifecycle::deprecated(),
   xVars = lifecycle::deprecated(),
   yVars = lifecycle::deprecated(),
-  fdr_scope = c("matrix", "per_outcome"),
+  fdr_scope = c("matrix", "per_outcome", "per_predictor"),
   covars = lifecycle::deprecated()
 )
 }
@@ -64,12 +64,31 @@ If you need true covariate adjustment, use regression-based models (logistic/mul
 }
 \examples{
 data(SampleData)
+data(SampleVariableTypes)
+
+Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
+
+# Derive a few more categorical variables so the matrix has off-diagonal
+# structure to read; self-associations are dropped.
+Labelled$APOE4 <- ifelse(
+  grepl("E4", as.character(Labelled$Genotype)), "Carrier", "Non-carrier")
+Labelled$AgeGroup <- cut(
+  Labelled$age, breaks = c(-Inf, 65, 80, Inf),
+  labels = c("<65", "65-79", "80+"))
+Labelled$TauTertile <- cut(
+  Labelled$tau,
+  breaks = stats::quantile(Labelled$tau, c(0, 1 / 3, 2 / 3, 1), na.rm = TRUE),
+  labels = c("Low", "Middle", "High"), include.lowest = TRUE)
 
 result <- PlotChiSqCovar(
-  SampleData,
-  predictor_vars = c("Diagnosis", "Genotype"),
-  outcome_vars = c("Diagnosis", "Genotype")
+  Labelled,
+  predictor_vars = c("Diagnosis", "sex", "APOE4"),
+  outcome_vars = c("Genotype", "AgeGroup", "TauTertile")
 )
 
+# Raw p-value associations
 result$p
+
+# FDR-adjusted associations
+result$p_FDR
 }

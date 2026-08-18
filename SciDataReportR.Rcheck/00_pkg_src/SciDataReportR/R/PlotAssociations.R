@@ -19,15 +19,18 @@
 #' @param DataFrame \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
 #' @examples
 #' data(SampleData)
+#' data(SampleVariableTypes)
+#'
+#' Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
 #'
 #' # Two categorical variables (grouped bar chart)
-#' PlotAssociations(SampleData, "Diagnosis", "Genotype")
+#' PlotAssociations(Labelled, "Diagnosis", "Genotype")
 #'
 #' # Two continuous variables (scatter plot with correlation)
-#' PlotAssociations(SampleData, "age", "AXL")
+#' PlotAssociations(Labelled, "age", "AXL")
 #'
 #' # One continuous and one categorical variable (box/violin plot)
-#' PlotAssociations(SampleData, "Diagnosis", "AXL")
+#' PlotAssociations(Labelled, "Diagnosis", "AXL")
 #' @export
 PlotAssociations <- function(data,
     Var1,
@@ -40,6 +43,14 @@ PlotAssociations <- function(data,
     data <- DataFrame
   }
   if (!missing(data)) DataFrame <- data
+
+  ApplySciDataPalette <- function(plot) {
+    for (aesthetic in c("fill", "colour")) {
+      scale <- plot$scales$get_scales(aesthetic)
+      if (!is.null(scale)) scale$palette <- function(n) .SciDataColorValues(n)
+    }
+    plot
+  }
 
   TestFrame <- na.omit(DataFrame[c(Var1, Var2)])
   if (nrow(TestFrame) == 0) {
@@ -70,57 +81,23 @@ PlotAssociations <- function(data,
   }
   if (type == "NumNum") {
     p <- ggscatterstats(data = DataFrame, x = !!Var1, y = !!Var2,
-                        bf.message = FALSE)
-    pval <- extract_stats(p)[["subtitle_data"]][["p.value"]][1]
-    rval <- extract_stats(p)[["subtitle_data"]][["estimate"]][1]
-    if (is.na(pval)) {
-      p <- p + theme(panel.background = element_rect(fill = "#ff6347"))
-    }
-    else {
-      if (pval < 0.05) {
-        p <- p + theme(panel.background = element_rect(fill = "lightblue"))
-      }
-      if (rval == 1) {
-        p <- p + theme(panel.background = element_rect(fill = "#D8BFD8"))
-      }
-    }
+                        bf.message = FALSE, ggtheme = ggplot2::theme_bw())
   }
   else if (type == "CatCat") {
     DataFrame[[Var1]] <- DataFrame[[Var1]] %>% addNA()
     DataFrame[[Var2]] <- DataFrame[[Var2]] %>% addNA()
     p <- ggbarstats(data = DataFrame, x = !!Var1, y = !!Var2,
-                    bf.message = FALSE, label = "both")
-    s <- p$labels$subtitle %>% as.character()
-    if (length(s) == 0) {
-      p <- p + theme(panel.background = element_rect(fill = "#ff6347"))
-    }
-    else {
-      pval <- extract_stats(p)[["subtitle_data"]][["p.value"]][1]
-      rval <- extract_stats(p)[["subtitle_data"]][["estimate"]][1]
-      if (pval < 0.05) {
-        p <- p + theme(panel.background = element_rect(fill = "lightblue"))
-      }
-      if (rval == 1) {
-        p <- p + theme(panel.background = element_rect(fill = "#D8BFD8"))
-      }
-    }
+                    bf.message = FALSE, label = "both",
+                    ggtheme = ggplot2::theme_bw())
   }
   else if (type == "NumCat") {
     DataFrame <- DataFrame[!is.na(DataFrame[[NumVar]]), ]
     DataFrame[[CatVar]] <- DataFrame[[CatVar]] %>% as.factor()
     p <- ggstatsplot::ggbetweenstats(data = DataFrame, x = !!CatVar, y = !!NumVar,
-                                     plot.type = "box", bf.message = FALSE, pairwise.comparisons = FALSE)
-    s <- p$labels$subtitle %>% as.character()
-    if (length(s) == 0) {
-      p <- p + theme(panel.background = element_rect(fill = "#ff6347"))
-    }
-    else {
-      pval <- extract_stats(p)[["subtitle_data"]][["p.value"]][1]
-      if (pval < 0.05) {
-        p <- p + theme(panel.background = element_rect(fill = "lightblue"))
-      }
-    }
+                                     plot.type = "box", bf.message = FALSE,
+                                     pairwise.comparisons = FALSE,
+                                     ggtheme = ggplot2::theme_bw())
   }
-  p <- p + theme(text = element_text(size = 10))
+  p <- ApplySciDataPalette(p) + theme(text = element_text(size = 10))
   return(p)
 }

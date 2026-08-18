@@ -1,0 +1,247 @@
+---
+title: "Evaluating candidate biomarkers"
+author: "Raha Dastgheyb"
+title-block-banner: true
+date: "last-modified"
+format:
+  html:
+    embed-resources: true
+    toc: true
+    toc-location: left
+    smooth-scroll: true
+    theme: zephyr
+execute:
+  echo: false
+  message: false
+  warning: false
+  cache: false
+vignette: >
+  %\VignetteIndexEntry{Evaluating candidate biomarkers}
+  %\VignetteEngine{quarto::html}
+  %\VignetteEncoding{UTF-8}
+---
+
+## Overview
+
+This vignette uses the bundled `SampleData` to illustrate a realistic
+candidate-biomarker workflow: separating participants with `Impaired` versus
+`Control` diagnosis. It is a teaching dataset, not a validated diagnostic study.
+The examples show apparent performance in this dataset and should not be used as
+clinical cutoffs or estimates expected to transport unchanged to another cohort.
+
+Performance is multidimensional. AUC describes discrimination, Brier score
+describes probability accuracy, calibration asks whether predicted and observed
+risk agree, and delta AUC asks whether a biomarker adds information beyond the
+baseline covariate model.
+
+## Load packages
+
+```{r}
+#| label: LoadPackages
+library(SciDataReportR)
+library(dplyr)
+library(plotly)
+```
+
+## Load and revalue the bundled data
+
+```{r}
+#| label: LoadData
+data("SampleData")
+data("SampleVariableTypes")
+
+df_Raw <- SampleData
+VariableTypes <- SampleVariableTypes
+
+df_Revalued <- RevalueData(df_Raw, VariableTypes)$RevaluedData
+```
+
+::: callout-note
+The data file being used is `SampleData` from SciDataReportR.
+
+The codebook being used is `SampleVariableTypes` from SciDataReportR.
+:::
+
+`Diagnosis` has two observed levels here: `Control` and `Impaired`. Every
+binary example below explicitly treats `Impaired` as the positive outcome, so
+the scientific interpretation cannot silently flip with factor order.
+
+## Amyloid beta 42 as a candidate biomarker
+
+Amyloid beta 42 is a useful first candidate in this teaching dataset. We adjust
+for age because age can itself discriminate diagnostic groups and may account
+for part of the biomarker-outcome association.
+
+```{r}
+#| label: AmyloidBeta42
+Amyloid42Result <- EvaluateBiomarkerPerformance(
+  data = df_Revalued,
+  outcome_var = "Diagnosis",
+  biomarker_var = "Ab_42",
+  covariates = "age",
+  PositiveLevel = "Impaired",
+  codebook = VariableTypes
+)
+
+Amyloid42Result$PerformanceTable
+```
+
+Read the three rows together: `Biomarker` is amyloid beta 42 alone,
+`Covariates` is the age-only baseline, and `Adjusted` combines both. The AUC
+and Brier score describe different aspects of performance. A coefficient or AUC
+that looks promising does not alone establish clinical value.
+
+```{r}
+#| label: AmyloidBeta42Plots
+Amyloid42Result$ThresholdTable
+Amyloid42Result$Plots$ROC
+Amyloid42Result$Plots$Calibration
+Amyloid42Result$Plots$CalibrationGrouped
+Amyloid42Result$Plots$Probability
+```
+
+The raw threshold is expressed in amyloid beta 42 units; model-probability
+thresholds are on a different scale. Sensitivity and specificity depend on the
+selected threshold. PPV and NPV also depend on the prevalence in this dataset,
+so they should not be assumed to apply to another setting. The probability curve
+uses marginal standardization: each participant retains their observed age while
+amyloid beta 42 is varied, then predicted probabilities are averaged.
+
+## Compare several candidate proteins
+
+In practice, the question is often comparative: does amyloid beta 42 outperform
+tau, phosphorylated tau, serum amyloid P, or a weak comparator such as AXL?
+
+```{r}
+#| label: BiomarkerScreen
+vars_Biomarkers <- c("Ab_42", "tau", "p_tau", "Serum_Amyloid_P", "AXL")
+
+BiomarkerScreen <- ScreenBiomarkerPerformance(
+  data = df_Revalued,
+  outcome_vars = "Diagnosis",
+  biomarker_vars = vars_Biomarkers,
+  covariates = "age",
+  PositiveLevel = "Impaired",
+  codebook = VariableTypes
+)
+
+BiomarkerScreen$PerformanceTable
+```
+
+```{r}
+#| label: ComparativePerformancePlots
+BiomarkerScreen$Plots$AUC
+BiomarkerScreen$Plots$IncrementalAUC
+BiomarkerScreen$Plots$Heatmap
+```
+
+These screen-level plots provide a compact ranking. Each row has its own `N`
+because analyses use the complete observations available for that biomarker,
+outcome, and age. Compare AUC confidence intervals and missingness before
+over-interpreting small differences.
+
+```{r}
+#| label: BiomarkerPanels
+BiomarkerScreen$Plots$BiomarkerPanels
+BiomarkerScreen$Plots$ROCFacets
+```
+
+The distribution panels are visual QC: they show the raw biomarker values in
+each diagnostic group and annotate the adjusted AUC, confidence interval, and
+pair-specific N. The ROC facets show adjusted discrimination for the same
+candidate set. Neither plot turns a screen into external validation.
+
+```{r}
+#| label: InteractiveHeatmap
+ggplotly(BiomarkerScreen$Plots$Heatmap, tooltip = "text")
+
+BiomarkerScreen$Plots$Heatmap %>%
+  add_biomarker_values()
+```
+
+## Multicategory categorical predictor: genotype
+
+`Genotype` is a multicategory categorical predictor. It is evaluated through
+the fitted model and predicted probabilities at each genotype level. A single raw
+diagnostic cutoff would not make scientific sense, so it is intentionally absent.
+
+```{r}
+#| label: GenotypePredictor
+GenotypeResult <- EvaluateBiomarkerPerformance(
+  data = df_Revalued,
+  outcome_var = "Diagnosis",
+  biomarker_var = "Genotype",
+  covariates = "age",
+  PositiveLevel = "Impaired",
+  codebook = VariableTypes
+)
+
+GenotypeResult$RawBiomarkerThreshold
+GenotypeResult$PerformanceTable
+GenotypeResult$Plots$Probability
+```
+
+## Continuous-outcome appendix
+
+`SampleData` does not contain a credible continuous clinical endpoint. This
+small simulated appendix exists only to demonstrate the continuous-outcome API;
+the main workflow above remains entirely based on bundled sample data.
+
+```{r}
+#| label: ContinuousOutcomeData
+set.seed(2026)
+df_ContinuousExample <- tibble(
+  Age = rnorm(150, 60, 10),
+  Biomarker = rnorm(150)
+) %>%
+  dplyr::mutate(
+    SymptomScore = 0.35 * .data$Biomarker + 0.03 * .data$Age + rnorm(150)
+  )
+
+ContinuousResult <- EvaluateBiomarkerPerformance(
+  data = df_ContinuousExample,
+  outcome_var = "SymptomScore",
+  biomarker_var = "Biomarker",
+  covariates = "Age",
+  OutcomeType = "continuous"
+)
+
+ContinuousResult$PerformanceTable
+ContinuousResult$Plots$PredictedObserved
+```
+
+Continuous outcomes use R-squared, adjusted R-squared, incremental R-squared,
+RMSE, and MAE. ROC and classification metrics are intentionally not calculated.
+
+## Internal validation
+
+```{r}
+#| label: CrossValidation
+#| eval: false
+ValidatedResult <- EvaluateBiomarkerPerformance(
+  data = df_Revalued,
+  outcome_var = "Diagnosis",
+  biomarker_var = "Ab_42",
+  covariates = "age",
+  PositiveLevel = "Impaired",
+  Validation = "cross_validation",
+  CVFolds = 5,
+  codebook = VariableTypes
+)
+
+ValidatedResult$Validation
+ValidatedResult$ValidationPredictions
+```
+
+Apparent performance is evaluated in the same data used to fit the model and can
+be optimistic. Cross-validation uses out-of-fold predictions; bootstrap output
+is labelled optimism-corrected. Internal validation is still not external
+validation in a new population.
+
+## Reproducibility
+
+```{r}
+#| label: Reproducibility
+print(sessionInfo())
+# save.image()
+```

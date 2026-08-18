@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.9.37">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Getting started with SciDataReportR</title>
+<style>
+
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+width: 0.8em;
+margin: 0 0.8em 0.2em -1em;  vertical-align: middle;
+}
+.display.math{display: block; text-align: center; margin: 0.5rem auto;}
+
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+}
+pre.numberSource { margin-left: 3em; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+</style>
+</head>
+
+<body>
+
+
+<header id="title-block-header">
+<h1 class="title">Getting started with SciDataReportR</h1>
+
+</header>
+
+<nav id="TOC" role="doc-toc">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#why-this-workflow-matters" id="toc-why-this-workflow-matters">Why this workflow matters</a></li>
+  <li><a href="#load-data" id="toc-load-data">Load data</a></li>
+  <li><a href="#create-variable-metadata" id="toc-create-variable-metadata">Create variable metadata</a></li>
+  <li><a href="#recode-and-relabel-data" id="toc-recode-and-relabel-data">Recode and relabel data</a></li>
+  <li><a href="#inspect-missingness" id="toc-inspect-missingness">Inspect missingness</a></li>
+  <li><a href="#create-report-ready-summaries" id="toc-create-report-ready-summaries">Create report-ready summaries</a></li>
+  <li><a href="#screen-associations" id="toc-screen-associations">Screen associations</a></li>
+  <li><a href="#compare-groups" id="toc-compare-groups">Compare groups</a></li>
+  <li><a href="#build-reusable-dimensionality-reduction-workflows" id="toc-build-reusable-dimensionality-reduction-workflows">Build reusable dimensionality reduction workflows</a></li>
+  <li><a href="#reproducibility" id="toc-reproducibility">Reproducibility</a></li>
+  <li><a href="#next-steps" id="toc-next-steps">Next steps</a></li>
+  </ul>
+</nav>
+<p>SciDataReportR helps researchers turn labelled scientific and clinical data into reproducible exploratory analyses, statistical comparisons, scientific visualizations, and report-ready outputs.</p>
+<p>This article is adapted from the SciDataReportR R/Medicine workflow narrative. It follows the common path from a raw researcher-native data frame to metadata-aware reporting and reusable analysis outputs.</p>
+<p>The examples use the current workflow-oriented function names. Older names such as <a href="../reference/CreatePCAObject.html"><code>CreatePCATable()</code></a>, <a href="../reference/PlotZScore.html"><code>CreateZScorePlot()</code></a>, and <a href="../reference/MakeDataDictionary.html"><code>Make_DataDictionary()</code></a> remain available as compatibility aliases.</p>
+<h2 id="why-this-workflow-matters">Why this workflow matters</h2>
+<p>Scientific and clinical datasets often contain many variables, labels, recoding rules, caveats, missing values, and potential relationships. Before formal statistical modeling, researchers need to understand the structure of the data, identify quality issues, inspect distributions, screen associations, and decide whether covariates or dimensionality reduction are needed.</p>
+<p>SciDataReportR organizes that work into repeatable steps:</p>
+<ol type="1">
+<li>Import data and create metadata.</li>
+<li>Recode and relabel variables.</li>
+<li>Profile missingness and distributions.</li>
+<li>Create summary and comparison tables.</li>
+<li>Screen associations across variable families.</li>
+<li>Build dimensionality reduction or projection workflows.</li>
+<li>Save reproducible, report-ready outputs.</li>
+</ol>
+<h2 id="load-data">Load data</h2>
+<p>Most SciDataReportR workflows start with a data frame and, when available, a variable-type table or codebook.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(SciDataReportR)</span></code></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">data</span>(<span class="st">&quot;SampleData&quot;</span>)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">data</span>(<span class="st">&quot;SampleVariableTypes&quot;</span>)</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>df_Raw <span class="ot">&lt;-</span> SampleData</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>VariableTypes <span class="ot">&lt;-</span> SampleVariableTypes</span></code></pre></div>
+</div>
+<div>
+<blockquote>
+<p><strong>Note</strong></p>
+<p>The examples use the raw <code>SampleData</code> dataset and its shipped <code>SampleVariableTypes</code> codebook. The raw <code>age</code> variable contains <code>999</code> as a sentinel for missing data; <code>RevalueData()</code> uses the codebook to convert those values to <code>NA</code> before any summaries, plots, or models are created.</p>
+</blockquote>
+</div>
+<p>For a project dataset, the starting point might look like this:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>df_Clinical <span class="ot">&lt;-</span> readr<span class="sc">::</span><span class="fu">read_csv</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">&quot;data&quot;</span>, <span class="st">&quot;clinical_data.csv&quot;</span>))</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>VariableTypes_Clinical <span class="ot">&lt;-</span> readr<span class="sc">::</span><span class="fu">read_csv</span>(</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  here<span class="sc">::</span><span class="fu">here</span>(<span class="st">&quot;data&quot;</span>, <span class="st">&quot;variable_types.csv&quot;</span>)</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div>
+</div>
+<h2 id="create-variable-metadata">Create variable metadata</h2>
+<p>Variable type templates make the analysis plan explicit. They help distinguish continuous, categorical, binary, ordinal, outcome, covariate, and feature variables before plotting or testing.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>VariableTypes_Template <span class="ot">&lt;-</span> <span class="fu">CreateVariableTypesTemplate</span>(df_Raw)</span></code></pre></div>
+</div>
+<p><code>CreateVariableTypesTemplate()</code> is useful when a dataset does not yet have a codebook. For the remaining examples, use the shipped <code>SampleVariableTypes</code> object because it already contains the labels, recodes, and missing-value rules for <code>SampleData</code>.</p>
+<p>Data dictionaries summarize the available variables and make the dataset easier to review with collaborators.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>df_DataDictionary <span class="ot">&lt;-</span> <span class="fu">MakeDataDictionary</span>(df_Raw)</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="fu">FormattedDataDictionary</span>(df_Raw)</span></code></pre></div>
+</div>
+<h2 id="recode-and-relabel-data">Recode and relabel data</h2>
+<p>When a variable-type table contains recoding or label information, use it to produce an analysis-ready data frame while preserving scientific meaning.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>df_Revalued <span class="ot">&lt;-</span> <span class="fu">RevalueData</span>(df_Raw, VariableTypes)<span class="sc">$</span>RevaluedData</span></code></pre></div>
+</div>
+<h2 id="inspect-missingness">Inspect missingness</h2>
+<p>Missing data patterns are one of the first bottlenecks in scientific analysis. They affect which variables are interpretable, which models are feasible, and whether downstream comparisons are biased.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">PlotMissingData</span>(df_Revalued, <span class="at">Relabel =</span> <span class="cn">TRUE</span>)</span></code></pre></div>
+</div>
+<h2 id="create-report-ready-summaries">Create report-ready summaries</h2>
+<p>Table 1 style summaries help reviewers and collaborators understand the cohort before detailed analyses.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">MakeTable1</span>(df_Revalued, <span class="at">TreatOrdinalAs =</span> <span class="st">&quot;Continuous&quot;</span>)</span></code></pre></div>
+</div>
+<p>Continuous and categorical profiling functions help researchers inspect variable distributions without hand-building repeated plots.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>vars_Continuous <span class="ot">&lt;-</span> <span class="fu">getNumVars</span>(df_Revalued, <span class="at">Ordinal =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>vars_Categorical <span class="ot">&lt;-</span> <span class="fu">getCatVars</span>(df_Revalued)</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="fu">CreateSummaryTable</span>(df_Revalued, vars_Continuous, <span class="at">Relabel =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="fu">PlotContinuousDistributions</span>(df_Revalued, vars_Continuous[<span class="dv">1</span><span class="sc">:</span><span class="dv">12</span>], <span class="at">ncol =</span> <span class="dv">3</span>)</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a><span class="fu">PlotCategoricalDistributions</span>(df_Revalued, vars_Categorical)</span></code></pre></div>
+</div>
+<h2 id="screen-associations">Screen associations</h2>
+<p>SciDataReportR supports both focused plots and matrix-style screening. This helps researchers identify relationships, candidate covariates, and patterns that may need dimensionality reduction.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">PlotAssociations</span>(df_Revalued, <span class="st">&quot;age&quot;</span>, <span class="st">&quot;Adiponectin&quot;</span>)</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="fu">PlotAssociations</span>(df_Revalued, <span class="st">&quot;Diagnosis&quot;</span>, <span class="st">&quot;Ab_42&quot;</span>)</span></code></pre></div>
+</div>
+<p>Correlation heatmaps return structured objects that can be reused downstream.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>correlation_result <span class="ot">&lt;-</span> <span class="fu">PlotCorrelationsHeatmap</span>(</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>  df_Revalued,</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">xVars =</span> vars_Continuous[<span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>],</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">yVars =</span> vars_Continuous[<span class="dv">20</span><span class="sc">:</span><span class="dv">40</span>],</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">method =</span> <span class="st">&quot;pearson&quot;</span>,</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">covars =</span> <span class="cn">NULL</span>,</span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">Relabel =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">Ordinal =</span> <span class="cn">FALSE</span></span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a>correlation_result<span class="sc">$</span>Unadjusted<span class="sc">$</span>plot</span></code></pre></div>
+</div>
+<p>The output of <code>PlotCorrelationsHeatmap()</code> can be passed to <code>add_r_and_stars()</code>, and the returned plot can use <code>geom_starcaption()</code> to explain significance stars.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">add_r_and_stars</span>(correlation_result) <span class="sc">+</span> <span class="fu">geom_starcaption</span>()</span></code></pre></div>
+</div>
+<h2 id="compare-groups">Compare groups</h2>
+<p>Group comparisons are a central part of clinical and life science reporting. <code>MakeComparisonTable()</code> provides report-ready summaries with optional covariates, effect sizes, and pairwise contrasts.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">MakeComparisonTable</span>(</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">DataFrame =</span> df_Revalued,</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">CompVariable =</span> <span class="st">&quot;Diagnosis&quot;</span>,</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">Variables =</span> <span class="fu">c</span>(<span class="st">&quot;age&quot;</span>, <span class="st">&quot;tau&quot;</span>, <span class="st">&quot;p_tau&quot;</span>),</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">AddEffectSize =</span> <span class="cn">TRUE</span></span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div>
+</div>
+<p>For high-dimensional group signals, z-score plots provide a compact visual summary across many variables.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>vars_LabMeasures <span class="ot">&lt;-</span> vars_Continuous[<span class="dv">10</span><span class="sc">:</span><span class="dv">60</span>]</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="fu">PlotZScore</span>(</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>  df_Revalued,</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">TargetVar =</span> <span class="st">&quot;Diagnosis&quot;</span>,</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">Variables =</span> vars_LabMeasures,</span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">sort =</span> <span class="cn">FALSE</span></span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div>
+</div>
+<h2 id="build-reusable-dimensionality-reduction-workflows">Build reusable dimensionality reduction workflows</h2>
+<p>PCA workflows can produce scree plots, loading summaries, and reusable projection objects. This is useful when a cohort-level transformation should be applied to future datasets.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>pca_object <span class="ot">&lt;-</span> <span class="fu">CreatePCAObject</span>(</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>  df_Revalued,</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>  vars_LabMeasures,</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">minThresh =</span> <span class="fl">0.75</span>,</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">scale =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">center =</span> <span class="cn">TRUE</span></span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>pca_object<span class="sc">$</span>p_scree</span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a>pca_object<span class="sc">$</span>Lollipop</span></code></pre></div>
+</div>
+<p>Projection functions make the fit/apply split explicit:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>projected_scores <span class="ot">&lt;-</span> <span class="fu">ProjectPCA</span>(new_data, pca_object)</span></code></pre></div>
+</div>
+<h2 id="reproducibility">Reproducibility</h2>
+<p>SciDataReportR workflows are designed to make repeated analysis steps visible and reusable. For reports, include session information and preserve the variable-type table, codebook, and any fit objects used for projections.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="co"># save.image(here::here(&quot;results&quot;, &quot;getting-started.RData&quot;))</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">sessionInfo</span>())</span></code></pre></div>
+</div>
+<h2 id="next-steps">Next steps</h2>
+<p>Use the reference index by workflow family:</p>
+<ul>
+<li>Data setup, metadata, and codebooks.</li>
+<li>Preprocessing and data quality.</li>
+<li>Statistical comparison workflows.</li>
+<li>Association, regression, and interaction workflows.</li>
+<li>Visualization functions.</li>
+<li>Dimensionality reduction, projection, and clustering.</li>
+<li>Longitudinal and temporal workflows.</li>
+</ul>
+<p>Future article additions should expand this starter flow into focused workflows for codebook harmonization, visualization galleries, PCA/projection, SOM projection, normative T-scores, and longitudinal transitions.</p>
+
+
+
+
+
+</body></html>

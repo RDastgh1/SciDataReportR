@@ -20,15 +20,24 @@
 #' @param Covariates \strong{Deprecated} (since 19.15.0). Use \code{covariates} instead.
 #' @examples
 #' data(SampleData)
+#' data(SampleVariableTypes)
 #'
-#' # CatVars must be binary (exactly two unique non-NA values)
+#' Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
+#'
+#' # CatVars must be binary (exactly two unique non-NA values). These markers
+#' # separate on Diagnosis (Ab_42, tau, p_tau) or on sex (Leptin, PAI_1,
+#' # NT_proBNP), so both rows of the heatmap carry signal in both directions.
 #' result <- PlotPointCorrelationsHeatmap(
-#'   SampleData,
+#'   Labelled,
 #'   CatVars = c("Diagnosis", "sex"),
-#'   ContVars = c("age", "AXL", "Adiponectin")
+#'   ContVars = c("Ab_42", "tau", "p_tau", "Leptin", "PAI_1", "NT_proBNP")
 #' )
 #'
+#' # Raw p-value point-biserial heatmap
 #' result$Unadjusted$plot
+#'
+#' # FDR-adjusted point-biserial heatmap
+#' result$FDRCorrected$plot
 #' @export
 PlotPointCorrelationsHeatmap <- function(data,
     CatVars,
@@ -37,7 +46,7 @@ PlotPointCorrelationsHeatmap <- function(data,
     Relabel = TRUE,
     Ordinal = TRUE,
     binary_map = NULL,
-    fdr_scope = c("matrix", "per_outcome"),
+    fdr_scope = c("matrix", "per_outcome", "per_predictor"),
     Data = lifecycle::deprecated(),
     Covariates = lifecycle::deprecated()) {
   # Deprecated argument shims (SciDataReportR 19.15.0)
@@ -69,7 +78,13 @@ PlotPointCorrelationsHeatmap <- function(data,
   }
 
   # ---- data prep ----
-  DataSubset <- Data[c(CatVars, ContVars, if (!is.null(Covariates)) Covariates)]
+  # Checked before subsetting, which otherwise fails with base R's
+  # "undefined columns selected" and never names the offending variable.
+  CatVars <- ScidrValidateVariables(Data, CatVars, "CatVars")
+  ContVars <- ScidrValidateVariables(Data, ContVars, "ContVars")
+  Covariates <- ScidrValidateVariables(Data, Covariates, "covariates")
+
+  DataSubset <- Data[c(CatVars, ContVars, Covariates)]
   DataSubset <- ReplaceMissingLabels(DataSubset)
 
   # sanity: binaries truly binary
@@ -136,7 +151,8 @@ PlotPointCorrelationsHeatmap <- function(data,
   stat.test$p.adj <- ApplyFDRCorrection(
     stat.test$p_value,
     fdr_scope = fdr_scope,
-    outcome_ids = stat.test$ContinuousVariable
+    outcome_ids = stat.test$ContinuousVariable,
+    predictor_ids = stat.test$CategoricalVariable
   )
   stat.test <- stat.test %>%
     rstatix::add_significance("p_value", output.col = "p<.05") %>%
@@ -153,7 +169,13 @@ PlotPointCorrelationsHeatmap <- function(data,
 
   stat.test$test <- "point biserial correlation"
 
-  # labels for axes
+  # labels for axes. ContinuousVariable is a factor, so it must be coerced to
+  # character before it is used to index DataSubset: `[[` on a data frame
+  # resolves a factor through its integer code and would return the wrong
+  # column, silently mislabelling every row of the heatmap.
+  stat.test$CategoricalVariable <- as.character(stat.test$CategoricalVariable)
+  stat.test$ContinuousVariable <- as.character(stat.test$ContinuousVariable)
+
   if (Relabel) {
     stat.test$XLabel <- vapply(
       stat.test$CategoricalVariable,
@@ -167,6 +189,14 @@ PlotPointCorrelationsHeatmap <- function(data,
     stat.test$XLabel <- stat.test$CategoricalVariable
     stat.test$YLabel <- stat.test$ContinuousVariable
   }
+
+  # Keep the axes in the order the caller supplied rather than alphabetical.
+  x_levels <- unique(stat.test$XLabel[order(match(
+    stat.test$CategoricalVariable, CatVars))])
+  y_levels <- unique(stat.test$YLabel[order(match(
+    stat.test$ContinuousVariable, ContVars))])
+  stat.test$XLabel <- factor(stat.test$XLabel, levels = x_levels)
+  stat.test$YLabel <- factor(stat.test$YLabel, levels = rev(y_levels))
 
   # tooltip
   PlotText <- paste0(

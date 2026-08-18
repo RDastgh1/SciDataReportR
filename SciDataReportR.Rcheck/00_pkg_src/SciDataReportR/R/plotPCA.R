@@ -363,6 +363,17 @@ plotPCA <- function(PCAObj,
     }
   }
 
+  # Discrete colours for a factor grouping only. The vector is sized to the
+  # exact number of levels on purpose: plotly silently *interpolates* a
+  # `colors` vector shorter than the level count, which would quietly produce
+  # a ramp through the palette instead of the palette itself. A continuous
+  # colour variable keeps plotly's own scale.
+  plot_colors <- if (!is.null(colour_vec) && is.factor(colour_vec)) {
+    .SciDataColorValues(nlevels(colour_vec))
+  } else {
+    NULL
+  }
+
   # Build plot
 
   if (!requireNamespace("plotly", quietly = TRUE)) {
@@ -380,6 +391,7 @@ plotPCA <- function(PCAObj,
       z = ~.pca_z,
       text = ~.hover_text,
       color = colour_vec,
+      colors = plot_colors,
       type = "scatter3d",
       mode = "markers",
       marker = list(size = 5),
@@ -402,6 +414,7 @@ plotPCA <- function(PCAObj,
       y = ~.pca_y,
       text = ~.hover_text,
       color = colour_vec,
+      colors = plot_colors,
       type = "scatter",
       mode = "markers",
       hovertemplate = "%{text}<extra></extra>"

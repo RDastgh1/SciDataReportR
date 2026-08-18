@@ -2,6 +2,62 @@
 #'
 #' Creates a list of univariate regression tables with variable labels and standardized coefficients (if specified).
 #'
+#' @details
+#' Fits one model per outcome-predictor pair and collects every result into a
+#' single table. "Univariate" means each predictor is tested on its own: for
+#' three outcomes and eight predictors this is 24 separate models, not one
+#' model with eight terms. That is the screening step - finding which
+#' associations exist at all - and it is deliberately different from
+#' [MultivariableRegressionTable()], which puts all the predictors in one model
+#' and reports each one adjusted for the others.
+#'
+#' The model family is chosen per outcome. With `Method = "auto"` (the
+#' default), numeric outcomes get linear regression and two-level outcomes get
+#' logistic regression, so a mixed set of outcomes can be screened in one call
+#' and each is still modeled correctly. `"lm"` or `"logistic"` force one family
+#' for everything.
+#'
+#' @section Three views of the same results:
+#' The return value carries the same estimates in three shapes, for three
+#' different jobs:
+#'
+#' * `FormattedTable` - a wide `gt` table with one spanner per outcome,
+#'   confidence intervals, stars, and significant results emphasized.
+#' * `LargeTable` - the same wide layout with the individual model statistics,
+#'   when the raw numbers matter more than the presentation.
+#' * `Results` - one tidy row per estimated term, with `Estimate`, `StdError`,
+#'   confidence bounds, `PValue`, and the labels. This is the one to work with
+#'   programmatically: filter it, correct it with [ApplyFDRCorrection()], or
+#'   pass it straight to [PlotForestFromTable()].
+#'
+#' Categorical predictors contribute one row per non-reference level, with the
+#' level in `Level` and the level being compared against in `ReferenceValue`.
+#'
+#' @section Options that change the estimates:
+#' `Standardize = TRUE` z-scores the numeric variables first, so coefficients
+#' come back in standard deviations per standard deviation. Use it when
+#' predictors are on scales that are not comparable to each other - it is what
+#' makes "which predictor matters more" a meaningful question.
+#'
+#' `covariates` adds the named variables to every model, turning a screen of
+#' raw associations into a screen of associations adjusted for them. This is
+#' usually the difference between "these biomarkers track with the outcome" and
+#' "these biomarkers track with the outcome beyond age and sex".
+#'
+#' `LogisticExponentiate = TRUE` (the default) reports logistic results as odds
+#' ratios rather than log-odds, so the null value in the table is 1 rather
+#' than 0. `ReturnModels = TRUE` keeps the fitted model objects for
+#' residual checks; it is off by default because a large screen would otherwise
+#' hold hundreds of models in memory.
+#'
+#' Running many models at once means many p-values. Nothing here corrects for
+#' that automatically - the family is yours to define - so pass `Results$PValue`
+#' through [ApplyFDRCorrection()] once you have decided what the family is.
+#'
+#' @seealso [PlotForestFromTable()] to visualize `Results`,
+#'   [MultivariableRegressionTable()] for mutually adjusted models, and
+#'   [ApplyFDRCorrection()] for multiple-comparison correction.
+#'
 #' @param data Dataframe containing the variables
 #' @param outcome_vars Character vector of outcome variable names
 #' @param predictor_vars Character vector of predictor variable names
@@ -33,6 +89,98 @@
 #' @param OutcomeVars \strong{Deprecated} (since 19.15.0). Use \code{outcome_vars} instead.
 #' @param PredictorVars \strong{Deprecated} (since 19.15.0). Use \code{predictor_vars} instead.
 #' @param Covars \strong{Deprecated} (since 19.15.0). Use \code{covariates} instead.
+#'
+#' @examples
+#' \donttest{
+#' data(SampleData)
+#' data(SampleVariableTypes)
+#'
+#' Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
+#' # Make the reference example deterministic: age is visibly associated with
+#' # AXL, so the displayed table includes a clear significant result.
+#' ExampleData <- Labelled
+#' set.seed(20260810)
+#' ExampleData$AXL <- as.numeric(scale(ExampleData$age)) * 2 +
+#'   stats::rnorm(nrow(ExampleData), sd = 0.25)
+#' attr(ExampleData$AXL, "label") <- sjlabelled::get_label(Labelled$AXL)
+#'
+#' vars_Outcomes <- c("AXL", "tau", "p_tau")
+#' vars_Predictors <- c("age", "sex", "Adiponectin", "Cortisol")
+#'
+#' # Three outcomes by four predictors: twelve separate models, one table
+#' urt <- MakeUnivariateRegressionTable(
+#'   data = ExampleData,
+#'   outcome_vars = vars_Outcomes,
+#'   predictor_vars = vars_Predictors
+#' )
+#'
+#' # Format 1: the report-ready table
+#' urt$FormattedTable
+#'
+#' # Format 2: the same results unformatted
+#' urt$LargeTable
+#'
+#' # Format 3: the tidy dataframe, one row per estimated term
+#' htmltools::browsable(htmltools::HTML(as.character(
+#'   FreezeTableHeader(
+#'     dplyr::mutate(
+#'       dplyr::select(
+#'         urt$Results, Outcome, Predictor, TermLabel, Level, N,
+#'         Estimate, StdError, ConfLow, ConfHigh, PValue, Significant
+#'       ),
+#'       dplyr::across(dplyr::where(is.numeric), \(x) signif(x, 3))
+#'     ),
+#'     height = "320px", full_width = TRUE
+#'   )
+#' )))
+#'
+#' # Filter, correct, and plot
+#' urt$Results$PValueFDR <- ApplyFDRCorrection(urt$Results$PValue)
+#' PlotForestFromTable(urt$Results[urt$Results$PValueFDR < 0.1, ])
+#'
+#' # Standardized coefficients, in SD units
+#' MakeUnivariateRegressionTable(
+#'   data = Labelled,
+#'   outcome_vars = vars_Outcomes,
+#'   predictor_vars = vars_Predictors,
+#'   Standardize = TRUE
+#' )$FormattedTable
+#'
+#' # Every model adjusted for age and sex
+#' MakeUnivariateRegressionTable(
+#'   data = Labelled,
+#'   outcome_vars = vars_Outcomes,
+#'   predictor_vars = c("Adiponectin", "Cortisol", "Ferritin"),
+#'   covariates = c("age", "sex")
+#' )$FormattedTable
+#'
+#' # A binary outcome: logistic regression, reported as odds ratios
+#' urt_Logistic <- MakeUnivariateRegressionTable(
+#'   data = Labelled,
+#'   outcome_vars = "Diagnosis",
+#'   predictor_vars = c("age", "sex", "AXL", "tau", "p_tau")
+#' )
+#' urt_Logistic$Metadata
+#' urt_Logistic$FormattedTable
+#'
+#' # Log-odds instead of odds ratios
+#' MakeUnivariateRegressionTable(
+#'   data = Labelled,
+#'   outcome_vars = "Diagnosis",
+#'   predictor_vars = c("age", "AXL", "tau"),
+#'   LogisticExponentiate = FALSE
+#' )$FormattedTable
+#'
+#' # Keep the fitted models for residual checks
+#' urt_Models <- MakeUnivariateRegressionTable(
+#'   data = Labelled,
+#'   outcome_vars = "AXL",
+#'   predictor_vars = c("age", "Cortisol"),
+#'   ReturnModels = TRUE
+#' )
+#' summary(urt_Models$ModelSummaries[[1]])
+#' }
+#'
 #' @export
 #'
 MakeUnivariateRegressionTable <- function(data,
@@ -138,10 +286,9 @@ MakeUnivariateRegressionTable <- function(data,
     for (xVarIndex in seq_along(PredictorVars)) {
       xVar <- PredictorVars[xVarIndex]
       tryCatch(expr = {
-        f <- as.formula(paste(YVar, paste(c(xVar, Covars),
-                                          collapse = "+"), sep = " ~ "))
+        f <- ScidrRegressionFormula(c(xVar, Covars), outcome = YVar)
         if (Standardize) {
-          ModelData <- model_data_full %>% select(all_of(c(YVar, xVar, Covars)))
+          ModelData <- model_data_full %>% dplyr::select(dplyr::all_of(c(YVar, xVar, Covars)))
           numeric_cols <- sapply(ModelData, is.numeric)
           if (outcome_family == "logistic") {
             numeric_cols[YVar] <- FALSE
@@ -187,7 +334,9 @@ MakeUnivariateRegressionTable <- function(data,
         )
 
         model_terms <- attr(stats::terms(mod), "term.labels")
-        keep_terms <- model_terms[model_terms %!in% Covars]
+        covariate_terms <- ScidrQuoteFormulaNames(Covars)
+        predictor_term <- ScidrQuoteFormulaNames(xVar)
+        keep_terms <- model_terms[model_terms %!in% covariate_terms]
         keep_rows <- coefficient_table$Term %in% keep_terms
         if (length(keep_terms) > 0) {
           keep_rows <- keep_rows | startsWith(coefficient_table$Term, paste0(keep_terms, ""))
@@ -213,7 +362,10 @@ MakeUnivariateRegressionTable <- function(data,
         term_label <- coefficient_table$Term
         level <- rep(NA_character_, nrow(coefficient_table))
         if (is.factor(ModelData[[xVar]]) || is.character(ModelData[[xVar]])) {
-          level <- sub(paste0("^", xVar), "", coefficient_table$Term)
+          level <- substring(
+            coefficient_table$Term,
+            first = nchar(predictor_term) + 1L
+          )
           level[level == coefficient_table$Term | level == ""] <- NA_character_
           term_label <- ifelse(
             !is.na(level),
@@ -312,83 +464,117 @@ UnivariateRegressionTable <- function(data,
 }
 
 ScidrUnivariateGtTable <- function(results, formatted = TRUE) {
-  table_data <- results %>%
+  # Results remains the source of truth. These two tables deliberately only
+  # reshape it for reporting, so users can always filter Results for plotting.
+  results <- results %>%
     dplyr::mutate(
-      Estimate_CI = paste0(
-        formatC(.data$Estimate, digits = 3, format = "fg"),
-        " (",
-        formatC(.data$ConfLow, digits = 3, format = "fg"),
-        ", ",
-        formatC(.data$ConfHigh, digits = 3, format = "fg"),
-        ")"
-      ),
-      P = dplyr::case_when(
-        is.na(.data$PValue) ~ NA_character_,
-        .data$PValue < 0.001 ~ "<0.001",
-        TRUE ~ formatC(.data$PValue, digits = 2, format = "fg")
-      )
+      RowKey = paste(.data$Predictor, .data$Term, sep = "\r")
     )
 
-  if (formatted) {
-    table_data <- table_data %>%
-      dplyr::select(
-        OutcomeLabel,
-        TermLabel,
-        EffectType,
-        N,
-        Estimate_CI,
-        P,
-        Significant
-      )
+  row_data <- results %>%
+    dplyr::distinct(.data$RowKey, .data$TermLabel) %>%
+    dplyr::rename(Variable = .data$TermLabel)
+  outcome_order <- unique(results$Outcome)
 
-    out <- gt::gt(table_data, groupname_col = "OutcomeLabel") %>%
-      gt::cols_label(
-        TermLabel = "Variable",
-        EffectType = "Effect",
-        N = "N",
-        Estimate_CI = "Estimate (95% CI)",
-        P = "p-value"
-      ) %>%
-      gt::cols_hide(columns = "Significant") %>%
-      gt::tab_style(
-        style = gt::cell_text(weight = "bold"),
-        locations = gt::cells_body(
-          columns = "P",
-          rows = Significant
-        )
-      )
-  } else {
-    table_data <- table_data %>%
-      dplyr::select(
-        Outcome,
-        OutcomeLabel,
-        TermLabel,
-        EffectType,
-        N,
-        Estimate,
-        StdError,
-        ConfLow,
-        ConfHigh,
-        dplyr::all_of("PValue")
-      )
+  table_data <- row_data %>% dplyr::select(-.data$RowKey)
+  column_labels <- list(Variable = "Variable")
+  spanners <- list()
+  numeric_columns <- character(0)
+  significant_rows <- list()
 
-    out <- gt::gt(table_data, groupname_col = "OutcomeLabel") %>%
-      gt::cols_label(
-        Outcome = "Outcome",
-        TermLabel = "Variable",
-        EffectType = "Effect",
+  for (outcome_index in seq_along(outcome_order)) {
+    outcome <- outcome_order[[outcome_index]]
+    outcome_results <- results %>%
+      dplyr::filter(.data$Outcome == outcome) %>%
+      dplyr::select(-.data$Outcome)
+    outcome_results <- outcome_results[match(row_data$RowKey, outcome_results$RowKey), , drop = FALSE]
+
+    column_prefix <- paste0("Outcome", outcome_index)
+    outcome_label <- outcome_results$OutcomeLabel[[which(!is.na(outcome_results$OutcomeLabel))[1]]]
+    effect_type <- outcome_results$EffectType[[which(!is.na(outcome_results$EffectType))[1]]]
+    effect_label <- if (identical(effect_type, "Odds ratio")) {
+      "Odds ratio (95% CI)"
+    } else {
+      "Estimate (95% CI)"
+    }
+
+    if (formatted) {
+      effect_column <- paste0(column_prefix, "_EffectCI")
+      p_column <- paste0(column_prefix, "_P")
+      stars <- ifelse(
+        outcome_results$Significant,
+        ScidrPValueStars(outcome_results$PValue, ns_label = ""),
+        ""
+      )
+      stars[is.na(stars)] <- ""
+      table_data[[effect_column]] <- paste0(
+        formatC(outcome_results$Estimate, digits = 3, format = "fg"),
+        " (",
+        formatC(outcome_results$ConfLow, digits = 3, format = "fg"),
+        ", ",
+        formatC(outcome_results$ConfHigh, digits = 3, format = "fg"),
+        ")",
+        stars
+      )
+      table_data[[p_column]] <- dplyr::case_when(
+        is.na(outcome_results$PValue) ~ NA_character_,
+        outcome_results$PValue < 0.001 ~ "<0.001",
+        TRUE ~ formatC(outcome_results$PValue, digits = 2, format = "fg")
+      )
+      column_labels[[effect_column]] <- effect_label
+      column_labels[[p_column]] <- "p-value"
+      spanners[[column_prefix]] <- c(effect_column, p_column)
+      significant_rows[[effect_column]] <- which(outcome_results$Significant)
+      significant_rows[[p_column]] <- which(outcome_results$Significant)
+    } else {
+      large_columns <- c("N", "Estimate", "StdError", "ConfLow", "ConfHigh", "PValue")
+      large_labels <- c(
         N = "N",
-        Estimate = "Estimate",
+        Estimate = if (identical(effect_type, "Odds ratio")) "Odds ratio" else "Estimate",
         StdError = "SE",
         ConfLow = "95% CI Low",
         ConfHigh = "95% CI High",
         PValue = "p-value"
-      ) %>%
-      gt::fmt_number(
-        columns = c("Estimate", "StdError", "ConfLow", "ConfHigh"),
-        decimals = 3
-      ) %>%
-      gt::fmt_number(columns = "PValue", decimals = 3)
+      )
+      outcome_columns <- paste0(column_prefix, "_", large_columns)
+      for (column_index in seq_along(large_columns)) {
+        table_data[[outcome_columns[[column_index]]]] <- outcome_results[[large_columns[[column_index]]]]
+      }
+      column_labels <- c(column_labels, as.list(stats::setNames(large_labels, outcome_columns)))
+      spanners[[column_prefix]] <- outcome_columns
+      numeric_columns <- c(numeric_columns, outcome_columns)
+    }
+
+    attr(spanners[[column_prefix]], "label") <- outcome_label
+  }
+
+  out <- gt::gt(table_data, rowname_col = "Variable") %>%
+    gt::cols_label(.list = column_labels)
+
+  for (spanner_id in names(spanners)) {
+    out <- gt::tab_spanner(
+      out,
+      label = attr(spanners[[spanner_id]], "label"),
+      columns = spanners[[spanner_id]],
+      id = spanner_id
+    )
+  }
+
+  if (formatted) {
+    for (column_name in names(significant_rows)) {
+      if (length(significant_rows[[column_name]]) > 0) {
+        out <- gt::tab_style(
+          out,
+          style = gt::cell_text(weight = "bold"),
+          locations = gt::cells_body(
+            columns = column_name,
+            rows = significant_rows[[column_name]]
+          )
+        )
+      }
+    }
+  } else {
+    out <- gt::fmt_number(out, columns = numeric_columns, decimals = 3)
   }
 
   out

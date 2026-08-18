@@ -7,7 +7,10 @@
 #' @param variables A character vector specifying the variables for which summary statistics will be calculated.
 #' @param digits Number of decimal places to round the summary statistics.
 #' @param Relabel Logical, indicating whether to use variable labels as column headers.
-#' @param Ordinal Logical, indicating whether ordinal variables should be included in the summary.
+#' @param TreatOrdinalAs How ordinal variables are handled. This numeric
+#' descriptive table accepts `"Continuous"` or `"Exclude"`.
+#' @param Ordinal Deprecated logical compatibility option; use
+#' `TreatOrdinalAs` instead.
 #' @param ScrollBoxHeight Height of the scroll box for displaying the table.
 #' @return A formatted HTML table displaying summary statistics.
 #' @importFrom magrittr %>%
@@ -17,6 +20,25 @@
 #' @param Data \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
 #' @param Variables \strong{Deprecated} (since 19.15.0). Use \code{variables} instead.
 #' @param numdecimals \strong{Deprecated} (since 19.15.0). Use \code{digits} instead.
+#' @examples
+#' \donttest{
+#' data(SampleData)
+#' data(SampleVariableTypes)
+#'
+#' df_Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
+#'
+#' # Distribution diagnostics for six biomarkers
+#' summary_table <- CreateSummaryTable(
+#'   data = df_Labelled,
+#'   variables = c("AXL", "Adiponectin", "Ferritin", "MMP7", "tau", "p_tau"),
+#'   digits = 2,
+#'   ScrollBoxHeight = "320px"
+#' )
+#'
+#' # `browsable()` is what renders the HTML on this page; printing suffices
+#' # in Quarto or R Markdown
+#' htmltools::browsable(htmltools::HTML(as.character(summary_table)))
+#' }
 #' @export
 
 
@@ -24,7 +46,8 @@ CreateSummaryTable <- function(data,
     variables = NULL,
     digits = 2,
     Relabel = TRUE,
-    Ordinal = FALSE,
+    Ordinal = lifecycle::deprecated(),
+    TreatOrdinalAs = "Categorical",
     ScrollBoxHeight = "700px",
     Data = lifecycle::deprecated(),
     Variables = lifecycle::deprecated(),
@@ -46,6 +69,20 @@ CreateSummaryTable <- function(data,
   }
   numdecimals <- digits
 
+  if (lifecycle::is_present(Ordinal)) {
+    lifecycle::deprecate_warn("20.20.0", "CreateSummaryTable(Ordinal)", "CreateSummaryTable(TreatOrdinalAs)")
+    TreatOrdinalAs <- if (isTRUE(Ordinal)) "Continuous" else "Exclude"
+  }
+  TreatOrdinalAs <- match.arg(TreatOrdinalAs, c("Categorical", "Continuous", "Both", "Exclude"))
+  if (is.null(Variables)) Variables <- names(Data)
+  ordinal <- ConvertOrdinalToNumeric(
+    Data, Variables, TreatOrdinalAs = TreatOrdinalAs,
+    Relabel = Relabel, ReturnMetadata = TRUE
+  )
+  if (length(ordinal$ordinal_variables) && TreatOrdinalAs %in% c("Categorical", "Both")) {
+    stop("CreateSummaryTable() is numeric-only; use TreatOrdinalAs = 'Continuous' or 'Exclude'. Use MakeTable1() for categorical or both ordinal summaries.", call. = FALSE)
+  }
+
   for (pkg in c("summarytools", "kableExtra")) {
     if (!requireNamespace(pkg, quietly = TRUE)) {
       stop(
@@ -55,21 +92,9 @@ CreateSummaryTable <- function(data,
     }
   }
 
-  if (is.null(Variables)) {
-    Variables <- colnames(Data)
-  }
-
   suppressWarnings({
-    Data <- dplyr::select(Data, dplyr::all_of(Variables))
-    l <- sjlabelled::get_label(Data)
-
-    if(Ordinal){
-      Data <- ConvertOrdinalToNumeric(Data)
-      Data <- lapply(Data, as.numeric) %>% as.data.frame()
-      if(Relabel){
-        sjlabelled::set_label(Data) <- l
-      }
-    }
+    Data <- dplyr::select(ordinal$data, dplyr::all_of(ordinal$variables))
+    Variables <- ordinal$variables
 
     d <- summarytools::descr(Data)
     statVars <- c("Mean", "Std.Dev", "Median", "IQR", "Min", "Max", "Skewness", "Kurtosis", "N.Valid", "Pct.Valid")
@@ -79,8 +104,7 @@ CreateSummaryTable <- function(data,
     d2[statVars] <- lapply(d2[statVars], round, numdecimals)
 
     if (Relabel) {
-      Data <- ReplaceMissingLabels(Data)
-      labels <- sjlabelled::get_label(Data, def.value = colnames(Data)) %>%
+      labels <- ScidrDisplayLabels(Data, Variables, Relabel) %>%
         as.data.frame() %>% tibble::rownames_to_column()
       colnames(labels) <- c("Variable", "label")
       d2$label <- labels$label

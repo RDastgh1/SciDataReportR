@@ -35,7 +35,10 @@
 #' # IQR-based winsorization
 #' windsorize(x, method = "iqr", iqrlim = 1.5)
 #'
-#' # Compare the distribution before and after winsorization
+#' # Compare the distribution before and after winsorization. Both panels are
+#' # drawn on the raw data's x range, because free scales would rescale the
+#' # winsorized panel to its own narrower range and hide the very thing being
+#' # demonstrated.
 #' set.seed(42)
 #' x <- c(rnorm(200, mean = 10, sd = 2), 30, 32, -8, -10)
 #' compare_df <- data.frame(
@@ -43,7 +46,34 @@
 #'   winsorized = windsorize(x, method = "iqr", iqrlim = 1.5)
 #' )
 #'
-#' PlotContinuousDistributions(compare_df, variables = c("raw", "winsorized"))
+#' df_Compare <- tidyr::pivot_longer(
+#'   compare_df,
+#'   cols = dplyr::everything(),
+#'   names_to = "Version",
+#'   values_to = "Value"
+#' )
+#' df_Compare$Version <- factor(
+#'   df_Compare$Version,
+#'   levels = c("raw", "winsorized"),
+#'   labels = c("Raw", "Winsorized")
+#' )
+#'
+#' ggplot2::ggplot(df_Compare, ggplot2::aes(x = Value)) +
+#'   ggplot2::geom_histogram(bins = 40, na.rm = TRUE) +
+#'   ggplot2::facet_wrap(~ Version, ncol = 1) +
+#'   ggplot2::coord_cartesian(xlim = range(compare_df$raw, na.rm = TRUE)) +
+#'   ggplot2::labs(
+#'     title = "Winsorization pulls outliers to the limits",
+#'     subtitle = "Both panels share the raw data's x range",
+#'     x = "Value", y = "Count"
+#'   ) +
+#'   ggplot2::theme_bw()
+#'
+#' # The four extreme values are gone from the tails and have reappeared as
+#' # taller bars at the winsorized limits; nothing was dropped.
+#' range(compare_df$raw)
+#' range(compare_df$winsorized)
+#' length(compare_df$raw) == length(compare_df$winsorized)
 #'
 #' @param Data \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
 #' @export

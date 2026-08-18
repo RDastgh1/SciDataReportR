@@ -92,11 +92,14 @@ The formatted table is designed for reporting and manuscript preparation.
 UniObj$FormattedTable
 ```
 
-Estimates and standard errors are combined into a compact format and significance stars are automatically added.
+Each outcome has its own column spanner. Effects are displayed as estimate
+(95% CI), with significance stars appended and both the effect and p-value
+bolded when significant.
 
 ## Detailed regression table
 
-The larger table provides additional model details.
+The larger table keeps the same wide outcome layout while exposing N, estimate,
+standard error, confidence limits, and p-value separately.
 
 ```{r}
 UniObj$LargeTable

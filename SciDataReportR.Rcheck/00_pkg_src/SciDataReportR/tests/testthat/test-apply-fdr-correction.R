@@ -50,6 +50,14 @@ test_that("ApplyFDRCorrection vector input with outcome_ids groups correctly", {
   )
 })
 
+test_that("ApplyFDRCorrection supports per-predictor correction", {
+  pm <- matrix(c(0.005, 0.04, 0.03, 0.01), nrow = 2)
+  res <- ApplyFDRCorrection(pm, fdr_scope = "per_predictor")
+  expect_equal(res[1, ], ApplyFDRCorrection(pm[1, ]))
+  expect_equal(res[2, ], ApplyFDRCorrection(pm[2, ]))
+  expect_error(ApplyFDRCorrection(c(0.01, 0.02), fdr_scope = "per_predictor"), "predictor_ids")
+})
+
 test_that("ApplyFDRCorrection matrix scope reproduces stats::p.adjust exactly", {
   set.seed(7)
   pm <- matrix(runif(24), nrow = 4)
@@ -73,6 +81,121 @@ test_that("ApplyFDRCorrection supports data frames and other methods", {
   p <- c(0.01, 0.02, 0.03)
   expect_equal(ApplyFDRCorrection(p, method = "bonferroni"),
                stats::p.adjust(p, "bonferroni"))
+})
+
+MakeSymmetricPmat <- function(p) {
+  n <- (1 + sqrt(1 + 8 * length(p))) / 2
+  m <- matrix(NA_real_, n, n, dimnames = list(paste0("v", seq_len(n)), paste0("v", seq_len(n))))
+  m[lower.tri(m)] <- p
+  m[upper.tri(m)] <- t(m)[upper.tri(m)]
+  m
+}
+
+test_that("ApplyFDRCorrection corrects each pair of a symmetric matrix once", {
+  p <- c(0.001, 0.020, 0.040)
+  m <- MakeSymmetricPmat(p)
+
+  res <- ApplyFDRCorrection(m)
+
+  # The family is the three unique pairs, not the six filled cells.
+  expect_equal(res[lower.tri(res)], stats::p.adjust(p, "fdr"))
+  expect_equal(
+    ApplyFDRCorrection(m, method = "bonferroni")[lower.tri(m)],
+    stats::p.adjust(p, "bonferroni")
+  )
+  # Result stays symmetric, diagonal is excluded from the family.
+  expect_equal(res, t(res))
+  expect_true(all(is.na(diag(res))))
+  expect_identical(dimnames(res), dimnames(m))
+})
+
+test_that("ApplyFDRCorrection symmetric handling halves the Bonferroni family", {
+  p <- c(0.001, 0.020, 0.040)
+  m <- MakeSymmetricPmat(p)
+
+  doubled <- ApplyFDRCorrection(m, method = "bonferroni", symmetric = FALSE)
+  once <- ApplyFDRCorrection(m, method = "bonferroni", symmetric = TRUE)
+
+  expect_equal(doubled[lower.tri(m)], pmin(1, 2 * once[lower.tri(m)]))
+})
+
+test_that("ApplyFDRCorrection keeps a diagonal of self-comparisons out of the family", {
+  p <- c(0.001, 0.020, 0.040)
+  m <- MakeSymmetricPmat(p)
+  diag(m) <- 0
+
+  excluded <- ApplyFDRCorrection(m)
+  included <- ApplyFDRCorrection(m, include_diagonal = TRUE)
+
+  expect_true(all(is.na(diag(excluded))))
+  expect_equal(excluded[lower.tri(m)], stats::p.adjust(p, "fdr"))
+
+  # Folding perfect self-correlations into the family pulls the off-diagonal
+  # values down, which is exactly what excluding the diagonal prevents.
+  expect_true(all(included[lower.tri(m)] <= excluded[lower.tri(m)]))
+  expect_true(any(included[lower.tri(m)] < excluded[lower.tri(m)]))
+  expect_equal(diag(included), rep(0, 3), ignore_attr = TRUE)
+})
+
+test_that("ApplyFDRCorrection only treats genuinely symmetric matrices specially", {
+  p <- c(0.001, 0.020, 0.040)
+  m <- MakeSymmetricPmat(p)
+
+  # Different names down the two margins means these are not the same tests.
+  renamed <- m
+  colnames(renamed) <- c("a", "b", "c")
+  expect_equal(ApplyFDRCorrection(renamed),
+               ApplyFDRCorrection(renamed, symmetric = FALSE))
+
+  # One mismatched cell is enough to fall back to whole-matrix correction.
+  nearly <- m
+  nearly[1, 2] <- 0.5
+  expect_equal(ApplyFDRCorrection(nearly),
+               ApplyFDRCorrection(nearly, symmetric = FALSE))
+
+  # So is a missing value that only appears in one triangle.
+  half_missing <- m
+  half_missing[1, 2] <- NA
+  expect_equal(ApplyFDRCorrection(half_missing),
+               ApplyFDRCorrection(half_missing, symmetric = FALSE))
+
+  rect <- matrix(c(0.01, 0.02, 0.03, 0.04, 0.05, 0.06), nrow = 2)
+  expect_equal(ApplyFDRCorrection(rect),
+               ApplyFDRCorrection(rect, symmetric = FALSE))
+})
+
+test_that("ApplyFDRCorrection per-group scope drops the diagonal of symmetric input", {
+  p <- c(0.001, 0.020, 0.040)
+  m <- MakeSymmetricPmat(p)
+  diag(m) <- 0
+
+  res <- ApplyFDRCorrection(m, fdr_scope = "per_outcome", outcome_margin = 2)
+
+  expect_true(all(is.na(diag(res))))
+  for (j in seq_len(ncol(m))) {
+    col_p <- m[, j]
+    col_p[j] <- NA
+    expect_equal(res[, j], ApplyFDRCorrection(col_p))
+  }
+})
+
+test_that("ApplyFDRCorrection symmetric preserves data frame input", {
+  p <- c(0.001, 0.020, 0.040)
+  pdf_in <- as.data.frame(MakeSymmetricPmat(p))
+
+  res <- ApplyFDRCorrection(pdf_in)
+
+  expect_s3_class(res, "data.frame")
+  expect_identical(names(res), names(pdf_in))
+  expect_equal(unname(unlist(res[lower.tri(as.matrix(res))])),
+               unname(stats::p.adjust(p, "fdr")))
+})
+
+test_that("ApplyFDRCorrection validates symmetric arguments", {
+  rect <- matrix(c(0.01, 0.02, 0.03, 0.04, 0.05, 0.06), nrow = 2)
+  expect_error(ApplyFDRCorrection(rect, symmetric = TRUE), "not a symmetric")
+  expect_error(ApplyFDRCorrection(rect, symmetric = "yes"), "symmetric must be")
+  expect_error(ApplyFDRCorrection(rect, include_diagonal = NA), "include_diagonal")
 })
 
 test_that("ApplyFDRCorrection validates its inputs", {

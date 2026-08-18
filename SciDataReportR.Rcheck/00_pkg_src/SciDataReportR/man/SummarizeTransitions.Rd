@@ -53,6 +53,7 @@ A list with:
 \itemize{
 \item \code{participant_summary}: participant-level summary table
 \item \code{condition_summary}: one-row tibble with overall counts
+\item \code{Plots}: figures for the two summaries, described below
 }
 }
 \description{
@@ -80,6 +81,32 @@ The returned condition-level summary includes:
 \item number sustained after resolution
 }
 }
+\section{Figures}{
+
+\code{condition_summary} is a single row of six counts, which is exactly the
+shape a table reads worst: the numbers are related to each other, and the
+relationship is the point. \code{Plots} renders them so the relationship is
+visible:
+\itemize{
+\item \code{Plots$ConditionCascade} shows the counts as a cascade - the whole
+cohort, the part of it ever affected, the transitions that occurred
+within that part, and how many of those persisted - with each bar
+labelled by its count and its share of the cohort.
+\item \code{Plots$TransitionPatterns} classifies every participant into one
+mutually exclusive longitudinal pattern (never positive, positive
+throughout, developed only, resolved only, developed and resolved) and
+plots the counts. The indicator columns in \code{participant_summary} overlap,
+so this is the view that shows what the cohort is actually made of.
+}
+
+The two agree by construction: the pattern counts sum to
+\code{n_participants}, and everything except "never positive" sums to
+\code{n_ever_positive}.
+
+For the per-participant trajectories behind these counts, use
+\code{\link[=PlotSwimmerTransitions]{PlotSwimmerTransitions()}}, which prepares its data the same way.
+}
+
 \examples{
 toy_df <- tibble::tibble(
   ParticipantID = rep(paste0("P", 1:4), each = 4),
@@ -93,7 +120,7 @@ toy_df <- tibble::tibble(
   )
 )
 
-SummarizeTransitions(
+transitions <- SummarizeTransitions(
   data = toy_df,
   id_var = ParticipantID,
   time_var = VisitOrder,
@@ -102,4 +129,59 @@ SummarizeTransitions(
   x_axis_type = "time_from_baseline",
   time_from_baseline_unit = "months"
 )
+
+transitions$condition_summary
+
+\donttest{
+# A larger cohort, where a positive visit tends to be followed by another
+set.seed(9)
+n_participants <- 60
+
+df_Longitudinal <- do.call(rbind, lapply(seq_len(n_participants), function(i) {
+  n_visits <- sample(3:5, 1)
+  status <- numeric(n_visits)
+  status[1] <- stats::rbinom(1, 1, 0.3)
+  for (j in seq_len(n_visits)[-1]) {
+    status[j] <- stats::rbinom(1, 1, if (status[j - 1] == 1) 0.8 else 0.25)
+  }
+  data.frame(
+    ParticipantID = sprintf("P\%02d", i),
+    VisitOrder = seq_len(n_visits),
+    MetSBinary = status
+  )
+}))
+
+transitions <- SummarizeTransitions(
+  data = df_Longitudinal,
+  id_var = ParticipantID,
+  time_var = VisitOrder,
+  status_var = MetSBinary
+)
+
+# Six counts in one row
+htmltools::browsable(htmltools::HTML(as.character(
+  FreezeTableHeader(transitions$condition_summary, full_width = TRUE)
+)))
+
+# The same six numbers as a cascade
+transitions$Plots$ConditionCascade
+
+# The cohort split into mutually exclusive patterns
+transitions$Plots$TransitionPatterns
+
+# The participant-level table
+htmltools::browsable(htmltools::HTML(as.character(
+  FreezeTableHeader(
+    dplyr::select(
+      transitions$participant_summary,
+      .plot_id, n_visits, n_positive, pct_positive, ever_positive,
+      developed_condition, resolved_condition
+    ),
+    height = "300px", full_width = TRUE
+  )
+)))
+}
+}
+\seealso{
+\code{\link[=PlotSwimmerTransitions]{PlotSwimmerTransitions()}} for the participant-level swimmer plot.
 }

@@ -10,6 +10,26 @@
 #' @param Revalued Logical. If TRUE, the function checks factors and their levels;
 #' otherwise, it checks for variables with two unique values.
 #' @return A character vector containing the names of binary variables.
+#' @seealso [createBinaryMapping()] to fix which level counts as positive, and
+#'   [getCatVars()] / [getNumVars()] for the other partitions.
+#'
+#' @examples
+#' data(SampleData)
+#' data(SampleVariableTypes)
+#'
+#' Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
+#'
+#' # Two-level factors, which are the ones that can be modelled as 0/1
+#' vars_Binary <- getBinaryVars(Labelled)
+#' vars_Binary
+#'
+#' # `Revalued = FALSE` looks for any column with two distinct values instead
+#' # of two factor levels, for frames that have not been through RevalueData().
+#' getBinaryVars(SampleData, Revalued = FALSE)
+#'
+#' # Which level each one is scored against
+#' createBinaryMapping(Labelled, vars_Binary)
+#'
 #' @param DataFrame \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
 #' @export
 getBinaryVars <- function(data,
@@ -28,24 +48,24 @@ getBinaryVars <- function(data,
     if (Ordinal) {
       # Include all factors (ordered and unordered)
       CatVars <- DataFrame %>%
-        select(where(is.factor)) %>%
+        dplyr::select(dplyr::where(is.factor)) %>%
         names()
     } else {
       # Exclude ordered factors
       CatVars <- DataFrame %>%
-        select(where(is.factor) & !where(is.ordered)) %>%
+        dplyr::select(dplyr::where(is.factor) & !dplyr::where(is.ordered)) %>%
         names()
     }
 
     # Select binary variables from categorical variables (2 levels)
     BinaryVars <- DataFrame %>%
-      select(all_of(CatVars)) %>%
-      select(where(~ length(levels(.)) == 2)) %>%
+      dplyr::select(dplyr::all_of(CatVars)) %>%
+      dplyr::select(dplyr::where(~ length(levels(.)) == 2)) %>%
       names()
   } else {
     # For non-revalued data, check for variables with 2 unique values
     BinaryVars <- DataFrame %>%
-      select(where(~ length(unique(.)) == 2)) %>%
+      dplyr::select(dplyr::where(~ length(unique(.)) == 2)) %>%
       names()
   }
 

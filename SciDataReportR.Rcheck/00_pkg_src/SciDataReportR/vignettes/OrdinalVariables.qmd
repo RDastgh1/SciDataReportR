@@ -1,0 +1,207 @@
+---
+title: "Working with ordinal variables"
+author: "Raha Dastgheyb"
+title-block-banner: true
+date: "last-modified"
+format:
+  html:
+    embed-resources: true
+    toc: true
+    toc-location: left
+    smooth-scroll: true
+    theme: zephyr
+execute:
+  echo: true
+  message: false
+  warning: false
+  cache: false
+vignette: >
+  %\VignetteIndexEntry{Working with ordinal variables}
+  %\VignetteEngine{quarto::html}
+  %\VignetteEncoding{UTF-8}
+---
+
+## Why use more than one ordinal perspective?
+
+Ordinal variables have a meaningful order, but their adjacent categories are
+not automatically equally spaced. A symptom scale with *None*, *Mild*,
+*Moderate*, and *Severe* can therefore be useful as a categorical outcome when
+we care about the distribution across levels, or as a continuous score when a
+one-step increase is a clinically reasonable working scale.
+
+Neither view is universally correct. Looking at both is often useful during
+EDA: the categorical result shows whether a pattern is concentrated in one
+level, while the continuous result is a compact summary of an ordered trend.
+The appropriate confirmatory analysis should still be chosen from the study
+question, measurement properties, and prespecified analysis plan.
+
+## Load packages
+
+```{r}
+#| label: LoadPackages
+#| echo: false
+library(SciDataReportR)
+library(dplyr)
+```
+
+## Create a labelled ordinal example
+
+```{r}
+#| label: LoadData
+#| echo: false
+set.seed(20260802)
+
+df_Raw <- data.frame(
+  Group = factor(rep(c("Control", "Disease"), each = 45)),
+  SymptomSeverity = c(
+    sample(0:3, 45, replace = TRUE, prob = c(0.45, 0.30, 0.18, 0.07)),
+    sample(0:3, 45, replace = TRUE, prob = c(0.12, 0.28, 0.35, 0.25))
+  ),
+  Age = round(stats::rnorm(90, mean = 48, sd = 12))
+)
+
+VariableTypes <- data.frame(
+  Variable = c("Group", "SymptomSeverity", "Age"),
+  Label = c("Participant group", "Symptom Severity", "Age (years)"),
+  Type = c("Categorical", "Ordinal", "Continuous"),
+  Recode = c("No", "Yes", "No"),
+  Code = c(NA, "0=None;1=Mild;2=Moderate;3=Severe", NA)
+)
+
+df_Revalued <- RevalueData(df_Raw, VariableTypes)$RevaluedData
+```
+
+::: callout-note
+This vignette constructs a small example dataset in the document. The
+`VariableTypes` object above is the codebook used by `RevalueData()`.
+:::
+
+`RevalueData()` keeps `SymptomSeverity` as an ordered factor for categorical
+analysis and records its numeric codebook scores (`0` through `3`) for a
+continuous analysis. If a codebook has no complete numeric mapping, the ordered
+level ranks are used instead.
+
+## Comparison tables
+
+`TreatOrdinalAs` is the common control for tables:
+
+| Value | Table behavior |
+|---|---|
+| `"Categorical"` | Show ordinal levels and use a categorical test. |
+| `"Continuous"` | Use the preserved numeric score and continuous summary/test. |
+| `"Both"` | Show separate categorical and continuous entries. |
+| `"Exclude"` | Omit ordinal variables from automatic selection. |
+
+```{r}
+#| label: CategoricalComparisonTable
+tbl_Categorical <- MakeComparisonTable(
+  data = df_Revalued,
+  group_var = "Group",
+  variables = "SymptomSeverity",
+  TreatOrdinalAs = "Categorical"
+)
+
+tbl_Categorical
+```
+
+```{r}
+#| label: ContinuousComparisonTable
+tbl_Continuous <- MakeComparisonTable(
+  data = df_Revalued,
+  group_var = "Group",
+  variables = "SymptomSeverity",
+  TreatOrdinalAs = "Continuous"
+)
+
+tbl_Continuous
+```
+
+```{r}
+#| label: BothComparisonTable
+tbl_Both <- MakeComparisonTable(
+  data = df_Revalued,
+  group_var = "Group",
+  variables = "SymptomSeverity",
+  TreatOrdinalAs = "Both"
+)
+
+tbl_Both
+```
+
+With `TreatOrdinalAs = "Both"`, the original data are not changed. The table
+uses temporary analysis columns and displays them as **Symptom Severity
+(categorical)** and **Symptom Severity (continuous)**.
+With `Relabel = FALSE`, the same entries use the raw variable name instead:
+`SymptomSeverity (categorical)` and `SymptomSeverity (continuous)`.
+
+## Plotting options
+
+Plots intentionally allow only representations that make sense for the plot.
+
+| Function | Ordinal parameter | Valid values |
+|---|---|---|
+| `PlotCategoricalDistributions()` | `TreatOrdinalAs` | `"Categorical"`, `"Exclude"` |
+| `PlotContinuousDistributions()` | `TreatOrdinalAs` | `"Continuous"`, `"Exclude"` |
+| `PlotCorrelationsHeatmap()` | `TreatOrdinalAs` | `"Continuous"`, `"Exclude"` |
+| `PlotMiningMatrix()` | `TreatOrdinalAs` | all four values |
+
+`"Both"` is rejected by single-representation plots because it would make the
+analytic question ambiguous. Use separate categorical and continuous plots
+when you want to inspect both perspectives.
+
+```{r}
+#| label: CategoricalOrdinalDistribution
+PlotCategoricalDistributions(
+  data = df_Revalued,
+  variables = "SymptomSeverity",
+  TreatOrdinalAs = "Categorical"
+)
+```
+
+```{r}
+#| label: ContinuousOrdinalDistribution
+PlotContinuousDistributions(
+  data = df_Revalued,
+  variables = "SymptomSeverity",
+  TreatOrdinalAs = "Continuous"
+)
+```
+
+## PlotMiningMatrix() with both representations
+
+`PlotMiningMatrix()` is the exception: it can examine mixed variable types, so
+`TreatOrdinalAs = "Both"` adds two temporary analysis variables for each
+ordinal field. It evaluates each representation wherever a valid pairwise test
+is available; a particular representation will not appear when no compatible
+variable pair exists.
+
+```{r}
+#| label: OrdinalMiningMatrix
+#| column: screen
+vars_Mining <- c("Group", "SymptomSeverity", "Age")
+
+MiningObj <- PlotMiningMatrix(
+  data = df_Revalued,
+  outcome_vars = vars_Mining,
+  TreatOrdinalAs = "Both",
+  Relabel = TRUE
+)
+
+MiningObj$Unadjusted$plot
+```
+
+The plot labels use the same suffixes as the table: **Symptom Severity
+(categorical)** and **Symptom Severity (continuous)**.
+This makes the statistical interpretation visible rather than hiding it behind
+an internal duplicate-column name. Set `Relabel = FALSE` to use raw variable
+names with those same suffixes.
+
+## Reproducibility
+
+```{r}
+#| label: Reproducibility
+#| echo: false
+#| output: false
+# save.image()
+print(sessionInfo())
+```

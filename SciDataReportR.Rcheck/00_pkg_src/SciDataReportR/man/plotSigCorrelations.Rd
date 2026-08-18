@@ -31,11 +31,13 @@ Generate scatterplots for significant correlations based on a previously generat
 }
 \examples{
 \donttest{
-# Build a correlation heatmap, then plot the significant pairs
+# Build a correlation heatmap, then plot the significant pairs. Keep the
+# predictor and outcome sets disjoint so no variable is correlated with
+# itself.
 ch <- PlotCorrelationsHeatmap(
   mtcars,
-  predictor_vars = c("mpg", "wt", "hp"),
-  outcome_vars = c("mpg", "wt", "hp")
+  predictor_vars = c("wt", "hp", "disp"),
+  outcome_vars = c("mpg", "qsec")
 )
 
 plots <- plotSigCorrelations(mtcars, ch)

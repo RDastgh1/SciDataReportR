@@ -8,31 +8,95 @@
 #'   (Backward compatible: if MissingCode is absent/NA, will fall back to Missing.)
 #' @param missingVal Default value to treat as missing when VarTypes$MissingCode is absent or NA.
 #' @param splitchar Separator used in VarTypes$Code between pairs (default ";").
+#' @param on_error Whether to stop at the first variable-level error (the default)
+#'   or continue and record errors in the returned object.
 #'
 #' @return A list with:
 #'   RevaluedData (data), warninglist (character), recodedvars (character),
-#'   not_in_data (character).
+#'   not_in_data (character), and errors (data frame with `Variable` and
+#'   `Error` columns). In the default `on_error = "stop"` mode, an error names
+#'   the offending variable and preserves the underlying message.
 #'
 #' @examples
 #' data(SampleData)
 #' data(SampleVariableTypes)
 #'
-#' # Before: no variable labels and coded factors are still raw
-#' # (e.g. sex is stored as 0/1 with no label)
+#' # Before: no labels, and sex is stored as 0/1
 #' sjlabelled::get_label(SampleData$age)   # NULL
 #' class(SampleData$sex)                    # "integer"
 #'
-#' # Revalue using the codebook: attach labels and recode coded factors
+#' # Revalue using the codebook
 #' revalued <- RevalueData(SampleData, SampleVariableTypes)
 #' Labelled <- revalued$RevaluedData
 #'
-#' # After: labels are attached and sex is a labelled factor
+#' # After: labels attached, sex is a labelled factor
 #' sjlabelled::get_label(Labelled$age)     # "Age"
 #' levels(Labelled$sex)                     # "Female" "Male"
 #'
-#' # Variables that were recoded, and any codebook entries not found in the data
+#' # Recoded variables, and codebook entries not found in the data
 #' revalued$recodedvars
 #' revalued$not_in_data
+#'
+#' \donttest{
+#' # A side-by-side view of what changed
+#' vars_Show <- c("Diagnosis", "age", "sex", "Genotype", "AXL")
+#'
+#' df_Before <- utils::head(SampleData[, vars_Show], 6)
+#' df_After <- utils::head(Labelled[, vars_Show], 6)
+#'
+#' ShowTable <- function(x, caption) {
+#'   htmltools::browsable(htmltools::HTML(as.character(
+#'     kableExtra::kable_styling(
+#'       knitr::kable(x, format = "html", caption = caption, row.names = FALSE),
+#'       bootstrap_options = c("striped", "hover", "condensed"),
+#'       full_width = FALSE
+#'     )
+#'   )))
+#' }
+#'
+#' ShowTable(df_Before, "Before: raw codes as imported")
+#' ShowTable(df_After, "After: recoded and labelled")
+#'
+#' # The labels the codebook attached
+#' df_Labels <- data.frame(
+#'   Variable = vars_Show,
+#'   Label = vapply(
+#'     vars_Show,
+#'     function(v) {
+#'       lab <- sjlabelled::get_label(Labelled[[v]])
+#'       if (is.null(lab) || is.na(lab)) v else lab
+#'     },
+#'     character(1)
+#'   ),
+#'   Class = vapply(vars_Show, function(v) class(Labelled[[v]])[1], character(1)),
+#'   Levels = vapply(
+#'     vars_Show,
+#'     function(v) {
+#'       lv <- levels(Labelled[[v]])
+#'       if (is.null(lv)) "" else paste(lv, collapse = ", ")
+#'     },
+#'     character(1)
+#'   ),
+#'   row.names = NULL
+#' )
+#'
+#' htmltools::browsable(htmltools::HTML(as.character(
+#'   FreezeTableHeader(df_Labels, full_width = TRUE)
+#' )))
+#'
+#' # Anything the codebook could not act on
+#' revalued$warninglist
+#' }
+#'
+#' @section What changes:
+#' In the raw extract `sex` is a bare 0/1 column and nothing carries a label.
+#' Afterwards it is a factor with real levels, and the labels are attached for
+#' every downstream table and plot to pick up automatically - which is what
+#' makes output readable without renaming anything by hand.
+#'
+#' Anything the codebook could not act on is reported in `warninglist` rather
+#' than silently skipped, so a mistyped variable name or an unparseable `Code`
+#' string is visible instead of quietly leaving a variable unrecoded.
 #'
 #' @param DatatoRevalue \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
 #' @param VarTypes \strong{Deprecated} (since 19.15.0). Use \code{codebook} instead.
@@ -41,6 +105,7 @@ RevalueData <- function(data,
     codebook,
     missingVal = -999,
     splitchar = ";",
+    on_error = c("stop", "warn"),
     DatatoRevalue = lifecycle::deprecated(),
     VarTypes = lifecycle::deprecated()) {
   # Deprecated argument shims (SciDataReportR 19.15.0)
@@ -54,6 +119,7 @@ RevalueData <- function(data,
     codebook <- VarTypes
   }
   if (!missing(codebook)) VarTypes <- codebook
+  on_error <- match.arg(on_error)
 
   if (!requireNamespace("sjlabelled", quietly = TRUE))
     stop("Package 'sjlabelled' is required.")
@@ -111,6 +177,11 @@ RevalueData <- function(data,
 
   warninglist <- character(0)
   recodedvars <- character(0)
+  errorlist <- data.frame(
+    Variable = character(0),
+    Error = character(0),
+    stringsAsFactors = FALSE
+  )
 
   # treat these as numeric/double storage
   num_types <- c("double","numeric","numerical","integer","continuous")
@@ -119,7 +190,8 @@ RevalueData <- function(data,
   for (i in seq_along(vars)) {
     var <- vars[i]
     idx <- which(vt_in$Variable == var)[1]
-    x   <- RevaluedData[[var]]
+    tryCatch({
+      x <- RevaluedData[[var]]
 
     ## MissingCode -> NA
     mchr <- vt_in$MissingCode[idx]
@@ -140,6 +212,13 @@ RevalueData <- function(data,
 
     ## Recoding & labeling
     rc_flag <- tolower(trimws(vt_in$Recode[idx]))
+    valid_recode_flags <- c("yes", "y", "1", "true", "t", "no", "n", "0", "false", "f")
+    if (!is.na(rc_flag) && nzchar(rc_flag) && !rc_flag %in% valid_recode_flags) {
+      warninglist <- c(
+        warninglist,
+        paste0(var, ": Unrecognized Recode value '", vt_in$Recode[idx], "'. Expected Yes or No; recoding was skipped.")
+      )
+    }
     do_reco <- isTRUE(rc_flag %in% c("yes","y","1","true","t"))
     vartype <- tolower(trimws(vt_in$Type[idx]))
 
@@ -215,9 +294,56 @@ RevalueData <- function(data,
 
     # Variable label
     vlab <- vt_in$Label[idx]
-    if (!is.na(vlab) && nzchar(vlab)) {
+    if (length(vlab) > 0 && !is.na(vlab) && nzchar(vlab)) {
       RevaluedData[[var]] <- sjlabelled::set_label(RevaluedData[[var]], label = vlab)
     }
+
+    # Preserve the measurement-level decision from the codebook. Ordered
+    # factors remain the categorical representation; the score metadata lets
+    # downstream functions create a continuous representation without trying
+    # to recover the original codes from display labels.
+    if (vartype %in% c("ordinal", "ordered factor", "ordered")) {
+      x_ordinal <- RevaluedData[[var]]
+      if (!is.ordered(x_ordinal)) x_ordinal <- as.ordered(x_ordinal)
+      attr(x_ordinal, "scidr_type") <- "ordinal"
+
+      codestr <- vt_in$Code[idx]
+      score_map <- numeric(0)
+      if (!is.na(codestr) && nzchar(codestr)) {
+        parts <- strsplit(codestr, splitchar, fixed = TRUE)[[1]]
+        for (part in parts) {
+          sep <- if (grepl("=>", part, fixed = TRUE)) "=>" else if (grepl("=", part, fixed = TRUE)) "=" else if (grepl(":", part, fixed = TRUE)) ":" else NA_character_
+          if (is.na(sep)) next
+          pair <- trimws(strsplit(part, sep, fixed = TRUE)[[1]])
+          if (length(pair) < 2) next
+          score <- suppressWarnings(as.numeric(pair[1]))
+          if (!is.na(score) && nzchar(pair[2])) score_map[pair[2]] <- score
+        }
+      }
+
+      ordinal_levels <- levels(x_ordinal)
+      if (length(score_map) && all(ordinal_levels %in% names(score_map))) {
+        attr(x_ordinal, "scidr_ordinal_scores") <- score_map[ordinal_levels]
+        attr(x_ordinal, "scidr_ordinal_score_source") <- "codebook"
+      } else {
+        attr(x_ordinal, "scidr_ordinal_scores") <- stats::setNames(seq_along(ordinal_levels), ordinal_levels)
+        attr(x_ordinal, "scidr_ordinal_score_source") <- "rank"
+        warninglist <- c(
+          warninglist,
+          paste0(var, ": Ordinal continuous scores will use ordered-level ranks because Code does not provide a complete numeric mapping.")
+        )
+      }
+      RevaluedData[[var]] <- x_ordinal
+    }
+    }, error = function(e) {
+      error_message <- paste0("Error revaluing variable '", var, "': ", conditionMessage(e))
+      errorlist <<- rbind(
+        errorlist,
+        data.frame(Variable = var, Error = conditionMessage(e), stringsAsFactors = FALSE)
+      )
+      if (on_error == "stop") stop(error_message, call. = FALSE)
+      warninglist <<- c(warninglist, error_message)
+    })
   }
 
   if (length(not_in_data) > 0) {
@@ -232,6 +358,7 @@ RevalueData <- function(data,
     RevaluedData = RevaluedData,
     warninglist  = unique(warninglist),
     recodedvars  = unique(recodedvars),
-    not_in_data  = not_in_data
+    not_in_data  = not_in_data,
+    errors       = errorlist
   )
 }

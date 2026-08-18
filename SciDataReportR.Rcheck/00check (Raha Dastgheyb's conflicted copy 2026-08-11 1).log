@@ -1,0 +1,27 @@
+* using log directory ‘/Users/rahad/Library/CloudStorage/Dropbox/Coding/Package Development/SciDataReportR/SciDataReportR.Rcheck’
+* using R version 4.5.3 (2026-03-11)
+* using platform: aarch64-apple-darwin20
+* R was compiled by
+    Apple clang version 16.0.0 (clang-1600.0.26.6)
+    GNU Fortran (GCC) 14.2.0
+* running under: macOS Tahoe 26.5.1
+* using session charset: UTF-8
+* using options ‘--no-manual --as-cran’
+* checking for file ‘SciDataReportR/DESCRIPTION’ ... OK
+* this is package ‘SciDataReportR’ version ‘20.24.0’
+* package encoding: UTF-8
+* checking CRAN incoming feasibility ... [2s/16s] NOTE
+Maintainer: ‘Raha Dastgheyb <raha@jhmi.edu>’
+
+New submission
+
+Package has a VignetteBuilder field but no prebuilt vignette index.
+* checking package namespace information ... OK
+* checking package dependencies ... OK
+* checking if this is a source package ... OK
+* checking if there is a namespace ... OK
+* checking for executable files ... OK
+* checking for hidden files and directories ... OK
+* checking for portable file names ... OK
+* checking for sufficient/correct file permissions ... OK
+* checking whether package ‘SciDataReportR’ can be installed ...

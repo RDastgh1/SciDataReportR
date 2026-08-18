@@ -1,0 +1,9 @@
+# Extracted from test-scidata-colors.R:55
+
+# setup ------------------------------------------------------------------------
+library(testthat)
+test_env <- simulate_test_env(package = "SciDataReportR", path = "..")
+attach(test_env, warn.conflicts = FALSE)
+
+# test -------------------------------------------------------------------------
+expect_error(.SciDataColorValues(0), "positive integer")

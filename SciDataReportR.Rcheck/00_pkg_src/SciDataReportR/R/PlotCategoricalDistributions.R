@@ -9,7 +9,10 @@
 #'   automatically detected.
 #' @param Relabel Logical. If TRUE, missing labels in the dataframe are replaced
 #'   with column names as labels for plotting.
-#' @param Ordinal Logical, indicating whether ordinal variables should be included.
+#' @param TreatOrdinalAs How ordinal variables are handled. This categorical
+#' plot accepts `"Categorical"` or `"Exclude"`.
+#' @param Ordinal Deprecated logical compatibility option; use
+#' `TreatOrdinalAs` instead.
 #' @param LabelType Character. Either "percent" or "count", indicating what
 #'   should be shown on the x-axis and inside the bars.
 #' @param MissingLabel Character label to use for missing values.
@@ -21,16 +24,20 @@
 #' @param Variables \strong{Deprecated} (since 19.15.0). Use \code{variables} instead.
 #' @examples
 #' data(SampleData)
+#' data(SampleVariableTypes)
+#'
+#' Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
 #'
 #' PlotCategoricalDistributions(
-#'   SampleData,
+#'   Labelled,
 #'   variables = c("Diagnosis", "Genotype")
 #' )
 #' @export
 PlotCategoricalDistributions <- function(data,
     variables = NULL,
     Relabel = TRUE,
-    Ordinal = TRUE,
+    Ordinal = lifecycle::deprecated(),
+    TreatOrdinalAs = "Categorical",
     LabelType = "percent",
     MissingLabel = "Missing",
     DataFrame = lifecycle::deprecated(),
@@ -46,6 +53,15 @@ PlotCategoricalDistributions <- function(data,
     variables <- Variables
   }
   Variables <- variables
+
+  if (lifecycle::is_present(Ordinal)) {
+    lifecycle::deprecate_warn("20.20.0", "PlotCategoricalDistributions(Ordinal)", "PlotCategoricalDistributions(TreatOrdinalAs)")
+    TreatOrdinalAs <- if (isTRUE(Ordinal)) "Categorical" else "Exclude"
+  }
+  TreatOrdinalAs <- match.arg(TreatOrdinalAs, c("Categorical", "Continuous", "Both", "Exclude"))
+  if (TreatOrdinalAs %in% c("Continuous", "Both")) {
+    stop("PlotCategoricalDistributions() requires TreatOrdinalAs = 'Categorical' or 'Exclude'.", call. = FALSE)
+  }
 
 
   # Validate inputs
@@ -71,10 +87,6 @@ PlotCategoricalDistributions <- function(data,
     stop("`Relabel` must be TRUE or FALSE.")
   }
 
-  if (!is.logical(Ordinal) || length(Ordinal) != 1 || is.na(Ordinal)) {
-    stop("`Ordinal` must be TRUE or FALSE.")
-  }
-
   if (!LabelType %in% c("percent", "count")) {
     stop("`LabelType` must be either 'percent' or 'count'.")
   }
@@ -85,10 +97,12 @@ PlotCategoricalDistributions <- function(data,
 
   # Prepare data
 
-  if (!Ordinal) {
-    ordinal_vars <- Variables[vapply(DataFrame[Variables], is.ordered, logical(1))]
-    Variables <- setdiff(Variables, ordinal_vars)
-  }
+  ordinal <- ConvertOrdinalToNumeric(
+    DataFrame, Variables, TreatOrdinalAs = TreatOrdinalAs,
+    ReturnMetadata = TRUE
+  )
+  DataFrame <- ordinal$data
+  Variables <- ordinal$variables
 
   if (length(Variables) == 0) {
     stop("No variables available to plot.")
@@ -179,7 +193,7 @@ PlotCategoricalDistributions <- function(data,
   non_missing_keys <- unique(as.character(non_missing_keys))
 
   fill_values <- stats::setNames(
-    scales::hue_pal()(length(non_missing_keys)),
+    .SciDataColorValues(length(non_missing_keys)),
     non_missing_keys
   )
 
@@ -195,6 +209,16 @@ PlotCategoricalDistributions <- function(data,
       stats::setNames(rep("grey70", length(missing_keys)), missing_keys)
     )
   }
+
+  # Labels are drawn inside the bars, so their colour has to follow the fill
+  # they sit on. The palette spans roughly 1.4:1 to 14:1 against black, so a
+  # fixed label colour is illegible on part of it.
+  plot_df <- plot_df %>%
+    dplyr::mutate(
+      LabelColor = .SciDataContrastText(
+        fill_values[as.character(.data$FillKey)]
+      )
+    )
 
   x_lab <- if (LabelType == "percent") "Percent" else "Count"
 
@@ -220,17 +244,19 @@ PlotCategoricalDistributions <- function(data,
       linewidth = 0.3
     ) +
     ggplot2::geom_text(
-      ggplot2::aes(label = Label),
+      ggplot2::aes(label = Label, colour = LabelColor),
       position = if (LabelType == "percent") {
         ggplot2::position_fill(vjust = 0.5, reverse = TRUE)
       } else {
         ggplot2::position_stack(vjust = 0.5, reverse = TRUE)
       },
       size = 3,
-      lineheight = 0.9
+      lineheight = 0.9,
+      show.legend = FALSE
     ) +
     ggplot2::coord_flip() +
     ggplot2::scale_fill_manual(values = fill_values, drop = FALSE) +
+    ggplot2::scale_colour_identity() +
     ggplot2::labs(
       x = NULL,
       y = x_lab,

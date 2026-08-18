@@ -43,7 +43,7 @@ plotSigAssociations <- function(data,
 
   # Extract relevant data from the Plot object
   Relabeled <- Plot$Relabel
-  SigVarCombos <- Plot$Unadjusted$plot$data %>% as.data.frame() %>% filter(!!sym(PVar) < Pthresh)
+  SigVarCombos <- Plot$Unadjusted$plot$data %>% as.data.frame() %>% dplyr::filter(!!rlang::sym(PVar) < Pthresh)
 
   # Initialize list to store scatterplot objects
   plist <- list()
@@ -76,8 +76,8 @@ plotSigAssociations <- function(data,
     #
     # Change labels if Relabel is TRUE
     if (Relabeled) {
-      p$labels$x <- sjlabelled::get_label(DataFrame %>% select(all_of(SigVarCombos$CategoricalVariable[i])))[[1]]
-      p$labels$y <- sjlabelled::get_label(DataFrame %>% select(all_of(SigVarCombos$ContinuousVariable[i])))[[1]]
+      p$labels$x <- sjlabelled::get_label(DataFrame %>% dplyr::select(dplyr::all_of(SigVarCombos$CategoricalVariable[i])))[[1]]
+      p$labels$y <- sjlabelled::get_label(DataFrame %>% dplyr::select(dplyr::all_of(SigVarCombos$ContinuousVariable[i])))[[1]]
     }
 
     # Add scatterplot object to the list

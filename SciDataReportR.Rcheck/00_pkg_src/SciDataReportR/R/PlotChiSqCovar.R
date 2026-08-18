@@ -30,14 +30,33 @@
 #' @param covars \strong{Deprecated} (since 19.15.0). Use \code{covariates} instead.
 #' @examples
 #' data(SampleData)
+#' data(SampleVariableTypes)
+#'
+#' Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
+#'
+#' # Derive a few more categorical variables so the matrix has off-diagonal
+#' # structure to read; self-associations are dropped.
+#' Labelled$APOE4 <- ifelse(
+#'   grepl("E4", as.character(Labelled$Genotype)), "Carrier", "Non-carrier")
+#' Labelled$AgeGroup <- cut(
+#'   Labelled$age, breaks = c(-Inf, 65, 80, Inf),
+#'   labels = c("<65", "65-79", "80+"))
+#' Labelled$TauTertile <- cut(
+#'   Labelled$tau,
+#'   breaks = stats::quantile(Labelled$tau, c(0, 1 / 3, 2 / 3, 1), na.rm = TRUE),
+#'   labels = c("Low", "Middle", "High"), include.lowest = TRUE)
 #'
 #' result <- PlotChiSqCovar(
-#'   SampleData,
-#'   predictor_vars = c("Diagnosis", "Genotype"),
-#'   outcome_vars = c("Diagnosis", "Genotype")
+#'   Labelled,
+#'   predictor_vars = c("Diagnosis", "sex", "APOE4"),
+#'   outcome_vars = c("Genotype", "AgeGroup", "TauTertile")
 #' )
 #'
+#' # Raw p-value associations
 #' result$p
+#'
+#' # FDR-adjusted associations
+#' result$p_FDR
 #' @export
 PlotChiSqCovar <- function(data,
     predictor_vars,
@@ -49,7 +68,7 @@ PlotChiSqCovar <- function(data,
     Data = lifecycle::deprecated(),
     xVars = lifecycle::deprecated(),
     yVars = lifecycle::deprecated(),
-    fdr_scope = c("matrix", "per_outcome"),
+    fdr_scope = c("matrix", "per_outcome", "per_predictor"),
     covars = lifecycle::deprecated()) {
   # Deprecated argument shims (SciDataReportR 19.15.0)
   if (lifecycle::is_present(Data)) {
@@ -77,9 +96,11 @@ PlotChiSqCovar <- function(data,
 
   if (is.null(yVars)) yVars <- xVars
 
-  xVars <- unique(intersect(as.character(xVars), names(Data)))
-  yVars <- unique(intersect(as.character(yVars), names(Data)))
-  covars <- if (!is.null(covars) && length(covars) > 0) unique(intersect(as.character(covars), names(Data))) else character(0)
+  # Supplied names must exist. Intersecting them away silently shrank the matrix
+  # and, for covariates, produced unadjusted tests reported as adjusted.
+  xVars <- ScidrValidateVariables(Data, xVars, "predictor_vars")
+  yVars <- ScidrValidateVariables(Data, yVars, "outcome_vars")
+  covars <- ScidrValidateVariables(Data, covars, "covariates")
 
   empty_return <- function() {
     empty <- data.frame()
@@ -105,7 +126,12 @@ PlotChiSqCovar <- function(data,
   df0 <- Data %>%
     dplyr::select(dplyr::all_of(unique(c(xVars, yVars, covars)))) %>%
     dplyr::mutate(.rowID = dplyr::row_number()) %>%
-    dplyr::mutate(dplyr::across(dplyr::all_of(unique(c(xVars, yVars))), ~ as.factor(.x)))
+    dplyr::mutate(
+      dplyr::across(
+        dplyr::all_of(unique(c(xVars, yVars))),
+        function(x) if (is.factor(x)) factor(as.character(x), levels = levels(x)) else factor(x)
+      )
+    )
 
   cov_df <- if (length(covars) > 0) {
     df0 %>% dplyr::select(.rowID, dplyr::all_of(covars))
@@ -131,6 +157,10 @@ PlotChiSqCovar <- function(data,
   }
 
   mData <- mData %>%
+    # A variable is trivially associated with itself (Cramer's V = 1). Keeping
+    # those cells saturates the colour scale and hides the real off-diagonal
+    # associations, so self-pairs are dropped.
+    dplyr::filter(.data$XVar != .data$YVar) %>%
     dplyr::group_by(XVar, YVar) %>%
     dplyr::filter(
       dplyr::n() >= min_n,
@@ -169,7 +199,7 @@ PlotChiSqCovar <- function(data,
     dplyr::mutate(pval.adj = ApplyFDRCorrection(
       .data$pval,
       fdr_scope = fdr_scope,
-      outcome_ids = .data$YVar
+      outcome_ids = .data$YVar, predictor_ids = .data$XVar
     )) %>%
     rstatix::add_significance(p.col = "pval.adj", output.col = "pval.adj.signif") %>%
     dplyr::mutate(
@@ -213,27 +243,41 @@ PlotChiSqCovar <- function(data,
     "</br>Cramer's V:", round(stat.test$cramers_v, 3)
   )
 
+  # `drop = TRUE` keeps absent significance bands out of the guide: with
+  # `drop = FALSE` ggplot cannot resolve size/colour for a level that has no
+  # data and draws an empty key. `override.aes` then pins the key glyphs to a
+  # fixed size and colour so every band that is shown is legible.
+  significance_guide <- ggplot2::guides(
+    size = "none",
+    shape = ggplot2::guide_legend(
+      override.aes = list(size = 3, colour = "grey25"))
+  )
+
   p_g <- ggplot2::ggplot(stat.test, ggplot2::aes(y = YLabel, x = XLabel, shape = `p<.05`, text = PlotText)) +
     ggplot2::geom_point(ggplot2::aes(size = pmin(logp, 5), colour = cramers_v)) +
+    ggplot2::theme_bw() +
     ggplot2::theme(
-      axis.text.x = ggplot2::element_text(angle = 90),
+      axis.text.x = ggplot2::element_text(angle = 90, vjust = 0.5, hjust = 1),
       axis.title.x = ggplot2::element_blank(),
       axis.title.y = ggplot2::element_blank()
     ) +
-    ggplot2::scale_shape_manual(values = c(7, 16, 17, 15, 18), drop = FALSE) +
-    ggplot2::guides(size = "none") +
-    ggplot2::labs(subtitle = "No Multiple Comparison Correction")
+    ggplot2::scale_shape_manual(values = c(7, 16, 17, 15, 18), drop = TRUE) +
+    significance_guide +
+    ggplot2::labs(subtitle = "No multiple comparison correction",
+                  shape = "Significance", colour = "Cramer's V")
 
   p_g_FDR <- ggplot2::ggplot(stat.test, ggplot2::aes(y = YLabel, x = XLabel, shape = pval.adj.signif, text = PlotText)) +
     ggplot2::geom_point(ggplot2::aes(size = pmin(logp_FDR, 5), colour = cramers_v)) +
+    ggplot2::theme_bw() +
     ggplot2::theme(
-      axis.text.x = ggplot2::element_text(angle = 90),
+      axis.text.x = ggplot2::element_text(angle = 90, vjust = 0.5, hjust = 1),
       axis.title.x = ggplot2::element_blank(),
       axis.title.y = ggplot2::element_blank()
     ) +
-    ggplot2::scale_shape_manual(values = c(7, 16, 17, 15, 18), drop = FALSE) +
-    ggplot2::guides(size = "none") +
-    ggplot2::labs(subtitle = "FDR Correction")
+    ggplot2::scale_shape_manual(values = c(7, 16, 17, 15, 18), drop = TRUE) +
+    significance_guide +
+    ggplot2::labs(subtitle = "FDR correction",
+                  shape = "Significance", colour = "Cramer's V")
 
   pvaltable <- stat.test %>%
     dplyr::select(YVar, XVar, pval) %>%

@@ -24,10 +24,16 @@ ggplot with \code{+}, typically a plot returned inside the list created by
 }
 
 \examples{
-library(ggplot2)
+data(SampleData)
+data(SampleVariableTypes)
 
-# Compose the caption onto any ggplot with `+`
-ggplot(mtcars, aes(mpg, wt)) +
-  geom_point() +
-  geom_starcaption()
+df_Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
+
+# Add the caption to a correlation heatmap whose tiles already show stars.
+heatmap <- PlotCorrelationsHeatmap(
+  data = df_Labelled,
+  predictor_vars = c("Ab_42", "p_tau", "tau", "GRO_alpha", "MMP10"),
+  outcome_vars = c("MMP7", "TRAIL_R3", "Ferritin", "Fibrinogen", "MIF")
+)
+heatmap$Unadjusted$plot + geom_starcaption()
 }

@@ -1,0 +1,320 @@
+* using log directory ‘/Users/rahad/Library/CloudStorage/Dropbox/Coding/Package Development/SciDataReportR/SciDataReportR.Rcheck’
+* using R version 4.5.3 (2026-03-11)
+* using platform: aarch64-apple-darwin20
+* R was compiled by
+    Apple clang version 16.0.0 (clang-1600.0.26.6)
+    GNU Fortran (GCC) 14.2.0
+* running under: macOS Tahoe 26.5.1
+* using session charset: UTF-8
+* using options ‘--no-manual --no-build-vignettes’
+* checking for file ‘SciDataReportR/DESCRIPTION’ ... OK
+* this is package ‘SciDataReportR’ version ‘20.24.0’
+* package encoding: UTF-8
+* checking package namespace information ... OK
+* checking package dependencies ... OK
+* checking if this is a source package ... OK
+* checking if there is a namespace ... OK
+* checking for executable files ... OK
+* checking for hidden files and directories ... OK
+* checking for portable file names ... OK
+* checking for sufficient/correct file permissions ... OK
+* checking whether package ‘SciDataReportR’ can be installed ... OK
+* checking installed package size ... OK
+* checking package directory ... OK
+* checking DESCRIPTION meta-information ... OK
+* checking top-level files ... OK
+* checking for left-over files ... OK
+* checking index information ... OK
+* checking package subdirectories ... OK
+* checking code files for non-ASCII characters ... OK
+* checking R files for syntax errors ... OK
+* checking whether the package can be loaded ... OK
+* checking whether the package can be loaded with stated dependencies ... OK
+* checking whether the package can be unloaded cleanly ... OK
+* checking whether the namespace can be loaded with stated dependencies ... OK
+* checking whether the namespace can be unloaded cleanly ... OK
+* checking dependencies in R code ... OK
+* checking S3 generic/method consistency ... OK
+* checking replacement functions ... OK
+* checking foreign function calls ... OK
+* checking R code for possible problems ... OK
+* checking Rd files ... OK
+* checking Rd metadata ... OK
+* checking Rd cross-references ... OK
+* checking for missing documentation entries ... OK
+* checking for code/documentation mismatches ... OK
+* checking Rd \usage sections ... OK
+* checking Rd contents ... OK
+* checking for unstated dependencies in examples ... OK
+* checking contents of ‘data’ directory ... OK
+* checking data for non-ASCII characters ... OK
+* checking LazyData ... OK
+* checking data for ASCII and uncompressed saves ... OK
+* checking files in ‘vignettes’ ... WARNING
+Files in the 'vignettes' directory but no files in 'inst/doc':
+  ‘argument-renaming.R’ ‘argument-renaming.Rmd’ ‘clustering.scss’
+  ‘ClusteringPhenotyping.qmd’ ‘ClusteringPhenotyping.R’
+  ‘fdr-correction.R’ ‘fdr-correction.Rmd’ ‘getting-started.qmd’
+  ‘getting-started.R’ ‘MakeComparisonTable.qmd’ ‘MakeComparisonTable.R’
+  ‘MakeUnivariateRegressionTable.qmd’ ‘MakeUnivariateRegressionTable.R’
+  ‘merge-qc-workflow.R’ ‘merge-qc-workflow.Rmd’ ‘OrdinalVariables.qmd’
+  ‘OrdinalVariables.R’ ‘PlotCorrelationsHeatmap.qmd’
+  ‘PlotCorrelationsHeatmap.R’ ‘PlotForestFromTable.qmd’
+  ‘PlotForestFromTable.R’ ‘PlotMiningMatrix.qmd’ ‘PlotMiningMatrix.R’
+  ‘PValueColorScales.R’ ‘PValueColorScales.Rmd’
+  ‘UnivariateRegressions.qmd’ ‘UnivariateRegressions.R’
+* checking examples ... OK
+* checking for unstated dependencies in ‘tests’ ... OK
+* checking tests ... ERROR
+  Running ‘testthat.R’
+Running the tests in ‘tests/testthat.R’ failed.
+Complete output:
+  > library(testthat)
+  > library(SciDataReportR)
+  > 
+  > test_check("SciDataReportR")
+  Saving _problems/test-clustering-pipelines-54.R
+  Saving _problems/test-clustering-pipelines-80.R
+  Saving _problems/test-clustering-pipelines-81.R
+  Saving _problems/test-clustering-pipelines-75.R
+  Saving _problems/test-clustering-pipelines-93.R
+* checking for unstated dependencies in vignettes ... OK
+* checking package vignettes ... WARNING
+Directory 'inst/doc' does not exist.
+Package vignettes without corresponding single PDF/HTML:
+  ‘ClusteringPhenotyping (Raha Dastgheyb's conflicted copy 2026-08-13 1).qmd’
+  ‘ClusteringPhenotyping (Raha Dastgheyb's conflicted copy 2026-08-13).qmd’
+  ‘ClusteringPhenotyping.qmd’
+  ‘getting-started.qmd’
+  ‘MakeComparisonTable (Raha Dastgheyb's conflicted copy 2026-08-13 1).qmd’
+  ‘MakeComparisonTable (Raha Dastgheyb's conflicted copy 2026-08-13).qmd’
+  ‘MakeComparisonTable.qmd’
+  ‘MakeUnivariateRegressionTable.qmd’
+  ‘OrdinalVariables.qmd’
+  ‘PlotCorrelationsHeatmap.qmd’
+  ‘PlotForestFromTable.qmd’
+  ‘PlotMiningMatrix.qmd’
+  ‘UnivariateRegressions.qmd’
+  ‘argument-renaming.Rmd’
+  ‘fdr-correction.Rmd’
+  ‘merge-qc-workflow (Raha Dastgheyb's conflicted copy 2026-08-13 1).Rmd’
+  ‘merge-qc-workflow (Raha Dastgheyb's conflicted copy 2026-08-13).Rmd’
+  ‘merge-qc-workflow.Rmd’
+  ‘PValueColorScales.Rmd’
+* checking running R code from vignettes ... ERROR
+Errors in running code in vignettes:
+when running code in ‘ClusteringPhenotyping (Raha Dastgheyb's conflicted copy 2026-08-13 1).qmd’
+  ...
+Error: unexpected symbol in "tools:::.run_one_vignette('ClusteringPhenotyping (Raha Dastgheyb's"
+Execution halted
+
+... incomplete output.  Crash?
+when running code in ‘ClusteringPhenotyping (Raha Dastgheyb's conflicted copy 2026-08-13).qmd’
+  ...
+Error: unexpected symbol in "tools:::.run_one_vignette('ClusteringPhenotyping (Raha Dastgheyb's"
+Execution halted
+
+... incomplete output.  Crash?
+when running code in ‘ClusteringPhenotyping.qmd’
+  ...
+
+> data("SimulatedPhenotypeVariableTypes", package = "SciDataReportR")
+Warning in data("SimulatedPhenotypeVariableTypes", package = "SciDataReportR") :
+  data set ‘SimulatedPhenotypeVariableTypes’ not found
+
+> df_Raw <- SimulatedPhenotypeData
+
+  When sourcing ‘ClusteringPhenotyping.R’:
+Error: object 'SimulatedPhenotypeData' not found
+Execution halted
+when running code in ‘getting-started.qmd’
+  ...
+
+> df_Raw <- SampleData
+
+> VariableTypes <- SampleVariableTypes
+
+> VariableTypes_Template <- CreateVariableTypesTemplate(df_Raw)
+
+  When sourcing ‘getting-started.R’:
+Error: cannot open file '/Users/rahad/Library/CloudStorage/Dropbox/Coding/Package Development/SciDataReportR/SciDataReportR.Rcheck/SciDataReportR/R/SciDataReportR.rdb': No such file or directory
+Execution halted
+when running code in ‘MakeComparisonTable (Raha Dastgheyb's conflicted copy 2026-08-13 1).qmd’
+  ...
+Error: unexpected symbol in "tools:::.run_one_vignette('MakeComparisonTable (Raha Dastgheyb's"
+Execution halted
+
+... incomplete output.  Crash?
+when running code in ‘MakeComparisonTable (Raha Dastgheyb's conflicted copy 2026-08-13).qmd’
+  ...
+Error: unexpected symbol in "tools:::.run_one_vignette('MakeComparisonTable (Raha Dastgheyb's"
+Execution halted
+
+... incomplete output.  Crash?
+when running code in ‘MakeComparisonTable.qmd’
+  ...
+
+> data("SampleData")
+
+> data("SampleVariableTypes")
+
+> RevaluedObj <- RevalueData(SampleData, SampleVariableTypes)
+
+  When sourcing ‘MakeComparisonTable.R’:
+Error: cannot open file '/Users/rahad/Library/CloudStorage/Dropbox/Coding/Package Development/SciDataReportR/SciDataReportR.Rcheck/SciDataReportR/R/SciDataReportR.rdb': No such file or directory
+Execution halted
+when running code in ‘MakeUnivariateRegressionTable.qmd’
+  ...
+
+> data("SampleData")
+
+> data("SampleVariableTypes")
+
+> RevaluedObj <- RevalueData(SampleData, SampleVariableTypes)
+
+  When sourcing ‘MakeUnivariateRegressionTable.R’:
+Error: cannot open file '/Users/rahad/Library/CloudStorage/Dropbox/Coding/Package Development/SciDataReportR/SciDataReportR.Rcheck/SciDataReportR/R/SciDataReportR.rdb': No such file or directory
+Execution halted
+when running code in ‘OrdinalVariables.qmd’
+  ...
+
+> VariableTypes <- data.frame(Variable = c("Group", 
++     "SymptomSeverity", "Age"), Label = c("Participant group", 
++     "Symptom Severity", "Age ( ..." ... [TRUNCATED] 
+
+> df_Revalued <- RevalueData(df_Raw, VariableTypes)$RevaluedData
+
+  When sourcing ‘OrdinalVariables.R’:
+Error: cannot open file '/Users/rahad/Library/CloudStorage/Dropbox/Coding/Package Development/SciDataReportR/SciDataReportR.Rcheck/SciDataReportR/R/SciDataReportR.rdb': No such file or directory
+Execution halted
+when running code in ‘PlotCorrelationsHeatmap.qmd’
+  ...
+
+> data("SampleData")
+
+> data("SampleVariableTypes")
+
+> RevaluedObj <- RevalueData(SampleData, SampleVariableTypes)
+
+  When sourcing ‘PlotCorrelationsHeatmap.R’:
+Error: cannot open file '/Users/rahad/Library/CloudStorage/Dropbox/Coding/Package Development/SciDataReportR/SciDataReportR.Rcheck/SciDataReportR/R/SciDataReportR.rdb': No such file or directory
+Execution halted
+when running code in ‘PlotForestFromTable.qmd’
+  ...
+
+> data("SampleData")
+
+> data("SampleVariableTypes")
+
+> RevaluedObj <- RevalueData(SampleData, SampleVariableTypes)
+
+  When sourcing ‘PlotForestFromTable.R’:
+Error: cannot open file '/Users/rahad/Library/CloudStorage/Dropbox/Coding/Package Development/SciDataReportR/SciDataReportR.Rcheck/SciDataReportR/R/SciDataReportR.rdb': No such file or directory
+Execution halted
+when running code in ‘PlotMiningMatrix.qmd’
+  ...
+
+> data("SampleData")
+
+> data("SampleVariableTypes")
+
+> RevaluedObj <- RevalueData(SampleData, SampleVariableTypes)
+
+  When sourcing ‘PlotMiningMatrix.R’:
+Error: cannot open file '/Users/rahad/Library/CloudStorage/Dropbox/Coding/Package Development/SciDataReportR/SciDataReportR.Rcheck/SciDataReportR/R/SciDataReportR.rdb': No such file or directory
+Execution halted
+when running code in ‘UnivariateRegressions.qmd’
+  ...
+
+> data("SampleData")
+
+> data("SampleVariableTypes")
+
+> RevaluedObj <- RevalueData(SampleData, SampleVariableTypes)
+
+  When sourcing ‘UnivariateRegressions.R’:
+Error: cannot open file '/Users/rahad/Library/CloudStorage/Dropbox/Coding/Package Development/SciDataReportR/SciDataReportR.Rcheck/SciDataReportR/R/SciDataReportR.rdb': No such file or directory
+Execution halted
+when running code in ‘argument-renaming.Rmd’
+  ...
+> options(lifecycle_verbosity = "warning")
+
+> library(SciDataReportR)
+
+> old_style <- MakeDataDictionary(DataFrame = mtcars, 
++     numdecimals = 2)
+
+  When sourcing ‘argument-renaming.R’:
+Error: cannot open file '/Users/rahad/Library/CloudStorage/Dropbox/Coding/Package Development/SciDataReportR/SciDataReportR.Rcheck/SciDataReportR/R/SciDataReportR.rdb': No such file or directory
+Execution halted
+when running code in ‘fdr-correction.Rmd’
+  ...
+> pm
+       out1 out2  out3
+pred1 0.005 0.03    NA
+pred2 0.040 0.01 0.002
+
+> ApplyFDRCorrection(pm, fdr_scope = "matrix")
+
+  When sourcing ‘fdr-correction.R’:
+Error: cannot open file '/Users/rahad/Library/CloudStorage/Dropbox/Coding/Package Development/SciDataReportR/SciDataReportR.Rcheck/SciDataReportR/R/SciDataReportR.rdb': No such file or directory
+Execution halted
+when running code in ‘merge-qc-workflow (Raha Dastgheyb's conflicted copy 2026-08-13 1).Rmd’
+  ...
+Error: unexpected symbol in "tools:::.run_one_vignette('merge-qc-workflow (Raha Dastgheyb's"
+Execution halted
+
+... incomplete output.  Crash?
+when running code in ‘merge-qc-workflow (Raha Dastgheyb's conflicted copy 2026-08-13).Rmd’
+  ...
+Error: unexpected symbol in "tools:::.run_one_vignette('merge-qc-workflow (Raha Dastgheyb's"
+Execution halted
+
+... incomplete output.  Crash?
+when running code in ‘merge-qc-workflow.Rmd’
+  ...
+
+> pbc_labs <- pbcseq[, c("id", "day", "bili", "albumin", 
++     "platelet")]
+
+> m_pbc <- safe_merge(pbc_baseline, pbc_labs, by = "id", 
++     name = "pbc baseline + follow-up labs")
+
+  When sourcing ‘merge-qc-workflow.R’:
+Error: cannot open file '/Users/rahad/Library/CloudStorage/Dropbox/Coding/Package Development/SciDataReportR/SciDataReportR.Rcheck/SciDataReportR/R/SciDataReportR.rdb': No such file or directory
+Execution halted
+when running code in ‘PValueColorScales.Rmd’
+  ...
+> df_ColorExample <- data.frame(Estimate = seq(-2, 2, 
++     length.out = 80), PValue = 10^seq(0, -8, length.out = 80))
+
+> ggplot(df_ColorExample, aes(x = Estimate, y = 1, color = PValue)) + 
++     geom_point(size = 3) + scale_color_pvalue() + theme_minimal() + 
++     la .... [TRUNCATED] 
+
+  When sourcing ‘PValueColorScales.R’:
+Error: could not find function "scale_color_pvalue"
+Execution halted
+
+  ‘ClusteringPhenotyping (Raha Dastgheyb's conflicted copy 2026-08-13 1).qmd’ using ‘UTF-8’... failed to complete the test
+  ‘ClusteringPhenotyping (Raha Dastgheyb's conflicted copy 2026-08-13).qmd’ using ‘UTF-8’... failed to complete the test
+  ‘ClusteringPhenotyping.qmd’ using ‘UTF-8’... failed
+  ‘getting-started.qmd’ using ‘UTF-8’... failed
+  ‘MakeComparisonTable (Raha Dastgheyb's conflicted copy 2026-08-13 1).qmd’ using ‘UTF-8’... failed to complete the test
+  ‘MakeComparisonTable (Raha Dastgheyb's conflicted copy 2026-08-13).qmd’ using ‘UTF-8’... failed to complete the test
+  ‘MakeComparisonTable.qmd’ using ‘UTF-8’... failed
+  ‘MakeUnivariateRegressionTable.qmd’ using ‘UTF-8’... failed
+  ‘OrdinalVariables.qmd’ using ‘UTF-8’... failed
+  ‘PlotCorrelationsHeatmap.qmd’ using ‘UTF-8’... failed
+  ‘PlotForestFromTable.qmd’ using ‘UTF-8’... failed
+  ‘PlotMiningMatrix.qmd’ using ‘UTF-8’... failed
+  ‘UnivariateRegressions.qmd’ using ‘UTF-8’... failed
+  ‘argument-renaming.Rmd’ using ‘UTF-8’... failed
+  ‘fdr-correction.Rmd’ using ‘UTF-8’... failed
+  ‘merge-qc-workflow (Raha Dastgheyb's conflicted copy 2026-08-13 1).Rmd’ using ‘UTF-8’... failed to complete the test
+  ‘merge-qc-workflow (Raha Dastgheyb's conflicted copy 2026-08-13).Rmd’ using ‘UTF-8’... failed to complete the test
+  ‘merge-qc-workflow.Rmd’ using ‘UTF-8’... failed
+  ‘PValueColorScales.Rmd’ using ‘UTF-8’... failed
+* checking re-building of vignette outputs ... SKIPPED
+* DONE
+Status: 2 ERRORs, 2 WARNINGs

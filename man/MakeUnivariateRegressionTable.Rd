@@ -94,3 +94,157 @@ Creates a list of univariate regression tables with variable labels and standard
 package's \verb{Make*} naming convention. It remains available as a
 backwards-compatible synonym.
 }
+\details{
+Fits one model per outcome-predictor pair and collects every result into a
+single table. "Univariate" means each predictor is tested on its own: for
+three outcomes and eight predictors this is 24 separate models, not one
+model with eight terms. That is the screening step - finding which
+associations exist at all - and it is deliberately different from
+\code{\link[=MultivariableRegressionTable]{MultivariableRegressionTable()}}, which puts all the predictors in one model
+and reports each one adjusted for the others.
+
+The model family is chosen per outcome. With \code{Method = "auto"} (the
+default), numeric outcomes get linear regression and two-level outcomes get
+logistic regression, so a mixed set of outcomes can be screened in one call
+and each is still modeled correctly. \code{"lm"} or \code{"logistic"} force one family
+for everything.
+}
+\section{Three views of the same results}{
+
+The return value carries the same estimates in three shapes, for three
+different jobs:
+\itemize{
+\item \code{FormattedTable} - a wide \code{gt} table with one spanner per outcome,
+confidence intervals, stars, and significant results emphasized.
+\item \code{LargeTable} - the same wide layout with the individual model statistics,
+when the raw numbers matter more than the presentation.
+\item \code{Results} - one tidy row per estimated term, with \code{Estimate}, \code{StdError},
+confidence bounds, \code{PValue}, and the labels. This is the one to work with
+programmatically: filter it, correct it with \code{\link[=ApplyFDRCorrection]{ApplyFDRCorrection()}}, or
+pass it straight to \code{\link[=PlotForestFromTable]{PlotForestFromTable()}}.
+}
+
+Categorical predictors contribute one row per non-reference level, with the
+level in \code{Level} and the level being compared against in \code{ReferenceValue}.
+}
+
+\section{Options that change the estimates}{
+
+\code{Standardize = TRUE} z-scores the numeric variables first, so coefficients
+come back in standard deviations per standard deviation. Use it when
+predictors are on scales that are not comparable to each other - it is what
+makes "which predictor matters more" a meaningful question.
+
+\code{covariates} adds the named variables to every model, turning a screen of
+raw associations into a screen of associations adjusted for them. This is
+usually the difference between "these biomarkers track with the outcome" and
+"these biomarkers track with the outcome beyond age and sex".
+
+\code{LogisticExponentiate = TRUE} (the default) reports logistic results as odds
+ratios rather than log-odds, so the null value in the table is 1 rather
+than 0. \code{ReturnModels = TRUE} keeps the fitted model objects for
+residual checks; it is off by default because a large screen would otherwise
+hold hundreds of models in memory.
+
+Running many models at once means many p-values. Nothing here corrects for
+that automatically - the family is yours to define - so pass \code{Results$PValue}
+through \code{\link[=ApplyFDRCorrection]{ApplyFDRCorrection()}} once you have decided what the family is.
+}
+
+\examples{
+\donttest{
+data(SampleData)
+data(SampleVariableTypes)
+
+Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
+# Make the reference example deterministic: age is visibly associated with
+# AXL, so the displayed table includes a clear significant result.
+ExampleData <- Labelled
+set.seed(20260810)
+ExampleData$AXL <- as.numeric(scale(ExampleData$age)) * 2 +
+  stats::rnorm(nrow(ExampleData), sd = 0.25)
+attr(ExampleData$AXL, "label") <- sjlabelled::get_label(Labelled$AXL)
+
+vars_Outcomes <- c("AXL", "tau", "p_tau")
+vars_Predictors <- c("age", "sex", "Adiponectin", "Cortisol")
+
+# Three outcomes by four predictors: twelve separate models, one table
+urt <- MakeUnivariateRegressionTable(
+  data = ExampleData,
+  outcome_vars = vars_Outcomes,
+  predictor_vars = vars_Predictors
+)
+
+# Format 1: the report-ready table
+urt$FormattedTable
+
+# Format 2: the same results unformatted
+urt$LargeTable
+
+# Format 3: the tidy dataframe, one row per estimated term
+htmltools::browsable(htmltools::HTML(as.character(
+  FreezeTableHeader(
+    dplyr::mutate(
+      dplyr::select(
+        urt$Results, Outcome, Predictor, TermLabel, Level, N,
+        Estimate, StdError, ConfLow, ConfHigh, PValue, Significant
+      ),
+      dplyr::across(dplyr::where(is.numeric), \(x) signif(x, 3))
+    ),
+    height = "320px", full_width = TRUE
+  )
+)))
+
+# Filter, correct, and plot
+urt$Results$PValueFDR <- ApplyFDRCorrection(urt$Results$PValue)
+PlotForestFromTable(urt$Results[urt$Results$PValueFDR < 0.1, ])
+
+# Standardized coefficients, in SD units
+MakeUnivariateRegressionTable(
+  data = Labelled,
+  outcome_vars = vars_Outcomes,
+  predictor_vars = vars_Predictors,
+  Standardize = TRUE
+)$FormattedTable
+
+# Every model adjusted for age and sex
+MakeUnivariateRegressionTable(
+  data = Labelled,
+  outcome_vars = vars_Outcomes,
+  predictor_vars = c("Adiponectin", "Cortisol", "Ferritin"),
+  covariates = c("age", "sex")
+)$FormattedTable
+
+# A binary outcome: logistic regression, reported as odds ratios
+urt_Logistic <- MakeUnivariateRegressionTable(
+  data = Labelled,
+  outcome_vars = "Diagnosis",
+  predictor_vars = c("age", "sex", "AXL", "tau", "p_tau")
+)
+urt_Logistic$Metadata
+urt_Logistic$FormattedTable
+
+# Log-odds instead of odds ratios
+MakeUnivariateRegressionTable(
+  data = Labelled,
+  outcome_vars = "Diagnosis",
+  predictor_vars = c("age", "AXL", "tau"),
+  LogisticExponentiate = FALSE
+)$FormattedTable
+
+# Keep the fitted models for residual checks
+urt_Models <- MakeUnivariateRegressionTable(
+  data = Labelled,
+  outcome_vars = "AXL",
+  predictor_vars = c("age", "Cortisol"),
+  ReturnModels = TRUE
+)
+summary(urt_Models$ModelSummaries[[1]])
+}
+
+}
+\seealso{
+\code{\link[=PlotForestFromTable]{PlotForestFromTable()}} to visualize \code{Results},
+\code{\link[=MultivariableRegressionTable]{MultivariableRegressionTable()}} for mutually adjusted models, and
+\code{\link[=ApplyFDRCorrection]{ApplyFDRCorrection()}} for multiple-comparison correction.
+}

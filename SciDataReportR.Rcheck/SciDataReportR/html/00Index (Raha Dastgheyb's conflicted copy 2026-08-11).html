@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html>
+<head><title>R: Workflow Infrastructure for Reproducible Scientific Data
+Reporting</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+<link rel="stylesheet" type="text/css" href="R.css">
+</head><body><div class="container">
+<h1> Workflow Infrastructure for Reproducible Scientific Data
+Reporting
+<img class="toplogo" src="../../../doc/html/Rlogo.svg" alt="[R logo]">
+</h1>
+<hr>
+<div style="text-align: center;">
+<a href="../../../doc/html/packages.html"><img class="arrow" src="../../../doc/html/left.jpg" alt="[Up]"></a>
+<a href="../../../doc/html/index.html"><img class="arrow" src="../../../doc/html/up.jpg" alt="[Top]"></a>
+</div><h2>Documentation for package &lsquo;SciDataReportR&rsquo; version 20.24.0</h2>
+
+<ul><li><a href="../DESCRIPTION" type="text/plain; charset=utf-8">DESCRIPTION file</a>.</li>
+<li><a href="../NEWS.md">Package NEWS</a>.</li>
+</ul>
+
+<h2>Help Pages</h2>
+
+
+<p style="text-align: center;">
+<a href="#A">A</a>
+<a href="#C">C</a>
+<a href="#D">D</a>
+<a href="#E">E</a>
+<a href="#F">F</a>
+<a href="#G">G</a>
+<a href="#I">I</a>
+<a href="#K">K</a>
+<a href="#M">M</a>
+<a href="#N">N</a>
+<a href="#P">P</a>
+<a href="#R">R</a>
+<a href="#S">S</a>
+<a href="#U">U</a>
+<a href="#V">V</a>
+<a href="#W">W</a>
+<a href="#misc">misc</a>
+</p>
+
+
+<h2><a id="A">-- A --</a></h2>
+
+<table style="width: 100%;">
+<tr><td style="width: 25%;"><a href="AddToCodebook.html">AddToCodebook</a></td>
+<td>Add a new variable to a codebook</td></tr>
+<tr><td style="width: 25%;"><a href="add_r_and_stars.html">add_r_and_stars</a></td>
+<td>Add r-values and significance stars to a correlations heatmap</td></tr>
+<tr><td style="width: 25%;"><a href="ApplyFDRCorrection.html">ApplyFDRCorrection</a></td>
+<td>Apply multiple-comparison correction across a p-value matrix</td></tr>
+<tr><td style="width: 25%;"><a href="ApplyNormativeTScores.html">ApplyNormativeTScores</a></td>
+<td>Apply a normative T-score model to new data</td></tr>
+<tr><td style="width: 25%;"><a href="AssemblePlots.html">AssemblePlots</a></td>
+<td>Assemble ggplot objects into a unified multi-panel figure</td></tr>
+</table>
+
+<h2><a id="C">-- C --</a></h2>
+
+<table style="width: 100%;">
+<tr><td style="width: 25%;"><a href="CreateMScoreObject.html">CalcMScore</a></td>
+<td>Calculate robust M-scores for numeric variables</td></tr>
+<tr><td style="width: 25%;"><a href="calculate_pathway_results.html">calculate_pathway_results</a></td>
+<td>Calculate Pathway Results for Metabolite Comparisons</td></tr>
+<tr><td style="width: 25%;"><a href="CreateZScoreObject.html">CalcZScore</a></td>
+<td>Calculate Z-scores (or standardized scores) and return data + parameters</td></tr>
+<tr><td style="width: 25%;"><a href="CodebookMergeApp.html">CodebookMergeApp</a></td>
+<td>Interactive codebook harmonization dashboard</td></tr>
+<tr><td style="width: 25%;"><a href="CombineCodebooks.html">CombineCodebooks</a></td>
+<td>Combine Two Codebooks with Conflict Detection</td></tr>
+<tr><td style="width: 25%;"><a href="CompareDatasets.html">CompareDatasets</a></td>
+<td>Compare two versions of a dataset</td></tr>
+<tr><td style="width: 25%;"><a href="ConvertOrdinalToNumeric.html">ConvertOrdinalToNumeric</a></td>
+<td>Prepare ordinal variables for analysis</td></tr>
+<tr><td style="width: 25%;"><a href="createBinaryMapping.html">createBinaryMapping</a></td>
+<td>Create a Mapping Table for Binary Variables</td></tr>
+<tr><td style="width: 25%;"><a href="createFacetLabels.html">createFacetLabels</a></td>
+<td>Create facet labels for ggplot2 based on variable labels in a data frame</td></tr>
+<tr><td style="width: 25%;"><a href="CreateGowerPAMClusterModel.html">CreateGowerPAMClusterModel</a></td>
+<td>Fit a projectable Gower-distance PAM model for mixed clinical data</td></tr>
+<tr><td style="width: 25%;"><a href="CreateHDBSCANClusterModel.html">CreateHDBSCANClusterModel</a></td>
+<td>Fit a projectable HDBSCAN model</td></tr>
+<tr><td style="width: 25%;"><a href="CreateKMeansClusterModel.html">CreateKMeansClusterModel</a></td>
+<td>Fit a projectable K-means clustering model</td></tr>
+<tr><td style="width: 25%;"><a href="CreateLatentClassClusterModel.html">CreateLatentClassClusterModel</a></td>
+<td>Fit a projectable latent class model for categorical measures</td></tr>
+<tr><td style="width: 25%;"><a href="CreateMCAMclustClusterModel.html">CreateMCAMclustClusterModel</a></td>
+<td>Fit MCA followed by Mclust for nominal categorical data</td></tr>
+<tr><td style="width: 25%;"><a href="CreateMCAObject.html">CreateMCAObject</a></td>
+<td>Create a reusable MCA object and visualizations</td></tr>
+<tr><td style="width: 25%;"><a href="CreateMCAObject.html">CreateMCATable</a></td>
+<td>Create a reusable MCA object and visualizations</td></tr>
+<tr><td style="width: 25%;"><a href="CreateMclustClusterModel.html">CreateMclustClusterModel</a></td>
+<td>Fit a projectable Gaussian-mixture clustering model</td></tr>
+<tr><td style="width: 25%;"><a href="CreateMScoreObject.html">CreateMScoreObject</a></td>
+<td>Calculate robust M-scores for numeric variables</td></tr>
+<tr><td style="width: 25%;"><a href="CreateNormativeTScoreModel.html">CreateNormativeTScoreModel</a></td>
+<td>Create normative T-scores from a regression model</td></tr>
+<tr><td style="width: 25%;"><a href="CreateNormativeTScoreModel.html">CreateNormativeTScores</a></td>
+<td>Create normative T-scores from a regression model</td></tr>
+<tr><td style="width: 25%;"><a href="PlotPathway_KT.html">CreatePathwayPlot_KT</a></td>
+<td>Plot the kynurenine-tryptophan pathway</td></tr>
+<tr><td style="width: 25%;"><a href="CreatePCAKMeansClusterModel.html">CreatePCAKMeansClusterModel</a></td>
+<td>Fit PCA followed by K-means</td></tr>
+<tr><td style="width: 25%;"><a href="CreatePCAMclustClusterModel.html">CreatePCAMclustClusterModel</a></td>
+<td>Fit PCA followed by Mclust</td></tr>
+<tr><td style="width: 25%;"><a href="CreatePCAObject.html">CreatePCAObject</a></td>
+<td>Create a reusable PCA object and visualizations</td></tr>
+<tr><td style="width: 25%;"><a href="CreatePCAObject.html">CreatePCATable</a></td>
+<td>Create a reusable PCA object and visualizations</td></tr>
+<tr><td style="width: 25%;"><a href="CreateProjectFolders.html">CreateProjectFolders</a></td>
+<td>Create Project Folder Structure</td></tr>
+<tr><td style="width: 25%;"><a href="CreateRCIObject.html">CreateRCIObject</a></td>
+<td>Create a Reliable Change Index (RCI) object</td></tr>
+<tr><td style="width: 25%;"><a href="CreateSOMMclustClusterModel.html">CreateSOMClusterModel</a></td>
+<td>SOM + latent profile clustering pipeline (with AHP and distance baselines)</td></tr>
+<tr><td style="width: 25%;"><a href="CreateSOMHDBSCANClusterModel.html">CreateSOMHDBSCANClusterModel</a></td>
+<td>Fit HDBSCAN clusters on a frozen self-organizing map</td></tr>
+<tr><td style="width: 25%;"><a href="CreateSOMMclustClusterModel.html">CreateSOMMclustClusterModel</a></td>
+<td>SOM + latent profile clustering pipeline (with AHP and distance baselines)</td></tr>
+<tr><td style="width: 25%;"><a href="CreateStatisticsTable.html">CreateStatisticsTable</a></td>
+<td>Create Statistics Table</td></tr>
+<tr><td style="width: 25%;"><a href="CreateSummaryTable.html">CreateSummaryTable</a></td>
+<td>Create Summary Table</td></tr>
+<tr><td style="width: 25%;"><a href="CreateVariableTypesTemplate.html">CreateVariableTypesTemplate</a></td>
+<td>Create a Template for Variable Types</td></tr>
+<tr><td style="width: 25%;"><a href="CreateZScoreObject.html">CreateZScoreObject</a></td>
+<td>Calculate Z-scores (or standardized scores) and return data + parameters</td></tr>
+<tr><td style="width: 25%;"><a href="PlotZScore.html">CreateZScorePlot</a></td>
+<td>Plot Z-score group differences with statistical significance</td></tr>
+</table>
+
+<h2><a id="D">-- D --</a></h2>
+
+<table style="width: 100%;">
+<tr><td style="width: 25%;"><a href="DeriveFreesurferVolumes.html">DeriveFreesurferVolumes</a></td>
+<td>Derive Freesurfer bilateral totals and ICV-adjusted measures</td></tr>
+</table>
+
+<h2><a id="E">-- E --</a></h2>
+
+<table style="width: 100%;">
+<tr><td style="width: 25%;"><a href="ExploreDatasetComparison.html">ExploreDatasetComparison</a></td>
+<td>Explore dataset comparison results interactively</td></tr>
+<tr><td style="width: 25%;"><a href="ExploreMergeValidation.html">ExploreMergeValidation</a></td>
+<td>Explore merge validation results interactively</td></tr>
+<tr><td style="width: 25%;"><a href="ExtractPCAComponentSummary.html">ExtractPCAComponentSummary</a></td>
+<td>Extract PCA component summaries</td></tr>
+</table>
+
+<h2><a id="F">-- F --</a></h2>
+
+<table style="width: 100%;">
+<tr><td style="width: 25%;"><a href="FormattedDataDictionary.html">FormattedDataDictionary</a></td>
+<td>Create a formatted data dictionary table</td></tr>
+<tr><td style="width: 25%;"><a href="FreezeTableHeader.html">FreezeTableHeader</a></td>
+<td>Freeze the header row of a long table when scrolling</td></tr>
+</table>
+
+<h2><a id="G">-- G --</a></h2>
+
+<table style="width: 100%;">
+<tr><td style="width: 25%;"><a href="geom_starcaption.html">geom_starcaption</a></td>
+<td>Add a Caption Explaining Star Annotations</td></tr>
+<tr><td style="width: 25%;"><a href="getBinaryVars.html">getBinaryVars</a></td>
+<td>Identify Binary Variables</td></tr>
+<tr><td style="width: 25%;"><a href="getCatVars.html">getCatVars</a></td>
+<td>Get Categorical Variables</td></tr>
+<tr><td style="width: 25%;"><a href="getNumVars.html">getNumVars</a></td>
+<td>Get Numeric Variables</td></tr>
+</table>
+
+<h2><a id="I">-- I --</a></h2>
+
+<table style="width: 100%;">
+<tr><td style="width: 25%;"><a href="InsertValues.html">InsertValues</a></td>
+<td>Insert Values into a String Array</td></tr>
+<tr><td style="width: 25%;"><a href="InspectCategoricalSummary.html">InspectCategoricalSummary</a></td>
+<td>Inspect categorical variables</td></tr>
+<tr><td style="width: 25%;"><a href="InspectFile.html">InspectFile</a></td>
+<td>Inspect a scientific data file before import</td></tr>
+<tr><td style="width: 25%;"><a href="IQROutliers.html">IQROutliers</a></td>
+<td>Detect outliers using the Tukey IQR rule and visualize results</td></tr>
+</table>
+
+<h2><a id="K">-- K --</a></h2>
+
+<table style="width: 100%;">
+<tr><td style="width: 25%;"><a href="KeepEnv.html">KeepEnv</a></td>
+<td>Keep selected objects in an environment and remove everything else</td></tr>
+</table>
+
+<h2><a id="M">-- M --</a></h2>
+
+<table style="width: 100%;">
+<tr><td style="width: 25%;"><a href="MakeComparisonTable.html">MakeComparisonTable</a></td>
+<td>Make comparison table with covariate adjustment, effect sizes, and pairwise contrasts</td></tr>
+<tr><td style="width: 25%;"><a href="MakeDataDictionary.html">MakeDataDictionary</a></td>
+<td>Create a data dictionary for a data frame</td></tr>
+<tr><td style="width: 25%;"><a href="MakeFacetCatComparisonTable.html">MakeFacetCatComparisonTable</a></td>
+<td>Create a merged gtsummary table by faceting comparisons across multiple categorical variables</td></tr>
+<tr><td style="width: 25%;"><a href="MakePairwiseHeatmap.html">MakePairwiseHeatmap</a></td>
+<td>Make a pairwise referent heatmap</td></tr>
+<tr><td style="width: 25%;"><a href="MakeTable1.html">MakeTable1</a></td>
+<td>Create Summary Table using gtsummary</td></tr>
+<tr><td style="width: 25%;"><a href="MakeUnivariateRegressionTable.html">MakeUnivariateRegressionTable</a></td>
+<td>Univariate Regression Table</td></tr>
+<tr><td style="width: 25%;"><a href="MakeDataDictionary.html">Make_DataDictionary</a></td>
+<td>Create a data dictionary for a data frame</td></tr>
+<tr><td style="width: 25%;"><a href="MergeCodebooks.html">MergeCodebooks</a></td>
+<td>Merge multiple codebooks using harmonization rules</td></tr>
+<tr><td style="width: 25%;"><a href="MergeFragmentedRecords.html">MergeFragmentedRecords</a></td>
+<td>Merge fragmented records into a single observation</td></tr>
+<tr><td style="width: 25%;"><a href="Merge_ByClosestTime.html">Merge_ByClosestTime</a></td>
+<td>Merge Two Data Frames by Closest Time</td></tr>
+<tr><td style="width: 25%;"><a href="merge_detail.html">merge_detail</a></td>
+<td>Print a plain-text detail report for one safe_merge result</td></tr>
+<tr><td style="width: 25%;"><a href="merge_summary_table.html">merge_summary_table</a></td>
+<td>Combine safe_merge logs into a single summary table</td></tr>
+<tr><td style="width: 25%;"><a href="MultivariableRegressionTable.html">MultivariableRegressionTable</a></td>
+<td>Multivariable regression table</td></tr>
+</table>
+
+<h2><a id="N">-- N --</a></h2>
+
+<table style="width: 100%;">
+<tr><td style="width: 25%;"><a href="not_in_operator.html">not_in_operator</a></td>
+<td>Negated "in" Operator</td></tr>
+</table>
+
+<h2><a id="P">-- P --</a></h2>
+
+<table style="width: 100%;">
+<tr><td style="width: 25%;"><a href="CreateSOMMclustClusterModel.html">Pipeline_SOMClust</a></td>
+<td>SOM + latent profile clustering pipeline (with AHP and distance baselines)</td></tr>
+<tr><td style="width: 25%;"><a href="Plot2GroupStats.html">Plot2GroupStats</a></td>
+<td>Plot &amp; Summarize Group Stats via MakeComparisonTable (BH q from p; SHAPE by p; COLOR by Category (vector or data frame); stable point size; palette via paletteer)</td></tr>
+<tr><td style="width: 25%;"><a href="PlotAnovaRelationshipsMatrix.html">PlotAnovaRelationshipsMatrix</a></td>
+<td>Plot ANOVA Relationships Matrix</td></tr>
+<tr><td style="width: 25%;"><a href="PlotAssociations.html">PlotAssociations</a></td>
+<td>Plot Associations</td></tr>
+<tr><td style="width: 25%;"><a href="PlotBlandAltman.html">PlotBlandAltman</a></td>
+<td>Plot Bland-Altman Agreement Plot</td></tr>
+<tr><td style="width: 25%;"><a href="PlotCategoricalDistributions.html">PlotCategoricalDistributions</a></td>
+<td>Plot categorical distributions</td></tr>
+<tr><td style="width: 25%;"><a href="PlotCatInteractionEffectsMatrix.html">PlotCatInteractionEffectsMatrix</a></td>
+<td>Plot Categorical Interaction Effects Matrix</td></tr>
+<tr><td style="width: 25%;"><a href="PlotChiSqCovar.html">PlotChiSqCovar</a></td>
+<td>Plot Chi-Square Tests for Categorical Associations (optionally stratified by covariates)</td></tr>
+<tr><td style="width: 25%;"><a href="PlotClusterMap.html">PlotClusterAssignment</a></td>
+<td>Plot a two-dimensional cluster review map</td></tr>
+<tr><td style="width: 25%;"><a href="PlotClusterBoxplot.html">PlotClusterBoxplot</a></td>
+<td>Plot cluster boxplots by variable</td></tr>
+<tr><td style="width: 25%;"><a href="PlotClusterCentreHeatmap.html">PlotClusterCentreHeatmap</a></td>
+<td>Plot cluster centre profiles as a heatmap</td></tr>
+<tr><td style="width: 25%;"><a href="PlotClusterCentreHeatmap.html">PlotClusterCentreProfile</a></td>
+<td>Plot cluster centre profiles as a heatmap</td></tr>
+<tr><td style="width: 25%;"><a href="PlotClusterComposition.html">PlotClusterComposition</a></td>
+<td>Plot categorical composition by cluster</td></tr>
+<tr><td style="width: 25%;"><a href="PlotClusterDiagnostic.html">PlotClusterDiagnostic</a></td>
+<td>Plot a per-cluster diagnostic value</td></tr>
+<tr><td style="width: 25%;"><a href="PlotClusterFitReview.html">PlotClusterFitReview</a></td>
+<td>Plot cluster fit-review metrics</td></tr>
+<tr><td style="width: 25%;"><a href="PlotClusterMap.html">PlotClusterMap</a></td>
+<td>Plot a two-dimensional cluster review map</td></tr>
+<tr><td style="width: 25%;"><a href="PlotClusterProfiles.html">PlotClusterProfiles</a></td>
+<td>Plot labelled numeric profiles by cluster</td></tr>
+<tr><td style="width: 25%;"><a href="PlotClusterSilhouette.html">PlotClusterSilhouette</a></td>
+<td>Plot a per-participant silhouette profile</td></tr>
+<tr><td style="width: 25%;"><a href="PlotContinuousDistributions.html">PlotContinuousDistributions</a></td>
+<td>Plot Continuous Distributions</td></tr>
+<tr><td style="width: 25%;"><a href="PlotCorrelationsHeatmap.html">PlotCorrelationsHeatmap</a></td>
+<td>Plot correlations heatmap</td></tr>
+<tr><td style="width: 25%;"><a href="PlotDatasetComparison.html">PlotDatasetComparison</a></td>
+<td>Plot dataset comparison diagnostics</td></tr>
+<tr><td style="width: 25%;"><a href="PlotDirectionalHeatmaps.html">PlotDirectionalHeatmaps</a></td>
+<td>Create directional heatmaps across continuous &amp; binary variables</td></tr>
+<tr><td style="width: 25%;"><a href="PlotForestFromTable.html">PlotForestFromTable</a></td>
+<td>Create a Forest Plot from Univariate Regression Tables</td></tr>
+<tr><td style="width: 25%;"><a href="PlotForestFromTable.html">plotForestFromTable</a></td>
+<td>Create a Forest Plot from Univariate Regression Tables</td></tr>
+<tr><td style="width: 25%;"><a href="PlotInteractionEffectsContinuous.html">PlotInteractionEffectsContinuous</a></td>
+<td>Plot Single Interaction Effect</td></tr>
+<tr><td style="width: 25%;"><a href="PlotInteractionEffectsMatrix.html">PlotInteractionEffectsMatrix</a></td>
+<td>Plot Interaction Effects Matrix</td></tr>
+<tr><td style="width: 25%;"><a href="PlotMergeValidation.html">PlotMergeValidation</a></td>
+<td>Plot merge validation diagnostics</td></tr>
+<tr><td style="width: 25%;"><a href="PlotMiningMatrix.html">PlotMiningMatrix</a></td>
+<td>PlotMiningMatrix</td></tr>
+<tr><td style="width: 25%;"><a href="PlotMissingData.html">PlotMissingData</a></td>
+<td>Plot Missing Data</td></tr>
+<tr><td style="width: 25%;"><a href="PlotNumInteractionEffectsMatrix.html">PlotNumInteractionEffectsMatrix</a></td>
+<td>Plot Numerical Interaction Effects Matrix</td></tr>
+<tr><td style="width: 25%;"><a href="PlotPartialRegressionScatter.html">PlotPartialRegressionScatter</a></td>
+<td>Partial Regression Plot</td></tr>
+<tr><td style="width: 25%;"><a href="PlotPathway_KT.html">PlotPathway_KT</a></td>
+<td>Plot the kynurenine-tryptophan pathway</td></tr>
+<tr><td style="width: 25%;"><a href="plotPCA.html">plotPCA</a></td>
+<td>Plot PCA scores</td></tr>
+<tr><td style="width: 25%;"><a href="PlotPhiHeatmap.html">PlotPhiHeatmap</a></td>
+<td>Plot Phi Correlations Between Binary Variables</td></tr>
+<tr><td style="width: 25%;"><a href="PlotPointCorrelationsHeatmap.html">PlotPointCorrelationsHeatmap</a></td>
+<td>Plot Point-Biserial Correlations Between Binary and Continuous Variables</td></tr>
+<tr><td style="width: 25%;"><a href="PlotPValueComparisons.html">PlotPValueComparisons</a></td>
+<td>Plot P-Value Comparisons</td></tr>
+<tr><td style="width: 25%;"><a href="plotSigAssociations.html">plotSigAssociations</a></td>
+<td>Plot Significant Associations</td></tr>
+<tr><td style="width: 25%;"><a href="plotSigCorrelations.html">plotSigCorrelations</a></td>
+<td>Plot Significant Correlations</td></tr>
+<tr><td style="width: 25%;"><a href="PlotSpiderChart.html">PlotSpiderChart</a></td>
+<td>Plot a spider chart across continuous and binary variables</td></tr>
+<tr><td style="width: 25%;"><a href="PlotSplitViolin.html">PlotSplitViolin</a></td>
+<td>Split violin with aligned half-boxplots, significance label, sample sizes, and label-aware title</td></tr>
+<tr><td style="width: 25%;"><a href="PlotSwimmerTransitions.html">PlotSwimmerTransitions</a></td>
+<td>Plot swimmer-style transitions for a binary condition over repeated visits</td></tr>
+<tr><td style="width: 25%;"><a href="PlotTimeDistribution.html">PlotTimeDistribution</a></td>
+<td>Plot Time Distribution</td></tr>
+<tr><td style="width: 25%;"><a href="PlotTimeSwimmer.html">PlotTimeSwimmer</a></td>
+<td>Plot longitudinal swimmer timelines</td></tr>
+<tr><td style="width: 25%;"><a href="PlotVolcanoEffects.html">PlotVolcanoEffects</a></td>
+<td>Plot volcano-style association effects</td></tr>
+<tr><td style="width: 25%;"><a href="PlotZScore.html">PlotZScore</a></td>
+<td>Plot Z-score group differences with statistical significance</td></tr>
+<tr><td style="width: 25%;"><a href="PrepNumericData.html">PrepNumericData</a></td>
+<td>Prepare numeric data safely for analysis</td></tr>
+<tr><td style="width: 25%;"><a href="PrepSPSS.html">PrepSPSS</a></td>
+<td>Prepare a data frame for SPSS export</td></tr>
+<tr><td style="width: 25%;"><a href="ProjectGowerPAMCluster.html">ProjectGowerPAMCluster</a></td>
+<td>Project data onto a Gower + PAM model</td></tr>
+<tr><td style="width: 25%;"><a href="ProjectHDBSCANCluster.html">ProjectHDBSCANCluster</a></td>
+<td>Project data onto an HDBSCAN model using conservative nearest-core support</td></tr>
+<tr><td style="width: 25%;"><a href="ProjectKMeansCluster.html">ProjectKMeansCluster</a></td>
+<td>Project data onto a K-means cluster model</td></tr>
+<tr><td style="width: 25%;"><a href="ProjectLatentClassCluster.html">ProjectLatentClassCluster</a></td>
+<td>Project data onto a latent class model</td></tr>
+<tr><td style="width: 25%;"><a href="ProjectMCAMclustCluster.html">ProjectMCAMclustCluster</a></td>
+<td>Project data onto an MCA + Mclust model</td></tr>
+<tr><td style="width: 25%;"><a href="ProjectMclustCluster.html">ProjectMclustCluster</a></td>
+<td>Project data onto a Mclust cluster model</td></tr>
+<tr><td style="width: 25%;"><a href="ProjectPCA.html">ProjectPCA</a></td>
+<td>Project PCA scores onto new data</td></tr>
+<tr><td style="width: 25%;"><a href="ProjectPCAKMeansCluster.html">ProjectPCAKMeansCluster</a></td>
+<td>Project data onto a PCA + K-means model</td></tr>
+<tr><td style="width: 25%;"><a href="ProjectPCAMclustCluster.html">ProjectPCAMclustCluster</a></td>
+<td>Project data onto a PCA + Mclust model</td></tr>
+<tr><td style="width: 25%;"><a href="ProjectRCI.html">ProjectRCI</a></td>
+<td>Project a trained RCI object onto new data</td></tr>
+<tr><td style="width: 25%;"><a href="ProjectSOMMclustCluster.html">ProjectSOMCluster</a></td>
+<td>Project new data onto an existing SOM clinical phenotype space</td></tr>
+<tr><td style="width: 25%;"><a href="ProjectSOMHDBSCANCluster.html">ProjectSOMHDBSCANCluster</a></td>
+<td>Project cases onto a SOM + HDBSCAN model</td></tr>
+<tr><td style="width: 25%;"><a href="ProjectSOMMclustCluster.html">ProjectSOMMclustCluster</a></td>
+<td>Project new data onto an existing SOM clinical phenotype space</td></tr>
+<tr><td style="width: 25%;"><a href="ProjectZScore.html">ProjectZScore</a></td>
+<td>Project standardized scores onto new data using external parameters</td></tr>
+<tr><td style="width: 25%;"><a href="ProjectSOMMclustCluster.html">Project_SOMClust</a></td>
+<td>Project new data onto an existing SOM clinical phenotype space</td></tr>
+<tr><td style="width: 25%;"><a href="ProjectZScore.html">Project_ZScore</a></td>
+<td>Project standardized scores onto new data using external parameters</td></tr>
+</table>
+
+<h2><a id="R">-- R --</a></h2>
+
+<table style="width: 100%;">
+<tr><td style="width: 25%;"><a href="ReadSciData.html">ReadSciData</a></td>
+<td>Read a scientific data file with optional inspection</td></tr>
+<tr><td style="width: 25%;"><a href="removeString.html">removeString</a></td>
+<td>Remove Strings from a Vector</td></tr>
+<tr><td style="width: 25%;"><a href="ReplaceMissingCode.html">ReplaceMissingCode</a></td>
+<td>Replace Missing Codes with NA</td></tr>
+<tr><td style="width: 25%;"><a href="ReplaceMissingLabels.html">ReplaceMissingLabels</a></td>
+<td>Replace Missing Labels in Dataframe Columns</td></tr>
+<tr><td style="width: 25%;"><a href="RevalueData.html">RevalueData</a></td>
+<td>Revalue Data</td></tr>
+<tr><td style="width: 25%;"><a href="ReValueFactors.html">ReValueFactors</a></td>
+<td>Revalue Factors</td></tr>
+<tr><td style="width: 25%;"><a href="reverseFactorLevels.html">reverseFactorLevels</a></td>
+<td>Reverse Levels of Categorical Factors</td></tr>
+</table>
+
+<h2><a id="S">-- S --</a></h2>
+
+<table style="width: 100%;">
+<tr><td style="width: 25%;"><a href="safe_merge.html">safe_merge</a></td>
+<td>Safely merge two data frames with relationship-aware validation</td></tr>
+<tr><td style="width: 25%;"><a href="SampleData.html">SampleData</a></td>
+<td>SampleData for practicing SciDataReportR functions</td></tr>
+<tr><td style="width: 25%;"><a href="SampleVariableTypes.html">SampleVariableTypes</a></td>
+<td>Example Dataset: SampleVariableTypes</td></tr>
+<tr><td style="width: 25%;"><a href="scale_color_pvalue.html">scale_color_pvalue</a></td>
+<td>Apply an evidence-aware p-value color scale</td></tr>
+<tr><td style="width: 25%;"><a href="scale_color_SciData.html">scale_color_SciData</a></td>
+<td>SciDataReportR discrete color scale</td></tr>
+<tr><td style="width: 25%;"><a href="scale_fill_pvalue.html">scale_fill_pvalue</a></td>
+<td>Apply an evidence-aware p-value fill scale</td></tr>
+<tr><td style="width: 25%;"><a href="scale_fill_SciData.html">scale_fill_SciData</a></td>
+<td>SciDataReportR discrete fill scale</td></tr>
+<tr><td style="width: 25%;"><a href="SciDataPalette.html">SciDataPalette</a></td>
+<td>SciDataReportR qualitative color palette</td></tr>
+<tr><td style="width: 25%;"><a href="SimulatedPhenotypeData.html">SimulatedPhenotypeData</a></td>
+<td>Neutral simulated clustering and phenotyping benchmark</td></tr>
+<tr><td style="width: 25%;"><a href="SimulatedPhenotypeData.html">SimulatedPhenotypeVariableTypes</a></td>
+<td>Neutral simulated clustering and phenotyping benchmark</td></tr>
+<tr><td style="width: 25%;"><a href="SummarizeTransitions.html">SummarizeTransitions</a></td>
+<td>Summarize participant transitions for a binary longitudinal condition</td></tr>
+</table>
+
+<h2><a id="U">-- U --</a></h2>
+
+<table style="width: 100%;">
+<tr><td style="width: 25%;"><a href="MakeUnivariateRegressionTable.html">UnivariateRegressionTable</a></td>
+<td>Univariate Regression Table</td></tr>
+<tr><td style="width: 25%;"><a href="UpdateCodebook.html">UpdateCodebook</a></td>
+<td>Update an existing codebook based on a given dataframe</td></tr>
+<tr><td style="width: 25%;"><a href="UpdateDataDictionary.html">UpdateDataDictionary</a></td>
+<td>Update an existing data dictionary with new variables and types</td></tr>
+<tr><td style="width: 25%;"><a href="use_EDATemplate.html">use_EDATemplate</a></td>
+<td>Use the EDATemplate Quarto Template</td></tr>
+<tr><td style="width: 25%;"><a href="use_GetStartedScript.html">use_GetStartedScript</a></td>
+<td>Use the Get Started Script Template</td></tr>
+</table>
+
+<h2><a id="V">-- V --</a></h2>
+
+<table style="width: 100%;">
+<tr><td style="width: 25%;"><a href="ValidateMerge.html">ValidateMerge</a></td>
+<td>Validate a merge between two source data frames and a merged result</td></tr>
+</table>
+
+<h2><a id="W">-- W --</a></h2>
+
+<table style="width: 100%;">
+<tr><td style="width: 25%;"><a href="windsorize.html">windsorize</a></td>
+<td>Winsorize a numeric vector using SD or IQR thresholds</td></tr>
+</table>
+
+<h2><a id="misc">-- misc --</a></h2>
+
+<table style="width: 100%;">
+<tr><td style="width: 25%;"><a href="not_in_operator.html">%!in%</a></td>
+<td>Negated "in" Operator</td></tr>
+<tr><td style="width: 25%;"><a href="not_in_operator.html">%notin%</a></td>
+<td>Negated "in" Operator</td></tr>
+</table>
+</div></body></html>

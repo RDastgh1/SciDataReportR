@@ -9,7 +9,11 @@
 #' @param predictor_vars Character vector of predictor variable names (displayed on columns)
 #' @param covariates Character vector of covariate names to include in the models
 #' @param Relabel Logical indicating whether to use variable labels if available (default: TRUE)
-#' @param Ordinal Logical indicating whether to treat ordered factors as numeric (default: FALSE)
+#' @param TreatOrdinalAs How ordinal variables are handled. This interaction
+#'   matrix accepts `"Exclude"`, `"Continuous"`, or `"Categorical"`.
+#'   Categorical ordinal outcomes are not supported by the linear models.
+#' @param Ordinal \strong{Deprecated} (since 20.20.0). Use
+#'   \code{TreatOrdinalAs} instead.
 #'
 #' @return A list containing:
 #' \describe{
@@ -90,8 +94,11 @@
 #'   predictor_vars = predictors
 #' )
 #'
-#' # Display the plot (colored tiles mark significant interactions)
+#' # Raw p-value interaction matrix
 #' results$Unadjusted$plot
+#'
+#' # FDR-adjusted interaction matrix
+#' results$FDRCorrected$plot
 #' }
 #'
 #' @param fdr_scope Either `"matrix"` (default) or `"per_outcome"`, passed to
@@ -115,11 +122,12 @@ PlotInteractionEffectsMatrix <- function(data,
     predictor_vars = NULL,
     covariates = NULL,
     Relabel = TRUE,
-    Ordinal = FALSE,
+    Ordinal = lifecycle::deprecated(),
+    TreatOrdinalAs = "Exclude",
     Data = lifecycle::deprecated(),
     outcomeVars = lifecycle::deprecated(),
     predictorVars = lifecycle::deprecated(),
-    fdr_scope = c("matrix", "per_outcome"),
+    fdr_scope = c("matrix", "per_outcome", "per_predictor"),
     covars = lifecycle::deprecated()) {
   # Deprecated argument shims (SciDataReportR 19.15.0)
   if (lifecycle::is_present(Data)) {
@@ -143,6 +151,14 @@ PlotInteractionEffectsMatrix <- function(data,
   }
   covars <- covariates
   fdr_scope <- match.arg(fdr_scope)
+  if (lifecycle::is_present(Ordinal)) {
+    lifecycle::deprecate_warn("20.20.0", "PlotInteractionEffectsMatrix(Ordinal)", "PlotInteractionEffectsMatrix(TreatOrdinalAs)")
+    TreatOrdinalAs <- if (isTRUE(Ordinal)) "Continuous" else "Exclude"
+  }
+  TreatOrdinalAs <- match.arg(TreatOrdinalAs, c("Categorical", "Continuous", "Both", "Exclude"))
+  if (TreatOrdinalAs == "Both") {
+    stop("TreatOrdinalAs = 'Both' is not meaningful for PlotInteractionEffectsMatrix().", call. = FALSE)
+  }
 
 
   # Check for required packages
@@ -152,15 +168,14 @@ PlotInteractionEffectsMatrix <- function(data,
     stop(paste("Missing required packages:", paste(missing_packages, collapse = ", ")))
   }
 
-  # Create a custom function to handle p-values with NAs
+  # Handles p-values with NAs; thresholds come from the package-wide scale.
   get_significance_stars <- function(p_values) {
-    stars <- character(length(p_values))
-    stars[is.na(p_values)] <- ""
-    stars[!is.na(p_values) & p_values <= 0.001] <- "***"
-    stars[!is.na(p_values) & p_values > 0.001 & p_values <= 0.01] <- "**"
-    stars[!is.na(p_values) & p_values > 0.01 & p_values <= 0.05] <- "*"
-    stars[!is.na(p_values) & p_values > 0.05] <- ""
-    return(stars)
+    ScidrPValueStars(
+      p_values,
+      tiers = ScidrStarTiersThree,
+      ns_label = "",
+      na_label = ""
+    )
   }
 
   # Define helper functions if they don't exist
@@ -181,17 +196,6 @@ PlotInteractionEffectsMatrix <- function(data,
     }
   }
 
-  if (!exists("ConvertOrdinalToNumeric")) {
-    ConvertOrdinalToNumeric <- function(data, variables) {
-      for (var in variables) {
-        if (is.ordered(data[[var]])) {
-          data[[var]] <- as.numeric(data[[var]])
-        }
-      }
-      return(data)
-    }
-  }
-
   # Input validation
   if (is.null(Data) || !is.data.frame(Data)) {
     stop("Data must be a non-null data frame")
@@ -204,9 +208,6 @@ PlotInteractionEffectsMatrix <- function(data,
   if (!interVar %in% names(Data)) {
     stop(paste("interVar", interVar, "not found in Data"))
   }
-
-  # Check if interaction variable is continuous
-  interVar_is_continuous <- is.numeric(Data[[interVar]])
 
   # Check for missing values and replace with appropriate labels
   removediag <- FALSE
@@ -221,19 +222,9 @@ PlotInteractionEffectsMatrix <- function(data,
   # If outcomeVars is null, get all numeric variables
   if (is.null(outcomeVars)) {
     outcomeVars <- getNumVars(Data, Ordinal = FALSE)
-    if (Ordinal) {
+    if (TreatOrdinalAs == "Continuous") {
       outcomeVars <- getNumVars(Data, Ordinal = TRUE)
     }
-  }
-
-  # Combine variables into a single vector
-  Variables <- c(interVar, outcomeVars, predictorVars)
-
-  # If Ordinal is TRUE, convert ordinal variables to numeric and update Variables
-  if (Ordinal) {
-    Variables <- c(outcomeVars, predictorVars)
-    Data <- ConvertOrdinalToNumeric(Data, Variables)
-    Data[Variables] <- lapply(Data[Variables], as.numeric)
   }
 
   # Update outcomeVars and predictorVars to exclude covariates
@@ -241,6 +232,28 @@ PlotInteractionEffectsMatrix <- function(data,
     outcomeVars <- outcomeVars[!outcomeVars %in% covars]
     predictorVars <- predictorVars[!predictorVars %in% covars]
   }
+
+  ordinal <- ConvertOrdinalToNumeric(
+    Data, unique(c(interVar, outcomeVars, predictorVars, covars)),
+    TreatOrdinalAs = TreatOrdinalAs, Relabel = Relabel, ReturnMetadata = TRUE
+  )
+  Data <- ordinal$data
+  if (!interVar %in% ordinal$variables) {
+    stop("`interVar` is ordinal and was excluded by TreatOrdinalAs = 'Exclude'.", call. = FALSE)
+  }
+  outcomeVars <- intersect(outcomeVars, ordinal$variables)
+  predictorVars <- intersect(predictorVars, ordinal$variables)
+  covars <- intersect(covars, ordinal$variables)
+  if (TreatOrdinalAs == "Categorical" &&
+      any(outcomeVars %in% ordinal$ordinal_variables)) {
+    stop(
+      "Categorical ordinal outcomes are not supported by PlotInteractionEffectsMatrix(); use TreatOrdinalAs = 'Continuous' or 'Exclude'.",
+      call. = FALSE
+    )
+  }
+
+  # Check whether the interaction variable is continuous after ordinal treatment.
+  interVar_is_continuous <- is.numeric(Data[[interVar]])
 
   # Initialize matrices to store results
   r_P <- r_C <- r_S <- r_D <- matrix(NA, nrow = length(outcomeVars), ncol = length(predictorVars))
@@ -392,31 +405,31 @@ PlotInteractionEffectsMatrix <- function(data,
   m_r_C <- r_C %>%
     as.data.frame() %>%
     rownames_to_column(var = "Outcome") %>%
-    pivot_longer(cols = all_of(predictorVars), names_to = "Predictor", values_to = "C")
+    tidyr::pivot_longer(cols = dplyr::all_of(predictorVars), names_to = "Predictor", values_to = "C")
 
   m_r_P <- r_P %>%
     as.data.frame() %>%
     rownames_to_column(var = "Outcome") %>%
-    pivot_longer(cols = all_of(predictorVars), names_to = "Predictor", values_to = "P")
+    tidyr::pivot_longer(cols = dplyr::all_of(predictorVars), names_to = "Predictor", values_to = "P")
 
   m_r_S <- r_S %>% as.data.frame() %>%
     rownames_to_column(var = "Outcome") %>%
-    pivot_longer(cols = all_of(predictorVars), names_to = "Predictor", values_to = "S")
+    tidyr::pivot_longer(cols = dplyr::all_of(predictorVars), names_to = "Predictor", values_to = "S")
 
   m_r_D <- r_D %>%
     as.data.frame() %>%
     rownames_to_column(var = "Outcome") %>%
-    pivot_longer(cols = all_of(predictorVars), names_to = "Predictor", values_to = "D")
+    tidyr::pivot_longer(cols = dplyr::all_of(predictorVars), names_to = "Predictor", values_to = "D")
 
   m_r_Slope1 <- r_Slope1 %>%
     as.data.frame() %>%
     rownames_to_column(var = "Outcome") %>%
-    pivot_longer(cols = all_of(predictorVars), names_to = "Predictor", values_to = "Slope1")
+    tidyr::pivot_longer(cols = dplyr::all_of(predictorVars), names_to = "Predictor", values_to = "Slope1")
 
   m_r_Slope2 <- r_Slope2 %>%
     as.data.frame() %>%
     rownames_to_column(var = "Outcome") %>%
-    pivot_longer(cols = all_of(predictorVars), names_to = "Predictor", values_to = "Slope2")
+    tidyr::pivot_longer(cols = dplyr::all_of(predictorVars), names_to = "Predictor", values_to = "Slope2")
 
   # Join all data frames
   m_G <- left_join(m_r_C, m_r_P, by = c("Outcome", "Predictor")) %>%
@@ -464,7 +477,8 @@ PlotInteractionEffectsMatrix <- function(data,
     m_G$P_FDR <- ApplyFDRCorrection(
       m_G$P,
       fdr_scope = fdr_scope,
-      outcome_ids = m_G$Outcome
+      outcome_ids = m_G$Outcome,
+      predictor_ids = m_G$Predictor
     )
   } else {
     m_G$P_FDR <- NA
@@ -512,9 +526,9 @@ PlotInteractionEffectsMatrix <- function(data,
 
     m_G <- m_G %>%
       left_join(outcomelabels, by = c("Outcome" = "Variable")) %>%
-      rename(OutcomeLabel = label) %>%
+      dplyr::rename(OutcomeLabel = label) %>%
       left_join(predictorlabels, by = c("Predictor" = "Variable")) %>%
-      rename(PredictorLabel = label)
+      dplyr::rename(PredictorLabel = label)
   } else {
     m_G$OutcomeLabel <- m_G$Outcome
     m_G$PredictorLabel <- m_G$Predictor
@@ -549,19 +563,22 @@ PlotInteractionEffectsMatrix <- function(data,
                         "\nFDR-corrected P:", round(m_G$P_FDR, 4), m_G$sig_FDR)
 
   # Define color gradients
+  # Non-significant cells are deliberately white; unavailable model cells are
+  # grey so absence of an estimate remains distinct from a null result.
   colors <- c("same ***" = "#08519c",      # Darkest blue
               "same **" = "#3182bd",       # Medium blue
               "same *" = "#6baed6",        # Light blue
-              "ns" = "#FFFFFF",             # White
+              "ns" = "#FFFFFF",             # White: non-significant
               "reversed *" = "#fc9272",     # Light red
               "reversed **" = "#de2d26",    # Medium red
               "reversed ***" = "#a50f15",   # Darkest red
-              "na" = "#808080")             # Grey for NA
+              "na" = "#BDBDBD")             # Darker grey for NA
 
   # Create ggplot objects with gradient color scheme
   p <- m_G %>%
     ggplot(aes(x = PredictorLabel, y = OutcomeLabel, fill = sign)) +
-    geom_tile(aes(text = PlotText), show.legend = TRUE) +
+    geom_tile(show.legend = TRUE,
+              colour = "white", linewidth = 0.4) +
     geom_text(aes(label = sig), size = 4) +
     scale_fill_manual(values = colors,
                       drop = FALSE,
@@ -592,7 +609,7 @@ PlotInteractionEffectsMatrix <- function(data,
 
   p_FDR <- m_G %>%
     ggplot(aes(x = PredictorLabel, y = OutcomeLabel, fill = sign_FDR)) +
-    geom_tile(show.legend = TRUE) +
+    geom_tile(show.legend = TRUE, colour = "white", linewidth = 0.4) +
     geom_text(aes(label = sig_FDR), size = 4) +
     scale_fill_manual(values = colors,
                       drop = FALSE,
@@ -623,12 +640,12 @@ PlotInteractionEffectsMatrix <- function(data,
 
   # Create p-value tables
   pvaltable <- m_G %>%
-    select(Outcome, Predictor, P) %>%
-    pivot_wider(names_from = Outcome, values_from = P)
+    dplyr::select(Outcome, Predictor, P) %>%
+    tidyr::pivot_wider(names_from = Outcome, values_from = P)
 
   pvaltable_FDR <- m_G %>%
-    select(Outcome, Predictor, P_FDR) %>%
-    pivot_wider(names_from = Outcome, values_from = P_FDR)
+    dplyr::select(Outcome, Predictor, P_FDR) %>%
+    tidyr::pivot_wider(names_from = Outcome, values_from = P_FDR)
 
   # Create output list
   M <- list()
@@ -649,8 +666,8 @@ PlotInteractionEffectsMatrix <- function(data,
   M_FDR$Slope1 <- r_Slope1
   M_FDR$Slope2 <- r_Slope2
   M_FDR$P_adjusted <- m_G %>%
-    select(Outcome, Predictor, P_FDR) %>%
-    pivot_wider(names_from = Predictor, values_from = P_FDR) %>%
+    dplyr::select(Outcome, Predictor, P_FDR) %>%
+    tidyr::pivot_wider(names_from = Predictor, values_from = P_FDR) %>%
     column_to_rownames("Outcome") %>%
     as.matrix()
   M_FDR$plot <- p_FDR

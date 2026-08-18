@@ -32,17 +32,30 @@ values for modified cells.
 \details{
 This function is intended for interactive review rather than publication
 tables. It returns an HTML object that can be rendered in the RStudio Viewer,
-Quarto, R Markdown, or Shiny.
+Quarto, R Markdown, Shiny, or standalone HTML. The reference page uses a
+static preview because pkgdown cannot host the live dashboard.
 }
+\section{Dashboard preview}{
+
+\if{html}{\figure{ExploreDatasetComparison.png}{options: width="1200" alt="Dataset comparison dashboard showing summary cards, validation checks, and variable-change explorer"}}
+}
+
 \examples{
 data(SampleData)
 
 old_data <- cbind(id = seq_len(nrow(SampleData)), SampleData)
-new_data <- old_data
-new_data$age[1:5] <- new_data$age[1:5] + 1
+new_data <- old_data[-c(1, 2), ]
+new_data$MMP7[1:12] <- new_data$MMP7[1:12] * 1.15
+new_data$tau[20:35] <- new_data$tau[20:35] + 5
+new_data$QualityReview <- ifelse(seq_len(nrow(new_data)) \%\% 3 == 0, "Review", "Pass")
+new_data$Smoker <- NULL
+new_data <- rbind(
+  new_data,
+  transform(new_data[1, ], id = max(old_data$id) + 1, QualityReview = "New record")
+)
 
 comparison <- CompareDatasets(old_data, new_data, keys = "id")
 
-# Produce the interactive comparison dashboard
-ExploreDatasetComparison(comparison)
+# Render the dashboard in an HTML report, Shiny app, Viewer, or HTML file
+dashboard <- ExploreDatasetComparison(comparison, TopN = 8)
 }

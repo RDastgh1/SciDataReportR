@@ -41,7 +41,11 @@
 #'   interVar = "age"
 #' )
 #'
+#' # Raw p-value interaction matrix
 #' result$p
+#'
+#' # FDR-adjusted interaction matrix
+#' result$p_FDR
 #' @export
 PlotNumInteractionEffectsMatrix <- function(data,
     predictor_vars,
@@ -53,7 +57,7 @@ PlotNumInteractionEffectsMatrix <- function(data,
     Data = lifecycle::deprecated(),
     xVars = lifecycle::deprecated(),
     yVars = lifecycle::deprecated(),
-    fdr_scope = c("matrix", "per_outcome"),
+    fdr_scope = c("matrix", "per_outcome", "per_predictor"),
     covars = lifecycle::deprecated()) {
   # Deprecated argument shims (SciDataReportR 19.15.0)
   if (lifecycle::is_present(Data)) {
@@ -93,6 +97,14 @@ PlotNumInteractionEffectsMatrix <- function(data,
          "predictor-by-interVar interaction effects, so there is nothing to ",
          "compute without it.")
   }
+
+  # Supplied names must exist. `Data[[xVar]]` returns NULL for a name that is not
+  # a column, which used to fill the matrix with NA rather than report the typo.
+  # Order and length are preserved because xVarLabels/yVarLabels pair positionally.
+  ScidrValidateVariables(Data, xVars, "predictor_vars", unique_only = FALSE)
+  ScidrValidateVariables(Data, yVars, "outcome_vars", unique_only = FALSE)
+  ScidrValidateVariables(Data, covars, "covariates")
+  ScidrValidateVariable(Data, interVar, "interVar")
 
   # Update xVars and yVars to exclude covars
   xVarLabels <- xVarLabels[xVars %in% setdiff(xVars, covars)]
@@ -158,48 +170,58 @@ PlotNumInteractionEffectsMatrix <- function(data,
   rownames(r_S) <- xVarLabels
   colnames(r_S) <- yVarLabels
 
-  m_r_C <- r_C %>% as.data.frame %>% rownames_to_column(var = "X") %>%  pivot_longer(cols = all_of(yVarLabels), names_to = "Y", values_to = "C")
+  m_r_C <- r_C %>% as.data.frame %>% rownames_to_column(var = "X") %>% tidyr::pivot_longer(cols = dplyr::all_of(yVarLabels), names_to = "Y", values_to = "C")
 
-  m_r_P <- r_P %>% as.data.frame %>% rownames_to_column(var = "X") %>%  pivot_longer(cols = all_of(yVarLabels), names_to = "Y", values_to = "P")
+  m_r_P <- r_P %>% as.data.frame %>% rownames_to_column(var = "X") %>% tidyr::pivot_longer(cols = dplyr::all_of(yVarLabels), names_to = "Y", values_to = "P")
 
-  m_r_S <- r_S %>% as.data.frame %>% rownames_to_column(var = "X") %>%  pivot_longer(cols = all_of(yVarLabels), names_to = "Y", values_to = "S")
+  m_r_S <- r_S %>% as.data.frame %>% rownames_to_column(var = "X") %>% tidyr::pivot_longer(cols = dplyr::all_of(yVarLabels), names_to = "Y", values_to = "S")
 
   m_G <- left_join(m_r_C, m_r_P) %>% left_join(m_r_S)
   m_G$sign <- factor(m_G$S, levels = c(-1, 0, 1), labels = c("-", "ns", "+")) # Switched
   m_G$sign[m_G$P > 0.05] <- "ns"
   m_G$sig <- gtools::stars.pval(m_G$P)
   m_G$sig[m_G$sig == "." | m_G$sig == "+"  | m_G$sig == " "] <- ""
-  m_G$sig <- paste(m_G$sign, m_G$sig) %>% factor(levels = c("+ ***", "+ **", "+ *","ns ", "- *", "- **", "- ***"))
+  m_G$sig <- paste(m_G$sign, m_G$sig)
+  m_G$sig[is.na(m_G$P) | is.na(m_G$C)] <- "na"
+  m_G$sig <- factor(m_G$sig, levels = c("+ ***", "+ **", "+ *", "ns ", "- *", "- **", "- ***", "na"))
 
   ## FDR correction for r_P
   # Outcomes are the y-axis variables (outcome_vars / Y) for "per_outcome".
   m_G$P_FDR <- ApplyFDRCorrection(
     m_G$P,
     fdr_scope = fdr_scope,
-    outcome_ids = m_G$Y
+    outcome_ids = m_G$Y,
+    predictor_ids = m_G$X
   )
   m_G$sign_FDR <- factor(m_G$S, levels = c(-1, 0, 1), labels = c("-", "ns", "+"))
   m_G$sign_FDR[m_G$P_FDR > 0.05] <- "ns"
 
   m_G$sig_FDR <- gtools::stars.pval(m_G$P_FDR)
   m_G$sig_FDR[m_G$sig_FDR == "." | m_G$sig_FDR == "+"  | m_G$sig_FDR == " "] <- ""
-  m_G$sig_FDR <- paste(m_G$sign_FDR, m_G$sig_FDR) %>% factor(levels = c("+ ***", "+ **", "+ *","ns ", "- *", "- **", "- ***"))
+  m_G$sig_FDR <- paste(m_G$sign_FDR, m_G$sig_FDR)
+  m_G$sig_FDR[is.na(m_G$P_FDR) | is.na(m_G$C)] <- "na"
+  m_G$sig_FDR <- factor(m_G$sig_FDR, levels = levels(m_G$sig))
 
-  p <-  m_G %>% ggplot(aes(x = X, y = Y, fill = sig)) + geom_tile() +
-    scale_fill_manual(values = rev(c("red4", "firebrick3", "pink2", "white", "lightblue2", "steelblue3", "blue")), drop = FALSE) +
+  effect_colors <- c(
+    "+ ***" = "#0B1F5E", "+ **" = "#1769D2", "+ *" = "#B8D8E8",
+    "ns " = "#FFFFFF", "- *" = "#F2B29A", "- **" = "#C2185B",
+    "- ***" = "#841B37", "na" = "grey70")
+
+  p <-  m_G %>% ggplot(aes(x = X, y = Y, fill = sig)) + geom_tile(colour = "white", linewidth = 0.4) +
+    scale_fill_manual(values = effect_colors, drop = FALSE) +
     theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
           axis.title.x = element_blank(),
           axis.title.y = element_blank()) +
     labs(title = interVar, subtitle = "No Multiple Comparison Correction")
 
-  p_FDR <-  m_G %>% ggplot(aes(x = X, y = Y, fill = sig_FDR)) + geom_tile() +
-    scale_fill_manual(values = rev(c("red4", "firebrick3", "pink2", "white", "lightblue2", "steelblue3", "blue")), drop = FALSE) +
+  p_FDR <-  m_G %>% ggplot(aes(x = X, y = Y, fill = sig_FDR)) + geom_tile(colour = "white", linewidth = 0.4) +
+    scale_fill_manual(values = effect_colors, drop = FALSE) +
     theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
           axis.title.x = element_blank(),
           axis.title.y = element_blank()) +
     labs(title = interVar, subtitle = "FDR Correction")
 
-  pvaltable_FDR <- m_G %>% data.frame() %>% select(X, Y, P_FDR) %>% pivot_wider(names_from = X, values_from = P_FDR)
+  pvaltable_FDR <- m_G %>% data.frame() %>% dplyr::select(X, Y, P_FDR) %>% tidyr::pivot_wider(names_from = X, values_from = P_FDR)
 
   # Standardized p-value element aliases (old names kept)
   return(list(C = r_C, pvals = r_P, p = p, p_FDR = p_FDR, pvals_FDR = pvaltable_FDR,

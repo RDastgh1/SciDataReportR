@@ -45,8 +45,14 @@ duplicate-variable conflict explorer, and suggested actions.
 This function is intended for interactive review rather than publication
 tables. It returns an HTML object that can be rendered in the RStudio Viewer,
 Quarto, R Markdown, Shiny, or saved as HTML. If needed in an interactive
-console, wrap the result with \code{htmltools::browsable()}.
+console, wrap the result with \code{htmltools::browsable()}. The reference page
+uses a static preview because pkgdown cannot host the live dashboard.
 }
+\section{Dashboard preview}{
+
+\if{html}{\figure{ExploreMergeValidation.png}{options: width="1200" alt="Merge validation dashboard showing merge checks, coverage review, and recommended actions"}}
+}
+
 \examples{
 set.seed(1)
 left  <- data.frame(id = 1:50, x = rnorm(50))
@@ -55,6 +61,7 @@ merged <- merge(left, right, by = "id")
 
 validation <- ValidateMerge(left, right, merged, keys = "id")
 
-# Produce the interactive merge-validation dashboard
-ExploreMergeValidation(validation)
+# Render the interactive dashboard in an HTML report, Shiny app, Viewer,
+# or standalone HTML file.
+dashboard <- ExploreMergeValidation(validation)
 }

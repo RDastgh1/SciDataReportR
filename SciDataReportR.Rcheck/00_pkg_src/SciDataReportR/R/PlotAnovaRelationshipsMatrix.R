@@ -2,7 +2,9 @@
 #'
 #' This function plots the relationship between continuous and categorical variables
 #' using ANOVA or Kruskal-Wallis tests. It generates a "heatmap" with points
-#' colored and shaped based on statistical significance and effect size.
+#' colored and shaped based on statistical significance and effect size. When
+#' generalized eta-squared is unavailable, raw p-values are colored with
+#' [scale_color_pvalue()]; the FDR-corrected plot uses adjusted p-values.
 #'
 #' @param data The data frame containing the variables of interest.
 #' @param CatVars Character vector of categorical variable names.
@@ -15,7 +17,7 @@
 #' @param eps Small positive value used to avoid zero-size plotting artifacts.
 #' @return A list containing three ggplot objects: p (scatter plot without multiple comparison correction), p_FDR (scatter plot with FDR correction), and pvaltable (data frame of p-values and significance).
 #' @import dplyr
-#' @importFrom ggplot2 aes geom_point labs scale_shape_manual scale_color_gradientn guides theme
+#' @importFrom ggplot2 aes geom_point labs scale_shape_manual scale_colour_gradient guides theme
 #' @importFrom sjlabelled get_label
 #' @importFrom tidyr pivot_longer
 #' @importFrom rstatix anova_test kruskal_test get_summary_stats add_significance adjust_pvalue
@@ -24,6 +26,26 @@
 #'   [ApplyFDRCorrection()]. `"matrix"` corrects across all p-values at once
 #'   (historical behavior). `"per_outcome"` corrects separately within each
 #'   outcome: outcomes are the continuous variables (`ContVars`).
+#' @section Parametric and non-parametric tests:
+#' ANOVA assumes roughly normal residuals and similar variance across groups.
+#' Biomarker concentrations are often right-skewed, and group sizes are often
+#' uneven, both of which make the F-test unreliable.
+#'
+#' `Parametric = FALSE` switches to Kruskal-Wallis, which compares ranks rather
+#' than means and assumes neither normality nor equal variance. The matrix is
+#' built and read exactly the same way.
+#'
+#' Comparing the two p-value tables shows which conclusions depended on the
+#' choice of test. Relationships that hold under both are the ones to trust.
+#' Where they disagree, the direction is informative: significant only under
+#' ANOVA suggests the result is being carried by skew or a few extreme values,
+#' while significant only under Kruskal-Wallis suggests a real shift in the
+#' bulk of the distribution that outliers were masking from the mean-based
+#' test.
+#'
+#' Kruskal-Wallis is a rank test and has no ANCOVA form, so `covariates`
+#' requires `Parametric = TRUE`.
+#'
 #' @param Data \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
 #' @param Covariates \strong{Deprecated} (since 19.15.0). Use \code{covariates} instead.
 #' @examples
@@ -43,7 +65,55 @@
 #'                "Apolipoprotein_A1")
 #' )
 #'
+#' # Raw p-value associations
 #' result$Unadjusted$plot
+#'
+#' # FDR-adjusted associations
+#' result$FDRCorrected$plot
+#'
+#' # The same matrix using Kruskal-Wallis instead of ANOVA
+#' result_NonParametric <- PlotAnovaRelationshipsMatrix(
+#'   Labelled,
+#'   CatVars = c("Diagnosis", "sex", "Genotype"),
+#'   ContVars = c("age", "ACE_CD143_Angiotensin_Converti",
+#'                "ACTH_Adrenocorticotropic_Hormon", "AXL", "Adiponectin",
+#'                "Alpha_1_Antichymotrypsin", "Alpha_1_Antitrypsin",
+#'                "Alpha_1_Microglobulin", "Alpha_2_Macroglobulin",
+#'                "Apolipoprotein_A1"),
+#'   Parametric = FALSE
+#' )
+#'
+#' result_NonParametric$Unadjusted$plot
+#' result_NonParametric$FDRCorrected$plot
+#'
+#' # Where the two tests disagree
+#' cols_Key <- c("CategoricalVariable", "ContinuousVariable", "p")
+#' df_Compare <- merge(
+#'   result$Unadjusted$PvalTable[, cols_Key],
+#'   result_NonParametric$Unadjusted$PvalTable[, cols_Key],
+#'   by = c("CategoricalVariable", "ContinuousVariable"),
+#'   suffixes = c("_ANOVA", "_KruskalWallis")
+#' )
+#' df_Compare$AgreesAt05 <-
+#'   (df_Compare$p_ANOVA < 0.05) == (df_Compare$p_KruskalWallis < 0.05)
+#'
+#' htmltools::browsable(htmltools::HTML(as.character(
+#'   FreezeTableHeader(
+#'     dplyr::mutate(
+#'       df_Compare,
+#'       dplyr::across(dplyr::where(is.numeric), \(x) signif(x, 3))
+#'     ),
+#'     height = "320px", full_width = TRUE
+#'   )
+#' )))
+#'
+#' # Covariate adjustment (parametric only)
+#' PlotAnovaRelationshipsMatrix(
+#'   Labelled,
+#'   CatVars = c("Diagnosis", "sex"),
+#'   ContVars = c("AXL", "Adiponectin", "Alpha_1_Antitrypsin"),
+#'   covariates = "age"
+#' )$FDRCorrected$plot
 #' @export
 PlotAnovaRelationshipsMatrix <- function(data,
     CatVars,
@@ -55,7 +125,7 @@ PlotAnovaRelationshipsMatrix <- function(data,
     min_n = 4,
     eps = 1e-08,
     Data = lifecycle::deprecated(),
-    fdr_scope = c("matrix", "per_outcome"),
+    fdr_scope = c("matrix", "per_outcome", "per_predictor"),
     Covariates = lifecycle::deprecated()) {
   # Deprecated argument shims (SciDataReportR 19.15.0)
   if (lifecycle::is_present(Data)) {
@@ -73,9 +143,11 @@ PlotAnovaRelationshipsMatrix <- function(data,
 
   method <- if (isTRUE(Parametric)) "Anova" else "Kruskal"
 
-  CatVars <- unique(intersect(as.character(CatVars), names(Data)))
-  ContVars <- unique(intersect(as.character(ContVars), names(Data)))
-  Covariates <- if (!is.null(Covariates) && length(Covariates) > 0) unique(intersect(as.character(Covariates), names(Data))) else character(0)
+  # Supplied names must exist. Intersecting them away silently shrank the matrix
+  # and, for covariates, produced unadjusted tests reported as adjusted.
+  CatVars <- ScidrValidateVariables(Data, CatVars, "CatVars")
+  ContVars <- ScidrValidateVariables(Data, ContVars, "ContVars")
+  Covariates <- ScidrValidateVariables(Data, Covariates, "covariates")
 
   empty_return <- function() {
     empty <- data.frame()
@@ -129,36 +201,41 @@ PlotAnovaRelationshipsMatrix <- function(data,
 
   vars_keep <- unique(c(CatVars, ContVars, Covariates))
 
-  df0 <- Data |>
-    dplyr::select(dplyr::all_of(vars_keep)) |>
-    dplyr::mutate(.rowID = dplyr::row_number()) |>
-    dplyr::mutate(dplyr::across(dplyr::all_of(CatVars), ~ as.factor(.x)))
+  df0 <- Data %>%
+    dplyr::select(dplyr::all_of(vars_keep)) %>%
+    dplyr::mutate(.rowID = dplyr::row_number()) %>%
+    dplyr::mutate(
+      dplyr::across(
+        dplyr::all_of(CatVars),
+        function(x) if (is.factor(x)) factor(as.character(x), levels = levels(x)) else factor(x)
+      )
+    )
 
   # Keep covars attached by rowID (avoid pivot mixing types)
   cov_df <- if (length(Covariates) > 0) {
-    df0 |> dplyr::select(.rowID, dplyr::all_of(Covariates))
+    df0 %>% dplyr::select(.rowID, dplyr::all_of(Covariates))
   } else {
-    df0 |> dplyr::select(.rowID)
+    df0 %>% dplyr::select(.rowID)
   }
 
-  mData <- df0 |>
+  mData <- df0 %>%
     tidyr::pivot_longer(
       cols = dplyr::all_of(CatVars),
       names_to = "CategoricalVariable",
       values_to = "CategoricalValue"
-    ) |>
+    ) %>%
     tidyr::pivot_longer(
       cols = dplyr::all_of(ContVars),
       names_to = "ContinuousVariable",
       values_to = "ContinuousValue"
-    ) |>
-    dplyr::select(-dplyr::any_of(Covariates)) |>
-    dplyr::left_join(cov_df, by = ".rowID") |>
+    ) %>%
+    dplyr::select(-dplyr::any_of(Covariates)) %>%
+    dplyr::left_join(cov_df, by = ".rowID") %>%
     dplyr::mutate(
       CategoricalValue = as.factor(CategoricalValue),
       ContinuousVariable = as.factor(ContinuousVariable),
       ContinuousValue = suppressWarnings(as.numeric(as.character(ContinuousValue)))
-    ) |>
+    ) %>%
     tidyr::drop_na(CategoricalValue, ContinuousValue)
 
   if (length(Covariates) > 0) {
@@ -168,14 +245,14 @@ PlotAnovaRelationshipsMatrix <- function(data,
   if (nrow(mData) == 0) return(empty_return())
 
   # pair-level guards
-  mData <- mData |>
-    dplyr::group_by(ContinuousVariable, CategoricalVariable) |>
+  mData <- mData %>%
+    dplyr::group_by(ContinuousVariable, CategoricalVariable) %>%
     dplyr::filter(
       dplyr::n() >= min_n,
       dplyr::n_distinct(CategoricalValue) > 1,
       dplyr::n_distinct(ContinuousValue) > 2,
       stats::sd(ContinuousValue, na.rm = TRUE) > eps
-    ) |>
+    ) %>%
     dplyr::ungroup()
 
   if (nrow(mData) == 0) return(empty_return())
@@ -198,13 +275,13 @@ PlotAnovaRelationshipsMatrix <- function(data,
     as.data.frame(out)  # strip classes
   }
 
-  stat.test <- mData |>
-    dplyr::group_by(ContinuousVariable, CategoricalVariable) |>
+  stat.test <- mData %>%
+    dplyr::group_by(ContinuousVariable, CategoricalVariable) %>%
     dplyr::group_modify(~{
       res <- safe_test_df(.x)
       if (is.null(res)) return(tibble::tibble())
       tibble::as_tibble(res)
-    }) |>
+    }) %>%
     dplyr::ungroup()
 
   if (nrow(stat.test) == 0) return(empty_return())
@@ -213,15 +290,16 @@ PlotAnovaRelationshipsMatrix <- function(data,
     stat.test <- dplyr::rename(stat.test, p = p.value)
   }
 
-  stat.test <- stat.test |>
+  stat.test <- stat.test %>%
     rstatix::add_significance(p.col = "p", output.col = "p.signif")
   # Outcomes are the continuous variables (ContVars) for "per_outcome".
   stat.test$p.adj <- ApplyFDRCorrection(
     stat.test$p,
     fdr_scope = fdr_scope,
-    outcome_ids = stat.test$ContinuousVariable
+    outcome_ids = stat.test$ContinuousVariable,
+    predictor_ids = stat.test$CategoricalVariable
   )
-  stat.test <- stat.test |>
+  stat.test <- stat.test %>%
     rstatix::add_significance(p.col = "p.adj", output.col = "p.adj.signif")
 
   stat.test$logp <- -log10(stat.test$p)
@@ -231,7 +309,7 @@ PlotAnovaRelationshipsMatrix <- function(data,
 
   # Keep only main effect row if present
   if ("Effect" %in% names(stat.test)) {
-    stat.test <- stat.test |>
+    stat.test <- stat.test %>%
       dplyr::filter(Effect == "CategoricalValue")
   }
 
@@ -240,14 +318,14 @@ PlotAnovaRelationshipsMatrix <- function(data,
     Data <- ReplaceMissingLabels(Data)
 
     xlabels <- sjlabelled::get_label(Data[as.character(stat.test$CategoricalVariable)],
-                                     def.value = stat.test$CategoricalVariable) |>
-      as.data.frame() |>
+                                     def.value = stat.test$CategoricalVariable) %>%
+      as.data.frame() %>%
       tibble::rownames_to_column()
     colnames(xlabels) <- c("Variable", "label")
 
     ylabels <- sjlabelled::get_label(Data[as.character(stat.test$ContinuousVariable)],
-                                     def.value = stat.test$ContinuousVariable) |>
-      as.data.frame() |>
+                                     def.value = stat.test$ContinuousVariable) %>%
+      as.data.frame() %>%
       tibble::rownames_to_column()
     colnames(ylabels) <- c("Variable", "label")
 
@@ -279,15 +357,16 @@ PlotAnovaRelationshipsMatrix <- function(data,
     if ("ges" %in% names(stat.test)) paste0("</br>GES:", stat.test$ges) else ""
   )
 
-  stat.test <- stat.test |>
-    dplyr::mutate(Test = method) |>
+  stat.test <- stat.test %>%
+    dplyr::mutate(Test = method) %>%
     as.data.frame()
 
-  # plots: use ges if available, else color by p
-  colour_var <- if ("ges" %in% names(stat.test)) "ges" else "p"
+  has_effect_size <- "ges" %in% names(stat.test)
 
-  p <- ggplot2::ggplot(stat.test, ggplot2::aes(y = YLabel, x = XLabel, shape = `p<.05`, text = PlotText)) +
-    ggplot2::geom_point(ggplot2::aes(size = `p<.05`, colour = .data[[colour_var]])) +
+  p <- ggplot2::ggplot(
+    stat.test,
+    ggplot2::aes(y = YLabel, x = XLabel, shape = `p<.05`, text = PlotText)
+  ) +
     ggplot2::theme(
       axis.text.x = ggplot2::element_text(angle = 90),
       axis.title.x = ggplot2::element_blank(),
@@ -296,14 +375,31 @@ PlotAnovaRelationshipsMatrix <- function(data,
     ggplot2::scale_shape_manual(values = c(7, 16, 17, 15, 18), drop = FALSE) +
     ggplot2::guides(size = "none") +
     ggplot2::labs(subtitle = "No Multiple Comparison Correction") +
-    ggplot2::xlab("") + ggplot2::ylab("") + ggplot2::scale_colour_gradient(
+    ggplot2::xlab("") +
+    ggplot2::ylab("")
+
+  if (has_effect_size) {
+    p <- p +
+      ggplot2::geom_point(
+        ggplot2::aes(size = as.numeric(`p<.05`), colour = .data[["ges"]])
+      ) +
+      ggplot2::scale_colour_gradient(
       low = "#c6dbef",   # light blue
       high = "#08306b",  # dark blue
       name = "Effect Size"
     )
+  } else {
+    p <- p +
+      ggplot2::geom_point(
+        ggplot2::aes(size = as.numeric(`p<.05`), colour = .data[["p"]])
+      ) +
+      scale_color_pvalue()
+  }
 
-  p_FDR <- ggplot2::ggplot(stat.test, ggplot2::aes(y = YLabel, x = XLabel, shape = p.adj.signif, text = PlotText)) +
-    ggplot2::geom_point(ggplot2::aes(size = p.adj.signif, colour = .data[[colour_var]])) +
+  p_FDR <- ggplot2::ggplot(
+    stat.test,
+    ggplot2::aes(y = YLabel, x = XLabel, shape = p.adj.signif, text = PlotText)
+  ) +
     ggplot2::theme(
       axis.text.x = ggplot2::element_text(angle = 90),
       axis.title.x = ggplot2::element_blank(),
@@ -312,11 +408,26 @@ PlotAnovaRelationshipsMatrix <- function(data,
     ggplot2::scale_shape_manual(values = c(7, 16, 17, 15, 18), drop = FALSE) +
     ggplot2::guides(size = "none") +
     ggplot2::labs(subtitle = "FDR Correction") +
-    ggplot2::xlab("") + ggplot2::ylab("") + ggplot2::scale_colour_gradient(
+    ggplot2::xlab("") +
+    ggplot2::ylab("")
+
+  if (has_effect_size) {
+    p_FDR <- p_FDR +
+      ggplot2::geom_point(
+        ggplot2::aes(size = p.adj.signif, colour = .data[["ges"]])
+      ) +
+      ggplot2::scale_colour_gradient(
       low = "#c6dbef",   # light blue
       high = "#08306b",  # dark blue
       name = "Effect Size"
     )
+  } else {
+    p_FDR <- p_FDR +
+      ggplot2::geom_point(
+        ggplot2::aes(size = p.adj.signif, colour = .data[["p.adj"]])
+      ) +
+      scale_color_pvalue(name = "FDR-adjusted P-value")
+  }
 
   out <- list(
     Unadjusted = list(PvalTable = stat.test, plot = p),

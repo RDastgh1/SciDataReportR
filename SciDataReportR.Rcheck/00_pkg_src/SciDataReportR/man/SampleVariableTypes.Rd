@@ -29,8 +29,63 @@ SampleVariableTypes
 \description{
 An example of a modified VariableTypes file to be used to Revalue SampleData.
 }
+\details{
+This is what an edited codebook looks like in practice. It began as the
+output of \code{\link[=CreateVariableTypesTemplate]{CreateVariableTypesTemplate()}} run on \link{SampleData}, and was then
+filled in by hand: labels written for the columns that needed them, \code{sex}
+marked for recoding with its \code{Code} mapping, a missing code recorded where
+one applies, and \code{Category} / \code{Subcategory} / \code{Include} used to group
+variables for later selection.
+
+Most rows are left mostly blank, and that is normal. Of 138 variables only a
+handful carry a recode or a missing code; the rest simply need a readable
+label. A codebook is a place to record the exceptions, not a form to
+complete.
+
+Passing it with \link{SampleData} to \code{\link[=RevalueData]{RevalueData()}} is the first step of nearly
+every example in this package.
+}
 \examples{
 data(SampleVariableTypes)
-head(SampleVariableTypes)
+
+dim(SampleVariableTypes)
+table(SampleVariableTypes$Type)
+
+\donttest{
+# The whole codebook: one row per variable in SampleData
+htmltools::browsable(htmltools::HTML(as.character(
+  FreezeTableHeader(
+    SampleVariableTypes,
+    height = "420px", full_width = TRUE
+  )
+)))
+
+# Only the rows carrying an instruction
+rows_WithRules <- !is.na(SampleVariableTypes$Code) |
+  (!is.na(SampleVariableTypes$MissingCode) & SampleVariableTypes$MissingCode != "")
+
+htmltools::browsable(htmltools::HTML(as.character(
+  FreezeTableHeader(
+    SampleVariableTypes[
+      rows_WithRules,
+      c("Variable", "Label", "Type", "Recode", "Code", "MissingCode")
+    ],
+    full_width = TRUE
+  )
+)))
+
+# The grouping columns define variable sets
+vars_Labs <- SampleVariableTypes$Variable[
+  !is.na(SampleVariableTypes$Category) &
+    SampleVariableTypes$Category == "Lab Measures"
+]
+length(vars_Labs)
+utils::head(vars_Labs)
+}
+}
+\seealso{
+\link{SampleData} for the data it describes,
+\code{\link[=CreateVariableTypesTemplate]{CreateVariableTypesTemplate()}} to generate one for your own data, and
+\code{\link[=RevalueData]{RevalueData()}} to apply it.
 }
 \keyword{datasets}

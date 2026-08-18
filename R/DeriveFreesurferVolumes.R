@@ -1,7 +1,8 @@
-#' Derive Freesurfer bilateral totals and ICV-adjusted measures
+#' Derive Freesurfer bilateral measures and optional ICV-adjusted ratios
 #'
-#' Automatically derives bilateral Freesurfer volume measures from ASEG and DKT
-#' outputs, then creates intracranial-volume-adjusted ratios.
+#' Automatically derives bilateral Freesurfer measures from ASEG and DKT
+#' outputs, using either sums or means, and can create
+#' intracranial-volume-adjusted ratios.
 #'
 #' This function is designed for Freesurfer data frames that contain ASEG,
 #' DKT, and global Freesurfer volume variables. It supports both native
@@ -19,8 +20,11 @@
 #'
 #' * `lh_fusiform_volume`
 #' * `rh_fusiform_volume`
+#' * `lh_fusiform_thickness`
+#' * `rh_fusiform_thickness`
 #'
-#' Supported intracranial volume columns are:
+#' When ICV ratios are requested and `icv_var` is `NULL`, supported
+#' intracranial volume columns are:
 #'
 #' * `EstimatedTotalIntraCranialVol`
 #' * `eTIV`
@@ -30,9 +34,13 @@
 #' the two columns differ, the function stops and asks the user to resolve which
 #' intracranial volume variable should be used.
 #'
-#' Bilateral totals are computed as:
+#' Bilateral sums are computed as:
 #'
 #' `left + right`
+#'
+#' Bilateral means are computed as:
+#'
+#' `(left + right) / 2`
 #'
 #' ICV-adjusted ratios are computed as:
 #'
@@ -49,6 +57,14 @@
 #' `dplyr::bind_cols()`.
 #'
 #' @param data A data frame containing Freesurfer ASEG and/or DKT variables.
+#' @param icv_var Optional single character string naming the intracranial
+#'   volume column to use for ratios. When `NULL` and ratios are requested,
+#'   `EstimatedTotalIntraCranialVol` or `eTIV` is detected automatically.
+#' @param derive_icv_ratios Logical. If `TRUE`, derive ICV-adjusted ratios.
+#'   Default is `TRUE`.
+#' @param bilateral_method Character string specifying whether matched
+#'   left/right measures are combined using a `"sum"` or `"mean"`. Default is
+#'   `"sum"`. Output names retain the `_total` suffix for compatibility.
 #' @param verbose Logical. If `TRUE`, prints a short summary of derived variables.
 #'   Default is `TRUE`.
 #'
@@ -59,6 +75,12 @@
 #' @examples
 #' \dontrun{
 #' fs_derived <- DeriveFreesurferVolumes(df_freesurfer)
+#'
+#' thickness_derived <- DeriveFreesurferVolumes(
+#'   df_Thickness,
+#'   derive_icv_ratios = FALSE,
+#'   bilateral_method = "mean"
+#' )
 #'
 #' df_freesurfer <- dplyr::bind_cols(
 #'   df_freesurfer,
@@ -71,6 +93,9 @@
 #' @export
 DeriveFreesurferVolumes <- function(
   data,
+  icv_var = NULL,
+  derive_icv_ratios = TRUE,
+  bilateral_method = c("sum", "mean"),
   verbose = TRUE
 ) {
 
@@ -91,6 +116,19 @@ DeriveFreesurferVolumes <- function(
       call. = FALSE
     )
   }
+
+  if (
+    !is.logical(derive_icv_ratios) ||
+      length(derive_icv_ratios) != 1 ||
+      is.na(derive_icv_ratios)
+  ) {
+    stop(
+      "`derive_icv_ratios` must be either TRUE or FALSE.",
+      call. = FALSE
+    )
+  }
+
+  bilateral_method <- match.arg(bilateral_method)
 
   ############################################################
   ## Internal helper functions
@@ -122,85 +160,130 @@ DeriveFreesurferVolumes <- function(
     structure
   }
 
+  CombineBilateral <- function(left, right, method) {
+    if (method == "sum") {
+      return(left + right)
+    }
+
+    (left + right) / 2
+  }
+
   ############################################################
   ## Determine intracranial volume variable
   ############################################################
 
-  has_estimated_icv <- "EstimatedTotalIntraCranialVol" %in% names(data)
-  has_etiv <- "eTIV" %in% names(data)
+  icv <- NULL
+  icv_source <- NA_character_
 
-  if (!has_estimated_icv && !has_etiv) {
-    stop(
-      paste(
-        "Neither `EstimatedTotalIntraCranialVol` nor `eTIV` was found.",
-        "One of these columns is required for ICV-adjusted variables."
-      ),
-      call. = FALSE
-    )
-  }
+  if (derive_icv_ratios) {
 
-  if (has_estimated_icv && !is.numeric(data$EstimatedTotalIntraCranialVol)) {
-    stop(
-      "`EstimatedTotalIntraCranialVol` must be numeric.",
-      call. = FALSE
-    )
-  }
+    if (!is.null(icv_var)) {
+      if (
+        !is.character(icv_var) ||
+          length(icv_var) != 1 ||
+          is.na(icv_var) ||
+          !nzchar(icv_var)
+      ) {
+        stop(
+          "`icv_var` must be NULL or a single non-empty character column name.",
+          call. = FALSE
+        )
+      }
 
-  if (has_etiv && !is.numeric(data$eTIV)) {
-    stop(
-      "`eTIV` must be numeric.",
-      call. = FALSE
-    )
-  }
+      if (!icv_var %in% names(data)) {
+        stop(
+          paste0("`icv_var` was not found in `data`: `", icv_var, "`."),
+          call. = FALSE
+        )
+      }
 
-  if (has_estimated_icv && has_etiv) {
+      icv <- data[[icv_var]]
+      icv_source <- icv_var
 
-    same_icv <- isTRUE(
-      all.equal(
-        data$EstimatedTotalIntraCranialVol,
-        data$eTIV,
-        check.attributes = FALSE
-      )
-    )
+    } else {
+      has_estimated_icv <- "EstimatedTotalIntraCranialVol" %in% names(data)
+      has_etiv <- "eTIV" %in% names(data)
 
-    if (!same_icv) {
+      if (!has_estimated_icv && !has_etiv) {
+        stop(
+          paste(
+            "Neither `EstimatedTotalIntraCranialVol` nor `eTIV` was found.",
+            "One of these columns is required for ICV-adjusted variables."
+          ),
+          call. = FALSE
+        )
+      }
+
+      if (
+        has_estimated_icv &&
+          !is.numeric(data$EstimatedTotalIntraCranialVol)
+      ) {
+        stop(
+          "`EstimatedTotalIntraCranialVol` must be numeric.",
+          call. = FALSE
+        )
+      }
+
+      if (has_etiv && !is.numeric(data$eTIV)) {
+        stop(
+          "`eTIV` must be numeric.",
+          call. = FALSE
+        )
+      }
+
+      if (has_estimated_icv && has_etiv) {
+        same_icv <- isTRUE(
+          all.equal(
+            data$EstimatedTotalIntraCranialVol,
+            data$eTIV,
+            check.attributes = FALSE
+          )
+        )
+
+        if (!same_icv) {
+          stop(
+            paste(
+              "`EstimatedTotalIntraCranialVol` and `eTIV` differ.",
+              "These should represent the same Freesurfer estimated intracranial volume.",
+              "Please inspect both columns and decide which one should be used."
+            ),
+            call. = FALSE
+          )
+        }
+
+        icv <- data$EstimatedTotalIntraCranialVol
+        icv_source <- "EstimatedTotalIntraCranialVol"
+
+      } else if (has_estimated_icv) {
+        icv <- data$EstimatedTotalIntraCranialVol
+        icv_source <- "EstimatedTotalIntraCranialVol"
+
+      } else {
+        icv <- data$eTIV
+        icv_source <- "eTIV"
+      }
+    }
+
+    if (!is.numeric(icv)) {
       stop(
-        paste(
-          "`EstimatedTotalIntraCranialVol` and `eTIV` differ.",
-          "These should represent the same Freesurfer estimated intracranial volume.",
-          "Please inspect both columns and decide which one should be used."
-        ),
+        paste0("The selected ICV variable `", icv_source, "` must be numeric."),
         call. = FALSE
       )
     }
 
-    icv <- data$EstimatedTotalIntraCranialVol
-    icv_source <- "EstimatedTotalIntraCranialVol"
+    if (any(is.na(icv))) {
+      warning(
+        "The selected ICV variable contains missing values. Derived `_icv` variables will be missing for those rows.",
+        call. = FALSE
+      )
+    }
 
-  } else if (has_estimated_icv) {
-
-    icv <- data$EstimatedTotalIntraCranialVol
-    icv_source <- "EstimatedTotalIntraCranialVol"
-
-  } else {
-
-    icv <- data$eTIV
-    icv_source <- "eTIV"
-
-  }
-
-  if (any(is.na(icv))) {
-    warning(
-      "The selected ICV variable contains missing values. Derived `_icv` variables will be missing for those rows.",
-      call. = FALSE
-    )
-  }
-
-  if (any(icv == 0, na.rm = TRUE)) {
-    stop(
-      "The selected ICV variable contains zero values. Cannot divide by zero.",
-      call. = FALSE
-    )
+    if (any(icv == 0, na.rm = TRUE)) {
+      stop(
+        "The selected ICV variable contains zero values. Cannot divide by zero.",
+        call. = FALSE
+      )
+    }
   }
 
   ############################################################
@@ -292,7 +375,11 @@ DeriveFreesurferVolumes <- function(
         "_total"
       )
 
-      out[[new_col]] <- data[[left_col]] + data[[right_col]]
+      out[[new_col]] <- CombineBilateral(
+        data[[left_col]],
+        data[[right_col]],
+        bilateral_method
+      )
 
       aseg_total_cols <- c(
         aseg_total_cols,
@@ -367,20 +454,15 @@ DeriveFreesurferVolumes <- function(
       next
     }
 
-    region_name <- sub(
-      "_volume$",
-      "",
-      region
+    region_name <- clean_output_name(region)
+
+    new_col <- paste0(region_name, "_total")
+
+    out[[new_col]] <- CombineBilateral(
+      data[[lh_col]],
+      data[[rh_col]],
+      bilateral_method
     )
-
-    region_name <- clean_output_name(region_name)
-
-    new_col <- paste0(
-      region_name,
-      "_volume_total"
-    )
-
-    out[[new_col]] <- data[[lh_col]] + data[[rh_col]]
 
     dkt_total_cols <- c(
       dkt_total_cols,
@@ -433,27 +515,29 @@ DeriveFreesurferVolumes <- function(
     names(data)
   )
 
-  for (global_col in global_volumes) {
+  if (derive_icv_ratios) {
+    for (global_col in global_volumes) {
 
-    if (!is.numeric(data[[global_col]])) {
-      skipped_non_numeric_global <- c(
-        skipped_non_numeric_global,
-        global_col
+      if (!is.numeric(data[[global_col]])) {
+        skipped_non_numeric_global <- c(
+          skipped_non_numeric_global,
+          global_col
+        )
+        next
+      }
+
+      new_col <- paste0(
+        global_col,
+        "_icv"
       )
-      next
+
+      out[[new_col]] <- data[[global_col]] / icv
+
+      global_icv_cols <- c(
+        global_icv_cols,
+        new_col
+      )
     }
-
-    new_col <- paste0(
-      global_col,
-      "_icv"
-    )
-
-    out[[new_col]] <- data[[global_col]] / icv
-
-    global_icv_cols <- c(
-      global_icv_cols,
-      new_col
-    )
   }
 
   ############################################################
@@ -469,23 +553,25 @@ DeriveFreesurferVolumes <- function(
 
   lateralized_side_cols <- c(aseg_cols, lh_cols, rh_cols)
 
-  for (side_col in lateralized_side_cols) {
+  if (derive_icv_ratios) {
+    for (side_col in lateralized_side_cols) {
 
-    if (!is.numeric(data[[side_col]])) {
-      next
+      if (!is.numeric(data[[side_col]])) {
+        next
+      }
+
+      new_col <- paste0(
+        clean_output_name(side_col),
+        "_icv"
+      )
+
+      out[[new_col]] <- data[[side_col]] / icv
+
+      lateralized_icv_cols <- c(
+        lateralized_icv_cols,
+        new_col
+      )
     }
-
-    new_col <- paste0(
-      clean_output_name(side_col),
-      "_icv"
-    )
-
-    out[[new_col]] <- data[[side_col]] / icv
-
-    lateralized_icv_cols <- c(
-      lateralized_icv_cols,
-      new_col
-    )
   }
 
   ############################################################
@@ -500,23 +586,25 @@ DeriveFreesurferVolumes <- function(
     dkt_total_cols
   )
 
-  for (total_col in total_cols) {
+  if (derive_icv_ratios) {
+    for (total_col in total_cols) {
 
-    if (!is.numeric(out[[total_col]])) {
-      next
+      if (!is.numeric(out[[total_col]])) {
+        next
+      }
+
+      new_col <- paste0(
+        total_col,
+        "_icv"
+      )
+
+      out[[new_col]] <- out[[total_col]] / icv
+
+      bilateral_icv_cols <- c(
+        bilateral_icv_cols,
+        new_col
+      )
     }
-
-    new_col <- paste0(
-      total_col,
-      "_icv"
-    )
-
-    out[[new_col]] <- out[[total_col]] / icv
-
-    bilateral_icv_cols <- c(
-      bilateral_icv_cols,
-      new_col
-    )
   }
 
   ############################################################
@@ -525,6 +613,8 @@ DeriveFreesurferVolumes <- function(
 
   derivation_log <- list(
     icv_source = icv_source,
+    derive_icv_ratios = derive_icv_ratios,
+    bilateral_method = bilateral_method,
     n_rows_input = nrow(data),
     n_rows_output = nrow(out),
     n_aseg_total_cols = length(aseg_total_cols),
@@ -556,7 +646,12 @@ DeriveFreesurferVolumes <- function(
   if (verbose) {
 
     message("Derived Freesurfer measures:")
-    message("  ICV source: ", icv_source)
+    message("  Bilateral method: ", bilateral_method)
+    if (derive_icv_ratios) {
+      message("  ICV source: ", icv_source)
+    } else {
+      message("  ICV ratios: not derived")
+    }
     message("  ASEG bilateral totals: ", length(aseg_total_cols))
     message("  DKT bilateral totals: ", length(dkt_total_cols))
     message("  Global ICV-adjusted measures: ", length(global_icv_cols))

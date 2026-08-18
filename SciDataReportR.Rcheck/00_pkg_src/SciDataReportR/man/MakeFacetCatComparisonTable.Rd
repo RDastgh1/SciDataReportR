@@ -24,6 +24,8 @@ MakeFacetCatComparisonTable(
   IncludeOverallStats = FALSE,
   ShowPositiveBinaryOnLabel = TRUE,
   CompFun = MakeComparisonTable,
+  Relabel = TRUE,
+  TreatOrdinalAs = "Categorical",
   ...,
   DataFrame = lifecycle::deprecated(),
   Variables = lifecycle::deprecated(),
@@ -73,6 +75,10 @@ The function automatically selects those that are categorical (\code{factor} or 
 
 \item{CompFun}{Comparison function to apply; defaults to \code{MakeComparisonTable}.}
 
+\item{Relabel}{Logical; if TRUE (default), use attached variable labels.}
+
+\item{TreatOrdinalAs}{How ordinal variables are treated in each table.}
+
 \item{...}{Additional arguments passed to the comparison function.}
 
 \item{DataFrame}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
@@ -102,4 +108,84 @@ categorical dimensions such as Race, Sex, or HIV status.
 }
 \details{
 MakeFacetCatComparisonTable
+
+Use this when the same set of measures needs to be compared across several
+different groupings at once - by diagnosis, and by sex, and by APOE status -
+and those comparisons belong in one table rather than three.
+
+Running \code{\link[=MakeComparisonTable]{MakeComparisonTable()}} once per grouping produces tables that are
+each correct but cannot be read against each other: the variables are listed
+three times, and spotting that a biomarker separates diagnosis groups but not
+sexes means looking back and forth between pages. Merging them puts one row
+per variable and one column block per grouping, so that comparison is a
+left-to-right read.
+
+Facet variables that are not categorical are dropped automatically, so a
+vector of candidate groupings can be passed without pre-filtering it.
+
+Every argument that controls the individual tables - \code{AddPairwise},
+\code{covariates}, \code{Parametric}, and the rest - is passed through to each facet,
+so the blocks stay consistent with one another.
+}
+\examples{
+\donttest{
+data(SampleData)
+data(SampleVariableTypes)
+
+Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
+
+vars_Compare <- c("age", "AXL", "Adiponectin", "tau", "p_tau")
+
+# The same five measures compared across two groupings at once
+MakeFacetCatComparisonTable(
+  data = Labelled,
+  FacetVariables = c("Diagnosis", "sex"),
+  variables = vars_Compare
+)
+
+# Non-categorical facets are ignored, so a mixed vector is safe
+MakeFacetCatComparisonTable(
+  data = Labelled,
+  FacetVariables = c("Diagnosis", "age", "sex"),
+  variables = c("AXL", "tau")
+)
+
+# Options are forwarded to every facet
+MakeFacetCatComparisonTable(
+  data = Labelled,
+  FacetVariables = c("Diagnosis", "sex"),
+  variables = vars_Compare,
+  AddEffectSize = TRUE
+)
+
+# Covariate adjustment, applied within each grouping
+MakeFacetCatComparisonTable(
+  data = Labelled,
+  FacetVariables = c("Diagnosis", "sex"),
+  variables = c("AXL", "Adiponectin", "tau", "p_tau"),
+  covariates = "age"
+)
+
+# A three-level grouping alongside a two-level one, with pairwise contrasts
+Labelled$ApoeGroup <- factor(
+  dplyr::case_when(
+    Labelled$Genotype \%in\% c("E2E2", "E2E3") ~ "E2 carrier",
+    Labelled$Genotype == "E3E3" ~ "E3/E3",
+    TRUE ~ "E4 carrier"
+  ),
+  levels = c("E2 carrier", "E3/E3", "E4 carrier")
+)
+
+MakeFacetCatComparisonTable(
+  data = Labelled,
+  FacetVariables = c("Diagnosis", "ApoeGroup"),
+  variables = c("age", "tau", "p_tau"),
+  AddPairwise = TRUE
+)
+}
+
+}
+\seealso{
+\code{\link[=MakeComparisonTable]{MakeComparisonTable()}} for a single grouping, and \code{\link[=MakeTable1]{MakeTable1()}}
+for a plain descriptive table with no grouping at all.
 }

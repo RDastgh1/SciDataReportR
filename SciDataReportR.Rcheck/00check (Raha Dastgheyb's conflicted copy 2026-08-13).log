@@ -1,0 +1,212 @@
+* using log directory ‘/Users/rahad/Library/CloudStorage/Dropbox/Coding/Package Development/SciDataReportR/SciDataReportR.Rcheck’
+* using R version 4.5.3 (2026-03-11)
+* using platform: aarch64-apple-darwin20
+* R was compiled by
+    Apple clang version 16.0.0 (clang-1600.0.26.6)
+    GNU Fortran (GCC) 14.2.0
+* running under: macOS Tahoe 26.5.1
+* using session charset: UTF-8
+* using options ‘--no-manual --no-build-vignettes’
+* checking for file ‘SciDataReportR/DESCRIPTION’ ... OK
+* this is package ‘SciDataReportR’ version ‘20.24.0’
+* package encoding: UTF-8
+* checking package namespace information ... OK
+* checking package dependencies ... OK
+* checking if this is a source package ... OK
+* checking if there is a namespace ... OK
+* checking for executable files ... OK
+* checking for hidden files and directories ... OK
+* checking for portable file names ... OK
+* checking for sufficient/correct file permissions ... OK
+* checking whether package ‘SciDataReportR’ can be installed ... OK
+* checking installed package size ... OK
+* checking package directory ... OK
+* checking DESCRIPTION meta-information ... OK
+* checking top-level files ... OK
+* checking for left-over files ... OK
+* checking index information ... OK
+* checking package subdirectories ... OK
+* checking code files for non-ASCII characters ... OK
+* checking R files for syntax errors ... OK
+* checking whether the package can be loaded ... OK
+* checking whether the package can be loaded with stated dependencies ... OK
+* checking whether the package can be unloaded cleanly ... OK
+* checking whether the namespace can be loaded with stated dependencies ... OK
+* checking whether the namespace can be unloaded cleanly ... OK
+* checking dependencies in R code ... OK
+* checking S3 generic/method consistency ... OK
+* checking replacement functions ... OK
+* checking foreign function calls ... OK
+* checking R code for possible problems ... OK
+* checking Rd files ... OK
+* checking Rd metadata ... OK
+* checking Rd cross-references ... OK
+* checking for missing documentation entries ... OK
+* checking for code/documentation mismatches ... OK
+* checking Rd \usage sections ... WARNING
+Documented arguments not in \usage in Rd file 'CreateClusterModel_Gower_PAM.Rd':
+  ‘k’
+
+Documented arguments not in \usage in Rd file 'CreateClusterModel_HDBSCAN.Rd':
+  ‘minPts’
+
+Functions with \usage entries need to have the appropriate \alias
+entries, and all their arguments documented.
+The \usage entries must correspond to syntactically valid R code.
+See chapter ‘Writing R documentation files’ in the ‘Writing R
+Extensions’ manual.
+* checking Rd contents ... OK
+* checking for unstated dependencies in examples ... OK
+* checking contents of ‘data’ directory ... OK
+* checking data for non-ASCII characters ... OK
+* checking LazyData ... OK
+* checking data for ASCII and uncompressed saves ... OK
+* checking files in ‘vignettes’ ... WARNING
+Files in the 'vignettes' directory but no files in 'inst/doc':
+  ‘argument-renaming.R’ ‘argument-renaming.Rmd’ ‘clustering.scss’
+  ‘ClusteringPhenotyping.qmd’ ‘ClusteringPhenotyping.R’
+  ‘ClusteringPhenotyping.rmarkdown’ ‘fdr-correction.R’
+  ‘fdr-correction.Rmd’ ‘getting-started.qmd’ ‘getting-started.R’
+  ‘MakeComparisonTable.qmd’ ‘MakeComparisonTable.R’
+  ‘MakeUnivariateRegressionTable.qmd’ ‘MakeUnivariateRegressionTable.R’
+  ‘merge-qc-workflow.R’ ‘merge-qc-workflow.Rmd’ ‘OrdinalVariables.qmd’
+  ‘OrdinalVariables.R’ ‘PlotCorrelationsHeatmap.qmd’
+  ‘PlotCorrelationsHeatmap.R’ ‘PlotForestFromTable.qmd’
+  ‘PlotForestFromTable.R’ ‘PlotMiningMatrix.qmd’ ‘PlotMiningMatrix.R’
+  ‘PValueColorScales.R’ ‘PValueColorScales.Rmd’
+  ‘UnivariateRegressions.qmd’ ‘UnivariateRegressions.R’
+Files named as vignettes but with no recognized vignette engine:
+   ‘vignettes/ClusteringPhenotyping.rmarkdown’
+(Is a VignetteBuilder field missing?)
+* checking examples ... OK
+* checking for unstated dependencies in ‘tests’ ... WARNING
+Error in .read_description(dfile) : 
+  file '/Users/rahad/Library/CloudStorage/Dropbox/Coding/Package Development/SciDataReportR/SciDataReportR.Rcheck/00_pkg_src/SciDataReportR/DESCRIPTION' does not exist
+Execution halted
+* checking tests ... ERROR
+  Running ‘testthat.R’
+Running the tests in ‘tests/testthat.R’ failed.
+Last 13 lines of output:
+  Differences:
+  `actual`:   "data" "variables" "yVars"  
+  `expected`: "data" "variables" "Relabel"
+  
+  ── Failure ('test-variable-validation.R:133:3'): PlotDirectionalHeatmaps keeps deprecated formals trailing ──
+  Expected `tail(Formals, 3)` to equal `c("Data", "xVars", "yVars")`.
+  Differences:
+  `actual`:   "fdr_scope" "Data"  "xVars"
+  `expected`: "Data"      "xVars" "yVars"
+  
+  
+  [ FAIL 222 | WARN 181 | SKIP 3 | PASS 335 ]
+  Error:
+  ! Test failures.
+  Execution halted
+* checking for unstated dependencies in vignettes ... OK
+* checking package vignettes ... WARNING
+Directory 'inst/doc' does not exist.
+Package vignettes without corresponding single PDF/HTML:
+  ‘ClusteringPhenotyping (Raha Dastgheyb's conflicted copy 2026-08-13).qmd’
+  ‘ClusteringPhenotyping.qmd’
+  ‘getting-started.qmd’
+  ‘MakeComparisonTable (Raha Dastgheyb's conflicted copy 2026-08-13).qmd’
+  ‘MakeComparisonTable.qmd’
+  ‘MakeUnivariateRegressionTable.qmd’
+  ‘OrdinalVariables.qmd’
+  ‘PlotCorrelationsHeatmap.qmd’
+  ‘PlotForestFromTable.qmd’
+  ‘PlotMiningMatrix.qmd’
+  ‘UnivariateRegressions.qmd’
+  ‘argument-renaming.Rmd’
+  ‘fdr-correction.Rmd’
+  ‘merge-qc-workflow (Raha Dastgheyb's conflicted copy 2026-08-13).Rmd’
+  ‘merge-qc-workflow.Rmd’
+  ‘PValueColorScales.Rmd’
+* checking running R code from vignettes ... ERROR
+Errors in running code in vignettes:
+when running code in ‘ClusteringPhenotyping (Raha Dastgheyb's conflicted copy 2026-08-13).qmd’
+  ...
+Error: unexpected symbol in "tools:::.run_one_vignette('ClusteringPhenotyping (Raha Dastgheyb's"
+Execution halted
+
+... incomplete output.  Crash?
+when running code in ‘ClusteringPhenotyping.qmd’
+  ...
+
+> data("SimulatedPhenotypeVariableTypes", package = "SciDataReportR")
+Warning in data("SimulatedPhenotypeVariableTypes", package = "SciDataReportR") :
+  data set ‘SimulatedPhenotypeVariableTypes’ not found
+
+> df_Raw <- SimulatedPhenotypeData
+
+  When sourcing ‘ClusteringPhenotyping.R’:
+Error: object 'SimulatedPhenotypeData' not found
+Execution halted
+when running code in ‘MakeComparisonTable (Raha Dastgheyb's conflicted copy 2026-08-13).qmd’
+  ...
+Error: unexpected symbol in "tools:::.run_one_vignette('MakeComparisonTable (Raha Dastgheyb's"
+Execution halted
+
+... incomplete output.  Crash?
+when running code in ‘OrdinalVariables.qmd’
+  ...
++     "Symptom Severity", "Age ( ..." ... [TRUNCATED] 
+
+> df_Revalued <- RevalueData(df_Raw, VariableTypes)$RevaluedData
+
+> tbl_Categorical <- MakeComparisonTable(data = df_Revalued, 
++     group_var = "Group", variables = "SymptomSeverity", TreatOrdinalAs = "Categorical" .... [TRUNCATED] 
+
+  When sourcing ‘OrdinalVariables.R’:
+Error: Variable(s) not found: Categorical
+Execution halted
+when running code in ‘merge-qc-workflow (Raha Dastgheyb's conflicted copy 2026-08-13).Rmd’
+  ...
+Error: unexpected symbol in "tools:::.run_one_vignette('merge-qc-workflow (Raha Dastgheyb's"
+Execution halted
+
+... incomplete output.  Crash?
+when running code in ‘merge-qc-workflow.Rmd’
+  ...
+> m_declared <- safe_merge(pbc_baseline, pbc_labs, by = "id", 
++     name = "pbc, declared as many-to-one", expected_relationship = "many-to-one")
+
+> m_declared$log[, c("ExpectedRelationship", "DetectedRelationship", 
++     "RelationshipMatchesExpected")]
+
+  When sourcing ‘merge-qc-workflow.R’:
+Error: Can't subset columns that don't exist.
+✖ Columns `ExpectedRelationship`, `DetectedRelationship`, and `RelationshipMatchesExpected` don't exist.
+Execution halted
+when running code in ‘PValueColorScales.Rmd’
+  ...
+> df_ColorExample <- data.frame(Estimate = seq(-2, 2, 
++     length.out = 80), PValue = 10^seq(0, -8, length.out = 80))
+
+> ggplot(df_ColorExample, aes(x = Estimate, y = 1, color = PValue)) + 
++     geom_point(size = 3) + scale_color_pvalue() + theme_minimal() + 
++     la .... [TRUNCATED] 
+
+  When sourcing ‘PValueColorScales.R’:
+Error: could not find function "scale_color_pvalue"
+Execution halted
+
+  ‘ClusteringPhenotyping (Raha Dastgheyb's conflicted copy 2026-08-13).qmd’ using ‘UTF-8’... failed to complete the test
+  ‘ClusteringPhenotyping.qmd’ using ‘UTF-8’... failed
+  ‘getting-started.qmd’ using ‘UTF-8’... OK
+  ‘MakeComparisonTable (Raha Dastgheyb's conflicted copy 2026-08-13).qmd’ using ‘UTF-8’... failed to complete the test
+  ‘MakeComparisonTable.qmd’ using ‘UTF-8’... OK
+  ‘MakeUnivariateRegressionTable.qmd’ using ‘UTF-8’... OK
+  ‘OrdinalVariables.qmd’ using ‘UTF-8’... failed
+  ‘PlotCorrelationsHeatmap.qmd’ using ‘UTF-8’... OK
+  ‘PlotForestFromTable.qmd’ using ‘UTF-8’... OK
+  ‘PlotMiningMatrix.qmd’ using ‘UTF-8’... OK
+  ‘UnivariateRegressions.qmd’ using ‘UTF-8’... OK
+  ‘argument-renaming.Rmd’ using ‘UTF-8’... OK
+  ‘fdr-correction.Rmd’ using ‘UTF-8’... OK
+  ‘merge-qc-workflow (Raha Dastgheyb's conflicted copy 2026-08-13).Rmd’ using ‘UTF-8’... failed to complete the test
+  ‘merge-qc-workflow.Rmd’ using ‘UTF-8’... failed
+  ‘PValueColorScales.Rmd’ using ‘UTF-8’... failed
+* checking re-building of vignette outputs ... SKIPPED
+* DONE
+Status: 2 ERRORs, 4 WARNINGs

@@ -2,12 +2,29 @@
 % Please edit documentation in R/DeriveFreesurferVolumes.R
 \name{DeriveFreesurferVolumes}
 \alias{DeriveFreesurferVolumes}
-\title{Derive Freesurfer bilateral totals and ICV-adjusted measures}
+\title{Derive Freesurfer bilateral measures and optional ICV-adjusted ratios}
 \usage{
-DeriveFreesurferVolumes(data, verbose = TRUE)
+DeriveFreesurferVolumes(
+  data,
+  icv_var = NULL,
+  derive_icv_ratios = TRUE,
+  bilateral_method = c("sum", "mean"),
+  verbose = TRUE
+)
 }
 \arguments{
 \item{data}{A data frame containing Freesurfer ASEG and/or DKT variables.}
+
+\item{icv_var}{Optional single character string naming the intracranial
+volume column to use for ratios. When \code{NULL} and ratios are requested,
+\code{EstimatedTotalIntraCranialVol} or \code{eTIV} is detected automatically.}
+
+\item{derive_icv_ratios}{Logical. If \code{TRUE}, derive ICV-adjusted ratios.
+Default is \code{TRUE}.}
+
+\item{bilateral_method}{Character string specifying whether matched
+left/right measures are combined using a \code{"sum"} or \code{"mean"}. Default is
+\code{"sum"}. Output names retain the \verb{_total} suffix for compatibility.}
 
 \item{verbose}{Logical. If \code{TRUE}, prints a short summary of derived variables.
 Default is \code{TRUE}.}
@@ -18,8 +35,9 @@ number of rows as \code{data}. A derivation log is stored in the attribute
 \code{"Freesurfer_derivation_log"}.
 }
 \description{
-Automatically derives bilateral Freesurfer volume measures from ASEG and DKT
-outputs, then creates intracranial-volume-adjusted ratios.
+Automatically derives bilateral Freesurfer measures from ASEG and DKT
+outputs, using either sums or means, and can create
+intracranial-volume-adjusted ratios.
 }
 \details{
 This function is designed for Freesurfer data frames that contain ASEG,
@@ -39,9 +57,12 @@ Supported DKT-style bilateral cortical pairs include names such as:
 \itemize{
 \item \code{lh_fusiform_volume}
 \item \code{rh_fusiform_volume}
+\item \code{lh_fusiform_thickness}
+\item \code{rh_fusiform_thickness}
 }
 
-Supported intracranial volume columns are:
+When ICV ratios are requested and \code{icv_var} is \code{NULL}, supported
+intracranial volume columns are:
 \itemize{
 \item \code{EstimatedTotalIntraCranialVol}
 \item \code{eTIV}
@@ -52,9 +73,13 @@ checks that they are equivalent before deriving ICV-adjusted variables. If
 the two columns differ, the function stops and asks the user to resolve which
 intracranial volume variable should be used.
 
-Bilateral totals are computed as:
+Bilateral sums are computed as:
 
 \code{left + right}
+
+Bilateral means are computed as:
+
+\code{(left + right) / 2}
 
 ICV-adjusted ratios are computed as:
 
@@ -73,6 +98,12 @@ This makes it convenient to append the derived columns with \code{cbind()} or
 \examples{
 \dontrun{
 fs_derived <- DeriveFreesurferVolumes(df_freesurfer)
+
+thickness_derived <- DeriveFreesurferVolumes(
+  df_Thickness,
+  derive_icv_ratios = FALSE,
+  bilateral_method = "mean"
+)
 
 df_freesurfer <- dplyr::bind_cols(
   df_freesurfer,

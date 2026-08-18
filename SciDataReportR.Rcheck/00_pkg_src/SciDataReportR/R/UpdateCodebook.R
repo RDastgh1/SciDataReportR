@@ -46,7 +46,7 @@ UpdateCodebook <- function(data,
 
   # If there are missing variables, create a new codebook template for them
   if (length(vars_MissingFromCodebook) > 0) {
-    NewCodebook <- CreateVariableTypesTemplate(Dataframe %>% select(all_of(vars_MissingFromCodebook)))
+    NewCodebook <- CreateVariableTypesTemplate(Dataframe %>% dplyr::select(dplyr::all_of(vars_MissingFromCodebook)))
     Codebook <- bind_rows(Codebook, NewCodebook)
   }
 
@@ -55,7 +55,7 @@ UpdateCodebook <- function(data,
 
   # Remove missing variables from Codebook if RemoveMissing is set to TRUE
   if (RemoveMissing) {
-    Codebook <- Codebook %>% filter(Variable %in% names(Dataframe))
+    Codebook <- Codebook %>% dplyr::filter(Variable %in% names(Dataframe))
   }
 
   # Create a reference codebook for the full Dataframe
@@ -64,15 +64,15 @@ UpdateCodebook <- function(data,
   # Identify variables with mismatched labels between the Codebook and FullCodebook
   mismatched_labels <- Codebook %>%
     inner_join(FullCodebook, by = "Variable", suffix = c("_old", "_new")) %>%
-    filter(Label_old != Variable & Label_old != Label_new) %>%
-    select(Variable, Label_old, Label_new)
+    dplyr::filter(Label_old != Variable & Label_old != Label_new) %>%
+    dplyr::select(Variable, Label_old, Label_new)
 
   # Update labels if ReplaceLabels is TRUE
   if (ReplaceLabels) {
     Codebook <- Codebook %>%
-      left_join(FullCodebook %>% select(Variable, Label), by = "Variable", suffix = c("_old", "_new")) %>%
-      mutate(Label = ifelse(Label_new != Variable, Label_new, Label_old)) %>%
-      select(Variable, Label)
+      dplyr::left_join(FullCodebook %>% dplyr::select(Variable, Label), by = "Variable", suffix = c("_old", "_new")) %>%
+      dplyr::mutate(Label = ifelse(Label_new != Variable, Label_new, Label_old)) %>%
+      dplyr::select(Variable, Label)
   }
 
   # Return a list containing the updated codebook and relevant metadata

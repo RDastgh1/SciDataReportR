@@ -1,0 +1,13 @@
+
+> knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+
+> options(lifecycle_verbosity = "warning")
+
+> library(SciDataReportR)
+
+> old_style <- MakeDataDictionary(DataFrame = mtcars, 
++     numdecimals = 2)
+
+  When sourcing ‘argument-renaming.R’:
+Error: cannot open file '/Users/rahad/Library/CloudStorage/Dropbox/Coding/Package Development/SciDataReportR/SciDataReportR.Rcheck/SciDataReportR/R/SciDataReportR.rdb': No such file or directory
+Execution halted

@@ -9,7 +9,7 @@ PlotPhiHeatmap(
   CatVars,
   Relabel = TRUE,
   binary_map = NULL,
-  fdr_scope = c("matrix", "per_outcome"),
+  fdr_scope = c("matrix", "per_outcome", "per_predictor"),
   Data = lifecycle::deprecated()
 )
 }
@@ -48,9 +48,28 @@ then renders heatmap-style plots with raw and FDR-adjusted significance.
 }
 \examples{
 data(SampleData)
+data(SampleVariableTypes)
 
-# CatVars must be binary (exactly two unique non-NA values)
-result <- PlotPhiHeatmap(SampleData, CatVars = c("Diagnosis", "sex"))
+Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
 
+# CatVars must be binary (exactly two unique non-NA values). Derive a few
+# more binary indicators so the matrix has off-diagonal structure to read;
+# self-associations on the diagonal are masked out.
+Labelled$APOE4 <- ifelse(
+  grepl("E4", as.character(Labelled$Genotype)), "Carrier", "Non-carrier")
+Labelled$HighTau <- ifelse(
+  Labelled$tau > stats::median(Labelled$tau, na.rm = TRUE), "High", "Low")
+Labelled$LowAbeta <- ifelse(
+  Labelled$Ab_42 < stats::median(Labelled$Ab_42, na.rm = TRUE), "Low", "High")
+
+result <- PlotPhiHeatmap(
+  Labelled,
+  CatVars = c("Diagnosis", "sex", "APOE4", "HighTau", "LowAbeta")
+)
+
+# Raw p-value phi heatmap
 result$Unadjusted$plot
+
+# FDR-adjusted phi heatmap
+result$FDRCorrected$plot
 }

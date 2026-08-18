@@ -84,7 +84,13 @@ compatibility with \code{plotly::ggplotly(tooltip = "text")}. Default is \code{T
 A named list with \code{RawPPlot}, \code{FDRPlot}, and \code{ResultsTable}.
 \code{RawPPlot} uses \code{-log10(PValue)} on the y-axis. \code{FDRPlot} uses
 \code{-log10(FDR)} on the y-axis. \code{ResultsTable} is a tibble with one row per
-analyzed predictor.
+analyzed predictor. For continuous outcomes it includes \code{R} (the zero-order
+Pearson correlation between the predictor and outcome) and \code{AdjustedR} (the
+covariate-adjusted partial correlation, \code{NA} when no covariates are given).
+For two-group categorical outcomes it includes \code{Group1Level}, \code{Group2Level},
+\code{Group1Mean}, and \code{Group2Mean} (the raw predictor means within each outcome
+group). These values are also surfaced in the \code{Tooltip} column used by
+\code{plotly::ggplotly(tooltip = "text")}.
 }
 \description{
 Screen a set of predictor variables against one outcome and visualize the
@@ -105,9 +111,15 @@ data(SampleVariableTypes)
 # Attach labels and factor levels for readable point labels
 Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
 
-predictors <- c("Alpha_1_Antitrypsin", "Alpha_2_Macroglobulin",
-                "Apolipoprotein_A1", "Apolipoprotein_B", "C_Reactive_Protein",
-                "Cortisol", "Insulin", "Leptin")
+predictors <- c(
+  "ACE_CD143_Angiotensin_Converti", "ACTH_Adrenocorticotropic_Hormon",
+  "Adiponectin", "Alpha_1_Antichymotrypsin", "Alpha_1_Antitrypsin",
+  "Alpha_2_Macroglobulin", "Apolipoprotein_A1", "Apolipoprotein_B",
+  "B_Lymphocyte_Chemoattractant_BL", "C_Reactive_Protein", "Cortisol",
+  "Eotaxin_3", "Ferritin", "Fibrinogen", "GRO_alpha", "IGF_BP_2", "MIF",
+  "MMP10", "MMP7", "NT_proBNP", "PAI_1", "Resistin", "TRAIL_R3", "VEGF",
+  "Ab_42", "p_tau", "tau"
+)
 
 # Continuous outcome, adjusted for age
 cont <- PlotVolcanoEffects(
@@ -119,7 +131,9 @@ cont <- PlotVolcanoEffects(
   LabelMode = "top_n",
   TopN = 3
 )
+# Raw and FDR-adjusted continuous-outcome volcano plots
 cont$RawPPlot
+cont$FDRPlot
 
 # Categorical outcome (Diagnosis), Cohen's d effect metric
 cat_res <- PlotVolcanoEffects(
@@ -131,5 +145,7 @@ cat_res <- PlotVolcanoEffects(
   LabelMode = "top_n",
   TopN = 3
 )
+# Raw and FDR-adjusted categorical-outcome volcano plots
 cat_res$RawPPlot
+cat_res$FDRPlot
 }

@@ -14,16 +14,23 @@
 #' [PlotCorrelationsHeatmap()] or a plot returned by [add_r_and_stars()].
 #'
 #' @examples
-#' library(ggplot2)
+#' data(SampleData)
+#' data(SampleVariableTypes)
 #'
-#' # Compose the caption onto any ggplot with `+`
-#' ggplot(mtcars, aes(mpg, wt)) +
-#'   geom_point() +
-#'   geom_starcaption()
+#' df_Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
+#'
+#' # Add the caption to a correlation heatmap whose tiles already show stars.
+#' heatmap <- PlotCorrelationsHeatmap(
+#'   data = df_Labelled,
+#'   predictor_vars = c("Ab_42", "p_tau", "tau", "GRO_alpha", "MMP10"),
+#'   outcome_vars = c("MMP7", "TRAIL_R3", "Ferritin", "Fibrinogen", "MIF")
+#' )
+#' heatmap$Unadjusted$plot + geom_starcaption()
 #' @export
 geom_starcaption <- function() {
-  # Create a caption with the desired text
-  caption <- expression(paste("* = p < 0.05, ** = p < 0.01, *** = p < 0.001"))
+  # Caption text comes from the shared star scale so it cannot drift from the
+  # thresholds the plotting code actually applies.
+  caption <- ScidrStarCaptionText()
 
   # Use labs to add the caption to the plot
   labs(caption = caption)

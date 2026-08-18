@@ -1,11 +1,15 @@
 ^SciDataReportR\.Rproj$
 ^\.Rproj\.user$
+^\.git$
 ^\.DS_Store$
 ^\.Rhistory
 conflicted copy
 ^LICENSE\.md$
+^CONTRIBUTING\.md$
 ^README\.Rmd$
 ^README\.html$
+^Rplots\.pdf$
+^SciDataReportR\.Rcheck$
 ^_pkgdown\.yml$
 ^docs$
 ^pkgdown$
@@ -22,3 +26,5 @@ conflicted copy
 ^CRAN-SUBMISSION$
 \.tar\.gz$
 ^vignettes/.*_files$
+^vignettes/.*\.html$
+^tests/testthat/_problems$

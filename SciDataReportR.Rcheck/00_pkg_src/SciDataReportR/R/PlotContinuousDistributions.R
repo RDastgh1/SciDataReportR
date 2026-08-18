@@ -9,17 +9,35 @@
 #' @param Relabel Logical; use variable labels when available.
 #' @param FacetLabelStyle One of "both", "label_only", "variable_only", "auto".
 #' @param ncol Number of columns in the facet grid.
-#' @param Ordinal Logical; include labelled-ordinal variables as numeric.
+#' @param TreatOrdinalAs How ordinal variables are handled. `"Continuous"`
+#' includes their numeric score; `"Exclude"` omits them. `"Both"` is not
+#' meaningful for this plot and errors.
+#' @param Ordinal Deprecated logical compatibility option; use
+#' `TreatOrdinalAs` instead.
 #'
 #' @return A ggplot object.
 #' @param DataFrame \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
 #' @param Variables \strong{Deprecated} (since 19.15.0). Use \code{variables} instead.
 #' @examples
 #' data(SampleData)
+#' data(SampleVariableTypes)
 #'
+#' Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
+#'
+#' # Eight variables across three columns show wrapped labels and multi-row facets.
 #' PlotContinuousDistributions(
-#'   SampleData,
-#'   variables = c("age", "AXL", "Adiponectin")
+#'   data = Labelled,
+#'   variables = c("AXL", "Adiponectin", "Alpha_1_Antitrypsin", "Ferritin",
+#'                 "Gamma_Interferon_induced_Monokin", "MMP7", "tau", "p_tau"),
+#'   ncol = 3
+#' )
+#'
+#' # Grouped rain-clouds use the Diagnosis fill to compare distributions.
+#' PlotContinuousDistributions(
+#'   data = Labelled,
+#'   variables = c("Ab_42", "p_tau", "tau", "GRO_alpha", "MMP10", "TRAIL_R3"),
+#'   Fill = "Diagnosis",
+#'   ncol = 3
 #' )
 #' @export
 PlotContinuousDistributions <- function(data,
@@ -28,7 +46,8 @@ PlotContinuousDistributions <- function(data,
     Relabel = TRUE,
     FacetLabelStyle = c("both", "label_only", "variable_only", "auto"),
     ncol = 3,
-    Ordinal = TRUE,
+    Ordinal = lifecycle::deprecated(),
+    TreatOrdinalAs = "Categorical",
     DataFrame = lifecycle::deprecated(),
     Variables = lifecycle::deprecated()) {
   # Deprecated argument shims (SciDataReportR 19.15.0)
@@ -43,25 +62,33 @@ PlotContinuousDistributions <- function(data,
   }
   Variables <- variables
 
+  if (lifecycle::is_present(Ordinal)) {
+    lifecycle::deprecate_warn("20.20.0", "PlotContinuousDistributions(Ordinal)", "PlotContinuousDistributions(TreatOrdinalAs)")
+    TreatOrdinalAs <- if (isTRUE(Ordinal)) "Continuous" else "Exclude"
+  }
+  TreatOrdinalAs <- match.arg(TreatOrdinalAs, c("Categorical", "Continuous", "Both", "Exclude"))
+  if (TreatOrdinalAs %in% c("Categorical", "Both")) {
+    if (TreatOrdinalAs == "Both") {
+      stop("TreatOrdinalAs = 'Both' is not meaningful for PlotContinuousDistributions().", call. = FALSE)
+    }
+    TreatOrdinalAs <- "Exclude"
+  }
+
 
   FacetLabelStyle <- match.arg(FacetLabelStyle)
 
   # Select Variables
   if (is.null(Variables)) {
     Variables <- getNumVars(DataFrame, Ordinal = FALSE)
-    if (Ordinal) Variables <- getNumVars(DataFrame, Ordinal = TRUE)
+    if (TreatOrdinalAs == "Continuous") Variables <- getNumVars(DataFrame, Ordinal = TRUE)
   }
 
-  # Convert and Relabel
-  if (Ordinal) {
-    OriginalLabels <- sjlabelled::get_label(DataFrame, def.value = colnames(DataFrame))
-    DataFrame      <- ConvertOrdinalToNumeric(DataFrame, Variables)
-    DataFrame[Variables] <- lapply(DataFrame[Variables], as.numeric)
-
-    for (v in Variables) {
-      DataFrame[[v]] <- sjlabelled::set_label(DataFrame[[v]], OriginalLabels[[v]])
-    }
-  }
+  ordinal <- ConvertOrdinalToNumeric(
+    DataFrame, Variables, TreatOrdinalAs = TreatOrdinalAs,
+    Relabel = Relabel, ReturnMetadata = TRUE
+  )
+  DataFrame <- ordinal$data
+  Variables <- ordinal$variables
 
   # Build facet labels
   var_labels <- sjlabelled::get_label(DataFrame[Variables], def.value = Variables)
@@ -90,6 +117,10 @@ PlotContinuousDistributions <- function(data,
 
   ContData  <- DataFrame %>%
     dplyr::select(dplyr::all_of(long_vars)) %>%
+    # Labelled numeric columns can carry different variable labels, which
+    # vctrs correctly refuses to combine in pivot_longer(). Plot values are
+    # numeric; labels have already been captured above for the facet text.
+    dplyr::mutate(dplyr::across(dplyr::all_of(Variables), as.numeric)) %>%
     tidyr::pivot_longer(cols = dplyr::all_of(Variables)) %>%
     dplyr::group_by(name) %>%
     dplyr::mutate(Mean = mean(value, na.rm = TRUE)) %>%
@@ -127,12 +158,15 @@ PlotContinuousDistributions <- function(data,
     ggplot2::facet_wrap(~ name, scales = "free", ncol = ncol) +
     ggplot2::theme(axis.title.y = ggplot2::element_blank())
 
-  # Legend handling
+  # Legend handling. With no grouping there is a single series, which keeps its
+  # own fixed colour; with a Fill grouping the groups take the package palette.
   if (!legend) {
     p <- p +
       ggplot2::guides(fill = "none", colour = "none") +
       ggplot2::scale_fill_manual(values = "#6EC259") +
       ggplot2::scale_colour_manual(values = "#6EC259")
+  } else {
+    p <- p + .SciDataFillScale() + .SciDataColourScale()
   }
 
   return(p)

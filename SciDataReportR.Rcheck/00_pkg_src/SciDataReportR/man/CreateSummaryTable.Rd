@@ -9,7 +9,8 @@ CreateSummaryTable(
   variables = NULL,
   digits = 2,
   Relabel = TRUE,
-  Ordinal = FALSE,
+  Ordinal = lifecycle::deprecated(),
+  TreatOrdinalAs = "Categorical",
   ScrollBoxHeight = "700px",
   Data = lifecycle::deprecated(),
   Variables = lifecycle::deprecated(),
@@ -25,7 +26,11 @@ CreateSummaryTable(
 
 \item{Relabel}{Logical, indicating whether to use variable labels as column headers.}
 
-\item{Ordinal}{Logical, indicating whether ordinal variables should be included in the summary.}
+\item{Ordinal}{Deprecated logical compatibility option; use
+\code{TreatOrdinalAs} instead.}
+
+\item{TreatOrdinalAs}{How ordinal variables are handled. This numeric
+descriptive table accepts \code{"Continuous"} or \code{"Exclude"}.}
 
 \item{ScrollBoxHeight}{Height of the scroll box for displaying the table.}
 
@@ -40,4 +45,24 @@ A formatted HTML table displaying summary statistics.
 }
 \description{
 Generate a descriptive summary table for specified variables in a dataset.
+}
+\examples{
+\donttest{
+data(SampleData)
+data(SampleVariableTypes)
+
+df_Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
+
+# Distribution diagnostics for six biomarkers
+summary_table <- CreateSummaryTable(
+  data = df_Labelled,
+  variables = c("AXL", "Adiponectin", "Ferritin", "MMP7", "tau", "p_tau"),
+  digits = 2,
+  ScrollBoxHeight = "320px"
+)
+
+# `browsable()` is what renders the HTML on this page; printing suffices
+# in Quarto or R Markdown
+htmltools::browsable(htmltools::HTML(as.character(summary_table)))
+}
 }

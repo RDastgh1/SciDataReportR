@@ -23,17 +23,36 @@
 #' @param Data \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
 #' @examples
 #' data(SampleData)
+#' data(SampleVariableTypes)
 #'
-#' # CatVars must be binary (exactly two unique non-NA values)
-#' result <- PlotPhiHeatmap(SampleData, CatVars = c("Diagnosis", "sex"))
+#' Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
 #'
+#' # CatVars must be binary (exactly two unique non-NA values). Derive a few
+#' # more binary indicators so the matrix has off-diagonal structure to read;
+#' # self-associations on the diagonal are masked out.
+#' Labelled$APOE4 <- ifelse(
+#'   grepl("E4", as.character(Labelled$Genotype)), "Carrier", "Non-carrier")
+#' Labelled$HighTau <- ifelse(
+#'   Labelled$tau > stats::median(Labelled$tau, na.rm = TRUE), "High", "Low")
+#' Labelled$LowAbeta <- ifelse(
+#'   Labelled$Ab_42 < stats::median(Labelled$Ab_42, na.rm = TRUE), "Low", "High")
+#'
+#' result <- PlotPhiHeatmap(
+#'   Labelled,
+#'   CatVars = c("Diagnosis", "sex", "APOE4", "HighTau", "LowAbeta")
+#' )
+#'
+#' # Raw p-value phi heatmap
 #' result$Unadjusted$plot
+#'
+#' # FDR-adjusted phi heatmap
+#' result$FDRCorrected$plot
 #' @export
 PlotPhiHeatmap <- function(data,
     CatVars,
     Relabel = TRUE,
     binary_map = NULL,
-    fdr_scope = c("matrix", "per_outcome"),
+    fdr_scope = c("matrix", "per_outcome", "per_predictor"),
     Data = lifecycle::deprecated()) {
   # Deprecated argument shims (SciDataReportR 19.15.0)
   if (lifecycle::is_present(Data)) {
@@ -75,6 +94,10 @@ PlotPhiHeatmap <- function(data,
   }
 
   # ---- data prep -----------------------------------------------------------
+  # Checked before subsetting, which otherwise fails with base R's
+  # "undefined columns selected" and never names the offending variable.
+  CatVars <- ScidrValidateVariables(Data, CatVars, "CatVars")
+
   if (length(CatVars) < 2) {
     stop("Need at least two binary variables for a Phi heatmap.")
   }
@@ -112,7 +135,13 @@ PlotPhiHeatmap <- function(data,
     x <- x01[keep]; y <- y01[keep]
     nPairs <- length(x)
 
-    if (nPairs < 3L || length(unique(x)) < 2L || length(unique(y)) < 2L) {
+    if (identical(vx, vy)) {
+      # A variable is trivially associated with itself (Phi = 1). Leaving the
+      # diagonal in saturates the colour scale and flattens every real
+      # off-diagonal value, so it is masked out.
+      Phi <- NA_real_
+      p   <- NA_real_
+    } else if (nPairs < 3L || length(unique(x)) < 2L || length(unique(y)) < 2L) {
       Phi <- NA_real_
       p   <- NA_real_
     } else {
@@ -143,7 +172,7 @@ PlotPhiHeatmap <- function(data,
   stat.test$p.adj <- ApplyFDRCorrection(
     stat.test$p_value,
     fdr_scope = fdr_scope,
-    outcome_ids = stat.test$YVar
+    outcome_ids = stat.test$YVar, predictor_ids = stat.test$XVar
   )
 
   # significance stars
@@ -202,7 +231,8 @@ PlotPhiHeatmap <- function(data,
       limits = c(-1, 1),
       name = expression(Phi),                # Phi (plotmath: portable under C locale)
       low  = scales::muted("purple"),
-      high = scales::muted("green")
+      high = scales::muted("green"),
+      na.value = "grey85"
     ) +
     ggplot2::theme(
       axis.title.x = ggplot2::element_blank(),
@@ -222,7 +252,8 @@ PlotPhiHeatmap <- function(data,
       limits = c(-1, 1),
       name = expression(Phi),                # Phi (plotmath: portable under C locale)
       low  = scales::muted("purple"),
-      high = scales::muted("green")
+      high = scales::muted("green"),
+      na.value = "grey85"
     ) +
     ggplot2::theme(
       axis.title.x = ggplot2::element_blank(),

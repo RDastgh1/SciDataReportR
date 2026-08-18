@@ -1,0 +1,20 @@
+
+> knitr::opts_chunk$set(collapse = TRUE, comment = "#>", 
++     fig.width = 7, fig.height = 4.5)
+
+> library(SciDataReportR)
+
+> pm <- matrix(c(0.005, 0.04, 0.03, 0.01, NA, 0.002), 
++     nrow = 2, dimnames = list(c("pred1", "pred2"), c("out1", 
++         "out2", "out3")))
+
+> pm
+       out1 out2  out3
+pred1 0.005 0.03    NA
+pred2 0.040 0.01 0.002
+
+> ApplyFDRCorrection(pm, fdr_scope = "matrix")
+
+  When sourcing ‘fdr-correction.R’:
+Error: cannot open file '/Users/rahad/Library/CloudStorage/Dropbox/Coding/Package Development/SciDataReportR/SciDataReportR.Rcheck/SciDataReportR/R/SciDataReportR.rdb': No such file or directory
+Execution halted

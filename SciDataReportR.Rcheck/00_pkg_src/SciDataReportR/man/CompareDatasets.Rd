@@ -66,3 +66,71 @@ cell-level comparison is performed only for key combinations that are unique
 in both datasets. Duplicate keys are returned separately and flagged in
 \code{Checks}.
 }
+\section{Reading the result}{
+
+Start with \code{Checks}, the traffic-light table. Everything that changed
+between the two extracts is classified, counted, and explained there, so a
+release can be signed off - or stopped - without reading any raw data.
+\code{Summary} carries the same story as headline metrics, one row per measure.
+
+From there, \code{ModifiedValues} drills down to the individual cells that moved,
+with the old and new value side by side and each change classified;
+\code{VariableChangeSummary} rolls those up per variable, which is usually what
+gets circulated to collaborators. \code{SummaryText} is a plain-text version of
+the whole comparison, for a log or an email.
+}
+
+\examples{
+\donttest{
+data(SampleData)
+
+# A revised extract: corrected ages, lost values, dropped rows, a new column
+df_OldData <- dplyr::mutate(
+  SampleData,
+  ParticipantID = seq_len(nrow(SampleData)),
+  .before = 1
+)
+
+set.seed(4)
+df_NewData <- df_OldData
+df_NewData$age[1:5] <- df_NewData$age[1:5] + 1
+df_NewData$MMP7[c(2, 9, 14)] <- NA
+df_NewData$NewBiomarker <- stats::rnorm(nrow(df_NewData))
+df_NewData <- df_NewData[-c(3, 7), ]
+
+comparison <- CompareDatasets(
+  OldData = df_OldData,
+  NewData = df_NewData,
+  keys = "ParticipantID"
+)
+
+ShowTable <- function(x, height = "300px") {
+  htmltools::browsable(htmltools::HTML(as.character(
+    FreezeTableHeader(x, height = height, full_width = TRUE)
+  )))
+}
+
+# The traffic-light checks
+ShowTable(comparison$Checks, height = "360px")
+
+# The headline metrics
+ShowTable(
+  data.frame(
+    Metric = names(comparison$Summary),
+    Value = vapply(comparison$Summary, format, character(1), trim = TRUE),
+    row.names = NULL
+  ),
+  height = "300px"
+)
+
+# The individual cells that moved
+ShowTable(comparison$ModifiedValues)
+
+# A per-variable roll-up
+ShowTable(comparison$VariableChangeSummary, height = "220px")
+
+# A plain-text version, for a log or an email
+cat(comparison$SummaryText, sep = "\n")
+}
+
+}

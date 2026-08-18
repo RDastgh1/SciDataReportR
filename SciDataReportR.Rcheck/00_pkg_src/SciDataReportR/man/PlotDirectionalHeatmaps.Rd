@@ -7,12 +7,12 @@
 PlotDirectionalHeatmaps(
   data,
   variables = NULL,
-  yVars = lifecycle::deprecated(),
   Relabel = TRUE,
   Ordinal = TRUE,
-  fdr_scope = c("matrix", "per_outcome"),
+  fdr_scope = c("matrix", "per_outcome", "per_predictor"),
   Data = lifecycle::deprecated(),
-  xVars = lifecycle::deprecated()
+  xVars = lifecycle::deprecated(),
+  yVars = lifecycle::deprecated()
 )
 }
 \arguments{
@@ -23,12 +23,11 @@ columns). The analysis is symmetric: every variable is related to every
 other, so a single variable set defines both axes. If NULL, uses all
 detected continuous + binary vars.}
 
-\item{yVars}{\strong{Deprecated} (since 19.15.0). Use \code{variables}
-instead. If supplied, the old rectangular x-by-y display is still honored.}
-
 \item{Relabel}{Logical; use sjlabelled variable labels if present.}
 
-\item{Ordinal}{Logical; reserved for future use.}
+\item{Ordinal}{Logical; passed to \code{\link[=PlotPointCorrelationsHeatmap]{PlotPointCorrelationsHeatmap()}} for the
+binary~continuous block, where it controls whether ordinal variables are
+treated as continuous. Defaults to \code{TRUE}.}
 
 \item{fdr_scope}{Either \code{"matrix"} (default) or \code{"per_outcome"}, threaded
 through to the three sub-analyses (\code{\link[=PlotCorrelationsHeatmap]{PlotCorrelationsHeatmap()}},
@@ -41,6 +40,9 @@ sub-function's documented outcome orientation applies within its block.}
 
 \item{xVars}{\strong{Deprecated} (since 19.15.0). Use \code{variables}
 instead.}
+
+\item{yVars}{\strong{Deprecated} (since 19.15.0). Use \code{variables}
+instead. If supplied, the old rectangular x-by-y display is still honored.}
 }
 \value{
 list(Unadjusted, FDRCorrected, Relabel, BinaryMapping, Excluded)
@@ -60,9 +62,9 @@ automatically excluded before computing any tiles.
 }
 \note{
 The analysis covers continuous and binary variables. Multi-level categorical
-variables (more than two levels) are not placed on the heatmap. Ordinal
-handling via the \code{Ordinal} argument is reserved for future use and does not
-yet change the tiles that are computed.
+variables (more than two levels) are not placed on the heatmap. \code{Ordinal}
+affects only the binary~continuous block, which is the one sub-analysis that
+accepts it.
 }
 \examples{
 data(SampleData)
@@ -80,7 +82,11 @@ result <- PlotDirectionalHeatmaps(
                 "Insulin", "Leptin")
 )
 
+# Raw p-value directional heatmap
 result$Unadjusted$plot
+
+# FDR-adjusted directional heatmap
+result$FDRCorrected$plot
 
 # How binary variables were coded (which level counts as the positive one)
 result$BinaryMapping

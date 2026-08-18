@@ -31,3 +31,25 @@ in a dataframe. Binary variables are defined as having exactly two unique values
 or levels. The function supports options for handling ordinal factors and
 revalued data.
 }
+\examples{
+data(SampleData)
+data(SampleVariableTypes)
+
+Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
+
+# Two-level factors, which are the ones that can be modelled as 0/1
+vars_Binary <- getBinaryVars(Labelled)
+vars_Binary
+
+# `Revalued = FALSE` looks for any column with two distinct values instead
+# of two factor levels, for frames that have not been through RevalueData().
+getBinaryVars(SampleData, Revalued = FALSE)
+
+# Which level each one is scored against
+createBinaryMapping(Labelled, vars_Binary)
+
+}
+\seealso{
+\code{\link[=createBinaryMapping]{createBinaryMapping()}} to fix which level counts as positive, and
+\code{\link[=getCatVars]{getCatVars()}} / \code{\link[=getNumVars]{getNumVars()}} for the other partitions.
+}

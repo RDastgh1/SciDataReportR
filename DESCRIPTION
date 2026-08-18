@@ -1,6 +1,6 @@
 Package: SciDataReportR
 Title: Workflow Infrastructure for Reproducible Scientific Data Reporting
-Version: 20.22.0
+Version: 20.24.0
 Authors@R: 
     person("Raha", "Dastgheyb", , "raha@jhmi.edu", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0002-4992-711X"))
@@ -13,9 +13,11 @@ BugReports: https://github.com/RDastgh1/SciDataReportR/issues
 Imports:
     dplyr,
     ggplot2,
+    grDevices,
     labelled,
     lifecycle,
     magrittr,
+    pROC,
     sjlabelled,
     stats,
     tidyr,
@@ -61,6 +63,8 @@ Suggests:
     lubridate,
     MASS,
     mclust,
+    dbscan,
+    cluster,
     missRanger,
     nnet,
     openxlsx,
@@ -68,8 +72,8 @@ Suggests:
     pals,
     plyr,
     plotly,
+    poLCA,
     plotrix,
-    pROC,
     codebook,
     psych,
     quarto,

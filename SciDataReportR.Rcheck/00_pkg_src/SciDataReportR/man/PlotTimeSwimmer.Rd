@@ -112,18 +112,65 @@ States can either be displayed as continuous intervals extending forward
 until the next visit (\code{StateInterval = "forward"}) or shown only as visit
 points (\code{StateInterval = "point"}).
 }
+\section{What the examples vary}{
+
+State paths extend each state to the next visit, and ordering by duration
+puts the longest observed timelines at the top. Visit points instead retain
+only the observed visits, and \code{last_time} ranks participants by their most
+recent observed follow-up.
+
+Event rugs center time on each participant's first flare, so the input
+includes only participants who experienced the selected event; ordering by
+state then groups participants by their initial clinical state.
+}
+
 \examples{
-df <- tibble::tibble(
-  ID = c(1,1,1,2,2,2),
-  Visit = c(0,6,12,0,6,12),
-  Cluster = c("A","A","B","B","B","C")
+df_swimmer <- tibble::tibble(
+  ID = c("P01", "P01", "P01", "P02", "P02", "P03", "P03", "P03", "P04", "P04"),
+  Day = c(0, 90, 365, 0, 270, 0, 180, 540, 0, 120),
+  State = c("Stable", "Flare", "Recovered", "Stable", "Stable",
+            "Flare", "Flare", "Recovered", "Stable", "Withdrawn"),
+  Event = c(FALSE, TRUE, FALSE, FALSE, FALSE, TRUE, FALSE, FALSE, FALSE, TRUE),
+  EventType = c(NA, "Flare", NA, NA, NA, "Flare", NA, NA, NA, "Withdrawal")
 )
 
+# State paths, ordered by duration
 PlotTimeSwimmer(
-  data = df,
+  data = df_swimmer,
   id_var = "ID",
-  Time = "Visit",
-  State = "Cluster"
+  Time = "Day",
+  State = "State",
+  Event = "Event",
+  EventType = "EventType",
+  Format = "state_path",
+  SortBy = "duration",
+  TimeUnit = "months"
+)
+
+# Visit points, ordered by last observed follow-up
+PlotTimeSwimmer(
+  data = df_swimmer,
+  id_var = "ID",
+  Time = "Day",
+  State = "State",
+  Format = "visit_points",
+  SortBy = "last_time",
+  TimeUnit = "months"
+)
+
+# Event rugs, centered on each participant's first flare
+PlotTimeSwimmer(
+  data = subset(df_swimmer, ID \%in\% c("P01", "P03")),
+  id_var = "ID",
+  Time = "Day",
+  State = "State",
+  Event = "Event",
+  EventType = "EventType",
+  TimeScale = "from_event",
+  EventReference = TRUE,
+  Format = "event_rug",
+  SortBy = "state",
+  TimeUnit = "months"
 )
 
 }

@@ -1,0 +1,16 @@
+
+> library(SciDataReportR)
+
+> data("SampleData")
+
+> data("SampleVariableTypes")
+
+> df_Raw <- SampleData
+
+> VariableTypes <- SampleVariableTypes
+
+> VariableTypes_Template <- CreateVariableTypesTemplate(df_Raw)
+
+  When sourcing ‘getting-started.R’:
+Error: cannot open file '/Users/rahad/Library/CloudStorage/Dropbox/Coding/Package Development/SciDataReportR/SciDataReportR.Rcheck/SciDataReportR/R/SciDataReportR.rdb': No such file or directory
+Execution halted

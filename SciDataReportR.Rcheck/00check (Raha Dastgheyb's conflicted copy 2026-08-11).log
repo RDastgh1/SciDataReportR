@@ -1,0 +1,594 @@
+* using log directory ‘/Users/rahad/Library/CloudStorage/Dropbox/Coding/Package Development/SciDataReportR/SciDataReportR.Rcheck’
+* using R version 4.5.3 (2026-03-11)
+* using platform: aarch64-apple-darwin20
+* R was compiled by
+    Apple clang version 16.0.0 (clang-1600.0.26.6)
+    GNU Fortran (GCC) 14.2.0
+* running under: macOS Tahoe 26.5.1
+* using session charset: UTF-8
+* using options ‘--no-manual --as-cran’
+* checking for file ‘SciDataReportR/DESCRIPTION’ ... OK
+* this is package ‘SciDataReportR’ version ‘20.24.0’
+* package encoding: UTF-8
+* checking CRAN incoming feasibility ... [2s/12s] NOTE
+Maintainer: ‘Raha Dastgheyb <raha@jhmi.edu>’
+
+New submission
+
+Package has a VignetteBuilder field but no prebuilt vignette index.
+* checking package namespace information ... OK
+* checking package dependencies ... OK
+* checking if this is a source package ... OK
+* checking if there is a namespace ... OK
+* checking for executable files ... OK
+* checking for hidden files and directories ... OK
+* checking for portable file names ... OK
+* checking for sufficient/correct file permissions ... OK
+* checking whether package ‘SciDataReportR’ can be installed ... OK
+* checking installed package size ... OK
+* checking package directory ... OK
+* checking for future file timestamps ... OK
+* checking DESCRIPTION meta-information ... OK
+* checking top-level files ... NOTE
+Files ‘README.md’ or ‘NEWS.md’ cannot be checked without ‘pandoc’ being installed.
+* checking for left-over files ... OK
+* checking index information ... OK
+* checking package subdirectories ... OK
+* checking code files for non-ASCII characters ... OK
+* checking R files for syntax errors ... OK
+* checking whether the package can be loaded ... OK
+* checking whether the package can be loaded with stated dependencies ... OK
+* checking whether the package can be unloaded cleanly ... OK
+* checking whether the namespace can be loaded with stated dependencies ... OK
+* checking whether the namespace can be unloaded cleanly ... OK
+* checking use of S3 registration ... OK
+* checking dependencies in R code ... NOTE
+Error in .read_description(dfile) : 
+  file '/Users/rahad/Library/CloudStorage/Dropbox/Coding/Package Development/SciDataReportR/SciDataReportR.Rcheck/SciDataReportR/DESCRIPTION' does not exist
+Execution halted
+* checking S3 generic/method consistency ... OK
+* checking replacement functions ... OK
+* checking foreign function calls ... OK
+* checking R code for possible problems ... [11s/16s] NOTE
+Error: object 'pkgInfo' not found
+Call sequence:
+1: loadNamespace(package, lib.loc)
+Execution halted
+Plot2GroupStats: no visible binding for global variable ‘display_label’
+Undefined global functions or variables:
+  display_label
+
+Error: object 'pkgInfo' not found
+Call sequence:
+1: loadNamespace(package, lib.loc)
+Execution halted
+* checking Rd files ... OK
+* checking Rd metadata ... OK
+* checking Rd line widths ... NOTE
+Warning in FUN(X[[i]], ...) :
+  internal error 1 in R_decompress1 with libdeflate
+Error in FUN(X[[i]], ...) : 
+  lazy-load database '/Users/rahad/Library/CloudStorage/Dropbox/Coding/Package Development/SciDataReportR/SciDataReportR.Rcheck/SciDataReportR/help/SciDataReportR.rdb' is corrupt
+Calls: suppressPackageStartupMessages ... fetchRdDB -> lazyLoadDBexec -> fun -> lapply -> FUN
+Execution halted
+These lines will be truncated in the PDF manual.
+* checking Rd cross-references ... INFO
+Warning in gzfile(file, "rb") :
+  cannot open compressed file '', probable reason 'No such file or directory'
+Error in gzfile(file, "rb") : cannot open the connection
+Calls: <Anonymous> -> readRDS -> gzfile
+Execution halted
+* checking for missing documentation entries ... WARNING
+Error: ‘SciDataReportR’ is not a valid installed package
+Call sequence:
+2: stop(gettextf("%s is not a valid installed package", sQuote(package)), 
+       domain = NA)
+1: library(package, lib.loc = lib.loc, character.only = TRUE, verbose = FALSE)
+Execution halted
+All user-level objects in a package should have documentation entries.
+See chapter ‘Writing R documentation files’ in the ‘Writing R
+Extensions’ manual.
+* checking for code/documentation mismatches ... WARNING
+Error in tools::codoc(package = "SciDataReportR") : 
+  directory '/Users/rahad/Library/CloudStorage/Dropbox/Coding/Package Development/SciDataReportR/SciDataReportR.Rcheck/SciDataReportR' does not contain Rd objects
+Execution halted
+Warning in FUN(X[[i]], ...) :
+  internal error 1 in R_decompress1 with libdeflate
+Error in FUN(X[[i]], ...) : 
+  lazy-load database '/Users/rahad/Library/CloudStorage/Dropbox/Coding/Package Development/SciDataReportR/SciDataReportR.Rcheck/SciDataReportR/help/SciDataReportR.rdb' is corrupt
+Calls: <Anonymous> ... fetchRdDB -> lazyLoadDBexec -> fun -> lapply -> FUN
+Execution halted
+Error in tools::codocClasses(package = "SciDataReportR") : 
+  directory '/Users/rahad/Library/CloudStorage/Dropbox/Coding/Package Development/SciDataReportR/SciDataReportR.Rcheck/SciDataReportR' does not contain Rd objects
+Execution halted
+* checking Rd \usage sections ... WARNING
+Warning in FUN(X[[i]], ...) :
+  internal error 1 in R_decompress1 with libdeflate
+Error in FUN(X[[i]], ...) : 
+  lazy-load database '/Users/rahad/Library/CloudStorage/Dropbox/Coding/Package Development/SciDataReportR/SciDataReportR.Rcheck/SciDataReportR/help/SciDataReportR.rdb' is corrupt
+Calls: <Anonymous> ... fetchRdDB -> lazyLoadDBexec -> fun -> lapply -> FUN
+Execution halted
+Functions with \usage entries need to have the appropriate \alias
+entries, and all their arguments documented.
+The \usage entries must correspond to syntactically valid R code.
+See chapter ‘Writing R documentation files’ in the ‘Writing R
+Extensions’ manual.
+Error in tools::checkDocStyle(package = "SciDataReportR") : 
+  directory '/Users/rahad/Library/CloudStorage/Dropbox/Coding/Package Development/SciDataReportR/SciDataReportR.Rcheck/SciDataReportR' does not contain Rd objects
+Execution halted
+The \usage entries for S3 methods should use the \method markup and not
+their full name.
+See chapter ‘Writing R documentation files’ in the ‘Writing R
+Extensions’ manual.
+* checking Rd contents ... NOTE
+Warning in FUN(X[[i]], ...) :
+  internal error 1 in R_decompress1 with libdeflate
+Error in FUN(X[[i]], ...) : 
+  lazy-load database '/Users/rahad/Library/CloudStorage/Dropbox/Coding/Package Development/SciDataReportR/SciDataReportR.Rcheck/SciDataReportR/help/SciDataReportR.rdb' is corrupt
+Calls: <Anonymous> ... fetchRdDB -> lazyLoadDBexec -> fun -> lapply -> FUN
+Execution halted
+* checking for unstated dependencies in examples ... WARNING
+Warning in FUN(X[[i]], ...) :
+  internal error 1 in R_decompress1 with libdeflate
+Error in FUN(X[[i]], ...) : 
+  lazy-load database '/Users/rahad/Library/CloudStorage/Dropbox/Coding/Package Development/SciDataReportR/SciDataReportR.Rcheck/SciDataReportR/help/SciDataReportR.rdb' is corrupt
+Execution halted
+* checking contents of ‘data’ directory ... OK
+* checking data for non-ASCII characters ... OK
+* checking LazyData ... OK
+* checking data for ASCII and uncompressed saves ... OK
+* checking files in ‘vignettes’ ... WARNING
+Files in the 'vignettes' directory but no files in 'inst/doc':
+  ‘argument-renaming.Rmd’ ‘clustering.scss’ ‘ClusteringPhenotyping.qmd’
+  ‘fdr-correction.Rmd’ ‘getting-started.qmd’ ‘MakeComparisonTable.qmd’
+  ‘MakeUnivariateRegressionTable.qmd’ ‘merge-qc-workflow.Rmd’
+  ‘OrdinalVariables.qmd’ ‘PlotCorrelationsHeatmap.qmd’
+  ‘PlotForestFromTable.qmd’ ‘PlotMiningMatrix.qmd’
+  ‘PValueColorScales.Rmd’ ‘UnivariateRegressions.qmd’
+* checking examples ... ERROR
+Running massageExamples to create ‘SciDataReportR-Ex.R’ failed
+Error in FUN(X[[i]], ...) : 
+  lazy-load database '/Users/rahad/Library/CloudStorage/Dropbox/Coding/Package Development/SciDataReportR/SciDataReportR.Rcheck/SciDataReportR/help/SciDataReportR.rdb' is corrupt
+Calls: <Anonymous> ... fetchRdDB -> lazyLoadDBexec -> fun -> lapply -> FUN
+In addition: Warning message:
+In FUN(X[[i]], ...) : internal error 1 in R_decompress1 with libdeflate
+Execution halted
+ NONE
+* checking for unstated dependencies in ‘tests’ ... OK
+* checking tests ... ERROR
+  Running ‘testthat.R’
+Running the tests in ‘tests/testthat.R’ failed.
+Complete output:
+  > library(testthat)
+  > library(SciDataReportR)
+  Error in library(SciDataReportR) : 
+    'SciDataReportR' is not a valid installed package
+  Execution halted
+* checking for unstated dependencies in vignettes ... OK
+* checking package vignettes ... WARNING
+Directory 'inst/doc' does not exist.
+Package vignettes without corresponding single PDF/HTML:
+  ‘ClusteringPhenotyping.qmd’
+  ‘getting-started.qmd’
+  ‘MakeComparisonTable.qmd’
+  ‘MakeUnivariateRegressionTable.qmd’
+  ‘OrdinalVariables.qmd’
+  ‘PlotCorrelationsHeatmap.qmd’
+  ‘PlotForestFromTable.qmd’
+  ‘PlotMiningMatrix.qmd’
+  ‘UnivariateRegressions.qmd’
+  ‘argument-renaming.Rmd’
+  ‘fdr-correction.Rmd’
+  ‘merge-qc-workflow.Rmd’
+  ‘PValueColorScales.Rmd’
+* checking re-building of vignette outputs ... [59s/79s] ERROR
+Error(s) in re-building vignettes:
+--- re-building ‘ClusteringPhenotyping.qmd’ using html
+
+
+processing file: ClusteringPhenotyping.qmd
+Error:
+! object 'SimulatedPhenotypeData' not found
+
+Quitting from ClusteringPhenotyping.qmd:101-119 [LoadData]
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+<error/rlang_error>
+Error:
+! object 'SimulatedPhenotypeData' not found
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Execution halted
+WARN: Error encountered when rendering files
+Error: processing vignette 'ClusteringPhenotyping.qmd' failed with diagnostics:
+! Error running quarto CLI from R.
+Caused by error in `quarto_render()`:
+✖ Error returned by quarto CLI.
+  -----------------------------
+  
+  
+  processing file: ClusteringPhenotyping.qmd
+  Error:
+  ! object 'SimulatedPhenotypeData' not found
+  
+  Quitting from ClusteringPhenotyping.qmd:101-119 [LoadData]
+  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  <error/rlang_error>
+  Error:
+  ! object 'SimulatedPhenotypeData' not found
+  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  
+  Execution halted
+  WARN: Error encountered when rendering files
+  
+Caused by error in `processx::run()`:
+! System command 'quarto' failed
+--- failed re-building ‘ClusteringPhenotyping.qmd’
+
+--- re-building ‘getting-started.qmd’ using html
+
+
+processing file: getting-started.qmd
+output file: getting-started.knit.md
+
+pandoc 
+  to: html
+  output-file: getting-started.html
+  standalone: true
+  embed-resources: true
+  wrap: none
+  default-image-extension: png
+  css:
+    - >-
+      /Library/Frameworks/R.framework/Versions/4.5-arm64/Resources/library/quarto/rmarkdown/template/quarto_vignette/resources/vignette.css
+  toc: true
+  toc-depth: 2
+  variables: {}
+  
+metadata
+  document-css: false
+  lang: en
+  engines:
+    - path: /Applications/quarto/share/extension-subtrees/julia-engine/_extensions/julia-engine/julia-engine.js
+  minimal: true
+  theme: none
+  title: Getting started with SciDataReportR
+  vignette: |
+    %\VignetteIndexEntry{Getting started with SciDataReportR} %\VignetteEngine{quarto::html} %\VignetteEncoding{UTF-8}
+  
+Output created: getting-started.html
+
+--- finished re-building ‘getting-started.qmd’
+
+--- re-building ‘MakeComparisonTable.qmd’ using html
+
+
+processing file: MakeComparisonTable.qmd
+output file: MakeComparisonTable.knit.md
+
+pandoc 
+  to: html
+  output-file: MakeComparisonTable.html
+  standalone: true
+  embed-resources: true
+  wrap: none
+  default-image-extension: png
+  css:
+    - >-
+      /Library/Frameworks/R.framework/Versions/4.5-arm64/Resources/library/quarto/rmarkdown/template/quarto_vignette/resources/vignette.css
+  toc: true
+  number-sections: true
+  variables: {}
+  
+metadata
+  document-css: false
+  lang: en
+  engines:
+    - path: /Applications/quarto/share/extension-subtrees/julia-engine/_extensions/julia-engine/julia-engine.js
+  minimal: true
+  theme: none
+  title: Creating comparison tables with MakeComparisonTable()
+  description: Generate publication-ready comparison tables with effect sizes, covariate adjustment, and pairwise comparisons.
+  vignette: |
+    %\VignetteIndexEntry{Creating comparison tables with MakeComparisonTable()} %\VignetteEngine{quarto::html} %\VignetteEncoding{UTF-8}
+  
+Output created: MakeComparisonTable.html
+
+--- finished re-building ‘MakeComparisonTable.qmd’
+
+--- re-building ‘MakeUnivariateRegressionTable.qmd’ using html
+
+
+processing file: MakeUnivariateRegressionTable.qmd
+output file: MakeUnivariateRegressionTable.knit.md
+
+pandoc 
+  to: html
+  output-file: MakeUnivariateRegressionTable.html
+  standalone: true
+  embed-resources: true
+  wrap: none
+  default-image-extension: png
+  css:
+    - >-
+      /Library/Frameworks/R.framework/Versions/4.5-arm64/Resources/library/quarto/rmarkdown/template/quarto_vignette/resources/vignette.css
+  toc: true
+  number-sections: true
+  variables: {}
+  
+metadata
+  document-css: false
+  lang: en
+  engines:
+    - path: /Applications/quarto/share/extension-subtrees/julia-engine/_extensions/julia-engine/julia-engine.js
+  minimal: true
+  theme: none
+  title: Screening Outcomes and Predictors with MakeUnivariateRegressionTable()
+  description: Create label-aware univariate regression tables across multiple outcomes and predictors.
+  vignette: |
+    %\VignetteIndexEntry{Screening Outcomes and Predictors with MakeUnivariateRegressionTable()} %\VignetteEngine{quarto::html} %\VignetteEncoding{UTF-8}
+  
+Output created: MakeUnivariateRegressionTable.html
+
+--- finished re-building ‘MakeUnivariateRegressionTable.qmd’
+
+--- re-building ‘OrdinalVariables.qmd’ using html
+
+
+processing file: OrdinalVariables.qmd
+Error in `MakeComparisonTable()`:
+! Variable(s) not found: Categorical
+Backtrace:
+    ▆
+ 1. └─SciDataReportR::MakeComparisonTable(...)
+
+Quitting from OrdinalVariables.qmd:95-105 [CategoricalComparisonTable]
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+<error/rlang_error>
+Error in `MakeComparisonTable()`:
+! Variable(s) not found: Categorical
+---
+Backtrace:
+    ▆
+ 1. └─SciDataReportR::MakeComparisonTable(...)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Execution halted
+WARN: Error encountered when rendering files
+Error: processing vignette 'OrdinalVariables.qmd' failed with diagnostics:
+! Error running quarto CLI from R.
+Caused by error in `quarto_render()`:
+✖ Error returned by quarto CLI.
+  -----------------------------
+  
+  
+  processing file: OrdinalVariables.qmd
+  Error in `MakeComparisonTable()`:
+  ! Variable(s) not found: Categorical
+  Backtrace:
+  ▆
+  1. └─SciDataReportR::MakeComparisonTable(...)
+  
+  Quitting from OrdinalVariables.qmd:95-105 [CategoricalComparisonTable]
+  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  <error/rlang_error>
+  Error in `MakeComparisonTable()`:
+  ! Variable(s) not found: Categorical
+  ---
+  Backtrace:
+  ▆
+  1. └─SciDataReportR::MakeComparisonTable(...)
+  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  
+  Execution halted
+  WARN: Error encountered when rendering files
+  
+Caused by error in `processx::run()`:
+! System command 'quarto' failed
+--- failed re-building ‘OrdinalVariables.qmd’
+
+--- re-building ‘PlotCorrelationsHeatmap.qmd’ using html
+
+
+processing file: PlotCorrelationsHeatmap.qmd
+output file: PlotCorrelationsHeatmap.knit.md
+
+pandoc 
+  to: html
+  output-file: PlotCorrelationsHeatmap.html
+  standalone: true
+  embed-resources: true
+  wrap: none
+  default-image-extension: png
+  css:
+    - >-
+      /Library/Frameworks/R.framework/Versions/4.5-arm64/Resources/library/quarto/rmarkdown/template/quarto_vignette/resources/vignette.css
+  toc: true
+  number-sections: true
+  variables: {}
+  
+metadata
+  document-css: false
+  lang: en
+  engines:
+    - path: /Applications/quarto/share/extension-subtrees/julia-engine/_extensions/julia-engine/julia-engine.js
+  minimal: true
+  theme: none
+  title: Exploring associations with PlotCorrelationsHeatmap()
+  description: Create correlation heatmaps, perform FDR correction, adjust for covariates, and investigate significant associations.
+  knitr:
+    opts_chunk:
+      fig.retina: 1
+  vignette: |
+    %\VignetteIndexEntry{Exploring associations with PlotCorrelationsHeatmap()} %\VignetteEngine{quarto::html} %\VignetteEncoding{UTF-8}
+  
+Output created: PlotCorrelationsHeatmap.html
+
+--- finished re-building ‘PlotCorrelationsHeatmap.qmd’
+
+--- re-building ‘PlotForestFromTable.qmd’ using html
+
+
+processing file: PlotForestFromTable.qmd
+output file: PlotForestFromTable.knit.md
+
+pandoc 
+  to: html
+  output-file: PlotForestFromTable.html
+  standalone: true
+  embed-resources: true
+  wrap: none
+  default-image-extension: png
+  css:
+    - >-
+      /Library/Frameworks/R.framework/Versions/4.5-arm64/Resources/library/quarto/rmarkdown/template/quarto_vignette/resources/vignette.css
+  toc: true
+  number-sections: true
+  variables: {}
+  
+metadata
+  document-css: false
+  lang: en
+  engines:
+    - path: /Applications/quarto/share/extension-subtrees/julia-engine/_extensions/julia-engine/julia-engine.js
+  minimal: true
+  theme: none
+  title: Forest Plots from Univariate Regression Tables
+  description: Visualize estimates from MakeUnivariateRegressionTable() with PlotForestFromTable().
+  vignette: |
+    %\VignetteIndexEntry{Forest Plots from Univariate Regression Tables} %\VignetteEngine{quarto::html} %\VignetteEncoding{UTF-8}
+  
+Output created: PlotForestFromTable.html
+
+--- finished re-building ‘PlotForestFromTable.qmd’
+
+--- re-building ‘PlotMiningMatrix.qmd’ using html
+
+
+processing file: PlotMiningMatrix.qmd
+output file: PlotMiningMatrix.knit.md
+
+pandoc 
+  to: html
+  output-file: PlotMiningMatrix.html
+  standalone: true
+  embed-resources: true
+  wrap: none
+  default-image-extension: png
+  css:
+    - >-
+      /Library/Frameworks/R.framework/Versions/4.5-arm64/Resources/library/quarto/rmarkdown/template/quarto_vignette/resources/vignette.css
+  toc: true
+  number-sections: true
+  variables: {}
+  
+metadata
+  document-css: false
+  lang: en
+  engines:
+    - path: /Applications/quarto/share/extension-subtrees/julia-engine/_extensions/julia-engine/julia-engine.js
+  minimal: true
+  theme: none
+  title: Exploratory discovery with PlotMiningMatrix()
+  description: Rapidly identify patterns, anomalies, covariates, and candidate hypotheses across an entire dataset.
+  knitr:
+    opts_chunk:
+      fig.retina: 1
+  vignette: |
+    %\VignetteIndexEntry{Exploratory discovery with PlotMiningMatrix()} %\VignetteEngine{quarto::html} %\VignetteEncoding{UTF-8}
+  
+Output created: PlotMiningMatrix.html
+
+--- finished re-building ‘PlotMiningMatrix.qmd’
+
+--- re-building ‘UnivariateRegressions.qmd’ using html
+
+
+processing file: UnivariateRegressions.qmd
+output file: UnivariateRegressions.knit.md
+
+pandoc 
+  to: html
+  output-file: UnivariateRegressions.html
+  standalone: true
+  embed-resources: true
+  wrap: none
+  default-image-extension: png
+  css:
+    - >-
+      /Library/Frameworks/R.framework/Versions/4.5-arm64/Resources/library/quarto/rmarkdown/template/quarto_vignette/resources/vignette.css
+  toc: true
+  number-sections: true
+  variables: {}
+  
+metadata
+  document-css: false
+  lang: en
+  engines:
+    - path: /Applications/quarto/share/extension-subtrees/julia-engine/_extensions/julia-engine/julia-engine.js
+  minimal: true
+  theme: none
+  title: Screening predictors with MakeUnivariateRegressionTable()
+  description: Generate publication-ready regression tables and forest plots across multiple outcomes and predictors.
+  vignette: |
+    %\VignetteIndexEntry{Screening predictors with MakeUnivariateRegressionTable()} %\VignetteEngine{quarto::html} %\VignetteEncoding{UTF-8}
+  
+Output created: UnivariateRegressions.html
+
+--- finished re-building ‘UnivariateRegressions.qmd’
+
+--- re-building ‘argument-renaming.Rmd’ using rmarkdown
+Pandoc is required to build R Markdown vignettes but not available. Please make sure it is installed.
+--- finished re-building ‘argument-renaming.Rmd’
+
+--- re-building ‘fdr-correction.Rmd’ using rmarkdown
+Pandoc is required to build R Markdown vignettes but not available. Please make sure it is installed.
+--- finished re-building ‘fdr-correction.Rmd’
+
+--- re-building ‘merge-qc-workflow.Rmd’ using rmarkdown
+Pandoc is required to build R Markdown vignettes but not available. Please make sure it is installed.
+
+Quitting from merge-qc-workflow.Rmd:243-245 [unnamed-chunk-11]
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+<error/rlang_error>
+Error in `path.expand()`:
+! invalid 'path' argument
+---
+Backtrace:
+    ▆
+ 1. ├─base::withVisible(knit_print(x, ...))
+ 2. └─knitr::knit_print(x, ...)
+ 3.   └─knitr:::html_screenshot(x)
+ 4.     ├─knitr:::in_dir(...)
+ 5.     └─base::normalizePath(f3)
+ 6.       └─base::path.expand(path)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Error: processing vignette 'merge-qc-workflow.Rmd' failed with diagnostics:
+invalid 'path' argument
+--- failed re-building ‘merge-qc-workflow.Rmd’
+
+--- re-building ‘PValueColorScales.Rmd’ using rmarkdown
+Pandoc is required to build R Markdown vignettes but not available. Please make sure it is installed.
+
+Quitting from PValueColorScales.Rmd:56-72 [BasicColorScale]
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+<error/rlang_error>
+Error in `scale_color_pvalue()`:
+! could not find function "scale_color_pvalue"
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Error: processing vignette 'PValueColorScales.Rmd' failed with diagnostics:
+could not find function "scale_color_pvalue"
+--- failed re-building ‘PValueColorScales.Rmd’
+
+SUMMARY: processing the following files failed:
+  ‘ClusteringPhenotyping.qmd’ ‘OrdinalVariables.qmd’
+  ‘merge-qc-workflow.Rmd’ ‘PValueColorScales.Rmd’
+
+Error: Vignette re-building failed.
+Execution halted
+
+* checking for non-standard things in the check directory ... OK
+* checking for detritus in the temp directory ... OK
+* DONE
+Status: 3 ERRORs, 6 WARNINGs, 6 NOTEs

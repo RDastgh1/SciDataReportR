@@ -1,0 +1,812 @@
+---
+title: "Clustering and clinical phenotyping"
+author: "Raha Dastgheyb"
+date: "last-modified"
+bibliography: ../inst/REFERENCES.bib
+format:
+  html:
+    minimal: true
+    embed-resources: true
+    toc: true
+    toc-location: left
+    smooth-scroll: true
+execute:
+  echo: false
+  message: false
+  warning: false
+  cache: false
+vignette: >
+  %\VignetteIndexEntry{Clustering and clinical phenotyping}
+  %\VignetteEngine{quarto::html}
+  %\VignetteEncoding{UTF-8}
+---
+
+<style>
+table {
+  width: 100%;
+  table-layout: fixed;
+  font-size: 0.68rem;
+  line-height: 1.2;
+}
+table th, table td {
+  padding: 0.35rem 0.45rem;
+  overflow-wrap: anywhere;
+}
+</style>
+
+# Purpose
+
+Clinical phenotyping uses prespecified features to discover structure in a
+training cohort, then places later participants in that **fixed** phenotype
+space. Clustering is exploratory: fit indices, internal stability, and clean
+projection do not establish that a phenotype is biologically real. Clinical
+interpretation and independent-cohort validation remain essential.
+
+Every pipeline in this package uses the same train-once/project-many contract:
+
+- preprocessing and model parameters are learned from training data only;
+- `DataWithClusters` preserves the original row order and columns;
+- incomplete cases remain in the output with `NA` assignments;
+- bootstrap stability refits the **entire pipeline**, including scaling and
+  PCA/MCA when present;
+- fit, membership uncertainty or distance, and projection support are
+  reviewed before phenotypes are named.
+
+`method = "exploratory"` (or the shorter alias `"explore"`) compares candidate
+settings and gives an advisory AHP-style recommendation. The researcher then
+creates an explicit `method = "finalize"` model for projection.
+
+## Breaking output-name changes
+
+The unreleased clustering interface now uses `DataWithClusters` rather than
+`df_with_clusters`, and `ClusterVariableName` rather than `ClusterName`.
+`ModelInfo_MClust` is the only correctly cased Mclust-specific field; the
+erroneous `ModelInfo_Mclust` field has been removed. `complete_rows`,
+`CandidateAudit`, and internally generated `.scidr_rowid` columns are no
+longer public outputs. Use `Specification$n_complete` for aggregate training
+support and the `fit_table` status/warning/error columns to audit candidates.
+
+Every method stores its figures in the same places, so the same review sequence
+works whichever approach you choose. A figure lives beside the table it
+summarises rather than in one flat list:
+
+| Location | What it shows |
+|---|---|
+| `fit_plot` | candidate solutions across the search grid |
+| `ModelInfo$plots` | structure of the selected solution |
+| `ModelInfo$FitDiagnostics$plots` | how individual training cases sit inside that structure |
+| `ProbFit$plots` | membership confidence |
+| `Stability$plots` | bootstrap reproducibility |
+| `ProjectionFit$plots` | projected cases against the frozen training reference |
+
+The *contents* are method-specific: K-means and Gower/PAM give you a silhouette
+profile, Mclust a BIC curve and an uncertainty map, HDBSCAN a persistence
+review, LCA item response profiles, and the reduction pipelines a scree plot.
+The SOM pipeline keeps its own richer set, including the interactive `aweSOM`
+maps in `ModelInfo_SOM$plots`.
+
+# Choosing a method
+
+| Method | Data and geometry | Primary diagnostics | Projection rule | Ideal situation | Main caveat |
+|---|---|---|---|---|---|
+| SOM + Mclust | Continuous; topology and gradients matter | map fit, posterior, SOM distance, stability | scaling → SOM node → mixture class | phenotype maps and nonlinear gradients | most complex workflow |
+| Mclust | Continuous; Gaussian mixtures | BIC/ICL, entropy, posterior, stability | exact mixture posterior | probabilistic groups with different covariance | sensitive to distributional mismatch |
+| PCA + Mclust | Correlated continuous measures | scree, mixture fit, posterior, stability | frozen PCA → mixture posterior | clustering a lower-dimensional signal space | PCs can obscure individual variables |
+| K-means | Numeric; compact centroid geometry | WSS, silhouette, CH, margin, stability | nearest frozen centroid | simple, interpretable baseline | no probability model |
+| PCA + K-means | Correlated numeric measures | scree, silhouette, distance, stability | frozen PCA → nearest centroid | fast reduced-space baseline | inherits PCA and K-means assumptions |
+| HDBSCAN | Numeric; irregular or unequal-density groups | persistence, membership, noise, support | nearest eligible training core | clusters plus meaningful noise | conservative projection may label many cases noise |
+| Gower + PAM | Mixed numeric/categorical/ordinal | silhouette, medoids, distance, stability | nearest frozen medoid | mixed clinical measures and exemplar participants | coding and variable selection define distance |
+| LCA | Categorical response patterns | BIC, entropy, response probabilities, stability | latent-class posterior | symptom or questionnaire response phenotypes | local-independence assumption |
+| MCA + Mclust | Nominal categorical measures | inertia, mixture fit, posterior, stability | frozen MCA → mixture posterior | reduced categorical response space | MCA dimensions can be abstract |
+
+# Load the benchmark
+
+```{r}
+#| label: LoadPackages
+library(SciDataReportR)
+library(dplyr)
+library(ggplot2)
+```
+
+```{r}
+#| label: LoadData
+data("SimulatedPhenotypeData", package = "SciDataReportR")
+data("SimulatedPhenotypeVariableTypes", package = "SciDataReportR")
+
+df_Raw <- SimulatedPhenotypeData
+VariableTypes <- SimulatedPhenotypeVariableTypes
+df_Revalued <- RevalueData(df_Raw, VariableTypes)$RevaluedData
+
+vars_Continuous <- paste0("Var", 1:12)
+vars_Categorical <- paste0("CatVar", 1:3)
+vars_Mixed <- c(vars_Continuous, vars_Categorical)
+vars_Density <- c("DensityX", "DensityY")
+
+df_Training <- df_Revalued %>%
+  dplyr::filter(.data$Cohort == "Training")
+df_Projected <- df_Revalued %>%
+  dplyr::filter(.data$Cohort == "Projection")
+```
+
+::: callout-note
+The data file is `SimulatedPhenotypeData`; the codebook is
+`SimulatedPhenotypeVariableTypes`. The benchmark contains 320 training and 160
+projection participants. `TruthCluster`, `TruthDensityGroup`, and `Cohort` are
+never supplied to a clustering function. Truth is revealed only as a teaching
+check after fitting.
+:::
+
+```{r}
+#| label: BenchmarkHelpers
+PrintPlots <- function(plots, plot_names = NULL) {
+  if (is.null(plot_names)) plot_names <- names(plots)
+  for (plot_name in intersect(plot_names, names(plots))) {
+    if (inherits(plots[[plot_name]], "ggplot")) print(plots[[plot_name]])
+  }
+  invisible(NULL)
+}
+
+PrintFitMetrics <- function(object, metrics) {
+  object$ModelInfo$fit_table %>%
+    dplyr::select(dplyr::any_of(c(
+      "Model", "ModelName", "Classes", "MinPts", "Epsilon", metrics,
+      "ReproducibilityScore", "ahp_index", "Recommended")))
+}
+
+CalculateTruthARI <- function(truth, assignment) {
+  valid <- !is.na(truth) & !is.na(assignment)
+  if (sum(valid) < 2L) return(NA_real_)
+  mclust::adjustedRandIndex(truth[valid], assignment[valid])
+}
+
+CalculateNoisePerformance <- function(truth, assignment) {
+  valid <- !is.na(truth) & !is.na(assignment)
+  truth_noise <- as.character(truth[valid]) == "Noise"
+  assigned_noise <- assignment[valid] == 0
+  dplyr::tibble(
+    NoiseSensitivity = mean(assigned_noise[truth_noise]),
+    NoiseSpecificity = mean(!assigned_noise[!truth_noise]))
+}
+```
+
+The 12 numeric measures are three indicators of each of four independent
+simulated axes. The default 85% rule therefore retains at least four PCs. Four
+balanced truth groups use different combinations of these axes. Separate
+`DensityX`/`DensityY` coordinates contain two unequal-density groups and noise;
+three categorical variables contain deliberately strong class-dependent
+response patterns. That separation is useful for checking implementation; it
+is intentionally easier than most real categorical phenotyping problems.
+
+# Constructor interface
+
+All clustering constructors use `method = "exploratory"` to review candidates
+and `method = "finalize"` to create a reusable model. Fixed-count methods use
+`k_range` and `final_k`; density methods use `minPts_range`, epsilon settings,
+and their matching finalized inputs. Numeric methods use `ZScoreType`; `Scaling`
+is retained as a compatibility alias and must agree if both are supplied.
+
+| Workflow | Candidate settings | Finalized settings | Method-specific control |
+|---|---|---|---|
+| Mclust, PCA + Mclust, MCA + Mclust, SOM + Mclust | `k_range`, `models` | `final_k`, `final_model` | `models`: 1 = EEI, 2 = VVI, 3 = EEE |
+| K-means, PCA + K-means, Gower + PAM, latent class | `k_range` | `final_k` | `nstart` for K-means; `nrep` for LCA |
+| HDBSCAN, SOM + HDBSCAN | `minPts_range`, epsilon range | `final_minPts`, final epsilon | extracted class count is data-derived |
+
+# Continuous workflows
+
+## Mclust
+
+Gaussian mixture models provide posterior membership and allow clusters to
+differ in covariance [@scrucca2016].
+
+::: callout-note
+**When to use it:** continuous measures with approximately mixture-shaped
+groups. **Inspect before naming:** BIC/ICL, entropy, posterior confidence,
+small clusters, bootstrap ARI/Jaccard, and projected uncertainty.
+:::
+
+```{r}
+#| label: MclustReview
+df_MclustReview <- CreateClusterModel_MClust(
+  df_Training, vars_Continuous, k_range = 2:10, models = 1,
+  stability_resamples = 2
+)
+PrintFitMetrics(
+  df_MclustReview,
+  c("BIC", "ICL", "Entropy", "MinClusterN", "SizeBalance"))
+df_MclustReview$ModelInfo$AHP$recommendation
+print(df_MclustReview$fit_plot)
+PrintPlots(df_MclustReview$ModelInfo$plots, c("bic", "icl", "entropy"))
+PrintPlots(df_MclustReview$Stability$plots)
+```
+
+```{r}
+#| label: MclustFinalize
+df_Mclust <- CreateClusterModel_MClust(
+  df_Training, vars_Continuous, method = "finalize", final_k = 4,
+  final_model = 1, ClusterVariableName = "MclustCluster",
+  stability_resamples = 2
+)
+df_MclustProjected <- ProjectCluster(df_Mclust, df_Projected)
+PrintPlots(
+  df_Mclust$ModelInfo$plots,
+  c("separation_map", "classification_uncertainty", "centre_heatmap",
+    "profiles"))
+PrintPlots(df_Mclust$ModelInfo$FitDiagnostics$plots)
+PrintPlots(df_Mclust$ProbFit$plots)
+PrintPlots(df_MclustProjected$ProjectionFit$plots)
+```
+
+## K-means
+
+K-means is a useful scaled baseline for compact groups [@macqueen1967].
+
+::: callout-note
+**When to use it:** continuous features with roughly compact, similarly shaped
+groups. **Inspect before naming:** WSS, silhouette, Calinski--Harabasz index,
+centroid distance, assignment margin, and bootstrap stability.
+:::
+
+```{r}
+#| label: KMeansReview
+df_KMeansReview <- CreateClusterModel_KMeans(
+  df_Training, vars_Continuous, k_range = 2:10, nstart = 20,
+  stability_resamples = 2
+)
+PrintFitMetrics(
+  df_KMeansReview,
+  c("WSS", "Silhouette", "CalinskiHarabasz", "MinClusterN"))
+df_KMeansReview$ModelInfo$AHP$recommendation
+print(df_KMeansReview$fit_plot)
+PrintPlots(
+  df_KMeansReview$ModelInfo$plots,
+  c("elbow", "silhouette_by_k", "calinski_harabasz"))
+PrintPlots(df_KMeansReview$Stability$plots)
+```
+
+```{r}
+#| label: KMeansFinalize
+df_KMeans <- CreateClusterModel_KMeans(
+  df_Training, vars_Continuous, method = "finalize", final_k = 4,
+  nstart = 20, ClusterVariableName = "KMeansCluster", stability_resamples = 2
+)
+df_KMeansProjected <- ProjectCluster(df_KMeans, df_Projected)
+PrintPlots(
+  df_KMeans$ModelInfo$plots,
+  c("silhouette", "separation_map", "centre_heatmap", "profiles"))
+PrintPlots(df_KMeans$ModelInfo$FitDiagnostics$plots)
+PrintPlots(df_KMeans$ProbFit$plots)
+PrintPlots(df_KMeansProjected$ProjectionFit$plots)
+```
+
+## PCA followed by clustering
+
+PCA concentrates correlated variation into orthogonal dimensions
+[@jolliffe2016]. These pipelines refit scaling and PCA inside every stability
+bootstrap, then use the frozen training transformation for projection.
+
+::: callout-note
+**When to use it:** correlated continuous variables where a reduced signal
+space is clearer than the raw feature space. **Inspect before naming:** scree
+plot, retained component count/loadings, downstream fit and stability, score
+space separation, and projection distance or uncertainty.
+:::
+
+```{r}
+#| label: PCAMclustReview
+df_PCAMclustReview <- CreateClusterModel_PCA_MClust(
+  df_Training, vars_Continuous, k_range = 2:10, models = 1,
+  stability_resamples = 2
+)
+PrintFitMetrics(
+  df_PCAMclustReview,
+  c("BIC", "ICL", "Entropy", "MinClusterN"))
+df_PCAMclustReview$ModelInfo$AHP$recommendation
+ncol(df_PCAMclustReview$PCA$Scores)
+print(df_PCAMclustReview$fit_plot)
+PrintPlots(df_PCAMclustReview$ModelInfo$plots, c("scree", "bic", "icl"))
+PrintPlots(df_PCAMclustReview$Stability$plots)
+```
+
+```{r}
+#| label: PCAMclustFinalize
+df_PCAMclust <- CreateClusterModel_PCA_MClust(
+  df_Training, vars_Continuous, method = "finalize", final_k = 4,
+  final_model = 1, ClusterVariableName = "PCAMclustCluster",
+  stability_resamples = 2
+)
+df_PCAMclustProjected <- ProjectCluster(df_PCAMclust, df_Projected)
+PrintPlots(
+  df_PCAMclust$ModelInfo$plots,
+  c("scree", "separation_map", "profiles"))
+PrintPlots(df_PCAMclust$ModelInfo$FitDiagnostics$plots)
+PrintPlots(df_PCAMclust$ProbFit$plots)
+PrintPlots(df_PCAMclustProjected$ProjectionFit$plots)
+```
+
+```{r}
+#| label: PCAKMeansReview
+df_PCAKMeansReview <- CreateClusterModel_PCA_KMeans(
+  df_Training, vars_Continuous, k_range = 2:10, nstart = 20,
+  stability_resamples = 2
+)
+PrintFitMetrics(
+  df_PCAKMeansReview,
+  c("WSS", "Silhouette", "CalinskiHarabasz", "MinClusterN"))
+df_PCAKMeansReview$ModelInfo$AHP$recommendation
+ncol(df_PCAKMeansReview$PCA$Scores)
+print(df_PCAKMeansReview$fit_plot)
+PrintPlots(
+  df_PCAKMeansReview$ModelInfo$plots,
+  c("scree", "elbow", "silhouette_by_k"))
+PrintPlots(df_PCAKMeansReview$Stability$plots)
+```
+
+```{r}
+#| label: PCAKMeansFinalize
+df_PCAKMeans <- CreateClusterModel_PCA_KMeans(
+  df_Training, vars_Continuous, method = "finalize", final_k = 4,
+  nstart = 20, ClusterVariableName = "PCAKMeansCluster",
+  stability_resamples = 2
+)
+df_PCAKMeansProjected <- ProjectCluster(df_PCAKMeans, df_Projected)
+PrintPlots(
+  df_PCAKMeans$ModelInfo$plots,
+  c("scree", "silhouette", "separation_map", "profiles"))
+PrintPlots(df_PCAKMeans$ModelInfo$FitDiagnostics$plots)
+PrintPlots(df_PCAKMeans$ProbFit$plots)
+PrintPlots(df_PCAKMeansProjected$ProjectionFit$plots)
+```
+
+## HDBSCAN
+
+HDBSCAN is designed for irregular clusters, unequal density, and noise
+[@mcinnes2017]. A projected `0` is an out-of-support/noise assignment, not a
+new phenotype.
+
+::: callout-note
+**When to use it:** density structure is more plausible than centroid geometry
+and noise is scientifically meaningful. **Inspect before naming:** persistence,
+membership, noise burden, outlier scores, stability, and nearest-core support.
+All-noise candidates are valid negative results.
+:::
+
+```{r}
+#| label: HDBSCANReview
+df_HDBSCANReview <- CreateClusterModel_HDBSCAN(
+  df_Training, vars_Density, minPts_range = c(6, 10, 14),
+  cluster_selection_epsilon_range = c(0, 0.05), stability_resamples = 2
+)
+PrintFitMetrics(
+  df_HDBSCANReview,
+  c("Clusters", "Persistence", "MeanMembershipProbability",
+    "NoiseProportion", "MinClusterN"))
+df_HDBSCANReview$ModelInfo$AHP$recommendation
+print(df_HDBSCANReview$fit_plot)
+PrintPlots(df_HDBSCANReview$ModelInfo$plots, c("density_review", "persistence"))
+PrintPlots(df_HDBSCANReview$Stability$plots)
+```
+
+```{r}
+#| label: HDBSCANFinalize
+df_HDBSCAN <- CreateClusterModel_HDBSCAN(
+  df_Training, vars_Density, method = "finalize", final_minPts = 10,
+  final_cluster_selection_epsilon = 0, ClusterVariableName = "HDBSCANCluster",
+  stability_resamples = 2
+)
+df_HDBSCANProjected <- ProjectCluster(df_HDBSCAN, df_Projected)
+PrintPlots(
+  df_HDBSCAN$ModelInfo$plots,
+  c("separation_map", "cluster_persistence", "profiles"))
+PrintPlots(df_HDBSCAN$ModelInfo$FitDiagnostics$plots)
+PrintPlots(df_HDBSCAN$ProbFit$plots)
+PrintPlots(df_HDBSCANProjected$ProjectionFit$plots)
+```
+
+## SOM followed by Mclust
+
+Self-organizing maps preserve local topology before mixture clustering
+[@kohonen1982].
+
+::: callout-note
+**When to use it:** a map of phenotype gradients is as useful as the final
+labels. **Inspect before naming:** map topology, quantization/SOM distance,
+node occupancy, posterior confidence, stability, and projected distance flags.
+:::
+
+```{r}
+#| label: SOMReview
+df_SOMReview <- CreateClusterModel_SOM_MClust(
+  df_Training, vars_Continuous, method = "exploratory", k_range = 2:10,
+  models = 1, som_xdim = 5, som_ydim = 5, stability_resamples = 2,
+  Relabel = FALSE, min_nodes_per_cluster = NULL
+)
+df_SOMReview$ModelInfo_MClust$fit_table
+df_SOMReview$ModelInfo_MClust$AHP$recommendation
+df_SOMReview$Stability$summary
+print(df_SOMReview$fit_plot)
+df_SOMReview$ModelInfo_SOM$plots$Circular
+df_SOMReview$ModelInfo_SOM$plots$Line
+df_SOMReview$ModelInfo_SOM$plots$Cloud
+```
+
+```{r}
+#| label: SOMFinalize
+df_SOM <- CreateClusterModel_SOM_MClust(
+  df_Training, vars_Continuous, method = "finalize", final_k = 4,
+  final_model = 1, som_xdim = 5, som_ydim = 5,
+  ClusterVariableName = "SOMCluster", stability_resamples = 2,
+  Relabel = FALSE, min_nodes_per_cluster = NULL
+)
+df_SOMProjected <- ProjectCluster(df_SOM, df_Projected)
+PrintPlots(df_SOM$ModelInfo_SOM$plots)
+PrintPlots(df_SOM$ModelInfo_SOM$SOMFit$plots)
+PrintPlots(df_SOM$ModelInfo_SOM$ProjectionReference$plots)
+PrintPlots(df_SOM$ProbFit$plots)
+PrintPlots(df_SOM$Stability$plots)
+PrintPlots(
+  df_SOMProjected$ProjectionFit$plots,
+  c("projection_fit_class_bar", "som_grid_map"))
+```
+
+# Mixed and categorical workflows
+
+## Gower distance followed by PAM
+
+Gower distance combines mixed feature types, while PAM represents clusters by
+observed medoids [@gower1971; @kaufman1990]. Projection uses training ranges,
+levels, and medoids rather than recalculating them in the new cohort.
+
+::: callout-note
+**When to use it:** numeric, binary, ordinal, and nominal measures must be
+clustered together. **Inspect before naming:** candidate silhouette, size
+balance, medoids, numeric and categorical profiles, distance/margin, and
+bootstrap stability.
+:::
+
+```{r}
+#| label: GowerPAMReview
+df_GowerReview <- CreateClusterModel_Gower_PAM(
+  df_Training, vars_Mixed, k_range = 2:10, stability_resamples = 2
+)
+PrintFitMetrics(
+  df_GowerReview,
+  c("Silhouette", "MeanMedoidDistance", "MinClusterN", "SizeBalance"))
+df_GowerReview$ModelInfo$AHP$recommendation
+print(df_GowerReview$fit_plot)
+PrintPlots(
+  df_GowerReview$ModelInfo$plots,
+  c("silhouette_by_k", "medoid_distance_by_k"))
+PrintPlots(df_GowerReview$Stability$plots)
+```
+
+```{r}
+#| label: GowerPAMFinalize
+df_Gower <- CreateClusterModel_Gower_PAM(
+  df_Training, vars_Mixed, method = "finalize", final_k = 4,
+  ClusterVariableName = "GowerCluster", stability_resamples = 2
+)
+df_GowerProjected <- ProjectCluster(df_Gower, df_Projected)
+PrintPlots(
+  df_Gower$ModelInfo$plots,
+  c("silhouette", "gower_map", "profiles",
+    "categorical_composition"))
+PrintPlots(df_Gower$ModelInfo$FitDiagnostics$plots)
+PrintPlots(df_Gower$ProbFit$plots)
+PrintPlots(df_GowerProjected$ProjectionFit$plots)
+```
+
+## Latent class analysis
+
+LCA models class-specific categorical response probabilities [@linzer2011].
+
+::: callout-note
+**When to use it:** symptom, diagnosis, questionnaire, or assay-call items are
+the phenotype definition. **Inspect before naming:** BIC, entropy, class size,
+response-probability heatmap, posterior confidence, and bootstrap stability.
+Low posterior confidence is evidence of weak class separation.
+:::
+
+```{r}
+#| label: LatentClassReview
+df_LCAReview <- CreateClusterModel_LatentClass(
+  df_Training, vars_Categorical, k_range = 2:10, nrep = 5,
+  stability_resamples = 2
+)
+PrintFitMetrics(
+  df_LCAReview,
+  c("BIC", "AIC", "Entropy", "MinClassN", "SizeBalance"))
+df_LCAReview$ModelInfo$AHP$recommendation
+print(df_LCAReview$fit_plot)
+PrintPlots(df_LCAReview$ModelInfo$plots, c("bic", "entropy"))
+PrintPlots(df_LCAReview$Stability$plots)
+```
+
+```{r}
+#| label: LatentClassFinalize
+df_LCA <- CreateClusterModel_LatentClass(
+  df_Training, vars_Categorical, method = "finalize", final_k = 4,
+  nrep = 5, ClusterVariableName = "LCACluster", stability_resamples = 2
+)
+df_LCAProjected <- ProjectCluster(df_LCA, df_Projected)
+PrintPlots(
+  df_LCA$ModelInfo$plots,
+  c("response_probabilities", "item_profiles", "posterior_map",
+    "categorical_composition"))
+PrintPlots(df_LCA$ProbFit$plots)
+PrintPlots(df_LCAProjected$ProjectionFit$plots)
+```
+
+## MCA followed by Mclust
+
+MCA is a dimension-reduction method for nominal categorical measures
+[@greenacre2017]. The bootstrap refits MCA before refitting the mixture.
+
+::: callout-note
+**When to use it:** several nominal variables form a useful lower-dimensional
+category space. **Inspect before naming:** inertia/scree plot, MCA dimensions,
+mixture fit, score-space separation, posterior confidence, and stability.
+:::
+
+```{r}
+#| label: MCAMclustReview
+df_MCAMclustReview <- CreateClusterModel_MCA_MClust(
+  df_Training, vars_Categorical, k_range = 2:10, models = 1,
+  stability_resamples = 2
+)
+PrintFitMetrics(
+  df_MCAMclustReview,
+  c("BIC", "ICL", "Entropy", "MinClusterN", "SizeBalance"))
+df_MCAMclustReview$ModelInfo$AHP$recommendation
+print(df_MCAMclustReview$fit_plot)
+PrintPlots(df_MCAMclustReview$ModelInfo$plots, c("scree", "bic", "icl"))
+PrintPlots(df_MCAMclustReview$Stability$plots)
+```
+
+```{r}
+#| label: MCAMclustFinalize
+df_MCAMclust <- CreateClusterModel_MCA_MClust(
+  df_Training, vars_Categorical, method = "finalize", final_k = 4,
+  final_model = 1, ClusterVariableName = "MCAMclustCluster",
+  stability_resamples = 2
+)
+df_MCAMclustProjected <- ProjectCluster(df_MCAMclust, df_Projected)
+PrintPlots(
+  df_MCAMclust$ModelInfo$plots,
+  c("scree", "separation_map", "categorical_composition"))
+PrintPlots(df_MCAMclust$ModelInfo$FitDiagnostics$plots)
+PrintPlots(df_MCAMclust$ProbFit$plots)
+PrintPlots(df_MCAMclustProjected$ProjectionFit$plots)
+```
+
+# Reveal truth for teaching only
+
+The benchmark truth was not used during fitting. ARI is label-invariant, so
+cluster numbers do not need to match the truth labels. Strong simulation
+recovery confirms that the examples behave as designed; it is not external or
+biological validation.
+
+```{r}
+#| label: TruthAgreement
+df_TruthAgreement <- dplyr::tibble(
+  Method = c(
+    "Mclust", "K-means", "PCA + Mclust", "PCA + K-means",
+    "Gower + PAM", "LCA", "MCA + Mclust", "SOM + Mclust"),
+  TrainingARI = c(
+    CalculateTruthARI(df_Training$TruthCluster, df_Mclust$DataWithClusters$MclustCluster),
+    CalculateTruthARI(df_Training$TruthCluster, df_KMeans$DataWithClusters$KMeansCluster),
+    CalculateTruthARI(df_Training$TruthCluster, df_PCAMclust$DataWithClusters$PCAMclustCluster),
+    CalculateTruthARI(df_Training$TruthCluster, df_PCAKMeans$DataWithClusters$PCAKMeansCluster),
+    CalculateTruthARI(df_Training$TruthCluster, df_Gower$DataWithClusters$GowerCluster),
+    CalculateTruthARI(df_Training$TruthCluster, df_LCA$DataWithClusters$LCACluster),
+    CalculateTruthARI(df_Training$TruthCluster, df_MCAMclust$DataWithClusters$MCAMclustCluster),
+    CalculateTruthARI(df_Training$TruthCluster, df_SOM$DataWithClusters$SOMCluster)),
+  ProjectionARI = c(
+    CalculateTruthARI(df_Projected$TruthCluster, df_MclustProjected$ProbFit$individual$Cluster),
+    CalculateTruthARI(df_Projected$TruthCluster, df_KMeansProjected$ProbFit$individual$Cluster),
+    CalculateTruthARI(df_Projected$TruthCluster, df_PCAMclustProjected$ProbFit$individual$Cluster),
+    CalculateTruthARI(df_Projected$TruthCluster, df_PCAKMeansProjected$ProbFit$individual$Cluster),
+    CalculateTruthARI(df_Projected$TruthCluster, df_GowerProjected$ProbFit$individual$Cluster),
+    CalculateTruthARI(df_Projected$TruthCluster, df_LCAProjected$ProbFit$individual$Cluster),
+    CalculateTruthARI(df_Projected$TruthCluster, df_MCAMclustProjected$ProbFit$individual$Cluster),
+    CalculateTruthARI(df_Projected$TruthCluster, df_SOMProjected$ProbFit$individual$Cluster))
+)
+df_TruthAgreement
+```
+
+```{r}
+#| label: DensityTruthAgreement
+df_DensityTruth <- dplyr::tibble(
+  Cohort = c("Training", "Projection"),
+  ARI = c(
+    CalculateTruthARI(
+      df_Training$TruthDensityGroup,
+      df_HDBSCAN$DataWithClusters$HDBSCANCluster),
+    CalculateTruthARI(
+      df_Projected$TruthDensityGroup,
+      df_HDBSCANProjected$ProbFit$individual$Cluster)),
+  NoiseProportion = c(
+    mean(df_HDBSCAN$DataWithClusters$HDBSCANCluster == 0, na.rm = TRUE),
+    mean(df_HDBSCANProjected$ProbFit$individual$Cluster == 0, na.rm = TRUE))) %>%
+  dplyr::bind_cols(dplyr::bind_rows(
+    CalculateNoisePerformance(
+      df_Training$TruthDensityGroup,
+      df_HDBSCAN$DataWithClusters$HDBSCANCluster),
+    CalculateNoisePerformance(
+      df_Projected$TruthDensityGroup,
+      df_HDBSCANProjected$ProbFit$individual$Cluster)))
+df_DensityTruth
+```
+
+# Compare and interpret profiles
+
+The final label is not the phenotype interpretation. Compare occupancy and
+feature distributions across plausible models, then use codebook labels when
+describing the profiles.
+
+```{r}
+#| label: CompareClusterOccupancy
+df_Comparison <- df_Mclust$DataWithClusters %>%
+  dplyr::mutate(RowIndex = dplyr::row_number()) %>%
+  dplyr::select(.data$RowIndex, .data$MclustCluster) %>%
+  dplyr::left_join(
+    df_KMeans$DataWithClusters %>%
+      dplyr::mutate(RowIndex = dplyr::row_number()) %>%
+      dplyr::select(.data$RowIndex, .data$KMeansCluster),
+    by = "RowIndex")
+
+df_Comparison %>%
+  dplyr::count(.data$MclustCluster, .data$KMeansCluster)
+```
+
+```{r}
+#| label: PlotClusterProfiles
+PlotClusterBoxplot(
+  data = df_Mclust$DataWithClusters,
+  ClusterVar = "MclustCluster",
+  variables = vars_Continuous,
+  codebook = VariableTypes,
+  Scale = TRUE
+)
+```
+
+# Reproducibility
+
+# Candidate metrics and SOM + Mclust workflow
+
+All clustering functions have two modes. `method = "exploratory"` compares the
+requested 2:10 candidate settings and returns the fit table, candidate audit,
+and AHP advisory only. `method = "finalize"` requires the selected setting and
+returns assignments, profiles, fit diagnostics, and a reusable projection
+model. AHP is advisory; its selected row is retained in the table but is never
+highlighted on a figure.
+
+`SizeBalance` is the smallest extracted cluster/class size divided by the
+largest (1 is perfectly balanced). `MinClusterN`/`MinClassN` is the smallest
+group size. Bootstrap `ARI` measures agreement for the entire partition,
+whereas per-cluster Jaccard recovery measures whether each reference phenotype
+reappears after refitting. `ReproducibilityScore` is the mean of bootstrap mean
+ARI and mean Jaccard recovery; bootstrap success rate is reported separately.
+
+### Complementary stability diagnostics
+
+Every successful full-pipeline bootstrap refit also records variation of
+information (`VI`; lower is better), normalized mutual information (`NMI`; higher
+is better), and Fowlkes--Mallows agreement (higher is better). These are
+secondary partition diagnostics: they do not enter `ReproducibilityScore` or
+the AHP advisory index. `participant_inclusion` reports the probability that a
+participant returns to its reference cluster's label-matched bootstrap cluster;
+`cluster_inclusion` summarizes that probability by reference cluster.
+
+For complete-case cohorts of 2,000 or fewer participants, `coassignment`
+contains the bootstrap probability that each pair is assigned together and
+`Stability$plots$coassignment` displays it. Above that size, the matrix is
+skipped with a recorded reason to avoid unbounded memory use. For density-based
+methods, noise remains in global partition metrics but is excluded from
+inclusion and co-assignment summaries. These diagnostics explain instability;
+they cannot make a weak phenotype stable.
+
+## SOM + Mclust candidate-table fields
+
+`CreateClusterModel_SOM_MClust()` uses tidyLPA with its mclust backend to fit
+latent profiles to frozen SOM node codebooks. `ShowFitTable()` in its help
+example is only a local display helper: it rounds a table and displays it with
+a frozen header; it is not a SciDataReportR function.
+
+| Field | Definition and interpretation |
+|---|---|
+| `AIC`, `AWE`, `BIC`, `CAIC`, `CLC`, `KIC`, `SABIC`, `ICL` | Likelihood/information criteria from the LPA fit. Lower values are preferred only when comparing candidates fitted to the same SOM nodes and data. AWE, CLC, and ICL incorporate classification uncertainty [@celeux1996]; KIC is based on symmetric Kullback divergence [@cavanaugh1999], and SABIC is sample-size adjusted [@sclove1987]. `CAIC` and `CLC` are separate criteria, not one combined `CAICCLC` field. |
+| `Entropy` | Classification separation summary; higher values indicate cleaner profile separation. |
+| `MinProfileNodeN`, `MaxProfileNodeN` | Integer SOM-node counts in the smallest and largest profile. |
+| `MinProfileNodeProportion`, `MaxProfileNodeProportion` | The corresponding node counts divided by the total SOM-node count. These replace tidyLPA's ambiguous decimal `n_min` and `n_max` fields. |
+| `BLRTStatistic`, `BLRTPValue` | Bootstrap likelihood-ratio statistic and p-value for comparing the k-profile fit with k - 1 profiles [@nylund2007]. A small p-value supports the additional profile's statistical fit, but does not by itself establish stability, clinical meaning, or a final choice; it is unavailable for one profile. |
+| `StabilityARI_Mean` | Mean adjusted Rand index across successful full-pipeline bootstrap refits. It may be negative: this means agreement is worse than expected by chance, not an error. |
+| `StabilityJaccard_Mean` | Mean label-matched, per-profile Jaccard recovery across successful full-pipeline bootstrap refits. |
+| `ReproducibilityScore` | Mean of the finite `StabilityARI_Mean` and `StabilityJaccard_Mean`; `StabilitySuccessRate` remains separate. |
+| `Reproducibility_scaled` | Min-max rescaling of `ReproducibilityScore` across the current candidate table. It is used only as an AHP input [@akogul2017], not as an independently interpretable reproducibility metric. |
+
+| Method | Candidate metrics |
+|---|---|
+| Mclust, PCA + Mclust, MCA + Mclust | BIC/ICL/AIC (information criteria), entropy, maximum posterior uncertainty, minimum cluster size, size balance |
+| K-means, PCA + K-means | WSS, between-cluster sum of squares, silhouette width, Calinski–Harabasz index, minimum size, size balance |
+| Gower + PAM | silhouette width, mean distance to assigned medoid, minimum size, size balance |
+| Latent class | BIC, AIC, log likelihood, entropy, minimum class size, size balance |
+| HDBSCAN and SOM + HDBSCAN | persistence, noise proportion, membership probability, minimum size, size balance; extracted class count is data-derived |
+| SOM + Mclust | LPA AIC/BIC/entropy plus SOM node occupancy and bootstrap stability |
+
+## Candidate-metric definitions for every clustering model
+
+All exploratory `fit_table`s retain the raw metrics produced by their fitted
+method. AHP is advisory only: any `*_scaled` field is a within-search
+rescaling used to construct its index, not a standalone scientific result.
+
+| Metric | Definition |
+|---|---|
+| `Classes` | Requested class/cluster count for fixed-count methods. HDBSCAN variants instead report the data-derived number extracted from each density setting. |
+| `MinClusterN` / `MinClassN` | Smallest extracted participant cluster/class size. `SizeBalance` is smallest divided by largest extracted participant group size. SOM + Mclust reports its separate integer node-count and node-proportion fields above. |
+| `StabilitySuccessRate` | Proportion of requested bootstrap refits that successfully complete. It is reported separately and is never multiplied into reproducibility. |
+| `StabilityARI_Mean`, `StabilityARI_P05` | Mean and fifth percentile of the adjusted Rand index across successful full-pipeline bootstrap refits [@hubert1985]. ARI can be negative when agreement is worse than chance. |
+| `StabilityJaccard_Mean`, `StabilityJaccard_Min` | Mean and minimum label-matched per-cluster Jaccard recovery across successful bootstrap refits [@jaccard1901]. |
+| `ReproducibilityScore` | Mean of finite `StabilityARI_Mean` and `StabilityJaccard_Mean`; it is unavailable when neither component is estimable. |
+| `AHPIndex` / `ahp_index` and `*_scaled` | Advisory within-candidate ranking, calculated from the documented method-specific raw metrics. The recommendation does not finalize a model or alter any fit plot. |
+
+| Pipeline | Method-specific candidate metrics |
+|---|---|
+| Mclust, PCA + Mclust, MCA + Mclust | `BIC`, `ICL`, `AIC`, entropy, and maximum posterior uncertainty. BIC/ICL/AIC compare fitted Gaussian mixtures [@scrucca2016]; lower information criteria are preferred, entropy is higher-is-better, and uncertainty is lower-is-better. |
+| K-means, PCA + K-means | Within-cluster sum of squares (`WSS`; lower), between-cluster sum of squares (`BSS`; higher), mean silhouette width (higher), and Calinski--Harabasz index (higher) [@calinski1974; @rousseeuw1987]. |
+| Gower + PAM | Mean silhouette width (higher) and mean assigned-medoid Gower distance (lower). The latter is a dissimilarity, not a probability [@gower1971; @kaufman1990]. |
+| Latent class analysis | Log likelihood (higher), `AIC`/`BIC` (lower), and entropy (higher) from the fitted item-response model [@linzer2011]. |
+| HDBSCAN | `Persistence` (mean cluster persistence; higher), `NoiseProportion` (lower), and the data-derived extracted class count. Membership probability and outlier score are assignment diagnostics, not candidate-selection probabilities [@mcinnes2017]. |
+| SOM + Mclust | The LPA criteria, node allocation, BLRT, and bootstrap metrics defined in the dedicated SOM + Mclust table below. SOM distances describe map representation, not phenotype probability [@kohonen1982]. |
+| SOM + HDBSCAN | Node-codebook HDBSCAN persistence, noise proportion, extracted node-cluster count, and bootstrap stability. `minPts` and epsilon are requested settings; class count is data-derived. |
+
+`CreateClusterModel_SOM_MClust()` is the explicit SOM + Mclust API.
+`CreateSOMClusterModel()` remains available for compatibility but is deprecated.
+The SOM first freezes Z-score preprocessing and learns map nodes; Mclust then
+clusters those node prototypes. A SOM distance is the distance, in this frozen
+scaled feature space, between a participant and their best-matching map node.
+Lower values mean the participant is better represented by the map; they do
+not mean stronger membership in a phenotype. Interpret it against the frozen
+training distribution only: distances above the training p95 flag a case that
+is poorly represented by the training phenotype space.
+
+# How projection works
+
+Every fitted clustering object freezes its preprocessing and records it in
+`Specification`; every projected object reports participant-level diagnostics
+in `ProjectionFit$individual`, cohort summaries in `ProjectionFit$summary`,
+cluster summaries in `ProjectionFit$by_cluster`, support violations in
+`ProjectionFit$out_of_support`, and the applied thresholds in
+`ProjectionFit$policy`.
+
+| Workflow | Frozen projection rule | Assignment evidence |
+|---|---|---|
+| Mclust | Gaussian-mixture `predict()` after training scaling | Posterior probabilities and assigned-component Mahalanobis distance |
+| K-means | Nearest frozen centroid | Euclidean centroid distance and second-centroid margin; not a probability |
+| PCA/MCA + clustering | Training scaling and frozen reduction, then the fitted downstream model | The downstream model's metric/probability |
+| Gower + PAM | Nearest frozen observed medoid using training ranges and levels | Gower medoid distance and runner-up margin |
+| Latent class | Frozen class prevalence and item-response probabilities | Posterior class probabilities |
+| HDBSCAN | Conservative nearest in-training-cluster support rule | Nearest-core distance and support flag; **not native HDBSCAN prediction** |
+| SOM + Mclust | Frozen scaling, SOM BMU, and node mixture probabilities | BMU distance and node-derived posterior probability |
+| SOM + HDBSCAN | Frozen scaling, SOM BMU, and node HDBSCAN label | BMU distance and inherited node cluster/noise label; **not native HDBSCAN prediction** |
+
+`ReproducibilityScore` is the mean of bootstrap mean ARI and mean per-cluster
+Jaccard recovery. ARI summarizes agreement for the whole partition, whereas
+Jaccard asks whether each individual phenotype was recovered. Bootstrap
+success rate is reported separately and is not folded into the score.
+
+<details>
+<summary>Session information</summary>
+
+```{r}
+#| label: Reproducibility
+# save.image()
+print(sessionInfo())
+```
+
+</details>
+
+# References
+
+::: {#refs}
+:::
+

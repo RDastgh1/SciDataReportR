@@ -15,8 +15,9 @@
 #'   other, so a single variable set defines both axes. If NULL, uses all
 #'   detected continuous + binary vars.
 #' @param Relabel Logical; use sjlabelled variable labels if present.
-#' @param Ordinal Logical; reserved for future use.
-#' @return list(Unadjusted, FDRCorrected, Relabel, BinaryMapping, Excluded)
+#' @param Ordinal Logical; passed to [PlotPointCorrelationsHeatmap()] for the
+#'   binary~continuous block, where it controls whether ordinal variables are
+#'   treated as continuous. Defaults to `TRUE`.
 #' @param fdr_scope Either `"matrix"` (default) or `"per_outcome"`, threaded
 #'   through to the three sub-analyses ([PlotCorrelationsHeatmap()],
 #'   [PlotPhiHeatmap()], [PlotPointCorrelationsHeatmap()]). Correction is
@@ -28,11 +29,12 @@
 #'   instead.
 #' @param yVars \strong{Deprecated} (since 19.15.0). Use \code{variables}
 #'   instead. If supplied, the old rectangular x-by-y display is still honored.
+#' @return list(Unadjusted, FDRCorrected, Relabel, BinaryMapping, Excluded)
 #' @note
 #' The analysis covers continuous and binary variables. Multi-level categorical
-#' variables (more than two levels) are not placed on the heatmap. Ordinal
-#' handling via the `Ordinal` argument is reserved for future use and does not
-#' yet change the tiles that are computed.
+#' variables (more than two levels) are not placed on the heatmap. `Ordinal`
+#' affects only the binary~continuous block, which is the one sub-analysis that
+#' accepts it.
 #'
 #' @examples
 #' data(SampleData)
@@ -50,19 +52,23 @@
 #'                 "Insulin", "Leptin")
 #' )
 #'
+#' # Raw p-value directional heatmap
 #' result$Unadjusted$plot
+#'
+#' # FDR-adjusted directional heatmap
+#' result$FDRCorrected$plot
 #'
 #' # How binary variables were coded (which level counts as the positive one)
 #' result$BinaryMapping
 #' @export
 PlotDirectionalHeatmaps <- function(data,
     variables = NULL,
-    yVars = lifecycle::deprecated(),
     Relabel = TRUE,
     Ordinal = TRUE,
-    fdr_scope = c("matrix", "per_outcome"),
+    fdr_scope = c("matrix", "per_outcome", "per_predictor"),
     Data = lifecycle::deprecated(),
-    xVars = lifecycle::deprecated()) {
+    xVars = lifecycle::deprecated(),
+    yVars = lifecycle::deprecated()) {
   # Deprecated argument shims (SciDataReportR 19.15.0)
   if (lifecycle::is_present(Data)) {
     lifecycle::deprecate_warn("19.15.0", "PlotDirectionalHeatmaps(Data)", "PlotDirectionalHeatmaps(data)")
@@ -156,10 +162,9 @@ PlotDirectionalHeatmaps <- function(data,
   if (length(missing_safe) > 0) {
     missing_orig <- to_orig(missing_safe)
     stop(
-      paste0(
-        "These variables were not found in Data: ",
-        paste(missing_orig, collapse = ", ")
-      ),
+      "Variables not found in `data`: ",
+      paste(missing_orig, collapse = ", "),
+      " (supplied to `variables`).",
       call. = FALSE
     )
   }
@@ -382,8 +387,11 @@ PlotDirectionalHeatmaps <- function(data,
       axis.title.x = ggplot2::element_blank(),
       axis.title.y = ggplot2::element_blank(),
       axis.text.y  = ggplot2::element_text(size = 7),
-      legend.text  = ggplot2::element_text(size = 15),
-      axis.text.x  = ggplot2::element_text(angle = 90, vjust = 0.5, hjust = 1)
+      legend.position = "bottom",
+      legend.box = "horizontal",
+      legend.text  = ggplot2::element_text(size = 8),
+      axis.text.x  = ggplot2::element_text(angle = 90, vjust = 0.5, hjust = 1),
+      plot.margin = ggplot2::margin(5.5, 5.5, 26, 5.5)
     )
 
   p_FDR <- p +
@@ -396,8 +404,11 @@ PlotDirectionalHeatmaps <- function(data,
       axis.title.x = ggplot2::element_blank(),
       axis.title.y = ggplot2::element_blank(),
       axis.text.y  = ggplot2::element_text(size = 7),
-      legend.text  = ggplot2::element_text(size = 15),
-      axis.text.x  = ggplot2::element_text(angle = 90, vjust = 0.5, hjust = 1)
+      legend.position = "bottom",
+      legend.box = "horizontal",
+      legend.text  = ggplot2::element_text(size = 8),
+      axis.text.x  = ggplot2::element_text(angle = 90, vjust = 0.5, hjust = 1),
+      plot.margin = ggplot2::margin(5.5, 5.5, 26, 5.5)
     )
 
   # ---- 6) Return ----------------------------------------------------------

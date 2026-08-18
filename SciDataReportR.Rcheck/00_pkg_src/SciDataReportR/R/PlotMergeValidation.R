@@ -23,14 +23,34 @@
 #' @param Interactive \strong{Deprecated} (since 19.15.0). Use \code{interactive} instead.
 #' @examples
 #' set.seed(1)
-#' left  <- data.frame(id = 1:50, x = rnorm(50))
-#' right <- data.frame(id = 1:50, y = rnorm(50))
+#'
+#' # `site` comes from both sources and disagrees, leaving a site.x/site.y pair
+#' left <- data.frame(
+#'   id = 1:50,
+#'   site = sample(c("A", "B"), 50, replace = TRUE),
+#'   x = rnorm(50)
+#' )
+#' right <- data.frame(
+#'   id = c(1:45, 101:105),
+#'   site = sample(c("A", "B"), 50, replace = TRUE),
+#'   y = rnorm(50)
+#' )
 #' merged <- merge(left, right, by = "id")
 #'
 #' validation <- ValidateMerge(left, right, merged, keys = "id")
 #'
-#' # Display a single diagnostic plot
-#' PlotMergeValidation(validation, Plot = "Checks")
+#' diagnostics <- PlotMergeValidation(
+#'   validation,
+#'   Plot = "All",
+#'   interactive = FALSE
+#' )
+#'
+#' # Merge-check status, key coverage, join audit, agreement, and conflicts
+#' diagnostics$Checks
+#' diagnostics$Coverage
+#' diagnostics$JoinAudit
+#' diagnostics$Agreement
+#' diagnostics$Conflicts
 #' @export
 PlotMergeValidation <- function(MergeObj,
     Plot = c("All", "Checks", "Coverage", "JoinAudit", "Agreement", "Conflicts"),

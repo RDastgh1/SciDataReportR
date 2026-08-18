@@ -16,7 +16,10 @@
 #' @param covariates optional covariates
 #' @param method pearson/spearman/kendall
 #' @param Relabel use labels
-#' @param Ordinal include ordinal vars
+#' @param TreatOrdinalAs How ordinal variables are handled. `"Continuous"`
+#' includes ordinal scores and `"Exclude"` omits them.
+#' @param Ordinal Deprecated logical compatibility option; use
+#' `TreatOrdinalAs` instead.
 #' @param min_n minimum complete rows
 #' @param eps variance tolerance
 #' @param fdr_scope Either `"matrix"` (default) or `"per_outcome"`, passed to
@@ -69,10 +72,11 @@ PlotCorrelationsHeatmap <- function(data,
     covariates = NULL,
     method = "pearson",
     Relabel = TRUE,
-    Ordinal = FALSE,
+    Ordinal = lifecycle::deprecated(),
+    TreatOrdinalAs = "Categorical",
     min_n = 3,
     eps = 1e-12,
-    fdr_scope = c("matrix", "per_outcome"),
+    fdr_scope = c("matrix", "per_outcome", "per_predictor"),
     Data = lifecycle::deprecated(),
     xVars = lifecycle::deprecated(),
     yVars = lifecycle::deprecated(),
@@ -99,6 +103,16 @@ PlotCorrelationsHeatmap <- function(data,
   }
   covars <- covariates
 
+  if (lifecycle::is_present(Ordinal)) {
+    lifecycle::deprecate_warn("20.20.0", "PlotCorrelationsHeatmap(Ordinal)", "PlotCorrelationsHeatmap(TreatOrdinalAs)")
+    TreatOrdinalAs <- if (isTRUE(Ordinal)) "Continuous" else "Exclude"
+  }
+  TreatOrdinalAs <- match.arg(TreatOrdinalAs, c("Categorical", "Continuous", "Both", "Exclude"))
+  if (TreatOrdinalAs %in% c("Categorical", "Both")) {
+    if (TreatOrdinalAs == "Both") stop("TreatOrdinalAs = 'Both' is not meaningful for PlotCorrelationsHeatmap().", call. = FALSE)
+    TreatOrdinalAs <- "Exclude"
+  }
+
   fdr_scope <- match.arg(fdr_scope)
 
   `%||%` <- function(x, y) {
@@ -119,7 +133,7 @@ PlotCorrelationsHeatmap <- function(data,
     stop("method must be pearson, spearman, or kendall")
   }
 
-  Data <- ReplaceMissingLabels(Data)
+  Data <- ScidrApplyDisplayLabels(Data, names(Data), Relabel)
 
   # =========================================================
   # Determine variables
@@ -129,7 +143,7 @@ PlotCorrelationsHeatmap <- function(data,
 
     xVars <- getNumVars(
       Data,
-      Ordinal = isTRUE(Ordinal)
+      Ordinal = identical(TreatOrdinalAs, "Continuous")
     )
   }
 
@@ -143,18 +157,26 @@ PlotCorrelationsHeatmap <- function(data,
     removediag <- FALSE
   }
 
-  xVars <- intersect(
-    as.character(xVars),
-    names(Data)
-  )
+  # Names the user supplied must exist. Silently intersecting them away used to
+  # shrink the result matrix without any signal that a name was misspelled, and
+  # for covariates it left unadjusted correlations reported as adjusted. Checked
+  # against the frame as supplied, before ordinal handling renames anything.
+  xVars <- ScidrValidateVariables(Data, xVars, "predictor_vars")
+  yVars <- ScidrValidateVariables(Data, yVars, "outcome_vars")
+  ScidrValidateVariables(Data, covars, "covariates")
 
-  yVars <- intersect(
-    as.character(yVars),
-    names(Data)
+  ordinal <- ConvertOrdinalToNumeric(
+    Data, unique(c(xVars, yVars)), TreatOrdinalAs = TreatOrdinalAs,
+    Relabel = Relabel, ReturnMetadata = TRUE
   )
+  Data <- ordinal$data
+  xVars <- intersect(xVars, ordinal$variables)
+  yVars <- intersect(yVars, ordinal$variables)
 
   covars_in <- covars
 
+  # Any covariate lost here was dropped by ordinal handling, not misspelled --
+  # that case is reported through `CovariatesMissing`.
   covars <- intersect(
     as.character(covars %||% character(0)),
     names(Data)
@@ -765,4 +787,3 @@ PlotCorrelationsHeatmap <- function(data,
   out$p_fdr <- out$FDRCorrected
   out
 }
-

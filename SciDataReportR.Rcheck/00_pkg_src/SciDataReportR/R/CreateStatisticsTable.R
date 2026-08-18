@@ -8,6 +8,24 @@
 #' @return A formatted HTML table displaying statistics.
 #' @importFrom dplyr mutate rename
 #' @param Data \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
+#' @examples
+#' \donttest{
+#' data(SampleData)
+#' data(SampleVariableTypes)
+#'
+#' df_Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
+#' df_Statistics <- df_Labelled[, c("Diagnosis", "age", "AXL", "Ab_42", "p_tau")]
+#'
+#' # Group means (SD), missing counts, and a p-value for every variable
+#' statistics_table <- CreateStatisticsTable(
+#'   data = df_Statistics,
+#'   TargetVar = "Diagnosis"
+#' )
+#'
+#' # The returned kableExtra table prints directly in Quarto, R Markdown, and
+#' # the reference page. Do not wrap it in `browsable()` a second time.
+#' statistics_table
+#' }
 #' @export
 
 CreateStatisticsTable <- function(data,
@@ -44,7 +62,7 @@ CreateStatisticsTable <- function(data,
   on.exit(options(old_opts), add = TRUE)
 
   sd<-data.table::as.data.table(sd)
-  StatTable <- sd%>% mutate(p_value = kableExtra::cell_spec(p_value , "html", background = ifelse(pvals<0.05, "yellow", "")))%>%dplyr::rename("p-value" = p_value)%>%
+  StatTable <- sd %>% dplyr::mutate(p_value = kableExtra::cell_spec(p_value, "html", background = ifelse(pvals < 0.05, "yellow", ""))) %>% dplyr::rename("p-value" = p_value) %>%
     kableExtra:: kable(format = "html", escape = F)%>% kableExtra::kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))%>%
     kableExtra::scroll_box(width = "100%", height = "500px")
   return(StatTable)

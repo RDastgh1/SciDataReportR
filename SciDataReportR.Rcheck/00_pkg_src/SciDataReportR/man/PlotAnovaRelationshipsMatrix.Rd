@@ -15,7 +15,7 @@ PlotAnovaRelationshipsMatrix(
   min_n = 4,
   eps = 1e-08,
   Data = lifecycle::deprecated(),
-  fdr_scope = c("matrix", "per_outcome"),
+  fdr_scope = c("matrix", "per_outcome", "per_predictor"),
   Covariates = lifecycle::deprecated()
 )
 }
@@ -53,8 +53,32 @@ A list containing three ggplot objects: p (scatter plot without multiple compari
 \description{
 This function plots the relationship between continuous and categorical variables
 using ANOVA or Kruskal-Wallis tests. It generates a "heatmap" with points
-colored and shaped based on statistical significance and effect size.
+colored and shaped based on statistical significance and effect size. When
+generalized eta-squared is unavailable, raw p-values are colored with
+\code{\link[=scale_color_pvalue]{scale_color_pvalue()}}; the FDR-corrected plot uses adjusted p-values.
 }
+\section{Parametric and non-parametric tests}{
+
+ANOVA assumes roughly normal residuals and similar variance across groups.
+Biomarker concentrations are often right-skewed, and group sizes are often
+uneven, both of which make the F-test unreliable.
+
+\code{Parametric = FALSE} switches to Kruskal-Wallis, which compares ranks rather
+than means and assumes neither normality nor equal variance. The matrix is
+built and read exactly the same way.
+
+Comparing the two p-value tables shows which conclusions depended on the
+choice of test. Relationships that hold under both are the ones to trust.
+Where they disagree, the direction is informative: significant only under
+ANOVA suggests the result is being carried by skew or a few extreme values,
+while significant only under Kruskal-Wallis suggests a real shift in the
+bulk of the distribution that outliers were masking from the mean-based
+test.
+
+Kruskal-Wallis is a rank test and has no ANCOVA form, so \code{covariates}
+requires \code{Parametric = TRUE}.
+}
+
 \examples{
 data(SampleData)
 data(SampleVariableTypes)
@@ -72,5 +96,53 @@ result <- PlotAnovaRelationshipsMatrix(
                "Apolipoprotein_A1")
 )
 
+# Raw p-value associations
 result$Unadjusted$plot
+
+# FDR-adjusted associations
+result$FDRCorrected$plot
+
+# The same matrix using Kruskal-Wallis instead of ANOVA
+result_NonParametric <- PlotAnovaRelationshipsMatrix(
+  Labelled,
+  CatVars = c("Diagnosis", "sex", "Genotype"),
+  ContVars = c("age", "ACE_CD143_Angiotensin_Converti",
+               "ACTH_Adrenocorticotropic_Hormon", "AXL", "Adiponectin",
+               "Alpha_1_Antichymotrypsin", "Alpha_1_Antitrypsin",
+               "Alpha_1_Microglobulin", "Alpha_2_Macroglobulin",
+               "Apolipoprotein_A1"),
+  Parametric = FALSE
+)
+
+result_NonParametric$Unadjusted$plot
+result_NonParametric$FDRCorrected$plot
+
+# Where the two tests disagree
+cols_Key <- c("CategoricalVariable", "ContinuousVariable", "p")
+df_Compare <- merge(
+  result$Unadjusted$PvalTable[, cols_Key],
+  result_NonParametric$Unadjusted$PvalTable[, cols_Key],
+  by = c("CategoricalVariable", "ContinuousVariable"),
+  suffixes = c("_ANOVA", "_KruskalWallis")
+)
+df_Compare$AgreesAt05 <-
+  (df_Compare$p_ANOVA < 0.05) == (df_Compare$p_KruskalWallis < 0.05)
+
+htmltools::browsable(htmltools::HTML(as.character(
+  FreezeTableHeader(
+    dplyr::mutate(
+      df_Compare,
+      dplyr::across(dplyr::where(is.numeric), \(x) signif(x, 3))
+    ),
+    height = "320px", full_width = TRUE
+  )
+)))
+
+# Covariate adjustment (parametric only)
+PlotAnovaRelationshipsMatrix(
+  Labelled,
+  CatVars = c("Diagnosis", "sex"),
+  ContVars = c("AXL", "Adiponectin", "Alpha_1_Antitrypsin"),
+  covariates = "age"
+)$FDRCorrected$plot
 }

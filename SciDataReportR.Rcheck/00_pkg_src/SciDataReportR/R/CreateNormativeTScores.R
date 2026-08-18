@@ -55,22 +55,29 @@
 #' }
 #'
 #' @examples
+#' # A reference sample large enough to estimate the covariate effects
+#' set.seed(4127)
+#' n_Reference <- 240
+#' n_Clinical <- 60
+#' n_Total <- n_Reference + n_Clinical
+#'
 #' df <- tibble::tibble(
-#'   Group = c(
-#'     rep("Reference", 8),
-#'     rep("Clinical", 2)
-#'   ),
-#'   Age = c(30, 34, 38, 42, 46, 50, 54, 58, 40, 52),
-#'   Education = factor(c(
-#'     "College", "College", "Graduate", "Graduate",
-#'     "College", "Graduate", "College", "Graduate",
-#'     "College", "Graduate"
+#'   Group = c(rep("Reference", n_Reference), rep("Clinical", n_Clinical)),
+#'   Age = round(stats::rnorm(n_Total, mean = 55, sd = 12)),
+#'   Education = factor(sample(
+#'     c("High School", "College", "Graduate"), n_Total, replace = TRUE
 #'   )),
-#'   Sex = factor(c(
-#'     "F", "M", "F", "M", "F", "M", "F", "M", "F", "M"
-#'   )),
-#'   Visit = c(1, 1, 1, 1, 2, 2, 2, 2, 1, 2),
-#'   TrailsA = c(35, 38, 40, 43, 36, 39, 41, 44, 47, 49) * 1000
+#'   Sex = factor(sample(c("F", "M"), n_Total, replace = TRUE)),
+#'   Visit = sample(1:3, n_Total, replace = TRUE)
+#' )
+#'
+#' # Trail Making A: slower with age, faster with practice, slower if impaired
+#' df$TrailsA <- 1000 * exp(
+#'   3.35 +
+#'     0.011 * (df$Age - 55) -
+#'     0.04 * (df$Visit - 1) +
+#'     0.30 * (df$Group == "Clinical") +
+#'     stats::rnorm(n_Total, sd = 0.16)
 #' )
 #'
 #' out <- CreateNormativeTScoreModel(
@@ -90,8 +97,17 @@
 #' out$data
 #' out$model
 #'
-#' # Display the fitted T-score plot from the returned object
+#' # Raw, transformed, and normed score distributions
+#' out$plots$raw
+#' out$plots$scaled
 #' out$plots$tscore
+#'
+#' # T-score diagnostics by reference group, practice count, and covariates
+#' out$plots$reference
+#' out$plots$practice
+#' out$plots$Age
+#' out$plots$Education
+#' out$plots$Sex
 #' @param df \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
 #' @export
 CreateNormativeTScoreModel <- function(data,
@@ -341,6 +357,7 @@ CreateNormativeTScoreModel <- function(data,
       ggplot2::aes(x = NormRaw, fill = as.factor(.data[[reference_var]]))
     ) +
       ggplot2::geom_histogram(alpha = 0.5, position = "identity") +
+      .SciDataFillScale() +
       ggplot2::theme_bw() +
       ggplot2::labs(
         x = test_label,
@@ -354,6 +371,7 @@ CreateNormativeTScoreModel <- function(data,
       ggplot2::aes(x = NormScaled, fill = as.factor(.data[[reference_var]]))
     ) +
       ggplot2::geom_histogram(alpha = 0.5, position = "identity") +
+      .SciDataFillScale() +
       ggplot2::theme_bw() +
       ggplot2::labs(
         x = "Analysis scale",
@@ -368,6 +386,7 @@ CreateNormativeTScoreModel <- function(data,
     ) +
       ggplot2::geom_histogram(alpha = 0.5, position = "identity") +
       ggplot2::geom_vline(xintercept = 50, linetype = "dashed") +
+      .SciDataFillScale() +
       ggplot2::theme_bw() +
       ggplot2::labs(
         x = "T-score",
@@ -385,6 +404,7 @@ CreateNormativeTScoreModel <- function(data,
       )
     ) +
       ggplot2::geom_boxplot(alpha = 0.7) +
+      .SciDataFillScale() +
       ggplot2::theme_bw() +
       ggplot2::labs(
         x = reference_label,
@@ -402,6 +422,7 @@ CreateNormativeTScoreModel <- function(data,
     ) +
       ggplot2::geom_point(alpha = 0.7) +
       ggplot2::geom_smooth(method = "lm", se = FALSE) +
+      .SciDataColourScale() +
       ggplot2::theme_bw() +
       ggplot2::labs(
         x = count_label,
@@ -427,6 +448,7 @@ CreateNormativeTScoreModel <- function(data,
           ) +
             ggplot2::geom_point(alpha = 0.7) +
             ggplot2::geom_smooth(method = "lm", se = FALSE) +
+            .SciDataColourScale() +
             ggplot2::theme_bw() +
             ggplot2::labs(
               x = var_label,
@@ -444,6 +466,7 @@ CreateNormativeTScoreModel <- function(data,
             )
           ) +
             ggplot2::geom_boxplot(alpha = 0.7) +
+            .SciDataFillScale() +
             ggplot2::theme_bw() +
             ggplot2::labs(
               x = var_label,
@@ -495,35 +518,11 @@ CreateNormativeTScoreModel <- function(data,
   )
 }
 
-#' Create normative T-scores from a regression model
-#'
-#' Compatibility alias for [CreateNormativeTScoreModel()]. Prefer
-#' `CreateNormativeTScoreModel()` in new code because this function fits a
-#' reusable normative T-score model.
-#'
+#' @description `CreateNormativeTScores()` has been superseded by
+#'   `CreateNormativeTScoreModel()`. It remains available as a
+#'   backwards-compatible alias and returns the same reusable normative model.
+#' @rdname CreateNormativeTScoreModel
 #' @param ... Arguments passed to [CreateNormativeTScoreModel()].
-#' @return The same normative model object returned by
-#'   [CreateNormativeTScoreModel()].
-#' @seealso [CreateNormativeTScoreModel()] for the canonical function and full
-#'   examples.
-#' @examples
-#' df <- tibble::tibble(
-#'   Group = c(rep("Reference", 8), rep("Clinical", 2)),
-#'   Age = c(30, 34, 38, 42, 46, 50, 54, 58, 40, 52),
-#'   Visit = c(1, 1, 1, 1, 2, 2, 2, 2, 1, 2),
-#'   TrailsA = c(35, 38, 40, 43, 36, 39, 41, 44, 47, 49)
-#' )
-#'
-#' out <- CreateNormativeTScores(
-#'   data = df,
-#'   test_var = "TrailsA",
-#'   count_var = "Visit",
-#'   covariates = "Age",
-#'   reference_var = "Group",
-#'   reference_value = "Reference",
-#'   return_plots = TRUE
-#' )
-#' out$plots$tscore
 #' @export
 CreateNormativeTScores <- function(...) {
   CreateNormativeTScoreModel(...)

@@ -5,6 +5,25 @@
 #' @param data The data frame from which to extract categorical variables.
 #' @param Ordinal Logical, indicating whether to include ordinal variables.
 #' @return A character vector containing the names of categorical variables.
+#' @seealso [getNumVars()] and [getBinaryVars()] for the other partitions.
+#'
+#' @examples
+#' data(SampleData)
+#' data(SampleVariableTypes)
+#'
+#' Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
+#'
+#' # Every factor in the frame
+#' getCatVars(Labelled)
+#'
+#' # `Ordinal = FALSE` drops ordered factors, which is what you want when the
+#' # ordered variables are going to be analyzed on their numeric scale instead.
+#' getCatVars(Labelled, Ordinal = FALSE)
+#'
+#' # Only meaningful after RevalueData(): in the raw extract `sex` is still a
+#' # bare 0/1 numeric column and is not detected as categorical.
+#' getCatVars(SampleData)
+#'
 #' @importFrom dplyr select where
 #' @importFrom magrittr "%>%"
 #' @param DataFrame \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
@@ -21,11 +40,11 @@ getCatVars <- function(data,
 
   if (Ordinal) {
     CatVars <- DataFrame %>%
-      select(where(is.factor)) %>%
+      dplyr::select(dplyr::where(is.factor)) %>%
       names()
   } else {
     CatVars <- DataFrame %>%
-      select(where(is.factor) & !where(is.ordered)) %>%
+      dplyr::select(dplyr::where(is.factor) & !dplyr::where(is.ordered)) %>%
       names()
   }
   return(CatVars)

@@ -61,7 +61,7 @@ SciDataReportR functions are intended to be used as workflow components rather t
 | Association and regression mining | `PlotAssociations()`, `PlotCorrelationsHeatmap()`, `PlotDirectionalHeatmaps()`, `MakeUnivariateRegressionTable()`, `PlotForestFromTable()` |
 | Dimensionality reduction and projection | `CreatePCAObject()`, `plotPCA()`, `ExtractPCAComponentSummary()`, `ProjectPCA()`, `CreateZScoreObject()`, `ProjectZScore()` |
 | Normative modeling | `CreateNormativeTScoreModel()`, `ApplyNormativeTScores()` |
-| Clustering and cohort projection | `CreateSOMClusterModel()`, `ProjectSOMCluster()` |
+| Clustering and cohort projection | `CreateClusterModel_SOM_MClust()`, `ProjectCluster()` |
 | Longitudinal and temporal workflows | `Merge_ByClosestTime()`, `SummarizeTransitions()`, `PlotSwimmerTransitions()` |
 | Reporting | `CreateSummaryTable()`, `CreateStatisticsTable()`, `use_EDATemplate()` |
 
@@ -75,7 +75,7 @@ Visualization is a cross-cutting SciDataReportR workflow layer. Plot-producing f
 | Group comparison | `PlotZScore()`, `Plot2GroupStats()`, `PlotPValueComparisons()`, `PlotSplitViolin()` |
 | Association and correlation | `PlotCorrelationsHeatmap()`, `PlotPhiHeatmap()`, `PlotPointCorrelationsHeatmap()`, `PlotDirectionalHeatmaps()`, `PlotAssociations()`, `plotSigCorrelations()`, `plotSigAssociations()` |
 | Regression and interaction | `PlotPartialRegressionScatter()`, `PlotForestFromTable()`, `PlotInteractionEffectsContinuous()`, `PlotInteractionEffectsMatrix()`, `PlotCatInteractionEffectsMatrix()`, `PlotNumInteractionEffectsMatrix()` |
-| Dimensionality reduction and clustering | `plotPCA()`, plots produced from `CreateSOMClusterModel()` workflows |
+| Dimensionality reduction and clustering | `plotPCA()`, plots produced from `CreateClusterModel_SOM_MClust()` workflows |
 | Longitudinal and temporal | `PlotTimeDistribution()`, `PlotSwimmerTransitions()` |
 | Specialized scientific plots | `PlotBlandAltman()`, `PlotSpiderChart()`, `PlotPathway_KT()` |
 
@@ -108,7 +108,7 @@ SciDataReportR now uses workflow-oriented canonical names for new code, while ol
 | `ApplyNormativeTScores()` | New data and normative scoring object | `CreateNormativeTScoreModel()` | Applied normative T-scores | Score future cohorts with the same model |
 | `ProjectZScore()` | New data and z-score parameters | `CreateZScoreObject()` | Projected standardized scores | Apply a prior standardization to new data |
 | `ProjectPCA()` | New data and PCA object | `CreatePCAObject()` | Projected PCA scores | Compare new samples in an existing PCA space |
-| `ProjectSOMCluster()` | New data and SOM cluster solution | `CreateSOMClusterModel()` | Projected SOM/cluster assignments | Apply an existing cluster solution to future cohorts |
+| `ProjectCluster()` | New data and fitted cluster solution | `CreateClusterModel_*()` | Projected cluster assignments | Apply an existing cluster solution to future cohorts |
 | `ProjectRCI()` | New data and RCI object | `CreateRCIObject()` | Projected reliable change metrics | Apply an existing change model |
 
 ## Flagship Workflow Examples

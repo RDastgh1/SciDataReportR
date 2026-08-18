@@ -14,20 +14,95 @@ test_that("MakeUnivariateRegressionTable fits linear and logistic outcomes", {
   res <- MakeUnivariateRegressionTable(
     data = df,
     outcome_vars = c("y", "ybin"),
-    predictor_vars = c("x1", "x2")
+    predictor_vars = c("x1", "x2"),
+    ReturnModels = TRUE
   )
 
   expect_named(res, c("FormattedTable", "LargeTable", "Results", "ModelSummaries", "Metadata"))
+  expect_s3_class(res$FormattedTable, "gt_tbl")
+  expect_s3_class(res$LargeTable, "gt_tbl")
   expect_s3_class(res$ModelSummaries$y$x1, "lm")
   expect_s3_class(res$ModelSummaries$ybin$x1, "glm")
   expect_equal(res$Metadata$Outcomes$OutcomeFamily, c("linear", "logistic"))
   expect_equal(res$Metadata$Outcomes$ReferenceLevel[[2]], "Control")
   expect_equal(res$Metadata$Outcomes$EventLevel[[2]], "Case")
 
-  logistic_body <- res$LargeTable$tbls[[2]]$table_body
-  expect_true(all(logistic_body$outcome_family == "logistic"))
-  expect_true(all(logistic_body$effect_type == "Odds ratio"))
-  expect_true(all(logistic_body$estimate > 0, na.rm = TRUE))
+  logistic_results <- res$Results[res$Results$OutcomeFamily == "logistic", ]
+  expect_true(all(logistic_results$EffectType == "Odds ratio"))
+  expect_true(all(logistic_results$Estimate > 0, na.rm = TRUE))
+})
+
+test_that("MakeUnivariateRegressionTable supports non-syntactic variable names", {
+  set.seed(923)
+  df <- data.frame(
+    "Global Mean T" = rnorm(90),
+    "Global Mean T change" = rnorm(90),
+    "log AB-38 CSF" = rnorm(90),
+    "log IL-12/IL-23p40 Plasma" = rnorm(90),
+    "Age-years" = rnorm(90),
+    check.names = FALSE
+  )
+
+  res <- MakeUnivariateRegressionTable(
+    data = df,
+    outcome_vars = c("Global Mean T", "Global Mean T change"),
+    predictor_vars = c("log AB-38 CSF", "log IL-12/IL-23p40 Plasma"),
+    covariates = "Age-years",
+    ReturnModels = TRUE
+  )
+
+  expect_equal(nrow(res$Results), 4)
+  expect_setequal(res$Results$Outcome, c("Global Mean T", "Global Mean T change"))
+  expect_setequal(
+    res$Results$Predictor,
+    c("log AB-38 CSF", "log IL-12/IL-23p40 Plasma")
+  )
+  expect_equal(
+    all.vars(stats::formula(
+      res$ModelSummaries[["Global Mean T"]][["log IL-12/IL-23p40 Plasma"]]
+    )),
+    c("Global Mean T", "log IL-12/IL-23p40 Plasma", "Age-years")
+  )
+})
+
+test_that("MakeUnivariateRegressionTable labels factor levels with non-syntactic names", {
+  set.seed(924)
+  df <- data.frame(
+    "Global Mean T" = rnorm(80),
+    "Treatment Arm/Group" = factor(
+      rep(c("Placebo", "Active"), each = 40),
+      levels = c("Placebo", "Active")
+    ),
+    check.names = FALSE
+  )
+  attr(df[["Treatment Arm/Group"]], "label") <- "Treatment group"
+
+  res <- MakeUnivariateRegressionTable(
+    data = df,
+    outcome_vars = "Global Mean T",
+    predictor_vars = "Treatment Arm/Group"
+  )
+
+  expect_equal(res$Results$Term, "`Treatment Arm/Group`Active")
+  expect_equal(res$Results$Level, "Active")
+  expect_equal(res$Results$TermLabel, "Treatment group : Active")
+})
+
+test_that("MakeUnivariateRegressionTable skips model objects by default", {
+  set.seed(908)
+  df <- data.frame(
+    y = rnorm(50),
+    x1 = rnorm(50)
+  )
+
+  res <- MakeUnivariateRegressionTable(
+    data = df,
+    outcome_vars = "y",
+    predictor_vars = "x1"
+  )
+
+  expect_null(res$ModelSummaries)
+  expect_false(res$Metadata$AnalysisSettings$ReturnModels)
 })
 
 test_that("MakeUnivariateRegressionTable returns a tidy Results dataframe", {
@@ -47,7 +122,8 @@ test_that("MakeUnivariateRegressionTable returns a tidy Results dataframe", {
   res <- MakeUnivariateRegressionTable(
     data = df,
     outcome_vars = c("y", "ybin"),
-    predictor_vars = c("x1", "x2")
+    predictor_vars = c("x1", "x2"),
+    ReturnModels = TRUE
   )
 
   results <- res$Results
@@ -94,13 +170,15 @@ test_that("UnivariateRegressionTable is a backwards-compatible synonym", {
     res_old <- UnivariateRegressionTable(
       data = df,
       outcome_vars = "y",
-      predictor_vars = "x1"
+      predictor_vars = "x1",
+      ReturnModels = TRUE
     )
   )
   res_new <- MakeUnivariateRegressionTable(
     data = df,
     outcome_vars = "y",
-    predictor_vars = "x1"
+    predictor_vars = "x1",
+    ReturnModels = TRUE
   )
 
   expect_named(res_old, names(res_new))
@@ -121,7 +199,8 @@ test_that("MakeUnivariateRegressionTable handles binary character outcomes", {
   res <- MakeUnivariateRegressionTable(
     data = df,
     outcome_vars = "ychar",
-    predictor_vars = "x1"
+    predictor_vars = "x1",
+    ReturnModels = TRUE
   )
 
   expect_s3_class(res$ModelSummaries$ychar$x1, "glm")
@@ -162,7 +241,8 @@ test_that("MakeUnivariateRegressionTable does not standardize binary logistic ou
     data = df,
     outcome_vars = "ybin",
     predictor_vars = "x1",
-    Standardize = TRUE
+    Standardize = TRUE,
+    ReturnModels = TRUE
   )
 
   model_frame <- stats::model.frame(res$ModelSummaries$ybin$x1)
@@ -199,14 +279,7 @@ test_that("PlotForestFromTable keeps outcome labels aligned with table order", {
   point_data <- built_plot$data[[1]][, c("PANEL", "x")]
   point_data$PlotFacet <- as.character(facet_layout$PlotFacet[match(point_data$PANEL, facet_layout$PANEL)])
 
-  expected <- vapply(
-    names(res$FormattedTable$tbls),
-    function(outcome) {
-      table_body <- res$FormattedTable$tbls[[outcome]]$table_body
-      table_body$estimate[!is.na(table_body$estimate)][[1]]
-    },
-    numeric(1)
-  )
+  expected <- stats::setNames(res$Results$Estimate, res$Results$OutcomeLabel)
   observed <- stats::setNames(point_data$x, point_data$PlotFacet)
 
   expect_equal(names(observed), names(expected))
@@ -242,14 +315,7 @@ test_that("PlotForestFromTable can flip outcomes and terms", {
   point_data <- built_plot$data[[1]][, c("PANEL", "x", "y")]
   point_data$PlotFacet <- as.character(facet_layout$PlotFacet[match(point_data$PANEL, facet_layout$PANEL)])
 
-  expected <- vapply(
-    names(res$FormattedTable$tbls),
-    function(outcome) {
-      table_body <- res$FormattedTable$tbls[[outcome]]$table_body
-      table_body$estimate[!is.na(table_body$estimate)][[1]]
-    },
-    numeric(1)
-  )
+  expected <- stats::setNames(res$Results$Estimate, res$Results$OutcomeLabel)
 
   expect_equal(unique(point_data$PlotFacet), "cohort : Hiv_pos")
   expect_equal(sort(unique(point_data$y)), seq_along(expected))
@@ -310,27 +376,6 @@ test_that("PlotForestFromTable rejects dataframes missing required columns", {
   )
 })
 
-test_that("PlotForestFromTable still plots objects without a Results element", {
-  set.seed(920)
-  df <- data.frame(
-    y = rnorm(60),
-    x1 = rnorm(60)
-  )
-  res <- MakeUnivariateRegressionTable(
-    data = df,
-    outcome_vars = "y",
-    predictor_vars = "x1"
-  )
-  expected <- res$Results
-
-  # simulate an object saved by a version before 20.5.0
-  res$Results <- NULL
-  p <- PlotForestFromTable(res)
-  point_data <- ggplot2::ggplot_build(p)$data[[1]]
-
-  expect_equal(point_data$x, expected$Estimate, tolerance = 1e-8)
-})
-
 test_that("plotForestFromTable is a backwards-compatible synonym", {
   set.seed(921)
   df <- data.frame(
@@ -385,38 +430,6 @@ test_that("PlotForestFromTable uses outcome labels from metadata", {
   expect_equal(sort(unique(flipped_data$y)), c(1, 2))
 })
 
-test_that("PlotForestFromTable preserves table spanner labels when metadata has raw names", {
-  set.seed(915)
-  df <- data.frame(
-    cbf_m_l_100_g_min = rnorm(60),
-    e = rnorm(60),
-    cohort = factor(
-      rep(c("control", "Hiv_pos"), each = 30),
-      levels = c("control", "Hiv_pos")
-    )
-  )
-  attr(df$cbf_m_l_100_g_min, "label") <- "CBF"
-  attr(df$e, "label") <- "Extraction fraction"
-
-  res <- MakeUnivariateRegressionTable(
-    data = df,
-    outcome_vars = c("cbf_m_l_100_g_min", "e"),
-    predictor_vars = "cohort",
-    Standardize = TRUE
-  )
-  res$Metadata$Outcomes$OutcomeLabel <- res$Metadata$Outcomes$Outcome
-
-  # legacy path: objects without Results fall back to spanner labels
-  res$Results <- NULL
-  p <- PlotForestFromTable(res)
-  plot_layout <- ggplot2::ggplot_build(p)$layout$layout
-
-  expect_equal(
-    as.character(plot_layout$PlotFacet),
-    c("CBF", "Extraction fraction")
-  )
-})
-
 test_that("PlotForestFromTable uses odds ratio null line for logistic models", {
   set.seed(916)
   df <- data.frame(
@@ -453,7 +466,8 @@ test_that("MakeUnivariateRegressionTable still accepts deprecated argument names
     res <- MakeUnivariateRegressionTable(
       Data = df,
       OutcomeVars = "y",
-      PredictorVars = "x1"
+      PredictorVars = "x1",
+      ReturnModels = TRUE
     )
   )
   expect_length(deprecation_warnings, 3)

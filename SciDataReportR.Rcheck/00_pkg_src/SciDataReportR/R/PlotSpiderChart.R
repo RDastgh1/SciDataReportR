@@ -28,8 +28,9 @@
 #' @param BinaryPositiveValue Optional positive value to use for non-factor
 #'   binary variables. Defaults to `1`. For factor variables, the second factor
 #'   level is used.
-#' @param Palette Character name of an `hcl.colors()` palette. Defaults to
-#'   `"Dark 3"`.
+#' @param Palette Optional character name of an `hcl.colors()` palette. When
+#'   `NULL` (the default), the SciDataReportR palette is used. Passing a name
+#'   such as `"Dark 3"` still works exactly as before.
 #' @param LineSize Numeric line width for the static ggplot version.
 #' @param PointSize Numeric point size for the static ggplot version.
 #' @param ShowPoints Logical; if TRUE, show points at each spoke in the static
@@ -72,19 +73,67 @@
 #' @param MakeInteractive \strong{Deprecated} (since 19.15.0). Use \code{interactive} instead.
 #' @examples
 #' data(SampleData)
+#' data(SampleVariableTypes)
 #'
-#' # Static spider chart
-#' PlotSpiderChart(
-#'   SampleData,
-#'   variables = c("age", "AXL", "Adiponectin", "Alpha_1_Antitrypsin"),
-#'   group_var = "Diagnosis"
+#' Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
+#'
+#' vars_biomarkers <- c(
+#'   "Ab_42", "p_tau", "tau", "GRO_alpha", "MMP10", "MMP7", "TRAIL_R3"
+#' )
+#' categories_biomarkers <- c(
+#'   "Neurodegeneration", "Neurodegeneration", "Neurodegeneration",
+#'   "Inflammation", "Inflammation", "Matrix remodeling", "TNF signaling"
 #' )
 #'
-#' # Interactive (plotly) version of the same chart
+#' # Input order preserves the supplied clinical/domain sequence.
 #' PlotSpiderChart(
-#'   SampleData,
-#'   variables = c("age", "AXL", "Adiponectin", "Alpha_1_Antitrypsin"),
+#'   data = Labelled,
+#'   variables = vars_biomarkers,
 #'   group_var = "Diagnosis",
+#'   VariableOrder = "input"
+#' )
+#'
+#' # Discrimination puts the largest between-group differences next to each other.
+#' PlotSpiderChart(
+#'   data = Labelled,
+#'   variables = vars_biomarkers,
+#'   group_var = "Diagnosis",
+#'   VariableOrder = "discrimination"
+#' )
+#'
+#' # Hierarchical order groups biomarkers with similar Diagnosis profiles.
+#' PlotSpiderChart(
+#'   data = Labelled,
+#'   variables = vars_biomarkers,
+#'   group_var = "Diagnosis",
+#'   VariableOrder = "hierarchical"
+#' )
+#'
+#' # Greedy order places consecutive spokes with maximally different profiles.
+#' PlotSpiderChart(
+#'   data = Labelled,
+#'   variables = vars_biomarkers,
+#'   group_var = "Diagnosis",
+#'   VariableOrder = "greedy"
+#' )
+#'
+#' # Category/discrimination order keeps domains together, then ranks the
+#' # biomarkers within each domain by their between-group difference.
+#' PlotSpiderChart(
+#'   data = Labelled,
+#'   variables = vars_biomarkers,
+#'   group_var = "Diagnosis",
+#'   VariableOrder = "category_discrimination",
+#'   VariableCategories = categories_biomarkers
+#' )
+#'
+#' # Interactive (plotly) version of the category-aware chart.
+#' PlotSpiderChart(
+#'   data = Labelled,
+#'   variables = vars_biomarkers,
+#'   group_var = "Diagnosis",
+#'   VariableOrder = "category_discrimination",
+#'   VariableCategories = categories_biomarkers,
 #'   interactive = TRUE
 #' )
 #' @export
@@ -100,7 +149,7 @@ PlotSpiderChart <- function(data,
     VariableOrder = "input",
     VariableCategories = NULL,
     BinaryPositiveValue = 1,
-    Palette = "Dark 3",
+    Palette = NULL,
     LineSize = 1,
     PointSize = 2,
     ShowPoints = FALSE,
@@ -618,7 +667,13 @@ PlotSpiderChart <- function(data,
   }
 
   GroupLevels <- levels(as.factor(SummaryData$.Group))
-  PlotColors <- grDevices::hcl.colors(length(GroupLevels), palette = Palette)
+  # Single assignment on purpose: PlotColors feeds both the ggplot scales and
+  # the plotly traces, so the static and interactive charts cannot diverge.
+  PlotColors <- if (is.null(Palette)) {
+    .SciDataColorValues(length(GroupLevels))
+  } else {
+    grDevices::hcl.colors(length(GroupLevels), palette = Palette)
+  }
   names(PlotColors) <- GroupLevels
 
   # Return interactive widget
@@ -786,9 +841,7 @@ PlotSpiderChart <- function(data,
           title = list(text = LegendTitle),
           orientation = "v"
         ),
-        annotations = InteractiveAnnotations,
-        width = InteractiveWidth,
-        height = InteractiveHeight
+        annotations = InteractiveAnnotations
       )
 
     return(p_int)

@@ -11,7 +11,8 @@ PlotContinuousDistributions(
   Relabel = TRUE,
   FacetLabelStyle = c("both", "label_only", "variable_only", "auto"),
   ncol = 3,
-  Ordinal = TRUE,
+  Ordinal = lifecycle::deprecated(),
+  TreatOrdinalAs = "Categorical",
   DataFrame = lifecycle::deprecated(),
   Variables = lifecycle::deprecated()
 )
@@ -29,7 +30,12 @@ PlotContinuousDistributions(
 
 \item{ncol}{Number of columns in the facet grid.}
 
-\item{Ordinal}{Logical; include labelled-ordinal variables as numeric.}
+\item{Ordinal}{Deprecated logical compatibility option; use
+\code{TreatOrdinalAs} instead.}
+
+\item{TreatOrdinalAs}{How ordinal variables are handled. \code{"Continuous"}
+includes their numeric score; \code{"Exclude"} omits them. \code{"Both"} is not
+meaningful for this plot and errors.}
 
 \item{DataFrame}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
 
@@ -44,9 +50,23 @@ more continuous variables, with optional group-wise colouring.
 }
 \examples{
 data(SampleData)
+data(SampleVariableTypes)
 
+Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
+
+# Eight variables across three columns show wrapped labels and multi-row facets.
 PlotContinuousDistributions(
-  SampleData,
-  variables = c("age", "AXL", "Adiponectin")
+  data = Labelled,
+  variables = c("AXL", "Adiponectin", "Alpha_1_Antitrypsin", "Ferritin",
+                "Gamma_Interferon_induced_Monokin", "MMP7", "tau", "p_tau"),
+  ncol = 3
+)
+
+# Grouped rain-clouds use the Diagnosis fill to compare distributions.
+PlotContinuousDistributions(
+  data = Labelled,
+  variables = c("Ab_42", "p_tau", "tau", "GRO_alpha", "MMP10", "TRAIL_R3"),
+  Fill = "Diagnosis",
+  ncol = 3
 )
 }

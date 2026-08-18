@@ -2,6 +2,7 @@
 % Please edit documentation in R/CreateNormativeTScores.R
 \name{CreateNormativeTScoreModel}
 \alias{CreateNormativeTScoreModel}
+\alias{CreateNormativeTScores}
 \title{Create normative T-scores from a regression model}
 \usage{
 CreateNormativeTScoreModel(
@@ -21,6 +22,8 @@ CreateNormativeTScoreModel(
   return_plots = TRUE,
   df = lifecycle::deprecated()
 )
+
+CreateNormativeTScores(...)
 }
 \arguments{
 \item{data}{A data frame containing the test variable, count variable,
@@ -66,6 +69,8 @@ If supplied, plot labels use variable labels when available.}
 \item{return_plots}{Logical. If \code{TRUE}, returns a list of diagnostic plots.}
 
 \item{df}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
+
+\item{...}{Arguments passed to \code{\link[=CreateNormativeTScoreModel]{CreateNormativeTScoreModel()}}.}
 }
 \value{
 A list with the following elements:
@@ -87,6 +92,10 @@ z-scores and T-scores. This is useful for creating demographically adjusted
 cognitive norms with optional practice effect adjustment and optional
 preprocessing such as unit conversion, log transformation, and reverse
 scoring.
+
+\code{CreateNormativeTScores()} has been superseded by
+\code{CreateNormativeTScoreModel()}. It remains available as a
+backwards-compatible alias and returns the same reusable normative model.
 }
 \details{
 The reference group is defined by \code{reference_var == reference_value}.
@@ -96,22 +105,29 @@ rows where \code{count_var == baseline_count_value}. When
 available visits in the reference group are used.
 }
 \examples{
+# A reference sample large enough to estimate the covariate effects
+set.seed(4127)
+n_Reference <- 240
+n_Clinical <- 60
+n_Total <- n_Reference + n_Clinical
+
 df <- tibble::tibble(
-  Group = c(
-    rep("Reference", 8),
-    rep("Clinical", 2)
-  ),
-  Age = c(30, 34, 38, 42, 46, 50, 54, 58, 40, 52),
-  Education = factor(c(
-    "College", "College", "Graduate", "Graduate",
-    "College", "Graduate", "College", "Graduate",
-    "College", "Graduate"
+  Group = c(rep("Reference", n_Reference), rep("Clinical", n_Clinical)),
+  Age = round(stats::rnorm(n_Total, mean = 55, sd = 12)),
+  Education = factor(sample(
+    c("High School", "College", "Graduate"), n_Total, replace = TRUE
   )),
-  Sex = factor(c(
-    "F", "M", "F", "M", "F", "M", "F", "M", "F", "M"
-  )),
-  Visit = c(1, 1, 1, 1, 2, 2, 2, 2, 1, 2),
-  TrailsA = c(35, 38, 40, 43, 36, 39, 41, 44, 47, 49) * 1000
+  Sex = factor(sample(c("F", "M"), n_Total, replace = TRUE)),
+  Visit = sample(1:3, n_Total, replace = TRUE)
+)
+
+# Trail Making A: slower with age, faster with practice, slower if impaired
+df$TrailsA <- 1000 * exp(
+  3.35 +
+    0.011 * (df$Age - 55) -
+    0.04 * (df$Visit - 1) +
+    0.30 * (df$Group == "Clinical") +
+    stats::rnorm(n_Total, sd = 0.16)
 )
 
 out <- CreateNormativeTScoreModel(
@@ -131,6 +147,15 @@ out <- CreateNormativeTScoreModel(
 out$data
 out$model
 
-# Display the fitted T-score plot from the returned object
+# Raw, transformed, and normed score distributions
+out$plots$raw
+out$plots$scaled
 out$plots$tscore
+
+# T-score diagnostics by reference group, practice count, and covariates
+out$plots$reference
+out$plots$practice
+out$plots$Age
+out$plots$Education
+out$plots$Sex
 }

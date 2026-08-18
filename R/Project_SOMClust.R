@@ -1,11 +1,56 @@
 
+.NodeOccupancyJSD <- function(training_counts, projected_counts) {
+  if (length(training_counts) != length(projected_counts)) {
+    stop("training_counts and projected_counts must have the same length.")
+  }
+  if (!length(training_counts) || sum(training_counts) <= 0 || sum(projected_counts) <= 0) {
+    return(NA_real_)
+  }
+  p <- training_counts / sum(training_counts)
+  q <- projected_counts / sum(projected_counts)
+  midpoint <- 0.5 * (p + q)
+  0.5 * sum(ifelse(p > 0, p * log2(p / midpoint), 0)) +
+    0.5 * sum(ifelse(q > 0, q * log2(q / midpoint), 0))
+}
+
+.SOMAssignedProbabilityPlot <- function(probability_data) {
+  has_probability_spread <- nrow(probability_data) > 1L &&
+    diff(range(probability_data$prob_assigned)) > 1e-06
+  if (has_probability_spread) {
+    return(
+      ggplot2::ggplot(probability_data, ggplot2::aes(x = .data$prob_assigned)) +
+        ggplot2::geom_density(fill = "darkblue", alpha = 0.7) +
+        ggplot2::facet_wrap(~Cluster, scales = "free_y", nrow = 1) +
+        ggplot2::coord_cartesian(xlim = c(0, 1)) +
+        ggplot2::theme_bw() +
+        ggplot2::labs(
+          title = "Assigned posterior probability by cluster",
+          x = "Posterior probability for assigned cluster", y = "Density"
+        )
+    )
+  }
+  ggplot2::ggplot(probability_data,
+    ggplot2::aes(x = .data$prob_assigned, y = .data$Cluster)) +
+    ggplot2::geom_rug(sides = "b", alpha = 0.65) +
+    ggplot2::geom_point(alpha = 0.55,
+      position = ggplot2::position_jitter(height = 0.08)) +
+    ggplot2::coord_cartesian(xlim = c(0, 1)) +
+    ggplot2::theme_bw() +
+    ggplot2::labs(
+      title = "Assigned posterior probability by cluster",
+      subtitle = "Near-constant probabilities: a density cannot be estimated meaningfully",
+      x = "Posterior probability for assigned cluster", y = "Cluster"
+    )
+}
+
 #' Project new data onto an existing SOM clinical phenotype space
 #'
 #' @description
 #' Train once, project many: a reusable unsupervised clinical phenotyping
 #' framework that learns phenotype structure in a training cohort and projects
 #' new participants into the fixed phenotype space while quantifying membership
-#' uncertainty and projection fit. Given a fitted \code{CreateSOMClusterModel()}
+#' uncertainty and projection fit. Given a fitted
+#' \code{CreateClusterModel_SOM_MClust()}
 #' object, project a new data frame onto:
 #' \itemize{
 #'   \item The same Z-score scaling (via SciDataReportR::ProjectZScore()) when
@@ -30,10 +75,8 @@
 #'     }
 #' }
 #'
-#' Stable row id:
-#' - \code{.scidr_rowid} is added to \code{new_df} (if not already present) and
-#'   carried into \code{df_with_clusters} and \code{ProbFit$individual}.
-#' - \code{ProbFit$individual$RowID} is set equal to \code{.scidr_rowid}.
+#' Row alignment is preserved without adding internal identifier columns to
+#' either the projected data or public diagnostics.
 #'
 #' Missing data:
 #' \itemize{
@@ -42,10 +85,10 @@
 #'         and the cluster label.
 #' }
 #'
-#' @param object A SOM cluster model object from [CreateSOMClusterModel()].
+#' @param object A fitted SOM cluster model.
 #' @param new_df Data frame of new cases to project.
-#' @param ClusterName Optional name for the cluster column; defaults to
-#'   \code{object$ClusterName}. If that column already exists in \code{new_df}
+#' @param ClusterVariableName Optional name for the cluster column; defaults to
+#'   \code{object$ClusterVariableName}. If that column already exists in \code{new_df}
 #'   it is overwritten (with a message).
 #' @param high_dist_quantile Numeric value between 0 and 1 used to define
 #'   high SOM-distance flags from the training distance distribution. Default
@@ -55,50 +98,52 @@
 #'
 #' @return A list of class \code{"Project_SOMClust"} with components:
 #'   \itemize{
-#'     \item \code{vars_used}, \code{ClusterName}, \code{complete_rows}
-#'     \item \code{df_with_clusters}: \code{new_df} with \code{.scidr_rowid} and
-#'           only the cluster column appended.
-#'     \item \code{SOMProj}: list with training and projected distance
-#'           summaries, cluster-level flag summaries, comparison, and plots.
+#'     \item \code{vars_used}, \code{ClusterVariableName}
+#'     \item \code{DataWithClusters}: \code{new_df} with only the requested
+#'           cluster and projection-fit columns appended.
 #'     \item \code{ProbFit}: list with \code{node} (training node-level
-#'           posterior info), \code{individual} (projection-level info
-#'           including distance flags and z-scores), and probability plots.
+#'           posterior info), \code{individual} (projected cluster assignments
+#'           and posterior-probability diagnostics), and probability plots.
+#'     \item \code{ProjectionFit}: full-length map-fit diagnostics, cohort and
+#'           cluster summaries, training-support violations, policy, and plots.
 #'     \item \code{ModelInfo_SOM}, \code{ModelInfo_MClust}: references to the
 #'           original model objects for convenience.
 #'   }
 #'
 #' @examples
-#' \dontrun{
-#' # NOTE: Not run - projection requires a trained SOM model, and
-#' # CreateSOMClusterModel() currently errors on the tracked get_data() bug
-#' # (see CreateSOMClusterModel() for details).
-#' data(SampleData)
-#' data(SampleVariableTypes)
-#'
-#' Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
-#'
-#' model <- CreateSOMClusterModel(
-#'   data = Labelled,
-#'   variables = c("age", "AXL", "Adiponectin", "Alpha_1_Antitrypsin"),
+#' \donttest{
+#' data("SimulatedPhenotypeData")
+#' df_Training <- dplyr::filter(SimulatedPhenotypeData, .data$Cohort == "Training")
+#' df_Projection <- dplyr::filter(SimulatedPhenotypeData, .data$Cohort == "Projection")
+#' model <- CreateClusterModel_SOM_MClust(
+#'   data = df_Training,
+#'   variables = paste0("Var", 1:12),
 #'   method = "finalize",
-#'   final_k = 3,
-#'   final_model = 1
+#'   final_k = 4,
+#'   final_model = 1,
+#'   som_xdim = 5,
+#'   som_ydim = 5,
+#'   stability_resamples = 2,
+#'   Relabel = FALSE,
+#'   min_nodes_per_cluster = NULL
 #' )
-#'
-#' projected <- ProjectSOMCluster(object = model, new_df = Labelled)
+#' projected <- ProjectCluster(object = model, new_df = df_Projection)
+#' head(projected$ProbFit$individual)
+#' projected$ProjectionFit$plots$projection_fit_class_bar
+#' projected$ProjectionFit$plots$som_grid_map
+#' projected$ProbFit$plots$individual_ProbAssignedDensity
 #' }
+#' @noRd
 #' @export
-ProjectSOMCluster <- function(
+ProjectCluster.Pipeline_SOM_MClust <- function(
     object,
     new_df,
-    ClusterName = NULL,
+    ClusterVariableName = NULL,
     high_dist_quantile = 0.95,
-    low_prob_threshold = 0.70
+    low_prob_threshold = 0.70,
+    ...
 ) {
 
-  if (!inherits(object, "Pipeline_SOMClust")) {
-    stop("object must be a Pipeline_SOMClust result.")
-  }
 
   if (!requireNamespace("kohonen", quietly = TRUE)) {
     stop("Package 'kohonen' is required.")
@@ -119,8 +164,8 @@ ProjectSOMCluster <- function(
   }
 
   vars_used <- object$vars_used
-  if (is.null(ClusterName)) {
-    ClusterName <- object$ClusterName
+  if (is.null(ClusterVariableName)) {
+    ClusterVariableName <- object$ClusterVariableName
   }
 
 
@@ -133,7 +178,7 @@ ProjectSOMCluster <- function(
     )
   }
 
-  training_variable_summary <- object$ModelInfo_SOM$PhenotypeReference$training_variable_summary
+  training_variable_summary <- object$ModelInfo_SOM$ProjectionReference$training_variable_summary
   if (is.null(training_variable_summary)) {
     training_variable_summary <- object$ModelInfo_SOM$training_variable_summary
   }
@@ -168,23 +213,23 @@ ProjectSOMCluster <- function(
 
   if (length(out_of_range_vars) > 0) {
     warning(
-      "Projected data contain values outside the training range for: ",
+      "Projected data include values beyond the observed training range for: ",
       paste(out_of_range_vars, collapse = ", "),
-      ". Review SOMProj$out_of_range_summary."
+      ". These cases are still mapped; review ProjectionFit$out_of_support."
     )
+  }
+
+  Flag_OutsideTrainingRange <- rep(FALSE, nrow(new_df))
+  for (variable in out_of_range_vars) {
+    bounds <- out_of_range_summary %>% dplyr::filter(.data$Variable == variable)
+    values <- new_df[[variable]]
+    Flag_OutsideTrainingRange <- Flag_OutsideTrainingRange |
+      (!is.na(values) & (values < bounds$min[[1]] | values > bounds$max[[1]]))
   }
 
   # Stable row id ----------------------------------------------------------
 
-  if (!".scidr_rowid" %in% names(new_df)) {
-    new_df_scidr <- new_df %>%
-      dplyr::mutate(.scidr_rowid = dplyr::row_number())
-  } else {
-    new_df_scidr <- new_df
-    if (any(is.na(new_df_scidr$.scidr_rowid))) {
-      stop("new_df has .scidr_rowid but it contains missing values.")
-    }
-  }
+  new_df_scidr <- new_df
 
   # Determine Z-score columns used in training -----------------------------
 
@@ -236,7 +281,7 @@ ProjectSOMCluster <- function(
 
     Z_obj <- object$ZScoreObject
     if (is.null(Z_obj) || !"ZScoreObj" %in% class(Z_obj)) {
-      stop("object$ZScoreObject must be a valid ZScoreObj from CreateSOMClusterModel.")
+      stop("object$ZScoreObject must be a valid ZScoreObj from CreateClusterModel_SOM_MClust().")
     }
 
     z_proj <- SciDataReportR::ProjectZScore(
@@ -302,14 +347,12 @@ ProjectSOMCluster <- function(
 
   node_df <- object$ProbFit$node
   if (is.null(node_df)) {
-    stop("object$ProbFit$node is missing; run CreateSOMClusterModel first.")
+    stop("object$ProbFit$node is missing; run CreateClusterModel_SOM_MClust() first.")
   }
 
   # Individual table with distance flags -----------------------------------
 
   individual_tbl <- dplyr::tibble(
-    .scidr_rowid = new_df_scidr$.scidr_rowid,
-    RowID        = new_df_scidr$.scidr_rowid,
     SOM_Node     = SOM_Node_new,
     SOM_Distance = SOM_Dist_new
   ) %>%
@@ -321,7 +364,8 @@ ProjectSOMCluster <- function(
         if (is.na(x) || length(train_dist) == 0) NA_real_ else mean(train_dist <= x, na.rm = TRUE)
       }, numeric(1)),
       Flag_SOMDist_overallHigh =
-        !is.na(SOM_Distance) & !is.na(overall_high_cutoff) & SOM_Distance > overall_high_cutoff
+        !is.na(SOM_Distance) & !is.na(overall_high_cutoff) & SOM_Distance > overall_high_cutoff,
+      Flag_OutsideTrainingRange = Flag_OutsideTrainingRange
     ) %>%
     dplyr::left_join(
       dist_by_cluster_tr %>%
@@ -343,23 +387,24 @@ ProjectSOMCluster <- function(
         is.na(SOM_Distance) ~ NA_character_,
         (Flag_SOMDist_overallHigh | Flag_SOMDist_clusterHigh) &
           (is.na(max_prob) | max_prob < low_prob_threshold) ~ "Potential novel phenotype",
-        Flag_SOMDist_overallHigh | Flag_SOMDist_clusterHigh ~ "Poor SOM fit",
+        Flag_SOMDist_overallHigh | Flag_SOMDist_clusterHigh ~ "Poor fit to training structure",
         !is.na(max_prob) & max_prob < low_prob_threshold ~ "Uncertain membership",
         TRUE ~ "Good fit"
       )
     )
 
-  # df_with_clusters for projected data ------------------------------------
+  # DataWithClusters for projected data ------------------------------------
 
-  df_with_clusters <- new_df_scidr
+  DataWithClusters <- new_df_scidr
 
-  if (ClusterName %in% names(df_with_clusters)) {
-    message("Column '", ClusterName, "' already exists in new_df and will be overwritten.")
+  if (ClusterVariableName %in% names(DataWithClusters)) {
+    message("Column '", ClusterVariableName, "' already exists in new_df and will be overwritten.")
   }
 
-  df_with_clusters[[ClusterName]] <- individual_tbl$Cluster
+  DataWithClusters[[ClusterVariableName]] <- individual_tbl$Cluster
+  DataWithClusters$Projection_Fit_Class <- individual_tbl$Projection_Fit_Class
 
-  # SOMProj / distance diagnostics for projected cases ---------------------
+  # Frozen-SOM fit diagnostics for projected cases -------------------------
 
   somproj_tbl    <- individual_tbl
   somproj_non_na <- somproj_tbl[!is.na(somproj_tbl$SOM_Distance), ]
@@ -406,7 +451,7 @@ ProjectSOMCluster <- function(
       ", train max = ",
       sprintf("%.1f%%", 100 * max_train_prop),
       "). Review flags Flag_SOMDist_overallHigh / Flag_SOMDist_clusterHigh ",
-      "in ProbFit$individual and SOMProj$distance_flag_comparison."
+      "in ProjectionFit$individual and ProjectionFit$by_cluster."
     )
   }
 
@@ -430,16 +475,6 @@ ProjectSOMCluster <- function(
       cohort = "Projected"
     )
 
-  train_cluster_occupancy <- training_individual %>%
-    dplyr::filter(!is.na(.data$Cluster)) %>%
-    dplyr::count(.data$Cluster, name = "n") %>%
-    dplyr::mutate(cohort = "Training")
-
-  proj_cluster_occupancy <- somproj_non_na %>%
-    dplyr::filter(!is.na(.data$Cluster)) %>%
-    dplyr::count(.data$Cluster, name = "n") %>%
-    dplyr::mutate(cohort = "Projected")
-
   all_nodes <- sort(unique(c(train_node_occupancy$NodeID, proj_node_occupancy$NodeID)))
   train_node_p <- train_node_occupancy %>%
     dplyr::right_join(dplyr::tibble(NodeID = all_nodes), by = "NodeID") %>%
@@ -451,28 +486,7 @@ ProjectSOMCluster <- function(
     dplyr::mutate(n = dplyr::if_else(is.na(.data$n), 0L, .data$n)) %>%
     dplyr::arrange(.data$NodeID) %>%
     dplyr::pull(.data$n)
-  train_node_p <- train_node_p / sum(train_node_p)
-  proj_node_p <- proj_node_p / sum(proj_node_p)
-  node_m <- 0.5 * (train_node_p + proj_node_p)
-  node_js <- 0.5 * sum(ifelse(train_node_p > 0, train_node_p * log2(train_node_p / node_m), 0), na.rm = TRUE) +
-    0.5 * sum(ifelse(proj_node_p > 0, proj_node_p * log2(proj_node_p / node_m), 0), na.rm = TRUE)
-
-  all_clusters <- sort(unique(c(train_cluster_occupancy$Cluster, proj_cluster_occupancy$Cluster)))
-  train_cluster_p <- train_cluster_occupancy %>%
-    dplyr::right_join(dplyr::tibble(Cluster = all_clusters), by = "Cluster") %>%
-    dplyr::mutate(n = dplyr::if_else(is.na(.data$n), 0L, .data$n)) %>%
-    dplyr::arrange(.data$Cluster) %>%
-    dplyr::pull(.data$n)
-  proj_cluster_p <- proj_cluster_occupancy %>%
-    dplyr::right_join(dplyr::tibble(Cluster = all_clusters), by = "Cluster") %>%
-    dplyr::mutate(n = dplyr::if_else(is.na(.data$n), 0L, .data$n)) %>%
-    dplyr::arrange(.data$Cluster) %>%
-    dplyr::pull(.data$n)
-  train_cluster_p <- train_cluster_p / sum(train_cluster_p)
-  proj_cluster_p <- proj_cluster_p / sum(proj_cluster_p)
-  cluster_m <- 0.5 * (train_cluster_p + proj_cluster_p)
-  cluster_js <- 0.5 * sum(ifelse(train_cluster_p > 0, train_cluster_p * log2(train_cluster_p / cluster_m), 0), na.rm = TRUE) +
-    0.5 * sum(ifelse(proj_cluster_p > 0, proj_cluster_p * log2(proj_cluster_p / cluster_m), 0), na.rm = TRUE)
+  node_js <- .NodeOccupancyJSD(train_node_p, proj_node_p)
 
   training_mean_distance <- mean(train_dist, na.rm = TRUE)
   projected_mean_distance <- mean(somproj_non_na$SOM_Distance, na.rm = TRUE)
@@ -494,7 +508,8 @@ ProjectSOMCluster <- function(
       "mean_distance_ratio",
       "high_distance_burden",
       "cluster_high_distance_burden",
-      "Phenotype Drift Index"
+      "phenotype_drift_index",
+      "node_occupancy_js_divergence"
     ),
     value = c(
       nrow(new_df_scidr),
@@ -507,25 +522,9 @@ ProjectSOMCluster <- function(
       distance_ratio,
       mean(somproj_non_na$Flag_SOMDist_overallHigh, na.rm = TRUE),
       mean(somproj_non_na$Flag_SOMDist_clusterHigh, na.rm = TRUE),
-      phenotype_drift_index
+      phenotype_drift_index,
+      node_js
     )
-  )
-
-  TransportabilityDiagnostics <- list(
-    summary = dplyr::tibble(
-      metric = c(
-        "js_divergence_node_occupancy",
-        "js_divergence_cluster_occupancy"
-      ),
-      value = c(
-        node_js,
-        cluster_js
-      )
-    ),
-    node_occupancy_train = train_node_occupancy,
-    node_occupancy_proj = proj_node_occupancy,
-    cluster_occupancy_train = train_cluster_occupancy,
-    cluster_occupancy_proj = proj_cluster_occupancy
   )
 
   distance_compare_tbl <- dplyr::bind_rows(
@@ -535,11 +534,6 @@ ProjectSOMCluster <- function(
     somproj_non_na %>%
       dplyr::transmute(cohort = "Projected", SOM_Distance = .data$SOM_Distance, Cluster = .data$Cluster)
   )
-
-  cluster_occupancy_compare <- dplyr::bind_rows(train_cluster_occupancy, proj_cluster_occupancy) %>%
-    dplyr::group_by(.data$cohort) %>%
-    dplyr::mutate(prop = .data$n / sum(.data$n)) %>%
-    dplyr::ungroup()
 
   p_dist_hist <- ggplot2::ggplot(
     somproj_non_na,
@@ -553,43 +547,18 @@ ProjectSOMCluster <- function(
       y     = "Count"
     )
 
-  p_dist_box <- ggplot2::ggplot(
-    somproj_non_na,
-    ggplot2::aes(x = factor(Cluster), y = SOM_Distance)
-  ) +
-    ggplot2::geom_boxplot() +
-    ggplot2::theme_bw() +
-    ggplot2::labs(
-      title = "SOM distances by cluster (projected cases)",
-      x     = "Cluster",
-      y     = "Distance to BMU"
-    )
-
-
   p_train_proj_dist_density <- ggplot2::ggplot(
     distance_compare_tbl,
     ggplot2::aes(x = SOM_Distance, fill = cohort)
   ) +
     ggplot2::geom_density(alpha = 0.35) +
+    .SciDataFillScale() +
     ggplot2::theme_bw() +
     ggplot2::labs(
       title = "Training vs projected SOM distance",
       x = "Distance to BMU",
       y = "Density",
       fill = "Cohort"
-    )
-
-  p_train_proj_dist_ecdf <- ggplot2::ggplot(
-    distance_compare_tbl,
-    ggplot2::aes(x = .data$SOM_Distance, colour = .data$cohort)
-  ) +
-    ggplot2::stat_ecdf() +
-    ggplot2::theme_bw() +
-    ggplot2::labs(
-      title = "Training vs projected SOM distance ECDF",
-      x = "Distance to BMU",
-      y = "Empirical cumulative probability",
-      colour = "Cohort"
     )
 
   qq_probs <- seq(0.01, 0.99, by = 0.01)
@@ -611,36 +580,6 @@ ProjectSOMCluster <- function(
       y = "Projected SOM distance quantile"
     )
 
-  p_cluster_occupancy <- ggplot2::ggplot(
-    cluster_occupancy_compare,
-    ggplot2::aes(x = factor(Cluster), y = prop, fill = cohort)
-  ) +
-    ggplot2::geom_col(position = "dodge") +
-    ggplot2::theme_bw() +
-    ggplot2::labs(
-      title = "Training vs projected cluster occupancy",
-      x = "Cluster",
-      y = "Proportion",
-      fill = "Cohort"
-    )
-
-  somproj_plot_non_na <- somproj_non_na %>%
-    dplyr::filter(!is.na(.data$Cluster), !is.na(.data$max_prob))
-
-  p_projected_posterior_by_cluster <- ggplot2::ggplot(
-    somproj_plot_non_na,
-    ggplot2::aes(x = .data$max_prob)
-  ) +
-    ggplot2::geom_histogram(bins = 30) +
-    ggplot2::facet_wrap(~Cluster, scales = "free_y") +
-    ggplot2::theme_bw() +
-    ggplot2::scale_x_continuous(limits = c(0, 1)) +
-    ggplot2::labs(
-      title = "Projected posterior probability by assigned cluster",
-      x = "Max posterior probability",
-      y = "Count"
-    )
-
   cluster_fit_summary <- somproj_non_na %>%
     dplyr::filter(!is.na(.data$Cluster)) %>%
     dplyr::group_by(.data$Cluster) %>%
@@ -654,7 +593,7 @@ ProjectSOMCluster <- function(
       median_distance_percentile = stats::median(.data$SOMDist_percentile_train, na.rm = TRUE),
       prop_high_distance = mean(.data$Flag_SOMDist_overallHigh | .data$Flag_SOMDist_clusterHigh, na.rm = TRUE),
       prop_low_probability = mean(.data$prob_assigned < low_prob_threshold, na.rm = TRUE),
-      prop_poor_fit = mean(.data$Projection_Fit_Class == "Poor SOM fit", na.rm = TRUE),
+      prop_poor_fit = mean(.data$Projection_Fit_Class == "Poor fit to training structure", na.rm = TRUE),
       prop_potential_novel = mean(.data$Projection_Fit_Class == "Potential novel phenotype", na.rm = TRUE),
       .groups = "drop"
     )
@@ -691,31 +630,22 @@ ProjectSOMCluster <- function(
       y = "Proportion"
     )
 
-  SOMProj <- list(
-    distance_summary_train   = dist_summary_train,
-    distance_summary_proj    = dist_proj_summary,
-    flag_by_cluster_train    = flag_by_cluster_tr,
-    flag_by_cluster_proj     = flag_by_cluster_proj,
-    distance_flag_comparison = distance_flag_comparison,
-    ProjectionDiagnostics    = ProjectionDiagnostics,
-    TransportabilityDiagnostics = TransportabilityDiagnostics,
-    out_of_range_summary     = out_of_range_summary,
-    node_occupancy_train     = train_node_occupancy,
-    node_occupancy_proj      = proj_node_occupancy,
-    cluster_occupancy_train  = train_cluster_occupancy,
-    cluster_occupancy_proj   = proj_cluster_occupancy,
-    cluster_occupancy_compare = cluster_occupancy_compare,
-    poor_fit_by_cluster      = poor_fit_by_cluster,
-    cluster_fit_summary      = cluster_fit_summary,
-    table                    = somproj_tbl,
-    plots                    = list(
-      distance_hist           = p_dist_hist,
-      distance_by_cluster_box = p_dist_box,
+  DataWithClusters$Projection_Fit_Class <- individual_tbl$Projection_Fit_Class
+  ProjectionFit <- list(
+    individual = individual_tbl,
+    summary = ProjectionDiagnostics,
+    by_cluster = cluster_fit_summary,
+    out_of_support = out_of_range_summary %>%
+      dplyr::filter(!is.na(.data$n_out_of_range), .data$n_out_of_range > 0),
+    policy = list(
+    high_distance_quantile = high_dist_quantile,
+    low_probability_threshold = low_prob_threshold,
+    distance_metric = "distance to frozen SOM best-matching unit",
+    range_policy = "Values beyond observed training minima or maxima are warned but mapped when complete"),
+    plots = list(
+      distance_hist = p_dist_hist,
       training_vs_projected_distance_density = p_train_proj_dist_density,
-      training_vs_projected_distance_ecdf = p_train_proj_dist_ecdf,
       training_vs_projected_distance_qq = p_train_proj_dist_qq,
-      training_vs_projected_cluster_occupancy = p_cluster_occupancy,
-      projected_posterior_by_cluster = p_projected_posterior_by_cluster,
       projection_fit_class_bar = p_projection_fit_class,
       poor_fit_by_cluster = p_poor_fit_by_cluster
     )
@@ -723,52 +653,73 @@ ProjectSOMCluster <- function(
 
   # ProbFit for projected cases --------------------------------------------
 
-  indiv_non_na <- individual_tbl[!is.na(individual_tbl$max_prob), ]
-  indiv_non_na$Cluster <- factor(indiv_non_na$Cluster)
-
-  individual_MaxProbBoxplot <- ggplot2::ggplot(
-    indiv_non_na,
-    ggplot2::aes(x = Cluster, y = max_prob)
-  ) +
-    ggplot2::geom_boxplot() +
-    ggplot2::theme_bw() +
-    ggplot2::labs(
-      title = "Individual max posterior probability (projected cases)",
-      x     = "Cluster",
-      y     = "Max posterior probability"
-    )
-
-  individual_ProbAssignedDensity <- ggplot2::ggplot(
-    indiv_non_na,
-    ggplot2::aes(x = prob_assigned)
-  ) +
-    ggplot2::geom_density(fill = "darkblue", alpha = 0.7) +
-    ggplot2::facet_wrap(~Cluster, scales = "free_y", nrow = 1) +
-    ggplot2::theme_bw() +
-    ggplot2::scale_x_continuous(limits = c(0, 1)) +
-    ggplot2::labs(
-      title = "Density of prob_assigned by class (projected cases)",
-      x     = "Posterior probability for assigned class",
-      y     = "Density"
-    )
+  probability_columns <- unique(c(
+    "SOM_Node", "model_number", "classes_number",
+    grep("^prob_", names(individual_tbl), value = TRUE),
+    "Cluster", "max_prob", "prob_assigned", "uncertainty"
+  ))
+  probability_individual <- individual_tbl[, intersect(
+    probability_columns, names(individual_tbl)), drop = FALSE]
+  probability_plot_data <- probability_individual %>%
+    dplyr::filter(!is.na(.data$Cluster), is.finite(.data$prob_assigned)) %>%
+    dplyr::mutate(Cluster = factor(.data$Cluster))
+  individual_ProbAssignedDensity <- .SOMAssignedProbabilityPlot(
+    probability_plot_data)
 
   ProbFit <- list(
     node       = node_df,
-    individual = individual_tbl,
+    individual = probability_individual,
     plots      = list(
-      individual_MaxProbBoxplot      = individual_MaxProbBoxplot,
       individual_ProbAssignedDensity = individual_ProbAssignedDensity
     )
   )
 
+  # Place projected cases on the frozen SOM grid, which is this pipeline's
+  # native review space, so the map is comparable with the training figures.
+  grid_points <- as.data.frame(object$ModelInfo_SOM$som_grid$pts)
+  names(grid_points)[seq_len(min(2L, ncol(grid_points)))] <-
+    c("SOM_X", "SOM_Y")[seq_len(min(2L, ncol(grid_points)))]
+  grid_points$SOM_Node <- seq_len(nrow(grid_points))
+  assignment_data <- dplyr::left_join(
+    individual_tbl, grid_points, by = "SOM_Node")
+  if (all(c("SOM_X", "SOM_Y") %in% names(assignment_data))) {
+    ProjectionFit$plots$som_grid_map <- PlotClusterMap(
+      dplyr::filter(assignment_data, !is.na(.data$SOM_X), !is.na(.data$SOM_Y)),
+      "SOM_X", "SOM_Y", "Cluster",
+      title = "Projected cases on the frozen SOM grid",
+      subtitle = "Points are jittered within their best-matching unit",
+      xlab = "SOM x", ylab = "SOM y") +
+      ggplot2::geom_jitter(width = 0.12, height = 0.12, alpha = 0.65)
+  }
+  # aweSOM requires an SOM object carrying data and BMU assignments with the
+  # same row count. This shallow copy is a display view only; the fitted SOM
+  # remains frozen in the model object.
+  if (requireNamespace("aweSOM", quietly = TRUE) && any(complete_rows)) {
+    projection_som <- som_model
+    projection_som$data[[1]] <- zmat_new
+    projection_som$unit.classif <- mapping$unit.classif
+    projection_som$distances <- mapping$distances
+    projected_data <- new_df_scidr[complete_rows, vars_used, drop = FALSE]
+    superclass <- node_df$Cluster
+    ProjectionFit$plots$Circular <- aweSOM::aweSOMplot(
+      projection_som, type = "Circular", data = projected_data,
+      variables = vars_used, superclass = superclass)
+    ProjectionFit$plots$Line <- aweSOM::aweSOMplot(
+      projection_som, type = "Line", data = projected_data,
+      variables = vars_used, superclass = superclass)
+    ProjectionFit$plots$Cloud <- aweSOM::aweSOMplot(
+      projection_som, type = "Cloud", data = projected_data,
+      variables = c("None", vars_used), superclass = superclass,
+      cloudSeed = 93421L)
+  }
+
   out <- list(
     vars_used        = vars_used,
-    ClusterName      = ClusterName,
-    complete_rows    = complete_rows,
-    df_with_clusters = df_with_clusters,
-    SOMProj          = SOMProj,
-    out_of_range_summary = out_of_range_summary,
+    ClusterVariableName      = ClusterVariableName,
+    DataWithClusters = DataWithClusters,
     ProbFit          = ProbFit,
+    ProjectionFit    = ProjectionFit,
+    ModelInfo        = object$ModelInfo_MClust,
     ModelInfo_SOM    = object$ModelInfo_SOM,
     ModelInfo_MClust = object$ModelInfo_MClust
   )
@@ -777,12 +728,19 @@ ProjectSOMCluster <- function(
   out
 }
 
-#' @description `Project_SOMClust()` has been superseded by
-#'   `ProjectSOMCluster()`. It remains available as a backwards-compatible
-#'   alias and returns the same projection object.
-#' @rdname ProjectSOMCluster
-#' @param ... Arguments passed to [ProjectSOMCluster()].
+#' @description Compatibility wrapper for [ProjectCluster()].
+#' @rdname ProjectCluster
+#' @param ... Arguments passed to [ProjectCluster()].
 #' @export
 Project_SOMClust <- function(...) {
-  ProjectSOMCluster(...)
+  ProjectCluster(...)
+}
+
+#' @description Deprecated alias for [ProjectCluster()].
+#' @rdname ProjectCluster
+#' @export
+ProjectSOMCluster <- function(...) {
+  lifecycle::deprecate_warn("20.25.0", "ProjectSOMCluster()",
+    "ProjectCluster()")
+  ProjectCluster(...)
 }

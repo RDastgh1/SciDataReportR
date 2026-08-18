@@ -236,6 +236,12 @@ PlotClusterBoxplot <- function(data,
     dplyr::select(dplyr::all_of(c(ClusterVar, Variables))) %>%
     dplyr::mutate(
       .ClusterPlot = .data[[ClusterVar]]
+    ) %>%
+    dplyr::mutate(
+      dplyr::across(
+        dplyr::all_of(Variables),
+        ~ as.numeric(.x)
+      )
     )
 
   if (Scale) {
@@ -429,41 +435,10 @@ PlotClusterBoxplot <- function(data,
   fill_levels <- levels(long_data$Label)
   n_fill_levels <- length(fill_levels)
 
-  default_palette <- c(
-    "#4E79A7",
-    "#F28E2B",
-    "#E15759",
-    "#76B7B2",
-    "#59A14F",
-    "#EDC948",
-    "#B07AA1",
-    "#FF9DA7",
-    "#9C755F",
-    "#BAB0AC",
-    "#1F77B4",
-    "#FF7F0E",
-    "#2CA02C",
-    "#D62728",
-    "#9467BD",
-    "#8C564B",
-    "#E377C2",
-    "#7F7F7F",
-    "#BCBD22",
-    "#17BECF"
-  )
 
   if (is.null(Palette)) {
 
-    if (n_fill_levels <= length(default_palette)) {
-
-      Palette <- default_palette[seq_len(n_fill_levels)]
-
-    } else {
-
-      Palette <- grDevices::colorRampPalette(default_palette)(
-        n_fill_levels
-      )
-    }
+    Palette <- .SciDataColorValues(n_fill_levels)
 
   } else {
 

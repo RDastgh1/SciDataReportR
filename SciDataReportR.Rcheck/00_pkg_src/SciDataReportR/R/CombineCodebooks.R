@@ -42,24 +42,24 @@ CombineCodebooks <- function(OldCodebook,
   df_new <- dplyr::mutate(NewCodebook, RowID = seq_len(nrow(NewCodebook)))
 
   # 2) Added / removed variables & columns
-  added_variables   <- setdiff(df_new[[key]], df_old[[key]])
-  removed_variables <- setdiff(df_old[[key]], df_new[[key]])
+  added_variables   <- base::setdiff(df_new[[key]], df_old[[key]])
+  removed_variables <- base::setdiff(df_old[[key]], df_new[[key]])
   cols_old          <- names(df_old)
   cols_new          <- names(df_new)
-  columns_added     <- setdiff(cols_new, cols_old)
-  columns_removed   <- setdiff(cols_old, cols_new)
+  columns_added     <- base::setdiff(cols_new, cols_old)
+  columns_removed   <- base::setdiff(cols_old, cols_new)
 
   # 3) Common fields for diffing
-  common_fields <- intersect(cols_old, cols_new) %>% setdiff(c("RowID", key))
+  common_fields <- base::intersect(cols_old, cols_new) %>% base::setdiff(c("RowID", key))
 
   # 4) Cell-by-cell diffs on common fields
   df_old_long <- df_old %>%
-    mutate(dplyr::across(dplyr::all_of(common_fields), as.character)) %>%
+    dplyr::mutate(dplyr::across(dplyr::all_of(common_fields), as.character)) %>%
     tidyr::pivot_longer(dplyr::all_of(common_fields), names_to = "Field", values_to = "OldValue") %>%
     dplyr::select(RowID, Field, OldValue)
 
   df_new_long <- df_new %>%
-    mutate(dplyr::across(dplyr::all_of(common_fields), as.character)) %>%
+    dplyr::mutate(dplyr::across(dplyr::all_of(common_fields), as.character)) %>%
     tidyr::pivot_longer(dplyr::all_of(common_fields), names_to = "Field", values_to = "NewValue") %>%
     dplyr::select(RowID, Field, NewValue)
 
@@ -76,19 +76,19 @@ CombineCodebooks <- function(OldCodebook,
   conflict_rids <- unique(value_differences$RowID)
 
   # 6) Prepare superset of all fields
-  all_fields <- setdiff(union(cols_old, cols_new), "RowID")
+  all_fields <- base::setdiff(base::union(cols_old, cols_new), "RowID")
 
   # 7) Pad dataframes to same structure
-  missing_old <- setdiff(all_fields, cols_old)
+  missing_old <- base::setdiff(all_fields, cols_old)
   if (length(missing_old)) df_old[missing_old] <- NA
-  missing_new <- setdiff(all_fields, cols_new)
+  missing_new <- base::setdiff(all_fields, cols_new)
   if (length(missing_new)) df_new[missing_new] <- NA
 
   # 8) Merge with suffixes
   merged_join <- dplyr::full_join(df_old, df_new, by = "RowID", suffix = c(".old", ".new"))
 
   # 9) Coalesce all fields
-  fields_to_coalesce <- union(key, all_fields)
+  fields_to_coalesce <- base::union(key, all_fields)
   for (fld in fields_to_coalesce) {
     merged_join[[fld]] <- dplyr::coalesce(
       merged_join[[paste0(fld, ".new")]],

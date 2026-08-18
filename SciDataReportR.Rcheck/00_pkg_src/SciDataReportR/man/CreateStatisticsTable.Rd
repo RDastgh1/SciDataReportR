@@ -19,3 +19,22 @@ A formatted HTML table displaying statistics.
 \description{
 Generate a table of statistics including means, standard deviations, counts, and p-values.
 }
+\examples{
+\donttest{
+data(SampleData)
+data(SampleVariableTypes)
+
+df_Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
+df_Statistics <- df_Labelled[, c("Diagnosis", "age", "AXL", "Ab_42", "p_tau")]
+
+# Group means (SD), missing counts, and a p-value for every variable
+statistics_table <- CreateStatisticsTable(
+  data = df_Statistics,
+  TargetVar = "Diagnosis"
+)
+
+# The returned kableExtra table prints directly in Quarto, R Markdown, and
+# the reference page. Do not wrap it in `browsable()` a second time.
+statistics_table
+}
+}

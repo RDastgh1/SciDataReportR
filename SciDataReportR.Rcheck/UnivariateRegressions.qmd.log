@@ -1,0 +1,25 @@
+
+> library(SciDataReportR)
+
+> library(dplyr)
+
+Attaching package: ‘dplyr’
+
+The following objects are masked from ‘package:stats’:
+
+    filter, lag
+
+The following objects are masked from ‘package:base’:
+
+    intersect, setdiff, setequal, union
+
+
+> data("SampleData")
+
+> data("SampleVariableTypes")
+
+> RevaluedObj <- RevalueData(SampleData, SampleVariableTypes)
+
+  When sourcing ‘UnivariateRegressions.R’:
+Error: cannot open file '/Users/rahad/Library/CloudStorage/Dropbox/Coding/Package Development/SciDataReportR/SciDataReportR.Rcheck/SciDataReportR/R/SciDataReportR.rdb': No such file or directory
+Execution halted

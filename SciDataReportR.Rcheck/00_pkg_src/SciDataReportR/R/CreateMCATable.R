@@ -32,14 +32,20 @@
 #' @param Data \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
 #' @examples
 #' data(SampleData)
+#' data(SampleVariableTypes)
+#'
+#' Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
 #'
 #' mca <- CreateMCAObject(
-#'   SampleData,
+#'   Labelled,
 #'   VarsToReduce = c("Diagnosis", "Genotype")
 #' )
 #'
-#' # Display the scree plot from the returned object
+#' # Variance explained by MCA dimensions
 #' mca$p_scree
+#'
+#' # Variable loadings across MCA dimensions
+#' mca$Lollipop
 #' @export
 #'
 CreateMCAObject <- function(data,
@@ -59,12 +65,6 @@ CreateMCAObject <- function(data,
     data <- Data
   }
   if (!missing(data)) Data <- data
-
-  # Define custom colors for different classes
-  classcolors <- c(paletteer::paletteer_d("calecopal::superbloom2"),
-                   paletteer::paletteer_d("calecopal::vermillion"),
-                   paletteer::paletteer_d("fishualize::Antennarius_commerson"),
-                   paletteer::paletteer_d("fishualize::Bodianus_rufus"))
 
   # Optionally relabel data using an external helper function ReplaceMissingLabels
   if (Relabel == TRUE) {
@@ -91,12 +91,13 @@ CreateMCAObject <- function(data,
 
   # Perform MCA with all components, select appropriate number of components
   n <- length(VarsToReduce)
-  mca_result <- FactoMineR::MCA(DataSubset %>% select(all_of(VarsToReduce)),
+  mca_result <- FactoMineR::MCA(DataSubset %>% dplyr::select(dplyr::all_of(VarsToReduce)),
                     ncp = n, graph = FALSE)
 
   # Determine number of components if not provided
   if (is.null(numComponents)) {
-    nc <- min(which(mca_result$eig[, 3] >= minThresh))  # Select based on variance
+    nc_candidates <- which(mca_result$eig[, 3] >= minThresh)
+    nc <- if (length(nc_candidates) == 0) nrow(mca_result$eig) else min(nc_candidates)
   } else {
     nc <- numComponents
   }
@@ -114,7 +115,7 @@ CreateMCAObject <- function(data,
     ggplot2::scale_x_discrete(guide = ggplot2::guide_axis(angle = 90))
 
   # Perform MCA with selected number of components
-  mca_result <- FactoMineR::MCA(DataSubset %>% select(all_of(VarsToReduce)),
+  mca_result <- FactoMineR::MCA(DataSubset %>% dplyr::select(dplyr::all_of(VarsToReduce)),
                     ncp = nc, graph = FALSE)
 
   # Extract contributions and individual participant values from the MCA result
@@ -129,13 +130,13 @@ CreateMCAObject <- function(data,
 
   # Reshape loading table for plotting
   mLoading <- LoadingTable %>% rownames_to_column() %>%
-    pivot_longer(cols = colnames(LoadingTable),
+    tidyr::pivot_longer(cols = colnames(LoadingTable),
                  names_to = "Dimension", values_to = "Contribution")
 
   # Highlight top contributors based on contribution threshold (>=1)
-  mLoading <- mLoading %>% group_by(rowname) %>%
-    arrange(Contribution) %>%
-    mutate(TopContributor = abs(Contribution) >= 1)
+  mLoading <- mLoading %>% dplyr::group_by(rowname) %>%
+    dplyr::arrange(Contribution) %>%
+    dplyr::mutate(TopContributor = abs(Contribution) >= 1)
 
   # Assign colors based on variable categories if provided
   if (!is.null(VariableCategories)) {
@@ -145,12 +146,13 @@ CreateMCAObject <- function(data,
   }
 
   # Create a lollipop plot for loadings
-  p <- ggplot2::ggplot(mLoading, ggplot2::aes(x = rowname, y = Contribution, alpha = TopContributor)) +
+  p <- ggplot2::ggplot(mLoading, ggplot2::aes(x = rowname, y = Contribution, alpha = as.numeric(TopContributor))) +
     ggplot2::geom_segment(ggplot2::aes(xend = rowname, y = 0, yend = Contribution), color = "black") +
     ggplot2::geom_point() +
     ggplot2::facet_wrap(~Dimension, nrow = 1) +
     ggplot2::coord_flip() +
     ggplot2::geom_hline(yintercept = 0) +
+    ggplot2::scale_alpha_continuous(range = c(0.4, 1), guide = "none") +
     ggplot2::theme_bw()
 
   CombinedData <- cbind(Data, MCAind$coord)
@@ -163,20 +165,11 @@ CreateMCAObject <- function(data,
               Lollipop = p))
 }
 
-#' Create MCA table and visualization
-#'
-#' Compatibility alias for [CreateMCAObject()]. Prefer `CreateMCAObject()` in
-#' new code because this workflow returns a reusable MCA object, not only a
-#' static table.
-#'
+#' @description `CreateMCATable()` has been superseded by `CreateMCAObject()`.
+#'   It remains available as a backwards-compatible alias and returns the same
+#'   reusable MCA object.
+#' @rdname CreateMCAObject
 #' @param ... Arguments passed to [CreateMCAObject()].
-#' @return The same object returned by [CreateMCAObject()].
-#' @seealso [CreateMCAObject()] for the canonical function and full examples.
-#' @examples
-#' data(SampleData)
-#'
-#' mca <- CreateMCATable(SampleData, VarsToReduce = c("Diagnosis", "Genotype"))
-#' mca$p_scree
 #' @export
 CreateMCATable <- function(...) {
   CreateMCAObject(...)

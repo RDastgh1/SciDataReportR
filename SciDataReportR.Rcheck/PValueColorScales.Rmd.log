@@ -1,0 +1,31 @@
+
+> knitr::opts_chunk$set(collapse = TRUE, comment = "#>", 
++     fig.width = 7, fig.height = 4.5)
+
+> library(SciDataReportR)
+
+> library(ggplot2)
+
+> library(dplyr)
+
+Attaching package: ‘dplyr’
+
+The following objects are masked from ‘package:stats’:
+
+    filter, lag
+
+The following objects are masked from ‘package:base’:
+
+    intersect, setdiff, setequal, union
+
+
+> df_ColorExample <- data.frame(Estimate = seq(-2, 2, 
++     length.out = 80), PValue = 10^seq(0, -8, length.out = 80))
+
+> ggplot(df_ColorExample, aes(x = Estimate, y = 1, color = PValue)) + 
++     geom_point(size = 3) + scale_color_pvalue() + theme_minimal() + 
++     la .... [TRUNCATED] 
+
+  When sourcing ‘PValueColorScales.R’:
+Error: could not find function "scale_color_pvalue"
+Execution halted

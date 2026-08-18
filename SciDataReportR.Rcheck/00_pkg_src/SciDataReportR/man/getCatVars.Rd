@@ -19,3 +19,24 @@ A character vector containing the names of categorical variables.
 \description{
 Extracts categorical variables from a data frame.
 }
+\examples{
+data(SampleData)
+data(SampleVariableTypes)
+
+Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
+
+# Every factor in the frame
+getCatVars(Labelled)
+
+# `Ordinal = FALSE` drops ordered factors, which is what you want when the
+# ordered variables are going to be analyzed on their numeric scale instead.
+getCatVars(Labelled, Ordinal = FALSE)
+
+# Only meaningful after RevalueData(): in the raw extract `sex` is still a
+# bare 0/1 numeric column and is not detected as categorical.
+getCatVars(SampleData)
+
+}
+\seealso{
+\code{\link[=getNumVars]{getNumVars()}} and \code{\link[=getBinaryVars]{getBinaryVars()}} for the other partitions.
+}

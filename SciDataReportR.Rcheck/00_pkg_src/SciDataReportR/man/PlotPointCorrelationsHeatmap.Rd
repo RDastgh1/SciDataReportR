@@ -12,7 +12,7 @@ PlotPointCorrelationsHeatmap(
   Relabel = TRUE,
   Ordinal = TRUE,
   binary_map = NULL,
-  fdr_scope = c("matrix", "per_outcome"),
+  fdr_scope = c("matrix", "per_outcome", "per_predictor"),
   Data = lifecycle::deprecated(),
   Covariates = lifecycle::deprecated()
 )
@@ -51,13 +51,22 @@ where 1 == PositiveLevel from \code{createBinaryMapping()}, and renders heatmap-
 }
 \examples{
 data(SampleData)
+data(SampleVariableTypes)
 
-# CatVars must be binary (exactly two unique non-NA values)
+Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
+
+# CatVars must be binary (exactly two unique non-NA values). These markers
+# separate on Diagnosis (Ab_42, tau, p_tau) or on sex (Leptin, PAI_1,
+# NT_proBNP), so both rows of the heatmap carry signal in both directions.
 result <- PlotPointCorrelationsHeatmap(
-  SampleData,
+  Labelled,
   CatVars = c("Diagnosis", "sex"),
-  ContVars = c("age", "AXL", "Adiponectin")
+  ContVars = c("Ab_42", "tau", "p_tau", "Leptin", "PAI_1", "NT_proBNP")
 )
 
+# Raw p-value point-biserial heatmap
 result$Unadjusted$plot
+
+# FDR-adjusted point-biserial heatmap
+result$FDRCorrected$plot
 }

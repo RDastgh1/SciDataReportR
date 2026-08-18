@@ -45,13 +45,32 @@ changed between two versions of a dataset.
 \examples{
 data(SampleData)
 
-# Build two versions of a keyed dataset to compare
+# Build two versions of a keyed dataset that differ in records, variables,
+# and values, so every diagnostic panel has something to show.
 old_data <- cbind(id = seq_len(nrow(SampleData)), SampleData)
-new_data <- old_data
-new_data$age[1:5] <- new_data$age[1:5] + 1
+
+new_data <- old_data[-(1:8), ]
+new_data <- rbind(
+  new_data,
+  transform(old_data[1:3, ], id = max(old_data$id) + 1:3)
+)
+new_data$Cohort <- "Wave2"
+new_data$Genotype <- NULL
+new_data$age[1:25] <- new_data$age[1:25] + 1
+new_data$Cortisol[1:15] <- new_data$Cortisol[1:15] * 1.2
 
 comparison <- CompareDatasets(old_data, new_data, keys = "id")
 
-# Display a single diagnostic plot
-PlotDatasetComparison(comparison, Plot = "Checks")
+diagnostics <- PlotDatasetComparison(
+  comparison,
+  Plot = "All",
+  interactive = FALSE
+)
+
+# Check status, summary metrics, structural, value-change, and top-change views
+diagnostics$Checks
+diagnostics$SummaryMetrics
+diagnostics$StructureChanges
+diagnostics$VariableChanges
+diagnostics$TopChangedVariables
 }

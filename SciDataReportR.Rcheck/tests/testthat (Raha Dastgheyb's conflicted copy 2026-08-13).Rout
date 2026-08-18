@@ -1,0 +1,167 @@
+
+R version 4.5.3 (2026-03-11) -- "Reassured Reassurer"
+Copyright (C) 2026 The R Foundation for Statistical Computing
+Platform: aarch64-apple-darwin20
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> library(testthat)
+> library(SciDataReportR)
+> 
+> test_check("SciDataReportR")
+Joining with `by = join_by(X, Y)`
+Joining with `by = join_by(X, Y)`
+Joining with `by = join_by(X, Y)`
+Joining with `by = join_by(X, Y)`
+Joining with `by = join_by(X, Y)`
+Joining with `by = join_by(X, Y)`
+Joining with `by = join_by(X, Y)`
+Joining with `by = join_by(X, Y)`
+Joining with `by = join_by(X, Y)`
+Joining with `by = join_by(X, Y)`
+Saving _problems/test-make-comparison-table-effect-sizes-190.R
+Saving _problems/test-make-comparison-table-effect-sizes-191.R
+Saving _problems/test-make-comparison-table-effect-sizes-192.R
+Saving _problems/test-make-comparison-table-effect-sizes-193.R
+Saving _problems/test-make-comparison-table-effect-sizes-194.R
+
+
+Table: Messy merge: validation checks
+
+|Check                          | Count|Status  |Details                                                                                                    |
+|:------------------------------|-----:|:-------|:----------------------------------------------------------------------------------------------------------|
+|Key Types                      |   0.0|PASS    |Key storage classes match across datasets.                                                                 |
+|Missing Keys                   |   0.0|PASS    |No missing key rows detected.                                                                              |
+|Expected Relationship          |   2.0|FAIL    |Detected relationship is one-to-many, but expected_relationship = 'one-to-one'. Duplicate key blockers: 2. |
+|Duplicate Keys                 |   2.0|FAIL    |Duplicate complete key combinations violate the expected relationship.                                     |
+|Coverage                       |   4.0|WARNING |Some complete key combinations appear only in one source dataset.                                          |
+|Row Count                      |   1.0|FAIL    |MergedData row count changed even though the expected relationship should preserve left-side row count.    |
+|Row Inflation                  |   1.2|WARNING |MergedData has more rows than expected. Review whether row multiplication was intentional.                 |
+|Overlapping Variables          |   1.0|WARNING |Variables appear in both source datasets but were not specified as keys.                                   |
+|Unresolved Duplicate Variables |   1.0|FAIL    |MergedData still contains unresolved .x/.y or _x/_y variable pairs.                                        |
+|Variable Conflicts             |   3.0|WARNING |At least one duplicated variable pair contains conflicting values.                                         |
+|Suspicious Conflicts           |   1.0|WARNING |At least one duplicated variable has low agreement or mismatched classes.                                  |
+|Merge Readiness                |   1.0|FAIL    |Major merge-integrity blockers detected. Review failed checks.                                             |
+
+
+
+Table: Messy merge: keys only in left data (showing up to 10 of 3)
+
+|id |
+|:--|
+|3  |
+|4  |
+|5  |
+
+
+
+Table: Messy merge: keys only in right data (showing up to 10 of 1)
+
+|id |
+|:--|
+|6  |
+
+
+
+Table: Messy merge: overlapping non-key variables
+
+|Variable |
+|:--------|
+|sex      |
+
+
+
+Table: Messy merge: suspicious duplicate-variable conflicts
+
+|Variable |XVariable |YVariable |LeftClass |RightClass | Agreement| Conflicts| MissingnessConflicts| BothMissing| TotalRows|
+|:--------|:---------|:---------|:---------|:----------|---------:|---------:|--------------------:|-----------:|---------:|
+|sex      |sex.x     |sex.y     |character |character  |        50|         3|                    3|           0|         6|
+
+Waiting for profiling to be done...
+Waiting for profiling to be done...
+Waiting for profiling to be done...
+Waiting for profiling to be done...
+Waiting for profiling to be done...
+Waiting for profiling to be done...
+Waiting for profiling to be done...
+Waiting for profiling to be done...
+Waiting for profiling to be done...
+Saving _problems/test-scidata-colors-375.R
+Saving _problems/test-simulated-phenotype-data-32.R
+Saving _problems/test-simulated-phenotype-data-47.R
+[ FAIL 8 | WARN 186 | SKIP 15 | PASS 1018 ]
+
+══ Skipped tests (15) ══════════════════════════════════════════════════════════
+• {SciDataReportR} is not installed. (12): 'test-clustering-pipelines.R:339:3',
+  'test-clustering-pipelines.R:361:3', 'test-clustering-pipelines.R:376:3',
+  'test-clustering-pipelines.R:404:3', 'test-clustering-pipelines.R:440:3',
+  'test-clustering-pipelines.R:453:3', 'test-create-som-cluster-model (Raha
+  Dastgheyb's conflicted copy 2026-08-13).R:13:3',
+  'test-create-som-cluster-model (Raha Dastgheyb's conflicted copy
+  2026-08-13).R:74:3', 'test-create-som-cluster-model (Raha Dastgheyb's
+  conflicted copy 2026-08-13).R:100:5', 'test-create-som-cluster-model.R:13:3',
+  'test-create-som-cluster-model.R:53:3',
+  'test-create-som-cluster-model.R:79:5'
+• file.exists(vignette_path) is not TRUE (1):
+  'test-clustering-phenotyping-vignette.R:3:3'
+• ordinalNet is installed (1): 'test-multivariable-regression-table.R:516:3'
+• source not available: PlotNumInteractionEffectsMatrix.R (1):
+  'test-semantic-colors.R:102:5'
+
+══ Failed tests ════════════════════════════════════════════════════════════════
+── Failure ('test-make-comparison-table-effect-sizes.R:190:3'): effect-size caption is dynamic and explains mixed scales ──
+Expected `grepl("|d|: 0.2/0.5/0.8", caption_with_es, fixed = TRUE)` to be TRUE.
+Differences:
+`actual`:   FALSE
+`expected`: TRUE 
+
+── Failure ('test-make-comparison-table-effect-sizes.R:191:3'): effect-size caption is dynamic and explains mixed scales ──
+Expected `grepl("Cohen's f: 0.1/0.25/0.4", caption_with_es, fixed = TRUE)` to be TRUE.
+Differences:
+`actual`:   FALSE
+`expected`: TRUE 
+
+── Failure ('test-make-comparison-table-effect-sizes.R:192:3'): effect-size caption is dynamic and explains mixed scales ──
+Expected `grepl("Cramer's V: 0.1/0.3/0.5", caption_with_es, fixed = TRUE)` to be TRUE.
+Differences:
+`actual`:   FALSE
+`expected`: TRUE 
+
+── Failure ('test-make-comparison-table-effect-sizes.R:193:3'): effect-size caption is dynamic and explains mixed scales ──
+Expected `grepl(...)` to be TRUE.
+Differences:
+`actual`:   FALSE
+`expected`: TRUE 
+
+── Failure ('test-make-comparison-table-effect-sizes.R:194:3'): effect-size caption is dynamic and explains mixed scales ──
+Expected `grepl("not clinical-importance cutoffs", caption_with_es, fixed = TRUE)` to be TRUE.
+Differences:
+`actual`:   FALSE
+`expected`: TRUE 
+
+── Error ('test-scidata-colors.R:373:7'): every figure in every clustering pipeline actually builds ──
+Error in `CreateMclustClusterModel(training, numeric_vars, method = "finalize", final_k = 4, final_model = "EEI")`: could not find function "CreateMclustClusterModel"
+Backtrace:
+    ▆
+ 1. ├─base::suppressWarnings(models[[name]]()) at test-scidata-colors.R:393:5
+ 2. │ └─base::withCallingHandlers(...)
+ 3. └─models[[name]]()
+── Error ('test-simulated-phenotype-data.R:30:3'): neutral benchmark retains at least four PCA components ──
+Error in `CreatePCAKMeansClusterModel(df_Training, paste0("Var", 1:12), method = "finalize", final_k = 4, nstart = 5)`: could not find function "CreatePCAKMeansClusterModel"
+── Error ('test-simulated-phenotype-data.R:45:3'): categorical benchmark supports truth-known LCA and MCA examples ──
+Error in `CreateLatentClassClusterModel(df_Training, vars_Categorical, method = "finalize", final_k = 4, nrep = 5)`: could not find function "CreateLatentClassClusterModel"
+
+[ FAIL 8 | WARN 186 | SKIP 15 | PASS 1018 ]
+Error:
+! Test failures.
+Execution halted

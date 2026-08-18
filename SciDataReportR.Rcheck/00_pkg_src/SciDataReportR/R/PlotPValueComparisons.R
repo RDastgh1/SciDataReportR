@@ -23,11 +23,18 @@
 #' @param Variables \strong{Deprecated} (since 19.15.0). Use \code{variables} instead.
 #' @examples
 #' data(SampleData)
+#' data(SampleVariableTypes)
+#'
+#' Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
 #'
 #' PlotPValueComparisons(
-#'   SampleData,
+#'   Labelled,
 #'   group_var = "Diagnosis",
-#'   variables = c("age", "AXL", "Adiponectin")
+#'   variables = c(
+#'     "age", "AXL", "Adiponectin", "Alpha_1_Antitrypsin", "Cortisol",
+#'     "Ferritin", "GRO_alpha", "MMP10", "MMP7", "NT_proBNP", "PAI_1",
+#'     "TRAIL_R3", "VEGF", "Ab_42", "p_tau", "tau"
+#'   )
 #' )
 #' @export
 PlotPValueComparisons <- function(data,
@@ -57,23 +64,23 @@ PlotPValueComparisons <- function(data,
 
   # Validate and prepare Variables
   if (is.null(Variables)) {
-    Variables <- Data %>% select(-all_of(GroupVariable)) %>% colnames()
+    Variables <- Data %>% dplyr::select(-dplyr::all_of(GroupVariable)) %>% colnames()
   }
 
   # Preserve original GroupVariable and create a temporary column
   Data$GroupVariablex <- Data[[GroupVariable]]
-  Data <- Data %>% select(-all_of(GroupVariable))
+  Data <- Data %>% dplyr::select(-dplyr::all_of(GroupVariable))
 
   # Select relevant variables
-  tData <- Data %>% select(GroupVariablex, all_of(Variables))
+  tData <- Data %>% dplyr::select(GroupVariablex, dplyr::all_of(Variables))
 
   # Remove factor variables with zero levels
   l <- tData %>% summarise_if(is.factor, ~ nlevels(factor(.))) %>% as.list()
-  tData <- tData %>% select(-all_of(names(l[l < 2])))
+  tData <- tData %>% dplyr::select(-dplyr::all_of(names(l[l < 2])))
 
   # Remove numeric variables with zero or missing standard deviation
   l <- tData %>% summarise_if(is.numeric, ~ sd(., na.rm = TRUE)) %>% as.list()
-  tData <- tData %>% select(-all_of(names(l[is.na(l) | l == 0])))
+  tData <- tData %>% dplyr::select(-dplyr::all_of(names(l[is.na(l) | l == 0])))
 
   # Perform statistical tests using arsenal::tableby
   tab1 <- arsenal::tableby(GroupVariablex ~ ., data = tData)
@@ -117,6 +124,11 @@ PlotPValueComparisons <- function(data,
     xlab("-log10(p-value)") +
     scale_shape_manual(values = c(21, 16, 17, 15, 18, 8),
                        breaks = c("ns", "*", "**", "***", "****"), drop = FALSE)
+
+  # Colour is only mapped when categories were supplied.
+  if (!is.null(VariableCategories)) {
+    p <- p + .SciDataColourScale()
+  }
 
   return(p)
 }

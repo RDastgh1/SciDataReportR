@@ -7,6 +7,71 @@
 #' A data frame with 333 rows and 131 columns:
 #' \describe{
 #'   \item{Diagnosis}{Control or impaired}
+#'   \item{age}{Age in years}
+#'   \item{sex}{Coded 0 = Female, 1 = Male, left uncoded until [RevalueData()]
+#'     is applied}
+#'   \item{Genotype}{APOE genotype, one of E2E2, E2E3, E2E4, E3E3, E3E4, E4E4}
+#'   \item{...}{127 further columns, almost all continuous protein and
+#'     biomarker measurements}
+#' }
+#'
+#' @details
+#' This is deliberately a *raw* extract rather than a tidy one, because that is
+#' what the package is for. It arrives with no variable labels, `sex` stored as
+#' bare 0/1, and missingness scattered through 13 of the biomarker columns (up
+#' to 30% in some), so the examples throughout the package can show what each
+#' function does to real, untidied data.
+#'
+#' It is paired with [SampleVariableTypes], the codebook that describes it.
+#' Passing the two to [RevalueData()] is the first step of nearly every
+#' example in this package.
+#'
+#' @seealso [SampleVariableTypes] for the companion codebook, and
+#'   [SimulatedPhenotypeData] for the clustering examples.
+#'
+#' @examples
+#' data(SampleData)
+#'
+#' # 333 participants, 131 columns, two diagnosis groups.
+#' dim(SampleData)
+#' table(SampleData$Diagnosis)
+#'
+#' # The first columns are demographics; the rest are biomarkers.
+#' names(SampleData)[1:10]
+#'
+#' # As shipped, it is unlabelled and `sex` is still a bare numeric code.
+#' str(SampleData[, c("Diagnosis", "age", "sex", "Genotype", "AXL")])
+#' sjlabelled::get_label(SampleData$age)
+#'
+#' \donttest{
+#' data(SampleVariableTypes)
+#'
+#' # The codebook turns it into the labelled frame the other examples use.
+#' Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
+#'
+#' htmltools::browsable(htmltools::HTML(as.character(
+#'   FreezeTableHeader(
+#'     utils::head(
+#'       Labelled[, c("Diagnosis", "age", "sex", "Genotype", "AXL", "tau", "p_tau")],
+#'       8
+#'     ),
+#'     full_width = TRUE
+#'   )
+#' )))
+#'
+#' # Missingness is real and uneven, which is what makes it useful for
+#' # demonstrating the QC functions.
+#' missing_by_var <- sort(colMeans(is.na(SampleData)), decreasing = TRUE)
+#' round(utils::head(missing_by_var[missing_by_var > 0], 10), 3)
+#'
+#' # A descriptive overview of a handful of the biomarkers.
+#' htmltools::browsable(htmltools::HTML(as.character(
+#'   CreateSummaryTable(
+#'     data = Labelled,
+#'     variables = c("AXL", "Adiponectin", "Ferritin", "tau", "p_tau"),
+#'     ScrollBoxHeight = "260px"
+#'   )
+#' )))
 #' }
 #' @source <http://appliedpredictivemodeling.com/data>
 "SampleData"

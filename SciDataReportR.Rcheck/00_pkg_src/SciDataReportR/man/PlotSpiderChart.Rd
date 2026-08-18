@@ -17,7 +17,7 @@ PlotSpiderChart(
   VariableOrder = "input",
   VariableCategories = NULL,
   BinaryPositiveValue = 1,
-  Palette = "Dark 3",
+  Palette = NULL,
   LineSize = 1,
   PointSize = 2,
   ShowPoints = FALSE,
@@ -81,8 +81,9 @@ instead of overlaying all groups on one spider chart. Ignored when
 binary variables. Defaults to \code{1}. For factor variables, the second factor
 level is used.}
 
-\item{Palette}{Character name of an \code{hcl.colors()} palette. Defaults to
-\code{"Dark 3"}.}
+\item{Palette}{Optional character name of an \code{hcl.colors()} palette. When
+\code{NULL} (the default), the SciDataReportR palette is used. Passing a name
+such as \code{"Dark 3"} still works exactly as before.}
 
 \item{LineSize}{Numeric line width for the static ggplot version.}
 
@@ -164,19 +165,67 @@ return an interactive radar chart using plotly.
 }
 \examples{
 data(SampleData)
+data(SampleVariableTypes)
 
-# Static spider chart
-PlotSpiderChart(
-  SampleData,
-  variables = c("age", "AXL", "Adiponectin", "Alpha_1_Antitrypsin"),
-  group_var = "Diagnosis"
+Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
+
+vars_biomarkers <- c(
+  "Ab_42", "p_tau", "tau", "GRO_alpha", "MMP10", "MMP7", "TRAIL_R3"
+)
+categories_biomarkers <- c(
+  "Neurodegeneration", "Neurodegeneration", "Neurodegeneration",
+  "Inflammation", "Inflammation", "Matrix remodeling", "TNF signaling"
 )
 
-# Interactive (plotly) version of the same chart
+# Input order preserves the supplied clinical/domain sequence.
 PlotSpiderChart(
-  SampleData,
-  variables = c("age", "AXL", "Adiponectin", "Alpha_1_Antitrypsin"),
+  data = Labelled,
+  variables = vars_biomarkers,
   group_var = "Diagnosis",
+  VariableOrder = "input"
+)
+
+# Discrimination puts the largest between-group differences next to each other.
+PlotSpiderChart(
+  data = Labelled,
+  variables = vars_biomarkers,
+  group_var = "Diagnosis",
+  VariableOrder = "discrimination"
+)
+
+# Hierarchical order groups biomarkers with similar Diagnosis profiles.
+PlotSpiderChart(
+  data = Labelled,
+  variables = vars_biomarkers,
+  group_var = "Diagnosis",
+  VariableOrder = "hierarchical"
+)
+
+# Greedy order places consecutive spokes with maximally different profiles.
+PlotSpiderChart(
+  data = Labelled,
+  variables = vars_biomarkers,
+  group_var = "Diagnosis",
+  VariableOrder = "greedy"
+)
+
+# Category/discrimination order keeps domains together, then ranks the
+# biomarkers within each domain by their between-group difference.
+PlotSpiderChart(
+  data = Labelled,
+  variables = vars_biomarkers,
+  group_var = "Diagnosis",
+  VariableOrder = "category_discrimination",
+  VariableCategories = categories_biomarkers
+)
+
+# Interactive (plotly) version of the category-aware chart.
+PlotSpiderChart(
+  data = Labelled,
+  variables = vars_biomarkers,
+  group_var = "Diagnosis",
+  VariableOrder = "category_discrimination",
+  VariableCategories = categories_biomarkers,
   interactive = TRUE
 )
 }

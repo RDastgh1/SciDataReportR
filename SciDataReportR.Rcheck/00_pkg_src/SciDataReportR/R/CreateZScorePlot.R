@@ -2,7 +2,7 @@
 #'
 #' This function generates a Z-score plot to compare multiple variables across
 #' different groups. It offers options for parametric or non-parametric tests,
-#' ordinal variable conversion, and custom labeling. Significant p-values and
+#' ordinal treatment, and custom labeling. Significant p-values and
 #' FDR-adjusted p-values are highlighted on the plot.
 #'
 #'
@@ -13,7 +13,10 @@
 #' @param Relabel Logical; if TRUE, variables will be relabeled using their labels from the dataframe.
 #' @param sort Logical; if TRUE, variables will be sorted by category and p-value.
 #' @param RemoveXAxisLabels Logical; if TRUE, X-axis labels will be removed.
-#' @param Ordinal Logical; if TRUE, ordinal variables will be converted to numeric.
+#' @param TreatOrdinalAs How ordinal variables are handled. This numeric plot
+#'   accepts `"Continuous"` or `"Exclude"`.
+#' @param Ordinal \strong{Deprecated} (since 20.20.0). Use
+#'   \code{TreatOrdinalAs} instead.
 #' @param Parametric Logical; if TRUE, parametric tests (t-test/ANOVA) will be used; otherwise, non-parametric tests (Wilcoxon/Kruskal-Wallis) will be used.
 #' @param SigP_YCoord Numeric; the y-coordinate for marking significant p-values.
 #' @param SigFDR_YCoord Numeric; the y-coordinate for marking significant FDR-adjusted p-values.
@@ -57,7 +60,8 @@ PlotZScore <- function(data,
     Relabel = TRUE,
     sort = TRUE,
     RemoveXAxisLabels = TRUE,
-    Ordinal = TRUE,
+    Ordinal = lifecycle::deprecated(),
+    TreatOrdinalAs = "Continuous",
     Parametric = TRUE,
     SigP_YCoord = 1.5,
     SigFDR_YCoord = 1.6,
@@ -75,27 +79,35 @@ PlotZScore <- function(data,
   }
   if (!missing(variables)) Variables <- variables
 
-  if (Ordinal) {
-    Data <- ConvertOrdinalToNumeric(Data, Variables)
+  if (lifecycle::is_present(Ordinal)) {
+    lifecycle::deprecate_warn("20.20.0", "PlotZScore(Ordinal)", "PlotZScore(TreatOrdinalAs)")
+    TreatOrdinalAs <- if (isTRUE(Ordinal)) "Continuous" else "Exclude"
   }
+  TreatOrdinalAs <- match.arg(TreatOrdinalAs, c("Categorical", "Continuous", "Both", "Exclude"))
+  if (!TreatOrdinalAs %in% c("Continuous", "Exclude")) {
+    stop("PlotZScore() requires TreatOrdinalAs = 'Continuous' or 'Exclude'.", call. = FALSE)
+  }
+  ordinal <- ConvertOrdinalToNumeric(
+    Data, Variables, TreatOrdinalAs = TreatOrdinalAs,
+    Relabel = Relabel, ReturnMetadata = TRUE
+  )
+  Data <- ordinal$data
+  Variables <- ordinal$variables
 
-  classcolors <- c(paletteer::paletteer_d("calecopal::superbloom2"),
-                   paletteer::paletteer_d("calecopal::vermillion"), paletteer::paletteer_d("fishualize::Antennarius_commerson"),
-                   paletteer::paletteer_d("fishualize::Bodianus_rufus"))
   scaledData <- Data[c(TargetVar, Variables)]
   scaledData[Variables] <- scale(scaledData[Variables])
   colnames(scaledData)[1] <- "Group"
   n_groups <- length(unique(scaledData$Group))
-  melted <- tidyr::pivot_longer(scaledData, cols = all_of(Variables),
+  melted <- tidyr::pivot_longer(scaledData, cols = dplyr::all_of(Variables),
                                 names_to = "variable", values_to = "value")
   melted$variable <- factor(melted$variable, levels = unique(melted$variable))
 
   # Add contingency for when one group doesn't have much data
   melted$variable <- factor(melted$variable, levels = unique(melted$variable))
   melted <- melted[!is.na(melted$value),]
-  melted <- melted %>% group_by(Group, variable)%>% filter(n() > 2) %>% ungroup() %>%
-    group_by(variable) %>%
-    filter(n_distinct(Group) > 1) %>% filter(n() > 2) %>%# filter out variables with few observations
+  melted <- melted %>% dplyr::group_by(Group, variable) %>% dplyr::filter(n() > 2) %>% dplyr::ungroup() %>%
+    dplyr::group_by(variable) %>%
+    dplyr::filter(n_distinct(Group) > 1) %>% dplyr::filter(n() > 2) %>%# filter out variables with few observations
     ungroup()
 
   # Perform statistical tests based on the number of groups and Parametric flag
@@ -185,7 +197,7 @@ PlotZScore <- function(data,
     geom_point(data = pvaldata, aes(y = pvalline), color = "blue") +
     geom_point(data = pvaldata, aes(y = FDRline), color = "green") +
     guides(shape = "none", linetype = "none") + scale_y_continuous(limits = c(-2,
-                                                                            2)) + ylab("Z-Score") + scale_color_manual(values = classcolors)
+                                                                            2)) + ylab("Z-Score") + .SciDataColourScale()
   if (RemoveXAxisLabels) {
     pZ <- pZ + theme(axis.text.x = element_blank())
   }
@@ -196,22 +208,11 @@ PlotZScore <- function(data,
   return(pZ)
 }
 
-#' Create a Z-score plot with statistical significance
-#'
-#' Compatibility alias for [PlotZScore()]. Prefer `PlotZScore()` in new code
-#' because this function creates a scientific visualization.
-#'
+#' @description `CreateZScorePlot()` has been superseded by `PlotZScore()`.
+#'   It remains available as a backwards-compatible alias and returns the same
+#'   scientific visualization.
+#' @rdname PlotZScore
 #' @param ... Arguments passed to [PlotZScore()].
-#' @return A ggplot object returned by [PlotZScore()].
-#' @seealso [PlotZScore()] for the canonical function and full examples.
-#' @examples
-#' data(SampleData)
-#'
-#' CreateZScorePlot(
-#'   SampleData,
-#'   TargetVar = "Diagnosis",
-#'   variables = c("age", "AXL", "Adiponectin")
-#' )
 #' @export
 CreateZScorePlot <- function(...) {
   PlotZScore(...)

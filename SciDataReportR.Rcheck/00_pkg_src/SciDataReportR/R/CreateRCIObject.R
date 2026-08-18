@@ -54,24 +54,33 @@
 #' @param Variables \strong{Deprecated} (since 19.15.0). Use \code{variables} instead.
 #' @param ID \strong{Deprecated} (since 19.15.0). Use \code{id_var} instead.
 #' @examples
-#' set.seed(1)
+#' set.seed(20260803)
 #' rci_data <- data.frame(
 #'   id = rep(1:30, each = 2),
 #'   visit = rep(c("Baseline", "Followup"), 30),
 #'   Score = round(rnorm(60, mean = 50, sd = 10), 1)
 #' )
 #'
+#' # Use a +/-1 cutoff here so all three change classifications are visible.
+#' # The default Confidence = 0.95 retains the conventional +/-1.96 cutoff.
 #' rci <- CreateRCIObject(
 #'   data = rci_data,
 #'   variables = "Score",
 #'   DataFormat = "long",
 #'   id_var = "id",
 #'   VisitColumn = "visit",
-#'   BaselineVisit = "Baseline"
+#'   BaselineVisit = "Baseline",
+#'   Confidence = 0.68
 #' )
 #'
-#' # Display a spaghetti plot from the returned object
+#' # Individual trajectories across visits
 #' rci$Plots$Spaghetti$Score
+#'
+#' # Participant-level reliable-change values
+#' rci$Plots$Waterfall$Score
+#'
+#' # Baseline values relative to reliable change
+#' rci$Plots$Quadrant$Score
 #' @export
 CreateRCIObject <- function(data,
     variables,
