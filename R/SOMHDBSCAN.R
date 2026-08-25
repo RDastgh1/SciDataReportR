@@ -17,7 +17,8 @@
 #' @param seed_som Seed used for SOM training.
 #' @param seed_hdbscan Seed retained in the model specification.
 #' @param stability_resamples Number of 80% participant subsample refits used
-#'   for final-model stability. Subsamples are drawn without replacement.
+#'   for final-model stability. Subsamples are drawn without replacement and
+#'   reuse the reference model's resolved SOM grid dimensions.
 #' @param stability_seed Seed controlling participant subsampling.
 #' @param stability_progress Whether to print subsample progress messages.
 #' @param ... Additional arguments passed to [CreateClusterModel_SOM_MClust()].
@@ -132,20 +133,27 @@ CreateClusterModel_SOM_HDBSCAN <- function(data, variables = NULL,
   # so ProbFit$individual and DataWithClusters already carry them.
   individual <- som$ProbFit$individual
   if (stability_resamples > 0L) {
+    stability_args <- list(...)
+    stability_args$som_xdim <- som$ModelInfo_SOM$som_grid_info$som_xdim_used
+    stability_args$som_ydim <- som$ModelInfo_SOM$som_grid_info$som_ydim_used
     reference <- individual$Cluster
-    Stability <- .ClusterBootstrapStability(data, reference, function(boot, original) {
-      fitted <- CreateClusterModel_SOM_HDBSCAN(
+    Stability <- .ClusterSubsampleStability(data, reference, function(boot, model_seed) {
+      fitted <- do.call(CreateClusterModel_SOM_HDBSCAN, c(list(
         data = boot, variables = variables, method = "finalize",
         final_minPts = selected_minPts,
         final_cluster_selection_epsilon = selected_epsilon,
         ClusterVariableName = ".scidr_stability_cluster",
-        seed_som = seed_som, seed_hdbscan = seed_hdbscan,
-        stability_resamples = 0L, ...)
-      ProjectCluster(fitted, original,
-        ClusterVariableName = ".scidr_stability_cluster")$ProbFit$individual$Cluster
+        seed_som = model_seed, seed_hdbscan = model_seed,
+        stability_resamples = 0L), stability_args))
+      dplyr::select(
+        fitted$ProbFit$individual, dplyr::all_of(c(".row_id", "Cluster")))
     }, resamples = stability_resamples, seed = stability_seed,
     candidate = list(MinPts = selected_minPts, Epsilon = selected_epsilon),
     noise_label = 0L, progress = stability_progress)
+    Stability$settings$som_grid <- list(
+      xdim = stability_args$som_xdim,
+      ydim = stability_args$som_ydim,
+      policy = "fixed_to_reference_fit")
     Stability$plots <- .ClusterStabilityPlots(Stability)
     som$Stability <- Stability
     som$ModelInfo_HDBSCAN$fit_table <- dplyr::left_join(

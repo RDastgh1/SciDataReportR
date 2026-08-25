@@ -25,6 +25,7 @@ PlotSplitViolin(
   star_quantile = 0.995,
   star_pad = 0.05,
   star_size = 6,
+  p_label = c("stars", "p_value", "both"),
   ...,
   Group = lifecycle::deprecated(),
   covars = lifecycle::deprecated()
@@ -72,6 +73,9 @@ If \code{TRUE}, uses Wilcoxon (with residualization if covariates are present).}
 
 \item{star_size}{Text size for annotation.}
 
+\item{p_label}{P-value annotation style: significance \code{"stars"} (default),
+exact \code{"p_value"}, or \code{"both"}.}
+
 \item{...}{Additional arguments reserved for future extensions.}
 
 \item{Group}{\strong{Deprecated} (since 19.15.0). Use \code{group_var} instead.}
@@ -79,7 +83,8 @@ If \code{TRUE}, uses Wilcoxon (with residualization if covariates are present).}
 \item{covars}{\strong{Deprecated} (since 19.15.0). Use \code{covariates} instead.}
 }
 \value{
-A ggplot2 object.
+A ggplot2 object. The exact test result is available from
+\code{attr(plot, "comparison")}.
 }
 \description{
 Draws a split (left/right) violin for up to two groups at a single x-position,

@@ -28,7 +28,10 @@
 #' @param Format Color format. One of `"tiered"`, `"classic"`, `"fdr_only"`,
 #'   `"directional"`, `"effect_gradient"`, `"minimal"`, or `"neon"`.
 #' @param LabelMode Labeling mode. One of `"none"`, `"top_n"`,
-#'   `"significant"`, `"fdr"`, or `"extreme"`.
+#'   `"raw"`, `"significant"`, `"fdr"`, or `"extreme"`. `"raw"` labels
+#'   variables with `PValue < Alpha`; `"significant"` is retained as an alias
+#'   for `"raw"`. `"fdr"` labels variables with `FDR < Alpha`. The default is
+#'   `"none"`.
 #' @param TopN Number of variables to label when `LabelMode` is `"top_n"` or
 #'   `"extreme"`. Default is `10`.
 #' @param Relabel Logical. If `TRUE`, variable labels are used when available.
@@ -38,6 +41,12 @@
 #'   `Label`.
 #' @param InteractiveLabels Logical. If `TRUE`, a `text` aesthetic is added for
 #'   compatibility with `plotly::ggplotly(tooltip = "text")`. Default is `TRUE`.
+#' @param ColorBy Optional category mapping used to color points in both
+#'   `RawPPlot` and `FDRPlot`. Supply either a data frame with `Variable` and
+#'   `Category` columns or a named atomic vector whose names are predictor
+#'   variable names and whose values are categories. Tested predictors without
+#'   a mapping are shown as `"Unmapped"` in grey. When `NULL` (the default),
+#'   the existing significance-based `Format` colors are used unchanged.
 #' @return A named list with `RawPPlot`, `FDRPlot`, and `ResultsTable`.
 #'   `RawPPlot` uses `-log10(PValue)` on the y-axis. `FDRPlot` uses
 #'   `-log10(FDR)` on the y-axis. `ResultsTable` is a tibble with one row per
@@ -92,6 +101,25 @@
 #' # Raw and FDR-adjusted categorical-outcome volcano plots
 #' cat_res$RawPPlot
 #' cat_res$FDRPlot
+#'
+#' # Color analytes by categories supplied in a data frame
+#' category_df <- data.frame(
+#'   Variable = predictors,
+#'   Category = rep(c("Inflammatory", "Metabolic"), length.out = length(predictors))
+#' )
+#' PlotVolcanoEffects(
+#'   Labelled, predictors, "AXL",
+#'   ColorBy = category_df,
+#'   LabelMode = "raw"
+#' )$RawPPlot
+#'
+#' # A named vector is also accepted; use FDR-adjusted labels
+#' category_vector <- stats::setNames(category_df$Category, category_df$Variable)
+#' PlotVolcanoEffects(
+#'   Labelled, predictors, "AXL",
+#'   ColorBy = category_vector,
+#'   LabelMode = "fdr"
+#' )$FDRPlot
 #' @param Data \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
 #' @param xVars \strong{Deprecated} (since 19.15.0). Use \code{predictor_vars} instead.
 #' @param yVar \strong{Deprecated} (since 19.15.0). Use \code{outcome_var} instead.
@@ -107,11 +135,12 @@ PlotVolcanoEffects <- function(data,
     AdjustMethod = "fdr",
     Alpha = 0.05,
     Format = c("tiered", "classic", "fdr_only", "directional", "effect_gradient", "minimal", "neon"),
-    LabelMode = c("none", "top_n", "significant", "fdr", "extreme"),
+    LabelMode = c("none", "top_n", "raw", "significant", "fdr", "extreme"),
     TopN = 10,
     Relabel = TRUE,
     codebook = NULL,
     InteractiveLabels = TRUE,
+    ColorBy = NULL,
     Data = lifecycle::deprecated(),
     xVars = lifecycle::deprecated(),
     yVar = lifecycle::deprecated(),
@@ -214,6 +243,84 @@ PlotVolcanoEffects <- function(data,
         paste(missing_codebook_cols, collapse = ", ")
       )
     }
+  }
+
+  color_lookup <- NULL
+
+  if (!is.null(ColorBy)) {
+    if (is.data.frame(ColorBy)) {
+      required_color_cols <- c("Variable", "Category")
+      missing_color_cols <- setdiff(required_color_cols, names(ColorBy))
+
+      if (length(missing_color_cols) > 0) {
+        stop(
+          "ColorBy data frames must contain columns Variable and Category. Missing: ",
+          paste(missing_color_cols, collapse = ", ")
+        )
+      }
+
+      df_color_mapping <- ColorBy %>%
+        dplyr::transmute(
+          Variable = as.character(.data$Variable),
+          Category = as.character(.data$Category)
+        )
+    } else if (is.atomic(ColorBy) && !is.null(names(ColorBy))) {
+      df_color_mapping <- tibble::tibble(
+        Variable = names(ColorBy),
+        Category = as.character(ColorBy)
+      )
+    } else {
+      stop(
+        "ColorBy must be a data frame with Variable and Category columns or ",
+        "a named atomic vector."
+      )
+    }
+
+    if (nrow(df_color_mapping) == 0) {
+      stop("ColorBy must contain at least one variable-to-category mapping.")
+    }
+
+    invalid_color_vars <- is.na(df_color_mapping$Variable) |
+      trimws(df_color_mapping$Variable) == ""
+
+    if (any(invalid_color_vars)) {
+      stop("ColorBy variable names must be non-missing and non-empty.")
+    }
+
+    conflicting_color_vars <- df_color_mapping %>%
+      dplyr::mutate(
+        Category = dplyr::if_else(
+          is.na(.data$Category) | trimws(.data$Category) == "",
+          "Unmapped",
+          .data$Category
+        )
+      ) %>%
+      dplyr::group_by(.data$Variable) %>%
+      dplyr::summarise(NCategories = dplyr::n_distinct(.data$Category), .groups = "drop") %>%
+      dplyr::filter(.data$NCategories > 1) %>%
+      dplyr::pull(.data$Variable)
+
+    if (length(conflicting_color_vars) > 0) {
+      stop(
+        "ColorBy contains conflicting category mappings for: ",
+        paste(conflicting_color_vars, collapse = ", ")
+      )
+    }
+
+    df_color_mapping <- df_color_mapping %>%
+      dplyr::mutate(
+        Category = dplyr::if_else(
+          is.na(.data$Category) | trimws(.data$Category) == "",
+          "Unmapped",
+          .data$Category
+        )
+      ) %>%
+      dplyr::distinct(.data$Variable, .keep_all = TRUE)
+
+    color_lookup <- stats::setNames(
+      df_color_mapping$Category,
+      df_color_mapping$Variable
+    )
   }
 
   # Prepare outcome
@@ -657,6 +764,12 @@ PlotVolcanoEffects <- function(data,
     )
   }
 
+  if (!is.null(color_lookup)) {
+    mapped_categories <- unname(color_lookup[results$Variable])
+    mapped_categories[is.na(mapped_categories) | mapped_categories == ""] <- "Unmapped"
+    results$ColorCategory <- mapped_categories
+  }
+
   results <- results %>%
     dplyr::mutate(
       FDR = stats::p.adjust(.data$PValue, method = AdjustMethod),
@@ -698,7 +811,7 @@ PlotVolcanoEffects <- function(data,
       dplyr::pull(.data$Variable)
   }
 
-  if (LabelMode == "significant") {
+  if (LabelMode %in% c("raw", "significant")) {
     label_vars <- results %>%
       dplyr::filter(.data$Significant) %>%
       dplyr::pull(.data$Variable)
@@ -770,7 +883,37 @@ PlotVolcanoEffects <- function(data,
       ggplot2::geom_point(alpha = 0.85, size = 2.4)
     }
 
-    if (Format == "effect_gradient") {
+    if (!is.null(color_lookup)) {
+      category_levels <- unique(plot_data$ColorCategory)
+      mapped_levels <- setdiff(category_levels, "Unmapped")
+      category_colors <- character(0)
+
+      if (length(mapped_levels) > 0) {
+        category_colors <- stats::setNames(
+          .SciDataColorValues(length(mapped_levels)),
+          mapped_levels
+        )
+      }
+
+      if ("Unmapped" %in% category_levels) {
+        category_colors <- c(category_colors, "Unmapped" = "grey70")
+      }
+
+      p <- ggplot2::ggplot(
+        plot_data,
+        ggplot2::aes(
+          x = .data$Effect,
+          y = .data$PlotY,
+          color = .data$ColorCategory
+        )
+      ) +
+        volcano_point_layer +
+        ggplot2::scale_color_manual(
+          values = category_colors,
+          breaks = category_levels,
+          na.value = "grey70"
+        )
+    } else if (Format == "effect_gradient") {
       p <- ggplot2::ggplot(
         plot_data,
         ggplot2::aes(

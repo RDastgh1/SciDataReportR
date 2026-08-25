@@ -68,9 +68,12 @@ The unreleased clustering interface now uses `DataWithClusters` rather than
 `df_with_clusters`, and `ClusterVariableName` rather than `ClusterName`.
 `ModelInfo_MClust` is the only correctly cased Mclust-specific field; the
 erroneous `ModelInfo_Mclust` field has been removed. `complete_rows`,
-`CandidateAudit`, and internally generated `.scidr_rowid` columns are no
-longer public outputs. Use `Specification$n_complete` for aggregate training
+`CandidateAudit` and the old `.scidr_rowid` column are no longer public
+outputs. Every row-level output instead carries a merge-safe `.row_id`, labeled
+`"Row ID"`. Use `Specification$n_complete` for aggregate training
 support and the `fit_table` status/warning/error columns to audit candidates.
+For example, merge diagnostics back without relying on row order using
+`dplyr::left_join(model$DataWithClusters, model$ProbFit$individual, by = ".row_id")`.
 
 Every method stores its figures in the same places, so the same review sequence
 works whichever approach you choose. A figure lives beside the table it
@@ -193,7 +196,7 @@ is retained as a compatibility alias and must agree if both are supplied.
 
 | Workflow | Candidate settings | Finalized settings | Method-specific control |
 |---|---|---|---|
-| Mclust, PCA + Mclust, MCA + Mclust, SOM + Mclust | `k_range`, `models` | `final_k`, `final_model` | `models`: 1 = EEI, 2 = VVI, 3 = EEE |
+| Mclust, PCA + Mclust, MCA + Mclust, SOM + Mclust | `k_range`, `models` | `final_k`, `final_model` | tidyLPA mclust models: 1 = EEI, 2 = VVI, 3 = EEE, 6 = VVV; models 4 and 5 require OpenMx and are unsupported |
 | K-means, PCA + K-means, Gower + PAM, latent class | `k_range` | `final_k` | `nstart` for K-means; `nrep` for LCA |
 | HDBSCAN, SOM + HDBSCAN | `minPts_range`, epsilon range | `final_minPts`, final epsilon | extracted class count is data-derived |
 
@@ -700,13 +703,11 @@ describing the profiles.
 ```{r}
 #| label: CompareClusterOccupancy
 df_Comparison <- df_Mclust$DataWithClusters %>%
-  dplyr::mutate(RowIndex = dplyr::row_number()) %>%
-  dplyr::select(.data$RowIndex, .data$MclustCluster) %>%
+  dplyr::select(.data$.row_id, .data$MclustCluster) %>%
   dplyr::left_join(
     df_KMeans$DataWithClusters %>%
-      dplyr::mutate(RowIndex = dplyr::row_number()) %>%
-      dplyr::select(.data$RowIndex, .data$KMeansCluster),
-    by = "RowIndex")
+      dplyr::select(.data$.row_id, .data$KMeansCluster),
+    by = ".row_id")
 
 df_Comparison %>%
   dplyr::count(.data$MclustCluster, .data$KMeansCluster)
@@ -743,11 +744,11 @@ ARI and mean Jaccard recovery; subsample success rate is reported separately.
 
 ### Complementary stability diagnostics
 
-Every successful full-pipeline 80% subsample refit also records variation of
-information (`VI`; lower is better), normalized mutual information (`NMI`; higher
-is better), and Fowlkes--Mallows agreement (higher is better). These are
-secondary partition diagnostics: they do not enter `ReproducibilityScore` or
-the AHP advisory index. `participant_inclusion` reports the probability that a
+Every successful full-pipeline 80% subsample refit records ARI for the
+participants included in that refit. The pipeline is retrained from the subset
+and assignments are joined to the full-data reference by `.row_id`; projection
+is not part of stability. Sampling and model seeds vary independently and are
+recorded for each replicate. `participant_inclusion` reports the probability that a
 participant returns to its reference cluster's label-matched subsample cluster;
 `cluster_inclusion` summarizes that probability by reference cluster.
 
@@ -798,8 +799,8 @@ rescaling used to construct its index, not a standalone scientific result.
 | `Classes` | Requested class/cluster count for fixed-count methods. HDBSCAN variants instead report the data-derived number extracted from each density setting. |
 | `MinClusterN` / `MinClassN` | Smallest extracted participant cluster/class size. `SizeBalance` is smallest divided by largest extracted participant group size. SOM + Mclust reports its separate integer node-count and node-proportion fields above. |
 | `StabilitySuccessRate` | Proportion of requested 80% subsample refits that successfully complete. It is reported separately and is never multiplied into reproducibility. |
-| `StabilityARI_Mean`, `StabilityARI_P05` | Mean and fifth percentile of the adjusted Rand index across successful full-pipeline 80% participant subsample refits without replacement [@hubert1985]. ARI can be negative when agreement is worse than chance. |
-| `StabilityJaccard_Mean`, `StabilityJaccard_Min` | Mean and minimum label-matched per-cluster Jaccard recovery across successful 80% participant subsample refits [@jaccard1901]. |
+| `StabilityARI_Mean`, `StabilityARI_P05` | Mean and fifth percentile of the adjusted Rand index comparing sampled participants' full-data and subset-refit assignments [@hubert1985]. ARI is invariant to cluster numbering and can be negative when agreement is worse than chance. |
+| `StabilityJaccard_Mean`, `StabilityJaccard_Min` | Mean cluster-level Jaccard recovery and the minimum cluster-specific mean recovery across successful 80% participant subsample refits [@jaccard1901]. |
 | `ReproducibilityScore` | Mean of finite `StabilityARI_Mean` and `StabilityJaccard_Mean`; it is unavailable when neither component is estimable. |
 | `AHPIndex` / `ahp_index` and `*_scaled` | Advisory within-candidate ranking, calculated from the documented method-specific raw metrics. The recommendation does not finalize a model or alter any fit plot. |
 

@@ -229,7 +229,7 @@ ProjectCluster.Pipeline_SOM_MClust <- function(
 
   # Stable row id ----------------------------------------------------------
 
-  new_df_scidr <- new_df
+  new_df_scidr <- .AddClusterRowID(new_df, "new_df")
 
   # Determine Z-score columns used in training -----------------------------
 
@@ -353,6 +353,7 @@ ProjectCluster.Pipeline_SOM_MClust <- function(
   # Individual table with distance flags -----------------------------------
 
   individual_tbl <- dplyr::tibble(
+    .row_id      = new_df_scidr$.row_id,
     SOM_Node     = SOM_Node_new,
     SOM_Distance = SOM_Dist_new
   ) %>%
@@ -392,6 +393,10 @@ ProjectCluster.Pipeline_SOM_MClust <- function(
         TRUE ~ "Good fit"
       )
     )
+  attr(individual_tbl$.row_id, "label") <- "Row ID"
+  if (!is.null(object$id_var) && object$id_var %in% names(new_df_scidr)) {
+    individual_tbl[[object$id_var]] <- new_df_scidr[[object$id_var]]
+  }
 
   # DataWithClusters for projected data ------------------------------------
 
@@ -654,7 +659,7 @@ ProjectCluster.Pipeline_SOM_MClust <- function(
   # ProbFit for projected cases --------------------------------------------
 
   probability_columns <- unique(c(
-    "SOM_Node", "model_number", "classes_number",
+    ".row_id", object$id_var, "SOM_Node", "model_number", "classes_number",
     grep("^prob_", names(individual_tbl), value = TRUE),
     "Cluster", "max_prob", "prob_assigned", "uncertainty"
   ))

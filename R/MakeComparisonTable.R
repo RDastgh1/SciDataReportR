@@ -951,9 +951,16 @@ MakeComparisonTable <- function(data,
 
         if (Parametric) {
           a2 <- tryCatch(car::Anova(fit, type = 2), error = function(e) NULL)
+          group_row <- if (is.null(a2)) {
+            NA_integer_
+          } else {
+            group_rows <- match(c(CompVariable, btick(CompVariable)), rownames(a2), nomatch = 0L)
+            group_rows <- group_rows[group_rows > 0L]
+            if (length(group_rows)) group_rows[1] else NA_integer_
+          }
 
-          p_adj <- if (!is.null(a2) && CompVariable %in% rownames(a2)) {
-            as.numeric(a2[CompVariable, "Pr(>F)"])
+          p_adj <- if (!is.na(group_row)) {
+            as.numeric(a2[group_row, "Pr(>F)"])
           } else {
             NA_real_
           }

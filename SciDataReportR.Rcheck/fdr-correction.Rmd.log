@@ -14,7 +14,45 @@ pred1 0.005 0.03    NA
 pred2 0.040 0.01 0.002
 
 > ApplyFDRCorrection(pm, fdr_scope = "matrix")
+        out1       out2 out3
+pred1 0.0125 0.03750000   NA
+pred2 0.0400 0.01666667 0.01
 
-  When sourcing ‘fdr-correction.R’:
-Error: cannot open file '/Users/rahad/Library/CloudStorage/Dropbox/Coding/Package Development/SciDataReportR/SciDataReportR.Rcheck/SciDataReportR/R/SciDataReportR.rdb': No such file or directory
-Execution halted
+> ApplyFDRCorrection(pm, fdr_scope = "per_outcome", 
++     outcome_margin = 2)
+      out1 out2  out3
+pred1 0.01 0.03    NA
+pred2 0.04 0.02 0.002
+
+> res_matrix <- PlotCorrelationsHeatmap(mtcars, predictor_vars = c("disp", 
++     "hp", "drat", "wt"), outcome_vars = c("mpg", "qsec"), fdr_scope = "m ..." ... [TRUNCATED] 
+
+> res_per_outcome <- PlotCorrelationsHeatmap(mtcars, 
++     predictor_vars = c("disp", "hp", "drat", "wt"), outcome_vars = c("mpg", 
++         "qsec") .... [TRUNCATED] 
+
+> round(res_matrix$p$p, 5)
+       mpg    qsec
+disp 0e+00 0.01314
+hp   0e+00 0.00001
+drat 2e-05 0.61958
+wt   0e+00 0.33887
+
+> all.equal(res_matrix$p$p, res_per_outcome$p$p)
+[1] TRUE
+
+> round(res_matrix$p_fdr$p, 5)
+       mpg    qsec
+disp 0e+00 0.01753
+hp   0e+00 0.00001
+drat 3e-05 0.61958
+wt   0e+00 0.38728
+
+> round(res_per_outcome$p_fdr$p, 5)
+       mpg    qsec
+disp 0e+00 0.02629
+hp   0e+00 0.00002
+drat 2e-05 0.61958
+wt   0e+00 0.45182
+
+> res_matrix$p_fdr$plot

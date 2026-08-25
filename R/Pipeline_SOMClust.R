@@ -55,7 +55,9 @@
 #' @param k_range Integer vector of numbers of clusters/profiles to consider
 #'   in exploratory mode. Default \code{2:10}.
 #' @param models Integer vector of model specifications for tidyLPA
-#'   (mclust backend). Default \code{c(1, 2, 3)}.
+#'   (mclust backend). Supported values and the default are
+#'   \code{c(1, 2, 3, 6)}. Models 4 and 5 require OpenMx and are intentionally
+#'   unsupported.
 #' @param final_k Integer; number of profiles for \code{method = "finalize"}.
 #' @param final_model Integer; model specification for \code{method = "finalize"}
 #'   (should be one of \code{models}).
@@ -114,7 +116,8 @@
 #'   flag uncertain phenotype membership. Default is \code{0.70}.
 #' @param stability_resamples Number of 80% participant subsample refits used
 #'   to assess reproducibility for every successful exploratory candidate.
-#'   Subsamples are drawn without replacement. Defaults to \code{0} (disabled);
+#'   Subsamples are drawn without replacement and reuse the reference model's
+#'   resolved SOM grid dimensions. Defaults to \code{0} (disabled);
 #'   use \code{50} for an exploratory stability screen.
 #' @param stability_seed Integer seed for participant subsampling.
 #' @param stability_progress Logical; if TRUE, print subsample progress messages.
@@ -318,7 +321,7 @@ CreateClusterModel_SOM_MClust <- function(data,
     variables = NULL,
     method = c("exploratory", "finalize", "explore"),
     k_range = 2:10,
-    models = c(1, 2, 3),
+    models = c(1, 2, 3, 6),
     final_k = NULL,
     final_model = NULL,
     ClusterVariableName = "Cluster",
@@ -369,6 +372,10 @@ CreateClusterModel_SOM_MClust <- function(data,
   method     <- .ClusterMethod(method)
   .ValidateClusterLifecycle(method, supplied[c("k_range", "models")],
     supplied[c("final_k", "final_model")])
+  models <- .ResolveMclustModels(models)
+  if (method == "finalize") {
+    final_model <- .ResolveMclustModels(final_model, "final_model")
+  }
   ZScoreType <- match.arg(ZScoreType)
 
   if (!requireNamespace("SciDataReportR", quietly = TRUE)) {
@@ -492,7 +499,7 @@ CreateClusterModel_SOM_MClust <- function(data,
 
   # Stable row id ----------------------------------------------------------
 
-  df_scidr <- df
+  df_scidr <- .AddClusterRowID(df, "df")
 
   if (!is.null(id_col)) {
     if (!id_col %in% names(df_scidr)) {
@@ -838,18 +845,9 @@ CreateClusterModel_SOM_MClust <- function(data,
 
       fit_expr <- function() {
         if (is.null(lpa_control)) {
-          tidyLPA::estimate_profiles(
-            X,
-            n_profiles = k,
-            models     = model
-          )
+          .FitTidyLPAMclust(X, k, model)
         } else {
-          tidyLPA::estimate_profiles(
-            X,
-            n_profiles = k,
-            models     = model,
-            control    = lpa_control
-          )
+          .FitTidyLPAMclust(X, k, model, control = lpa_control)
         }
       }
 
@@ -1145,10 +1143,14 @@ CreateClusterModel_SOM_MClust <- function(data,
               )
             }
 
-            set.seed(as.integer(stability_seed + candidate_index * 100000L + replicate))
+            sampling_seed <- as.integer(
+              stability_seed + candidate_index * 100000L + replicate)
+            model_seed <- as.integer(
+              stability_seed + candidate_index * 200000L + replicate)
+            set.seed(sampling_seed)
             subsample_rows <- sample(reference_rows,
               max(2L, floor(length(reference_rows) * 0.80)), replace = FALSE)
-            df_subsample <- df[subsample_rows, , drop = FALSE]
+            df_subsample <- df_scidr[subsample_rows, , drop = FALSE]
 
             subsample_result <- tryCatch(
               CreateClusterModel_SOM_MClust(
@@ -1164,8 +1166,8 @@ CreateClusterModel_SOM_MClust <- function(data,
                 som_ydim = som_ydim,
                 som_topo = som_topo,
                 som_neigh = som_neigh,
-                seed_som = as.integer(seed_som + candidate_index * 100000L + replicate),
-                seed_lpa = as.integer(seed_lpa + candidate_index * 100000L + replicate),
+                seed_som = model_seed,
+                seed_lpa = model_seed + 1L,
                 Relabel = FALSE,
                 ZScorePrefix = ZScorePrefix,
                 ZScoreVars = ZScoreVars_used,
@@ -1190,6 +1192,8 @@ CreateClusterModel_SOM_MClust <- function(data,
                 Model = candidate_model,
                 Classes = candidate_k,
                 Replicate = replicate,
+                SamplingSeed = sampling_seed,
+                ModelSeed = model_seed,
                 Status = "failed",
                 ARI = NA_real_,
                 Error = conditionMessage(subsample_result)
@@ -1197,39 +1201,27 @@ CreateClusterModel_SOM_MClust <- function(data,
               next
             }
 
-            projection_result <- tryCatch(
-              suppressWarnings(ProjectCluster(
-                object = subsample_result,
-                new_df = df,
-                ClusterVariableName = ".scidr_stability_cluster",
-                high_dist_quantile = high_dist_quantile,
-                low_prob_threshold = low_prob_threshold
-              )),
-              error = function(e) e
-            )
-
-            if (inherits(projection_result, "error")) {
-              replicate_rows[[length(replicate_rows) + 1L]] <- dplyr::tibble(
-                Model = candidate_model,
-                Classes = candidate_k,
-                Replicate = replicate,
-                Status = "failed",
-                ARI = NA_real_,
-                Error = conditionMessage(projection_result)
-              )
-              next
-            }
-
-            resampled_assignment <- projection_result$ProbFit$individual$Cluster[reference_rows]
-            valid <- !is.na(reference_assignment) & !is.na(resampled_assignment)
+            comparison <- dplyr::tibble(
+              .row_id = df_scidr$.row_id[reference_rows],
+              ReferenceCluster = reference_assignment) %>%
+              dplyr::inner_join(
+                dplyr::transmute(
+                  subsample_result$ProbFit$individual,
+                  .row_id = .data$.row_id,
+                  RefitCluster = .data$Cluster),
+                by = ".row_id", relationship = "one-to-one")
+            valid <- !is.na(comparison$ReferenceCluster) &
+              !is.na(comparison$RefitCluster)
             ari <- if (sum(valid) > 1) {
-              mclust::adjustedRandIndex(reference_assignment[valid], resampled_assignment[valid])
+              mclust::adjustedRandIndex(
+                comparison$ReferenceCluster[valid], comparison$RefitCluster[valid])
             } else {
               NA_real_
             }
             partition_metrics <- .ClusterPartitionMetrics(
-              reference_assignment[valid], resampled_assignment[valid])
-            jaccard <- cluster_jaccard(reference_assignment, resampled_assignment) %>%
+              comparison$ReferenceCluster[valid], comparison$RefitCluster[valid])
+            jaccard <- cluster_jaccard(
+              comparison$ReferenceCluster, comparison$RefitCluster) %>%
               dplyr::mutate(
                 Model = candidate_model,
                 Classes = candidate_k,
@@ -1240,6 +1232,8 @@ CreateClusterModel_SOM_MClust <- function(data,
               Model = candidate_model,
               Classes = candidate_k,
               Replicate = replicate,
+              SamplingSeed = sampling_seed,
+              ModelSeed = model_seed,
               Status = "success",
               ARI = ari,
               VI = partition_metrics[["VI"]],
@@ -1248,9 +1242,13 @@ CreateClusterModel_SOM_MClust <- function(data,
               Error = NA_character_
             )
             cluster_rows[[length(cluster_rows) + 1L]] <- jaccard
+            assignment_full <- rep(NA_integer_, length(reference_assignment))
+            assignment_full[match(
+              comparison$.row_id, df_scidr$.row_id[reference_rows])] <-
+              comparison$RefitCluster
             assignment_rows[[length(assignment_rows) + 1L]] <- list(
               Model = candidate_model, Classes = candidate_k,
-              reference = reference_assignment, assignment = resampled_assignment)
+              reference = reference_assignment, assignment = assignment_full)
           }
 
           candidate_replicates <- dplyr::bind_rows(replicate_rows) %>%
@@ -1307,8 +1305,9 @@ CreateClusterModel_SOM_MClust <- function(data,
           dplyr::left_join(stability_summary, by = c("Model", "Classes"))
         diagnostics <- lapply(split(assignment_rows, vapply(assignment_rows,
           function(x) paste(x$Model, x$Classes, sep = "_"), character(1))), function(rows) {
-          .ClusterStabilityDiagnostics(rows[[1]]$reference,
-            lapply(rows, `[[`, "assignment"), seq_along(rows[[1]]$reference))
+          .ClusterStabilityDiagnostics(
+            rows[[1]]$reference, lapply(rows, `[[`, "assignment"),
+            seq_along(rows[[1]]$reference), df_scidr$.row_id[complete_rows])
         })
         diagnostic_keys <- names(diagnostics)
         participant_inclusion <- dplyr::bind_rows(lapply(seq_along(diagnostics), function(i) {
@@ -1325,11 +1324,16 @@ CreateClusterModel_SOM_MClust <- function(data,
           settings = list(
             resamples = as.integer(stability_resamples),
             seed = stability_seed,
-            refit_scope = "full_pipeline",
+            refit_scope = "full_pipeline_in_sample",
+            comparison_scope = "sampled_participants",
             resample_type = "subsample_without_replacement",
             resample_fraction = 0.80,
             coassignment_limit = 2000L,
-            noise_policy = "all clusters included"
+            noise_policy = "all clusters included",
+            som_grid = list(
+              xdim = som_xdim,
+              ydim = som_ydim,
+              policy = "fixed_to_reference_fit")
           ),
           replicates = stability_replicates,
           cluster_recovery = stability_clusters,
@@ -1494,12 +1498,13 @@ CreateClusterModel_SOM_MClust <- function(data,
         name = factor(.data$name, levels = c(
           "AIC", "BIC", "Entropy", "ReproducibilityScore", blrt_label)))
 
-    model_levels <- sort(unique(c(1, 2, 3, models, final_model)))
+    model_levels <- sort(unique(c(1, 2, 3, 6, models, final_model)))
     model_levels <- model_levels[!is.na(model_levels)]
     model_labels <- as.character(model_levels)
     model_labels[model_levels == 1] <- "1:Equal variance, cov = 0"
     model_labels[model_levels == 2] <- "2:Varying variance, cov = 0"
     model_labels[model_levels == 3] <- "3:Equal variance, equal cov"
+    model_labels[model_levels == 6] <- "6:Varying variance, varying cov"
 
     mdata$Model <- factor(
       mdata$Model,
@@ -1639,6 +1644,7 @@ CreateClusterModel_SOM_MClust <- function(data,
   Cluster_full[complete_rows] <- patient_clust
 
   individual_tbl <- dplyr::tibble(
+    .row_id      = df_scidr$.row_id,
     SOM_Node     = SOM_Node_full,
     SOM_Distance = SOM_Dist_full
   ) %>%
@@ -1654,6 +1660,7 @@ CreateClusterModel_SOM_MClust <- function(data,
   if (nrow(individual_tbl) != nrow(df_scidr)) {
     stop("Internal row alignment error: ProbFit$individual does not match the number of rows in df.")
   }
+  attr(individual_tbl$.row_id, "label") <- "Row ID"
 
   # DataWithClusters: only cluster label -----------------------------------
 
@@ -1948,6 +1955,7 @@ CreateClusterModel_SOM_MClust <- function(data,
     ZScoreType       = ZScoreType,
     ZScoreObject     = ZScoreObject_used,
     ZScoreVars       = ZScoreVars_used,
+    id_var           = id_var,
     ClusterVariableName      = ClusterVariableName,
     DataWithClusters = DataWithClusters,
     fit_plot         = fit_plot,

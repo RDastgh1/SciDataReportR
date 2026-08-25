@@ -38,6 +38,29 @@ The following object is masked from ‘package:graphics’:
 
 > RevaluedObj <- RevalueData(SampleData, SampleVariableTypes)
 
-  When sourcing ‘PlotCorrelationsHeatmap.R’:
-Error: cannot open file '/Users/rahad/Library/CloudStorage/Dropbox/Coding/Package Development/SciDataReportR/SciDataReportR.Rcheck/SciDataReportR/R/SciDataReportR.rdb': No such file or directory
-Execution halted
+> df_Revalued <- RevaluedObj$RevaluedData
+
+> biomarkers <- c("AXL", "Calbindin", "Ferritin", "MMP7", 
++     "MMP10", "IL_6", "VCAM_1", "ICAM_1", "C_Reactive_Protein", 
++     "TNF_RII", "MCP_1", .... [TRUNCATED] 
+
+> CorrObj <- PlotCorrelationsHeatmap(Data = df_Revalued, 
++     xVars = biomarkers)
+Warning: The `Data` argument of `PlotCorrelationsHeatmap()` is deprecated as of
+SciDataReportR 19.15.0.
+ℹ Please use the `data` argument instead.
+Warning: The `xVars` argument of `PlotCorrelationsHeatmap()` is deprecated as of
+SciDataReportR 19.15.0.
+ℹ Please use the `predictor_vars` argument instead.
+
+> CorrObj$Unadjusted$plot
+
+> clinical_vars <- c("age", "Insulin")
+
+> CorrObj_Clinical <- PlotCorrelationsHeatmap(Data = df_Revalued, 
++     xVars = biomarkers, yVars = clinical_vars)
+Warning: The `yVars` argument of `PlotCorrelationsHeatmap()` is deprecated as of
+SciDataReportR 19.15.0.
+ℹ Please use the `outcome_vars` argument instead.
+
+> CorrObj_Clinical$Unadjusted$plot

@@ -1,0 +1,51 @@
+
+> library(SciDataReportR)
+
+> library(dplyr)
+
+Attaching package: ‘dplyr’
+
+The following objects are masked from ‘package:stats’:
+
+    filter, lag
+
+The following objects are masked from ‘package:base’:
+
+    intersect, setdiff, setequal, union
+
+
+> library(plotly)
+Loading required package: ggplot2
+
+Attaching package: ‘plotly’
+
+The following object is masked from ‘package:ggplot2’:
+
+    last_plot
+
+The following object is masked from ‘package:stats’:
+
+    filter
+
+The following object is masked from ‘package:graphics’:
+
+    layout
+
+
+> data("SampleData")
+
+> data("SampleVariableTypes")
+
+> df_Raw <- SampleData
+
+> VariableTypes <- SampleVariableTypes
+
+> df_Revalued <- RevalueData(df_Raw, VariableTypes)$RevaluedData
+
+> Amyloid42Result <- EvaluateBiomarkerPerformance(data = df_Revalued, 
++     outcome_var = "Diagnosis", biomarker_var = "Ab_42", covariates = "age", 
+ .... [TRUNCATED] 
+
+  When sourcing ‘BiomarkerPerformance.R’:
+Error: could not find function "EvaluateBiomarkerPerformance"
+Execution halted

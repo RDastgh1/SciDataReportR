@@ -473,10 +473,10 @@ ScidrUnivariateGtTable <- function(results, formatted = TRUE) {
 
   row_data <- results %>%
     dplyr::distinct(.data$RowKey, .data$TermLabel) %>%
-    dplyr::rename(Variable = .data$TermLabel)
+    dplyr::rename(Variable = "TermLabel")
   outcome_order <- unique(results$Outcome)
 
-  table_data <- row_data %>% dplyr::select(-.data$RowKey)
+  table_data <- row_data %>% dplyr::select(-tidyselect::all_of("RowKey"))
   column_labels <- list(Variable = "Variable")
   spanners <- list()
   numeric_columns <- character(0)
@@ -486,7 +486,7 @@ ScidrUnivariateGtTable <- function(results, formatted = TRUE) {
     outcome <- outcome_order[[outcome_index]]
     outcome_results <- results %>%
       dplyr::filter(.data$Outcome == outcome) %>%
-      dplyr::select(-.data$Outcome)
+      dplyr::select(-tidyselect::all_of("Outcome"))
     outcome_results <- outcome_results[match(row_data$RowKey, outcome_results$RowKey), , drop = FALSE]
 
     column_prefix <- paste0("Outcome", outcome_index)

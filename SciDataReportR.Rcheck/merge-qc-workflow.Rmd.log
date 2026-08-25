@@ -21,6 +21,263 @@
 > m_pbc <- safe_merge(pbc_baseline, pbc_labs, by = "id", 
 +     name = "pbc baseline + follow-up labs")
 
+> m_pbc$log
+# A tibble: 1 × 16
+  Merge        Status ReadyForAnalysis RowsBefore RowsAfter ColsBefore ColsAfter
+  <chr>        <chr>  <lgl>                 <int>     <int>      <int>     <int>
+1 pbc baselin… FAIL   FALSE                   418      2051          5         9
+# ℹ 9 more variables: ExpectedColsAdded <int>, ActualColsAdded <int>,
+#   MatchedKeys <int>, LeftUniqueKeys <int>, MatchRate <dbl>,
+#   DuplicateKeyGroups <int>, UnresolvedDupVars <int>, KeyHarmonization <chr>,
+#   Note <chr>
+
+> m_pbc$summary
+<table class="table" style="width: auto !important; margin-left: auto; margin-right: auto;">
+<caption>pbc baseline + follow-up labs</caption>
+ <thead>
+  <tr>
+   <th style="text-align:left;"> Metric </th>
+   <th style="text-align:left;"> Value </th>
+  </tr>
+ </thead>
+<tbody>
+  <tr>
+   <td style="text-align:left;font-weight: bold;"> Status </td>
+   <td style="text-align:left;font-weight: bold;"> &lt;span style=" font-weight: bold;    color: white !important;border-radius: 4px; padding-right: 4px; padding-left: 4px; background-color: rgba(198, 40, 40, 255) !important;" &gt;FAIL&lt;/span&gt; </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Rows (before -&gt; after) </td>
+   <td style="text-align:left;"> 418 -&gt; 2051 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Columns (before -&gt; after) </td>
+   <td style="text-align:left;"> 5 -&gt; 9 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Columns added (expected vs actual) </td>
+   <td style="text-align:left;"> expected +4; actual +4 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Keys matched </td>
+   <td style="text-align:left;"> 312 / 418 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Match rate </td>
+   <td style="text-align:left;"> 74.6% </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Duplicate key groups </td>
+   <td style="text-align:left;"> 570 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Key harmonization </td>
+   <td style="text-align:left;"> Key types already compatible. </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Note </td>
+   <td style="text-align:left;"> Rows changed after merge. Review for row multiplication or filtering. </td>
+  </tr>
+</tbody>
+</table>
+> merge_detail(m_pbc, TopN = 5)
+
+
+Table: pbc baseline + follow-up labs: validation checks
+
+|Check                          |   Count|Status  |Details                                                                                            |
+|:------------------------------|-------:|:-------|:--------------------------------------------------------------------------------------------------|
+|Key Types                      |   0.000|PASS    |Key storage classes match across datasets.                                                         |
+|Missing Keys                   |   0.000|PASS    |No missing key rows detected.                                                                      |
+|Duplicate Keys                 | 570.000|FAIL    |Duplicate complete key combinations were detected.                                                 |
+|Coverage                       | 106.000|WARNING |Some complete key combinations appear only in one source dataset.                                  |
+|Row Inflation                  |   1.054|WARNING |MergedData has more rows than expected. Review whether row multiplication was intentional.         |
+|Overlapping Variables          |   0.000|PASS    |No non-key variables overlap across source datasets.                                               |
+|Unresolved Duplicate Variables |   0.000|PASS    |No unresolved duplicate variable pairs detected.                                                   |
+|Variable Conflicts             |   0.000|PASS    |No duplicated-variable value conflicts detected.                                                   |
+|Suspicious Conflicts           |   0.000|PASS    |No low-agreement or class-mismatched duplicated variables detected.                                |
+|Merge Readiness                |   1.000|FAIL    |Major merge-integrity blockers detected. Review duplicate keys and unresolved duplicate variables. |
+
+
+
+Table: pbc baseline + follow-up labs: keys only in left data (showing up to 5 of 106)
+
+|id  |
+|:---|
+|313 |
+|314 |
+|315 |
+|316 |
+|317 |
+
+
+> pbc_enroll <- pbc_baseline
+
+> pbc_enroll$enroll_day <- 0
+
+> m_closest <- safe_merge(pbc_enroll, pbc_labs, by = "id", 
++     name = "closest lab to enrollment", method = "closest_time", 
++     time_var_before  .... [TRUNCATED] 
+
+> m_closest$log
+# A tibble: 1 × 16
+  Merge        Status ReadyForAnalysis RowsBefore RowsAfter ColsBefore ColsAfter
+  <chr>        <chr>  <lgl>                 <int>     <int>      <int>     <int>
+1 closest lab… FAIL   FALSE                   418       418          6        10
+# ℹ 9 more variables: ExpectedColsAdded <int>, ActualColsAdded <int>,
+#   MatchedKeys <int>, LeftUniqueKeys <int>, MatchRate <dbl>,
+#   DuplicateKeyGroups <int>, UnresolvedDupVars <int>, KeyHarmonization <chr>,
+#   Note <chr>
+
+> demographics <- data.frame(id = 1:6, sex = c("F", 
++     "M", "F", "F", "M", "F"), age = c(54, 61, 47, 66, 58, 50))
+
+> device_data <- data.frame(id = c(1, 2, 2, 5, 7), sex = c("F", 
++     "F", "M", "M", "F"), score = c(0.82, 0.75, 0.71, 0.64, 0.9))
+
+> m_synth <- safe_merge(demographics, device_data, by = "id", 
++     name = "demographics + device data")
+
+> m_synth$log
+# A tibble: 1 × 16
+  Merge        Status ReadyForAnalysis RowsBefore RowsAfter ColsBefore ColsAfter
+  <chr>        <chr>  <lgl>                 <int>     <int>      <int>     <int>
+1 demographic… FAIL   FALSE                     6         7          3         5
+# ℹ 9 more variables: ExpectedColsAdded <int>, ActualColsAdded <int>,
+#   MatchedKeys <int>, LeftUniqueKeys <int>, MatchRate <dbl>,
+#   DuplicateKeyGroups <int>, UnresolvedDupVars <int>, KeyHarmonization <chr>,
+#   Note <chr>
+
+> m_synth$summary
+<table class="table" style="width: auto !important; margin-left: auto; margin-right: auto;">
+<caption>demographics + device data</caption>
+ <thead>
+  <tr>
+   <th style="text-align:left;"> Metric </th>
+   <th style="text-align:left;"> Value </th>
+  </tr>
+ </thead>
+<tbody>
+  <tr>
+   <td style="text-align:left;font-weight: bold;"> Status </td>
+   <td style="text-align:left;font-weight: bold;"> &lt;span style=" font-weight: bold;    color: white !important;border-radius: 4px; padding-right: 4px; padding-left: 4px; background-color: rgba(198, 40, 40, 255) !important;" &gt;FAIL&lt;/span&gt; </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Rows (before -&gt; after) </td>
+   <td style="text-align:left;"> 6 -&gt; 7 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Columns (before -&gt; after) </td>
+   <td style="text-align:left;"> 3 -&gt; 5 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Columns added (expected vs actual) </td>
+   <td style="text-align:left;"> expected +2; actual +2 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Keys matched </td>
+   <td style="text-align:left;"> 3 / 6 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Match rate </td>
+   <td style="text-align:left;"> 50% </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Duplicate key groups </td>
+   <td style="text-align:left;"> 2 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Key harmonization </td>
+   <td style="text-align:left;"> id: integer / numeric -&gt; numeric </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Note </td>
+   <td style="text-align:left;"> Rows changed after merge. Review for row multiplication or filtering. </td>
+  </tr>
+</tbody>
+</table>
+> merge_detail(m_synth)
+
+
+Table: demographics + device data: validation checks
+
+|Check                          | Count|Status  |Details                                                                                            |
+|:------------------------------|-----:|:-------|:--------------------------------------------------------------------------------------------------|
+|Key Types                      | 0.000|PASS    |Key storage classes match across datasets.                                                         |
+|Missing Keys                   | 0.000|PASS    |No missing key rows detected.                                                                      |
+|Duplicate Keys                 | 2.000|FAIL    |Duplicate complete key combinations were detected.                                                 |
+|Coverage                       | 4.000|WARNING |Some complete key combinations appear only in one source dataset.                                  |
+|Row Inflation                  | 1.167|WARNING |MergedData has more rows than expected. Review whether row multiplication was intentional.         |
+|Overlapping Variables          | 1.000|WARNING |Variables appear in both source datasets but were not specified as keys.                           |
+|Unresolved Duplicate Variables | 1.000|FAIL    |MergedData still contains unresolved .x/.y or _x/_y variable pairs.                                |
+|Variable Conflicts             | 4.000|WARNING |At least one duplicated variable pair contains conflicting values.                                 |
+|Suspicious Conflicts           | 1.000|WARNING |At least one duplicated variable has low agreement or mismatched classes.                          |
+|Merge Readiness                | 1.000|FAIL    |Major merge-integrity blockers detected. Review duplicate keys and unresolved duplicate variables. |
+
+
+
+Table: demographics + device data: keys only in left data (showing up to 10 of 3)
+
+|id |
+|:--|
+|3  |
+|4  |
+|6  |
+
+
+
+Table: demographics + device data: keys only in right data (showing up to 10 of 1)
+
+|id |
+|:--|
+|7  |
+
+
+
+Table: demographics + device data: overlapping non-key variables
+
+|Variable |
+|:--------|
+|sex      |
+
+
+
+Table: demographics + device data: suspicious duplicate-variable conflicts
+
+|Variable |XVariable |YVariable |LeftClass |RightClass | Agreement| Conflicts| MissingnessConflicts| BothMissing| TotalRows|
+|:--------|:---------|:---------|:---------|:----------|---------:|---------:|--------------------:|-----------:|---------:|
+|sex      |sex.x     |sex.y     |character |character  |     42.86|         4|                    3|           0|         7|
+
+
+> plots_synth <- PlotMergeValidation(m_synth$validation, 
++     Plot = "All", interactive = FALSE)
+
+> names(plots_synth)
+[1] "Checks"    "Coverage"  "JoinAudit" "Agreement" "Conflicts"
+
+> plots_synth$Checks
+
+> plots_synth$Coverage
+
+> merge_summary_table(list(m_pbc$log, m_closest$log, 
++     m_synth$log), flagged_only = TRUE)
+# A tibble: 3 × 16
+  Merge        Status ReadyForAnalysis RowsBefore RowsAfter ColsBefore ColsAfter
+  <chr>        <chr>  <lgl>                 <int>     <int>      <int>     <int>
+1 pbc baselin… FAIL   FALSE                   418      2051          5         9
+2 closest lab… FAIL   FALSE                   418       418          6        10
+3 demographic… FAIL   FALSE                     6         7          3         5
+# ℹ 9 more variables: ExpectedColsAdded <int>, ActualColsAdded <int>,
+#   MatchedKeys <int>, LeftUniqueKeys <int>, MatchRate <dbl>,
+#   DuplicateKeyGroups <int>, UnresolvedDupVars <int>, KeyHarmonization <chr>,
+#   Note <chr>
+
+> m_declared <- safe_merge(pbc_baseline, pbc_labs, by = "id", 
++     name = "pbc, declared as many-to-one", expected_relationship = "many-to-one")
+
+> m_declared$log[, c("ExpectedRelationship", "DetectedRelationship", 
++     "RelationshipMatchesExpected")]
+
   When sourcing ‘merge-qc-workflow.R’:
-Error: cannot open file '/Users/rahad/Library/CloudStorage/Dropbox/Coding/Package Development/SciDataReportR/SciDataReportR.Rcheck/SciDataReportR/R/SciDataReportR.rdb': No such file or directory
+Error: Can't subset columns that don't exist.
+✖ Columns `ExpectedRelationship`, `DetectedRelationship`, and `RelationshipMatchesExpected` don't exist.
 Execution halted

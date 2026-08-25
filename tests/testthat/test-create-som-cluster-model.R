@@ -104,7 +104,32 @@ test_that("CreateClusterModel_SOM_MClust handles a single exploratory candidate"
   expect_equal(model$ModelInfo_MClust$AHP$ahp_best_row$Classes, 2)
 })
 
-test_that("CreateClusterModel_SOM_MClust adds deterministic bootstrap stability to fit review", {
+test_that("SOM Mclust supports tidyLPA model 6", {
+  skip_if_not_installed("aweSOM")
+  skip_if_not_installed("kohonen")
+  skip_if_not_installed("mclust")
+  skip_if_not_installed("R.utils")
+  suppressPackageStartupMessages(skip_if_not_installed("tidyLPA"))
+  data("SampleData", package = "SciDataReportR")
+  data("SampleVariableTypes", package = "SciDataReportR")
+  df_Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
+
+  model <- suppressWarnings(CreateClusterModel_SOM_MClust(
+    df_Labelled,
+    c("age", "AXL", "Adiponectin", "Alpha_1_Antitrypsin"),
+    method = "finalize", final_k = 2, final_model = 6,
+    som_xdim = 4, som_ydim = 4, min_nodes_per_cluster = NULL,
+    lpa_timeout_seconds = 30, Relabel = FALSE
+  ))
+
+  expect_identical(model$ModelInfo_MClust$fit_table$Model, 6L)
+  expect_true(any(grepl(
+    "6:Varying variance, varying cov",
+    levels(model$fit_plot$data$Model), fixed = TRUE
+  )))
+})
+
+test_that("CreateClusterModel_SOM_MClust adds deterministic subsample stability to fit review", {
   skip_if_not_installed("aweSOM")
   skip_if_not_installed("kohonen")
   skip_if_not_installed("mclust")

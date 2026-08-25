@@ -26,9 +26,12 @@
 #' @param star_quantile Quantile used for placement.
 #' @param star_pad Padding above anchor.
 #' @param star_size Text size for annotation.
+#' @param p_label P-value annotation style: significance `"stars"` (default),
+#'   exact `"p_value"`, or `"both"`.
 #' @param ... Additional arguments reserved for future extensions.
 #'
-#' @return A ggplot2 object.
+#' @return A ggplot2 object. The exact test result is available from
+#'   `attr(plot, "comparison")`.
 #'
 #' @param Group \strong{Deprecated} (since 19.15.0). Use \code{group_var} instead.
 #' @param covars \strong{Deprecated} (since 19.15.0). Use \code{covariates} instead.
@@ -61,6 +64,7 @@ PlotSplitViolin <- function(data,
     star_quantile = 0.995,
     star_pad = 0.05,
     star_size = 6,
+    p_label = c("stars", "p_value", "both"),
     ...,
     Group = lifecycle::deprecated(),
     covars = lifecycle::deprecated()) {
@@ -82,6 +86,7 @@ PlotSplitViolin <- function(data,
 
   star_from  <- match.arg(star_from)
   n_position <- match.arg(n_position)
+  p_label <- match.arg(p_label)
 
   if (is.null(covars)) covars <- character(0)
 
@@ -89,7 +94,15 @@ PlotSplitViolin <- function(data,
   Group <- if (!missing(group_var)) rlang::ensym(group_var) else rlang::ensym(Group)
 
   var_nm <- rlang::as_string(Var)
-  var_safe <- paste0("`", var_nm, "`")
+
+  missing_covars <- setdiff(covars, names(data))
+  if (length(missing_covars) > 0) {
+    stop(
+      "Covariate(s) not found in data: ",
+      paste(missing_covars, collapse = ", "),
+      call. = FALSE
+    )
+  }
 
   df <- data %>%
     dplyr::select(!!Group, !!Var, dplyr::all_of(covars)) %>%
@@ -135,20 +148,87 @@ PlotSplitViolin <- function(data,
     )
   }
 
+  format_p <- function(p) {
+    if (!is.finite(p)) return("p = NA")
+    if (p < 0.001) return("p < 0.001")
+    paste0("p = ", formatC(p, digits = 3, format = "f"))
+  }
+
+  comparison <- list(
+    PValue = NA_real_,
+    Method = NA_character_,
+    Covariates = covars,
+    N = nrow(df),
+    Error = NULL
+  )
+
   if (is.null(annotation_text) && !is.null(g_right)) {
+    test_result <- tryCatch({
+      if (nonparametric) {
+        test_values <- df[[var_nm]]
+        method <- "Wilcoxon rank-sum test"
 
-    rhs <- paste(c(".Group", covars), collapse = " + ")
-    fml <- as.formula(paste0(var_safe, " ~ ", rhs))
+        if (length(covars) > 0) {
+          covariate_formula <- stats::reformulate(covars, response = var_nm)
+          covariate_fit <- stats::lm(covariate_formula, data = df)
+          test_values <- stats::residuals(covariate_fit)
+          method <- "Wilcoxon rank-sum test of covariate-adjusted residuals"
+        }
 
-    p_val <- tryCatch({
-      fit <- lm(fml, data = df)
-      as.data.frame(
-        emmeans::contrast(emmeans::emmeans(fit, ".Group"),
-                          method = "revpairwise")
-      )$p.value[1]
-    }, error = function(e) NA_real_)
+        df_Test <- data.frame(
+          TestValue = test_values,
+          Group = df$.Group
+        )
+        p_value <- stats::wilcox.test(
+          TestValue ~ Group,
+          data = df_Test,
+          exact = FALSE
+        )$p.value
+      } else {
+        model_formula <- stats::reformulate(
+          c(".Group", covars),
+          response = var_nm
+        )
+        fit <- stats::lm(model_formula, data = df)
+        p_value <- as.data.frame(
+          emmeans::contrast(
+            emmeans::emmeans(fit, ".Group"),
+            method = "revpairwise"
+          )
+        )$p.value[1]
+        method <- if (length(covars) > 0) {
+          "Covariate-adjusted linear model contrast"
+        } else {
+          "Linear model contrast"
+        }
+      }
 
-    annotation_text <- stars_from_p(p_val)
+      list(PValue = p_value, Method = method, Error = NULL)
+    }, error = function(e) {
+      list(PValue = NA_real_, Method = NA_character_, Error = conditionMessage(e))
+    })
+
+    comparison$PValue <- test_result$PValue
+    comparison$Method <- test_result$Method
+    comparison$Error <- test_result$Error
+
+    if (!is.null(comparison$Error)) {
+      warning(
+        "Could not calculate the group-comparison p-value: ",
+        comparison$Error,
+        call. = FALSE
+      )
+    }
+
+    stars <- stars_from_p(comparison$PValue)
+    formatted_p <- format_p(comparison$PValue)
+    combined_labels <- c(stars, formatted_p)
+    annotation_text <- switch(
+      p_label,
+      stars = stars,
+      p_value = formatted_p,
+      both = paste(combined_labels[nzchar(combined_labels)], collapse = "\n")
+    )
   }
 
   # ---- scaling
@@ -241,7 +321,7 @@ PlotSplitViolin <- function(data,
       )
   }
 
-  p +
+  p <- p +
     ggplot2::scale_fill_manual(values = color_palette, labels = legend_labels) +
     ggplot2::labs(x = NULL) +
     ggplot2::coord_cartesian(ylim = c(ylim_bot, ylim_top), clip = "off") +
@@ -253,4 +333,7 @@ PlotSplitViolin <- function(data,
       axis.ticks.x = ggplot2::element_blank(),
       plot.title = ggplot2::element_text(hjust = 0.5, face = "bold")
     )
+
+  attr(p, "comparison") <- comparison
+  p
 }

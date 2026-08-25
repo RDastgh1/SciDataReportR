@@ -55,6 +55,7 @@ test_that("ProjectCluster dispatches by fitted pipeline class", {
 
 test_that("numeric Mclust model IDs and preprocessing aliases are standardized", {
   skip_if_not_installed("mclust")
+  suppressPackageStartupMessages(skip_if_not_installed("tidyLPA"))
   set.seed(112)
   df_Test <- data.frame(x = c(rnorm(20), rnorm(20, 4)),
     y = c(rnorm(20), rnorm(20, 4)))
@@ -69,7 +70,7 @@ test_that("numeric Mclust model IDs and preprocessing aliases are standardized",
   expect_error(
     CreateClusterModel_MClust(df_Test, c("x", "y"), method = "finalize",
       final_k = 2, final_model = "EEI"),
-    "integer model IDs"
+    "model IDs"
   )
   expect_error(
     CreateClusterModel_KMeans(df_Test, c("x", "y"), method = "finalize",
@@ -79,6 +80,61 @@ test_that("numeric Mclust model IDs and preprocessing aliases are standardized",
   expect_silent(CreateClusterModel_KMeans(
     df_Test, c("x", "y"), method = "finalize", final_k = 2,
     ZScoreType = "None", Scaling = "None"))
+})
+
+test_that("tidyLPA mclust models fit and model 6 remains projectable", {
+  skip_if_not_installed("mclust")
+  suppressPackageStartupMessages(skip_if_not_installed("tidyLPA"))
+  set.seed(113)
+  df_Test <- data.frame(
+    x = c(rnorm(40, -2), rnorm(40, 2)),
+    y = c(rnorm(40, -2), rnorm(40, 2))
+  )
+
+  fits <- lapply(c(1L, 2L, 3L, 6L), function(model) {
+    CreateClusterModel_MClust(
+      df_Test, c("x", "y"), method = "finalize", final_k = 2,
+      final_model = model, ZScoreType = "None"
+    )
+  })
+  expect_identical(
+    vapply(fits, function(fit) fit$ModelInfo$final_model, integer(1)),
+    c(1L, 2L, 3L, 6L)
+  )
+  expect_identical(
+    vapply(fits, function(fit) fit$ModelInfo$final_model_name, character(1)),
+    c("EEI", "VVI", "EEE", "VVV")
+  )
+  expect_s3_class(fits[[4]]$ModelInfo$mclust_model, "Mclust")
+  projection <- ProjectCluster(fits[[4]], df_Test[1:8, ])
+  expect_equal(nrow(projection$ProbFit$individual), 8)
+  expect_true(all(is.finite(projection$ProbFit$individual$PosteriorMax)))
+
+  pca_fit <- CreateClusterModel_PCA_MClust(
+    df_Test, c("x", "y"), method = "finalize", final_k = 2,
+    final_model = 6, ZScoreType = "None"
+  )
+  expect_identical(pca_fit$ModelInfo$final_model, 6L)
+
+  set.seed(114)
+  df_Categorical <- as.data.frame(replicate(
+    5, factor(sample(letters[1:4], 200, replace = TRUE))
+  ))
+  mca_fit <- suppressWarnings(CreateClusterModel_MCA_MClust(
+    df_Categorical, names(df_Categorical), method = "finalize",
+    final_k = 2, final_model = 6, mca_variance_threshold = 50
+  ))
+  expect_identical(mca_fit$ModelInfo$final_model, 6L)
+
+  for (bad_model in list(4, 5, 7, NA_real_, "VVV")) {
+    expect_error(
+      CreateClusterModel_MClust(
+        df_Test, c("x", "y"), method = "finalize", final_k = 2,
+        final_model = bad_model
+      ),
+      "Models 4 and 5 require OpenMx"
+    )
+  }
 })
 
 test_that("established SOM projection aliases delegate to ProjectCluster", {
@@ -136,6 +192,13 @@ test_that("clustering defaults review the full 2:10 candidate range", {
   expect_identical(DefaultRange(CreateClusterModel_SOM_MClust, "k_range"), 2:10)
   expect_identical(DefaultRange(CreateClusterModel_HDBSCAN, "minPts_range"), 2:10)
   expect_identical(DefaultRange(CreateClusterModel_SOM_HDBSCAN, "minPts_range"), 2:10)
+  expected_models <- c(1L, 2L, 3L, 6L)
+  expect_identical(DefaultRange(CreateClusterModel_MClust, "models"), expected_models)
+  expect_identical(DefaultRange(CreateClusterModel_PCA_MClust, "models"), expected_models)
+  expect_identical(DefaultRange(CreateClusterModel_MCA_MClust, "models"), expected_models)
+  expect_equal(
+    DefaultRange(CreateClusterModel_SOM_MClust, "models"), expected_models
+  )
 })
 
 test_that("categorical enrichment identifies a defining category", {
@@ -237,7 +300,10 @@ test_that("exploratory clustering models return AHP and deterministic stability"
   expect_equal(first$Stability$replicates, second$Stability$replicates)
   expect_equal(sum(first$ModelInfo$fit_table$Recommended), 1)
   expect_true(all(c("ReproducibilityScore", "ahp_index") %in% names(first$ModelInfo$fit_table)))
-  expect_true(all(c("VI", "NMI", "FowlkesMallows") %in% names(first$Stability$replicates)))
+  expect_true(all(c("ARI", "SamplingSeed", "ModelSeed") %in%
+    names(first$Stability$replicates)))
+  expect_false(any(c("VI", "NMI", "FowlkesMallows") %in%
+    names(first$Stability$replicates)))
   expect_true(all(c("participant_inclusion", "cluster_inclusion", "coassignment") %in% names(first$Stability)))
   expect_true(all(vapply(first$Stability$coassignment, function(x) {
     identical(x$status, "available")
@@ -279,7 +345,7 @@ test_that("HDBSCAN stability reports noise recovery and handles candidate grids"
   expect_equal(sum(model$ModelInfo$fit_table$Recommended), 1)
 })
 
-test_that("every non-SOM pipeline exposes full-pipeline bootstrap stability", {
+test_that("every non-SOM pipeline exposes in-sample refit stability", {
   skip_if_not_installed("mclust")
   skip_if_not_installed("cluster")
   skip_if_not_installed("dbscan")
@@ -321,7 +387,10 @@ test_that("every non-SOM pipeline exposes full-pipeline bootstrap stability", {
   # Every method carries the same structural blocks, populated with figures
   # appropriate to that method rather than a shared lowest common denominator.
   for (model in models) {
-    expect_identical(model$Stability$settings$refit_scope, "full_pipeline")
+    expect_identical(
+      model$Stability$settings$refit_scope, "full_pipeline_in_sample")
+    expect_identical(
+      model$Stability$settings$comparison_scope, "sampled_participants")
     expect_equal(nrow(model$Stability$replicates), 1)
     expect_null(model$plots)
     expect_s3_class(model$fit_plot, "ggplot")
@@ -431,10 +500,13 @@ test_that("SOM finalized models can report full-pipeline stability", {
     stability_resamples = 1, Relabel = FALSE,
     min_nodes_per_cluster = NULL, lpa_timeout_seconds = NULL)
   expect_equal(nrow(model$Stability$summary), 1)
-  expect_identical(model$Stability$settings$refit_scope, "full_pipeline")
+  expect_identical(
+    model$Stability$settings$refit_scope, "full_pipeline_in_sample")
   expect_identical(model$Stability$settings$resample_type,
     "subsample_without_replacement")
   expect_equal(model$Stability$settings$resample_fraction, 0.80)
+  expect_identical(model$Stability$settings$som_grid,
+    list(xdim = 4, ydim = 4, policy = "fixed_to_reference_fit"))
   expect_identical(model$method, "finalize")
   # The SOM pipeline keeps its own figures where they were; it gains stability
   # figures, and never a flat plots list.
@@ -514,11 +586,13 @@ test_that("SOM plus HDBSCAN uses the same unique-participant stability contract"
   model <- CreateClusterModel_SOM_HDBSCAN(
     df_Test, paste0("Var", 1:6), method = "finalize",
     final_minPts = 2, final_cluster_selection_epsilon = 0,
-    som_xdim = 4, som_ydim = 4, min_nodes_per_cluster = NULL,
+    min_nodes_per_cluster = NULL,
     lpa_timeout_seconds = NULL, stability_resamples = 1)
   expect_identical(model$Stability$settings$resample_type,
     "subsample_without_replacement")
   expect_equal(model$Stability$settings$resample_fraction, 0.80)
+  expect_identical(model$Stability$settings$som_grid,
+    list(xdim = 5, ydim = 5, policy = "fixed_to_reference_fit"))
   expect_true(all(c("MinPts", "Epsilon") %in% names(model$Stability$summary)))
 })
 
@@ -528,9 +602,9 @@ test_that("stability validation and failed resamples are explicit", {
       data.frame(x = 1:5, y = 6:10), c("x", "y"),
       stability_resamples = -1),
     "non-negative integer")
-  failed <- .ClusterBootstrapStability(
+  failed <- .ClusterSubsampleStability(
     data.frame(x = 1:6), reference = rep(1:2, each = 3),
-    fit_project = function(boot, original) stop("expected failure"),
+    fit_subset = function(boot, model_seed) stop("expected failure"),
     resamples = 2, seed = 1)
   expect_equal(nrow(failed$failures), 2)
   expect_true(all(failed$replicates$Status == "failed"))
@@ -542,15 +616,53 @@ test_that("stability validation and failed resamples are explicit", {
 
 test_that("primary stability refits use unique 80 percent participant subsamples", {
   observed_ids <- integer()
-  result <- .ClusterBootstrapStability(
+  result <- .ClusterSubsampleStability(
     data.frame(id = 1:10), reference = rep(1:2, each = 5),
-    fit_project = function(boot, original) {
+    fit_subset = function(boot, model_seed) {
       observed_ids <<- boot$id
-      rep(1:2, each = 5)
+      dplyr::tibble(.row_id = boot$.row_id, Cluster = rep(1:2, each = 4))
     }, resamples = 1, seed = 11)
   expect_equal(length(observed_ids), 8)
   expect_equal(length(unique(observed_ids)), 8)
   expect_equal(result$settings$resample_fraction, 0.80)
+  expect_identical(result$settings$comparison_scope, "sampled_participants")
+})
+
+test_that("in-sample stability is label invariant and varies model seeds", {
+  df_Test <- data.frame(x = seq_len(20))
+  reference <- rep(c(1L, 2L), each = 10)
+  first <- .ClusterSubsampleStability(
+    df_Test, reference,
+    fit_subset = function(boot, model_seed) {
+      dplyr::tibble(
+        .row_id = boot$.row_id,
+        Cluster = ifelse(boot$x <= 10, 20L, 10L))
+    },
+    resamples = 3, seed = 71)
+  second <- .ClusterSubsampleStability(
+    df_Test, reference,
+    fit_subset = function(boot, model_seed) {
+      dplyr::tibble(
+        .row_id = boot$.row_id,
+        Cluster = ifelse(boot$x <= 10, 20L, 10L))
+    },
+    resamples = 3, seed = 71)
+
+  expect_true(all(first$replicates$ARI == 1))
+  expect_true(all(first$cluster_recovery$Jaccard == 1))
+  expect_equal(first$summary$StabilityJaccard_Min, 1)
+  expect_equal(length(unique(first$replicates$ModelSeed)), 3)
+  expect_equal(first$replicates, second$replicates)
+})
+
+test_that("HDBSCAN noise contributes to ARI but not phenotype Jaccard", {
+  skip_if_not_installed("mclust")
+  reference <- c(0L, 0L, 1L, 1L, 2L, 2L)
+  refit <- c(0L, 1L, 1L, 1L, 2L, 2L)
+  recovery <- .ClusterJaccard(reference, refit, noise_label = 0L)
+
+  expect_false(0L %in% recovery$Cluster)
+  expect_true(is.finite(mclust::adjustedRandIndex(reference, refit)))
 })
 
 test_that("all-noise HDBSCAN candidates remain projectable", {
@@ -574,13 +686,59 @@ test_that("final clustering outputs use clean canonical fields", {
     df_Test, paste0("Var", 1:4), method = "finalize", final_k = 2,
     final_model = 1, ClusterVariableName = "Phenotype")
   expect_identical(nrow(model$DataWithClusters), nrow(df_Test))
-  expect_identical(names(model$DataWithClusters), c(names(df_Test), "Phenotype"))
+  expect_identical(names(model$DataWithClusters), c(names(df_Test), ".row_id", "Phenotype"))
   expect_true(is.na(model$DataWithClusters$Phenotype[[3]]))
   expect_false(any(c("df_with_clusters", "ClusterName", "complete_rows",
     "CandidateAudit", "ModelInfo_Mclust") %in% names(model)))
   expect_identical(model$ClusterVariableName, "Phenotype")
   expect_true("ModelInfo_MClust" %in% names(model))
   expect_false(".scidr_rowid" %in% names(model$ProbFit$individual))
+})
+
+test_that("clustering row identifiers are labeled, validated, and merge safely", {
+  set.seed(93421)
+  df_Test <- data.frame(
+    ParticipantID = paste0("P", seq_len(40)),
+    x = stats::rnorm(40), y = stats::rnorm(40))
+  df_Test$x[[3]] <- NA_real_
+
+  model <- CreateClusterModel_KMeans(
+    df_Test, c("x", "y"), method = "finalize", final_k = 2,
+    stability_resamples = 1)
+
+  expect_identical(as.vector(model$DataWithClusters$.row_id), seq_len(nrow(df_Test)))
+  expect_identical(
+    model$ProbFit$individual$.row_id, model$DataWithClusters$.row_id)
+  expect_identical(attr(model$DataWithClusters$.row_id, "label"), "Row ID")
+  expect_identical(attr(model$ProbFit$individual$.row_id, "label"), "Row ID")
+  expect_false(".scidr_rowid" %in% names(model$DataWithClusters))
+  expect_false(".row_id" %in% names(model$ModelInfo$fit_table))
+  expect_identical(
+    nrow(dplyr::left_join(
+      model$DataWithClusters,
+      model$ProbFit$individual,
+      by = ".row_id")),
+    nrow(df_Test))
+  expect_true(".row_id" %in% names(model$Stability$participant_inclusion))
+  expect_true(".row_id" %in% names(model$Stability$coassignment))
+
+  df_Keyed <- dplyr::mutate(df_Test, .row_id = seq(101L, 140L))
+  keyed <- CreateClusterModel_KMeans(
+    df_Keyed, c("x", "y"), method = "finalize", final_k = 2)
+  expect_identical(
+    as.vector(keyed$DataWithClusters$.row_id), as.vector(df_Keyed$.row_id))
+
+  df_Duplicate <- dplyr::mutate(df_Test, .row_id = 1L)
+  expect_error(
+    CreateClusterModel_KMeans(
+      df_Duplicate, c("x", "y"), method = "finalize", final_k = 2),
+    "nonmissing and unique")
+  df_Missing <- dplyr::mutate(df_Test, .row_id = seq_len(nrow(df_Test)))
+  df_Missing$.row_id[[2]] <- NA_integer_
+  expect_error(
+    CreateClusterModel_KMeans(
+      df_Missing, c("x", "y"), method = "finalize", final_k = 2),
+    "nonmissing and unique")
 })
 
 test_that("constructors reject explicitly supplied settings from the other lifecycle", {

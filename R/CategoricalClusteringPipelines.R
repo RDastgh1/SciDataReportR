@@ -75,7 +75,7 @@ CreateClusterModel_LatentClass <- function(data, variables = NULL,
   if (!is.data.frame(data)) stop("data must be a data frame.")
   if (is.null(variables)) variables <- names(data)[vapply(data, function(x) is.factor(x) || is.character(x) || is.logical(x) || is.ordered(x), logical(1))]
   if (!length(variables) || length(setdiff(variables, names(data)))) stop("variables must be present categorical columns.")
-  df_scidr <- data
+  df_scidr <- .AddClusterRowID(data)
   training <- df_scidr[variables]
   levels_used <- lapply(training, function(x) levels(factor(x)))
   training[] <- Map(function(x, lev) as.integer(factor(x, levels = lev)), training, levels_used)
@@ -117,10 +117,11 @@ CreateClusterModel_LatentClass <- function(data, variables = NULL,
   if (stability_resamples > 0L) {
     stabilities <- lapply(good, function(i) {
       reference <- rep(NA_integer_, nrow(df_scidr)); reference[complete] <- fits[[i]]$predclass
-      .ClusterBootstrapStability(df_scidr, reference, function(boot, original) {
+      .ClusterSubsampleStability(df_scidr, reference, function(boot, model_seed) {
         fitted <- CreateClusterModel_LatentClass(boot, variables, method = "finalize",
-          final_k = ks[[i]], nrep = nrep, seed = seed, stability_resamples = 0L)
-        ProjectCluster(fitted, original)$ProbFit$individual$Cluster
+          final_k = ks[[i]], nrep = nrep, seed = model_seed, stability_resamples = 0L)
+        dplyr::select(
+          fitted$ProbFit$individual, dplyr::all_of(c(".row_id", "Cluster")))
       }, stability_resamples, stability_seed + i, list(Classes = ks[[i]]),
       progress = stability_progress, preserve_levels = variables)
     })
@@ -244,11 +245,12 @@ CreateClusterModel_LatentClass <- function(data, variables = NULL,
 #' @export
 ProjectCluster.Pipeline_LatentClass <- function(object, new_df, ClusterVariableName = object$ClusterVariableName, ...) {
   vars <- object$vars_used; if (length(setdiff(vars, names(new_df)))) stop("new_df is missing required clustering variables.")
+  new_df <- .AddClusterRowID(new_df, "new_df")
   out_of_support <- dplyr::bind_rows(lapply(vars, function(variable) {
     values <- as.character(new_df[[variable]])
     bad <- !is.na(values) & !values %in% object$Preprocessing$levels[[variable]]
     if (!any(bad)) return(dplyr::tibble())
-    dplyr::tibble(RowID = which(bad), Variable = variable, Value = values[bad],
+    dplyr::tibble(.row_id = new_df$.row_id[bad], Variable = variable, Value = values[bad],
       Issue = "category absent from training")
   }))
   prep <- list(data = new_df, complete_rows = stats::complete.cases(new_df[vars]), variables = vars)
@@ -338,7 +340,7 @@ ProjectCluster.Pipeline_LatentClass <- function(object, new_df, ClusterVariableN
 #' @export
 CreateClusterModel_MCA_MClust <- function(data, variables,
     method = c("exploratory", "finalize"), k_range = 2:10,
-    models = c(1L, 2L, 3L), final_k = NULL,
+    models = c(1L, 2L, 3L, 6L), final_k = NULL,
     final_model = NULL, ClusterVariableName = "Cluster", seed = 93421L,
     mca_variance_threshold = 75, stability_resamples = 0L,
     stability_seed = seed + 1L, stability_progress = FALSE) {
@@ -387,13 +389,14 @@ CreateClusterModel_MCA_MClust <- function(data, variables,
         mca_variance_threshold = mca_variance_threshold,
         stability_resamples = 0L)
       reference <- reference_fit$ProbFit$individual$Cluster
-      .ClusterBootstrapStability(data, reference, function(boot, original) {
+      .ClusterSubsampleStability(data, reference, function(boot, model_seed) {
         fitted <- CreateClusterModel_MCA_MClust(
           boot, variables, method = "finalize", final_k = candidate_k,
           final_model = candidate_model, ClusterVariableName = ClusterVariableName,
-          seed = seed, mca_variance_threshold = mca_variance_threshold,
+          seed = model_seed, mca_variance_threshold = mca_variance_threshold,
           stability_resamples = 0L)
-        ProjectCluster(fitted, original)$ProbFit$individual$Cluster
+        dplyr::select(
+          fitted$ProbFit$individual, dplyr::all_of(c(".row_id", "Cluster")))
       }, stability_resamples, stability_seed + i,
       list(Model = candidate_model, Classes = candidate_k),
       progress = stability_progress, preserve_levels = variables)
@@ -418,7 +421,7 @@ CreateClusterModel_MCA_MClust <- function(data, variables,
   model$ModelInfo$AHP <- review$AHP
   model$Stability <- Stability
   model$fit_plot <- PlotClusterFitReview(review$fit_table)
-  df_scidr <- data
+  df_scidr <- .AddClusterRowID(data)
   model$DataWithClusters <- df_scidr
   model$DataWithClusters[[ClusterVariableName]] <- model$ProbFit$individual$Cluster
   # The inner mixture model built its structure figures in MCA score space,
@@ -483,7 +486,7 @@ ProjectCluster.Pipeline_MCA_MClust <- function(object, new_df, ClusterVariableNa
   if (length(setdiff(vars, names(new_df)))) {
     stop("new_df is missing required clustering variables.")
   }
-  df_scidr <- new_df
+  df_scidr <- .AddClusterRowID(new_df, "new_df")
   reference_levels <- lapply(
     object$Preprocessing$MCAObject$mcaresults$call$X[vars], levels)
   for (variable in vars) {

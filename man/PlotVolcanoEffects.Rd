@@ -15,11 +15,12 @@ PlotVolcanoEffects(
   Alpha = 0.05,
   Format = c("tiered", "classic", "fdr_only", "directional", "effect_gradient",
     "minimal", "neon"),
-  LabelMode = c("none", "top_n", "significant", "fdr", "extreme"),
+  LabelMode = c("none", "top_n", "raw", "significant", "fdr", "extreme"),
   TopN = 10,
   Relabel = TRUE,
   codebook = NULL,
   InteractiveLabels = TRUE,
+  ColorBy = NULL,
   Data = lifecycle::deprecated(),
   xVars = lifecycle::deprecated(),
   yVar = lifecycle::deprecated(),
@@ -55,7 +56,10 @@ scaled predictor and scaled outcome.}
 \code{"directional"}, \code{"effect_gradient"}, \code{"minimal"}, or \code{"neon"}.}
 
 \item{LabelMode}{Labeling mode. One of \code{"none"}, \code{"top_n"},
-\code{"significant"}, \code{"fdr"}, or \code{"extreme"}.}
+\code{"raw"}, \code{"significant"}, \code{"fdr"}, or \code{"extreme"}. \code{"raw"} labels
+variables with \code{PValue < Alpha}; \code{"significant"} is retained as an alias
+for \code{"raw"}. \code{"fdr"} labels variables with \code{FDR < Alpha}. The default is
+\code{"none"}.}
 
 \item{TopN}{Number of variables to label when \code{LabelMode} is \code{"top_n"} or
 \code{"extreme"}. Default is \code{10}.}
@@ -69,6 +73,13 @@ label attributes. Default is \code{TRUE}.}
 
 \item{InteractiveLabels}{Logical. If \code{TRUE}, a \code{text} aesthetic is added for
 compatibility with \code{plotly::ggplotly(tooltip = "text")}. Default is \code{TRUE}.}
+
+\item{ColorBy}{Optional category mapping used to color points in both
+\code{RawPPlot} and \code{FDRPlot}. Supply either a data frame with \code{Variable} and
+\code{Category} columns or a named atomic vector whose names are predictor
+variable names and whose values are categories. Tested predictors without
+a mapping are shown as \code{"Unmapped"} in grey. When \code{NULL} (the default),
+the existing significance-based \code{Format} colors are used unchanged.}
 
 \item{Data}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
 
@@ -148,4 +159,23 @@ cat_res <- PlotVolcanoEffects(
 # Raw and FDR-adjusted categorical-outcome volcano plots
 cat_res$RawPPlot
 cat_res$FDRPlot
+
+# Color analytes by categories supplied in a data frame
+category_df <- data.frame(
+  Variable = predictors,
+  Category = rep(c("Inflammatory", "Metabolic"), length.out = length(predictors))
+)
+PlotVolcanoEffects(
+  Labelled, predictors, "AXL",
+  ColorBy = category_df,
+  LabelMode = "raw"
+)$RawPPlot
+
+# A named vector is also accepted; use FDR-adjusted labels
+category_vector <- stats::setNames(category_df$Category, category_df$Variable)
+PlotVolcanoEffects(
+  Labelled, predictors, "AXL",
+  ColorBy = category_vector,
+  LabelMode = "fdr"
+)$FDRPlot
 }

@@ -26,6 +26,9 @@ The following objects are masked from ‘package:base’:
 
 > df_Revalued <- RevalueData(df_Raw, VariableTypes)$RevaluedData
 
+> tbl_Categorical <- MakeComparisonTable(data = df_Revalued, 
++     group_var = "Group", variables = "SymptomSeverity", TreatOrdinalAs = "Categorical" .... [TRUNCATED] 
+
   When sourcing ‘OrdinalVariables.R’:
-Error: cannot open file '/Users/rahad/Library/CloudStorage/Dropbox/Coding/Package Development/SciDataReportR/SciDataReportR.Rcheck/SciDataReportR/R/SciDataReportR.rdb': No such file or directory
+Error: Variable(s) not found: Categorical
 Execution halted

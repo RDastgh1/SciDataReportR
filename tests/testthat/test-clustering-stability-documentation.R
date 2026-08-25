@@ -19,9 +19,10 @@ test_that("every finalizable clustering reference documents Stability field by f
   fields <- c(
     "Stability output", "coassignment_limit", "noise_policy", "refit_scope",
     "resample_type", "resample_fraction", "subsample_without_replacement",
-    "FowlkesMallows", "StabilityARI_Mean", "StabilityJaccard_Mean",
+    "comparison_scope", "SamplingSeed", "ModelSeed", "StabilityARI_Mean",
+    "StabilityJaccard_Mean",
     "ReproducibilityScore", "participant_inclusion", "cluster_inclusion",
-    "row_ids", "Hubert and Arabie", "Monti et al."
+    ".row_id", "Hubert and Arabie", "Monti et al."
   )
 
   for (page in pages) {
@@ -40,11 +41,11 @@ test_that("SOM plus Mclust reference documents every returned stability field", 
   text <- paste(readLines(path, warn = FALSE), collapse = "\n")
   fields <- c(
     "resamples", "seed", "refit_scope", "coassignment_limit", "noise_policy",
-    "Model", "Classes", "Replicate", "Status", "ARI", "VI", "NMI",
-    "FowlkesMallows", "Error", "Cluster", "Jaccard", "StabilitySuccessRate",
-    "StabilityARI_P05", "StabilityJaccard_Min", "failures", "RowIndex",
+    "Model", "Classes", "Replicate", "SamplingSeed", "ModelSeed", "Status",
+    "ARI", "Error", "Cluster", "Jaccard", "StabilitySuccessRate",
+    "StabilityARI_P05", "StabilityJaccard_Min", "failures", ".row_id",
     "SuccessfulRefits", "InclusionProbability", "MeanInclusion", "P05Inclusion",
-    "MinInclusion", "coassignment", "matrix", "row_ids", "cluster_recovery",
+    "MinInclusion", "coassignment", "matrix", ".row_id", "cluster_recovery",
     "partition_metrics", "cluster_inclusion"
   )
   for (field in fields) {

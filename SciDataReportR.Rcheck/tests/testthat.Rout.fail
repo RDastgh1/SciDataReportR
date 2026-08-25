@@ -19,8 +19,105 @@ Type 'q()' to quit R.
 > library(SciDataReportR)
 > 
 > test_check("SciDataReportR")
-Saving _problems/test-clustering-pipelines-54.R
-Saving _problems/test-clustering-pipelines-80.R
-Saving _problems/test-clustering-pipelines-81.R
-Saving _problems/test-clustering-pipelines-75.R
-Saving _problems/test-clustering-pipelines-93.R
+Disease Cohort: treating "Disease" as the positive outcome level.
+Outcome: treating "Yes" as the positive outcome level.
+Outcome: treating "Yes" as the positive outcome level.
+Outcome: treating "Yes" as the positive outcome level.
+Outcome: treating "Yes" as the positive outcome level.
+Outcome: treating "Impaired" as the positive outcome level.
+Joining with `by = join_by(X, Y)`
+Joining with `by = join_by(X, Y)`
+Joining with `by = join_by(X, Y)`
+Joining with `by = join_by(X, Y)`
+Joining with `by = join_by(X, Y)`
+Joining with `by = join_by(X, Y)`
+Joining with `by = join_by(X, Y)`
+Joining with `by = join_by(X, Y)`
+Joining with `by = join_by(X, Y)`
+Joining with `by = join_by(X, Y)`
+Saving _problems/test-make-comparison-table-adjusted-pvalues-34.R
+Saving _problems/test-make-comparison-table-adjusted-pvalues-35.R
+Saving _problems/test-make-comparison-table-adjusted-pvalues-36.R
+Saving _problems/test-make-comparison-table-adjusted-pvalues-66.R
+Saving _problems/test-make-comparison-table-adjusted-pvalues-67.R
+
+
+Table: Messy merge: validation checks
+
+|Check                          | Count|Status  |Details                                                                                                    |
+|:------------------------------|-----:|:-------|:----------------------------------------------------------------------------------------------------------|
+|Key Types                      |   0.0|PASS    |Key storage classes match across datasets.                                                                 |
+|Missing Keys                   |   0.0|PASS    |No missing key rows detected.                                                                              |
+|Expected Relationship          |   2.0|FAIL    |Detected relationship is one-to-many, but expected_relationship = 'one-to-one'. Duplicate key blockers: 2. |
+|Duplicate Keys                 |   2.0|FAIL    |Duplicate complete key combinations violate the expected relationship.                                     |
+|Coverage                       |   4.0|WARNING |Some complete key combinations appear only in one source dataset.                                          |
+|Row Count                      |   1.0|FAIL    |MergedData row count changed even though the expected relationship should preserve left-side row count.    |
+|Row Inflation                  |   1.2|WARNING |MergedData has more rows than expected. Review whether row multiplication was intentional.                 |
+|Overlapping Variables          |   1.0|WARNING |Variables appear in both source datasets but were not specified as keys.                                   |
+|Unresolved Duplicate Variables |   1.0|FAIL    |MergedData still contains unresolved .x/.y or _x/_y variable pairs.                                        |
+|Variable Conflicts             |   3.0|WARNING |At least one duplicated variable pair contains conflicting values.                                         |
+|Suspicious Conflicts           |   1.0|WARNING |At least one duplicated variable has low agreement or mismatched classes.                                  |
+|Merge Readiness                |   1.0|FAIL    |Major merge-integrity blockers detected. Review failed checks.                                             |
+
+
+
+Table: Messy merge: keys only in left data (showing up to 10 of 3)
+
+|id |
+|:--|
+|3  |
+|4  |
+|5  |
+
+
+
+Table: Messy merge: keys only in right data (showing up to 10 of 1)
+
+|id |
+|:--|
+|6  |
+
+
+
+Table: Messy merge: overlapping non-key variables
+
+|Variable |
+|:--------|
+|sex      |
+
+
+
+Table: Messy merge: suspicious duplicate-variable conflicts
+
+|Variable |XVariable |YVariable |LeftClass |RightClass | Agreement| Conflicts| MissingnessConflicts| BothMissing| TotalRows|
+|:--------|:---------|:---------|:---------|:----------|---------:|---------:|--------------------:|-----------:|---------:|
+|sex      |sex.x     |sex.y     |character |character  |        50|         3|                    3|           0|         6|
+
+Waiting for profiling to be done...
+Waiting for profiling to be done...
+Waiting for profiling to be done...
+Waiting for profiling to be done...
+Waiting for profiling to be done...
+Waiting for profiling to be done...
+Waiting for profiling to be done...
+Waiting for profiling to be done...
+Waiting for profiling to be done...
+Error in `test_dir()`:
+! `path` does not exist.
+Backtrace:
+     ▆
+  1. └─testthat::test_check("SciDataReportR")
+  2.   └─testthat::test_dir("testthat", package = package, reporter = reporter, ..., load_package = "installed")
+  3.     └─testthat:::test_files(...)
+  4.       └─testthat:::test_files_serial(...)
+  5.         ├─testthat::with_reporter(...)
+  6.         │ └─base::tryCatch(...)
+  7.         │   └─base (local) tryCatchList(expr, classes, parentenv, handlers)
+  8.         │     └─base (local) tryCatchOne(expr, names, parentenv, handlers[[1L]])
+  9.         │       └─base (local) doTryCatch(return(expr), name, parentenv, handler)
+ 10.         └─base::lapply(...)
+ 11.           └─testthat (local) FUN(X[[i]], ...)
+ 12.             └─testthat::source_file(...)
+ 13.               └─cli::cli_abort("{.arg path} does not exist.", call = error_call)
+ 14.                 └─rlang::abort(...)
+Execution halted

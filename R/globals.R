@@ -193,7 +193,7 @@ utils::globalVariables(c(
   "RightType",
   "RightValue",
   "RightValueEscaped",
-  "RowID",
+  "RowID", ".row_id",
   "SOM_Distance",
   "SegmentClass",
   "Sig",

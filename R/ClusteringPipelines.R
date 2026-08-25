@@ -1,3 +1,16 @@
+.AddClusterRowID <- function(data, data_name = "data") {
+  if (!is.data.frame(data)) stop(data_name, " must be a data frame.")
+  if (".row_id" %in% names(data)) {
+    if (anyNA(data$.row_id) || anyDuplicated(data$.row_id)) {
+      stop(data_name, "$.row_id must be nonmissing and unique for merge-safe clustering outputs.")
+    }
+  } else {
+    data$.row_id <- seq_len(nrow(data))
+  }
+  attr(data$.row_id, "label") <- "Row ID"
+  data
+}
+
 #' Reusable numeric clustering models
 #'
 #' @description Fit projectable Mclust or K-means models. These functions keep
@@ -9,7 +22,7 @@
   if (!is.character(variables) || !length(variables)) stop("variables must be a non-empty character vector.")
   if (length(setdiff(variables, names(data)))) stop("data is missing required clustering variables.")
   if (!all(vapply(data[variables], is.numeric, logical(1)))) stop("All clustering variables must be numeric.")
-  df_scidr <- data
+  df_scidr <- .AddClusterRowID(data)
   if (Scaling == "None" || Scaling == "PreZScored") {
     X <- as.matrix(df_scidr[variables])
     z_obj <- NULL
@@ -44,14 +57,30 @@
   if (is.null(ZScoreType)) Scaling else ZScoreType
 }
 
-.MclustModelNames <- c(`1` = "EEI", `2` = "VVI", `3` = "EEE")
+.MclustModelNames <- c(`1` = "EEI", `2` = "VVI", `3` = "EEE", `6` = "VVV")
 
 .ResolveMclustModels <- function(models, argument = "models") {
   if (!is.numeric(models) || !length(models) || anyNA(models) ||
-      any(models != as.integer(models)) || any(!as.integer(models) %in% 1:3)) {
-    stop(argument, " must contain integer model IDs 1, 2, and/or 3.")
+      any(models != as.integer(models)) ||
+      any(!as.integer(models) %in% as.integer(names(.MclustModelNames)))) {
+    stop(
+      argument, " must contain tidyLPA mclust model IDs 1, 2, 3, and/or 6. ",
+      "Models 4 and 5 require OpenMx and are intentionally unsupported."
+    )
   }
   as.integer(models)
+}
+
+.FitTidyLPAMclust <- function(X, k, model, control = NULL) {
+  model <- .ResolveMclustModels(model, "model")
+  args <- list(
+    df = as.data.frame(X),
+    n_profiles = as.integer(k),
+    models = model,
+    package = "mclust"
+  )
+  if (!is.null(control)) args$control <- control
+  suppressMessages(do.call(tidyLPA::estimate_profiles, args))
 }
 
 .ProjectClusterNumeric <- function(object, new_df) {
@@ -60,7 +89,7 @@
   if (length(setdiff(vars, names(new_df)))) {
     stop("new_df is missing required clustering variable(s): ", paste(setdiff(vars, names(new_df)), collapse = ", "))
   }
-  df_scidr <- new_df
+  df_scidr <- .AddClusterRowID(new_df, "new_df")
   Scaling <- object$Preprocessing$Scaling
   if (Scaling == "None" || Scaling == "PreZScored") {
     X <- as.matrix(df_scidr[vars])
@@ -75,11 +104,13 @@
        variables = vars)
 }
 
-.ClusterJaccard <- function(reference, resampled) {
+.ClusterJaccard <- function(reference, resampled, noise_label = NULL) {
   clusters <- sort(unique(reference[!is.na(reference)]))
+  if (!is.null(noise_label)) clusters <- setdiff(clusters, noise_label)
   dplyr::bind_rows(lapply(clusters, function(this_cluster) {
     a <- reference == this_cluster
     candidates <- unique(resampled[!is.na(resampled)])
+    if (!is.null(noise_label)) candidates <- setdiff(candidates, noise_label)
     j <- vapply(candidates, function(candidate) {
       b <- resampled == candidate
       sum(a & b, na.rm = TRUE) / sum(a | b, na.rm = TRUE)
@@ -138,13 +169,17 @@
 }
 
 .ClusterStabilityDiagnostics <- function(reference, assignments, valid_reference,
-    noise_label = NULL, coassignment_limit = 2000L) {
+    row_id = seq_along(reference), noise_label = NULL, coassignment_limit = 2000L) {
+  LabelRowID <- function(x) {
+    attr(x, "label") <- "Row ID"
+    x
+  }
   successful <- Filter(Negate(is.null), assignments)
   n_success <- length(successful)
   empty <- list(
     participant_inclusion = dplyr::tibble(), cluster_inclusion = dplyr::tibble(),
     coassignment = list(status = "not_available", reason = "No successful refits.",
-      matrix = NULL, row_ids = integer()))
+      matrix = NULL, .row_id = LabelRowID(row_id[integer()])))
   if (!n_success || !length(valid_reference)) return(empty)
   reference_complete <- reference[valid_reference]
   clusters <- sort(unique(reference_complete[!is.na(reference_complete)]))
@@ -160,11 +195,12 @@
       as.integer(result_complete[eligible] == matched[eligible])
   }
   participant_inclusion <- dplyr::tibble(
-    RowIndex = valid_reference,
+    .row_id = row_id[valid_reference],
     Cluster = reference_complete,
     SuccessfulRefits = inclusion_denominator,
     InclusionProbability = ifelse(inclusion_denominator > 0,
       inclusion_count / inclusion_denominator, NA_real_))
+  attr(participant_inclusion$.row_id, "label") <- "Row ID"
   if (!is.null(noise_label)) participant_inclusion <- dplyr::filter(
     participant_inclusion, .data$Cluster != noise_label)
   cluster_inclusion <- if (nrow(participant_inclusion)) participant_inclusion %>%
@@ -179,7 +215,7 @@
       cluster_inclusion = cluster_inclusion,
       coassignment = list(status = "skipped", reason = paste0(
         "Complete-case n exceeds coassignment_limit (", coassignment_limit, ")."),
-        matrix = NULL, row_ids = valid_reference)))
+        matrix = NULL, .row_id = LabelRowID(row_id[valid_reference]))))
   }
   coassignment <- matrix(0, nrow = length(valid_reference), ncol = length(valid_reference))
   denominator <- matrix(0, nrow = length(valid_reference), ncol = length(valid_reference))
@@ -194,10 +230,11 @@
   }
   coassignment <- ifelse(denominator > 0, coassignment / denominator, NA_real_)
   diag(coassignment) <- ifelse(diag(denominator) > 0, 1, NA_real_)
+  coassignment_row_id <- LabelRowID(row_id[valid_reference])
   list(participant_inclusion = participant_inclusion,
     cluster_inclusion = cluster_inclusion,
     coassignment = list(status = "available", reason = NA_character_,
-      matrix = coassignment, row_ids = valid_reference))
+      matrix = coassignment, .row_id = coassignment_row_id))
 }
 
 .ClusterMethod <- function(method) {
@@ -273,7 +310,8 @@
   settings <- stabilities[[1]]$settings
   list(
     settings = list(resamples = as.integer(resamples), seed = seed,
-      refit_scope = "full_pipeline",
+      refit_scope = settings$refit_scope,
+      comparison_scope = settings$comparison_scope,
       resample_type = settings$resample_type,
       resample_fraction = settings$resample_fraction,
       coassignment_limit = settings$coassignment_limit,
@@ -344,12 +382,11 @@
   sampled
 }
 
-.ClusterBootstrapStability <- function(data, reference, fit_project,
+.ClusterSubsampleStability <- function(data, reference, fit_subset,
     resamples = 0L, seed = 93422L, candidate = list(), noise_label = NULL,
-    progress = FALSE, preserve_levels = character(), replacement = FALSE,
-    resample_type = "subsample_without_replacement", coassignment_limit = 2000L,
-    subsample_resamples = 0L, subsample_fraction = .80,
-    prediction_resamples = 0L) {
+    progress = FALSE, preserve_levels = character(),
+    coassignment_limit = 2000L, subsample_fraction = .80) {
+  data <- .AddClusterRowID(data)
   if (!is.numeric(resamples) || length(resamples) != 1L || is.na(resamples) ||
       resamples < 0 || resamples != as.integer(resamples)) {
     stop("stability_resamples must be a single non-negative integer.")
@@ -361,45 +398,71 @@
   recovery_rows <- vector("list", resamples)
   assignments <- vector("list", resamples)
   set.seed(seed)
-  seeds <- sample.int(.Machine$integer.max, resamples)
+  sampling_seeds <- sample.int(.Machine$integer.max, resamples)
+  model_seeds <- sample.int(.Machine$integer.max, resamples)
   for (replicate in seq_len(resamples)) {
     if (isTRUE(progress)) message("Stability subsample ", replicate, "/", resamples)
-    set.seed(seeds[[replicate]])
-    sample_n <- if (replacement) length(valid_reference) else max(2L,
-      floor(length(valid_reference) * subsample_fraction))
-    sampled <- sample(valid_reference, sample_n, replace = replacement)
+    set.seed(sampling_seeds[[replicate]])
+    sample_n <- max(2L, floor(length(valid_reference) * subsample_fraction))
+    sampled <- sample(valid_reference, sample_n, replace = FALSE)
     sampled <- .PreserveResampleLevels(data, sampled, preserve_levels)
-    result <- tryCatch(fit_project(data[sampled, , drop = FALSE], data), error = function(e) e)
+    df_Subset <- data[sampled, , drop = FALSE]
+    result <- tryCatch(
+      fit_subset(df_Subset, model_seeds[[replicate]]), error = function(e) e)
     if (inherits(result, "error")) {
-      replicate_rows[[replicate]] <- dplyr::tibble(Replicate = replicate,
+      replicate_rows[[replicate]] <- dplyr::tibble(
+        Replicate = replicate, SamplingSeed = sampling_seeds[[replicate]],
+        ModelSeed = model_seeds[[replicate]],
         ARI = NA_real_, NoiseSensitivity = NA_real_, NoiseSpecificity = NA_real_,
         Status = "failed", Error = conditionMessage(result))
       next
     }
-    compare <- valid_reference[!is.na(result[valid_reference])]
-    ari <- if (length(compare) > 1L && requireNamespace("mclust", quietly = TRUE))
-      mclust::adjustedRandIndex(reference[compare], result[compare]) else NA_real_
-    partition_metrics <- .ClusterPartitionMetrics(reference[compare], result[compare])
+    if (!is.data.frame(result) ||
+        !all(c(".row_id", "Cluster") %in% names(result))) {
+      stop("fit_subset must return a data frame containing .row_id and Cluster.")
+    }
+    if (anyNA(result$.row_id) || anyDuplicated(result$.row_id)) {
+      stop("fit_subset returned missing or duplicated .row_id values.")
+    }
+    reference_subset <- dplyr::tibble(
+      .row_id = data$.row_id[sampled], ReferenceCluster = reference[sampled])
+    comparison <- dplyr::left_join(
+      reference_subset,
+      dplyr::transmute(
+        result, .row_id = .data$.row_id, RefitCluster = .data$Cluster),
+      by = ".row_id", relationship = "one-to-one")
+    compare <- !is.na(comparison$ReferenceCluster) & !is.na(comparison$RefitCluster)
+    ari <- if (sum(compare) > 1L && requireNamespace("mclust", quietly = TRUE)) {
+      mclust::adjustedRandIndex(
+        comparison$ReferenceCluster[compare], comparison$RefitCluster[compare])
+    } else NA_real_
     noise_sensitivity <- noise_specificity <- NA_real_
-    if (!is.null(noise_label) && length(compare)) {
-      truth_noise <- reference[compare] == noise_label
-      result_noise <- result[compare] == noise_label
+    if (!is.null(noise_label) && any(compare)) {
+      truth_noise <- comparison$ReferenceCluster[compare] == noise_label
+      result_noise <- comparison$RefitCluster[compare] == noise_label
       noise_sensitivity <- if (any(truth_noise)) mean(result_noise[truth_noise]) else NA_real_
       noise_specificity <- if (any(!truth_noise)) mean(!result_noise[!truth_noise]) else NA_real_
     }
-    recovery <- .ClusterJaccard(reference[compare], result[compare])
+    recovery <- .ClusterJaccard(
+      comparison$ReferenceCluster[compare], comparison$RefitCluster[compare],
+      noise_label = noise_label)
     if (nrow(recovery)) recovery_rows[[replicate]] <- dplyr::mutate(recovery, Replicate = replicate)
-    assignments[[replicate]] <- result
-    replicate_rows[[replicate]] <- dplyr::tibble(Replicate = replicate, ARI = ari,
-      VI = partition_metrics[["VI"]], NMI = partition_metrics[["NMI"]],
-      FowlkesMallows = partition_metrics[["FowlkesMallows"]],
+    assignment_full <- rep(NA_integer_, nrow(data))
+    assignment_full[match(comparison$.row_id, data$.row_id)] <- comparison$RefitCluster
+    assignments[[replicate]] <- assignment_full
+    replicate_rows[[replicate]] <- dplyr::tibble(
+      Replicate = replicate, SamplingSeed = sampling_seeds[[replicate]],
+      ModelSeed = model_seeds[[replicate]], ARI = ari,
       NoiseSensitivity = noise_sensitivity, NoiseSpecificity = noise_specificity,
       Status = "success", Error = NA_character_)
   }
   replicates <- dplyr::bind_rows(replicate_rows)
   cluster_recovery <- dplyr::bind_rows(recovery_rows)
   successful <- dplyr::filter(replicates, .data$Status == "success")
-  jaccard <- if (nrow(cluster_recovery)) cluster_recovery$Jaccard else NA_real_
+  cluster_jaccard <- if (nrow(cluster_recovery)) cluster_recovery %>%
+    dplyr::group_by(.data$Cluster) %>%
+    dplyr::summarise(MeanJaccard = mean(.data$Jaccard, na.rm = TRUE),
+      .groups = "drop") else dplyr::tibble()
   SafeMean <- function(x) if (any(is.finite(x))) mean(x, na.rm = TRUE) else NA_real_
   SafeQuantile <- function(x, probability) {
     if (any(is.finite(x))) as.numeric(stats::quantile(
@@ -409,72 +472,37 @@
     StabilitySuccessRate = mean(replicates$Status == "success"),
     StabilityARI_Mean = SafeMean(successful$ARI),
     StabilityARI_P05 = SafeQuantile(successful$ARI, .05),
-    StabilityJaccard_Mean = SafeMean(jaccard),
-    StabilityJaccard_Min = if (any(is.finite(jaccard))) min(jaccard, na.rm = TRUE) else NA_real_,
+    StabilityJaccard_Mean = if (nrow(cluster_jaccard))
+      SafeMean(cluster_jaccard$MeanJaccard) else NA_real_,
+    StabilityJaccard_Min = if (nrow(cluster_jaccard) &&
+      any(is.finite(cluster_jaccard$MeanJaccard)))
+      min(cluster_jaccard$MeanJaccard, na.rm = TRUE) else NA_real_,
     NoiseSensitivity = SafeMean(successful$NoiseSensitivity),
     NoiseSpecificity = SafeMean(successful$NoiseSpecificity))
   summary$ReproducibilityScore <- rowMeans(summary[c("StabilityARI_Mean", "StabilityJaccard_Mean")], na.rm = TRUE)
   summary$ReproducibilityScore[is.nan(summary$ReproducibilityScore)] <- NA_real_
   diagnostics <- .ClusterStabilityDiagnostics(
-    reference, assignments, valid_reference, noise_label, coassignment_limit)
+    reference, assignments, valid_reference, data$.row_id, noise_label,
+    coassignment_limit)
   for (name in names(candidate)) {
     replicates[[name]] <- candidate[[name]]
     if (nrow(cluster_recovery)) cluster_recovery[[name]] <- candidate[[name]]
     summary[[name]] <- candidate[[name]]
   }
-  prediction_strength <- NULL
-  if (prediction_resamples > 0L && length(valid_reference) >= 4L) {
-    prediction_rows <- vector("list", prediction_resamples)
-    set.seed(seed + 1000003L)
-    prediction_seeds <- sample.int(.Machine$integer.max, prediction_resamples)
-    for (replicate in seq_len(prediction_resamples)) {
-      set.seed(prediction_seeds[[replicate]])
-      train <- sample(valid_reference, floor(length(valid_reference) / 2))
-      test <- setdiff(valid_reference, train)
-      projected <- tryCatch(fit_project(data[train, , drop = FALSE], data[test, , drop = FALSE]),
-        error = function(e) e)
-      independent <- tryCatch(fit_project(data[test, , drop = FALSE], data[test, , drop = FALSE]),
-        error = function(e) e)
-      if (inherits(projected, "error") || inherits(independent, "error")) {
-        prediction_rows[[replicate]] <- dplyr::tibble(Replicate = replicate,
-          Cluster = NA_integer_, PredictionStrength = NA_real_, EvaluablePairs = 0L,
-          Status = "failed")
-        next
-      }
-      predicted_labels <- projected[!is.na(projected)]
-      independent_labels <- independent[!is.na(projected)]
-      clusters <- unique(predicted_labels)
-      if (!is.null(noise_label)) clusters <- setdiff(clusters, noise_label)
-      prediction_rows[[replicate]] <- dplyr::bind_rows(lapply(clusters, function(cluster) {
-        members <- which(predicted_labels == cluster)
-        pairs <- if (length(members) > 1L) utils::combn(members, 2) else matrix(integer(), 2, 0)
-        strength <- if (ncol(pairs)) mean(independent_labels[pairs[1, ]] == independent_labels[pairs[2, ]]) else NA_real_
-        dplyr::tibble(Replicate = replicate, Cluster = cluster,
-          PredictionStrength = strength, EvaluablePairs = ncol(pairs), Status = "success")
-      }))
-    }
-    prediction_strength <- dplyr::bind_rows(prediction_rows)
-  }
-  subsample <- if (subsample_resamples > 0L) .ClusterBootstrapStability(
-    data = data, reference = reference, fit_project = fit_project,
-    resamples = subsample_resamples, seed = seed + 2000003L, candidate = candidate,
-    noise_label = noise_label, progress = progress, preserve_levels = preserve_levels,
-    replacement = FALSE, resample_type = "subsample",
-    coassignment_limit = coassignment_limit, subsample_resamples = 0L,
-    prediction_resamples = 0L, subsample_fraction = subsample_fraction) else NULL
   list(settings = list(resamples = resamples, seed = seed,
-    refit_scope = "full_pipeline", resample_type = resample_type,
-    resample_fraction = if (isTRUE(replacement)) NA_real_ else subsample_fraction,
+    refit_scope = "full_pipeline_in_sample",
+    comparison_scope = "sampled_participants",
+    resample_type = "subsample_without_replacement",
+    resample_fraction = subsample_fraction,
     coassignment_limit = coassignment_limit, noise_policy = if (is.null(noise_label))
-      "all clusters included" else "noise excluded from inclusion and coassignment",
-    subsample_resamples = subsample_resamples, subsample_fraction = subsample_fraction,
-    prediction_resamples = prediction_resamples), replicates = replicates,
+      "all clusters included" else
+      "noise included in ARI and excluded from phenotype Jaccard"),
+    replicates = replicates,
     cluster_recovery = cluster_recovery, summary = summary,
     failures = dplyr::filter(replicates, .data$Status != "success"),
     participant_inclusion = diagnostics$participant_inclusion,
     cluster_inclusion = diagnostics$cluster_inclusion,
-    coassignment = diagnostics$coassignment, subsample = subsample,
-    prediction_strength = prediction_strength)
+    coassignment = diagnostics$coassignment)
 }
 
 .ClusterOutput <- function(prep, cluster, ClusterVariableName, individual, ModelInfo,
@@ -484,7 +512,9 @@
   df_out <- prep$data
   if (ClusterVariableName %in% names(df_out)) message("Overwriting existing column '", ClusterVariableName, "'.")
   df_out[[ClusterVariableName]] <- cluster_full
-  individual <- dplyr::mutate(individual, Cluster = cluster_full)
+  individual <- dplyr::mutate(
+    individual, .row_id = prep$data$.row_id, Cluster = cluster_full, .before = 1)
+  attr(individual$.row_id, "label") <- "Row ID"
   list(DataWithClusters = df_out, ProbFit = list(individual = individual),
        ModelInfo = ModelInfo, Stability = Stability)
 }
@@ -622,22 +652,28 @@
 }
 
 .MclustCandidate <- function(X, k, model) {
-  # mclust::Mclust evaluates mclustBIC in its caller's environment. Keeping
-  # this binding local avoids attaching an optional package at runtime.
-  mclustBIC <- mclust::mclustBIC
   model <- .ResolveMclustModels(model, "model")
   model_name <- unname(.MclustModelNames[as.character(model)])
-  fit <- tryCatch(mclust::Mclust(X, G = k, modelNames = model_name, verbose = FALSE), error = function(e) e)
-  if (inherits(fit, "error")) return(list(fit = NULL, error = conditionMessage(fit)))
+  tidy_fit <- tryCatch(
+    suppressWarnings(.FitTidyLPAMclust(X, k, model)),
+    error = function(e) e
+  )
+  if (inherits(tidy_fit, "error")) {
+    return(list(fit = NULL, error = conditionMessage(tidy_fit)))
+  }
+  profile <- if (inherits(tidy_fit, "tidyLPA") && length(tidy_fit) == 1L) {
+    tidy_fit[[1]]
+  } else NULL
+  fit <- if (is.null(profile)) NULL else profile$model
   if (is.null(fit) || is.null(fit$classification) || is.null(fit$G)) {
-    return(list(fit = NULL, error = "Mclust returned no usable classification."))
+    return(list(fit = NULL, error = "tidyLPA returned no usable mclust classification."))
   }
   entropy <- if (!is.null(fit$z)) {
     p <- pmax(fit$z, .Machine$double.eps)
     1 - (-sum(p * log(p)) / (nrow(p) * log(ncol(p))))
   } else NA_real_
   cluster_sizes <- tabulate(fit$classification, nbins = fit$G)
-  list(fit = fit, error = NA_character_, row = dplyr::tibble(
+  list(fit = fit, tidy_fit = tidy_fit, error = NA_character_, row = dplyr::tibble(
     Model = model, ModelName = model_name, Classes = as.integer(fit$G), BIC = fit$bic,
     ICL = if (is.null(fit$icl)) NA_real_ else fit$icl,
     AIC = -2 * fit$loglik + 2 * fit$df, Entropy = entropy,
@@ -659,7 +695,9 @@
 #' @param variables Variables used for clustering.
 #' @param method Either `"exploratory"` or `"finalize"`.
 #' @param k_range Candidate cluster counts in exploratory mode.
-#' @param models Numeric Mclust model IDs: `1` = EEI, `2` = VVI, `3` = EEE.
+#' @param models Numeric tidyLPA mclust model IDs: `1` = EEI, `2` = VVI,
+#'   `3` = EEE, and `6` = VVV. Models 4 and 5 require OpenMx and are not
+#'   supported by these pipelines.
 #' @param final_k,final_model Finalized cluster count and numeric model ID.
 #' @param ZScoreType Frozen numeric preprocessing. `Scaling` is a compatibility alias.
 #' @param Scaling Compatibility alias for `ZScoreType`.
@@ -712,13 +750,14 @@
 #' @export
 CreateClusterModel_MClust <- function(data, variables = NULL,
     method = c("exploratory", "finalize"), k_range = 2:10,
-    models = c(1L, 2L, 3L), final_k = NULL, final_model = NULL,
+    models = c(1L, 2L, 3L, 6L), final_k = NULL, final_model = NULL,
     ZScoreType = NULL, Scaling = NULL,
     ClusterVariableName = "Cluster", seed = 93421L, stability_resamples = 0L,
     stability_seed = seed + 1L, stability_progress = FALSE) {
   supplied <- list(k_range = !missing(k_range), models = !missing(models),
     final_k = !missing(final_k), final_model = !missing(final_model))
   if (!requireNamespace("mclust", quietly = TRUE)) stop("Package 'mclust' is required.")
+  if (!requireNamespace("tidyLPA", quietly = TRUE)) stop("Package 'tidyLPA' is required.")
   stability_resamples <- .ValidateClusterStability(
     stability_resamples, stability_seed, stability_progress)
   method <- .ClusterMethod(method)
@@ -744,11 +783,12 @@ CreateClusterModel_MClust <- function(data, variables = NULL,
     stabilities <- lapply(seq_along(good), function(i) {
       candidate <- good[[i]]; k <- candidate$row$Classes[[1]]; model <- candidate$row$Model[[1]]
       reference <- rep(NA_integer_, nrow(prep$data)); reference[prep$complete_rows] <- candidate$fit$classification
-      .ClusterBootstrapStability(prep$data, reference, function(boot, original) {
+      .ClusterSubsampleStability(prep$data, reference, function(boot, model_seed) {
         fitted <- CreateClusterModel_MClust(boot, prep$variables, method = "finalize",
-          final_k = k, final_model = model, ZScoreType = Scaling, seed = seed,
+          final_k = k, final_model = model, ZScoreType = Scaling, seed = model_seed,
           stability_resamples = 0L)
-        ProjectCluster(fitted, original)$ProbFit$individual$Cluster
+        dplyr::select(
+          fitted$ProbFit$individual, dplyr::all_of(c(".row_id", "Cluster")))
       }, stability_resamples, stability_seed + i, list(Model = model, Classes = k),
       progress = stability_progress)
     })
@@ -763,7 +803,8 @@ CreateClusterModel_MClust <- function(data, variables = NULL,
     identical(as.character(x$row$Model[[1]]), as.character(recommended$Model[[1]])) &&
       x$row$Classes[[1]] == recommended$Classes[[1]], logical(1)))[1] else
     which.max(vapply(good, function(x) x$row$BIC, numeric(1)))
-  best <- good[[best_i]]$fit
+  selected <- good[[best_i]]
+  best <- selected$fit
   probs <- best$z
   individual <- dplyr::tibble(
     PosteriorMax = rep(NA_real_, nrow(prep$data)),
@@ -779,15 +820,19 @@ CreateClusterModel_MClust <- function(data, variables = NULL,
     individual[[paste0("prob_", i)]][prep$complete_rows] <- probs[, i]
   }
   review_space <- .ClusterReviewSpace(X)
-  centers <- t(best$parameters$mean)
+  centers <- if (is.null(dim(best$parameters$mean))) {
+    matrix(best$parameters$mean, ncol = 1L)
+  } else {
+    t(best$parameters$mean)
+  }
   colnames(centers) <- prep$variables
   variable_labels <- vapply(
     prep$variables, function(v) .ClusterVariableLabel(prep$data, v), character(1))
   ModelInfo <- list(
     mclust_model = best, fit_table = fit_table, AHP = review$AHP,
     ReviewSpace = review_space, centers = centers,
-    final_k = best$G, final_model = as.integer(names(.MclustModelNames)[.MclustModelNames == best$modelName]),
-    final_model_name = best$modelName)
+    final_k = best$G, final_model = selected$row$Model[[1]],
+    final_model_name = selected$row$ModelName[[1]])
   base <- .ClusterOutput(prep, best$classification, ClusterVariableName, individual,
     ModelInfo = ModelInfo, Stability = Stability)
   individual <- base$ProbFit$individual
@@ -816,7 +861,8 @@ CreateClusterModel_MClust <- function(data, variables = NULL,
   out$Specification <- .ClusterSpecification(
     "Mclust", prep$variables, list(seed = seed, stability_seed = stability_seed),
     out$Preprocessing, dplyr::select(fit_table, dplyr::any_of(c("Model", "Classes"))),
-    list(k = best$G, model = ModelInfo$final_model, model_name = best$modelName), prep$complete_rows,
+    list(k = best$G, model = ModelInfo$final_model,
+      model_name = ModelInfo$final_model_name), prep$complete_rows,
     list(distance_metric = "assigned-component Mahalanobis distance"))
   class(out) <- c("Pipeline_MClust", class(out)); out
 }
@@ -839,11 +885,15 @@ CreateClusterModel_MClust <- function(data, variables = NULL,
   variance <- fit$parameters$variance
   vapply(seq_len(nrow(X)), function(i) {
     component <- classification[[i]]
-    centre <- means[, component]
+    centre <- if (is.null(dim(means))) means[[component]] else means[, component]
     delta <- as.numeric(X[i, ]) - centre
     sigma <- tryCatch({
       if (!is.null(variance$sigma)) variance$sigma[, , component] else
-        diag(variance$scale, nrow = length(delta))
+        diag(
+          if (!is.null(variance$sigmasq)) variance$sigmasq[[component]] else
+            variance$scale,
+          nrow = length(delta)
+        )
     }, error = function(e) NULL)
     if (is.null(sigma)) return(sqrt(sum(delta^2)))
     solved <- tryCatch(solve(sigma, delta), error = function(e) NULL)
@@ -1023,11 +1073,12 @@ CreateClusterModel_KMeans <- function(data, variables = NULL,
   if (stability_resamples > 0L) {
     stabilities <- lapply(seq_along(ks), function(i) {
       k <- ks[[i]]; reference <- rep(NA_integer_, nrow(prep$data)); reference[prep$complete_rows] <- fits[[i]]$cluster
-      .ClusterBootstrapStability(prep$data, reference, function(boot, original) {
+      .ClusterSubsampleStability(prep$data, reference, function(boot, model_seed) {
         fitted <- CreateClusterModel_KMeans(boot, prep$variables, method = "finalize",
-          final_k = k, ZScoreType = Scaling, seed = seed, nstart = nstart,
+          final_k = k, ZScoreType = Scaling, seed = model_seed, nstart = nstart,
           stability_resamples = 0L)
-        ProjectCluster(fitted, original)$ProbFit$individual$Cluster
+        dplyr::select(
+          fitted$ProbFit$individual, dplyr::all_of(c(".row_id", "Cluster")))
       }, stability_resamples, stability_seed + k, list(Classes = k), progress = stability_progress)
     })
     stability_summary <- dplyr::bind_rows(lapply(stabilities, `[[`, "summary"))
@@ -1156,7 +1207,7 @@ ProjectCluster.Pipeline_KMeans <- function(object, new_df, ClusterVariableName =
 
 .CreatePCACluster <- function(data, variables, algorithm, method, k_range,
     final_k, final_model, Scaling, ClusterVariableName, seed, pca_variance_threshold,
-    nstart = NULL, models = c(1L, 2L, 3L),
+    nstart = NULL, models = c(1L, 2L, 3L, 6L),
     stability_resamples = 0L, stability_seed = seed + 1L,
     stability_progress = FALSE) {
   stability_resamples <- .ValidateClusterStability(
@@ -1215,13 +1266,14 @@ ProjectCluster.Pipeline_KMeans <- function(object, new_df, ClusterVariableName =
         candidate_k, candidate_model, Scaling, ClusterVariableName, seed,
         pca_variance_threshold, nstart, models, 0L, stability_seed, FALSE)
       reference <- reference_fit$ProbFit$individual$Cluster
-      .ClusterBootstrapStability(data, reference, function(boot, original) {
+      .ClusterSubsampleStability(data, reference, function(boot, model_seed) {
         fitted <- .CreatePCACluster(
           boot, prep$variables, algorithm, "finalize", candidate_k,
-          candidate_k, candidate_model, Scaling, ClusterVariableName, seed,
+          candidate_k, candidate_model, Scaling, ClusterVariableName, model_seed,
           pca_variance_threshold, nstart, models, 0L,
           stability_seed, FALSE)
-        .ProjectPCACluster(fitted, original, algorithm, ClusterVariableName)$ProbFit$individual$Cluster
+        dplyr::select(
+          fitted$ProbFit$individual, dplyr::all_of(c(".row_id", "Cluster")))
       }, stability_resamples, stability_seed + i,
       candidate = if (algorithm == "mclust") {
         list(Model = candidate_model, Classes = candidate_k)
@@ -1400,7 +1452,7 @@ ProjectCluster.Pipeline_KMeans <- function(object, new_df, ClusterVariableName =
 #' }
 #' @export
 CreateClusterModel_PCA_MClust <- function(data, variables = NULL, method = c("exploratory", "finalize"),
-    k_range = 2:10, models = c(1L, 2L, 3L), final_k = NULL, final_model = NULL,
+    k_range = 2:10, models = c(1L, 2L, 3L, 6L), final_k = NULL, final_model = NULL,
     ZScoreType = NULL, Scaling = NULL,
     ClusterVariableName = "Cluster", seed = 93421L, pca_variance_threshold = 0.85,
     stability_resamples = 0L, stability_seed = seed + 1L, stability_progress = FALSE) {
@@ -1629,11 +1681,12 @@ CreateClusterModel_HDBSCAN <- function(data, variables = NULL,
   if (stability_resamples > 0L) {
     stabilities <- lapply(seq_len(nrow(grid)), function(i) {
       reference <- rep(NA_integer_, nrow(prep$data)); reference[prep$complete_rows] <- fits[[i]]$cluster
-      .ClusterBootstrapStability(prep$data, reference, function(boot, original) {
+      .ClusterSubsampleStability(prep$data, reference, function(boot, model_seed) {
         fitted <- CreateClusterModel_HDBSCAN(boot, prep$variables, method = "finalize",
           final_minPts = grid$MinPts[[i]], final_cluster_selection_epsilon = grid$Epsilon[[i]],
-          ZScoreType = Scaling, seed = seed, stability_resamples = 0L)
-        ProjectCluster(fitted, original)$ProbFit$individual$Cluster
+          ZScoreType = Scaling, seed = model_seed, stability_resamples = 0L)
+        dplyr::select(
+          fitted$ProbFit$individual, dplyr::all_of(c(".row_id", "Cluster")))
       }, stability_resamples, stability_seed + i,
       list(MinPts = grid$MinPts[[i]], Epsilon = grid$Epsilon[[i]]), noise_label = 0L,
       progress = stability_progress)
@@ -1943,7 +1996,7 @@ CreateClusterModel_Gower_PAM <- function(data, variables = NULL,
   if (!is.data.frame(data)) stop("data must be a data frame.")
   if (is.null(variables)) variables <- names(data)
   if (length(setdiff(variables, names(data)))) stop("data is missing required clustering variables.")
-  df_scidr <- data
+  df_scidr <- .AddClusterRowID(data)
   method <- .ClusterMethod(method)
   .ValidateClusterLifecycle(method, supplied["k_range"], supplied["final_k"])
   complete <- stats::complete.cases(df_scidr[variables]); if (sum(complete) < 2) stop("Fewer than two complete rows are available.")
@@ -1965,10 +2018,11 @@ CreateClusterModel_Gower_PAM <- function(data, variables = NULL,
   if (stability_resamples > 0L) {
     stabilities <- lapply(seq_along(ks), function(i) {
       reference <- rep(NA_integer_, nrow(df_scidr)); reference[complete] <- fits[[i]]$clustering
-      .ClusterBootstrapStability(df_scidr, reference, function(boot, original) {
+      .ClusterSubsampleStability(df_scidr, reference, function(boot, model_seed) {
         fitted <- CreateClusterModel_Gower_PAM(boot, variables, method = "finalize",
-          final_k = ks[[i]], seed = seed, stability_resamples = 0L)
-        ProjectCluster(fitted, original)$ProbFit$individual$Cluster
+          final_k = ks[[i]], seed = model_seed, stability_resamples = 0L)
+        dplyr::select(
+          fitted$ProbFit$individual, dplyr::all_of(c(".row_id", "Cluster")))
       }, stability_resamples, stability_seed + i, list(Classes = ks[[i]]),
       progress = stability_progress, preserve_levels = variables)
     })
@@ -2074,6 +2128,7 @@ CreateClusterModel_Gower_PAM <- function(data, variables = NULL,
 #' @export
 ProjectCluster.Pipeline_Gower_PAM <- function(object, new_df, ClusterVariableName = object$ClusterVariableName, ...) {
   if (length(setdiff(object$vars_used, names(new_df)))) stop("new_df is missing required clustering variables.")
+  new_df <- .AddClusterRowID(new_df, "new_df")
   specification <- object$ModelInfo$GowerSpecification
   out_of_support <- dplyr::bind_rows(lapply(object$vars_used, function(variable) {
     # Only the categorical scales carry a closed set of admissible values, so
@@ -2085,13 +2140,15 @@ ProjectCluster.Pipeline_Gower_PAM <- function(object, new_df, ClusterVariableNam
     observed <- as.character(new_df[[variable]])
     bad <- !is.na(observed) & !observed %in% known
     if (!any(bad)) return(dplyr::tibble())
-    dplyr::tibble(RowID = which(bad), Variable = variable,
+    dplyr::tibble(.row_id = new_df$.row_id[bad], Variable = variable,
       Value = observed[bad], Issue = "category absent from training")
   }))
   new_df_supported <- new_df
   if (nrow(out_of_support)) {
     for (variable in unique(out_of_support$Variable)) {
-      rows <- out_of_support$RowID[out_of_support$Variable == variable]
+      rows <- match(
+        out_of_support$.row_id[out_of_support$Variable == variable],
+        new_df_supported$.row_id)
       new_df_supported[[variable]][rows] <- NA
     }
     warning("Projected Gower/PAM data contain categories absent from training; affected rows are out of support.", call. = FALSE)

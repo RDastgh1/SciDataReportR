@@ -9,7 +9,7 @@ CreateClusterModel_MClust(
   variables = NULL,
   method = c("exploratory", "finalize"),
   k_range = 2:10,
-  models = c(1L, 2L, 3L),
+  models = c(1L, 2L, 3L, 6L),
   final_k = NULL,
   final_model = NULL,
   ZScoreType = NULL,
@@ -30,7 +30,9 @@ CreateClusterModel_MClust(
 
 \item{k_range}{Candidate cluster counts in exploratory mode.}
 
-\item{models}{Numeric Mclust model IDs: \code{1} = EEI, \code{2} = VVI, \code{3} = EEE.}
+\item{models}{Numeric tidyLPA mclust model IDs: \code{1} = EEI, \code{2} = VVI,
+\code{3} = EEE, and \code{6} = VVV. Models 4 and 5 require OpenMx and are not
+supported by these pipelines.}
 
 \item{final_k, final_model}{Finalized cluster count and numeric model ID.}
 
@@ -74,19 +76,21 @@ may differ in means, variance, or covariance and posterior uncertainty is useful
 
 Stability assesses internal reproducibility by full-pipeline 80\% participant
 subsampling without replacement. For each replicate, 80\% of complete
-participants are selected once, all preprocessing and any reduction (PCA,
-MCA, or SOM) are refit, the
-selected clustering method is refit, and the original complete training
-participants are projected into that subsample fit for comparison with the
-original fitted partition. It is an internal sensitivity analysis, not
+participants are selected once, all preprocessing, any reduction (PCA,
+MCA, or SOM), and the selected clustering method are refit. Assignments from
+that refit are compared with the full-data reference assignments for the
+same sampled participants, joined by \code{.row_id}; projection is not used.
+It is an internal sensitivity analysis, not
 independent-cohort validation.
 
 \code{Stability$settings} records the analysis provenance:
 \itemize{
 \item \code{resamples}: requested number of 80\% subsample refits.
-\item \code{seed}: seed used to select subsamples.
-\item \code{refit_scope}: always \code{"full_pipeline"}, meaning preprocessing,
-reduction where applicable, and clustering were all refit.
+\item \code{seed}: seed used to derive reproducible sampling and model seeds.
+\item \code{refit_scope}: always \code{"full_pipeline_in_sample"}, meaning
+preprocessing, reduction where applicable, and clustering were all refit.
+\item \code{comparison_scope}: always \code{"sampled_participants"}; only the
+participants used in a refit enter that replicate's agreement metrics.
 \item \code{resample_type}: \code{"subsample_without_replacement"} for the
 primary stability analysis.
 \item \code{resample_fraction}: the retained participant fraction, \code{0.80}.
@@ -95,25 +99,17 @@ participants (2,000) for which the full pairwise co-assignment matrix is
 calculated.
 \item \code{noise_policy}: whether the method has noise labels. For ordinary
 methods it is \code{"all clusters included"}; HDBSCAN variants retain noise in
-global partition metrics but exclude it from per-cluster inclusion and
-co-assignment summaries.
+ARI but exclude it from phenotype-level Jaccard recovery.
 }
 
 \code{Stability$replicates} has one row per requested refit. \code{Model} and
 \code{Classes} identify the selected candidate (for HDBSCAN, \code{Classes} is the
 data-derived extracted count); \code{Replicate} is its sequence number; \code{Status}
-is \code{"success"} or a failure status; and \code{Error} contains the error message
-for an unsuccessful refit. Successful rows contain these partition metrics:
-\itemize{
-\item \code{ARI}: adjusted Rand index, agreement corrected for chance; higher
-is better and can be negative when agreement is worse than chance.
-\item \code{VI}: variation of information, the information lost or gained when
-changing partitions; lower is better and zero is identical.
-\item \code{NMI}: normalized mutual information; higher is better and one is
-identical.
-\item \code{FowlkesMallows}: pairwise clustering agreement; higher is better
-and one is identical.
-}
+is \code{"success"} or a failure status; \code{SamplingSeed} and \code{ModelSeed} identify
+the independently varied participant draw and stochastic refit; and \code{Error}
+contains the error message for an unsuccessful refit. \code{ARI} is the primary
+successful-refit metric: it is invariant to cluster numbering, higher is
+better, and it can be negative when agreement is worse than chance.
 
 \code{Stability$cluster_recovery} has one row for each reference \code{Cluster} in
 each successful \code{Replicate}. \code{Jaccard} is the recovery of that reference
@@ -126,16 +122,16 @@ again identify the fitted candidate.
 operational reliability measure that does not enter the reproducibility
 score. \code{StabilityARI_Mean} and \code{StabilityARI_P05} are the mean and fifth
 percentile of ARI. \code{StabilityJaccard_Mean} and \code{StabilityJaccard_Min} are
-respectively the mean and minimum label-matched Jaccard recovery.
+respectively the mean cluster-level recovery and the minimum of the
+cluster-specific mean recoveries across replicates.
 \code{ReproducibilityScore} is the mean of the finite \code{StabilityARI_Mean} and
-\code{StabilityJaccard_Mean} values only; it does not include success rate, VI,
-NMI, or Fowlkes--Mallows.
+\code{StabilityJaccard_Mean} values only; it does not include success rate.
 
 \code{Stability$failures} repeats the replicate columns for unsuccessful refits,
 making fit failures auditable without mixing them with successful metrics.
 
 \code{Stability$participant_inclusion} is one row per complete reference
-participant. \code{RowIndex} identifies its original row position, \code{Cluster} its
+participant. \code{.row_id} identifies the merge-safe input row, \code{Cluster} its
 reference assignment, \code{SuccessfulRefits} the number of usable refits, and
 \code{InclusionProbability} the proportion of those refits in which the
 participant returned to that cluster's label-matched subsample cluster.
@@ -152,23 +148,22 @@ has at most \code{coassignment_limit} participants. Each candidate entry has a
 \code{status} of \code{"available"}, \code{"skipped"}, or \code{"not_available"}; \code{reason}
 explains a non-available result; \code{matrix} is the pairwise probability that
 two complete reference participants are assigned together across successful
-subsample refits; and \code{row_ids} maps matrix rows and columns to original training-row
-positions. Higher matrix values mean more consistent pairwise co-membership.
+subsample refits; and \code{.row_id} maps matrix rows and columns to the same
+identifiers returned in \code{DataWithClusters} and \code{ProbFit$individual}. Higher
+matrix values mean more consistent pairwise co-membership.
 Where more than one candidate is summarized, entries are named by its
 \code{Model_Classes} key. The matrix is diagnostic only and is never used for
 selection.
 
 \code{Stability$plots} contains \code{cluster_recovery} (per-cluster Jaccard),
-\code{partition_metrics} (ARI, VI, NMI, and Fowlkes--Mallows distributions), and
+\code{partition_metrics} (the ARI distribution), and
 \code{cluster_inclusion}; it also contains a co-assignment heatmap when the
 matrix is available. These diagnostics complement rather than replace ARI
 and Jaccard: none can turn a poorly reproducible cluster into a stable
 phenotype.
 
 Metric sources: Hubert and Arabie (1985) define ARI; Jaccard (1901) defines
-the overlap coefficient; Meila (2005) defines VI; Strehl and Ghosh (2002)
-describe NMI for partition comparison; Fowlkes and Mallows (1983) define
-their pairwise index; and Monti et al. (2003) describe resampling-based
+the overlap coefficient; and Monti et al. (2003) describe resampling-based
 consensus co-assignment.
 }
 

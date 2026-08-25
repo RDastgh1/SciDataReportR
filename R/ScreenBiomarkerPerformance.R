@@ -534,7 +534,7 @@ ScreenBiomarkerPerformance <- function(
         MetricLabel = paste0(
           "Adjusted AUC = ", sprintf("%.2f", .data$AUC),
           " (", sprintf("%.2f", .data$AUC_Lower),
-          "–", sprintf("%.2f", .data$AUC_Upper), ")\n",
+          "\u2013", sprintf("%.2f", .data$AUC_Upper), ")\n",
           "N = ", .data$N
         )
       )
@@ -580,7 +580,7 @@ ScreenBiomarkerPerformance <- function(
         MetricLabel = paste0(
           "AUC = ", sprintf("%.2f", .data$AUC),
           " (", sprintf("%.2f", .data$AUC_Lower),
-          "–", sprintf("%.2f", .data$AUC_Upper), ")\n",
+          "\u2013", sprintf("%.2f", .data$AUC_Upper), ")\n",
           "N = ", .data$N
         )
       )
