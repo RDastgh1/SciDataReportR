@@ -1,14 +1,50 @@
+# SciDataReportR 21.1.0
+
+# SciDataReportR 21.0.2
+
+* `PlotVolcanoEffects()` can now color both raw-p and FDR volcano plots by an
+  analyte category supplied as a `Variable`/`Category` data frame or named
+  vector. Unmapped analytes remain visible in grey.
+
+* `PlotVolcanoEffects(LabelMode = "raw")` now explicitly labels analytes that
+  pass the raw p-value threshold. The existing `"significant"` value remains a
+  compatible alias, while `"fdr"` continues to use adjusted p-values.
+
+# SciDataReportR 21.0.1
+
+* Mclust, PCA + Mclust, MCA + Mclust, and SOM + Mclust now share tidyLPA's
+  mclust backend and explore all supported covariance models by default:
+  models 1 (EEI), 2 (VVI), 3 (EEE), and 6 (VVV). Models 4 and 5 remain
+  unavailable because they require OpenMx.
+
+* `MakeComparisonTable()` now displays adjusted Type II ANCOVA p-values when
+  the grouping variable has a non-syntactic name requiring backticks in model
+  formulas. Previously the model fit and effect size succeeded, but the
+  p-value row lookup missed the backtick-quoted term and rendered a blank cell.
+
+* `MakeUnivariateRegressionTable()` no longer emits tidyselect deprecation
+  warnings while building its report tables, and biomarker-performance source
+  code now passes the package portability check for non-ASCII characters.
+
 # SciDataReportR 21.0.0
 
 # SciDataReportR 20.24.0
 
 ## Clustering API is standardized around fitted pipelines and one projector
 
+* **Stability now measures participant-overlap refit reproducibility.** Each
+  replicate refits the complete clustering pipeline on an 80% participant
+  subsample and compares those participants' refitted assignments with their
+  full-data reference assignments by `.row_id`. Projection is no longer part
+  of stability. ARI is the primary partition metric, model seeds vary by
+  replicate, and SOM grid dimensions remain fixed to the reference fit.
+
 * **Breaking unreleased clustering-output cleanup.** Finalized fits and
   projections now return `DataWithClusters` (formerly `df_with_clusters`) and
   `ClusterVariableName` (formerly `ClusterName`). The mistyped
   `ModelInfo_Mclust`, public `complete_rows`, `CandidateAudit`, and injected
-  `.scidr_rowid` columns have been removed. `ModelInfo_MClust` is the canonical
+  `.scidr_rowid` columns have been removed and replaced by a consistently
+  labeled `.row_id` in mergeable row-level outputs. `ModelInfo_MClust` is the canonical
   Mclust-specific layer; `ModelInfo` remains the generic compatibility alias.
 
 * SOM + Mclust now reports `MinProfileNodeN`/`MaxProfileNodeN` alongside their
@@ -679,3 +715,9 @@
 # SciDataReportR 8.6.0
 
 * Initial CRAN submission.
+# SciDataReportR development version
+
+* Mclust, PCA + Mclust, MCA + Mclust, and SOM + Mclust now share tidyLPA's
+  mclust backend and explore all supported covariance models by default:
+  models 1 (EEI), 2 (VVI), 3 (EEE), and 6 (VVV). Models 4 and 5 remain
+  unavailable because they require OpenMx.
