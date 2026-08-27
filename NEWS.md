@@ -1,5 +1,15 @@
 # SciDataReportR 21.2.0
 
+* Clustering stability now retains 90% of participants per full-pipeline
+  subsample refit by default, so it measures whether assignments persist after
+  removing a random 10% of participants. The retained fraction is recorded as
+  `Stability$settings$resample_fraction = 0.90`.
+
+* Mclust candidate plots now use consistent descriptive model legends, such as
+  `Model 6: varying variance, varying covariance`, derived from one shared model
+  registry. The clustering documentation now explains each supported variance
+  and covariance structure.
+
 # SciDataReportR 21.1.0
 
 # SciDataReportR 21.0.2
@@ -717,9 +727,3 @@
 # SciDataReportR 8.6.0
 
 * Initial CRAN submission.
-# SciDataReportR development version
-
-* Mclust, PCA + Mclust, MCA + Mclust, and SOM + Mclust now share tidyLPA's
-  mclust backend and explore all supported covariance models by default:
-  models 1 (EEI), 2 (VVI), 3 (EEE), and 6 (VVV). Models 4 and 5 remain
-  unavailable because they require OpenMx.

@@ -64,8 +64,21 @@ test_that("numeric Mclust model IDs and preprocessing aliases are standardized",
     final_model = 1, ZScoreType = "None")
   expect_identical(model$ModelInfo$final_model, 1L)
   expect_identical(model$ModelInfo$final_model_name, "EEI")
-  expect_true(all(c("Model", "ModelName") %in% names(model$ModelInfo$fit_table)))
+  expect_true(all(c("Model", "ModelName", "ModelLabel") %in%
+    names(model$ModelInfo$fit_table)))
   expect_identical(model$ModelInfo$fit_table$ModelName[[1]], "EEI")
+  expect_identical(
+    model$ModelInfo$fit_table$ModelLabel[[1]],
+    "Model 1: equal variance, zero covariance"
+  )
+  model_scale <- ggplot2::ggplot_build(
+    model$fit_plot
+  )$plot$scales$get_scales("colour")
+  expect_equal(
+    as.character(model_scale$get_breaks()),
+    "Model 1: equal variance, zero covariance"
+  )
+  expect_identical(model$fit_plot$labels$colour, "Model")
   expect_identical(model$Preprocessing$ZScoreType, "None")
   expect_error(
     CreateClusterModel_MClust(df_Test, c("x", "y"), method = "finalize",
@@ -504,7 +517,7 @@ test_that("SOM finalized models can report full-pipeline stability", {
     model$Stability$settings$refit_scope, "full_pipeline_in_sample")
   expect_identical(model$Stability$settings$resample_type,
     "subsample_without_replacement")
-  expect_equal(model$Stability$settings$resample_fraction, 0.80)
+  expect_equal(model$Stability$settings$resample_fraction, 0.90)
   expect_identical(model$Stability$settings$som_grid,
     list(xdim = 4, ydim = 4, policy = "fixed_to_reference_fit"))
   expect_identical(model$method, "finalize")
@@ -590,7 +603,7 @@ test_that("SOM plus HDBSCAN uses the same unique-participant stability contract"
     lpa_timeout_seconds = NULL, stability_resamples = 1)
   expect_identical(model$Stability$settings$resample_type,
     "subsample_without_replacement")
-  expect_equal(model$Stability$settings$resample_fraction, 0.80)
+  expect_equal(model$Stability$settings$resample_fraction, 0.90)
   expect_identical(model$Stability$settings$som_grid,
     list(xdim = 5, ydim = 5, policy = "fixed_to_reference_fit"))
   expect_true(all(c("MinPts", "Epsilon") %in% names(model$Stability$summary)))
@@ -611,20 +624,23 @@ test_that("stability validation and failed resamples are explicit", {
   expect_equal(failed$summary$StabilitySuccessRate, 0)
   expect_identical(failed$settings$resample_type,
     "subsample_without_replacement")
-  expect_equal(failed$settings$resample_fraction, 0.80)
+  expect_equal(failed$settings$resample_fraction, 0.90)
 })
 
-test_that("primary stability refits use unique 80 percent participant subsamples", {
+test_that("primary stability refits use unique 90 percent participant subsamples", {
   observed_ids <- integer()
   result <- .ClusterSubsampleStability(
     data.frame(id = 1:10), reference = rep(1:2, each = 5),
     fit_subset = function(boot, model_seed) {
       observed_ids <<- boot$id
-      dplyr::tibble(.row_id = boot$.row_id, Cluster = rep(1:2, each = 4))
+      dplyr::tibble(
+        .row_id = boot$.row_id,
+        Cluster = rep(1:2, length.out = nrow(boot))
+      )
     }, resamples = 1, seed = 11)
-  expect_equal(length(observed_ids), 8)
-  expect_equal(length(unique(observed_ids)), 8)
-  expect_equal(result$settings$resample_fraction, 0.80)
+  expect_equal(length(observed_ids), 9)
+  expect_equal(length(unique(observed_ids)), 9)
+  expect_equal(result$settings$resample_fraction, 0.90)
   expect_identical(result$settings$comparison_scope, "sampled_participants")
 })
 

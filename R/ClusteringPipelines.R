@@ -58,6 +58,12 @@
 }
 
 .MclustModelNames <- c(`1` = "EEI", `2` = "VVI", `3` = "EEE", `6` = "VVV")
+.MclustModelLabels <- c(
+  `1` = "Model 1: equal variance, zero covariance",
+  `2` = "Model 2: varying variance, zero covariance",
+  `3` = "Model 3: equal variance, equal covariance",
+  `6` = "Model 6: varying variance, varying covariance"
+)
 
 .ResolveMclustModels <- function(models, argument = "models") {
   if (!is.numeric(models) || !length(models) || anyNA(models) ||
@@ -358,7 +364,7 @@
     ahp_best_row = fit_table[fit_table$Recommended, , drop = FALSE], recommendation = recommendation))
 }
 
-# An 80% subsample can drop a rare category entirely, and a model refit on that
+# A participant subsample can drop a rare category entirely, and a model refit on that
 # sample then has no coefficient for it, so projecting the original cohort
 # fails and the replicate is wasted. Swap a carrying row back in for any level
 # the draw missed; this keeps every replicate usable at a negligible cost to
@@ -385,7 +391,7 @@
 .ClusterSubsampleStability <- function(data, reference, fit_subset,
     resamples = 0L, seed = 93422L, candidate = list(), noise_label = NULL,
     progress = FALSE, preserve_levels = character(),
-    coassignment_limit = 2000L, subsample_fraction = .80) {
+    coassignment_limit = 2000L, subsample_fraction = .90) {
   data <- .AddClusterRowID(data)
   if (!is.numeric(resamples) || length(resamples) != 1L || is.na(resamples) ||
       resamples < 0 || resamples != as.integer(resamples)) {
@@ -674,7 +680,9 @@
   } else NA_real_
   cluster_sizes <- tabulate(fit$classification, nbins = fit$G)
   list(fit = fit, tidy_fit = tidy_fit, error = NA_character_, row = dplyr::tibble(
-    Model = model, ModelName = model_name, Classes = as.integer(fit$G), BIC = fit$bic,
+    Model = model, ModelName = model_name,
+    ModelLabel = unname(.MclustModelLabels[as.character(model)]),
+    Classes = as.integer(fit$G), BIC = fit$bic,
     ICL = if (is.null(fit$icl)) NA_real_ else fit$icl,
     AIC = -2 * fit$loglik + 2 * fit$df, Entropy = entropy,
     MinClusterN = min(cluster_sizes),
@@ -695,15 +703,20 @@
 #' @param variables Variables used for clustering.
 #' @param method Either `"exploratory"` or `"finalize"`.
 #' @param k_range Candidate cluster counts in exploratory mode.
-#' @param models Numeric tidyLPA mclust model IDs: `1` = EEI, `2` = VVI,
-#'   `3` = EEE, and `6` = VVV. Models 4 and 5 require OpenMx and are not
-#'   supported by these pipelines.
+#' @param models Numeric tidyLPA mclust model IDs. The supported models are:
+#'   `1` (EEI), equal variance and zero covariance; `2` (VVI), varying
+#'   variance and zero covariance; `3` (EEE), equal variance and equal
+#'   covariance; and `6` (VVV), varying variance and varying covariance.
+#'   Zero-covariance models assume conditional independence between variables
+#'   within each cluster. Equal parameters are shared across clusters; varying
+#'   parameters are estimated separately for each cluster. Models 4 and 5
+#'   require OpenMx and are not supported by these pipelines.
 #' @param final_k,final_model Finalized cluster count and numeric model ID.
 #' @param ZScoreType Frozen numeric preprocessing. `Scaling` is a compatibility alias.
 #' @param Scaling Compatibility alias for `ZScoreType`.
 #' @param ClusterVariableName Output cluster column name.
 #' @param seed Random seed retained for reproducibility.
-#' @param stability_resamples Number of 80% participant subsample refits used
+#' @param stability_resamples Number of 90% participant subsample refits used
 #'   to estimate candidate reproducibility. Subsamples are drawn without
 #'   replacement. Use `0` to disable stability analysis.
 #' @param stability_seed Seed controlling participant subsampling.
@@ -1942,7 +1955,7 @@ ProjectCluster.Pipeline_HDBSCAN <- function(object, new_df, ClusterVariableName 
 #' @param k_range Candidate medoid counts in exploratory mode.
 #' @param final_k Final medoid count in finalized mode.
 #' @param seed Random seed.
-#' @param stability_resamples Number of 80% participant subsample refits.
+#' @param stability_resamples Number of 90% participant subsample refits.
 #' @param stability_seed Seed controlling participant subsampling.
 #' @param stability_progress Whether to print subsample progress messages.
 #' @param ClusterVariableName Output cluster column name.

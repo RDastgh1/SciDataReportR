@@ -124,9 +124,27 @@ test_that("SOM Mclust supports tidyLPA model 6", {
 
   expect_identical(model$ModelInfo_MClust$fit_table$Model, 6L)
   expect_true(any(grepl(
-    "6:Varying variance, varying cov",
+    "Model 6: varying variance, varying covariance",
     levels(model$fit_plot$data$Model), fixed = TRUE
   )))
+
+  mixed_model <- suppressWarnings(CreateClusterModel_SOM_MClust(
+    df_Labelled,
+    c("age", "AXL", "Adiponectin", "Alpha_1_Antitrypsin"),
+    method = "exploratory", k_range = 2, models = c(1, 6),
+    som_xdim = 4, som_ydim = 4, min_nodes_per_cluster = NULL,
+    lpa_timeout_seconds = 30, Relabel = FALSE
+  ))
+  model_six_label <- "Model 6: varying variance, varying covariance"
+  colour_scale <- ggplot2::ggplot_build(mixed_model$fit_plot)$plot$scales$get_scales("colour")
+
+  expect_true(all(c(
+    "Model 1: equal variance, zero covariance", model_six_label
+  ) %in% colour_scale$get_breaks()))
+  expect_identical(
+    unname(colour_scale$map(model_six_label)),
+    unname(.SciDataColorValues(4)[[4]])
+  )
 })
 
 test_that("CreateClusterModel_SOM_MClust adds deterministic subsample stability to fit review", {

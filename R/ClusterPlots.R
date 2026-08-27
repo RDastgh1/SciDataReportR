@@ -11,7 +11,7 @@
 #'   \item `ModelInfo$FitDiagnostics$plots` describes how well individual
 #'     training cases sit inside that structure.
 #'   \item `ProbFit$plots` describes membership confidence.
-#'   \item `Stability$plots` describes 80% subsample reproducibility.
+#'   \item `Stability$plots` describes 90% subsample reproducibility.
 #'   \item `ProjectionFit$plots` describes how projected cases compare with the
 #'     frozen training reference.
 #' }
@@ -607,7 +607,9 @@ PlotClusterFitReview <- function(fit_table, x = "Classes", metrics = NULL,
   metrics <- setdiff(metrics, x)
   if (!length(metrics)) stop("No numeric fit metrics are available to plot.")
   if (is.null(group)) {
-    group <- if ("Model" %in% names(fit_table)) {
+    group <- if ("ModelLabel" %in% names(fit_table)) {
+      "ModelLabel"
+    } else if ("Model" %in% names(fit_table)) {
       "Model"
     } else if ("Epsilon" %in% names(fit_table) && x != "Epsilon") {
       "Epsilon"
@@ -633,7 +635,8 @@ PlotClusterFitReview <- function(fit_table, x = "Classes", metrics = NULL,
         group = interaction(.data$Metric, .data[[group]]))) +
       ggplot2::geom_point()
     if (nrow(fit_table) > 1) plot <- plot + ggplot2::geom_line()
-    plot <- plot + .SciDataColourScale() + ggplot2::labs(color = group)
+    legend_title <- if (identical(group, "ModelLabel")) "Model" else group
+    plot <- plot + .SciDataColourScale() + ggplot2::labs(color = legend_title)
   }
   plot <- plot +
     ggplot2::facet_wrap(

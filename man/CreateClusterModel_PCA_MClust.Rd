@@ -31,9 +31,14 @@ CreateClusterModel_PCA_MClust(
 
 \item{k_range}{Candidate cluster counts in exploratory mode.}
 
-\item{models}{Numeric tidyLPA mclust model IDs: \code{1} = EEI, \code{2} = VVI,
-\code{3} = EEE, and \code{6} = VVV. Models 4 and 5 require OpenMx and are not
-supported by these pipelines.}
+\item{models}{Numeric tidyLPA mclust model IDs. The supported models are:
+\code{1} (EEI), equal variance and zero covariance; \code{2} (VVI), varying
+variance and zero covariance; \code{3} (EEE), equal variance and equal
+covariance; and \code{6} (VVV), varying variance and varying covariance.
+Zero-covariance models assume conditional independence between variables
+within each cluster. Equal parameters are shared across clusters; varying
+parameters are estimated separately for each cluster. Models 4 and 5
+require OpenMx and are not supported by these pipelines.}
 
 \item{final_k, final_model}{Finalized cluster count and numeric model ID.}
 
@@ -47,7 +52,7 @@ supported by these pipelines.}
 
 \item{pca_variance_threshold}{Cumulative variance retained by the existing PCA workflow.}
 
-\item{stability_resamples}{Number of 80\% participant subsample refits used
+\item{stability_resamples}{Number of 90\% participant subsample refits used
 to estimate candidate reproducibility. Subsamples are drawn without
 replacement. Use \code{0} to disable stability analysis.}
 
@@ -70,8 +75,8 @@ lower-dimensional, frozen PCA representation is preferable to raw features.
 }
 \section{Stability output}{
 
-Stability assesses internal reproducibility by full-pipeline 80\% participant
-subsampling without replacement. For each replicate, 80\% of complete
+Stability assesses internal reproducibility by full-pipeline 90\% participant
+subsampling without replacement. For each replicate, 90\% of complete
 participants are selected once, all preprocessing, any reduction (PCA,
 MCA, or SOM), and the selected clustering method are refit. Assignments from
 that refit are compared with the full-data reference assignments for the
@@ -81,7 +86,7 @@ independent-cohort validation.
 
 \code{Stability$settings} records the analysis provenance:
 \itemize{
-\item \code{resamples}: requested number of 80\% subsample refits.
+\item \code{resamples}: requested number of 90\% subsample refits.
 \item \code{seed}: seed used to derive reproducible sampling and model seeds.
 \item \code{refit_scope}: always \code{"full_pipeline_in_sample"}, meaning
 preprocessing, reduction where applicable, and clustering were all refit.
@@ -89,7 +94,7 @@ preprocessing, reduction where applicable, and clustering were all refit.
 participants used in a refit enter that replicate's agreement metrics.
 \item \code{resample_type}: \code{"subsample_without_replacement"} for the
 primary stability analysis.
-\item \code{resample_fraction}: the retained participant fraction, \code{0.80}.
+\item \code{resample_fraction}: the retained participant fraction, \code{0.90}.
 \item \code{coassignment_limit}: maximum number of complete training
 participants (2,000) for which the full pairwise co-assignment matrix is
 calculated.

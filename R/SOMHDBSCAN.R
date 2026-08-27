@@ -16,7 +16,7 @@
 #' @param ClusterVariableName Name of the appended cluster column.
 #' @param seed_som Seed used for SOM training.
 #' @param seed_hdbscan Seed retained in the model specification.
-#' @param stability_resamples Number of 80% participant subsample refits used
+#' @param stability_resamples Number of 90% participant subsample refits used
 #'   for final-model stability. Subsamples are drawn without replacement and
 #'   reuse the reference model's resolved SOM grid dimensions.
 #' @param stability_seed Seed controlling participant subsampling.

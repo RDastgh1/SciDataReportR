@@ -54,10 +54,15 @@
 #'   \code{final_k} and \code{final_model}.
 #' @param k_range Integer vector of numbers of clusters/profiles to consider
 #'   in exploratory mode. Default \code{2:10}.
-#' @param models Integer vector of model specifications for tidyLPA
-#'   (mclust backend). Supported values and the default are
-#'   \code{c(1, 2, 3, 6)}. Models 4 and 5 require OpenMx and are intentionally
-#'   unsupported.
+#' @param models Integer vector of model specifications for tidyLPA's mclust
+#'   backend. Model 1 uses equal variance and zero covariance; model 2 uses
+#'   varying variance and zero covariance; model 3 uses equal variance and
+#'   equal covariance; and model 6 uses varying variance and varying
+#'   covariance. Zero-covariance models assume conditional independence
+#'   between variables within each cluster. Equal parameters are shared across
+#'   clusters; varying parameters are cluster-specific. Supported values and
+#'   the default are \code{c(1, 2, 3, 6)}. Models 4 and 5 require OpenMx and
+#'   are intentionally unsupported.
 #' @param final_k Integer; number of profiles for \code{method = "finalize"}.
 #' @param final_model Integer; model specification for \code{method = "finalize"}
 #'   (should be one of \code{models}).
@@ -114,7 +119,7 @@
 #'   is \code{0.95}.
 #' @param low_prob_threshold Numeric posterior probability threshold used to
 #'   flag uncertain phenotype membership. Default is \code{0.70}.
-#' @param stability_resamples Number of 80% participant subsample refits used
+#' @param stability_resamples Number of 90% participant subsample refits used
 #'   to assess reproducibility for every successful exploratory candidate.
 #'   Subsamples are drawn without replacement and reuse the reference model's
 #'   resolved SOM grid dimensions. Defaults to \code{0} (disabled);
@@ -144,7 +149,7 @@
 #' an error, even when an exploratory setting equals its default.
 #'
 #' Stability is assessed by refitting the full SOM/LPA pipeline on independent
-#' 80% participant subsamples drawn without replacement.
+#' 90% participant subsamples drawn without replacement.
 #' `StabilityARI_Mean` is the mean adjusted Rand index across successful
 #' refits and can be negative when agreement is worse than chance.
 #' `StabilityJaccard_Mean` is the mean label-matched, per-profile Jaccard
@@ -189,7 +194,7 @@
 #' the reusable model for projection.
 #'
 #' Set \code{stability_resamples} to a positive value to assess internal
-#' reproducibility. Each 80% subsample refits the same candidate SOM/LPA solution
+#' reproducibility. Each 90% subsample refits the same candidate SOM/LPA solution
 #' and projects the original participants back into it. Mean adjusted Rand
 #' index summarizes whole-partition agreement; cluster-wise Jaccard recovery
 #' identifies phenotypes that dissolve despite good overall agreement. This is
@@ -1149,7 +1154,7 @@ CreateClusterModel_SOM_MClust <- function(data,
               stability_seed + candidate_index * 200000L + replicate)
             set.seed(sampling_seed)
             subsample_rows <- sample(reference_rows,
-              max(2L, floor(length(reference_rows) * 0.80)), replace = FALSE)
+              max(2L, floor(length(reference_rows) * 0.90)), replace = FALSE)
             df_subsample <- df_scidr[subsample_rows, , drop = FALSE]
 
             subsample_result <- tryCatch(
@@ -1327,7 +1332,7 @@ CreateClusterModel_SOM_MClust <- function(data,
             refit_scope = "full_pipeline_in_sample",
             comparison_scope = "sampled_participants",
             resample_type = "subsample_without_replacement",
-            resample_fraction = 0.80,
+            resample_fraction = 0.90,
             coassignment_limit = 2000L,
             noise_policy = "all clusters included",
             som_grid = list(
@@ -1498,13 +1503,9 @@ CreateClusterModel_SOM_MClust <- function(data,
         name = factor(.data$name, levels = c(
           "AIC", "BIC", "Entropy", "ReproducibilityScore", blrt_label)))
 
-    model_levels <- sort(unique(c(1, 2, 3, 6, models, final_model)))
+    model_levels <- as.integer(names(.MclustModelLabels))
     model_levels <- model_levels[!is.na(model_levels)]
-    model_labels <- as.character(model_levels)
-    model_labels[model_levels == 1] <- "1:Equal variance, cov = 0"
-    model_labels[model_levels == 2] <- "2:Varying variance, cov = 0"
-    model_labels[model_levels == 3] <- "3:Equal variance, equal cov"
-    model_labels[model_levels == 6] <- "6:Varying variance, varying cov"
+    model_labels <- unname(.MclustModelLabels[as.character(model_levels)])
 
     mdata$Model <- factor(
       mdata$Model,
@@ -1515,11 +1516,7 @@ CreateClusterModel_SOM_MClust <- function(data,
     # Model family is a plain category, so it takes the package palette. Colours
     # are assigned over the full set of families, not the subset present, so a
     # family keeps the same colour whether or not the others converged.
-    model_families <- c(
-      "1:Equal variance, cov = 0",
-      "2:Varying variance, cov = 0",
-      "3:Equal variance, equal cov"
-    )
+    model_families <- model_labels
     pal_cols <- stats::setNames(
       .SciDataColorValues(length(model_families)), model_families)
     pal_cols <- pal_cols[names(pal_cols) %in% levels(mdata$Model)]

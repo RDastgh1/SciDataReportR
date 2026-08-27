@@ -72,10 +72,15 @@ recommended solution. In \code{"finalize"}, the user must specify
 \item{k_range}{Integer vector of numbers of clusters/profiles to consider
 in exploratory mode. Default \code{2:10}.}
 
-\item{models}{Integer vector of model specifications for tidyLPA
-(mclust backend). Supported values and the default are
-\code{c(1, 2, 3, 6)}. Models 4 and 5 require OpenMx and are intentionally
-unsupported.}
+\item{models}{Integer vector of model specifications for tidyLPA's mclust
+backend. Model 1 uses equal variance and zero covariance; model 2 uses
+varying variance and zero covariance; model 3 uses equal variance and
+equal covariance; and model 6 uses varying variance and varying
+covariance. Zero-covariance models assume conditional independence
+between variables within each cluster. Equal parameters are shared across
+clusters; varying parameters are cluster-specific. Supported values and
+the default are \code{c(1, 2, 3, 6)}. Models 4 and 5 require OpenMx and
+are intentionally unsupported.}
 
 \item{final_k}{Integer; number of profiles for \code{method = "finalize"}.}
 
@@ -157,7 +162,7 @@ is \code{0.95}.}
 \item{low_prob_threshold}{Numeric posterior probability threshold used to
 flag uncertain phenotype membership. Default is \code{0.70}.}
 
-\item{stability_resamples}{Number of 80\% participant subsample refits used
+\item{stability_resamples}{Number of 90\% participant subsample refits used
 to assess reproducibility for every successful exploratory candidate.
 Subsamples are drawn without replacement and reuse the reference model's
 resolved SOM grid dimensions. Defaults to \code{0} (disabled);
@@ -280,7 +285,7 @@ Lifecycle settings are intentionally strict: \code{k_range} and
 an error, even when an exploratory setting equals its default.
 
 Stability is assessed by refitting the full SOM/LPA pipeline on independent
-80\% participant subsamples drawn without replacement.
+90\% participant subsamples drawn without replacement.
 \code{StabilityARI_Mean} is the mean adjusted Rand index across successful
 refits and can be negative when agreement is worse than chance.
 \code{StabilityJaccard_Mean} is the mean label-matched, per-profile Jaccard
@@ -326,7 +331,7 @@ exploratory mode. Once a solution is selected, refit it with
 the reusable model for projection.
 
 Set \code{stability_resamples} to a positive value to assess internal
-reproducibility. Each 80\% subsample refits the same candidate SOM/LPA solution
+reproducibility. Each 90\% subsample refits the same candidate SOM/LPA solution
 and projects the original participants back into it. Mean adjusted Rand
 index summarizes whole-partition agreement; cluster-wise Jaccard recovery
 identifies phenotypes that dissolve despite good overall agreement. This is
@@ -352,8 +357,8 @@ get the reusable, projectable model.
 
 \section{Stability output}{
 
-Stability assesses internal reproducibility by full-pipeline 80\% participant
-subsampling without replacement. For each replicate, 80\% of complete
+Stability assesses internal reproducibility by full-pipeline 90\% participant
+subsampling without replacement. For each replicate, 90\% of complete
 participants are selected once, all preprocessing, any reduction (PCA,
 MCA, or SOM), and the selected clustering method are refit. Assignments from
 that refit are compared with the full-data reference assignments for the
@@ -363,7 +368,7 @@ independent-cohort validation.
 
 \code{Stability$settings} records the analysis provenance:
 \itemize{
-\item \code{resamples}: requested number of 80\% subsample refits.
+\item \code{resamples}: requested number of 90\% subsample refits.
 \item \code{seed}: seed used to derive reproducible sampling and model seeds.
 \item \code{refit_scope}: always \code{"full_pipeline_in_sample"}, meaning
 preprocessing, reduction where applicable, and clustering were all refit.
@@ -371,7 +376,7 @@ preprocessing, reduction where applicable, and clustering were all refit.
 participants used in a refit enter that replicate's agreement metrics.
 \item \code{resample_type}: \code{"subsample_without_replacement"} for the
 primary stability analysis.
-\item \code{resample_fraction}: the retained participant fraction, \code{0.80}.
+\item \code{resample_fraction}: the retained participant fraction, \code{0.90}.
 \item \code{coassignment_limit}: maximum number of complete training
 participants (2,000) for which the full pairwise co-assignment matrix is
 calculated.

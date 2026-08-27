@@ -15,7 +15,7 @@ by \code{\link[=CreateClusterModel_SOM_MClust]{CreateClusterModel_SOM_MClust()}}
 \item \code{ModelInfo$FitDiagnostics$plots} describes how well individual
 training cases sit inside that structure.
 \item \code{ProbFit$plots} describes membership confidence.
-\item \code{Stability$plots} describes 80\% subsample reproducibility.
+\item \code{Stability$plots} describes 90\% subsample reproducibility.
 \item \code{ProjectionFit$plots} describes how projected cases compare with the
 frozen training reference.
 }

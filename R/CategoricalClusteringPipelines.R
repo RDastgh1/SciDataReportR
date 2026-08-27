@@ -26,7 +26,7 @@
 #' @param nrep Number of random starts per candidate.
 #' @param seed Random seed controlling latent-class random starts.
 #' @param method Either `"exploratory"`/`"explore"` or `"finalize"`.
-#' @param stability_resamples Number of 80% participant subsample refits.
+#' @param stability_resamples Number of 90% participant subsample refits.
 #' @param stability_seed Seed controlling participant subsampling.
 #' @param stability_progress Whether to print subsample progress messages.
 #' @inheritSection cluster-stability-output Stability output

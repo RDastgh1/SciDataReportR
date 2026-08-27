@@ -47,7 +47,7 @@ Every pipeline in this package uses the same train-once/project-many contract:
 - preprocessing and model parameters are learned from training data only;
 - `DataWithClusters` preserves the original row order and columns;
 - incomplete cases remain in the output with `NA` assignments;
-- 80% participant subsample stability refits the **entire pipeline**, including scaling and
+- 90% participant subsample stability refits the **entire pipeline**, including scaling and
   PCA/MCA when present;
 - fit, membership uncertainty or distance, and projection support are
   reviewed before phenotypes are named.
@@ -85,7 +85,7 @@ summarises rather than in one flat list:
 | `ModelInfo$plots` | structure of the selected solution |
 | `ModelInfo$FitDiagnostics$plots` | how individual training cases sit inside that structure |
 | `ProbFit$plots` | membership confidence |
-| `Stability$plots` | 80% subsample reproducibility |
+| `Stability$plots` | 90% subsample reproducibility |
 | `ProjectionFit$plots` | projected cases against the frozen training reference |
 
 The *contents* are method-specific: K-means and Gower/PAM give you a silhouette
@@ -158,7 +158,7 @@ PrintPlots <- function(plots, plot_names = NULL) {
 PrintFitMetrics <- function(object, metrics) {
   object$ModelInfo$fit_table %>%
     dplyr::select(dplyr::any_of(c(
-      "Model", "ModelName", "Classes", "MinPts", "Epsilon", metrics,
+      "Model", "ModelName", "ModelLabel", "Classes", "MinPts", "Epsilon", metrics,
       "ReproducibilityScore", "ahp_index", "Recommended")))
 }
 
@@ -199,6 +199,20 @@ is retained as a compatibility alias and must agree if both are supplied.
 | Mclust, PCA + Mclust, MCA + Mclust, SOM + Mclust | `k_range`, `models` | `final_k`, `final_model` | tidyLPA mclust models: 1 = EEI, 2 = VVI, 3 = EEE, 6 = VVV; models 4 and 5 require OpenMx and are unsupported |
 | K-means, PCA + K-means, Gower + PAM, latent class | `k_range` | `final_k` | `nstart` for K-means; `nrep` for LCA |
 | HDBSCAN, SOM + HDBSCAN | `minPts_range`, epsilon range | `final_minPts`, final epsilon | extracted class count is data-derived |
+
+The tidyLPA Mclust model numbers describe which within-cluster variances and
+covariances may differ between clusters:
+
+| Model | mclust code | Meaning |
+|---|---|---|
+| Model 1 | EEI | Equal variance across clusters, with covariance fixed at zero |
+| Model 2 | VVI | Varying variance across clusters, with covariance fixed at zero |
+| Model 3 | EEE | Equal variance and equal covariance across clusters |
+| Model 6 | VVV | Varying variance and varying covariance across clusters |
+
+Zero covariance assumes the clustering variables are conditionally independent
+within a cluster. Equal parameters pool the corresponding structure across
+clusters; varying parameters let each cluster estimate its own structure.
 
 # Continuous workflows
 
@@ -290,7 +304,7 @@ PrintPlots(df_KMeansProjected$ProjectionFit$plots)
 
 PCA concentrates correlated variation into orthogonal dimensions
 [@jolliffe2016]. These pipelines refit scaling and PCA inside every stability
-80% subsampling, then use the frozen training transformation for projection.
+90% subsampling, then use the frozen training transformation for projection.
 
 ::: callout-note
 **When to use it:** correlated continuous variables where a reduced signal
@@ -596,7 +610,7 @@ PrintPlots(df_LCAProjected$ProjectionFit$plots)
 ## MCA followed by Mclust
 
 MCA is a dimension-reduction method for nominal categorical measures
-[@greenacre2017]. Each 80% subsample refits MCA before refitting the mixture.
+[@greenacre2017]. Each 90% subsample refits MCA before refitting the mixture.
 
 ::: callout-note
 **When to use it:** several nominal variables form a useful lower-dimensional
@@ -744,7 +758,7 @@ ARI and mean Jaccard recovery; subsample success rate is reported separately.
 
 ### Complementary stability diagnostics
 
-Every successful full-pipeline 80% subsample refit records ARI for the
+Every successful full-pipeline 90% subsample refit records ARI for the
 participants included in that refit. The pipeline is retrained from the subset
 and assignments are joined to the full-data reference by `.row_id`; projection
 is not part of stability. Sampling and model seeds vary independently and are
@@ -774,8 +788,8 @@ a frozen header; it is not a SciDataReportR function.
 | `MinProfileNodeN`, `MaxProfileNodeN` | Integer SOM-node counts in the smallest and largest profile. |
 | `MinProfileNodeProportion`, `MaxProfileNodeProportion` | The corresponding node counts divided by the total SOM-node count. These replace tidyLPA's ambiguous decimal `n_min` and `n_max` fields. |
 | `BLRTStatistic`, `BLRTPValue` | Bootstrap likelihood-ratio statistic and raw p-value for comparing the k-profile fit with k - 1 profiles [@nylund2007]. A small p-value supports the additional profile's statistical fit, but does not by itself establish stability, clinical meaning, or a final choice; it is unavailable for one profile. The last candidate-review panel displays `−log10(BLRTPValue)` and marks `−log10(0.05)`, approximately 1.301. |
-| `StabilityARI_Mean` | Mean adjusted Rand index across successful full-pipeline 80% participant subsample refits without replacement. It may be negative: this means agreement is worse than expected by chance, not an error. |
-| `StabilityJaccard_Mean` | Mean label-matched, per-profile Jaccard recovery across successful 80% participant subsample refits without replacement. |
+| `StabilityARI_Mean` | Mean adjusted Rand index across successful full-pipeline 90% participant subsample refits without replacement. It may be negative: this means agreement is worse than expected by chance, not an error. |
+| `StabilityJaccard_Mean` | Mean label-matched, per-profile Jaccard recovery across successful 90% participant subsample refits without replacement. |
 | `ReproducibilityScore` | Mean of the finite `StabilityARI_Mean` and `StabilityJaccard_Mean`; `StabilitySuccessRate` remains separate. |
 | `Reproducibility_scaled` | Min-max rescaling of `ReproducibilityScore` across the current candidate table. It is used only as an AHP input [@akogul2017], not as an independently interpretable reproducibility metric. |
 
@@ -798,9 +812,9 @@ rescaling used to construct its index, not a standalone scientific result.
 |---|---|
 | `Classes` | Requested class/cluster count for fixed-count methods. HDBSCAN variants instead report the data-derived number extracted from each density setting. |
 | `MinClusterN` / `MinClassN` | Smallest extracted participant cluster/class size. `SizeBalance` is smallest divided by largest extracted participant group size. SOM + Mclust reports its separate integer node-count and node-proportion fields above. |
-| `StabilitySuccessRate` | Proportion of requested 80% subsample refits that successfully complete. It is reported separately and is never multiplied into reproducibility. |
+| `StabilitySuccessRate` | Proportion of requested 90% subsample refits that successfully complete. It is reported separately and is never multiplied into reproducibility. |
 | `StabilityARI_Mean`, `StabilityARI_P05` | Mean and fifth percentile of the adjusted Rand index comparing sampled participants' full-data and subset-refit assignments [@hubert1985]. ARI is invariant to cluster numbering and can be negative when agreement is worse than chance. |
-| `StabilityJaccard_Mean`, `StabilityJaccard_Min` | Mean cluster-level Jaccard recovery and the minimum cluster-specific mean recovery across successful 80% participant subsample refits [@jaccard1901]. |
+| `StabilityJaccard_Mean`, `StabilityJaccard_Min` | Mean cluster-level Jaccard recovery and the minimum cluster-specific mean recovery across successful 90% participant subsample refits [@jaccard1901]. |
 | `ReproducibilityScore` | Mean of finite `StabilityARI_Mean` and `StabilityJaccard_Mean`; it is unavailable when neither component is estimable. |
 | `AHPIndex` / `ahp_index` and `*_scaled` | Advisory within-candidate ranking, calculated from the documented method-specific raw metrics. The recommendation does not finalize a model or alter any fit plot. |
 
@@ -812,7 +826,7 @@ rescaling used to construct its index, not a standalone scientific result.
 | Latent class analysis | Log likelihood (higher), `AIC`/`BIC` (lower), and entropy (higher) from the fitted item-response model [@linzer2011]. |
 | HDBSCAN | `Persistence` (mean cluster persistence; higher), `NoiseProportion` (lower), and the data-derived extracted class count. Membership probability and outlier score are assignment diagnostics, not candidate-selection probabilities [@mcinnes2017]. |
 | SOM + Mclust | The LPA criteria, node allocation, BLRT, and subsample metrics defined in the dedicated SOM + Mclust table below. SOM distances describe map representation, not phenotype probability [@kohonen1982]. |
-| SOM + HDBSCAN | Node-codebook HDBSCAN persistence, noise proportion, extracted node-cluster count, and 80% participant subsample stability. `minPts` and epsilon are requested settings; class count is data-derived. |
+| SOM + HDBSCAN | Node-codebook HDBSCAN persistence, noise proportion, extracted node-cluster count, and 90% participant subsample stability. `minPts` and epsilon are requested settings; class count is data-derived. |
 
 `CreateClusterModel_SOM_MClust()` is the explicit SOM + Mclust API.
 `CreateSOMClusterModel()` remains available for compatibility but is deprecated.

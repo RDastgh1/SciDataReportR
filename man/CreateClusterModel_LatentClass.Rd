@@ -35,7 +35,7 @@ CreateClusterModel_LatentClass(
 
 \item{seed}{Random seed controlling latent-class random starts.}
 
-\item{stability_resamples}{Number of 80\% participant subsample refits.}
+\item{stability_resamples}{Number of 90\% participant subsample refits.}
 
 \item{stability_seed}{Seed controlling participant subsampling.}
 
@@ -58,8 +58,8 @@ It estimates class-specific response probabilities and posterior membership.
 }
 \section{Stability output}{
 
-Stability assesses internal reproducibility by full-pipeline 80\% participant
-subsampling without replacement. For each replicate, 80\% of complete
+Stability assesses internal reproducibility by full-pipeline 90\% participant
+subsampling without replacement. For each replicate, 90\% of complete
 participants are selected once, all preprocessing, any reduction (PCA,
 MCA, or SOM), and the selected clustering method are refit. Assignments from
 that refit are compared with the full-data reference assignments for the
@@ -69,7 +69,7 @@ independent-cohort validation.
 
 \code{Stability$settings} records the analysis provenance:
 \itemize{
-\item \code{resamples}: requested number of 80\% subsample refits.
+\item \code{resamples}: requested number of 90\% subsample refits.
 \item \code{seed}: seed used to derive reproducible sampling and model seeds.
 \item \code{refit_scope}: always \code{"full_pipeline_in_sample"}, meaning
 preprocessing, reduction where applicable, and clustering were all refit.
@@ -77,7 +77,7 @@ preprocessing, reduction where applicable, and clustering were all refit.
 participants used in a refit enter that replicate's agreement metrics.
 \item \code{resample_type}: \code{"subsample_without_replacement"} for the
 primary stability analysis.
-\item \code{resample_fraction}: the retained participant fraction, \code{0.80}.
+\item \code{resample_fraction}: the retained participant fraction, \code{0.90}.
 \item \code{coassignment_limit}: maximum number of complete training
 participants (2,000) for which the full pairwise co-assignment matrix is
 calculated.
