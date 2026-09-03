@@ -13,6 +13,8 @@ PlotPointCorrelationsHeatmap(
   Ordinal = TRUE,
   binary_map = NULL,
   fdr_scope = c("matrix", "per_outcome", "per_predictor"),
+  cluster_rows = FALSE,
+  cluster_columns = FALSE,
   Data = lifecycle::deprecated(),
   Covariates = lifecycle::deprecated()
 )
@@ -37,6 +39,9 @@ If NULL, a mapping is created internally for \code{CatVars}.}
 \code{\link[=ApplyFDRCorrection]{ApplyFDRCorrection()}}. \code{"matrix"} corrects across all p-values at once
 (historical behavior). \code{"per_outcome"} corrects separately within each
 continuous variable: outcomes are the continuous variables (\code{ContVars}).}
+
+\item{cluster_rows, cluster_columns}{Logical; cluster continuous y-axis rows
+and/or binary x-axis columns using displayed correlation profiles.}
 
 \item{Data}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
 

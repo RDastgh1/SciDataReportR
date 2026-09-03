@@ -66,6 +66,8 @@ PlotDirectionalHeatmaps <- function(data,
     Relabel = TRUE,
     Ordinal = TRUE,
     fdr_scope = c("matrix", "per_outcome", "per_predictor"),
+    cluster_rows = FALSE,
+    cluster_columns = FALSE,
     Data = lifecycle::deprecated(),
     xVars = lifecycle::deprecated(),
     yVars = lifecycle::deprecated()) {
@@ -90,6 +92,12 @@ PlotDirectionalHeatmaps <- function(data,
     if (is.null(yVars)) yVars <- variables
   }
   fdr_scope <- match.arg(fdr_scope)
+  if (!is.logical(cluster_rows) || length(cluster_rows) != 1 || is.na(cluster_rows)) {
+    stop("cluster_rows must be TRUE or FALSE.")
+  }
+  if (!is.logical(cluster_columns) || length(cluster_columns) != 1 || is.na(cluster_columns)) {
+    stop("cluster_columns must be TRUE or FALSE.")
+  }
 
 
   # ---- Validate inputs ----------------------------------------------------
@@ -299,6 +307,10 @@ PlotDirectionalHeatmaps <- function(data,
       Unadjusted   = Unadjusted,
       FDRCorrected = FDRCorrected,
       Relabel      = Relabel,
+      AxisOrder    = list(
+        rows = character(0), columns = character(0),
+        cluster_rows = cluster_rows, cluster_columns = cluster_columns
+      ),
       BinaryMapping= BinaryMapping,
       Excluded     = Excluded
     ))
@@ -315,8 +327,15 @@ PlotDirectionalHeatmaps <- function(data,
   }, character(1))
   ordered_ylabels <- unique(ordered_ylabels[!is.na(ordered_ylabels)])
 
-  df_Combined_plot$XLabel <- factor(df_Combined_plot$XLabel, levels = ordered_xlabels)
-  df_Combined_plot$YLabel <- factor(df_Combined_plot$YLabel, levels = ordered_ylabels)
+  AxisOrder <- .OrderHeatmapAxes(
+    df_Combined_plot, row_id = "YVar", column_id = "XVar", value = "correlation",
+    row_order = yVars_orig, column_order = xVars_orig,
+    cluster_rows = cluster_rows, cluster_columns = cluster_columns
+  )
+  x_axis_labels <- stats::setNames(ordered_xlabels, xVars_orig)
+  y_axis_labels <- stats::setNames(ordered_ylabels, yVars_orig)
+  df_Combined_plot$XOrder <- factor(df_Combined_plot$XVar, levels = AxisOrder$columns)
+  df_Combined_plot$YOrder <- factor(df_Combined_plot$YVar, levels = rev(AxisOrder$rows))
 
   # ---- 5) Build layered heatmap ------------------------------------------
   p <- ggplot2::ggplot()
@@ -325,7 +344,7 @@ PlotDirectionalHeatmaps <- function(data,
     p <- p +
       ggplot2::geom_tile(
         data = dplyr::filter(df_Combined_plot, test == "pearson"),
-        ggplot2::aes(x = XLabel, y = YLabel, fill = correlation)
+        ggplot2::aes(x = XOrder, y = YOrder, fill = correlation)
       ) +
       ggplot2::scale_fill_gradient2(limits = c(-1, 1), name = "r") +
       ggnewscale::new_scale_fill()
@@ -335,7 +354,7 @@ PlotDirectionalHeatmaps <- function(data,
     p <- p +
       ggplot2::geom_tile(
         data = dplyr::filter(df_Combined_plot, test == "spearman"),
-        ggplot2::aes(x = XLabel, y = YLabel, fill = correlation)
+        ggplot2::aes(x = XOrder, y = YOrder, fill = correlation)
       ) +
       ggplot2::scale_fill_gradient2(limits = c(-1, 1), name = "\u03C1") +
       ggnewscale::new_scale_fill()
@@ -345,7 +364,7 @@ PlotDirectionalHeatmaps <- function(data,
     p <- p +
       ggplot2::geom_tile(
         data = dplyr::filter(df_Combined_plot, test == "Phi"),
-        ggplot2::aes(x = XLabel, y = YLabel, fill = correlation)
+        ggplot2::aes(x = XOrder, y = YOrder, fill = correlation)
       ) +
       ggplot2::scale_fill_gradient2(
         limits = c(-1, 1),
@@ -360,7 +379,7 @@ PlotDirectionalHeatmaps <- function(data,
     p <- p +
       ggplot2::geom_tile(
         data = dplyr::filter(df_Combined_plot, test == "Point Correlation"),
-        ggplot2::aes(x = XLabel, y = YLabel, fill = correlation)
+        ggplot2::aes(x = XOrder, y = YOrder, fill = correlation)
       ) +
       ggplot2::scale_fill_gradient2(
         limits = c(-1, 1),
@@ -373,14 +392,14 @@ PlotDirectionalHeatmaps <- function(data,
 
   # reset limits to preserve ordering
   p <- p +
-    ggplot2::scale_x_discrete(limits = levels(df_Combined_plot$XLabel)) +
-    ggplot2::scale_y_discrete(limits = levels(df_Combined_plot$YLabel))
+    ggplot2::scale_x_discrete(limits = AxisOrder$columns, labels = x_axis_labels) +
+    ggplot2::scale_y_discrete(limits = rev(AxisOrder$rows), labels = y_axis_labels)
 
   # annotate with raw and FDR stars
   p_raw <- p +
     ggplot2::geom_text(
       data = df_Combined_plot,
-      ggplot2::aes(x = XLabel, y = YLabel, label = stars),
+      ggplot2::aes(x = XOrder, y = YOrder, label = stars),
       color = "black"
     ) +
     ggplot2::theme(
@@ -397,7 +416,7 @@ PlotDirectionalHeatmaps <- function(data,
   p_FDR <- p +
     ggplot2::geom_text(
       data = df_Combined_plot,
-      ggplot2::aes(x = XLabel, y = YLabel, label = stars_FDR),
+      ggplot2::aes(x = XOrder, y = YOrder, label = stars_FDR),
       color = "black"
     ) +
     ggplot2::theme(
@@ -419,6 +438,7 @@ PlotDirectionalHeatmaps <- function(data,
     Unadjusted    = Unadjusted,
     FDRCorrected  = FDRCorrected,
     Relabel       = Relabel,
+    AxisOrder     = AxisOrder,
     BinaryMapping = BinaryMapping,
     Excluded      = Excluded
   )

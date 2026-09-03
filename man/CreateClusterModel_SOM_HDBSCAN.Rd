@@ -18,6 +18,7 @@ CreateClusterModel_SOM_HDBSCAN(
   stability_resamples = 0L,
   stability_seed = seed_hdbscan + 1L,
   stability_progress = FALSE,
+  stability_cores = NULL,
   ...
 )
 }
@@ -49,6 +50,11 @@ reuse the reference model's resolved SOM grid dimensions.}
 \item{stability_seed}{Seed controlling participant subsampling.}
 
 \item{stability_progress}{Whether to print subsample progress messages.}
+
+\item{stability_cores}{Number of workers for stability refits. \code{NULL} uses
+all detected physical cores minus one, capped at the requested resamples
+and any scheduler limit. Each worker holds a refit in memory, so lower this
+setting for large SOM or high-dimensional analyses.}
 
 \item{...}{Additional arguments passed to \code{\link[=CreateClusterModel_SOM_MClust]{CreateClusterModel_SOM_MClust()}}.}
 }

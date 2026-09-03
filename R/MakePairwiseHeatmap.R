@@ -352,25 +352,14 @@ MakePairwiseHeatmap <- function(data,
   group_order <- setdiff(group_levels, Referent)
   row_order <- variables
 
-  if (isTRUE(cluster_rows)) {
-    wide_rows <- stats::xtabs(
-      EstimatedMeanDifference ~ Variable + Group,
-      data = results
-    )
-    if (nrow(wide_rows) > 1 && ncol(wide_rows) > 0 && all(is.finite(wide_rows))) {
-      row_order <- rownames(wide_rows)[stats::hclust(stats::dist(wide_rows))$order]
-    }
-  }
-
-  if (isTRUE(cluster_columns)) {
-    wide_cols <- stats::xtabs(
-      EstimatedMeanDifference ~ Variable + Group,
-      data = results
-    )
-    if (ncol(wide_cols) > 1 && nrow(wide_cols) > 0 && all(is.finite(wide_cols))) {
-      group_order <- colnames(wide_cols)[stats::hclust(stats::dist(t(wide_cols)))$order]
-    }
-  }
+  AxisOrder <- .OrderHeatmapAxes(
+    results, row_id = "Variable", column_id = "Group",
+    value = "EstimatedMeanDifference", row_order = row_order,
+    column_order = group_order, cluster_rows = cluster_rows,
+    cluster_columns = cluster_columns
+  )
+  row_order <- AxisOrder$rows
+  group_order <- AxisOrder$columns
 
   row_labels <- stats::setNames(
     vapply(row_order, function(v) .SdrLabelOrName(data, v), character(1)),
@@ -465,6 +454,7 @@ MakePairwiseHeatmap <- function(data,
     ),
     cluster_rows = cluster_rows,
     cluster_columns = cluster_columns,
+    AxisOrder = AxisOrder,
     show_caption = show_caption,
     x_axis_text_angle = x_axis_text_angle
   )
@@ -477,6 +467,7 @@ MakePairwiseHeatmap <- function(data,
     ScalingParameters = scale_obj$Parameters,
     Warnings = contrast_res$Warnings
   )
+  out$AxisOrder <- AxisOrder
 
   class(out) <- c("SciDataReportRPairwiseHeatmap", class(out))
   out

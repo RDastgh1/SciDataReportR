@@ -250,7 +250,7 @@
 }
 
 .ValidateClusterStability <- function(stability_resamples, stability_seed,
-    stability_progress) {
+    stability_progress, stability_cores = NULL) {
   if (!is.numeric(stability_resamples) || length(stability_resamples) != 1L ||
       is.na(stability_resamples) || stability_resamples < 0 ||
       stability_resamples != as.integer(stability_resamples)) {
@@ -264,7 +264,64 @@
       is.na(stability_progress)) {
     stop("stability_progress must be TRUE or FALSE.")
   }
-  as.integer(stability_resamples)
+  resamples <- as.integer(stability_resamples)
+  .ResolveClusterStabilityCores(stability_cores, resamples)
+  resamples
+}
+
+.ResolveClusterStabilityCores <- function(stability_cores, resamples) {
+  if (!is.null(stability_cores) &&
+      (!is.numeric(stability_cores) || length(stability_cores) != 1L ||
+       is.na(stability_cores) || !is.finite(stability_cores) ||
+       stability_cores < 1 || stability_cores != as.integer(stability_cores))) {
+    stop("stability_cores must be NULL or a single positive integer.", call. = FALSE)
+  }
+  requested_cores <- if (is.null(stability_cores)) "automatic" else
+    as.character(as.integer(stability_cores))
+  detected_cores <- suppressWarnings(parallel::detectCores(logical = FALSE))
+  if (is.na(detected_cores) || detected_cores < 1L) detected_cores <- 1L
+  available_cores <- if (requireNamespace("future", quietly = TRUE)) {
+    future::availableCores()
+  } else detected_cores
+  if (is.na(available_cores) || available_cores < 1L) available_cores <- 1L
+  automatic_cores <- max(1L, as.integer(detected_cores) - 1L)
+  resolved_cores <- if (is.null(stability_cores)) automatic_cores else
+    as.integer(stability_cores)
+  resolved_cores <- min(resolved_cores, as.integer(available_cores))
+  if (resamples > 0L) resolved_cores <- min(resolved_cores, as.integer(resamples))
+  list(requested = requested_cores, resolved = as.integer(resolved_cores))
+}
+
+.ClusterParallelMap <- function(indices, fn, cores) {
+  if (cores <= 1L || length(indices) <= 1L) {
+    results <- lapply(indices, fn)
+    attr(results, "backend") <- "serial"
+    attr(results, "resolved_cores") <- 1L
+    return(results)
+  }
+  if (!requireNamespace("future", quietly = TRUE) ||
+      !requireNamespace("future.apply", quietly = TRUE)) {
+    stop("Packages 'future' and 'future.apply' are required for parallel stability refits.",
+      call. = FALSE)
+  }
+  used_parallel <- TRUE
+  results <- tryCatch({
+    old_plan <- future::plan()
+    on.exit(future::plan(old_plan), add = TRUE)
+    future::plan(future::multisession, workers = cores)
+    future.apply::future_lapply(indices, fn, future.seed = TRUE)
+  }, error = function(error) {
+    used_parallel <<- FALSE
+    warning("Parallel stability workers could not be started; using serial refits. ",
+      conditionMessage(error), call. = FALSE)
+    lapply(indices, fn)
+  })
+  backend <- if (used_parallel) "future_multisession" else "serial"
+  if (is.null(attr(results, "backend"))) attr(results, "backend") <- backend
+  if (is.null(attr(results, "resolved_cores"))) {
+    attr(results, "resolved_cores") <- if (identical(backend, "serial")) 1L else cores
+  }
+  results
 }
 
 # Reject settings from the opposite lifecycle explicitly. `missing()` is
@@ -321,7 +378,10 @@
       resample_type = settings$resample_type,
       resample_fraction = settings$resample_fraction,
       coassignment_limit = settings$coassignment_limit,
-      noise_policy = settings$noise_policy),
+      noise_policy = settings$noise_policy,
+      requested_cores = settings$requested_cores,
+      resolved_cores = settings$resolved_cores,
+      backend = settings$backend),
     replicates = dplyr::bind_rows(lapply(stabilities, `[[`, "replicates")),
     cluster_recovery = dplyr::bind_rows(lapply(stabilities, `[[`, "cluster_recovery")),
     summary = dplyr::bind_rows(lapply(stabilities, `[[`, "summary")),
@@ -391,7 +451,8 @@
 .ClusterSubsampleStability <- function(data, reference, fit_subset,
     resamples = 0L, seed = 93422L, candidate = list(), noise_label = NULL,
     progress = FALSE, preserve_levels = character(),
-    coassignment_limit = 2000L, subsample_fraction = .90) {
+    coassignment_limit = 2000L, subsample_fraction = .90,
+    stability_cores = NULL) {
   data <- .AddClusterRowID(data)
   if (!is.numeric(resamples) || length(resamples) != 1L || is.na(resamples) ||
       resamples < 0 || resamples != as.integer(resamples)) {
@@ -399,15 +460,16 @@
   }
   resamples <- as.integer(resamples)
   if (resamples < 1L) return(NULL)
+  core_settings <- .ResolveClusterStabilityCores(stability_cores, resamples)
   valid_reference <- which(!is.na(reference))
-  replicate_rows <- vector("list", resamples)
-  recovery_rows <- vector("list", resamples)
-  assignments <- vector("list", resamples)
   set.seed(seed)
   sampling_seeds <- sample.int(.Machine$integer.max, resamples)
   model_seeds <- sample.int(.Machine$integer.max, resamples)
-  for (replicate in seq_len(resamples)) {
-    if (isTRUE(progress)) message("Stability subsample ", replicate, "/", resamples)
+  if (isTRUE(progress)) {
+    message("Running ", resamples, " stability refits with ",
+      core_settings$resolved, " worker", if (core_settings$resolved == 1L) "" else "s", ".")
+  }
+  replicate_results <- .ClusterParallelMap(seq_len(resamples), function(replicate) {
     set.seed(sampling_seeds[[replicate]])
     sample_n <- max(2L, floor(length(valid_reference) * subsample_fraction))
     sampled <- sample(valid_reference, sample_n, replace = FALSE)
@@ -416,12 +478,13 @@
     result <- tryCatch(
       fit_subset(df_Subset, model_seeds[[replicate]]), error = function(e) e)
     if (inherits(result, "error")) {
-      replicate_rows[[replicate]] <- dplyr::tibble(
-        Replicate = replicate, SamplingSeed = sampling_seeds[[replicate]],
-        ModelSeed = model_seeds[[replicate]],
-        ARI = NA_real_, NoiseSensitivity = NA_real_, NoiseSpecificity = NA_real_,
-        Status = "failed", Error = conditionMessage(result))
-      next
+      return(list(
+        replicate = dplyr::tibble(
+          Replicate = replicate, SamplingSeed = sampling_seeds[[replicate]],
+          ModelSeed = model_seeds[[replicate]],
+          ARI = NA_real_, NoiseSensitivity = NA_real_, NoiseSpecificity = NA_real_,
+          Status = "failed", Error = conditionMessage(result)),
+        recovery = NULL, assignment = NULL))
     }
     if (!is.data.frame(result) ||
         !all(c(".row_id", "Cluster") %in% names(result))) {
@@ -452,18 +515,26 @@
     recovery <- .ClusterJaccard(
       comparison$ReferenceCluster[compare], comparison$RefitCluster[compare],
       noise_label = noise_label)
-    if (nrow(recovery)) recovery_rows[[replicate]] <- dplyr::mutate(recovery, Replicate = replicate)
+    if (nrow(recovery)) recovery <- dplyr::mutate(recovery, Replicate = replicate)
     assignment_full <- rep(NA_integer_, nrow(data))
     assignment_full[match(comparison$.row_id, data$.row_id)] <- comparison$RefitCluster
-    assignments[[replicate]] <- assignment_full
-    replicate_rows[[replicate]] <- dplyr::tibble(
-      Replicate = replicate, SamplingSeed = sampling_seeds[[replicate]],
-      ModelSeed = model_seeds[[replicate]], ARI = ari,
-      NoiseSensitivity = noise_sensitivity, NoiseSpecificity = noise_specificity,
-      Status = "success", Error = NA_character_)
+    list(
+      replicate = dplyr::tibble(
+        Replicate = replicate, SamplingSeed = sampling_seeds[[replicate]],
+        ModelSeed = model_seeds[[replicate]], ARI = ari,
+        NoiseSensitivity = noise_sensitivity, NoiseSpecificity = noise_specificity,
+        Status = "success", Error = NA_character_),
+      recovery = if (nrow(recovery)) recovery else NULL,
+      assignment = assignment_full)
+  }, cores = core_settings$resolved)
+  stability_backend <- attr(replicate_results, "backend")
+  resolved_cores <- attr(replicate_results, "resolved_cores")
+  if (isTRUE(progress) && identical(stability_backend, "future_multisession")) {
+    message("Completed ", resamples, " parallel stability refits.")
   }
-  replicates <- dplyr::bind_rows(replicate_rows)
-  cluster_recovery <- dplyr::bind_rows(recovery_rows)
+  replicates <- dplyr::bind_rows(lapply(replicate_results, `[[`, "replicate"))
+  cluster_recovery <- dplyr::bind_rows(lapply(replicate_results, `[[`, "recovery"))
+  assignments <- lapply(replicate_results, `[[`, "assignment")
   successful <- dplyr::filter(replicates, .data$Status == "success")
   cluster_jaccard <- if (nrow(cluster_recovery)) cluster_recovery %>%
     dplyr::group_by(.data$Cluster) %>%
@@ -502,7 +573,10 @@
     resample_fraction = subsample_fraction,
     coassignment_limit = coassignment_limit, noise_policy = if (is.null(noise_label))
       "all clusters included" else
-      "noise included in ARI and excluded from phenotype Jaccard"),
+      "noise included in ARI and excluded from phenotype Jaccard",
+    requested_cores = core_settings$requested,
+    resolved_cores = resolved_cores,
+    backend = stability_backend),
     replicates = replicates,
     cluster_recovery = cluster_recovery, summary = summary,
     failures = dplyr::filter(replicates, .data$Status != "success"),
@@ -721,6 +795,10 @@
 #'   replacement. Use `0` to disable stability analysis.
 #' @param stability_seed Seed controlling participant subsampling.
 #' @param stability_progress Whether to print subsample progress messages.
+#' @param stability_cores Number of workers for stability refits. `NULL` uses
+#'   all detected physical cores minus one, capped at the requested resamples
+#'   and any scheduler limit. Each worker holds a refit in memory, so lower this
+#'   setting for large SOM or high-dimensional analyses.
 #' @inheritSection cluster-stability-output Stability output
 #' @return A projectable mixture model. `ModelInfo$fit_table` contains BIC,
 #'   ICL, entropy, uncertainty, and subsample stability metrics. `BIC` and
@@ -766,13 +844,14 @@ CreateClusterModel_MClust <- function(data, variables = NULL,
     models = c(1L, 2L, 3L, 6L), final_k = NULL, final_model = NULL,
     ZScoreType = NULL, Scaling = NULL,
     ClusterVariableName = "Cluster", seed = 93421L, stability_resamples = 0L,
-    stability_seed = seed + 1L, stability_progress = FALSE) {
+    stability_seed = seed + 1L, stability_progress = FALSE,
+    stability_cores = NULL) {
   supplied <- list(k_range = !missing(k_range), models = !missing(models),
     final_k = !missing(final_k), final_model = !missing(final_model))
   if (!requireNamespace("mclust", quietly = TRUE)) stop("Package 'mclust' is required.")
   if (!requireNamespace("tidyLPA", quietly = TRUE)) stop("Package 'tidyLPA' is required.")
   stability_resamples <- .ValidateClusterStability(
-    stability_resamples, stability_seed, stability_progress)
+    stability_resamples, stability_seed, stability_progress, stability_cores)
   method <- .ClusterMethod(method)
   .ValidateClusterLifecycle(method, supplied[c("k_range", "models")],
     supplied[c("final_k", "final_model")])
@@ -803,7 +882,7 @@ CreateClusterModel_MClust <- function(data, variables = NULL,
         dplyr::select(
           fitted$ProbFit$individual, dplyr::all_of(c(".row_id", "Cluster")))
       }, stability_resamples, stability_seed + i, list(Model = model, Classes = k),
-      progress = stability_progress)
+      progress = stability_progress, stability_cores = stability_cores)
     })
     stability_summary <- dplyr::bind_rows(lapply(stabilities, `[[`, "summary"))
     fit_table <- dplyr::left_join(fit_table, stability_summary, by = c("Model", "Classes"))
@@ -877,6 +956,7 @@ CreateClusterModel_MClust <- function(data, variables = NULL,
     list(k = best$G, model = ModelInfo$final_model,
       model_name = ModelInfo$final_model_name), prep$complete_rows,
     list(distance_metric = "assigned-component Mahalanobis distance"))
+  out$Specification$stability <- if (is.null(Stability)) NULL else Stability$settings
   class(out) <- c("Pipeline_MClust", class(out)); out
 }
 
@@ -1060,10 +1140,10 @@ CreateClusterModel_KMeans <- function(data, variables = NULL,
     ZScoreType = NULL, Scaling = NULL,
     ClusterVariableName = "Cluster", seed = 93421L, nstart = 50L,
     stability_resamples = 0L, stability_seed = seed + 1L,
-    stability_progress = FALSE) {
+    stability_progress = FALSE, stability_cores = NULL) {
   supplied <- list(k_range = !missing(k_range), final_k = !missing(final_k))
   stability_resamples <- .ValidateClusterStability(
-    stability_resamples, stability_seed, stability_progress)
+    stability_resamples, stability_seed, stability_progress, stability_cores)
   method <- .ClusterMethod(method)
   .ValidateClusterLifecycle(method, supplied["k_range"], supplied["final_k"])
   Scaling <- .ResolveNumericClusterScaling(ZScoreType, Scaling)
@@ -1092,7 +1172,8 @@ CreateClusterModel_KMeans <- function(data, variables = NULL,
           stability_resamples = 0L)
         dplyr::select(
           fitted$ProbFit$individual, dplyr::all_of(c(".row_id", "Cluster")))
-      }, stability_resamples, stability_seed + k, list(Classes = k), progress = stability_progress)
+      }, stability_resamples, stability_seed + k, list(Classes = k),
+      progress = stability_progress, stability_cores = stability_cores)
     })
     stability_summary <- dplyr::bind_rows(lapply(stabilities, `[[`, "summary"))
     rows <- dplyr::left_join(rows, stability_summary, by = "Classes")
@@ -1158,6 +1239,7 @@ CreateClusterModel_KMeans <- function(data, variables = NULL,
     out$Preprocessing, dplyr::select(rows, dplyr::any_of("Classes")),
     list(k = nrow(best$centers)), prep$complete_rows,
     list(distance_metric = "Euclidean distance to frozen centroid"))
+  out$Specification$stability <- if (is.null(Stability)) NULL else Stability$settings
   class(out) <- c("Pipeline_KMeans", class(out)); out
 }
 
@@ -1222,9 +1304,9 @@ ProjectCluster.Pipeline_KMeans <- function(object, new_df, ClusterVariableName =
     final_k, final_model, Scaling, ClusterVariableName, seed, pca_variance_threshold,
     nstart = NULL, models = c(1L, 2L, 3L, 6L),
     stability_resamples = 0L, stability_seed = seed + 1L,
-    stability_progress = FALSE) {
+    stability_progress = FALSE, stability_cores = NULL) {
   stability_resamples <- .ValidateClusterStability(
-    stability_resamples, stability_seed, stability_progress)
+    stability_resamples, stability_seed, stability_progress, stability_cores)
   prep <- .PrepareClusterNumeric(data, variables, Scaling)
   if (!any(prep$complete_rows)) stop("No complete rows available for PCA clustering.")
   df_PCA <- as.data.frame(prep$X[prep$complete_rows, , drop = FALSE])
@@ -1290,7 +1372,8 @@ ProjectCluster.Pipeline_KMeans <- function(object, new_df, ClusterVariableName =
       }, stability_resamples, stability_seed + i,
       candidate = if (algorithm == "mclust") {
         list(Model = candidate_model, Classes = candidate_k)
-      } else list(Classes = candidate_k), progress = stability_progress)
+      } else list(Classes = candidate_k), progress = stability_progress,
+      stability_cores = stability_cores)
     })
     Stability <- .CombineClusterStabilities(
       stabilities, stability_resamples, stability_seed)
@@ -1368,6 +1451,7 @@ ProjectCluster.Pipeline_KMeans <- function(object, new_df, ClusterVariableName =
     if (algorithm == "mclust") "PCA + Mclust" else "PCA + KMeans",
     prep$variables, list(seed = seed, stability_seed = stability_seed),
     out$Preprocessing, review$fit_table, list(), prep$complete_rows)
+  out$Specification$stability <- if (is.null(Stability)) NULL else Stability$settings
   class(out) <- c(
     if (algorithm == "mclust") "Pipeline_PCA_MClust" else "Pipeline_PCA_KMeans",
     class(selected))
@@ -1468,7 +1552,8 @@ CreateClusterModel_PCA_MClust <- function(data, variables = NULL, method = c("ex
     k_range = 2:10, models = c(1L, 2L, 3L, 6L), final_k = NULL, final_model = NULL,
     ZScoreType = NULL, Scaling = NULL,
     ClusterVariableName = "Cluster", seed = 93421L, pca_variance_threshold = 0.85,
-    stability_resamples = 0L, stability_seed = seed + 1L, stability_progress = FALSE) {
+    stability_resamples = 0L, stability_seed = seed + 1L,
+    stability_progress = FALSE, stability_cores = NULL) {
   supplied <- list(k_range = !missing(k_range), models = !missing(models),
     final_k = !missing(final_k), final_model = !missing(final_model))
   method <- .ClusterMethod(method)
@@ -1478,7 +1563,8 @@ CreateClusterModel_PCA_MClust <- function(data, variables = NULL, method = c("ex
   .CreatePCACluster(data, variables, "mclust", method, k_range, final_k, final_model,
                     resolved_scaling, ClusterVariableName, seed, pca_variance_threshold, models = .ResolveMclustModels(models),
                     stability_resamples = stability_resamples, stability_seed = stability_seed,
-                    stability_progress = stability_progress)
+                    stability_progress = stability_progress,
+                    stability_cores = stability_cores)
 }
 
 #' Project data onto a PCA + Mclust model
@@ -1547,7 +1633,8 @@ CreateClusterModel_PCA_KMeans <- function(data, variables = NULL, method = c("ex
     k_range = 2:10, final_k = NULL,
     ZScoreType = NULL, Scaling = NULL,
     ClusterVariableName = "Cluster", seed = 93421L, nstart = 50L, pca_variance_threshold = 0.85,
-    stability_resamples = 0L, stability_seed = seed + 1L, stability_progress = FALSE) {
+    stability_resamples = 0L, stability_seed = seed + 1L,
+    stability_progress = FALSE, stability_cores = NULL) {
   supplied <- list(k_range = !missing(k_range), final_k = !missing(final_k))
   method <- .ClusterMethod(method)
   .ValidateClusterLifecycle(method, supplied["k_range"], supplied["final_k"])
@@ -1555,7 +1642,8 @@ CreateClusterModel_PCA_KMeans <- function(data, variables = NULL, method = c("ex
   .CreatePCACluster(data, variables, "kmeans", method, k_range, final_k, NULL,
                     resolved_scaling, ClusterVariableName, seed, pca_variance_threshold, nstart,
                     stability_resamples = stability_resamples, stability_seed = stability_seed,
-                    stability_progress = stability_progress)
+                    stability_progress = stability_progress,
+                    stability_cores = stability_cores)
 }
 
 #' Project data onto a PCA + K-means model
@@ -1659,14 +1747,15 @@ CreateClusterModel_HDBSCAN <- function(data, variables = NULL,
     final_cluster_selection_epsilon = NULL,
     ZScoreType = NULL, Scaling = NULL,
     ClusterVariableName = "Cluster", seed = 93421L, stability_resamples = 0L,
-    stability_seed = seed + 1L, stability_progress = FALSE) {
+    stability_seed = seed + 1L, stability_progress = FALSE,
+    stability_cores = NULL) {
   supplied <- list(minPts_range = !missing(minPts_range),
     cluster_selection_epsilon_range = !missing(cluster_selection_epsilon_range),
     final_minPts = !missing(final_minPts),
     final_cluster_selection_epsilon = !missing(final_cluster_selection_epsilon))
   if (!requireNamespace("dbscan", quietly = TRUE)) stop("Package 'dbscan' is required.")
   stability_resamples <- .ValidateClusterStability(
-    stability_resamples, stability_seed, stability_progress)
+    stability_resamples, stability_seed, stability_progress, stability_cores)
   method <- .ClusterMethod(method)
   .ValidateClusterLifecycle(method,
     supplied[c("minPts_range", "cluster_selection_epsilon_range")],
@@ -1702,7 +1791,7 @@ CreateClusterModel_HDBSCAN <- function(data, variables = NULL,
           fitted$ProbFit$individual, dplyr::all_of(c(".row_id", "Cluster")))
       }, stability_resamples, stability_seed + i,
       list(MinPts = grid$MinPts[[i]], Epsilon = grid$Epsilon[[i]]), noise_label = 0L,
-      progress = stability_progress)
+      progress = stability_progress, stability_cores = stability_cores)
     })
     stability_summary <- dplyr::bind_rows(lapply(stabilities, `[[`, "summary"))
     rows <- dplyr::left_join(rows, stability_summary, by = c("MinPts", "Epsilon"))
@@ -1796,6 +1885,7 @@ CreateClusterModel_HDBSCAN <- function(data, variables = NULL,
     out$Preprocessing, grid, list(minPts = minPts,
       epsilon = grid$Epsilon[[best_i]]), prep$complete_rows,
     list(projection = "conservative nearest-training-support assignment"))
+  out$Specification$stability <- if (is.null(Stability)) NULL else Stability$settings
   class(out) <- c("Pipeline_HDBSCAN", class(out)); out
 }
 
@@ -1958,6 +2048,10 @@ ProjectCluster.Pipeline_HDBSCAN <- function(object, new_df, ClusterVariableName 
 #' @param stability_resamples Number of 90% participant subsample refits.
 #' @param stability_seed Seed controlling participant subsampling.
 #' @param stability_progress Whether to print subsample progress messages.
+#' @param stability_cores Number of workers for stability refits. `NULL` uses
+#'   all detected physical cores minus one, capped at the requested resamples
+#'   and any scheduler limit. Each worker holds a refit in memory, so lower this
+#'   setting for large or high-dimensional analyses.
 #' @param ClusterVariableName Output cluster column name.
 #' @inheritSection cluster-stability-output Stability output
 #' @return A fitted PAM model with frozen medoids, numeric ranges, categorical
@@ -2001,11 +2095,12 @@ ProjectCluster.Pipeline_HDBSCAN <- function(object, new_df, ClusterVariableName 
 CreateClusterModel_Gower_PAM <- function(data, variables = NULL,
     method = c("exploratory", "finalize"), k_range = 2:10, final_k = NULL,
     ClusterVariableName = "Cluster", seed = 93421L, stability_resamples = 0L,
-    stability_seed = seed + 1L, stability_progress = FALSE) {
+    stability_seed = seed + 1L, stability_progress = FALSE,
+    stability_cores = NULL) {
   supplied <- list(k_range = !missing(k_range), final_k = !missing(final_k))
   if (!requireNamespace("cluster", quietly = TRUE)) stop("Package 'cluster' is required.")
   stability_resamples <- .ValidateClusterStability(
-    stability_resamples, stability_seed, stability_progress)
+    stability_resamples, stability_seed, stability_progress, stability_cores)
   if (!is.data.frame(data)) stop("data must be a data frame.")
   if (is.null(variables)) variables <- names(data)
   if (length(setdiff(variables, names(data)))) stop("data is missing required clustering variables.")
@@ -2037,7 +2132,8 @@ CreateClusterModel_Gower_PAM <- function(data, variables = NULL,
         dplyr::select(
           fitted$ProbFit$individual, dplyr::all_of(c(".row_id", "Cluster")))
       }, stability_resamples, stability_seed + i, list(Classes = ks[[i]]),
-      progress = stability_progress, preserve_levels = variables)
+      progress = stability_progress, preserve_levels = variables,
+      stability_cores = stability_cores)
     })
     stability_summary <- dplyr::bind_rows(lapply(stabilities, `[[`, "summary"))
     rows <- dplyr::left_join(rows, stability_summary, by = "Classes")
@@ -2111,6 +2207,7 @@ CreateClusterModel_Gower_PAM <- function(data, variables = NULL,
     out$Preprocessing, dplyr::select(rows, dplyr::any_of("Classes")),
     list(k = k), complete,
     list(distance_metric = "Gower distance to frozen medoid", levels = ModelInfo$levels))
+  out$Specification$stability <- if (is.null(Stability)) NULL else Stability$settings
   class(out) <- c("Pipeline_Gower_PAM", class(out)); out
 }
 

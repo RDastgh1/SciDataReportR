@@ -63,10 +63,18 @@ ScreenBiomarkerPerformance <- function(
     HeatmapMetric = "AdjustedAUC",
     Seed = 123,
     Relabel = TRUE,
-    codebook = NULL) {
+    codebook = NULL,
+    cluster_rows = FALSE,
+    cluster_columns = FALSE) {
 
   OutcomeType <- match.arg(OutcomeType)
   Validation <- match.arg(Validation)
+  if (!is.logical(cluster_rows) || length(cluster_rows) != 1 || is.na(cluster_rows)) {
+    stop("cluster_rows must be TRUE or FALSE.", call. = FALSE)
+  }
+  if (!is.logical(cluster_columns) || length(cluster_columns) != 1 || is.na(cluster_columns)) {
+    stop("cluster_columns must be TRUE or FALSE.", call. = FALSE)
+  }
 
   # Validate inputs
 
@@ -374,17 +382,36 @@ ScreenBiomarkerPerformance <- function(
       )
     )
 
+  AxisOrder <- .OrderHeatmapAxes(
+    heatmap_data, row_id = "Biomarker", column_id = "Outcome",
+    value = "HeatmapValue", row_order = biomarker_vars,
+    column_order = outcome_vars, cluster_rows = cluster_rows,
+    cluster_columns = cluster_columns
+  )
+  x_axis_labels <- stats::setNames(
+    heatmap_data$OutcomeLabel[match(AxisOrder$columns, heatmap_data$Outcome)],
+    AxisOrder$columns
+  )
+  y_axis_labels <- stats::setNames(
+    heatmap_data$BiomarkerLabel[match(AxisOrder$rows, heatmap_data$Biomarker)],
+    AxisOrder$rows
+  )
+  heatmap_data$OutcomeOrder <- factor(heatmap_data$Outcome, levels = AxisOrder$columns)
+  heatmap_data$BiomarkerOrder <- factor(heatmap_data$Biomarker, levels = rev(AxisOrder$rows))
+
   Heatmap <- ggplot2::ggplot(
     heatmap_data,
     ggplot2::aes(
-      x = .data$OutcomeLabel,
-      y = .data$BiomarkerLabel,
+      x = .data$OutcomeOrder,
+      y = .data$BiomarkerOrder,
       fill = .data$HeatmapValue,
       text = .data$Tooltip
     )
   ) +
     ggplot2::geom_tile() +
     ggplot2::scale_fill_viridis_c(na.value = "grey90") +
+    ggplot2::scale_x_discrete(labels = x_axis_labels) +
+    ggplot2::scale_y_discrete(labels = y_axis_labels) +
     ggplot2::labs(
       x = NULL,
       y = NULL,
@@ -621,6 +648,7 @@ ScreenBiomarkerPerformance <- function(
     RegressionTable = RegressionTable,
     ThresholdTable = ThresholdTable,
     FailureTable = FailureTable,
+    AxisOrder = AxisOrder,
     Evaluations = evaluation_list,
     Plots = list(
       Heatmap = Heatmap,

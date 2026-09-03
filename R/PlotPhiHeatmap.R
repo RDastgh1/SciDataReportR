@@ -20,6 +20,8 @@
 #'   (historical behavior). `"per_outcome"` corrects separately within
 #'   each y-axis variable (`YVar`); the Phi matrix is symmetric, so this
 #'   treats each variable's row of tiles as one family.
+#' @param cluster_rows,cluster_columns Logical; cluster y-axis rows and/or
+#'   x-axis columns using displayed Phi-coefficient profiles.
 #' @param Data \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
 #' @examples
 #' data(SampleData)
@@ -53,6 +55,8 @@ PlotPhiHeatmap <- function(data,
     Relabel = TRUE,
     binary_map = NULL,
     fdr_scope = c("matrix", "per_outcome", "per_predictor"),
+    cluster_rows = FALSE,
+    cluster_columns = FALSE,
     Data = lifecycle::deprecated()) {
   # Deprecated argument shims (SciDataReportR 19.15.0)
   if (lifecycle::is_present(Data)) {
@@ -61,6 +65,12 @@ PlotPhiHeatmap <- function(data,
   }
   if (!missing(data)) Data <- data
   fdr_scope <- match.arg(fdr_scope)
+  if (!is.logical(cluster_rows) || length(cluster_rows) != 1 || is.na(cluster_rows)) {
+    stop("cluster_rows must be TRUE or FALSE.")
+  }
+  if (!is.logical(cluster_columns) || length(cluster_columns) != 1 || is.na(cluster_columns)) {
+    stop("cluster_columns must be TRUE or FALSE.")
+  }
 
 
   # ---- helpers -------------------------------------------------------------
@@ -208,6 +218,20 @@ PlotPhiHeatmap <- function(data,
   stat.test$XLabel <- XLabel
   stat.test$YLabel <- YLabel
 
+  AxisOrder <- .OrderHeatmapAxes(
+    stat.test, row_id = "YVar", column_id = "XVar", value = "Phi",
+    row_order = CatVars, column_order = CatVars,
+    cluster_rows = cluster_rows, cluster_columns = cluster_columns
+  )
+  x_axis_labels <- stats::setNames(
+    XLabel[match(AxisOrder$columns, stat.test$XVar)], AxisOrder$columns
+  )
+  y_axis_labels <- stats::setNames(
+    YLabel[match(AxisOrder$rows, stat.test$YVar)], AxisOrder$rows
+  )
+  stat.test$XOrder <- factor(stat.test$XVar, levels = AxisOrder$columns)
+  stat.test$YOrder <- factor(stat.test$YVar, levels = rev(AxisOrder$rows))
+
   # tooltip
   PlotText <- paste0(
     "</br>X Label: ", stat.test$XLabel,
@@ -223,7 +247,7 @@ PlotPhiHeatmap <- function(data,
   # ---- plots ---------------------------------------------------------------
   p <- ggplot2::ggplot(
     stat.test,
-    ggplot2::aes(x = XLabel, y = YLabel, fill = Phi, text = PlotText)
+    ggplot2::aes(x = XOrder, y = YOrder, fill = Phi, text = PlotText)
   ) +
     ggplot2::geom_tile() +
     ggplot2::geom_text(ggplot2::aes(label = `p<.05`), color = "black") +
@@ -234,6 +258,8 @@ PlotPhiHeatmap <- function(data,
       high = scales::muted("green"),
       na.value = "grey85"
     ) +
+    ggplot2::scale_x_discrete(labels = x_axis_labels) +
+    ggplot2::scale_y_discrete(labels = y_axis_labels) +
     ggplot2::theme(
       axis.title.x = ggplot2::element_blank(),
       axis.title.y = ggplot2::element_blank(),
@@ -244,7 +270,7 @@ PlotPhiHeatmap <- function(data,
 
   p_FDR <- ggplot2::ggplot(
     stat.test,
-    ggplot2::aes(x = XLabel, y = YLabel, fill = Phi, text = PlotText)
+    ggplot2::aes(x = XOrder, y = YOrder, fill = Phi, text = PlotText)
   ) +
     ggplot2::geom_tile() +
     ggplot2::geom_text(ggplot2::aes(label = p.adj.signif), color = "black") +
@@ -255,6 +281,8 @@ PlotPhiHeatmap <- function(data,
       high = scales::muted("green"),
       na.value = "grey85"
     ) +
+    ggplot2::scale_x_discrete(labels = x_axis_labels) +
+    ggplot2::scale_y_discrete(labels = y_axis_labels) +
     ggplot2::theme(
       axis.title.x = ggplot2::element_blank(),
       axis.title.y = ggplot2::element_blank(),
@@ -272,6 +300,7 @@ PlotPhiHeatmap <- function(data,
     FDRCorrected  = M_FDR,
     method        = "Phi",
     Relabel       = Relabel,
+    AxisOrder     = AxisOrder,
     BinaryMapping = binary_map
   )
   # Standardized p-value element aliases (old names kept)

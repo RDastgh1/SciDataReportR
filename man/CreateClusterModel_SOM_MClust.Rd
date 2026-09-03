@@ -43,6 +43,7 @@ CreateClusterModel_SOM_MClust(
   stability_resamples = 0L,
   stability_seed = 934522L,
   stability_progress = FALSE,
+  stability_cores = NULL,
   df = lifecycle::deprecated(),
   id_col = lifecycle::deprecated(),
   .NodeClusterFn = NULL
@@ -171,6 +172,11 @@ use \code{50} for an exploratory stability screen.}
 \item{stability_seed}{Integer seed for participant subsampling.}
 
 \item{stability_progress}{Logical; if TRUE, print subsample progress messages.}
+
+\item{stability_cores}{Number of workers for stability refits. \code{NULL} uses
+all detected physical cores minus one, capped at the requested resamples
+and any scheduler limit. Each worker holds a refit in memory, so lower this
+setting for large SOM or high-dimensional analyses.}
 
 \item{df}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
 

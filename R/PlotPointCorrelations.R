@@ -16,6 +16,8 @@
 #'   [ApplyFDRCorrection()]. `"matrix"` corrects across all p-values at once
 #'   (historical behavior). `"per_outcome"` corrects separately within each
 #'   continuous variable: outcomes are the continuous variables (`ContVars`).
+#' @param cluster_rows,cluster_columns Logical; cluster continuous y-axis rows
+#'   and/or binary x-axis columns using displayed correlation profiles.
 #' @param Data \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
 #' @param Covariates \strong{Deprecated} (since 19.15.0). Use \code{covariates} instead.
 #' @examples
@@ -47,6 +49,8 @@ PlotPointCorrelationsHeatmap <- function(data,
     Ordinal = TRUE,
     binary_map = NULL,
     fdr_scope = c("matrix", "per_outcome", "per_predictor"),
+    cluster_rows = FALSE,
+    cluster_columns = FALSE,
     Data = lifecycle::deprecated(),
     Covariates = lifecycle::deprecated()) {
   # Deprecated argument shims (SciDataReportR 19.15.0)
@@ -61,6 +65,12 @@ PlotPointCorrelationsHeatmap <- function(data,
   }
   Covariates <- covariates
   fdr_scope <- match.arg(fdr_scope)
+  if (!is.logical(cluster_rows) || length(cluster_rows) != 1 || is.na(cluster_rows)) {
+    stop("cluster_rows must be TRUE or FALSE.")
+  }
+  if (!is.logical(cluster_columns) || length(cluster_columns) != 1 || is.na(cluster_columns)) {
+    stop("cluster_columns must be TRUE or FALSE.")
+  }
 
   # ---- helpers ----
   .is_binary <- function(x) length(unique(stats::na.omit(x))) == 2
@@ -190,13 +200,21 @@ PlotPointCorrelationsHeatmap <- function(data,
     stat.test$YLabel <- stat.test$ContinuousVariable
   }
 
-  # Keep the axes in the order the caller supplied rather than alphabetical.
-  x_levels <- unique(stat.test$XLabel[order(match(
-    stat.test$CategoricalVariable, CatVars))])
-  y_levels <- unique(stat.test$YLabel[order(match(
-    stat.test$ContinuousVariable, ContVars))])
-  stat.test$XLabel <- factor(stat.test$XLabel, levels = x_levels)
-  stat.test$YLabel <- factor(stat.test$YLabel, levels = rev(y_levels))
+  AxisOrder <- .OrderHeatmapAxes(
+    stat.test, row_id = "ContinuousVariable", column_id = "CategoricalVariable",
+    value = "correlation", row_order = ContVars, column_order = CatVars,
+    cluster_rows = cluster_rows, cluster_columns = cluster_columns
+  )
+  x_axis_labels <- stats::setNames(
+    stat.test$XLabel[match(AxisOrder$columns, stat.test$CategoricalVariable)],
+    AxisOrder$columns
+  )
+  y_axis_labels <- stats::setNames(
+    stat.test$YLabel[match(AxisOrder$rows, stat.test$ContinuousVariable)],
+    AxisOrder$rows
+  )
+  stat.test$XOrder <- factor(stat.test$CategoricalVariable, levels = AxisOrder$columns)
+  stat.test$YOrder <- factor(stat.test$ContinuousVariable, levels = rev(AxisOrder$rows))
 
   # tooltip
   PlotText <- paste0(
@@ -212,13 +230,15 @@ PlotPointCorrelationsHeatmap <- function(data,
   # ---- plots ----
   p <- ggplot2::ggplot(
     stat.test,
-    ggplot2::aes(y = YLabel, x = XLabel, fill = correlation, text = PlotText)
+    ggplot2::aes(y = YOrder, x = XOrder, fill = correlation, text = PlotText)
   ) +
     ggplot2::geom_tile() +
     ggplot2::geom_text(ggplot2::aes(label = `p<.05`), color = "black") +
     ggplot2::scale_fill_gradient2(limits = c(-1, 1),
                                   low = scales::muted("#FFA500"),
                                   high = scales::muted("#008080")) +
+    ggplot2::scale_x_discrete(labels = x_axis_labels) +
+    ggplot2::scale_y_discrete(labels = y_axis_labels) +
     ggplot2::theme(
       axis.title.x = ggplot2::element_blank(),
       axis.title.y = ggplot2::element_blank(),
@@ -230,13 +250,15 @@ PlotPointCorrelationsHeatmap <- function(data,
 
   p_FDR <- ggplot2::ggplot(
     stat.test,
-    ggplot2::aes(y = YLabel, x = XLabel, fill = correlation, text = PlotText)
+    ggplot2::aes(y = YOrder, x = XOrder, fill = correlation, text = PlotText)
   ) +
     ggplot2::geom_tile() +
     ggplot2::geom_text(ggplot2::aes(label = p.adj.signif), color = "black") +
     ggplot2::scale_fill_gradient2(limits = c(-1, 1),
                                   low = scales::muted("#FFA500"),
                                   high = scales::muted("#008080")) +
+    ggplot2::scale_x_discrete(labels = x_axis_labels) +
+    ggplot2::scale_y_discrete(labels = y_axis_labels) +
     ggplot2::theme(
       axis.title.x = ggplot2::element_blank(),
       axis.title.y = ggplot2::element_blank(),
@@ -255,6 +277,7 @@ PlotPointCorrelationsHeatmap <- function(data,
     FDRCorrected  = M_FDR,
     method        = "R_pb",
     Relabel       = Relabel,
+    AxisOrder     = AxisOrder,
     Covariates    = Covariates,
     BinaryMapping = binary_map
   )

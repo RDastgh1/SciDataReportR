@@ -17,7 +17,8 @@ CreateClusterModel_KMeans(
   nstart = 50L,
   stability_resamples = 0L,
   stability_seed = seed + 1L,
-  stability_progress = FALSE
+  stability_progress = FALSE,
+  stability_cores = NULL
 )
 }
 \arguments{
@@ -48,6 +49,11 @@ replacement. Use \code{0} to disable stability analysis.}
 \item{stability_seed}{Seed controlling participant subsampling.}
 
 \item{stability_progress}{Whether to print subsample progress messages.}
+
+\item{stability_cores}{Number of workers for stability refits. \code{NULL} uses
+all detected physical cores minus one, capped at the requested resamples
+and any scheduler limit. Each worker holds a refit in memory, so lower this
+setting for large SOM or high-dimensional analyses.}
 }
 \value{
 A fitted model with \code{ModelInfo$fit_table} (WSS, between-cluster

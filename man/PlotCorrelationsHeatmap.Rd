@@ -16,6 +16,8 @@ PlotCorrelationsHeatmap(
   min_n = 3,
   eps = 1e-12,
   fdr_scope = c("matrix", "per_outcome", "per_predictor"),
+  cluster_rows = FALSE,
+  cluster_columns = FALSE,
   Data = lifecycle::deprecated(),
   xVars = lifecycle::deprecated(),
   yVars = lifecycle::deprecated(),
@@ -51,6 +53,10 @@ the whole p-value matrix at once (historical behavior). With
 \code{"per_outcome"}, correction is applied separately within each outcome:
 in this function outcomes are the columns of the p-value matrix, i.e.
 \code{outcome_vars} (\code{outcome_margin = 2}).}
+
+\item{cluster_rows, cluster_columns}{Logical; cluster predictor rows and/or
+outcome columns from their displayed correlation profiles. Defaults retain
+the caller-supplied variable order.}
 
 \item{Data}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
 

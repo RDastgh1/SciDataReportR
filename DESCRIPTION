@@ -12,6 +12,8 @@ URL: https://github.com/RDastgh1/SciDataReportR, https://rdastgh1.github.io/SciD
 BugReports: https://github.com/RDastgh1/SciDataReportR/issues
 Imports:
     dplyr,
+    future,
+    future.apply,
     ggplot2,
     grDevices,
     labelled,

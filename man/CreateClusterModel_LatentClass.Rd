@@ -15,7 +15,8 @@ CreateClusterModel_LatentClass(
   seed = 93421L,
   stability_resamples = 0L,
   stability_seed = seed + 1L,
-  stability_progress = FALSE
+  stability_progress = FALSE,
+  stability_cores = NULL
 )
 }
 \arguments{
@@ -40,6 +41,11 @@ CreateClusterModel_LatentClass(
 \item{stability_seed}{Seed controlling participant subsampling.}
 
 \item{stability_progress}{Whether to print subsample progress messages.}
+
+\item{stability_cores}{Number of workers for stability refits. \code{NULL} uses
+all detected physical cores minus one, capped at the requested resamples
+and any scheduler limit. Each worker holds a refit in memory, so lower this
+setting for large or high-dimensional analyses.}
 }
 \value{
 A fitted latent-class model with BIC, AIC, log likelihood, entropy,

@@ -2,6 +2,82 @@
   ScidrPValueStars(p_values, tiers = thresholds, ns_label = "", na_label = "")
 }
 
+# Keep ordering logic in one place so every matrix-style plot clusters the
+# numbers represented by its tiles, rather than its display labels.
+.OrderHeatmapAxes <- function(data,
+                               row_id,
+                               column_id,
+                               value,
+                               row_order = NULL,
+                               column_order = NULL,
+                               cluster_rows = FALSE,
+                               cluster_columns = FALSE) {
+  if (!is.data.frame(data)) stop("data must be a data frame.")
+  required_columns <- c(row_id, column_id, value)
+  if (!all(required_columns %in% names(data))) {
+    stop("row_id, column_id, and value must name columns in data.")
+  }
+  if (!is.logical(cluster_rows) || length(cluster_rows) != 1 || is.na(cluster_rows)) {
+    stop("cluster_rows must be TRUE or FALSE.")
+  }
+  if (!is.logical(cluster_columns) || length(cluster_columns) != 1 || is.na(cluster_columns)) {
+    stop("cluster_columns must be TRUE or FALSE.")
+  }
+
+  row_ids <- as.character(data[[row_id]])
+  column_ids <- as.character(data[[column_id]])
+  if (is.null(row_order)) row_order <- unique(row_ids)
+  if (is.null(column_order)) column_order <- unique(column_ids)
+  row_order <- as.character(row_order)
+  column_order <- as.character(column_order)
+  row_order <- unique(c(row_order, setdiff(unique(row_ids), row_order)))
+  column_order <- unique(c(column_order, setdiff(unique(column_ids), column_order)))
+
+  score_matrix <- matrix(
+    NA_real_, nrow = length(row_order), ncol = length(column_order),
+    dimnames = list(row_order, column_order)
+  )
+  score_values <- suppressWarnings(as.numeric(data[[value]]))
+  for (idx in seq_along(score_values)) {
+    row_idx <- match(row_ids[idx], row_order)
+    column_idx <- match(column_ids[idx], column_order)
+    if (!is.na(row_idx) && !is.na(column_idx)) {
+      score_matrix[row_idx, column_idx] <- score_values[idx]
+    }
+  }
+
+  ImputeProfiles <- function(values) {
+    values[!is.finite(values)] <- NA_real_
+    overall_median <- stats::median(values, na.rm = TRUE)
+    if (!is.finite(overall_median)) overall_median <- 0
+    for (idx in seq_len(ncol(values))) {
+      column_median <- stats::median(values[, idx], na.rm = TRUE)
+      if (!is.finite(column_median)) column_median <- overall_median
+      values[is.na(values[, idx]), idx] <- column_median
+    }
+    values
+  }
+
+  ClusterOrder <- function(ids, profiles) {
+    if (length(ids) < 2L) return(ids)
+    profiles <- ImputeProfiles(profiles)
+    if (!all(is.finite(profiles))) return(ids)
+    ids[stats::hclust(stats::dist(profiles))$order]
+  }
+
+  if (isTRUE(cluster_rows)) row_order <- ClusterOrder(row_order, score_matrix)
+  if (isTRUE(cluster_columns)) {
+    column_order <- ClusterOrder(column_order, t(score_matrix))
+  }
+
+  list(
+    rows = row_order,
+    columns = column_order,
+    cluster_rows = cluster_rows,
+    cluster_columns = cluster_columns
+  )
+}
+
 .ApplyTidyPAdjustment <- function(data,
                                   p_col,
                                   adjust_scope = c("per_group", "per_variable", "matrix", "none"),

@@ -126,6 +126,10 @@
 #'   use \code{50} for an exploratory stability screen.
 #' @param stability_seed Integer seed for participant subsampling.
 #' @param stability_progress Logical; if TRUE, print subsample progress messages.
+#' @param stability_cores Number of workers for stability refits. `NULL` uses
+#'   all detected physical cores minus one, capped at the requested resamples
+#'   and any scheduler limit. Each worker holds a refit in memory, so lower this
+#'   setting for large SOM or high-dimensional analyses.
 #'
 #' @details
 #' `ModelInfo_MClust$fit_table` uses the fit indices returned by tidyLPA's
@@ -356,6 +360,7 @@ CreateClusterModel_SOM_MClust <- function(data,
     stability_resamples = 0L,
     stability_seed = 934522L,
     stability_progress = FALSE,
+    stability_cores = NULL,
     df = lifecycle::deprecated(),
     id_col = lifecycle::deprecated(),
     .NodeClusterFn = NULL) {
@@ -424,6 +429,8 @@ CreateClusterModel_SOM_MClust <- function(data,
   if (!is.logical(stability_progress) || length(stability_progress) != 1) {
     stop("stability_progress must be TRUE or FALSE.")
   }
+  stability_core_settings <- .ResolveClusterStabilityCores(
+    stability_cores, stability_resamples)
   if (!is.logical(lpa_drop_zero_sd) || length(lpa_drop_zero_sd) != 1) {
     stop("lpa_drop_zero_sd must be TRUE or FALSE.")
   }
@@ -497,7 +504,8 @@ CreateClusterModel_SOM_MClust <- function(data,
       low_prob_threshold = low_prob_threshold,
       stability_resamples = stability_resamples,
       stability_seed = stability_seed,
-      stability_progress = stability_progress)
+      stability_progress = stability_progress,
+      stability_cores = stability_cores)
     stable_model$method <- "finalize"
     return(stable_model)
   }
@@ -1126,6 +1134,8 @@ CreateClusterModel_SOM_MClust <- function(data,
         assignment_rows <- list()
         candidate_rows <- list()
         candidate_index <- 0L
+        stability_backend <- "serial"
+        resolved_stability_cores <- 1L
 
         for (fit_name in names(lpa_models)) {
           candidate_index <- candidate_index + 1L
@@ -1139,15 +1149,14 @@ CreateClusterModel_SOM_MClust <- function(data,
           candidate_k <- candidate_info$Classes[[1]]
           reference_assignment <- get_profile_assignments(candidate_fit)[som_model$unit.classif]
 
-          for (replicate in seq_len(stability_resamples)) {
-            if (stability_progress) {
-              message(
-                "Stability candidate ", candidate_index, "/", length(lpa_models),
-                ", subsample ", replicate, "/", stability_resamples,
-                ": model ", candidate_model, ", k = ", candidate_k
-              )
-            }
-
+          if (stability_progress) {
+            message("Running stability candidate ", candidate_index, "/",
+              length(lpa_models), " (model ", candidate_model, ", k = ",
+              candidate_k, ") with ", stability_core_settings$resolved,
+              " worker", if (stability_core_settings$resolved == 1L) "" else "s", ".")
+          }
+          candidate_results <- .ClusterParallelMap(seq_len(stability_resamples),
+              function(replicate) {
             sampling_seed <- as.integer(
               stability_seed + candidate_index * 100000L + replicate)
             model_seed <- as.integer(
@@ -1193,17 +1202,13 @@ CreateClusterModel_SOM_MClust <- function(data,
             )
 
             if (inherits(subsample_result, "error")) {
-              replicate_rows[[length(replicate_rows) + 1L]] <- dplyr::tibble(
-                Model = candidate_model,
-                Classes = candidate_k,
-                Replicate = replicate,
-                SamplingSeed = sampling_seed,
-                ModelSeed = model_seed,
-                Status = "failed",
-                ARI = NA_real_,
-                Error = conditionMessage(subsample_result)
-              )
-              next
+              return(list(
+                replicate = dplyr::tibble(
+                  Model = candidate_model, Classes = candidate_k,
+                  Replicate = replicate, SamplingSeed = sampling_seed,
+                  ModelSeed = model_seed, Status = "failed", ARI = NA_real_,
+                  Error = conditionMessage(subsample_result)),
+                recovery = NULL, assignment = NULL))
             }
 
             comparison <- dplyr::tibble(
@@ -1233,27 +1238,32 @@ CreateClusterModel_SOM_MClust <- function(data,
                 Replicate = replicate
               )
 
-            replicate_rows[[length(replicate_rows) + 1L]] <- dplyr::tibble(
-              Model = candidate_model,
-              Classes = candidate_k,
-              Replicate = replicate,
-              SamplingSeed = sampling_seed,
-              ModelSeed = model_seed,
-              Status = "success",
-              ARI = ari,
-              VI = partition_metrics[["VI"]],
-              NMI = partition_metrics[["NMI"]],
-              FowlkesMallows = partition_metrics[["FowlkesMallows"]],
-              Error = NA_character_
-            )
-            cluster_rows[[length(cluster_rows) + 1L]] <- jaccard
             assignment_full <- rep(NA_integer_, length(reference_assignment))
             assignment_full[match(
               comparison$.row_id, df_scidr$.row_id[reference_rows])] <-
               comparison$RefitCluster
-            assignment_rows[[length(assignment_rows) + 1L]] <- list(
-              Model = candidate_model, Classes = candidate_k,
-              reference = reference_assignment, assignment = assignment_full)
+            list(
+              replicate = dplyr::tibble(
+                Model = candidate_model, Classes = candidate_k,
+                Replicate = replicate, SamplingSeed = sampling_seed,
+                ModelSeed = model_seed, Status = "success", ARI = ari,
+                VI = partition_metrics[["VI"]], NMI = partition_metrics[["NMI"]],
+                FowlkesMallows = partition_metrics[["FowlkesMallows"]],
+                Error = NA_character_),
+              recovery = jaccard,
+              assignment = list(Model = candidate_model, Classes = candidate_k,
+                reference = reference_assignment, assignment = assignment_full))
+          }, cores = stability_core_settings$resolved)
+          stability_backend <- attr(candidate_results, "backend")
+          resolved_stability_cores <- attr(candidate_results, "resolved_cores")
+          replicate_rows <- c(replicate_rows, lapply(candidate_results, `[[`, "replicate"))
+          cluster_rows <- c(cluster_rows, Filter(Negate(is.null),
+            lapply(candidate_results, `[[`, "recovery")))
+          assignment_rows <- c(assignment_rows, Filter(Negate(is.null),
+            lapply(candidate_results, `[[`, "assignment")))
+          if (stability_progress && identical(stability_backend, "future_multisession")) {
+            message("Completed stability candidate ", candidate_index, "/",
+              length(lpa_models), ".")
           }
 
           candidate_replicates <- dplyr::bind_rows(replicate_rows) %>%
@@ -1335,6 +1345,9 @@ CreateClusterModel_SOM_MClust <- function(data,
             resample_fraction = 0.90,
             coassignment_limit = 2000L,
             noise_policy = "all clusters included",
+            requested_cores = stability_core_settings$requested,
+            resolved_cores = resolved_stability_cores,
+            backend = stability_backend,
             som_grid = list(
               xdim = som_xdim,
               ydim = som_ydim,
@@ -1965,12 +1978,15 @@ CreateClusterModel_SOM_MClust <- function(data,
 
   out$Specification <- .ClusterSpecification(
     "SOM + Mclust", vars_used,
-    list(seed_som = seed_som, seed_lpa = seed_lpa, stability_seed = stability_seed),
+    list(seed_som = seed_som, seed_lpa = seed_lpa, stability_seed = stability_seed,
+      stability_cores = stability_core_settings$requested,
+      stability_cores_resolved = stability_core_settings$resolved),
     list(ZScoreType = ZScoreType, ZScoreObject = ZScoreObject_used,
       ZScoreVars = ZScoreVars_used, SOM = ModelInfo_SOM$som_grid_info),
     ModelInfo_MClust$fit_table,
     list(k = final_k, model = final_model), complete_rows,
     list(distance_metric = "distance to frozen SOM best-matching unit"))
+  out$Specification$stability <- if (is.null(Stability)) NULL else Stability$settings
 
   class(out) <- c("Pipeline_SOM_MClust", class(out))
   out

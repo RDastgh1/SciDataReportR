@@ -415,13 +415,20 @@ PlotClusterSilhouette <- function(silhouette, title = "Silhouette profile") {
 #' }
 #' @export
 PlotClusterCentreHeatmap <- function(centers, variable_labels = NULL,
-    title = "Cluster centre profiles", value_label = "Centre") {
+    title = "Cluster centre profiles", value_label = "Centre",
+    cluster_rows = FALSE, cluster_columns = FALSE) {
   df_Long <- .ClusterCenterTable(centers, variable_labels)
   if (is.null(df_Long)) return(NULL)
+  AxisOrder <- .OrderHeatmapAxes(
+    df_Long, row_id = "Cluster", column_id = "Variable", value = "Value",
+    cluster_rows = cluster_rows, cluster_columns = cluster_columns
+  )
+  df_Long$ClusterOrder <- factor(df_Long$Cluster, levels = rev(AxisOrder$rows))
+  df_Long$VariableOrder <- factor(df_Long$Variable, levels = AxisOrder$columns)
   limit <- max(abs(df_Long$Value), na.rm = TRUE)
-  ggplot2::ggplot(
+  plot <- ggplot2::ggplot(
     df_Long,
-    ggplot2::aes(x = .data$Variable, y = .data$Cluster, fill = .data$Value)) +
+    ggplot2::aes(x = .data$VariableOrder, y = .data$ClusterOrder, fill = .data$Value)) +
     ggplot2::geom_tile() +
     ggplot2::scale_fill_gradient2(
       low = "#1864AB", mid = "white", high = "#C92A2A", midpoint = 0,
@@ -431,6 +438,8 @@ PlotClusterCentreHeatmap <- function(centers, variable_labels = NULL,
       axis.text.x = ggplot2::element_text(angle = 45, hjust = 1)) +
     ggplot2::labs(
       title = title, x = "Variable", y = "Cluster", fill = value_label)
+  attr(plot, "AxisOrder") <- AxisOrder
+  plot
 }
 
 #' @description `PlotClusterCentreProfile()` shows the same centres as connected

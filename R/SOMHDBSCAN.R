@@ -21,6 +21,10 @@
 #'   reuse the reference model's resolved SOM grid dimensions.
 #' @param stability_seed Seed controlling participant subsampling.
 #' @param stability_progress Whether to print subsample progress messages.
+#' @param stability_cores Number of workers for stability refits. `NULL` uses
+#'   all detected physical cores minus one, capped at the requested resamples
+#'   and any scheduler limit. Each worker holds a refit in memory, so lower this
+#'   setting for large SOM or high-dimensional analyses.
 #' @param ... Additional arguments passed to [CreateClusterModel_SOM_MClust()].
 #' @inheritSection cluster-stability-output Stability output
 #' @return A `Pipeline_SOM_HDBSCAN` object containing frozen SOM and HDBSCAN
@@ -35,7 +39,7 @@ CreateClusterModel_SOM_HDBSCAN <- function(data, variables = NULL,
     final_minPts = NULL, final_cluster_selection_epsilon = NULL,
     ClusterVariableName = "Cluster", seed_som = 934521L, seed_hdbscan = 93421L,
     stability_resamples = 0L, stability_seed = seed_hdbscan + 1L,
-    stability_progress = FALSE,
+    stability_progress = FALSE, stability_cores = NULL,
     ...) {
   supplied <- list(minPts_range = !missing(minPts_range),
     cluster_selection_epsilon_range = !missing(cluster_selection_epsilon_range),
@@ -45,7 +49,7 @@ CreateClusterModel_SOM_HDBSCAN <- function(data, variables = NULL,
     stop("Package 'dbscan' is required.")
   }
   stability_resamples <- .ValidateClusterStability(
-    stability_resamples, stability_seed, stability_progress)
+    stability_resamples, stability_seed, stability_progress, stability_cores)
   method <- .ClusterMethod(method)
   .ValidateClusterLifecycle(method,
     supplied[c("minPts_range", "cluster_selection_epsilon_range")],
@@ -149,13 +153,15 @@ CreateClusterModel_SOM_HDBSCAN <- function(data, variables = NULL,
         fitted$ProbFit$individual, dplyr::all_of(c(".row_id", "Cluster")))
     }, resamples = stability_resamples, seed = stability_seed,
     candidate = list(MinPts = selected_minPts, Epsilon = selected_epsilon),
-    noise_label = 0L, progress = stability_progress)
+    noise_label = 0L, progress = stability_progress,
+    stability_cores = stability_cores)
     Stability$settings$som_grid <- list(
       xdim = stability_args$som_xdim,
       ydim = stability_args$som_ydim,
       policy = "fixed_to_reference_fit")
     Stability$plots <- .ClusterStabilityPlots(Stability)
     som$Stability <- Stability
+    som$Specification$stability <- Stability$settings
     som$ModelInfo_HDBSCAN$fit_table <- dplyr::left_join(
       som$ModelInfo_HDBSCAN$fit_table, Stability$summary,
       by = c("MinPts", "Epsilon"))

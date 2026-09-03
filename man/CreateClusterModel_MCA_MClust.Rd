@@ -17,7 +17,8 @@ CreateClusterModel_MCA_MClust(
   mca_variance_threshold = 75,
   stability_resamples = 0L,
   stability_seed = seed + 1L,
-  stability_progress = FALSE
+  stability_progress = FALSE,
+  stability_cores = NULL
 )
 }
 \arguments{
@@ -53,6 +54,11 @@ replacement. Use \code{0} to disable stability analysis.}
 \item{stability_seed}{Seed controlling participant subsampling.}
 
 \item{stability_progress}{Whether to print subsample progress messages.}
+
+\item{stability_cores}{Number of workers for stability refits. \code{NULL} uses
+all detected physical cores minus one, capped at the requested resamples
+and any scheduler limit. Each worker holds a refit in memory, so lower this
+setting for large SOM or high-dimensional analyses.}
 }
 \value{
 A fitted MCA plus Mclust model containing the frozen MCA object,

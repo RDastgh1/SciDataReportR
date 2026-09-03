@@ -29,6 +29,10 @@
 #' @param stability_resamples Number of 90% participant subsample refits.
 #' @param stability_seed Seed controlling participant subsampling.
 #' @param stability_progress Whether to print subsample progress messages.
+#' @param stability_cores Number of workers for stability refits. `NULL` uses
+#'   all detected physical cores minus one, capped at the requested resamples
+#'   and any scheduler limit. Each worker holds a refit in memory, so lower this
+#'   setting for large or high-dimensional analyses.
 #' @inheritSection cluster-stability-output Stability output
 #' @return A fitted latent-class model with BIC, AIC, log likelihood, entropy,
 #'   class-size and subsample stability metrics in `ModelInfo$fit_table`. Log
@@ -67,11 +71,11 @@ CreateClusterModel_LatentClass <- function(data, variables = NULL,
     method = c("exploratory", "finalize"), k_range = 2:10,
     final_k = NULL, ClusterVariableName = "Cluster", nrep = 20L, seed = 93421L,
     stability_resamples = 0L, stability_seed = seed + 1L,
-    stability_progress = FALSE) {
+    stability_progress = FALSE, stability_cores = NULL) {
   supplied <- list(k_range = !missing(k_range), final_k = !missing(final_k))
   if (!requireNamespace("poLCA", quietly = TRUE)) stop("Package 'poLCA' is required.")
   stability_resamples <- .ValidateClusterStability(
-    stability_resamples, stability_seed, stability_progress)
+    stability_resamples, stability_seed, stability_progress, stability_cores)
   if (!is.data.frame(data)) stop("data must be a data frame.")
   if (is.null(variables)) variables <- names(data)[vapply(data, function(x) is.factor(x) || is.character(x) || is.logical(x) || is.ordered(x), logical(1))]
   if (!length(variables) || length(setdiff(variables, names(data)))) stop("variables must be present categorical columns.")
@@ -123,7 +127,8 @@ CreateClusterModel_LatentClass <- function(data, variables = NULL,
         dplyr::select(
           fitted$ProbFit$individual, dplyr::all_of(c(".row_id", "Cluster")))
       }, stability_resamples, stability_seed + i, list(Classes = ks[[i]]),
-      progress = stability_progress, preserve_levels = variables)
+      progress = stability_progress, preserve_levels = variables,
+      stability_cores = stability_cores)
     })
     stability_summary <- dplyr::bind_rows(lapply(stabilities, `[[`, "summary"))
     rows <- dplyr::left_join(rows, stability_summary, by = "Classes")
@@ -217,6 +222,7 @@ CreateClusterModel_LatentClass <- function(data, variables = NULL,
     out$Preprocessing, dplyr::select(rows, dplyr::any_of("Classes")),
     list(k = ncol(best$posterior)), complete,
     list(projection = "frozen class prevalence and item-response probabilities"))
+  out$Specification$stability <- if (is.null(Stability)) NULL else Stability$settings
   class(out) <- c("Pipeline_LatentClass", class(out)); out
 }
 
@@ -343,12 +349,13 @@ CreateClusterModel_MCA_MClust <- function(data, variables,
     models = c(1L, 2L, 3L, 6L), final_k = NULL,
     final_model = NULL, ClusterVariableName = "Cluster", seed = 93421L,
     mca_variance_threshold = 75, stability_resamples = 0L,
-    stability_seed = seed + 1L, stability_progress = FALSE) {
+    stability_seed = seed + 1L, stability_progress = FALSE,
+    stability_cores = NULL) {
   supplied <- list(k_range = !missing(k_range), models = !missing(models),
     final_k = !missing(final_k), final_model = !missing(final_model))
   if (!requireNamespace("FactoMineR", quietly = TRUE)) stop("Package 'FactoMineR' is required.")
   stability_resamples <- .ValidateClusterStability(
-    stability_resamples, stability_seed, stability_progress)
+    stability_resamples, stability_seed, stability_progress, stability_cores)
   method <- .ClusterMethod(method)
   .ValidateClusterLifecycle(method, supplied[c("k_range", "models")],
     supplied[c("final_k", "final_model")])
@@ -399,7 +406,8 @@ CreateClusterModel_MCA_MClust <- function(data, variables,
           fitted$ProbFit$individual, dplyr::all_of(c(".row_id", "Cluster")))
       }, stability_resamples, stability_seed + i,
       list(Model = candidate_model, Classes = candidate_k),
-      progress = stability_progress, preserve_levels = variables)
+      progress = stability_progress, preserve_levels = variables,
+      stability_cores = stability_cores)
     })
     Stability <- .CombineClusterStabilities(
       stabilities, stability_resamples, stability_seed)
@@ -455,6 +463,7 @@ CreateClusterModel_MCA_MClust <- function(data, variables,
     "MCA + Mclust", variables, list(seed = seed, stability_seed = stability_seed),
     model$Preprocessing, model$ModelInfo$fit_table, list(),
     stats::complete.cases(data[variables]))
+  model$Specification$stability <- if (is.null(Stability)) NULL else Stability$settings
   class(model) <- c("Pipeline_MCA_MClust", class(model))
   model
 }

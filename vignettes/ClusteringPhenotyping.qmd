@@ -216,6 +216,14 @@ clusters; varying parameters let each cluster estimate its own structure.
 
 # Continuous workflows
 
+::: callout-note
+The non-SOM workflows below are complete, copyable templates, but their model
+fits are intentionally not evaluated while this vignette renders. This keeps
+package checks practical. Run one workflow at a time in an analysis project,
+then increase `stability_resamples` when the candidate solution is ready for a
+real stability assessment.
+:::
+
 ## Mclust
 
 Gaussian mixture models provide posterior membership and allow clusters to
@@ -229,6 +237,7 @@ small clusters, subsample ARI/Jaccard, and projected uncertainty.
 
 ```{r}
 #| label: MclustReview
+#| eval: false
 df_MclustReview <- CreateClusterModel_MClust(
   df_Training, vars_Continuous, k_range = 2:10, models = 1,
   stability_resamples = 2
@@ -244,6 +253,7 @@ PrintPlots(df_MclustReview$Stability$plots)
 
 ```{r}
 #| label: MclustFinalize
+#| eval: false
 df_Mclust <- CreateClusterModel_MClust(
   df_Training, vars_Continuous, method = "finalize", final_k = 4,
   final_model = 1, ClusterVariableName = "MclustCluster",
@@ -270,6 +280,7 @@ centroid distance, assignment margin, and subsample stability.
 
 ```{r}
 #| label: KMeansReview
+#| eval: false
 df_KMeansReview <- CreateClusterModel_KMeans(
   df_Training, vars_Continuous, k_range = 2:10, nstart = 20,
   stability_resamples = 2
@@ -287,6 +298,7 @@ PrintPlots(df_KMeansReview$Stability$plots)
 
 ```{r}
 #| label: KMeansFinalize
+#| eval: false
 df_KMeans <- CreateClusterModel_KMeans(
   df_Training, vars_Continuous, method = "finalize", final_k = 4,
   nstart = 20, ClusterVariableName = "KMeansCluster", stability_resamples = 2
@@ -315,6 +327,7 @@ space separation, and projection distance or uncertainty.
 
 ```{r}
 #| label: PCAMclustReview
+#| eval: false
 df_PCAMclustReview <- CreateClusterModel_PCA_MClust(
   df_Training, vars_Continuous, k_range = 2:10, models = 1,
   stability_resamples = 2
@@ -331,6 +344,7 @@ PrintPlots(df_PCAMclustReview$Stability$plots)
 
 ```{r}
 #| label: PCAMclustFinalize
+#| eval: false
 df_PCAMclust <- CreateClusterModel_PCA_MClust(
   df_Training, vars_Continuous, method = "finalize", final_k = 4,
   final_model = 1, ClusterVariableName = "PCAMclustCluster",
@@ -347,6 +361,7 @@ PrintPlots(df_PCAMclustProjected$ProjectionFit$plots)
 
 ```{r}
 #| label: PCAKMeansReview
+#| eval: false
 df_PCAKMeansReview <- CreateClusterModel_PCA_KMeans(
   df_Training, vars_Continuous, k_range = 2:10, nstart = 20,
   stability_resamples = 2
@@ -365,6 +380,7 @@ PrintPlots(df_PCAKMeansReview$Stability$plots)
 
 ```{r}
 #| label: PCAKMeansFinalize
+#| eval: false
 df_PCAKMeans <- CreateClusterModel_PCA_KMeans(
   df_Training, vars_Continuous, method = "finalize", final_k = 4,
   nstart = 20, ClusterVariableName = "PCAKMeansCluster",
@@ -394,6 +410,7 @@ All-noise candidates are valid negative results.
 
 ```{r}
 #| label: HDBSCANReview
+#| eval: false
 df_HDBSCANReview <- CreateClusterModel_HDBSCAN(
   df_Training, vars_Density, minPts_range = c(6, 10, 14),
   cluster_selection_epsilon_range = c(0, 0.05), stability_resamples = 2
@@ -410,6 +427,7 @@ PrintPlots(df_HDBSCANReview$Stability$plots)
 
 ```{r}
 #| label: HDBSCANFinalize
+#| eval: false
 df_HDBSCAN <- CreateClusterModel_HDBSCAN(
   df_Training, vars_Density, method = "finalize", final_minPts = 10,
   final_cluster_selection_epsilon = 0, ClusterVariableName = "HDBSCANCluster",
@@ -437,7 +455,10 @@ node occupancy, posterior confidence, stability, and projected distance flags.
 
 For an analysis, use the complete workflow below. `stability_resamples = 30`
 is a practical internal-stability screen; the rendered vignette uses two
-resamples only to keep build time reasonable.
+resamples only to keep build time reasonable. Stability refits run in parallel
+by default, using all available physical cores minus one (and never more than
+the requested resamples). Set `stability_cores = 1L` for serial execution or a
+smaller positive value when each SOM or high-dimensional refit needs more memory.
 
 ```r
 data("SimulatedPhenotypeData")
@@ -536,6 +557,7 @@ subsample stability.
 
 ```{r}
 #| label: GowerPAMReview
+#| eval: false
 df_GowerReview <- CreateClusterModel_Gower_PAM(
   df_Training, vars_Mixed, k_range = 2:10, stability_resamples = 2
 )
@@ -552,6 +574,7 @@ PrintPlots(df_GowerReview$Stability$plots)
 
 ```{r}
 #| label: GowerPAMFinalize
+#| eval: false
 df_Gower <- CreateClusterModel_Gower_PAM(
   df_Training, vars_Mixed, method = "finalize", final_k = 4,
   ClusterVariableName = "GowerCluster", stability_resamples = 2
@@ -579,6 +602,7 @@ Low posterior confidence is evidence of weak class separation.
 
 ```{r}
 #| label: LatentClassReview
+#| eval: false
 df_LCAReview <- CreateClusterModel_LatentClass(
   df_Training, vars_Categorical, k_range = 2:10, nrep = 5,
   stability_resamples = 2
@@ -594,6 +618,7 @@ PrintPlots(df_LCAReview$Stability$plots)
 
 ```{r}
 #| label: LatentClassFinalize
+#| eval: false
 df_LCA <- CreateClusterModel_LatentClass(
   df_Training, vars_Categorical, method = "finalize", final_k = 4,
   nrep = 5, ClusterVariableName = "LCACluster", stability_resamples = 2
@@ -620,6 +645,7 @@ mixture fit, score-space separation, posterior confidence, and stability.
 
 ```{r}
 #| label: MCAMclustReview
+#| eval: false
 df_MCAMclustReview <- CreateClusterModel_MCA_MClust(
   df_Training, vars_Categorical, k_range = 2:10, models = 1,
   stability_resamples = 2
@@ -635,6 +661,7 @@ PrintPlots(df_MCAMclustReview$Stability$plots)
 
 ```{r}
 #| label: MCAMclustFinalize
+#| eval: false
 df_MCAMclust <- CreateClusterModel_MCA_MClust(
   df_Training, vars_Categorical, method = "finalize", final_k = 4,
   final_model = 1, ClusterVariableName = "MCAMclustCluster",
@@ -658,6 +685,7 @@ biological validation.
 
 ```{r}
 #| label: TruthAgreement
+#| eval: false
 df_TruthAgreement <- dplyr::tibble(
   Method = c(
     "Mclust", "K-means", "PCA + Mclust", "PCA + K-means",
@@ -686,6 +714,7 @@ df_TruthAgreement
 
 ```{r}
 #| label: DensityTruthAgreement
+#| eval: false
 df_DensityTruth <- dplyr::tibble(
   Cohort = c("Training", "Projection"),
   ARI = c(
@@ -716,6 +745,7 @@ describing the profiles.
 
 ```{r}
 #| label: CompareClusterOccupancy
+#| eval: false
 df_Comparison <- df_Mclust$DataWithClusters %>%
   dplyr::select(.data$.row_id, .data$MclustCluster) %>%
   dplyr::left_join(
@@ -729,6 +759,7 @@ df_Comparison %>%
 
 ```{r}
 #| label: PlotClusterProfiles
+#| eval: false
 PlotClusterBoxplot(
   data = df_Mclust$DataWithClusters,
   ClusterVar = "MclustCluster",

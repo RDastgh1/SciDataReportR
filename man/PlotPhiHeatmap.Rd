@@ -10,6 +10,8 @@ PlotPhiHeatmap(
   Relabel = TRUE,
   binary_map = NULL,
   fdr_scope = c("matrix", "per_outcome", "per_predictor"),
+  cluster_rows = FALSE,
+  cluster_columns = FALSE,
   Data = lifecycle::deprecated()
 )
 }
@@ -28,6 +30,9 @@ If NULL, a mapping is created internally for \code{CatVars}.}
 (historical behavior). \code{"per_outcome"} corrects separately within
 each y-axis variable (\code{YVar}); the Phi matrix is symmetric, so this
 treats each variable's row of tiles as one family.}
+
+\item{cluster_rows, cluster_columns}{Logical; cluster y-axis rows and/or
+x-axis columns using displayed Phi-coefficient profiles.}
 
 \item{Data}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
 }

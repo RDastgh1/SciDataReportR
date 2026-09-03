@@ -19,7 +19,9 @@ ScreenBiomarkerPerformance(
   HeatmapMetric = "AdjustedAUC",
   Seed = 123,
   Relabel = TRUE,
-  codebook = NULL
+  codebook = NULL,
+  cluster_rows = FALSE,
+  cluster_columns = FALSE
 )
 }
 \arguments{

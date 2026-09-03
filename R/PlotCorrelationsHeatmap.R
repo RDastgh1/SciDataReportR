@@ -28,6 +28,9 @@
 #'   `"per_outcome"`, correction is applied separately within each outcome:
 #'   in this function outcomes are the columns of the p-value matrix, i.e.
 #'   `outcome_vars` (`outcome_margin = 2`).
+#' @param cluster_rows,cluster_columns Logical; cluster predictor rows and/or
+#'   outcome columns from their displayed correlation profiles. Defaults retain
+#'   the caller-supplied variable order.
 #'
 #' @return A list. `Unadjusted` and `FDRCorrected` each contain `r`, `p`,
 #'   `npairs`, and `plot`. The standardized aliases `p` (same as `Unadjusted`)
@@ -77,6 +80,8 @@ PlotCorrelationsHeatmap <- function(data,
     min_n = 3,
     eps = 1e-12,
     fdr_scope = c("matrix", "per_outcome", "per_predictor"),
+    cluster_rows = FALSE,
+    cluster_columns = FALSE,
     Data = lifecycle::deprecated(),
     xVars = lifecycle::deprecated(),
     yVars = lifecycle::deprecated(),
@@ -114,6 +119,12 @@ PlotCorrelationsHeatmap <- function(data,
   }
 
   fdr_scope <- match.arg(fdr_scope)
+  if (!is.logical(cluster_rows) || length(cluster_rows) != 1 || is.na(cluster_rows)) {
+    stop("cluster_rows must be TRUE or FALSE.")
+  }
+  if (!is.logical(cluster_columns) || length(cluster_columns) != 1 || is.na(cluster_columns)) {
+    stop("cluster_columns must be TRUE or FALSE.")
+  }
 
   `%||%` <- function(x, y) {
     if (is.null(x)) y else x
@@ -228,6 +239,10 @@ PlotCorrelationsHeatmap <- function(data,
       ),
       method = method,
       Relabel = Relabel,
+      AxisOrder = list(
+        rows = character(0), columns = character(0),
+        cluster_rows = cluster_rows, cluster_columns = cluster_columns
+      ),
       Covariates = covars,
       CovariatesMissing = covars_missing
     )
@@ -684,15 +699,25 @@ PlotCorrelationsHeatmap <- function(data,
     plot.data$YLabel <- plot.data$YVar
   }
 
-  plot.data$XLabel <- factor(
-    plot.data$XLabel,
-    levels = rev(unique(plot.data$XLabel))
+  AxisOrder <- .OrderHeatmapAxes(
+    plot.data,
+    row_id = "XVar",
+    column_id = "YVar",
+    value = "R",
+    row_order = xVars,
+    column_order = yVars,
+    cluster_rows = cluster_rows,
+    cluster_columns = cluster_columns
   )
-
-  plot.data$YLabel <- factor(
-    plot.data$YLabel,
-    levels = unique(plot.data$YLabel)
-  )
+  if (Relabel) {
+    x_axis_labels <- stats::setNames(xlabels[AxisOrder$rows], AxisOrder$rows)
+    y_axis_labels <- stats::setNames(ylabels[AxisOrder$columns], AxisOrder$columns)
+  } else {
+    x_axis_labels <- stats::setNames(AxisOrder$rows, AxisOrder$rows)
+    y_axis_labels <- stats::setNames(AxisOrder$columns, AxisOrder$columns)
+  }
+  plot.data$XOrder <- factor(plot.data$XVar, levels = rev(AxisOrder$rows))
+  plot.data$YOrder <- factor(plot.data$YVar, levels = AxisOrder$columns)
 
   # =========================================================
   # Plot helper
@@ -706,8 +731,8 @@ PlotCorrelationsHeatmap <- function(data,
     ggplot2::ggplot(
       plot.data,
       ggplot2::aes(
-        x = YLabel,
-        y = XLabel,
+        x = YOrder,
+        y = XOrder,
         fill = R
       )
     ) +
@@ -733,6 +758,10 @@ PlotCorrelationsHeatmap <- function(data,
         na.value = "grey90",
         name = "r"
       ) +
+
+      ggplot2::scale_x_discrete(labels = y_axis_labels) +
+
+      ggplot2::scale_y_discrete(labels = x_axis_labels) +
 
       ggplot2::theme_bw() +
 
@@ -778,6 +807,7 @@ PlotCorrelationsHeatmap <- function(data,
 
     method = method,
     Relabel = Relabel,
+    AxisOrder = AxisOrder,
     Covariates = covars,
     CovariatesMissing = covars_missing
   )

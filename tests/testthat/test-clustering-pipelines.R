@@ -615,6 +615,11 @@ test_that("stability validation and failed resamples are explicit", {
       data.frame(x = 1:5, y = 6:10), c("x", "y"),
       stability_resamples = -1),
     "non-negative integer")
+  expect_error(
+    CreateClusterModel_KMeans(
+      data.frame(x = 1:5, y = 6:10), c("x", "y"),
+      stability_cores = 0),
+    "NULL or a single positive integer")
   failed <- .ClusterSubsampleStability(
     data.frame(x = 1:6), reference = rep(1:2, each = 3),
     fit_subset = function(boot, model_seed) stop("expected failure"),
@@ -625,6 +630,28 @@ test_that("stability validation and failed resamples are explicit", {
   expect_identical(failed$settings$resample_type,
     "subsample_without_replacement")
   expect_equal(failed$settings$resample_fraction, 0.90)
+})
+
+test_that("parallel stability refits preserve serial seeded results", {
+  skip_if(future::availableCores() < 2L,
+    "This test environment permits only one parallel worker.")
+  df_Test <- data.frame(
+    x = c(stats::rnorm(20, -2), stats::rnorm(20, 2)),
+    y = c(stats::rnorm(20, -2), stats::rnorm(20, 2))
+  )
+  serial <- CreateClusterModel_KMeans(
+    df_Test, c("x", "y"), method = "finalize", final_k = 2,
+    nstart = 5, stability_resamples = 2, stability_seed = 901,
+    stability_cores = 1L)
+  parallel <- CreateClusterModel_KMeans(
+    df_Test, c("x", "y"), method = "finalize", final_k = 2,
+    nstart = 5, stability_resamples = 2, stability_seed = 901,
+    stability_cores = 2L)
+  expect_identical(serial$Stability$replicates, parallel$Stability$replicates)
+  expect_identical(serial$Stability$summary, parallel$Stability$summary)
+  expect_identical(parallel$Stability$settings$requested_cores, "2")
+  expect_identical(parallel$Stability$settings$resolved_cores, 2L)
+  expect_identical(parallel$Stability$settings$backend, "future_multisession")
 })
 
 test_that("primary stability refits use unique 90 percent participant subsamples", {

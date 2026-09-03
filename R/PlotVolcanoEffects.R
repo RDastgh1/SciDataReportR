@@ -447,119 +447,28 @@ PlotVolcanoEffects <- function(data,
     }
 
     if (OutcomeType == "continuous") {
-      model_data <- model_data %>%
-        dplyr::mutate(
-          .volcano_y_scaled = as.numeric(scale(.data[[yVar]])),
-          .volcano_x_scaled = as.numeric(scale(.data[[this_var]]))
-        )
-
-      if (
-        all(is.na(model_data$.volcano_y_scaled)) ||
-        all(is.na(model_data$.volcano_x_scaled)) ||
-        stats::sd(model_data$.volcano_y_scaled, na.rm = TRUE) == 0 ||
-        stats::sd(model_data$.volcano_x_scaled, na.rm = TRUE) == 0
-      ) {
-        return(
-          tibble::tibble(
-            Variable = this_var,
-            Label = unname(label_lookup[[this_var]]),
-            Outcome = yVar,
-            OutcomeType = OutcomeType,
-            Effect = NA_real_,
-            EffectType = "Standardized beta",
-            PValue = NA_real_,
-            N = final_n,
-            Note = "Zero variance in predictor or outcome"
-          )
-        )
-      }
-
-      model_formula <- stats::as.formula(
-        paste(
-          ".volcano_y_scaled ~ .volcano_x_scaled",
-          if (!is.null(Covariates)) {
-            paste("+", paste(Covariates, collapse = " + "))
-          } else {
-            ""
-          }
-        )
+      continuous_result <- CalculateContinuousScreeningEffects(
+        data = Data,
+        predictor_vars = this_var,
+        outcome_var = yVar,
+        covariates = Covariates,
+        label_lookup = label_lookup
       )
 
-      model_fit <- tryCatch(
-        stats::lm(model_formula, data = model_data),
-        error = function(e) NULL
-      )
-
-      if (is.null(model_fit)) {
-        return(
-          tibble::tibble(
-            Variable = this_var,
-            Label = unname(label_lookup[[this_var]]),
-            Outcome = yVar,
-            OutcomeType = OutcomeType,
-            Effect = NA_real_,
-            EffectType = "Standardized beta",
-            PValue = NA_real_,
-            N = final_n,
-            Note = "Model failed"
-          )
-        )
-      }
-
-      coefficient_table <- summary(model_fit)$coefficients
-
-      if (!".volcano_x_scaled" %in% rownames(coefficient_table)) {
-        return(
-          tibble::tibble(
-            Variable = this_var,
-            Label = unname(label_lookup[[this_var]]),
-            Outcome = yVar,
-            OutcomeType = OutcomeType,
-            Effect = NA_real_,
-            EffectType = "Standardized beta",
-            PValue = NA_real_,
-            N = final_n,
-            Note = "Predictor coefficient not estimable"
-          )
-        )
-      }
-
-      effect <- unname(coefficient_table[".volcano_x_scaled", "Estimate"])
-      p_value <- unname(coefficient_table[".volcano_x_scaled", "Pr(>|t|)"])
-
-      # Zero-order Pearson correlation between the raw predictor and outcome.
-      pearson_r <- tryCatch(
-        stats::cor(model_data[[this_var]], model_data[[yVar]], use = "complete.obs"),
-        error = function(e) NA_real_
-      )
-
-      # Adjusted (partial) correlation of the predictor with the outcome, holding
-      # the covariates constant. Derived from the predictor's t-statistic so no
-      # extra package is required. NA when there are no covariates.
-      adjusted_r <- NA_real_
-      if (!is.null(Covariates)) {
-        t_val <- unname(coefficient_table[".volcano_x_scaled", "t value"])
-        df_resid <- stats::df.residual(model_fit)
-        if (is.finite(t_val) && is.finite(df_resid) && df_resid > 0) {
-          adjusted_r <- unname(t_val / sqrt(t_val^2 + df_resid))
-        }
-      }
-
-      return(
-        tibble::tibble(
-          Variable = this_var,
-          Label = unname(label_lookup[[this_var]]),
+      return(continuous_result %>%
+        dplyr::transmute(
+          Variable = .data$Variable,
+          Label = .data$Label,
           Outcome = yVar,
           OutcomeType = OutcomeType,
-          Effect = effect,
+          Effect = .data$Beta,
           EffectType = "Standardized beta",
-          PValue = p_value,
-          N = final_n,
-          R = pearson_r,
-          AdjustedR = adjusted_r,
-          Note = NA_character_
-        )
-      )
+          PValue = .data$PValue,
+          N = .data$N,
+          R = .data$R,
+          AdjustedR = .data$AdjustedR,
+          Note = .data$Note
+        ))
     }
 
     model_data <- model_data %>%
