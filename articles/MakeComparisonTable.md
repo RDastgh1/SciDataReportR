@@ -304,7 +304,7 @@ sessionInfo()
     [1] stats     graphics  grDevices utils     datasets  methods   base
 
     other attached packages:
-    [1] dplyr_1.2.1           SciDataReportR_21.3.0
+    [1] dplyr_1.2.1           SciDataReportR_21.4.0
 
     loaded via a namespace (and not attached):
       [1] Exact_3.3              ggstatsplot_1.1.1      sjlabelled_1.2.0
