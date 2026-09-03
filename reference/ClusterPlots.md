@@ -15,7 +15,7 @@ established by
 
 - `ProbFit$plots` describes membership confidence.
 
-- `Stability$plots` describes 80% subsample reproducibility.
+- `Stability$plots` describes 90% subsample reproducibility.
 
 - `ProjectionFit$plots` describes how projected cases compare with the
   frozen training reference.

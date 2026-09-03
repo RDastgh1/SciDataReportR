@@ -30,6 +30,7 @@ PlotSplitViolin(
   star_quantile = 0.995,
   star_pad = 0.05,
   star_size = 6,
+  p_label = c("stars", "p_value", "both"),
   ...,
   Group = lifecycle::deprecated(),
   covars = lifecycle::deprecated()
@@ -119,6 +120,11 @@ PlotSplitViolin(
 
   Text size for annotation.
 
+- p_label:
+
+  P-value annotation style: significance `"stars"` (default), exact
+  `"p_value"`, or `"both"`.
+
 - ...:
 
   Additional arguments reserved for future extensions.
@@ -133,7 +139,8 @@ PlotSplitViolin(
 
 ## Value
 
-A ggplot2 object.
+A ggplot2 object. The exact test result is available from
+`attr(plot, "comparison")`.
 
 ## Examples
 

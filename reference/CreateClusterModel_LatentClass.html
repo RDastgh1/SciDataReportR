@@ -11,7 +11,7 @@ It estimates class-specific response probabilities and posterior membership."><m
 
     <a class="navbar-brand me-2" href="../index.html">SciDataReportR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">21.0.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">21.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -49,7 +49,7 @@ It estimates class-specific response probabilities and posterior membership."><m
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Fit a projectable latent class model for categorical measures</h1>
-      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/v21.0.0/R/CategoricalClusteringPipelines.R" class="external-link"><code>R/CategoricalClusteringPipelines.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/master/R/CategoricalClusteringPipelines.R" class="external-link"><code>R/CategoricalClusteringPipelines.R</code></a></small>
       <div class="d-none name"><code>CreateClusterModel_LatentClass.Rd</code></div>
     </div>
 
@@ -72,7 +72,8 @@ It estimates class-specific response probabilities and posterior membership.</p>
 <span>  seed <span class="op">=</span> <span class="fl">93421L</span>,</span>
 <span>  stability_resamples <span class="op">=</span> <span class="fl">0L</span>,</span>
 <span>  stability_seed <span class="op">=</span> <span class="va">seed</span> <span class="op">+</span> <span class="fl">1L</span>,</span>
-<span>  stability_progress <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span>  stability_progress <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  stability_cores <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -113,7 +114,7 @@ It estimates class-specific response probabilities and posterior membership.</p>
 
 
 <dt id="arg-stability-resamples">stability_resamples<a class="anchor" aria-label="anchor" href="#arg-stability-resamples"></a></dt>
-<dd><p>Number of 80% participant subsample refits.</p></dd>
+<dd><p>Number of 90% participant subsample refits.</p></dd>
 
 
 <dt id="arg-stability-seed">stability_seed<a class="anchor" aria-label="anchor" href="#arg-stability-seed"></a></dt>
@@ -122,6 +123,13 @@ It estimates class-specific response probabilities and posterior membership.</p>
 
 <dt id="arg-stability-progress">stability_progress<a class="anchor" aria-label="anchor" href="#arg-stability-progress"></a></dt>
 <dd><p>Whether to print subsample progress messages.</p></dd>
+
+
+<dt id="arg-stability-cores">stability_cores<a class="anchor" aria-label="anchor" href="#arg-stability-cores"></a></dt>
+<dd><p>Number of workers for stability refits. <code>NULL</code> uses
+all detected physical cores minus one, capped at the requested resamples
+and any scheduler limit. Each worker holds a refit in memory, so lower this
+setting for large or high-dimensional analyses.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -139,41 +147,38 @@ recovery.</p>
     <h2 id="stability-output">Stability output<a class="anchor" aria-label="anchor" href="#stability-output"></a></h2>
 
 
-<p>Stability assesses internal reproducibility by full-pipeline 80% participant
-subsampling without replacement. For each replicate, 80% of complete
-participants are selected once, all preprocessing and any reduction (PCA,
-MCA, or SOM) are refit, the
-selected clustering method is refit, and the original complete training
-participants are projected into that subsample fit for comparison with the
-original fitted partition. It is an internal sensitivity analysis, not
+<p>Stability assesses internal reproducibility by full-pipeline 90% participant
+subsampling without replacement. For each replicate, 90% of complete
+participants are selected once, all preprocessing, any reduction (PCA,
+MCA, or SOM), and the selected clustering method are refit. Assignments from
+that refit are compared with the full-data reference assignments for the
+same sampled participants, joined by <code>.row_id</code>; projection is not used.
+It is an internal sensitivity analysis, not
 independent-cohort validation.</p>
-<p><code>Stability$settings</code> records the analysis provenance:</p><ul><li><p><code>resamples</code>: requested number of 80% subsample refits.</p></li>
-<li><p><code>seed</code>: seed used to select subsamples.</p></li>
-<li><p><code>refit_scope</code>: always <code>"full_pipeline"</code>, meaning preprocessing,
-reduction where applicable, and clustering were all refit.</p></li>
+<p><code>Stability$settings</code> records the analysis provenance:</p><ul><li><p><code>resamples</code>: requested number of 90% subsample refits.</p></li>
+<li><p><code>seed</code>: seed used to derive reproducible sampling and model seeds.</p></li>
+<li><p><code>refit_scope</code>: always <code>"full_pipeline_in_sample"</code>, meaning
+preprocessing, reduction where applicable, and clustering were all refit.</p></li>
+<li><p><code>comparison_scope</code>: always <code>"sampled_participants"</code>; only the
+participants used in a refit enter that replicate's agreement metrics.</p></li>
 <li><p><code>resample_type</code>: <code>"subsample_without_replacement"</code> for the
 primary stability analysis.</p></li>
-<li><p><code>resample_fraction</code>: the retained participant fraction, <code>0.80</code>.</p></li>
+<li><p><code>resample_fraction</code>: the retained participant fraction, <code>0.90</code>.</p></li>
 <li><p><code>coassignment_limit</code>: maximum number of complete training
 participants (2,000) for which the full pairwise co-assignment matrix is
 calculated.</p></li>
 <li><p><code>noise_policy</code>: whether the method has noise labels. For ordinary
 methods it is <code>"all clusters included"</code>; HDBSCAN variants retain noise in
-global partition metrics but exclude it from per-cluster inclusion and
-co-assignment summaries.</p></li>
+ARI but exclude it from phenotype-level Jaccard recovery.</p></li>
 </ul><p><code>Stability$replicates</code> has one row per requested refit. <code>Model</code> and
 <code>Classes</code> identify the selected candidate (for HDBSCAN, <code>Classes</code> is the
 data-derived extracted count); <code>Replicate</code> is its sequence number; <code>Status</code>
-is <code>"success"</code> or a failure status; and <code>Error</code> contains the error message
-for an unsuccessful refit. Successful rows contain these partition metrics:</p><ul><li><p><code>ARI</code>: adjusted Rand index, agreement corrected for chance; higher
-is better and can be negative when agreement is worse than chance.</p></li>
-<li><p><code>VI</code>: variation of information, the information lost or gained when
-changing partitions; lower is better and zero is identical.</p></li>
-<li><p><code>NMI</code>: normalized mutual information; higher is better and one is
-identical.</p></li>
-<li><p><code>FowlkesMallows</code>: pairwise clustering agreement; higher is better
-and one is identical.</p></li>
-</ul><p><code>Stability$cluster_recovery</code> has one row for each reference <code>Cluster</code> in
+is <code>"success"</code> or a failure status; <code>SamplingSeed</code> and <code>ModelSeed</code> identify
+the independently varied participant draw and stochastic refit; and <code>Error</code>
+contains the error message for an unsuccessful refit. <code>ARI</code> is the primary
+successful-refit metric: it is invariant to cluster numbering, higher is
+better, and it can be negative when agreement is worse than chance.</p>
+<p><code>Stability$cluster_recovery</code> has one row for each reference <code>Cluster</code> in
 each successful <code>Replicate</code>. <code>Jaccard</code> is the recovery of that reference
 cluster after matching it to the subsample cluster with the largest Jaccard
 overlap; higher is better and one is exact recovery. <code>Model</code> and <code>Classes</code>
@@ -183,14 +188,14 @@ again identify the fitted candidate.</p>
 operational reliability measure that does not enter the reproducibility
 score. <code>StabilityARI_Mean</code> and <code>StabilityARI_P05</code> are the mean and fifth
 percentile of ARI. <code>StabilityJaccard_Mean</code> and <code>StabilityJaccard_Min</code> are
-respectively the mean and minimum label-matched Jaccard recovery.
+respectively the mean cluster-level recovery and the minimum of the
+cluster-specific mean recoveries across replicates.
 <code>ReproducibilityScore</code> is the mean of the finite <code>StabilityARI_Mean</code> and
-<code>StabilityJaccard_Mean</code> values only; it does not include success rate, VI,
-NMI, or Fowlkes–Mallows.</p>
+<code>StabilityJaccard_Mean</code> values only; it does not include success rate.</p>
 <p><code>Stability$failures</code> repeats the replicate columns for unsuccessful refits,
 making fit failures auditable without mixing them with successful metrics.</p>
 <p><code>Stability$participant_inclusion</code> is one row per complete reference
-participant. <code>RowIndex</code> identifies its original row position, <code>Cluster</code> its
+participant. <code>.row_id</code> identifies the merge-safe input row, <code>Cluster</code> its
 reference assignment, <code>SuccessfulRefits</code> the number of usable refits, and
 <code>InclusionProbability</code> the proportion of those refits in which the
 participant returned to that cluster's label-matched subsample cluster.
@@ -205,21 +210,20 @@ has at most <code>coassignment_limit</code> participants. Each candidate entry h
 <code>status</code> of <code>"available"</code>, <code>"skipped"</code>, or <code>"not_available"</code>; <code>reason</code>
 explains a non-available result; <code>matrix</code> is the pairwise probability that
 two complete reference participants are assigned together across successful
-subsample refits; and <code>row_ids</code> maps matrix rows and columns to original training-row
-positions. Higher matrix values mean more consistent pairwise co-membership.
+subsample refits; and <code>.row_id</code> maps matrix rows and columns to the same
+identifiers returned in <code>DataWithClusters</code> and <code>ProbFit$individual</code>. Higher
+matrix values mean more consistent pairwise co-membership.
 Where more than one candidate is summarized, entries are named by its
 <code>Model_Classes</code> key. The matrix is diagnostic only and is never used for
 selection.</p>
 <p><code>Stability$plots</code> contains <code>cluster_recovery</code> (per-cluster Jaccard),
-<code>partition_metrics</code> (ARI, VI, NMI, and Fowlkes–Mallows distributions), and
+<code>partition_metrics</code> (the ARI distribution), and
 <code>cluster_inclusion</code>; it also contains a co-assignment heatmap when the
 matrix is available. These diagnostics complement rather than replace ARI
 and Jaccard: none can turn a poorly reproducible cluster into a stable
 phenotype.</p>
 <p>Metric sources: Hubert and Arabie (1985) define ARI; Jaccard (1901) defines
-the overlap coefficient; Meila (2005) defines VI; Strehl and Ghosh (2002)
-describe NMI for partition comparison; Fowlkes and Mallows (1983) define
-their pairwise index; and Monti et al. (2003) describe resampling-based
+the overlap coefficient; and Monti et al. (2003) describe resampling-based
 consensus co-assignment.</p>
     </div>
     <div class="section level2">

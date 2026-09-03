@@ -95,7 +95,7 @@ Deprecated alias for CreateClusterModel_SOM_MClust().'><meta property="og:image"
 
     <a class="navbar-brand me-2" href="../index.html">SciDataReportR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">21.0.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">21.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -133,7 +133,7 @@ Deprecated alias for CreateClusterModel_SOM_MClust().'><meta property="og:image"
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>SOM + latent profile clustering pipeline (with AHP and distance baselines)</h1>
-      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/v21.0.0/R/Pipeline_SOMClust.R" class="external-link"><code>R/Pipeline_SOMClust.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/master/R/Pipeline_SOMClust.R" class="external-link"><code>R/Pipeline_SOMClust.R</code></a></small>
       <div class="d-none name"><code>CreateClusterModel_SOM_MClust.Rd</code></div>
     </div>
 
@@ -183,7 +183,7 @@ as-is and does not re-zscore.</p></li>
 <span>  variables <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"exploratory"</span>, <span class="st">"finalize"</span>, <span class="st">"explore"</span><span class="op">)</span>,</span>
 <span>  k_range <span class="op">=</span> <span class="fl">2</span><span class="op">:</span><span class="fl">10</span>,</span>
-<span>  models <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span>, <span class="fl">3</span><span class="op">)</span>,</span>
+<span>  models <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span>, <span class="fl">3</span>, <span class="fl">6</span><span class="op">)</span>,</span>
 <span>  final_k <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  final_model <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  ClusterVariableName <span class="op">=</span> <span class="st">"Cluster"</span>,</span>
@@ -214,6 +214,7 @@ as-is and does not re-zscore.</p></li>
 <span>  stability_resamples <span class="op">=</span> <span class="fl">0L</span>,</span>
 <span>  stability_seed <span class="op">=</span> <span class="fl">934522L</span>,</span>
 <span>  stability_progress <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  stability_cores <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  df <span class="op">=</span> <span class="fu">lifecycle</span><span class="fu">::</span><span class="fu"><a href="https://lifecycle.r-lib.org/reference/deprecated.html" class="external-link">deprecated</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  id_col <span class="op">=</span> <span class="fu">lifecycle</span><span class="fu">::</span><span class="fu"><a href="https://lifecycle.r-lib.org/reference/deprecated.html" class="external-link">deprecated</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  .NodeClusterFn <span class="op">=</span> <span class="cn">NULL</span></span>
@@ -256,8 +257,15 @@ in exploratory mode. Default <code>2:10</code>.</p></dd>
 
 
 <dt id="arg-models">models<a class="anchor" aria-label="anchor" href="#arg-models"></a></dt>
-<dd><p>Integer vector of model specifications for tidyLPA
-(mclust backend). Default <code>c(1, 2, 3)</code>.</p></dd>
+<dd><p>Integer vector of model specifications for tidyLPA's mclust
+backend. Model 1 uses equal variance and zero covariance; model 2 uses
+varying variance and zero covariance; model 3 uses equal variance and
+equal covariance; and model 6 uses varying variance and varying
+covariance. Zero-covariance models assume conditional independence
+between variables within each cluster. Equal parameters are shared across
+clusters; varying parameters are cluster-specific. Supported values and
+the default are <code>c(1, 2, 3, 6)</code>. Models 4 and 5 require OpenMx and
+are intentionally unsupported.</p></dd>
 
 
 <dt id="arg-final-k">final_k<a class="anchor" aria-label="anchor" href="#arg-final-k"></a></dt>
@@ -387,9 +395,10 @@ flag uncertain phenotype membership. Default is <code>0.70</code>.</p></dd>
 
 
 <dt id="arg-stability-resamples">stability_resamples<a class="anchor" aria-label="anchor" href="#arg-stability-resamples"></a></dt>
-<dd><p>Number of 80% participant subsample refits used
+<dd><p>Number of 90% participant subsample refits used
 to assess reproducibility for every successful exploratory candidate.
-Subsamples are drawn without replacement. Defaults to <code>0</code> (disabled);
+Subsamples are drawn without replacement and reuse the reference model's
+resolved SOM grid dimensions. Defaults to <code>0</code> (disabled);
 use <code>50</code> for an exploratory stability screen.</p></dd>
 
 
@@ -399,6 +408,13 @@ use <code>50</code> for an exploratory stability screen.</p></dd>
 
 <dt id="arg-stability-progress">stability_progress<a class="anchor" aria-label="anchor" href="#arg-stability-progress"></a></dt>
 <dd><p>Logical; if TRUE, print subsample progress messages.</p></dd>
+
+
+<dt id="arg-stability-cores">stability_cores<a class="anchor" aria-label="anchor" href="#arg-stability-cores"></a></dt>
+<dd><p>Number of workers for stability refits. <code>NULL</code> uses
+all detected physical cores minus one, capped at the requested resamples
+and any scheduler limit. Each worker holds a refit in memory, so lower this
+setting for large SOM or high-dimensional analyses.</p></dd>
 
 
 <dt id="arg-df">df<a class="anchor" aria-label="anchor" href="#arg-df"></a></dt>
@@ -465,7 +481,7 @@ reference at <code>-log10(0.05)</code>.</p>
 <code>final_model</code> are finalize-only. Supplying settings from both modes is
 an error, even when an exploratory setting equals its default.</p>
 <p>Stability is assessed by refitting the full SOM/LPA pipeline on independent
-80% participant subsamples drawn without replacement.
+90% participant subsamples drawn without replacement.
 <code>StabilityARI_Mean</code> is the mean adjusted Rand index across successful
 refits and can be negative when agreement is worse than chance.
 <code>StabilityJaccard_Mean</code> is the mean label-matched, per-profile Jaccard
@@ -505,7 +521,7 @@ exploratory mode. Once a solution is selected, refit it with
 <code>method = "finalize"</code>, <code>final_k</code>, and <code>final_model</code> to create
 the reusable model for projection.</p>
 <p>Set <code>stability_resamples</code> to a positive value to assess internal
-reproducibility. Each 80% subsample refits the same candidate SOM/LPA solution
+reproducibility. Each 90% subsample refits the same candidate SOM/LPA solution
 and projects the original participants back into it. Mean adjusted Rand
 index summarizes whole-partition agreement; cluster-wise Jaccard recovery
 identifies phenotypes that dissolve despite good overall agreement. This is
@@ -531,41 +547,38 @@ get the reusable, projectable model.</p>
     <h2 id="stability-output">Stability output<a class="anchor" aria-label="anchor" href="#stability-output"></a></h2>
 
 
-<p>Stability assesses internal reproducibility by full-pipeline 80% participant
-subsampling without replacement. For each replicate, 80% of complete
-participants are selected once, all preprocessing and any reduction (PCA,
-MCA, or SOM) are refit, the
-selected clustering method is refit, and the original complete training
-participants are projected into that subsample fit for comparison with the
-original fitted partition. It is an internal sensitivity analysis, not
+<p>Stability assesses internal reproducibility by full-pipeline 90% participant
+subsampling without replacement. For each replicate, 90% of complete
+participants are selected once, all preprocessing, any reduction (PCA,
+MCA, or SOM), and the selected clustering method are refit. Assignments from
+that refit are compared with the full-data reference assignments for the
+same sampled participants, joined by <code>.row_id</code>; projection is not used.
+It is an internal sensitivity analysis, not
 independent-cohort validation.</p>
-<p><code>Stability$settings</code> records the analysis provenance:</p><ul><li><p><code>resamples</code>: requested number of 80% subsample refits.</p></li>
-<li><p><code>seed</code>: seed used to select subsamples.</p></li>
-<li><p><code>refit_scope</code>: always <code>"full_pipeline"</code>, meaning preprocessing,
-reduction where applicable, and clustering were all refit.</p></li>
+<p><code>Stability$settings</code> records the analysis provenance:</p><ul><li><p><code>resamples</code>: requested number of 90% subsample refits.</p></li>
+<li><p><code>seed</code>: seed used to derive reproducible sampling and model seeds.</p></li>
+<li><p><code>refit_scope</code>: always <code>"full_pipeline_in_sample"</code>, meaning
+preprocessing, reduction where applicable, and clustering were all refit.</p></li>
+<li><p><code>comparison_scope</code>: always <code>"sampled_participants"</code>; only the
+participants used in a refit enter that replicate's agreement metrics.</p></li>
 <li><p><code>resample_type</code>: <code>"subsample_without_replacement"</code> for the
 primary stability analysis.</p></li>
-<li><p><code>resample_fraction</code>: the retained participant fraction, <code>0.80</code>.</p></li>
+<li><p><code>resample_fraction</code>: the retained participant fraction, <code>0.90</code>.</p></li>
 <li><p><code>coassignment_limit</code>: maximum number of complete training
 participants (2,000) for which the full pairwise co-assignment matrix is
 calculated.</p></li>
 <li><p><code>noise_policy</code>: whether the method has noise labels. For ordinary
 methods it is <code>"all clusters included"</code>; HDBSCAN variants retain noise in
-global partition metrics but exclude it from per-cluster inclusion and
-co-assignment summaries.</p></li>
+ARI but exclude it from phenotype-level Jaccard recovery.</p></li>
 </ul><p><code>Stability$replicates</code> has one row per requested refit. <code>Model</code> and
 <code>Classes</code> identify the selected candidate (for HDBSCAN, <code>Classes</code> is the
 data-derived extracted count); <code>Replicate</code> is its sequence number; <code>Status</code>
-is <code>"success"</code> or a failure status; and <code>Error</code> contains the error message
-for an unsuccessful refit. Successful rows contain these partition metrics:</p><ul><li><p><code>ARI</code>: adjusted Rand index, agreement corrected for chance; higher
-is better and can be negative when agreement is worse than chance.</p></li>
-<li><p><code>VI</code>: variation of information, the information lost or gained when
-changing partitions; lower is better and zero is identical.</p></li>
-<li><p><code>NMI</code>: normalized mutual information; higher is better and one is
-identical.</p></li>
-<li><p><code>FowlkesMallows</code>: pairwise clustering agreement; higher is better
-and one is identical.</p></li>
-</ul><p><code>Stability$cluster_recovery</code> has one row for each reference <code>Cluster</code> in
+is <code>"success"</code> or a failure status; <code>SamplingSeed</code> and <code>ModelSeed</code> identify
+the independently varied participant draw and stochastic refit; and <code>Error</code>
+contains the error message for an unsuccessful refit. <code>ARI</code> is the primary
+successful-refit metric: it is invariant to cluster numbering, higher is
+better, and it can be negative when agreement is worse than chance.</p>
+<p><code>Stability$cluster_recovery</code> has one row for each reference <code>Cluster</code> in
 each successful <code>Replicate</code>. <code>Jaccard</code> is the recovery of that reference
 cluster after matching it to the subsample cluster with the largest Jaccard
 overlap; higher is better and one is exact recovery. <code>Model</code> and <code>Classes</code>
@@ -575,14 +588,14 @@ again identify the fitted candidate.</p>
 operational reliability measure that does not enter the reproducibility
 score. <code>StabilityARI_Mean</code> and <code>StabilityARI_P05</code> are the mean and fifth
 percentile of ARI. <code>StabilityJaccard_Mean</code> and <code>StabilityJaccard_Min</code> are
-respectively the mean and minimum label-matched Jaccard recovery.
+respectively the mean cluster-level recovery and the minimum of the
+cluster-specific mean recoveries across replicates.
 <code>ReproducibilityScore</code> is the mean of the finite <code>StabilityARI_Mean</code> and
-<code>StabilityJaccard_Mean</code> values only; it does not include success rate, VI,
-NMI, or Fowlkes–Mallows.</p>
+<code>StabilityJaccard_Mean</code> values only; it does not include success rate.</p>
 <p><code>Stability$failures</code> repeats the replicate columns for unsuccessful refits,
 making fit failures auditable without mixing them with successful metrics.</p>
 <p><code>Stability$participant_inclusion</code> is one row per complete reference
-participant. <code>RowIndex</code> identifies its original row position, <code>Cluster</code> its
+participant. <code>.row_id</code> identifies the merge-safe input row, <code>Cluster</code> its
 reference assignment, <code>SuccessfulRefits</code> the number of usable refits, and
 <code>InclusionProbability</code> the proportion of those refits in which the
 participant returned to that cluster's label-matched subsample cluster.
@@ -597,21 +610,20 @@ has at most <code>coassignment_limit</code> participants. Each candidate entry h
 <code>status</code> of <code>"available"</code>, <code>"skipped"</code>, or <code>"not_available"</code>; <code>reason</code>
 explains a non-available result; <code>matrix</code> is the pairwise probability that
 two complete reference participants are assigned together across successful
-subsample refits; and <code>row_ids</code> maps matrix rows and columns to original training-row
-positions. Higher matrix values mean more consistent pairwise co-membership.
+subsample refits; and <code>.row_id</code> maps matrix rows and columns to the same
+identifiers returned in <code>DataWithClusters</code> and <code>ProbFit$individual</code>. Higher
+matrix values mean more consistent pairwise co-membership.
 Where more than one candidate is summarized, entries are named by its
 <code>Model_Classes</code> key. The matrix is diagnostic only and is never used for
 selection.</p>
 <p><code>Stability$plots</code> contains <code>cluster_recovery</code> (per-cluster Jaccard),
-<code>partition_metrics</code> (ARI, VI, NMI, and Fowlkes–Mallows distributions), and
+<code>partition_metrics</code> (the ARI distribution), and
 <code>cluster_inclusion</code>; it also contains a co-assignment heatmap when the
 matrix is available. These diagnostics complement rather than replace ARI
 and Jaccard: none can turn a poorly reproducible cluster into a stable
 phenotype.</p>
 <p>Metric sources: Hubert and Arabie (1985) define ARI; Jaccard (1901) defines
-the overlap coefficient; Meila (2005) defines VI; Strehl and Ghosh (2002)
-describe NMI for partition comparison; Fowlkes and Mallows (1983) define
-their pairwise index; and Monti et al. (2003) describe resampling-based
+the overlap coefficient; and Monti et al. (2003) describe resampling-based
 consensus co-assignment.</p>
     </div>
     <div class="section level2">
@@ -726,16 +738,16 @@ a model-based cluster analysis. <em>Entropy</em>. 2017;19:452.</p>
    <td style="text-align:right;"> 0.20 </td>
    <td style="text-align:right;"> 0.80 </td>
    <td style="text-align:right;"> 1 </td>
-   <td style="text-align:right;"> 0.947 </td>
-   <td style="text-align:right;"> 0.900 </td>
-   <td style="text-align:right;"> 0.967 </td>
-   <td style="text-align:right;"> 0.950 </td>
-   <td style="text-align:right;"> 0.957 </td>
+   <td style="text-align:right;"> 0.418 </td>
+   <td style="text-align:right;"> -0.026 </td>
+   <td style="text-align:right;"> 0.678 </td>
+   <td style="text-align:right;"> 0.613 </td>
+   <td style="text-align:right;"> 0.548 </td>
    <td style="text-align:right;"> -1.291 </td>
    <td style="text-align:right;"> -1.315 </td>
    <td style="text-align:right;"> -2.217 </td>
-   <td style="text-align:right;"> 0.809 </td>
-   <td style="text-align:right;"> -1.004 </td>
+   <td style="text-align:right;"> -0.793 </td>
+   <td style="text-align:right;"> -1.404 </td>
   </tr><tr><td style="text-align:right;"> 3 </td>
    <td style="text-align:right;"> 2 </td>
    <td style="text-align:right;"> 228.125 </td>
@@ -759,16 +771,16 @@ a model-based cluster analysis. <em>Entropy</em>. 2017;19:452.</p>
    <td style="text-align:right;"> 0.16 </td>
    <td style="text-align:right;"> 0.84 </td>
    <td style="text-align:right;"> 1 </td>
-   <td style="text-align:right;"> 0.947 </td>
-   <td style="text-align:right;"> 0.900 </td>
-   <td style="text-align:right;"> 0.967 </td>
-   <td style="text-align:right;"> 0.950 </td>
-   <td style="text-align:right;"> 0.957 </td>
+   <td style="text-align:right;"> 0.454 </td>
+   <td style="text-align:right;"> -0.037 </td>
+   <td style="text-align:right;"> 0.709 </td>
+   <td style="text-align:right;"> 0.644 </td>
+   <td style="text-align:right;"> 0.582 </td>
    <td style="text-align:right;"> 0.885 </td>
    <td style="text-align:right;"> 0.951 </td>
    <td style="text-align:right;"> 0.500 </td>
-   <td style="text-align:right;"> 0.809 </td>
-   <td style="text-align:right;"> 0.786 </td>
+   <td style="text-align:right;"> -0.628 </td>
+   <td style="text-align:right;"> 0.427 </td>
   </tr><tr><td style="text-align:right;"> 1 </td>
    <td style="text-align:right;"> 3 </td>
    <td style="text-align:right;"> -287.806 </td>
@@ -792,11 +804,11 @@ a model-based cluster analysis. <em>Entropy</em>. 2017;19:452.</p>
    <td style="text-align:right;"> 0.20 </td>
    <td style="text-align:right;"> 0.60 </td>
    <td style="text-align:right;"> 1 </td>
-   <td style="text-align:right;"> 0.722 </td>
-   <td style="text-align:right;"> 0.481 </td>
-   <td style="text-align:right;"> 0.828 </td>
-   <td style="text-align:right;"> 0.745 </td>
-   <td style="text-align:right;"> 0.775 </td>
+   <td style="text-align:right;"> 0.444 </td>
+   <td style="text-align:right;"> 0.444 </td>
+   <td style="text-align:right;"> 0.652 </td>
+   <td style="text-align:right;"> 0.488 </td>
+   <td style="text-align:right;"> 0.548 </td>
    <td style="text-align:right;"> -1.144 </td>
    <td style="text-align:right;"> -1.178 </td>
    <td style="text-align:right;"> -0.769 </td>
@@ -825,16 +837,16 @@ a model-based cluster analysis. <em>Entropy</em>. 2017;19:452.</p>
    <td style="text-align:right;"> 0.16 </td>
    <td style="text-align:right;"> 0.68 </td>
    <td style="text-align:right;"> 1 </td>
-   <td style="text-align:right;"> 0.637 </td>
-   <td style="text-align:right;"> 0.407 </td>
-   <td style="text-align:right;"> 0.703 </td>
-   <td style="text-align:right;"> 0.678 </td>
-   <td style="text-align:right;"> 0.670 </td>
+   <td style="text-align:right;"> 0.372 </td>
+   <td style="text-align:right;"> 0.369 </td>
+   <td style="text-align:right;"> 0.537 </td>
+   <td style="text-align:right;"> 0.460 </td>
+   <td style="text-align:right;"> 0.454 </td>
    <td style="text-align:right;"> 0.881 </td>
    <td style="text-align:right;"> 0.893 </td>
    <td style="text-align:right;"> 0.434 </td>
-   <td style="text-align:right;"> -1.709 </td>
-   <td style="text-align:right;"> 0.125 </td>
+   <td style="text-align:right;"> -1.248 </td>
+   <td style="text-align:right;"> 0.240 </td>
   </tr><tr><td style="text-align:right;"> 1 </td>
    <td style="text-align:right;"> 4 </td>
    <td style="text-align:right;"> -182.881 </td>
@@ -858,16 +870,16 @@ a model-based cluster analysis. <em>Entropy</em>. 2017;19:452.</p>
    <td style="text-align:right;"> 0.20 </td>
    <td style="text-align:right;"> 0.32 </td>
    <td style="text-align:right;"> 1 </td>
-   <td style="text-align:right;"> 0.983 </td>
+   <td style="text-align:right;"> 0.973 </td>
+   <td style="text-align:right;"> 0.956 </td>
+   <td style="text-align:right;"> 0.979 </td>
+   <td style="text-align:right;"> 0.970 </td>
    <td style="text-align:right;"> 0.976 </td>
-   <td style="text-align:right;"> 0.988 </td>
-   <td style="text-align:right;"> 0.975 </td>
-   <td style="text-align:right;"> 0.985 </td>
    <td style="text-align:right;"> -0.674 </td>
    <td style="text-align:right;"> -0.627 </td>
    <td style="text-align:right;"> 0.470 </td>
-   <td style="text-align:right;"> 1.058 </td>
-   <td style="text-align:right;"> 0.057 </td>
+   <td style="text-align:right;"> 1.288 </td>
+   <td style="text-align:right;"> 0.114 </td>
   </tr><tr><td style="text-align:right;"> 3 </td>
    <td style="text-align:right;"> 4 </td>
    <td style="text-align:right;"> 258.702 </td>
@@ -891,16 +903,16 @@ a model-based cluster analysis. <em>Entropy</em>. 2017;19:452.</p>
    <td style="text-align:right;"> 0.16 </td>
    <td style="text-align:right;"> 0.36 </td>
    <td style="text-align:right;"> 1 </td>
-   <td style="text-align:right;"> 0.911 </td>
-   <td style="text-align:right;"> 0.904 </td>
-   <td style="text-align:right;"> 0.934 </td>
-   <td style="text-align:right;"> 0.894 </td>
    <td style="text-align:right;"> 0.923 </td>
+   <td style="text-align:right;"> 0.911 </td>
+   <td style="text-align:right;"> 0.943 </td>
+   <td style="text-align:right;"> 0.920 </td>
+   <td style="text-align:right;"> 0.933 </td>
    <td style="text-align:right;"> 0.909 </td>
    <td style="text-align:right;"> 0.877 </td>
    <td style="text-align:right;"> 0.525 </td>
-   <td style="text-align:right;"> 0.509 </td>
-   <td style="text-align:right;"> 0.705 </td>
+   <td style="text-align:right;"> 1.079 </td>
+   <td style="text-align:right;"> 0.847 </td>
   </tr><tr><td style="text-align:right;"> 1 </td>
    <td style="text-align:right;"> 5 </td>
    <td style="text-align:right;"> -140.289 </td>
@@ -924,16 +936,16 @@ a model-based cluster analysis. <em>Entropy</em>. 2017;19:452.</p>
    <td style="text-align:right;"> 0.16 </td>
    <td style="text-align:right;"> 0.28 </td>
    <td style="text-align:right;"> 1 </td>
-   <td style="text-align:right;"> 0.979 </td>
-   <td style="text-align:right;"> 0.975 </td>
-   <td style="text-align:right;"> 0.790 </td>
-   <td style="text-align:right;"> 0.012 </td>
-   <td style="text-align:right;"> 0.885 </td>
+   <td style="text-align:right;"> 0.984 </td>
+   <td style="text-align:right;"> 0.973 </td>
+   <td style="text-align:right;"> 0.842 </td>
+   <td style="text-align:right;"> 0.257 </td>
+   <td style="text-align:right;"> 0.913 </td>
    <td style="text-align:right;"> -0.523 </td>
    <td style="text-align:right;"> -0.485 </td>
    <td style="text-align:right;"> 0.529 </td>
-   <td style="text-align:right;"> 0.173 </td>
-   <td style="text-align:right;"> -0.076 </td>
+   <td style="text-align:right;"> 0.981 </td>
+   <td style="text-align:right;"> 0.126 </td>
   </tr><tr><td style="text-align:right;"> 3 </td>
    <td style="text-align:right;"> 5 </td>
    <td style="text-align:right;"> 280.916 </td>
@@ -957,16 +969,16 @@ a model-based cluster analysis. <em>Entropy</em>. 2017;19:452.</p>
    <td style="text-align:right;"> 0.12 </td>
    <td style="text-align:right;"> 0.32 </td>
    <td style="text-align:right;"> 1 </td>
-   <td style="text-align:right;"> 0.813 </td>
-   <td style="text-align:right;"> 0.794 </td>
-   <td style="text-align:right;"> 0.722 </td>
-   <td style="text-align:right;"> 0.233 </td>
-   <td style="text-align:right;"> 0.767 </td>
+   <td style="text-align:right;"> 0.779 </td>
+   <td style="text-align:right;"> 0.771 </td>
+   <td style="text-align:right;"> 0.689 </td>
+   <td style="text-align:right;"> 0.220 </td>
+   <td style="text-align:right;"> 0.734 </td>
    <td style="text-align:right;"> 0.956 </td>
    <td style="text-align:right;"> 0.885 </td>
    <td style="text-align:right;"> 0.528 </td>
-   <td style="text-align:right;"> -0.858 </td>
-   <td style="text-align:right;"> 0.377 </td>
+   <td style="text-align:right;"> 0.112 </td>
+   <td style="text-align:right;"> 0.620 </td>
   </tr></tbody></table></div><span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Status, runtime, warnings, and errors for every attempted fit</span></span></span>
 <span class="r-in"><span><span class="fu">ShowFitTable</span><span class="op">(</span></span></span>
@@ -984,7 +996,7 @@ a model-based cluster analysis. <em>Entropy</em>. 2017;19:452.</p>
   </tr></thead><tbody><tr><td style="text-align:right;"> 1 </td>
    <td style="text-align:right;"> 2 </td>
    <td style="text-align:left;"> success </td>
-   <td style="text-align:right;"> 0.328 </td>
+   <td style="text-align:right;"> 0.310 </td>
    <td style="text-align:left;"> FALSE </td>
    <td style="text-align:right;"> 0 </td>
    <td style="text-align:left;">  </td>
@@ -992,7 +1004,7 @@ a model-based cluster analysis. <em>Entropy</em>. 2017;19:452.</p>
   </tr><tr><td style="text-align:right;"> 3 </td>
    <td style="text-align:right;"> 2 </td>
    <td style="text-align:left;"> success </td>
-   <td style="text-align:right;"> 0.598 </td>
+   <td style="text-align:right;"> 0.545 </td>
    <td style="text-align:left;"> FALSE </td>
    <td style="text-align:right;"> 0 </td>
    <td style="text-align:left;">  </td>
@@ -1000,7 +1012,7 @@ a model-based cluster analysis. <em>Entropy</em>. 2017;19:452.</p>
   </tr><tr><td style="text-align:right;"> 1 </td>
    <td style="text-align:right;"> 3 </td>
    <td style="text-align:left;"> success </td>
-   <td style="text-align:right;"> 0.543 </td>
+   <td style="text-align:right;"> 0.558 </td>
    <td style="text-align:left;"> FALSE </td>
    <td style="text-align:right;"> 0 </td>
    <td style="text-align:left;">  </td>
@@ -1008,7 +1020,7 @@ a model-based cluster analysis. <em>Entropy</em>. 2017;19:452.</p>
   </tr><tr><td style="text-align:right;"> 3 </td>
    <td style="text-align:right;"> 3 </td>
    <td style="text-align:left;"> success </td>
-   <td style="text-align:right;"> 1.098 </td>
+   <td style="text-align:right;"> 1.039 </td>
    <td style="text-align:left;"> FALSE </td>
    <td style="text-align:right;"> 0 </td>
    <td style="text-align:left;">  </td>
@@ -1016,7 +1028,7 @@ a model-based cluster analysis. <em>Entropy</em>. 2017;19:452.</p>
   </tr><tr><td style="text-align:right;"> 1 </td>
    <td style="text-align:right;"> 4 </td>
    <td style="text-align:left;"> success </td>
-   <td style="text-align:right;"> 0.778 </td>
+   <td style="text-align:right;"> 0.754 </td>
    <td style="text-align:left;"> FALSE </td>
    <td style="text-align:right;"> 0 </td>
    <td style="text-align:left;">  </td>
@@ -1024,7 +1036,7 @@ a model-based cluster analysis. <em>Entropy</em>. 2017;19:452.</p>
   </tr><tr><td style="text-align:right;"> 3 </td>
    <td style="text-align:right;"> 4 </td>
    <td style="text-align:left;"> success </td>
-   <td style="text-align:right;"> 1.644 </td>
+   <td style="text-align:right;"> 1.628 </td>
    <td style="text-align:left;"> FALSE </td>
    <td style="text-align:right;"> 0 </td>
    <td style="text-align:left;">  </td>
@@ -1032,7 +1044,7 @@ a model-based cluster analysis. <em>Entropy</em>. 2017;19:452.</p>
   </tr><tr><td style="text-align:right;"> 1 </td>
    <td style="text-align:right;"> 5 </td>
    <td style="text-align:left;"> success </td>
-   <td style="text-align:right;"> 1.585 </td>
+   <td style="text-align:right;"> 1.415 </td>
    <td style="text-align:left;"> FALSE </td>
    <td style="text-align:right;"> 0 </td>
    <td style="text-align:left;">  </td>
@@ -1040,14 +1052,14 @@ a model-based cluster analysis. <em>Entropy</em>. 2017;19:452.</p>
   </tr><tr><td style="text-align:right;"> 3 </td>
    <td style="text-align:right;"> 5 </td>
    <td style="text-align:left;"> success </td>
-   <td style="text-align:right;"> 2.429 </td>
+   <td style="text-align:right;"> 2.367 </td>
    <td style="text-align:left;"> FALSE </td>
    <td style="text-align:right;"> 0 </td>
    <td style="text-align:left;">  </td>
    <td style="text-align:left;"> NA </td>
   </tr></tbody></table></div><span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="va">review</span><span class="op">$</span><span class="va">ModelInfo_MClust</span><span class="op">$</span><span class="va">AHP</span><span class="op">$</span><span class="va">recommendation</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "AHP (AIC, BIC, Entropy, reproducibility) recommends Model 3 with k = 2 profiles."</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "AHP (AIC, BIC, Entropy, reproducibility) recommends Model 3 with k = 4 profiles."</span>
 <span class="r-in"><span><span class="fu">ShowFitTable</span><span class="op">(</span><span class="va">review</span><span class="op">$</span><span class="va">Stability</span><span class="op">$</span><span class="va">summary</span>, height <span class="op">=</span> <span class="st">"260px"</span><span class="op">)</span></span></span>
 <div style="border: 1px solid #ddd; padding: 0px; overflow-y: scroll; height:260px; "><table class="table table table-striped table-hover table-condensed" style="margin-left: auto; margin-right: auto;"><thead><tr><th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> Model </th>
    <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> Classes </th>
@@ -1060,67 +1072,67 @@ a model-based cluster analysis. <em>Entropy</em>. 2017;19:452.</p>
   </tr></thead><tbody><tr><td style="text-align:right;"> 1 </td>
    <td style="text-align:right;"> 2 </td>
    <td style="text-align:right;"> 1 </td>
-   <td style="text-align:right;"> 0.947 </td>
-   <td style="text-align:right;"> 0.900 </td>
-   <td style="text-align:right;"> 0.967 </td>
-   <td style="text-align:right;"> 0.950 </td>
-   <td style="text-align:right;"> 0.957 </td>
+   <td style="text-align:right;"> 0.418 </td>
+   <td style="text-align:right;"> -0.026 </td>
+   <td style="text-align:right;"> 0.678 </td>
+   <td style="text-align:right;"> 0.613 </td>
+   <td style="text-align:right;"> 0.548 </td>
   </tr><tr><td style="text-align:right;"> 3 </td>
    <td style="text-align:right;"> 2 </td>
    <td style="text-align:right;"> 1 </td>
-   <td style="text-align:right;"> 0.947 </td>
-   <td style="text-align:right;"> 0.900 </td>
-   <td style="text-align:right;"> 0.967 </td>
-   <td style="text-align:right;"> 0.950 </td>
-   <td style="text-align:right;"> 0.957 </td>
+   <td style="text-align:right;"> 0.454 </td>
+   <td style="text-align:right;"> -0.037 </td>
+   <td style="text-align:right;"> 0.709 </td>
+   <td style="text-align:right;"> 0.644 </td>
+   <td style="text-align:right;"> 0.582 </td>
   </tr><tr><td style="text-align:right;"> 1 </td>
    <td style="text-align:right;"> 3 </td>
    <td style="text-align:right;"> 1 </td>
-   <td style="text-align:right;"> 0.722 </td>
-   <td style="text-align:right;"> 0.481 </td>
-   <td style="text-align:right;"> 0.828 </td>
-   <td style="text-align:right;"> 0.745 </td>
-   <td style="text-align:right;"> 0.775 </td>
+   <td style="text-align:right;"> 0.444 </td>
+   <td style="text-align:right;"> 0.444 </td>
+   <td style="text-align:right;"> 0.652 </td>
+   <td style="text-align:right;"> 0.488 </td>
+   <td style="text-align:right;"> 0.548 </td>
   </tr><tr><td style="text-align:right;"> 3 </td>
    <td style="text-align:right;"> 3 </td>
    <td style="text-align:right;"> 1 </td>
-   <td style="text-align:right;"> 0.637 </td>
-   <td style="text-align:right;"> 0.407 </td>
-   <td style="text-align:right;"> 0.703 </td>
-   <td style="text-align:right;"> 0.678 </td>
-   <td style="text-align:right;"> 0.670 </td>
+   <td style="text-align:right;"> 0.372 </td>
+   <td style="text-align:right;"> 0.369 </td>
+   <td style="text-align:right;"> 0.537 </td>
+   <td style="text-align:right;"> 0.460 </td>
+   <td style="text-align:right;"> 0.454 </td>
   </tr><tr><td style="text-align:right;"> 1 </td>
    <td style="text-align:right;"> 4 </td>
    <td style="text-align:right;"> 1 </td>
-   <td style="text-align:right;"> 0.983 </td>
-   <td style="text-align:right;"> 0.976 </td>
-   <td style="text-align:right;"> 0.988 </td>
-   <td style="text-align:right;"> 0.975 </td>
-   <td style="text-align:right;"> 0.985 </td>
-  </tr><tr><td style="text-align:right;"> 3 </td>
-   <td style="text-align:right;"> 4 </td>
-   <td style="text-align:right;"> 1 </td>
-   <td style="text-align:right;"> 0.911 </td>
-   <td style="text-align:right;"> 0.904 </td>
-   <td style="text-align:right;"> 0.934 </td>
-   <td style="text-align:right;"> 0.894 </td>
-   <td style="text-align:right;"> 0.923 </td>
-  </tr><tr><td style="text-align:right;"> 1 </td>
-   <td style="text-align:right;"> 5 </td>
-   <td style="text-align:right;"> 1 </td>
+   <td style="text-align:right;"> 0.973 </td>
+   <td style="text-align:right;"> 0.956 </td>
    <td style="text-align:right;"> 0.979 </td>
-   <td style="text-align:right;"> 0.975 </td>
-   <td style="text-align:right;"> 0.790 </td>
-   <td style="text-align:right;"> 0.012 </td>
-   <td style="text-align:right;"> 0.885 </td>
+   <td style="text-align:right;"> 0.970 </td>
+   <td style="text-align:right;"> 0.976 </td>
+  </tr><tr><td style="text-align:right;"> 3 </td>
+   <td style="text-align:right;"> 4 </td>
+   <td style="text-align:right;"> 1 </td>
+   <td style="text-align:right;"> 0.923 </td>
+   <td style="text-align:right;"> 0.911 </td>
+   <td style="text-align:right;"> 0.943 </td>
+   <td style="text-align:right;"> 0.920 </td>
+   <td style="text-align:right;"> 0.933 </td>
+  </tr><tr><td style="text-align:right;"> 1 </td>
+   <td style="text-align:right;"> 5 </td>
+   <td style="text-align:right;"> 1 </td>
+   <td style="text-align:right;"> 0.984 </td>
+   <td style="text-align:right;"> 0.973 </td>
+   <td style="text-align:right;"> 0.842 </td>
+   <td style="text-align:right;"> 0.257 </td>
+   <td style="text-align:right;"> 0.913 </td>
   </tr><tr><td style="text-align:right;"> 3 </td>
    <td style="text-align:right;"> 5 </td>
    <td style="text-align:right;"> 1 </td>
-   <td style="text-align:right;"> 0.813 </td>
-   <td style="text-align:right;"> 0.794 </td>
-   <td style="text-align:right;"> 0.722 </td>
-   <td style="text-align:right;"> 0.233 </td>
-   <td style="text-align:right;"> 0.767 </td>
+   <td style="text-align:right;"> 0.779 </td>
+   <td style="text-align:right;"> 0.771 </td>
+   <td style="text-align:right;"> 0.689 </td>
+   <td style="text-align:right;"> 0.220 </td>
+   <td style="text-align:right;"> 0.734 </td>
   </tr></tbody></table></div><span class="r-in"><span><span class="va">review</span><span class="op">$</span><span class="va">fit_plot</span></span></span>
 <span class="r-plt img"><img src="CreateClusterModel_SOM_MClust-1.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span><span class="va">review</span><span class="op">$</span><span class="va">fit_plot</span></span></span>
@@ -1190,11 +1202,11 @@ a model-based cluster analysis. <em>Entropy</em>. 2017;19:452.</p>
    <td style="text-align:right;"> 0.2 </td>
    <td style="text-align:right;"> 0.32 </td>
    <td style="text-align:right;"> 1 </td>
-   <td style="text-align:right;"> 0.983 </td>
-   <td style="text-align:right;"> 0.976 </td>
-   <td style="text-align:right;"> 0.988 </td>
-   <td style="text-align:right;"> 0.975 </td>
-   <td style="text-align:right;"> 0.985 </td>
+   <td style="text-align:right;"> 0.981 </td>
+   <td style="text-align:right;"> 0.973 </td>
+   <td style="text-align:right;"> 0.986 </td>
+   <td style="text-align:right;"> 0.974 </td>
+   <td style="text-align:right;"> 0.984 </td>
    <td style="text-align:right;"> 0 </td>
    <td style="text-align:right;"> 0 </td>
    <td style="text-align:right;"> 0 </td>

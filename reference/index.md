@@ -125,6 +125,8 @@
   : Plot ANOVA Relationships Matrix
 - [`PlotAssociations()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotAssociations.md)
   : Plot Associations
+- [`PlotBetaProfile()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotBetaProfile.md)
+  : Plot standardized beta profiles across continuous predictors
 - [`PlotBlandAltman()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotBlandAltman.md)
   : Plot Bland-Altman Agreement Plot
 - [`PlotCatInteractionEffectsMatrix()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotCatInteractionEffectsMatrix.md)
@@ -154,6 +156,8 @@
   : Plot a per-participant silhouette profile
 - [`PlotContinuousDistributions()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotContinuousDistributions.md)
   : Plot Continuous Distributions
+- [`PlotCorrelationComparisons()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotCorrelationComparisons.md)
+  : Compare correlations between two independent groups
 - [`PlotCorrelationsHeatmap()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotCorrelationsHeatmap.md)
   : Plot correlations heatmap
 - [`PlotDatasetComparison()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotDatasetComparison.md)
@@ -250,6 +254,9 @@
   : Validate a merge between two source data frames and a merged result
 - [`add_biomarker_values()`](https://rdastgh1.github.io/SciDataReportR/reference/add_biomarker_values.md)
   : Add values to a biomarker performance heatmap
+- [`add_delta_r_and_stars()`](https://rdastgh1.github.io/SciDataReportR/reference/add_delta_r_and_stars.md)
+  : Add DeltaR values and significance stars to a correlation comparison
+  heatmap
 - [`add_r_and_stars()`](https://rdastgh1.github.io/SciDataReportR/reference/add_r_and_stars.md)
   : Add r-values and significance stars to a correlations heatmap
 - [`calculate_pathway_results()`](https://rdastgh1.github.io/SciDataReportR/reference/calculate_pathway_results.md)

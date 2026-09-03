@@ -21,11 +21,12 @@ PlotVolcanoEffects(
   Alpha = 0.05,
   Format = c("tiered", "classic", "fdr_only", "directional", "effect_gradient",
     "minimal", "neon"),
-  LabelMode = c("none", "top_n", "significant", "fdr", "extreme"),
+  LabelMode = c("none", "top_n", "raw", "significant", "fdr", "extreme"),
   TopN = 10,
   Relabel = TRUE,
   codebook = NULL,
   InteractiveLabels = TRUE,
+  ColorBy = NULL,
   Data = lifecycle::deprecated(),
   xVars = lifecycle::deprecated(),
   yVar = lifecycle::deprecated(),
@@ -83,8 +84,10 @@ PlotVolcanoEffects(
 
 - LabelMode:
 
-  Labeling mode. One of `"none"`, `"top_n"`, `"significant"`, `"fdr"`,
-  or `"extreme"`.
+  Labeling mode. One of `"none"`, `"top_n"`, `"raw"`, `"significant"`,
+  `"fdr"`, or `"extreme"`. `"raw"` labels variables with
+  `PValue < Alpha`; `"significant"` is retained as an alias for `"raw"`.
+  `"fdr"` labels variables with `FDR < Alpha`. The default is `"none"`.
 
 - TopN:
 
@@ -105,6 +108,15 @@ PlotVolcanoEffects(
 
   Logical. If `TRUE`, a `text` aesthetic is added for compatibility with
   `plotly::ggplotly(tooltip = "text")`. Default is `TRUE`.
+
+- ColorBy:
+
+  Optional category mapping used to color points in both `RawPPlot` and
+  `FDRPlot`. Supply either a data frame with `Variable` and `Category`
+  columns or a named atomic vector whose names are predictor variable
+  names and whose values are categories. Tested predictors without a
+  mapping are shown as `"Unmapped"` in grey. When `NULL` (the default),
+  the existing significance-based `Format` colors are used unchanged.
 
 - Data:
 
@@ -195,4 +207,25 @@ cat_res <- PlotVolcanoEffects(
 cat_res$RawPPlot
 
 cat_res$FDRPlot
+
+
+# Color analytes by categories supplied in a data frame
+category_df <- data.frame(
+  Variable = predictors,
+  Category = rep(c("Inflammatory", "Metabolic"), length.out = length(predictors))
+)
+PlotVolcanoEffects(
+  Labelled, predictors, "AXL",
+  ColorBy = category_df,
+  LabelMode = "raw"
+)$RawPPlot
+
+
+# A named vector is also accepted; use FDR-adjusted labels
+category_vector <- stats::setNames(category_df$Category, category_df$Variable)
+PlotVolcanoEffects(
+  Labelled, predictors, "AXL",
+  ColorBy = category_vector,
+  LabelMode = "fdr"
+)$FDRPlot
 ```

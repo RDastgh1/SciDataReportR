@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">SciDataReportR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">21.0.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">21.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -45,9 +45,31 @@
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Changelog</h1>
-      <small>Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/v21.0.0/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
+      <small>Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/master/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="21.3.0" id="scidatareportr-2130">SciDataReportR 21.3.0<a class="anchor" aria-label="anchor" href="#scidatareportr-2130"></a></h2>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="21.2.0" id="scidatareportr-2120">SciDataReportR 21.2.0<a class="anchor" aria-label="anchor" href="#scidatareportr-2120"></a></h2>
+<ul><li><p>Clustering stability now retains 90% of participants per full-pipeline subsample refit by default, so it measures whether assignments persist after removing a random 10% of participants. The retained fraction is recorded as <code>Stability$settings$resample_fraction = 0.90</code>.</p></li>
+<li><p>Mclust candidate plots now use consistent descriptive model legends, such as <code>Model 6: varying variance, varying covariance</code>, derived from one shared model registry. The clustering documentation now explains each supported variance and covariance structure.</p></li>
+</ul></div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="21.1.0" id="scidatareportr-2110">SciDataReportR 21.1.0<a class="anchor" aria-label="anchor" href="#scidatareportr-2110"></a></h2>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="21.0.2" id="scidatareportr-2102">SciDataReportR 21.0.2<a class="anchor" aria-label="anchor" href="#scidatareportr-2102"></a></h2>
+<ul><li><p><code><a href="../reference/PlotVolcanoEffects.html">PlotVolcanoEffects()</a></code> can now color both raw-p and FDR volcano plots by an analyte category supplied as a <code>Variable</code>/<code>Category</code> data frame or named vector. Unmapped analytes remain visible in grey.</p></li>
+<li><p><code>PlotVolcanoEffects(LabelMode = "raw")</code> now explicitly labels analytes that pass the raw p-value threshold. The existing <code>"significant"</code> value remains a compatible alias, while <code>"fdr"</code> continues to use adjusted p-values.</p></li>
+</ul></div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="21.0.1" id="scidatareportr-2101">SciDataReportR 21.0.1<a class="anchor" aria-label="anchor" href="#scidatareportr-2101"></a></h2>
+<ul><li><p>Mclust, PCA + Mclust, MCA + Mclust, and SOM + Mclust now share tidyLPA’s mclust backend and explore all supported covariance models by default: models 1 (EEI), 2 (VVI), 3 (EEE), and 6 (VVV). Models 4 and 5 remain unavailable because they require OpenMx.</p></li>
+<li><p><code><a href="../reference/MakeComparisonTable.html">MakeComparisonTable()</a></code> now displays adjusted Type II ANCOVA p-values when the grouping variable has a non-syntactic name requiring backticks in model formulas. Previously the model fit and effect size succeeded, but the p-value row lookup missed the backtick-quoted term and rendered a blank cell.</p></li>
+<li><p><code><a href="../reference/MakeUnivariateRegressionTable.html">MakeUnivariateRegressionTable()</a></code> no longer emits tidyselect deprecation warnings while building its report tables, and biomarker-performance source code now passes the package portability check for non-ASCII characters.</p></li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="21.0.0" id="scidatareportr-2100">SciDataReportR 21.0.0<a class="anchor" aria-label="anchor" href="#scidatareportr-2100"></a></h2>
 </div>
@@ -55,7 +77,8 @@
 <h2 class="pkg-version" data-toc-text="20.24.0" id="scidatareportr-20240">SciDataReportR 20.24.0<a class="anchor" aria-label="anchor" href="#scidatareportr-20240"></a></h2>
 <div class="section level3">
 <h3 id="clustering-api-is-standardized-around-fitted-pipelines-and-one-projector-20-24-0">Clustering API is standardized around fitted pipelines and one projector<a class="anchor" aria-label="anchor" href="#clustering-api-is-standardized-around-fitted-pipelines-and-one-projector-20-24-0"></a></h3>
-<ul><li><p><strong>Breaking unreleased clustering-output cleanup.</strong> Finalized fits and projections now return <code>DataWithClusters</code> (formerly <code>df_with_clusters</code>) and <code>ClusterVariableName</code> (formerly <code>ClusterName</code>). The mistyped <code>ModelInfo_Mclust</code>, public <code>complete_rows</code>, <code>CandidateAudit</code>, and injected <code>.scidr_rowid</code> columns have been removed. <code>ModelInfo_MClust</code> is the canonical Mclust-specific layer; <code>ModelInfo</code> remains the generic compatibility alias.</p></li>
+<ul><li><p><strong>Stability now measures participant-overlap refit reproducibility.</strong> Each replicate refits the complete clustering pipeline on an 80% participant subsample and compares those participants’ refitted assignments with their full-data reference assignments by <code>.row_id</code>. Projection is no longer part of stability. ARI is the primary partition metric, model seeds vary by replicate, and SOM grid dimensions remain fixed to the reference fit.</p></li>
+<li><p><strong>Breaking unreleased clustering-output cleanup.</strong> Finalized fits and projections now return <code>DataWithClusters</code> (formerly <code>df_with_clusters</code>) and <code>ClusterVariableName</code> (formerly <code>ClusterName</code>). The mistyped <code>ModelInfo_Mclust</code>, public <code>complete_rows</code>, <code>CandidateAudit</code>, and injected <code>.scidr_rowid</code> columns have been removed and replaced by a consistently labeled <code>.row_id</code> in mergeable row-level outputs. <code>ModelInfo_MClust</code> is the canonical Mclust-specific layer; <code>ModelInfo</code> remains the generic compatibility alias.</p></li>
 <li><p>SOM + Mclust now reports <code>MinProfileNodeN</code>/<code>MaxProfileNodeN</code> alongside their explicit proportions, and <code>BLRTStatistic</code>/<code>BLRTPValue</code>. The candidate plot includes an unselected BLRT p-value panel with a neutral 0.05 reference line.</p></li>
 <li><p>Clustering constructors now use <code>CreateClusterModel_&lt;reduction&gt;_&lt;method&gt;()</code>, for example <code><a href="../reference/CreateClusterModel_PCA_MClust.html">CreateClusterModel_PCA_MClust()</a></code> and <code><a href="../reference/CreateClusterModel_SOM_HDBSCAN.html">CreateClusterModel_SOM_HDBSCAN()</a></code>. Fitted objects use matching <code>Pipeline_&lt;reduction&gt;_&lt;method&gt;</code> classes.</p></li>
 <li><p><code>ProjectCluster(object, new_df)</code> is the single public projection interface. It dispatches from the fitted pipeline class and retains each method’s frozen preprocessing, reduction, support checks, and projection diagnostics.</p></li>

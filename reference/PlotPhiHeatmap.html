@@ -11,7 +11,7 @@ then renders heatmap-style plots with raw and FDR-adjusted significance."><meta 
 
     <a class="navbar-brand me-2" href="../index.html">SciDataReportR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">21.0.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">21.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -49,7 +49,7 @@ then renders heatmap-style plots with raw and FDR-adjusted significance."><meta 
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Plot Phi Correlations Between Binary Variables</h1>
-      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/v21.0.0/R/PlotPhiHeatmap.R" class="external-link"><code>R/PlotPhiHeatmap.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/master/R/PlotPhiHeatmap.R" class="external-link"><code>R/PlotPhiHeatmap.R</code></a></small>
       <div class="d-none name"><code>PlotPhiHeatmap.Rd</code></div>
     </div>
 
@@ -67,6 +67,8 @@ then renders heatmap-style plots with raw and FDR-adjusted significance.</p>
 <span>  Relabel <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  binary_map <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  fdr_scope <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"matrix"</span>, <span class="st">"per_outcome"</span>, <span class="st">"per_predictor"</span><span class="op">)</span>,</span>
+<span>  cluster_rows <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  cluster_columns <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  Data <span class="op">=</span> <span class="fu">lifecycle</span><span class="fu">::</span><span class="fu"><a href="https://lifecycle.r-lib.org/reference/deprecated.html" class="external-link">deprecated</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -98,6 +100,11 @@ If NULL, a mapping is created internally for <code>CatVars</code>.</p></dd>
 (historical behavior). <code>"per_outcome"</code> corrects separately within
 each y-axis variable (<code>YVar</code>); the Phi matrix is symmetric, so this
 treats each variable's row of tiles as one family.</p></dd>
+
+
+<dt id="arg-cluster-rows-cluster-columns">cluster_rows, cluster_columns<a class="anchor" aria-label="anchor" href="#arg-cluster-rows-cluster-columns"></a></dt>
+<dd><p>Logical; cluster y-axis rows and/or
+x-axis columns using displayed Phi-coefficient profiles.</p></dd>
 
 
 <dt id="arg-data">Data<a class="anchor" aria-label="anchor" href="#arg-data"></a></dt>

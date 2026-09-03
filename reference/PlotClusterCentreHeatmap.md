@@ -15,7 +15,9 @@ PlotClusterCentreHeatmap(
   centers,
   variable_labels = NULL,
   title = "Cluster centre profiles",
-  value_label = "Centre"
+  value_label = "Centre",
+  cluster_rows = FALSE,
+  cluster_columns = FALSE
 )
 
 PlotClusterCentreProfile(

@@ -17,6 +17,8 @@ PlotPointCorrelationsHeatmap(
   Ordinal = TRUE,
   binary_map = NULL,
   fdr_scope = c("matrix", "per_outcome", "per_predictor"),
+  cluster_rows = FALSE,
+  cluster_columns = FALSE,
   Data = lifecycle::deprecated(),
   Covariates = lifecycle::deprecated()
 )
@@ -61,6 +63,11 @@ PlotPointCorrelationsHeatmap(
   `"matrix"` corrects across all p-values at once (historical behavior).
   `"per_outcome"` corrects separately within each continuous variable:
   outcomes are the continuous variables (`ContVars`).
+
+- cluster_rows, cluster_columns:
+
+  Logical; cluster continuous y-axis rows and/or binary x-axis columns
+  using displayed correlation profiles.
 
 - Data:
 

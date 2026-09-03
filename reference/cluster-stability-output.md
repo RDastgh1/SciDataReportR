@@ -11,28 +11,32 @@ Shared clustering stability-output reference
 
 ## Stability output
 
-Stability assesses internal reproducibility by full-pipeline 80%
-participant subsampling without replacement. For each replicate, 80% of
-complete participants are selected once, all preprocessing and any
-reduction (PCA, MCA, or SOM) are refit, the selected clustering method
-is refit, and the original complete training participants are projected
-into that subsample fit for comparison with the original fitted
-partition. It is an internal sensitivity analysis, not
-independent-cohort validation.
+Stability assesses internal reproducibility by full-pipeline 90%
+participant subsampling without replacement. For each replicate, 90% of
+complete participants are selected once, all preprocessing, any
+reduction (PCA, MCA, or SOM), and the selected clustering method are
+refit. Assignments from that refit are compared with the full-data
+reference assignments for the same sampled participants, joined by
+`.row_id`; projection is not used. It is an internal sensitivity
+analysis, not independent-cohort validation.
 
 `Stability$settings` records the analysis provenance:
 
-- `resamples`: requested number of 80% subsample refits.
+- `resamples`: requested number of 90% subsample refits.
 
-- `seed`: seed used to select subsamples.
+- `seed`: seed used to derive reproducible sampling and model seeds.
 
-- `refit_scope`: always `"full_pipeline"`, meaning preprocessing,
-  reduction where applicable, and clustering were all refit.
+- `refit_scope`: always `"full_pipeline_in_sample"`, meaning
+  preprocessing, reduction where applicable, and clustering were all
+  refit.
+
+- `comparison_scope`: always `"sampled_participants"`; only the
+  participants used in a refit enter that replicate's agreement metrics.
 
 - `resample_type`: `"subsample_without_replacement"` for the primary
   stability analysis.
 
-- `resample_fraction`: the retained participant fraction, `0.80`.
+- `resample_fraction`: the retained participant fraction, `0.90`.
 
 - `coassignment_limit`: maximum number of complete training participants
   (2,000) for which the full pairwise co-assignment matrix is
@@ -40,27 +44,17 @@ independent-cohort validation.
 
 - `noise_policy`: whether the method has noise labels. For ordinary
   methods it is `"all clusters included"`; HDBSCAN variants retain noise
-  in global partition metrics but exclude it from per-cluster inclusion
-  and co-assignment summaries.
+  in ARI but exclude it from phenotype-level Jaccard recovery.
 
 `Stability$replicates` has one row per requested refit. `Model` and
 `Classes` identify the selected candidate (for HDBSCAN, `Classes` is the
 data-derived extracted count); `Replicate` is its sequence number;
-`Status` is `"success"` or a failure status; and `Error` contains the
-error message for an unsuccessful refit. Successful rows contain these
-partition metrics:
-
-- `ARI`: adjusted Rand index, agreement corrected for chance; higher is
-  better and can be negative when agreement is worse than chance.
-
-- `VI`: variation of information, the information lost or gained when
-  changing partitions; lower is better and zero is identical.
-
-- `NMI`: normalized mutual information; higher is better and one is
-  identical.
-
-- `FowlkesMallows`: pairwise clustering agreement; higher is better and
-  one is identical.
+`Status` is `"success"` or a failure status; `SamplingSeed` and
+`ModelSeed` identify the independently varied participant draw and
+stochastic refit; and `Error` contains the error message for an
+unsuccessful refit. `ARI` is the primary successful-refit metric: it is
+invariant to cluster numbering, higher is better, and it can be negative
+when agreement is worse than chance.
 
 `Stability$cluster_recovery` has one row for each reference `Cluster` in
 each successful `Replicate`. `Jaccard` is the recovery of that reference
@@ -73,17 +67,18 @@ Jaccard overlap; higher is better and one is exact recovery. `Model` and
 an operational reliability measure that does not enter the
 reproducibility score. `StabilityARI_Mean` and `StabilityARI_P05` are
 the mean and fifth percentile of ARI. `StabilityJaccard_Mean` and
-`StabilityJaccard_Min` are respectively the mean and minimum
-label-matched Jaccard recovery. `ReproducibilityScore` is the mean of
-the finite `StabilityARI_Mean` and `StabilityJaccard_Mean` values only;
-it does not include success rate, VI, NMI, or Fowlkes–Mallows.
+`StabilityJaccard_Min` are respectively the mean cluster-level recovery
+and the minimum of the cluster-specific mean recoveries across
+replicates. `ReproducibilityScore` is the mean of the finite
+`StabilityARI_Mean` and `StabilityJaccard_Mean` values only; it does not
+include success rate.
 
 `Stability$failures` repeats the replicate columns for unsuccessful
 refits, making fit failures auditable without mixing them with
 successful metrics.
 
 `Stability$participant_inclusion` is one row per complete reference
-participant. `RowIndex` identifies its original row position, `Cluster`
+participant. `.row_id` identifies the merge-safe input row, `Cluster`
 its reference assignment, `SuccessfulRefits` the number of usable
 refits, and `InclusionProbability` the proportion of those refits in
 which the participant returned to that cluster's label-matched subsample
@@ -101,24 +96,21 @@ cohort has at most `coassignment_limit` participants. Each candidate
 entry has a `status` of `"available"`, `"skipped"`, or
 `"not_available"`; `reason` explains a non-available result; `matrix` is
 the pairwise probability that two complete reference participants are
-assigned together across successful subsample refits; and `row_ids` maps
-matrix rows and columns to original training-row positions. Higher
-matrix values mean more consistent pairwise co-membership. Where more
-than one candidate is summarized, entries are named by its
-`Model_Classes` key. The matrix is diagnostic only and is never used for
-selection.
+assigned together across successful subsample refits; and `.row_id` maps
+matrix rows and columns to the same identifiers returned in
+`DataWithClusters` and `ProbFit$individual`. Higher matrix values mean
+more consistent pairwise co-membership. Where more than one candidate is
+summarized, entries are named by its `Model_Classes` key. The matrix is
+diagnostic only and is never used for selection.
 
 `Stability$plots` contains `cluster_recovery` (per-cluster Jaccard),
-`partition_metrics` (ARI, VI, NMI, and Fowlkes–Mallows distributions),
-and `cluster_inclusion`; it also contains a co-assignment heatmap when
-the matrix is available. These diagnostics complement rather than
-replace ARI and Jaccard: none can turn a poorly reproducible cluster
-into a stable phenotype.
+`partition_metrics` (the ARI distribution), and `cluster_inclusion`; it
+also contains a co-assignment heatmap when the matrix is available.
+These diagnostics complement rather than replace ARI and Jaccard: none
+can turn a poorly reproducible cluster into a stable phenotype.
 
 Metric sources: Hubert and Arabie (1985) define ARI; Jaccard (1901)
-defines the overlap coefficient; Meila (2005) defines VI; Strehl and
-Ghosh (2002) describe NMI for partition comparison; Fowlkes and Mallows
-(1983) define their pairwise index; and Monti et al. (2003) describe
+defines the overlap coefficient; and Monti et al. (2003) describe
 resampling-based consensus co-assignment.
 
 ## References
@@ -126,12 +118,7 @@ resampling-based consensus co-assignment.
 Hubert L, Arabie P. Comparing partitions. *Journal of Classification*.
 1985;2:193-218. Jaccard P. Nouvelles recherches sur la distribution
 florale. *Bulletin de la Societe Vaudoise des Sciences Naturelles*.
-1901;37:547-579. Meila M. Comparing clusterings: an axiomatic view.
-*Proceedings of ICML*. 2005:577-584. Strehl A, Ghosh J. Cluster
-ensembles—a knowledge reuse framework for combining multiple partitions.
-*Journal of Machine Learning Research*. 2002;3:583-617. Fowlkes EB,
-Mallows CL. A method for comparing two hierarchical clusterings.
-*Journal of the American Statistical Association*. 1983;78:553-569.
-Monti S, Tamayo P, Mesirov J, Golub T. Consensus clustering: a
-resampling-based method for class discovery and visualization of gene
-expression microarray data. *Machine Learning*. 2003;52:91-118.
+1901;37:547-579. Monti S, Tamayo P, Mesirov J, Golub T. Consensus
+clustering: a resampling-based method for class discovery and
+visualization of gene expression microarray data. *Machine Learning*.
+2003;52:91-118.

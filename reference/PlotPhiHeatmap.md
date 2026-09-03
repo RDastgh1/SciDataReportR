@@ -14,6 +14,8 @@ PlotPhiHeatmap(
   Relabel = TRUE,
   binary_map = NULL,
   fdr_scope = c("matrix", "per_outcome", "per_predictor"),
+  cluster_rows = FALSE,
+  cluster_columns = FALSE,
   Data = lifecycle::deprecated()
 )
 ```
@@ -46,6 +48,11 @@ PlotPhiHeatmap(
   `"per_outcome"` corrects separately within each y-axis variable
   (`YVar`); the Phi matrix is symmetric, so this treats each variable's
   row of tiles as one family.
+
+- cluster_rows, cluster_columns:
+
+  Logical; cluster y-axis rows and/or x-axis columns using displayed
+  Phi-coefficient profiles.
 
 - Data:
 

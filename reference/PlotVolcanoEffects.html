@@ -15,7 +15,7 @@ Optional covariates are included in the model for each predictor."><meta propert
 
     <a class="navbar-brand me-2" href="../index.html">SciDataReportR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">21.0.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">21.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -53,7 +53,7 @@ Optional covariates are included in the model for each predictor."><meta propert
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Plot volcano-style association effects</h1>
-      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/v21.0.0/R/PlotVolcanoEffects.R" class="external-link"><code>R/PlotVolcanoEffects.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/master/R/PlotVolcanoEffects.R" class="external-link"><code>R/PlotVolcanoEffects.R</code></a></small>
       <div class="d-none name"><code>PlotVolcanoEffects.Rd</code></div>
     </div>
 
@@ -78,11 +78,12 @@ Optional covariates are included in the model for each predictor.</p>
 <span>  Alpha <span class="op">=</span> <span class="fl">0.05</span>,</span>
 <span>  Format <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"tiered"</span>, <span class="st">"classic"</span>, <span class="st">"fdr_only"</span>, <span class="st">"directional"</span>, <span class="st">"effect_gradient"</span>,</span>
 <span>    <span class="st">"minimal"</span>, <span class="st">"neon"</span><span class="op">)</span>,</span>
-<span>  LabelMode <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"none"</span>, <span class="st">"top_n"</span>, <span class="st">"significant"</span>, <span class="st">"fdr"</span>, <span class="st">"extreme"</span><span class="op">)</span>,</span>
+<span>  LabelMode <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"none"</span>, <span class="st">"top_n"</span>, <span class="st">"raw"</span>, <span class="st">"significant"</span>, <span class="st">"fdr"</span>, <span class="st">"extreme"</span><span class="op">)</span>,</span>
 <span>  TopN <span class="op">=</span> <span class="fl">10</span>,</span>
 <span>  Relabel <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  codebook <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  InteractiveLabels <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  ColorBy <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  Data <span class="op">=</span> <span class="fu">lifecycle</span><span class="fu">::</span><span class="fu"><a href="https://lifecycle.r-lib.org/reference/deprecated.html" class="external-link">deprecated</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  xVars <span class="op">=</span> <span class="fu">lifecycle</span><span class="fu">::</span><span class="fu"><a href="https://lifecycle.r-lib.org/reference/deprecated.html" class="external-link">deprecated</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  yVar <span class="op">=</span> <span class="fu">lifecycle</span><span class="fu">::</span><span class="fu"><a href="https://lifecycle.r-lib.org/reference/deprecated.html" class="external-link">deprecated</a></span><span class="op">(</span><span class="op">)</span>,</span>
@@ -141,7 +142,10 @@ scaled predictor and scaled outcome.</p></dd>
 
 <dt id="arg-labelmode">LabelMode<a class="anchor" aria-label="anchor" href="#arg-labelmode"></a></dt>
 <dd><p>Labeling mode. One of <code>"none"</code>, <code>"top_n"</code>,
-<code>"significant"</code>, <code>"fdr"</code>, or <code>"extreme"</code>.</p></dd>
+<code>"raw"</code>, <code>"significant"</code>, <code>"fdr"</code>, or <code>"extreme"</code>. <code>"raw"</code> labels
+variables with <code>PValue &lt; Alpha</code>; <code>"significant"</code> is retained as an alias
+for <code>"raw"</code>. <code>"fdr"</code> labels variables with <code>FDR &lt; Alpha</code>. The default is
+<code>"none"</code>.</p></dd>
 
 
 <dt id="arg-topn">TopN<a class="anchor" aria-label="anchor" href="#arg-topn"></a></dt>
@@ -163,6 +167,15 @@ label attributes. Default is <code>TRUE</code>.</p></dd>
 <dt id="arg-interactivelabels">InteractiveLabels<a class="anchor" aria-label="anchor" href="#arg-interactivelabels"></a></dt>
 <dd><p>Logical. If <code>TRUE</code>, a <code>text</code> aesthetic is added for
 compatibility with <code>plotly::ggplotly(tooltip = "text")</code>. Default is <code>TRUE</code>.</p></dd>
+
+
+<dt id="arg-colorby">ColorBy<a class="anchor" aria-label="anchor" href="#arg-colorby"></a></dt>
+<dd><p>Optional category mapping used to color points in both
+<code>RawPPlot</code> and <code>FDRPlot</code>. Supply either a data frame with <code>Variable</code> and
+<code>Category</code> columns or a named atomic vector whose names are predictor
+variable names and whose values are categories. Tested predictors without
+a mapping are shown as <code>"Unmapped"</code> in grey. When <code>NULL</code> (the default),
+the existing significance-based <code>Format</code> colors are used unchanged.</p></dd>
 
 
 <dt id="arg-data">Data<a class="anchor" aria-label="anchor" href="#arg-data"></a></dt>
@@ -254,6 +267,27 @@ covariates. Invalid predictor variables are removed with a warning.</p>
 <span class="r-plt img"><img src="PlotVolcanoEffects-3.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span><span class="va">cat_res</span><span class="op">$</span><span class="va">FDRPlot</span></span></span>
 <span class="r-plt img"><img src="PlotVolcanoEffects-4.png" alt="" width="700" height="433"></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Color analytes by categories supplied in a data frame</span></span></span>
+<span class="r-in"><span><span class="va">category_df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>  Variable <span class="op">=</span> <span class="va">predictors</span>,</span></span>
+<span class="r-in"><span>  Category <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Inflammatory"</span>, <span class="st">"Metabolic"</span><span class="op">)</span>, length.out <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">predictors</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">PlotVolcanoEffects</span><span class="op">(</span></span></span>
+<span class="r-in"><span>  <span class="va">Labelled</span>, <span class="va">predictors</span>, <span class="st">"AXL"</span>,</span></span>
+<span class="r-in"><span>  ColorBy <span class="op">=</span> <span class="va">category_df</span>,</span></span>
+<span class="r-in"><span>  LabelMode <span class="op">=</span> <span class="st">"raw"</span></span></span>
+<span class="r-in"><span><span class="op">)</span><span class="op">$</span><span class="va">RawPPlot</span></span></span>
+<span class="r-plt img"><img src="PlotVolcanoEffects-5.png" alt="" width="700" height="433"></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># A named vector is also accepted; use FDR-adjusted labels</span></span></span>
+<span class="r-in"><span><span class="va">category_vector</span> <span class="op">&lt;-</span> <span class="fu">stats</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/stats/setNames.html" class="external-link">setNames</a></span><span class="op">(</span><span class="va">category_df</span><span class="op">$</span><span class="va">Category</span>, <span class="va">category_df</span><span class="op">$</span><span class="va">Variable</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">PlotVolcanoEffects</span><span class="op">(</span></span></span>
+<span class="r-in"><span>  <span class="va">Labelled</span>, <span class="va">predictors</span>, <span class="st">"AXL"</span>,</span></span>
+<span class="r-in"><span>  ColorBy <span class="op">=</span> <span class="va">category_vector</span>,</span></span>
+<span class="r-in"><span>  LabelMode <span class="op">=</span> <span class="st">"fdr"</span></span></span>
+<span class="r-in"><span><span class="op">)</span><span class="op">$</span><span class="va">FDRPlot</span></span></span>
+<span class="r-plt img"><img src="PlotVolcanoEffects-6.png" alt="" width="700" height="433"></span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

@@ -12,7 +12,7 @@ CreateClusterModel_MClust(
   variables = NULL,
   method = c("exploratory", "finalize"),
   k_range = 2:10,
-  models = c(1L, 2L, 3L),
+  models = c(1L, 2L, 3L, 6L),
   final_k = NULL,
   final_model = NULL,
   ZScoreType = NULL,
@@ -21,7 +21,8 @@ CreateClusterModel_MClust(
   seed = 93421L,
   stability_resamples = 0L,
   stability_seed = seed + 1L,
-  stability_progress = FALSE
+  stability_progress = FALSE,
+  stability_cores = NULL
 )
 ```
 
@@ -45,7 +46,14 @@ CreateClusterModel_MClust(
 
 - models:
 
-  Numeric Mclust model IDs: `1` = EEI, `2` = VVI, `3` = EEE.
+  Numeric tidyLPA mclust model IDs. The supported models are: `1` (EEI),
+  equal variance and zero covariance; `2` (VVI), varying variance and
+  zero covariance; `3` (EEE), equal variance and equal covariance; and
+  `6` (VVV), varying variance and varying covariance. Zero-covariance
+  models assume conditional independence between variables within each
+  cluster. Equal parameters are shared across clusters; varying
+  parameters are estimated separately for each cluster. Models 4 and 5
+  require OpenMx and are not supported by these pipelines.
 
 - final_k, final_model:
 
@@ -69,7 +77,7 @@ CreateClusterModel_MClust(
 
 - stability_resamples:
 
-  Number of 80% participant subsample refits used to estimate candidate
+  Number of 90% participant subsample refits used to estimate candidate
   reproducibility. Subsamples are drawn without replacement. Use `0` to
   disable stability analysis.
 
@@ -80,6 +88,13 @@ CreateClusterModel_MClust(
 - stability_progress:
 
   Whether to print subsample progress messages.
+
+- stability_cores:
+
+  Number of workers for stability refits. `NULL` uses all detected
+  physical cores minus one, capped at the requested resamples and any
+  scheduler limit. Each worker holds a refit in memory, so lower this
+  setting for large SOM or high-dimensional analyses.
 
 ## Value
 
@@ -100,28 +115,32 @@ diagnostics.
 
 ## Stability output
 
-Stability assesses internal reproducibility by full-pipeline 80%
-participant subsampling without replacement. For each replicate, 80% of
-complete participants are selected once, all preprocessing and any
-reduction (PCA, MCA, or SOM) are refit, the selected clustering method
-is refit, and the original complete training participants are projected
-into that subsample fit for comparison with the original fitted
-partition. It is an internal sensitivity analysis, not
-independent-cohort validation.
+Stability assesses internal reproducibility by full-pipeline 90%
+participant subsampling without replacement. For each replicate, 90% of
+complete participants are selected once, all preprocessing, any
+reduction (PCA, MCA, or SOM), and the selected clustering method are
+refit. Assignments from that refit are compared with the full-data
+reference assignments for the same sampled participants, joined by
+`.row_id`; projection is not used. It is an internal sensitivity
+analysis, not independent-cohort validation.
 
 `Stability$settings` records the analysis provenance:
 
-- `resamples`: requested number of 80% subsample refits.
+- `resamples`: requested number of 90% subsample refits.
 
-- `seed`: seed used to select subsamples.
+- `seed`: seed used to derive reproducible sampling and model seeds.
 
-- `refit_scope`: always `"full_pipeline"`, meaning preprocessing,
-  reduction where applicable, and clustering were all refit.
+- `refit_scope`: always `"full_pipeline_in_sample"`, meaning
+  preprocessing, reduction where applicable, and clustering were all
+  refit.
+
+- `comparison_scope`: always `"sampled_participants"`; only the
+  participants used in a refit enter that replicate's agreement metrics.
 
 - `resample_type`: `"subsample_without_replacement"` for the primary
   stability analysis.
 
-- `resample_fraction`: the retained participant fraction, `0.80`.
+- `resample_fraction`: the retained participant fraction, `0.90`.
 
 - `coassignment_limit`: maximum number of complete training participants
   (2,000) for which the full pairwise co-assignment matrix is
@@ -129,27 +148,17 @@ independent-cohort validation.
 
 - `noise_policy`: whether the method has noise labels. For ordinary
   methods it is `"all clusters included"`; HDBSCAN variants retain noise
-  in global partition metrics but exclude it from per-cluster inclusion
-  and co-assignment summaries.
+  in ARI but exclude it from phenotype-level Jaccard recovery.
 
 `Stability$replicates` has one row per requested refit. `Model` and
 `Classes` identify the selected candidate (for HDBSCAN, `Classes` is the
 data-derived extracted count); `Replicate` is its sequence number;
-`Status` is `"success"` or a failure status; and `Error` contains the
-error message for an unsuccessful refit. Successful rows contain these
-partition metrics:
-
-- `ARI`: adjusted Rand index, agreement corrected for chance; higher is
-  better and can be negative when agreement is worse than chance.
-
-- `VI`: variation of information, the information lost or gained when
-  changing partitions; lower is better and zero is identical.
-
-- `NMI`: normalized mutual information; higher is better and one is
-  identical.
-
-- `FowlkesMallows`: pairwise clustering agreement; higher is better and
-  one is identical.
+`Status` is `"success"` or a failure status; `SamplingSeed` and
+`ModelSeed` identify the independently varied participant draw and
+stochastic refit; and `Error` contains the error message for an
+unsuccessful refit. `ARI` is the primary successful-refit metric: it is
+invariant to cluster numbering, higher is better, and it can be negative
+when agreement is worse than chance.
 
 `Stability$cluster_recovery` has one row for each reference `Cluster` in
 each successful `Replicate`. `Jaccard` is the recovery of that reference
@@ -162,17 +171,18 @@ Jaccard overlap; higher is better and one is exact recovery. `Model` and
 an operational reliability measure that does not enter the
 reproducibility score. `StabilityARI_Mean` and `StabilityARI_P05` are
 the mean and fifth percentile of ARI. `StabilityJaccard_Mean` and
-`StabilityJaccard_Min` are respectively the mean and minimum
-label-matched Jaccard recovery. `ReproducibilityScore` is the mean of
-the finite `StabilityARI_Mean` and `StabilityJaccard_Mean` values only;
-it does not include success rate, VI, NMI, or Fowlkes–Mallows.
+`StabilityJaccard_Min` are respectively the mean cluster-level recovery
+and the minimum of the cluster-specific mean recoveries across
+replicates. `ReproducibilityScore` is the mean of the finite
+`StabilityARI_Mean` and `StabilityJaccard_Mean` values only; it does not
+include success rate.
 
 `Stability$failures` repeats the replicate columns for unsuccessful
 refits, making fit failures auditable without mixing them with
 successful metrics.
 
 `Stability$participant_inclusion` is one row per complete reference
-participant. `RowIndex` identifies its original row position, `Cluster`
+participant. `.row_id` identifies the merge-safe input row, `Cluster`
 its reference assignment, `SuccessfulRefits` the number of usable
 refits, and `InclusionProbability` the proportion of those refits in
 which the participant returned to that cluster's label-matched subsample
@@ -190,24 +200,21 @@ cohort has at most `coassignment_limit` participants. Each candidate
 entry has a `status` of `"available"`, `"skipped"`, or
 `"not_available"`; `reason` explains a non-available result; `matrix` is
 the pairwise probability that two complete reference participants are
-assigned together across successful subsample refits; and `row_ids` maps
-matrix rows and columns to original training-row positions. Higher
-matrix values mean more consistent pairwise co-membership. Where more
-than one candidate is summarized, entries are named by its
-`Model_Classes` key. The matrix is diagnostic only and is never used for
-selection.
+assigned together across successful subsample refits; and `.row_id` maps
+matrix rows and columns to the same identifiers returned in
+`DataWithClusters` and `ProbFit$individual`. Higher matrix values mean
+more consistent pairwise co-membership. Where more than one candidate is
+summarized, entries are named by its `Model_Classes` key. The matrix is
+diagnostic only and is never used for selection.
 
 `Stability$plots` contains `cluster_recovery` (per-cluster Jaccard),
-`partition_metrics` (ARI, VI, NMI, and Fowlkes–Mallows distributions),
-and `cluster_inclusion`; it also contains a co-assignment heatmap when
-the matrix is available. These diagnostics complement rather than
-replace ARI and Jaccard: none can turn a poorly reproducible cluster
-into a stable phenotype.
+`partition_metrics` (the ARI distribution), and `cluster_inclusion`; it
+also contains a co-assignment heatmap when the matrix is available.
+These diagnostics complement rather than replace ARI and Jaccard: none
+can turn a poorly reproducible cluster into a stable phenotype.
 
 Metric sources: Hubert and Arabie (1985) define ARI; Jaccard (1901)
-defines the overlap coefficient; Meila (2005) defines VI; Strehl and
-Ghosh (2002) describe NMI for partition comparison; Fowlkes and Mallows
-(1983) define their pairwise index; and Monti et al. (2003) describe
+defines the overlap coefficient; and Monti et al. (2003) describe
 resampling-based consensus co-assignment.
 
 ## References
@@ -229,18 +236,18 @@ review <- CreateClusterModel_MClust(
   stability_resamples = 2
 )
 review$ModelInfo$fit_table
-#> # A tibble: 3 × 27
-#>   Model ModelName Classes     BIC     ICL    AIC Entropy MinClusterN SizeBalance
-#>   <int> <chr>       <int>   <dbl>   <dbl>  <dbl>   <dbl>       <int>       <dbl>
-#> 1     1 EEI             4  -6009.  -6009.  5771.   1.000          80       1    
-#> 2     1 EEI             3  -8630.  -8630.  8441.   1.000          80       0.5  
-#> 3     1 EEI             2 -10446. -10446. 10306.   0.995          80       0.333
-#> # ℹ 18 more variables: MaxUncertainty <dbl>, StabilitySuccessRate <dbl>,
-#> #   StabilityARI_Mean <dbl>, StabilityARI_P05 <dbl>,
-#> #   StabilityJaccard_Mean <dbl>, StabilityJaccard_Min <dbl>,
-#> #   NoiseSensitivity <dbl>, NoiseSpecificity <dbl>, ReproducibilityScore <dbl>,
-#> #   BIC_scaled <dbl>, ICL_scaled <dbl>, Entropy_scaled <dbl>,
-#> #   MinClusterN_scaled <dbl>, SizeBalance_scaled <dbl>,
+#> # A tibble: 3 × 28
+#>   Model ModelName ModelLabel  Classes     BIC     ICL    AIC Entropy MinClusterN
+#>   <int> <chr>     <chr>         <int>   <dbl>   <dbl>  <dbl>   <dbl>       <int>
+#> 1     1 EEI       Model 1: e…       4  -6009.  -6009.  5771.   1.000          80
+#> 2     1 EEI       Model 1: e…       3  -8630.  -8630.  8441.   1.000          80
+#> 3     1 EEI       Model 1: e…       2 -10446. -10446. 10306.   0.995          80
+#> # ℹ 19 more variables: SizeBalance <dbl>, MaxUncertainty <dbl>,
+#> #   StabilitySuccessRate <dbl>, StabilityARI_Mean <dbl>,
+#> #   StabilityARI_P05 <dbl>, StabilityJaccard_Mean <dbl>,
+#> #   StabilityJaccard_Min <dbl>, NoiseSensitivity <dbl>, NoiseSpecificity <dbl>,
+#> #   ReproducibilityScore <dbl>, BIC_scaled <dbl>, ICL_scaled <dbl>,
+#> #   Entropy_scaled <dbl>, MinClusterN_scaled <dbl>, SizeBalance_scaled <dbl>,
 #> #   ReproducibilityScore_scaled <dbl>, MaxUncertainty_scaled <dbl>, …
 review$ModelInfo$AHP$recommendation
 #> [1] "AHP-style review recommends Gaussian-mixture model (Model = 1, Classes = 4). Review this advisory choice alongside the candidate plots."
