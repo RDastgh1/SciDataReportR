@@ -9,6 +9,8 @@
 #' @param method Character string specifying the method: "sd" (default) or "iqr".
 #' @param sdlim Numeric. Number of standard deviations for the "sd" method.
 #' @param iqrlim Numeric. Multiplier for the IQR when method = "iqr" (default 1.5).
+#' @param side Character string specifying which tail(s) to winsorize: "both"
+#'   (default), "right" for high values only, or "left" for low values only.
 #'
 #' @return A numeric vector with values winsorized to the specified thresholds.
 #'
@@ -34,6 +36,9 @@
 #'
 #' # IQR-based winsorization
 #' windsorize(x, method = "iqr", iqrlim = 1.5)
+#'
+#' # Winsorize high-value outliers only
+#' windsorize(x, method = "iqr", iqrlim = 1.5, side = "right")
 #'
 #' # Compare the distribution before and after winsorization. Both panels are
 #' # drawn on the raw data's x range, because free scales would rescale the
@@ -81,6 +86,7 @@ windsorize <- function(data,
     sdlim = 2.5,
     iqrlim = 1.5,
     method = "sd",
+    side = "both",
     Data = lifecycle::deprecated()) {
   # Deprecated argument shims (SciDataReportR 19.15.0)
   if (lifecycle::is_present(Data)) {
@@ -97,6 +103,11 @@ windsorize <- function(data,
 
   if (!method %in% c("sd", "iqr")) {
     stop("method must be either 'sd' or 'iqr'.")
+  }
+
+  if (!is.character(side) || length(side) != 1L || is.na(side) ||
+      !side %in% c("both", "right", "left")) {
+    stop("side must be either 'both', 'right', or 'left'.")
   }
 
   # Remove NA for calculations (but preserve positions)
@@ -120,8 +131,12 @@ windsorize <- function(data,
   }
 
   # Apply winsorization
-  Data[Data < lower] <- lower
-  Data[Data > upper] <- upper
+  if (side %in% c("both", "left")) {
+    Data[Data < lower] <- lower
+  }
+  if (side %in% c("both", "right")) {
+    Data[Data > upper] <- upper
+  }
 
   return(Data)
 }

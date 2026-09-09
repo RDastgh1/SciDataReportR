@@ -9,6 +9,7 @@ windsorize(
   sdlim = 2.5,
   iqrlim = 1.5,
   method = "sd",
+  side = "both",
   Data = lifecycle::deprecated()
 )
 }
@@ -20,6 +21,9 @@ windsorize(
 \item{iqrlim}{Numeric. Multiplier for the IQR when method = "iqr" (default 1.5).}
 
 \item{method}{Character string specifying the method: "sd" (default) or "iqr".}
+
+\item{side}{Character string specifying which tail(s) to winsorize: "both"
+(default), "right" for high values only, or "left" for low values only.}
 
 \item{Data}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
 }
@@ -46,6 +50,9 @@ windsorize(x, method = "sd", sdlim = 2.5)
 
 # IQR-based winsorization
 windsorize(x, method = "iqr", iqrlim = 1.5)
+
+# Winsorize high-value outliers only
+windsorize(x, method = "iqr", iqrlim = 1.5, side = "right")
 
 # Compare the distribution before and after winsorization. Both panels are
 # drawn on the raw data's x range, because free scales would rescale the

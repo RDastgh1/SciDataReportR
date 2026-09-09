@@ -28,3 +28,5 @@ conflicted copy
 ^vignettes/.*_files$
 ^vignettes/.*\.html$
 ^tests/testthat/_problems$
+^skills$
+^tools$

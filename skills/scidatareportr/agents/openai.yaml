@@ -1,0 +1,6 @@
+interface:
+  display_name: "SciDataReportR"
+  short_description: "Use SciDataReportR for R and Quarto analyses"
+  default_prompt: "Use $scidatareportr to select the right SciDataReportR workflow for this analysis."
+policy:
+  allow_implicit_invocation: true
