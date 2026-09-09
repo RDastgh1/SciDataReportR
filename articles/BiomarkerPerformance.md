@@ -213,7 +213,7 @@ still not external validation in a new population.
 
     loaded via a namespace (and not attached):
      [1] gtable_0.3.6           xfun_0.60              bayestestR_0.18.1
-     [4] htmlwidgets_1.6.4      insight_1.5.3          rstatix_1.1.0
+     [4] htmlwidgets_1.6.4      insight_1.5.4          rstatix_1.1.0
      [7] lattice_0.22-9         paletteer_1.7.0        crosstalk_1.2.2
     [10] vctrs_0.7.3            tools_4.6.1            generics_0.1.4
     [13] datawizard_1.3.1       tibble_3.3.1           pkgconfig_2.0.3
@@ -225,7 +225,7 @@ still not external validation in a new population.
     [31] car_3.1-5              tidyr_1.3.2            statsExpressions_2.1.1
     [34] abind_1.4-8            nlme_3.1-169           tidyselect_1.2.1
     [37] sjlabelled_1.2.0       digest_0.6.39          mvtnorm_1.4-2
-    [40] gtsummary_2.6.0        purrr_1.2.2            rematch2_2.1.2
+    [40] gtsummary_2.6.1        purrr_1.2.2            rematch2_2.1.2
     [43] splines_4.6.1          labeling_0.4.3         forcats_1.0.1
     [46] ggstatsplot_1.1.1      labelled_2.16.1        fastmap_1.2.0
     [49] grid_4.6.1             cli_3.6.6              magrittr_2.0.5
@@ -234,7 +234,7 @@ still not external validation in a new population.
     [58] backports_1.5.1        estimability_2.0.0     rmarkdown_2.32
     [61] httr_1.4.9             emmeans_2.0.4          otel_0.2.0
     [64] hms_1.1.4              coda_0.19-4.1          evaluate_1.0.5
-    [67] knitr_1.51             haven_2.5.5            parameters_0.29.3
+    [67] knitr_1.52             haven_2.5.5            parameters_0.29.3
     [70] viridisLite_0.4.3      mgcv_1.9-4             rstantools_2.7.1
     [73] rlang_1.3.0            Rcpp_1.1.2             xtable_1.8-8
     [76] glue_1.8.1             pROC_1.19.1            jsonlite_2.0.0

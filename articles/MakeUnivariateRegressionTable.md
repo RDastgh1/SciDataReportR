@@ -309,7 +309,7 @@ print(sessionInfo())
 
     loaded via a namespace (and not attached):
      [1] gtable_0.3.6           xfun_0.60              bayestestR_0.18.1
-     [4] ggplot2_4.0.3          insight_1.5.3          rstatix_1.1.0
+     [4] ggplot2_4.0.3          insight_1.5.4          rstatix_1.1.0
      [7] lattice_0.22-9         paletteer_1.7.0        vctrs_0.7.3
     [10] tools_4.6.1            generics_0.1.4         datawizard_1.3.1
     [13] tibble_3.3.1           pkgconfig_2.0.3        RColorBrewer_1.1-3
@@ -320,7 +320,7 @@ print(sessionInfo())
     [28] Formula_1.2-6          pillar_1.11.1          car_3.1-5
     [31] tidyr_1.3.2            statsExpressions_2.1.1 abind_1.4-8
     [34] tidyselect_1.2.1       sjlabelled_1.2.0       digest_0.6.39
-    [37] mvtnorm_1.4-2          gtsummary_2.6.0        purrr_1.2.2
+    [37] mvtnorm_1.4-2          gtsummary_2.6.1        purrr_1.2.2
     [40] rematch2_2.1.2         forcats_1.0.1          ggstatsplot_1.1.1
     [43] labelled_2.16.1        fastmap_1.2.0          grid_4.6.1
     [46] cli_3.6.6              magrittr_2.0.5         patchwork_1.3.2
@@ -328,7 +328,7 @@ print(sessionInfo())
     [52] scales_1.4.0           backports_1.5.1        estimability_2.0.0
     [55] rmarkdown_2.32         emmeans_2.0.4          otel_0.2.0
     [58] hms_1.1.4              coda_0.19-4.1          evaluate_1.0.5
-    [61] knitr_1.51             haven_2.5.5            parameters_0.29.3
+    [61] knitr_1.52             haven_2.5.5            parameters_0.29.3
     [64] rstantools_2.7.1       rlang_1.3.0            xtable_1.8-8
     [67] glue_1.8.1             xml2_1.6.0             jsonlite_2.0.0
     [70] R6_2.6.1               fs_2.1.0              

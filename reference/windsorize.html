@@ -51,7 +51,7 @@ range (robust to skewed distributions)."><meta property="og:image" content="http
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Winsorize a numeric vector using SD or IQR thresholds</h1>
-      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/v21.4.0/R/windsorize.R" class="external-link"><code>R/windsorize.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/master/R/windsorize.R" class="external-link"><code>R/windsorize.R</code></a></small>
       <div class="d-none name"><code>windsorize.Rd</code></div>
     </div>
 
@@ -69,6 +69,7 @@ range (robust to skewed distributions).</p>
 <span>  sdlim <span class="op">=</span> <span class="fl">2.5</span>,</span>
 <span>  iqrlim <span class="op">=</span> <span class="fl">1.5</span>,</span>
 <span>  method <span class="op">=</span> <span class="st">"sd"</span>,</span>
+<span>  side <span class="op">=</span> <span class="st">"both"</span>,</span>
 <span>  Data <span class="op">=</span> <span class="fu">lifecycle</span><span class="fu">::</span><span class="fu"><a href="https://lifecycle.r-lib.org/reference/deprecated.html" class="external-link">deprecated</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -91,6 +92,11 @@ range (robust to skewed distributions).</p>
 
 <dt id="arg-method">method<a class="anchor" aria-label="anchor" href="#arg-method"></a></dt>
 <dd><p>Character string specifying the method: "sd" (default) or "iqr".</p></dd>
+
+
+<dt id="arg-side">side<a class="anchor" aria-label="anchor" href="#arg-side"></a></dt>
+<dd><p>Character string specifying which tail(s) to winsorize: "both"
+(default), "right" for high values only, or "left" for low values only.</p></dd>
 
 
 <dt id="arg-data">Data<a class="anchor" aria-label="anchor" href="#arg-data"></a></dt>
@@ -168,6 +174,30 @@ Mathematical Statistics</em>, 33(1), 1-67. <a href="https://doi.org/10.1214/aoms
 <span class="r-out co"><span class="r-pr">#&gt;</span>  [91]  0.1748617077 -1.0354283710 -0.4499560481 -0.7541600329 -0.0802208439</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  [96]  0.6183656944 -1.7119516099  0.7613269130 -0.9408779229  0.4397209569</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [101]  2.8326433726  2.8326433726 -3.1428708771</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Winsorize high-value outliers only</span></span></span>
+<span class="r-in"><span><span class="fu">windsorize</span><span class="op">(</span><span class="va">x</span>, method <span class="op">=</span> <span class="st">"iqr"</span>, iqrlim <span class="op">=</span> <span class="fl">1.5</span>, side <span class="op">=</span> <span class="st">"right"</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   [1]  9.681954e-02  4.588994e-01 -8.434093e-01  1.949260e-01  3.814395e-01</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   [6] -1.121447e+00  5.952929e-01  5.489146e-01 -8.286469e-02 -6.385080e-01</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [11]  6.162608e-01 -2.660659e+00  1.169811e+00 -5.854163e-01 -1.500781e+00</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [16]  8.230886e-01 -1.676763e-01 -2.335675e+00  1.329274e+00 -1.602746e-01</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [21]  2.150926e+00 -9.759004e-01 -8.448511e-01 -1.017063e+00  1.379327e+00</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [26] -2.420102e-01  1.380095e+00  4.991265e-01 -9.994087e-01  4.280967e-01</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [31] -8.632281e-01 -3.793071e-01  5.054526e-02  3.666609e-02 -7.738860e-01</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [36]  1.772522e+00 -3.566236e-01 -1.409124e-02 -1.882242e+00 -1.261046e-01</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [41] -4.565938e-01  1.035617e+00 -2.970376e-02  1.661091e+00  2.169206e-01</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [46] -6.072952e-04  1.130523e+00 -6.878356e-01 -1.093879e+00  5.688288e-01</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [51] -4.970397e-01 -1.668764e+00 -4.382745e-01  5.883582e-01 -6.031577e-01</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [56]  8.200095e-01  2.506614e-01 -1.130986e+00  5.082037e-01 -1.320918e+00</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [61] -4.707902e-01 -6.446786e-01  1.317470e+00 -1.412521e+00  8.418432e-01</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [66] -1.566863e+00 -1.891629e+00 -1.882115e+00  1.350518e+00 -2.378265e-02</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [71]  2.994772e-01  3.002926e-02 -3.545861e-01  1.218276e+00 -1.386695e+00</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [76] -3.446927e-01  2.196154e+00  1.473008e+00 -1.564961e-01 -3.038252e+00</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [81]  7.997282e-01 -2.117760e-01  8.054718e-02 -1.272924e+00  1.276221e+00</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [86] -9.729868e-01  7.794430e-01 -9.927240e-01 -1.799448e+00  9.481821e-02</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [91]  1.748617e-01 -1.035428e+00 -4.499560e-01 -7.541600e-01 -8.022084e-02</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [96]  6.183657e-01 -1.711952e+00  7.613269e-01 -9.408779e-01  4.397210e-01</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [101]  2.832643e+00  2.832643e+00 -1.200000e+01</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Compare the distribution before and after winsorization. Both panels are</span></span></span>
 <span class="r-in"><span><span class="co"># drawn on the raw data's x range, because free scales would rescale the</span></span></span>

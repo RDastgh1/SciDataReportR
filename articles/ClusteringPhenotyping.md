@@ -281,7 +281,7 @@ ObjClustProjected <- ProjectCluster(Obj_ClustFinal, df_Projection)
     13 1.0000000     323.68552 0.00990099               1               5
     14 1.0000000      37.30184 0.15841584               2               4
     15 1.0000000     -13.14147 1.00000000               1               4
-    16 1.0000000      38.32467 0.04950495               1               5
+    16 1.0000000      38.32467 0.07920792               1               5
        MinProfileNodeProportion MaxProfileNodeProportion StabilitySuccessRate
     1                      0.20                     0.80                    1
     2                      0.16                     0.84                    1
@@ -674,8 +674,8 @@ Session information
      [31] pkgconfig_2.0.3        sjlabelled_1.2.0       R6_2.6.1
      [34] fastmap_1.2.0          future_1.75.0          shiny_1.14.0
      [37] digest_0.6.39          colorspace_2.1-3       rematch2_2.1.2
-     [40] patchwork_1.3.2        Hmisc_5.2-6            labeling_0.4.3
-     [43] gtsummary_2.6.0        progressr_1.0.0        httr_1.4.9
+     [40] patchwork_1.3.2        Hmisc_5.3-0            labeling_0.4.3
+     [43] gtsummary_2.6.1        progressr_1.0.0        httr_1.4.9
      [46] abind_1.4-8            compiler_4.6.1         withr_3.0.3
      [49] pander_0.6.6           htmlTable_2.5.0        S7_0.2.2
      [52] backports_1.5.1        viridis_0.6.5          carData_3.0-6
@@ -692,7 +692,7 @@ Session information
      [85] hms_1.1.4              car_3.1-5              stringr_1.6.0
      [88] RANN_2.6.3             pillar_1.11.1          later_1.4.8
      [91] lattice_0.22-9         ggstatsplot_1.1.1      tidyselect_1.2.1
-     [94] knitr_1.51             gridExtra_2.3.1        stats4_4.6.1
+     [94] knitr_1.52             gridExtra_2.3.1        stats4_4.6.1
      [97] xfun_0.60              texreg_1.40            stringi_1.8.9
     [100] proto_1.0.0            yaml_2.3.12            boot_1.3-32
     [103] evaluate_1.0.5         codetools_0.2-20       nonnest2_0.5-9
@@ -703,7 +703,7 @@ Session information
     [118] parallel_4.6.1         kohonen_3.0.13         rstantools_2.7.1
     [121] prettyunits_1.2.0      mclust_6.1.3           bayestestR_0.18.1
     [124] listenv_1.0.0          viridisLite_0.4.3      mvtnorm_1.4-2
-    [127] scales_1.4.0           insight_1.5.3          purrr_1.2.2
+    [127] scales_1.4.0           insight_1.5.4          purrr_1.2.2
     [130] crayon_1.5.3           rlang_1.3.0            mnormt_2.1.2
     [133] poLCA_1.6.0.2          tidyLPA_2.0.2         
 
