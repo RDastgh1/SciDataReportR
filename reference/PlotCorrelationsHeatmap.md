@@ -32,6 +32,7 @@ PlotCorrelationsHeatmap(
   fdr_scope = c("matrix", "per_outcome", "per_predictor"),
   cluster_rows = FALSE,
   cluster_columns = FALSE,
+  triangle = c("full", "upper", "lower"),
   Data = lifecycle::deprecated(),
   xVars = lifecycle::deprecated(),
   yVars = lifecycle::deprecated(),
@@ -98,6 +99,13 @@ PlotCorrelationsHeatmap(
   displayed correlation profiles. Defaults retain the caller-supplied
   variable order.
 
+- triangle:
+
+  Display `"full"` (default), `"upper"`, or `"lower"` half of a
+  symmetric correlation matrix. This affects the plot only; returned
+  matrices remain complete. Triangle display is applied only when the
+  same variables occur on both axes.
+
 - Data:
 
   **Deprecated** (since 19.15.0). Use `data` instead.
@@ -142,6 +150,16 @@ square <- PlotCorrelationsHeatmap(
 square$Unadjusted$plot
 
 square$FDRCorrected$plot
+
+
+# Show each symmetric pair once; estimates and p-value matrices stay full.
+upper <- PlotCorrelationsHeatmap(
+  Labelled,
+  predictor_vars = vars,
+  outcome_vars = vars,
+  triangle = "upper"
+)
+upper$FDRCorrected$plot
 
 
 # Rectangular heatmap: different variables on x and y

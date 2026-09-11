@@ -91,7 +91,8 @@ correlations with opposite signs between groups.</p>
 <span>  high_color <span class="op">=</span> <span class="st">"#2166AC"</span>,</span>
 <span>  color_limits <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">2</span>, <span class="fl">2</span><span class="op">)</span>,</span>
 <span>  cluster_rows <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  cluster_columns <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span>  cluster_columns <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  triangle <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"full"</span>, <span class="st">"upper"</span>, <span class="st">"lower"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -189,6 +190,12 @@ under <code>Interactive</code>.</p></dd>
 <dd><p>Limits for the DeltaR color scale. The theoretical
 range is -2 to 2.</p></dd>
 
+
+<dt id="arg-triangle">triangle<a class="anchor" aria-label="anchor" href="#arg-triangle"></a></dt>
+<dd><p>Display "full" (default), "upper", or "lower" half of a
+symmetric comparison matrix. This affects plots only; returned matrices
+and Results remain complete.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
@@ -249,7 +256,8 @@ both groups must be specified explicitly.</p>
 <span class="r-in"><span><span class="co">#   outcome_vars = c("Cortisol", "Insulin"),</span></span></span>
 <span class="r-in"><span><span class="co">#   group_var = "Sex",</span></span></span>
 <span class="r-in"><span><span class="co">#   covariates = "education",</span></span></span>
-<span class="r-in"><span><span class="co">#   method = "spearman"</span></span></span>
+<span class="r-in"><span><span class="co">#   method = "spearman",</span></span></span>
+<span class="r-in"><span><span class="co">#   triangle = "upper"</span></span></span>
 <span class="r-in"><span><span class="co"># )</span></span></span>
 <span class="r-in"><span><span class="co">#</span></span></span>
 <span class="r-in"><span><span class="co"># res$FDRCorrected$plot</span></span></span>

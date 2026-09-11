@@ -93,6 +93,7 @@ Handles:</p><ul><li><p>continuous + categorical covariates</p></li>
 <span>  fdr_scope <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"matrix"</span>, <span class="st">"per_outcome"</span>, <span class="st">"per_predictor"</span><span class="op">)</span>,</span>
 <span>  cluster_rows <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  cluster_columns <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  triangle <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"full"</span>, <span class="st">"upper"</span>, <span class="st">"lower"</span><span class="op">)</span>,</span>
 <span>  Data <span class="op">=</span> <span class="fu">lifecycle</span><span class="fu">::</span><span class="fu"><a href="https://lifecycle.r-lib.org/reference/deprecated.html" class="external-link">deprecated</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  xVars <span class="op">=</span> <span class="fu">lifecycle</span><span class="fu">::</span><span class="fu"><a href="https://lifecycle.r-lib.org/reference/deprecated.html" class="external-link">deprecated</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  yVars <span class="op">=</span> <span class="fu">lifecycle</span><span class="fu">::</span><span class="fu"><a href="https://lifecycle.r-lib.org/reference/deprecated.html" class="external-link">deprecated</a></span><span class="op">(</span><span class="op">)</span>,</span>
@@ -161,6 +162,13 @@ outcome columns from their displayed correlation profiles. Defaults retain
 the caller-supplied variable order.</p></dd>
 
 
+<dt id="arg-triangle">triangle<a class="anchor" aria-label="anchor" href="#arg-triangle"></a></dt>
+<dd><p>Display <code>"full"</code> (default), <code>"upper"</code>, or <code>"lower"</code> half of
+a symmetric correlation matrix. This affects the plot only; returned
+matrices remain complete. Triangle display is applied only when the same
+variables occur on both axes.</p></dd>
+
+
 <dt id="arg-data">Data<a class="anchor" aria-label="anchor" href="#arg-data"></a></dt>
 <dd><p><strong>Deprecated</strong> (since 19.15.0). Use <code>data</code> instead.</p></dd>
 
@@ -207,6 +215,16 @@ and <code>p_fdr</code> (same as <code>FDRCorrected</code>) are also included.</p
 <span class="r-in"><span><span class="va">square</span><span class="op">$</span><span class="va">FDRCorrected</span><span class="op">$</span><span class="va">plot</span></span></span>
 <span class="r-plt img"><img src="PlotCorrelationsHeatmap-2.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Show each symmetric pair once; estimates and p-value matrices stay full.</span></span></span>
+<span class="r-in"><span><span class="va">upper</span> <span class="op">&lt;-</span> <span class="fu">PlotCorrelationsHeatmap</span><span class="op">(</span></span></span>
+<span class="r-in"><span>  <span class="va">Labelled</span>,</span></span>
+<span class="r-in"><span>  predictor_vars <span class="op">=</span> <span class="va">vars</span>,</span></span>
+<span class="r-in"><span>  outcome_vars <span class="op">=</span> <span class="va">vars</span>,</span></span>
+<span class="r-in"><span>  triangle <span class="op">=</span> <span class="st">"upper"</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">upper</span><span class="op">$</span><span class="va">FDRCorrected</span><span class="op">$</span><span class="va">plot</span></span></span>
+<span class="r-plt img"><img src="PlotCorrelationsHeatmap-3.png" alt="" width="700" height="433"></span>
+<span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Rectangular heatmap: different variables on x and y</span></span></span>
 <span class="r-in"><span><span class="va">rectangular</span> <span class="op">&lt;-</span> <span class="fu">PlotCorrelationsHeatmap</span><span class="op">(</span></span></span>
 <span class="r-in"><span>  <span class="va">Labelled</span>,</span></span>
@@ -215,7 +233,7 @@ and <code>p_fdr</code> (same as <code>FDRCorrected</code>) are also included.</p
 <span class="r-in"><span>                   <span class="st">"C_Reactive_Protein"</span>, <span class="st">"Ferritin"</span>, <span class="st">"Leptin"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">rectangular</span><span class="op">$</span><span class="va">Unadjusted</span><span class="op">$</span><span class="va">plot</span></span></span>
-<span class="r-plt img"><img src="PlotCorrelationsHeatmap-3.png" alt="" width="700" height="433"></span>
+<span class="r-plt img"><img src="PlotCorrelationsHeatmap-4.png" alt="" width="700" height="433"></span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

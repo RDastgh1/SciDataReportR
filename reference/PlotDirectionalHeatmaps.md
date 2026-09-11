@@ -20,6 +20,7 @@ PlotDirectionalHeatmaps(
   fdr_scope = c("matrix", "per_outcome", "per_predictor"),
   cluster_rows = FALSE,
   cluster_columns = FALSE,
+  triangle = c("full", "upper", "lower"),
   Data = lifecycle::deprecated(),
   xVars = lifecycle::deprecated(),
   yVars = lifecycle::deprecated()
@@ -61,6 +62,12 @@ PlotDirectionalHeatmaps(
   (continuous~continuous, binary~binary, binary~continuous), matching
   historical behavior; each sub-function's documented outcome
   orientation applies within its block.
+
+- triangle:
+
+  Display `"full"` (default), `"upper"`, or `"lower"` half of a
+  symmetric directional matrix. This affects plots only and is applied
+  only when the same variables occur on both axes.
 
 - Data:
 
@@ -118,6 +125,19 @@ result$Unadjusted$plot
 # FDR-adjusted directional heatmap
 result$FDRCorrected$plot
 #> Warning: Removed 26 rows containing missing values or values outside the scale range
+#> (`geom_text()`).
+
+
+# Show each symmetric variable pair once.
+upper <- PlotDirectionalHeatmaps(
+  Labelled,
+  variables = c("Diagnosis", "sex", "age", "AXL", "Adiponectin",
+                "Alpha_1_Antitrypsin", "C_Reactive_Protein", "Cortisol",
+                "Insulin", "Leptin"),
+  triangle = "upper"
+)
+upper$FDRCorrected$plot
+#> Warning: Removed 12 rows containing missing values or values outside the scale range
 #> (`geom_text()`).
 
 

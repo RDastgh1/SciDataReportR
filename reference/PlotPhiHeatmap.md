@@ -16,6 +16,7 @@ PlotPhiHeatmap(
   fdr_scope = c("matrix", "per_outcome", "per_predictor"),
   cluster_rows = FALSE,
   cluster_columns = FALSE,
+  triangle = c("full", "upper", "lower"),
   Data = lifecycle::deprecated()
 )
 ```
@@ -53,6 +54,12 @@ PlotPhiHeatmap(
 
   Logical; cluster y-axis rows and/or x-axis columns using displayed
   Phi-coefficient profiles.
+
+- triangle:
+
+  Display `"full"` (default), `"upper"`, or `"lower"` half of the
+  symmetric Phi matrix. This affects the plot only; returned results
+  remain complete.
 
 - Data:
 
@@ -104,5 +111,16 @@ result$Unadjusted$plot
 # FDR-adjusted phi heatmap
 result$FDRCorrected$plot
 #> Warning: Removed 13 rows containing missing values or values outside the scale range
+#> (`geom_text()`).
+
+
+# Show each binary-variable pair once.
+upper <- PlotPhiHeatmap(
+  Labelled,
+  CatVars = c("Diagnosis", "sex", "APOE4", "HighTau", "LowAbeta"),
+  triangle = "upper"
+)
+upper$FDRCorrected$plot
+#> Warning: Removed 4 rows containing missing values or values outside the scale range
 #> (`geom_text()`).
 ```

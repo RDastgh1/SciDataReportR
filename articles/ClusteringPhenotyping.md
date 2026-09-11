@@ -281,7 +281,7 @@ ObjClustProjected <- ProjectCluster(Obj_ClustFinal, df_Projection)
     13 1.0000000     323.68552 0.00990099               1               5
     14 1.0000000      37.30184 0.15841584               2               4
     15 1.0000000     -13.14147 1.00000000               1               4
-    16 1.0000000      38.32467 0.02970297               1               5
+    16 1.0000000      38.32467 0.04950495               1               5
        MinProfileNodeProportion MaxProfileNodeProportion StabilitySuccessRate
     1                      0.20                     0.80                    1
     2                      0.16                     0.84                    1
