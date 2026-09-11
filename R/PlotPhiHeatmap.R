@@ -22,6 +22,9 @@
 #'   treats each variable's row of tiles as one family.
 #' @param cluster_rows,cluster_columns Logical; cluster y-axis rows and/or
 #'   x-axis columns using displayed Phi-coefficient profiles.
+#' @param triangle Display `"full"` (default), `"upper"`, or `"lower"` half of
+#'   the symmetric Phi matrix. This affects the plot only; returned results
+#'   remain complete.
 #' @param Data \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
 #' @examples
 #' data(SampleData)
@@ -49,6 +52,14 @@
 #'
 #' # FDR-adjusted phi heatmap
 #' result$FDRCorrected$plot
+#'
+#' # Show each binary-variable pair once.
+#' upper <- PlotPhiHeatmap(
+#'   Labelled,
+#'   CatVars = c("Diagnosis", "sex", "APOE4", "HighTau", "LowAbeta"),
+#'   triangle = "upper"
+#' )
+#' upper$FDRCorrected$plot
 #' @export
 PlotPhiHeatmap <- function(data,
     CatVars,
@@ -57,6 +68,7 @@ PlotPhiHeatmap <- function(data,
     fdr_scope = c("matrix", "per_outcome", "per_predictor"),
     cluster_rows = FALSE,
     cluster_columns = FALSE,
+    triangle = c("full", "upper", "lower"),
     Data = lifecycle::deprecated()) {
   # Deprecated argument shims (SciDataReportR 19.15.0)
   if (lifecycle::is_present(Data)) {
@@ -65,6 +77,7 @@ PlotPhiHeatmap <- function(data,
   }
   if (!missing(data)) Data <- data
   fdr_scope <- match.arg(fdr_scope)
+  triangle <- match.arg(triangle)
   if (!is.logical(cluster_rows) || length(cluster_rows) != 1 || is.na(cluster_rows)) {
     stop("cluster_rows must be TRUE or FALSE.")
   }
@@ -218,11 +231,14 @@ PlotPhiHeatmap <- function(data,
   stat.test$XLabel <- XLabel
   stat.test$YLabel <- YLabel
 
-  AxisOrder <- .OrderHeatmapAxes(
-    stat.test, row_id = "YVar", column_id = "XVar", value = "Phi",
+  triangle_display <- .ResolveHeatmapTriangle(
+    data = stat.test, row_id = "YVar", column_id = "XVar", value = "Phi",
     row_order = CatVars, column_order = CatVars,
-    cluster_rows = cluster_rows, cluster_columns = cluster_columns
+    cluster_rows = cluster_rows, cluster_columns = cluster_columns,
+    triangle = triangle
   )
+  AxisOrder <- triangle_display$AxisOrder
+  stat.test_display <- triangle_display$PlotData
   x_axis_labels <- stats::setNames(
     XLabel[match(AxisOrder$columns, stat.test$XVar)], AxisOrder$columns
   )
@@ -243,10 +259,21 @@ PlotPhiHeatmap <- function(data,
     "</br> FDR P: ",   signif(stat.test$p.adj, 3),   " ", stat.test$p.adj.signif,
     "</br> nPairs: ",  stat.test$nPairs
   )
+  stat.test_display$XOrder <- factor(
+    stat.test_display$XVar,
+    levels = AxisOrder$columns
+  )
+  stat.test_display$YOrder <- factor(
+    stat.test_display$YVar,
+    levels = rev(AxisOrder$rows)
+  )
+  stat.test_display$PlotText <- PlotText[
+    match(rownames(stat.test_display), rownames(stat.test))
+  ]
 
   # ---- plots ---------------------------------------------------------------
   p <- ggplot2::ggplot(
-    stat.test,
+    stat.test_display,
     ggplot2::aes(x = XOrder, y = YOrder, fill = Phi, text = PlotText)
   ) +
     ggplot2::geom_tile() +
@@ -269,7 +296,7 @@ PlotPhiHeatmap <- function(data,
     )
 
   p_FDR <- ggplot2::ggplot(
-    stat.test,
+    stat.test_display,
     ggplot2::aes(x = XOrder, y = YOrder, fill = Phi, text = PlotText)
   ) +
     ggplot2::geom_tile() +
@@ -301,6 +328,7 @@ PlotPhiHeatmap <- function(data,
     method        = "Phi",
     Relabel       = Relabel,
     AxisOrder     = AxisOrder,
+    Triangle      = triangle,
     BinaryMapping = binary_map
   )
   # Standardized p-value element aliases (old names kept)

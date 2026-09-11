@@ -12,6 +12,7 @@ PlotPhiHeatmap(
   fdr_scope = c("matrix", "per_outcome", "per_predictor"),
   cluster_rows = FALSE,
   cluster_columns = FALSE,
+  triangle = c("full", "upper", "lower"),
   Data = lifecycle::deprecated()
 )
 }
@@ -33,6 +34,10 @@ treats each variable's row of tiles as one family.}
 
 \item{cluster_rows, cluster_columns}{Logical; cluster y-axis rows and/or
 x-axis columns using displayed Phi-coefficient profiles.}
+
+\item{triangle}{Display \code{"full"} (default), \code{"upper"}, or \code{"lower"} half of
+the symmetric Phi matrix. This affects the plot only; returned results
+remain complete.}
 
 \item{Data}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
 }
@@ -77,4 +82,12 @@ result$Unadjusted$plot
 
 # FDR-adjusted phi heatmap
 result$FDRCorrected$plot
+
+# Show each binary-variable pair once.
+upper <- PlotPhiHeatmap(
+  Labelled,
+  CatVars = c("Diagnosis", "sex", "APOE4", "HighTau", "LowAbeta"),
+  triangle = "upper"
+)
+upper$FDRCorrected$plot
 }

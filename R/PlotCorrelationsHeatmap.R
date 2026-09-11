@@ -31,6 +31,10 @@
 #' @param cluster_rows,cluster_columns Logical; cluster predictor rows and/or
 #'   outcome columns from their displayed correlation profiles. Defaults retain
 #'   the caller-supplied variable order.
+#' @param triangle Display `"full"` (default), `"upper"`, or `"lower"` half of
+#'   a symmetric correlation matrix. This affects the plot only; returned
+#'   matrices remain complete. Triangle display is applied only when the same
+#'   variables occur on both axes.
 #'
 #' @return A list. `Unadjusted` and `FDRCorrected` each contain `r`, `p`,
 #'   `npairs`, and `plot`. The standardized aliases `p` (same as `Unadjusted`)
@@ -59,6 +63,15 @@
 #' square$Unadjusted$plot
 #' square$FDRCorrected$plot
 #'
+#' # Show each symmetric pair once; estimates and p-value matrices stay full.
+#' upper <- PlotCorrelationsHeatmap(
+#'   Labelled,
+#'   predictor_vars = vars,
+#'   outcome_vars = vars,
+#'   triangle = "upper"
+#' )
+#' upper$FDRCorrected$plot
+#'
 #' # Rectangular heatmap: different variables on x and y
 #' rectangular <- PlotCorrelationsHeatmap(
 #'   Labelled,
@@ -82,6 +95,7 @@ PlotCorrelationsHeatmap <- function(data,
     fdr_scope = c("matrix", "per_outcome", "per_predictor"),
     cluster_rows = FALSE,
     cluster_columns = FALSE,
+    triangle = c("full", "upper", "lower"),
     Data = lifecycle::deprecated(),
     xVars = lifecycle::deprecated(),
     yVars = lifecycle::deprecated(),
@@ -119,6 +133,7 @@ PlotCorrelationsHeatmap <- function(data,
   }
 
   fdr_scope <- match.arg(fdr_scope)
+  triangle <- match.arg(triangle)
   if (!is.logical(cluster_rows) || length(cluster_rows) != 1 || is.na(cluster_rows)) {
     stop("cluster_rows must be TRUE or FALSE.")
   }
@@ -699,16 +714,19 @@ PlotCorrelationsHeatmap <- function(data,
     plot.data$YLabel <- plot.data$YVar
   }
 
-  AxisOrder <- .OrderHeatmapAxes(
-    plot.data,
+  triangle_display <- .ResolveHeatmapTriangle(
+    data = plot.data,
     row_id = "XVar",
     column_id = "YVar",
     value = "R",
     row_order = xVars,
     column_order = yVars,
     cluster_rows = cluster_rows,
-    cluster_columns = cluster_columns
+    cluster_columns = cluster_columns,
+    triangle = triangle
   )
+  AxisOrder <- triangle_display$AxisOrder
+  plot.data_display <- triangle_display$PlotData
   if (Relabel) {
     x_axis_labels <- stats::setNames(xlabels[AxisOrder$rows], AxisOrder$rows)
     y_axis_labels <- stats::setNames(ylabels[AxisOrder$columns], AxisOrder$columns)
@@ -718,18 +736,20 @@ PlotCorrelationsHeatmap <- function(data,
   }
   plot.data$XOrder <- factor(plot.data$XVar, levels = rev(AxisOrder$rows))
   plot.data$YOrder <- factor(plot.data$YVar, levels = AxisOrder$columns)
+  plot.data_display$XOrder <- factor(plot.data_display$XVar, levels = rev(AxisOrder$rows))
+  plot.data_display$YOrder <- factor(plot.data_display$YVar, levels = AxisOrder$columns)
 
   # =========================================================
   # Plot helper
   # =========================================================
 
   BuildPlot <- function(
-    plot.data,
+    plot.data_display,
     starvar
   ) {
 
     ggplot2::ggplot(
-      plot.data,
+      plot.data_display,
       ggplot2::aes(
         x = YOrder,
         y = XOrder,
@@ -776,12 +796,12 @@ PlotCorrelationsHeatmap <- function(data,
   }
 
   P <- BuildPlot(
-    plot.data,
+    plot.data_display,
     "stars"
   )
 
   P_FDR <- BuildPlot(
-    plot.data,
+    plot.data_display,
     "stars_FDR"
   )
 
@@ -808,6 +828,7 @@ PlotCorrelationsHeatmap <- function(data,
     method = method,
     Relabel = Relabel,
     AxisOrder = AxisOrder,
+    Triangle = triangle,
     Covariates = covars,
     CovariatesMissing = covars_missing
   )

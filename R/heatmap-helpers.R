@@ -78,6 +78,86 @@
   )
 }
 
+# Resolve a display-only triangle for heatmaps representing the same variable
+# set on both axes. Returned estimates remain untouched; only `PlotData` is
+# filtered. A triangular display needs one shared ordering, including when the
+# caller requests clustering, so each unordered pair appears exactly once.
+.ResolveHeatmapTriangle <- function(data,
+                                    row_id,
+                                    column_id,
+                                    value,
+                                    row_order = NULL,
+                                    column_order = NULL,
+                                    cluster_rows = FALSE,
+                                    cluster_columns = FALSE,
+                                    triangle = c("full", "upper", "lower")) {
+  triangle <- match.arg(triangle)
+
+  axis_order <- .OrderHeatmapAxes(
+    data = data,
+    row_id = row_id,
+    column_id = column_id,
+    value = value,
+    row_order = row_order,
+    column_order = column_order,
+    cluster_rows = cluster_rows,
+    cluster_columns = cluster_columns
+  )
+
+  row_ids <- unique(as.character(data[[row_id]]))
+  column_ids <- unique(as.character(data[[column_id]]))
+  is_symmetric <-
+    length(row_ids) == length(column_ids) &&
+    setequal(row_ids, column_ids)
+
+  triangle_applied <- "full"
+  if (triangle != "full" && is_symmetric) {
+    shared_order <- if (!is.null(row_order)) {
+      unique(as.character(row_order))
+    } else {
+      row_ids
+    }
+    shared_order <- unique(c(shared_order, setdiff(row_ids, shared_order)))
+
+    # A symmetric matrix has identical row/column profiles. Cluster once and
+    # reuse that order for both axes so upper/lower has an unambiguous meaning.
+    shared_axis_order <- .OrderHeatmapAxes(
+      data = data,
+      row_id = row_id,
+      column_id = column_id,
+      value = value,
+      row_order = shared_order,
+      column_order = shared_order,
+      cluster_rows = isTRUE(cluster_rows) || isTRUE(cluster_columns),
+      cluster_columns = FALSE
+    )
+    axis_order$rows <- shared_axis_order$rows
+    axis_order$columns <- shared_axis_order$rows
+    triangle_applied <- triangle
+  }
+
+  plot_data <- data
+  if (triangle_applied != "full") {
+    row_index <- match(as.character(plot_data[[row_id]]), axis_order$rows)
+    column_index <- match(as.character(plot_data[[column_id]]), axis_order$columns)
+    keep <- if (triangle_applied == "upper") {
+      column_index > row_index
+    } else {
+      column_index < row_index
+    }
+    plot_data <- plot_data[keep, , drop = FALSE]
+  }
+
+  axis_order$triangle <- triangle
+  axis_order$triangle_applied <- triangle_applied
+  axis_order$is_symmetric <- is_symmetric
+
+  list(
+    PlotData = plot_data,
+    AxisOrder = axis_order
+  )
+}
+
 .ApplyTidyPAdjustment <- function(data,
                                   p_col,
                                   adjust_scope = c("per_group", "per_variable", "matrix", "none"),

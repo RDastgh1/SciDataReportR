@@ -58,6 +58,9 @@
 #' @param high_color Color representing positive DeltaR values.
 #' @param color_limits Limits for the DeltaR color scale. The theoretical
 #'   range is -2 to 2.
+#' @param triangle Display "full" (default), "upper", or "lower" half of a
+#'   symmetric comparison matrix. This affects plots only; returned matrices
+#'   and Results remain complete.
 #'
 #' @return A list containing:
 #' \describe{
@@ -86,7 +89,8 @@
 #' #   outcome_vars = c("Cortisol", "Insulin"),
 #' #   group_var = "Sex",
 #' #   covariates = "education",
-#' #   method = "spearman"
+#' #   method = "spearman",
+#' #   triangle = "upper"
 #' # )
 #' #
 #' # res$FDRCorrected$plot
@@ -113,7 +117,8 @@ PlotCorrelationComparisons <- function(
     high_color = "#2166AC",
     color_limits = c(-2, 2),
     cluster_rows = FALSE,
-    cluster_columns = FALSE) {
+    cluster_columns = FALSE,
+    triangle = c("full", "upper", "lower")) {
 
   # Validate inputs
 
@@ -146,6 +151,7 @@ PlotCorrelationComparisons <- function(
   fdr_scope <- match.arg(fdr_scope)
   reversal_style <- match.arg(reversal_style)
   interactive <- match.arg(interactive)
+  triangle <- match.arg(triangle)
 
   if (
     length(color_limits) != 2 ||
@@ -752,6 +758,11 @@ PlotCorrelationComparisons <- function(
         OutcomeIndex,
         ~ direction_reversal[.x, .y]
       ),
+      TestAvailable = purrr::map2_lgl(
+        PredictorIndex,
+        OutcomeIndex,
+        ~ valid_test[.x, .y]
+      ),
       PredictorLabel = unname(
         predictor_labels[Predictor]
       ),
@@ -786,6 +797,7 @@ PlotCorrelationComparisons <- function(
       DirectionReversal,
       Direction,
       InferenceStatus,
+      TestAvailable,
       CellId
     )
 
@@ -842,20 +854,16 @@ PlotCorrelationComparisons <- function(
         "<br>",
         InferenceStatus
       ),
-      stars = dplyr::case_when(
-        is.na(PValue) ~ "",
-        PValue < 0.001 ~ "***",
-        PValue < 0.01 ~ "**",
-        PValue < 0.05 ~ "*",
-        TRUE ~ ""
+      ComparisonStatus = dplyr::case_when(
+        TestAvailable ~ "Testable",
+        !is.finite(RComparison) | !is.finite(RReference) ~
+          "Unavailable: correlation could not be estimated in one or both groups",
+        TRUE ~
+          "Unavailable: insufficient pairwise observations after covariate adjustment"
       ),
-      stars_FDR = dplyr::case_when(
-        is.na(PAdjusted) ~ "",
-        PAdjusted < 0.001 ~ "***",
-        PAdjusted < 0.01 ~ "**",
-        PAdjusted < 0.05 ~ "*",
-        TRUE ~ ""
-      ),
+      InferenceApproximate = method == "spearman" || length(covariates) > 0,
+      stars = .FormatPValueStars(PValue),
+      stars_FDR = .FormatPValueStars(PAdjusted),
       ReversalPattern = dplyr::if_else(
         DirectionReversal,
         "Opposite signs",
@@ -871,11 +879,14 @@ PlotCorrelationComparisons <- function(
       )
     )
 
-  AxisOrder <- .OrderHeatmapAxes(
-    results, row_id = "Predictor", column_id = "Outcome", value = "DeltaR",
+  triangle_display <- .ResolveHeatmapTriangle(
+    data = results, row_id = "Predictor", column_id = "Outcome", value = "DeltaR",
     row_order = predictor_vars, column_order = outcome_vars,
-    cluster_rows = cluster_rows, cluster_columns = cluster_columns
+    cluster_rows = cluster_rows, cluster_columns = cluster_columns,
+    triangle = triangle
   )
+  AxisOrder <- triangle_display$AxisOrder
+  results_display <- triangle_display$PlotData
   predictor_axis_labels <- stats::setNames(
     as.character(predictor_labels[AxisOrder$rows]), AxisOrder$rows
   )
@@ -884,6 +895,8 @@ PlotCorrelationComparisons <- function(
   )
   results$PredictorOrder <- factor(results$Predictor, levels = rev(AxisOrder$rows))
   results$OutcomeOrder <- factor(results$Outcome, levels = AxisOrder$columns)
+  results_display$PredictorOrder <- factor(results_display$Predictor, levels = rev(AxisOrder$rows))
+  results_display$OutcomeOrder <- factor(results_display$Outcome, levels = AxisOrder$columns)
 
   # Build plots
 
@@ -959,13 +972,13 @@ PlotCorrelationComparisons <- function(
         colour = "black",
         na.rm = TRUE
       ) +
-      ggplot2::scale_fill_gradient2(
-        low = low_color,
-        mid = mid_color,
-        high = high_color,
-        midpoint = 0,
-        limits = color_limits,
-        oob = scales::squish,
+      .GetHeatmapColorScale(
+        low_color = low_color,
+        mid_color = mid_color,
+        high_color = high_color,
+        fill_midpoint = 0,
+        fill_limits = color_limits,
+        fill_oob = scales::squish,
         name = paste0("Δr\n", comparison_group, " - ", reference_group)
       ) +
       ggplot2::scale_x_discrete(labels = outcome_axis_labels) +
@@ -980,8 +993,8 @@ PlotCorrelationComparisons <- function(
       )
   }
 
-  raw_plot <- build_comparison_heatmap(results, "stars")
-  fdr_plot <- build_comparison_heatmap(results, "stars_FDR")
+  raw_plot <- build_comparison_heatmap(results_display, "stars")
+  fdr_plot <- build_comparison_heatmap(results_display, "stars_FDR")
 
   # Return result
 
@@ -1036,7 +1049,9 @@ PlotCorrelationComparisons <- function(
         NA_real_
       },
       ColorLimits = color_limits,
-      ReversalStyle = reversal_style
+      ReversalStyle = reversal_style,
+      Triangle = triangle,
+      TriangleApplied = AxisOrder$triangle_applied
     )
   )
 
@@ -1046,11 +1061,11 @@ PlotCorrelationComparisons <- function(
     }
     out$Interactive$Plotly <- list(
       Unadjusted = plotly::ggplotly(
-        build_comparison_heatmap(results, "stars", backend = "plotly", style = "outline"),
+        build_comparison_heatmap(results_display, "stars", backend = "plotly", style = "outline"),
         tooltip = "text"
       ),
       FDRCorrected = plotly::ggplotly(
-        build_comparison_heatmap(results, "stars_FDR", backend = "plotly", style = "outline"),
+        build_comparison_heatmap(results_display, "stars_FDR", backend = "plotly", style = "outline"),
         tooltip = "text"
       )
     )
@@ -1062,10 +1077,10 @@ PlotCorrelationComparisons <- function(
     }
     out$Interactive$Girafe <- list(
       Unadjusted = ggiraph::girafe(
-        ggobj = build_comparison_heatmap(results, "stars", backend = "girafe", style = "outline")
+        ggobj = build_comparison_heatmap(results_display, "stars", backend = "girafe", style = "outline")
       ),
       FDRCorrected = ggiraph::girafe(
-        ggobj = build_comparison_heatmap(results, "stars_FDR", backend = "girafe", style = "outline")
+        ggobj = build_comparison_heatmap(results_display, "stars_FDR", backend = "girafe", style = "outline")
       )
     )
   }

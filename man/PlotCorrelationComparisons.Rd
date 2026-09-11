@@ -25,7 +25,8 @@ PlotCorrelationComparisons(
   high_color = "#2166AC",
   color_limits = c(-2, 2),
   cluster_rows = FALSE,
-  cluster_columns = FALSE
+  cluster_columns = FALSE,
+  triangle = c("full", "upper", "lower")
 )
 }
 \arguments{
@@ -81,6 +82,10 @@ under \code{Interactive}.}
 
 \item{color_limits}{Limits for the DeltaR color scale. The theoretical
 range is -2 to 2.}
+
+\item{triangle}{Display "full" (default), "upper", or "lower" half of a
+symmetric comparison matrix. This affects plots only; returned matrices
+and Results remain complete.}
 }
 \value{
 A list containing:
@@ -135,7 +140,8 @@ data(SampleData)
 #   outcome_vars = c("Cortisol", "Insulin"),
 #   group_var = "Sex",
 #   covariates = "education",
-#   method = "spearman"
+#   method = "spearman",
+#   triangle = "upper"
 # )
 #
 # res$FDRCorrected$plot

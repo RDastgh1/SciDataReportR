@@ -24,6 +24,9 @@
 #'   applied within each sub-analysis block (continuous~continuous,
 #'   binary~binary, binary~continuous), matching historical behavior; each
 #'   sub-function's documented outcome orientation applies within its block.
+#' @param triangle Display `"full"` (default), `"upper"`, or `"lower"` half
+#'   of a symmetric directional matrix. This affects plots only and is applied
+#'   only when the same variables occur on both axes.
 #' @param Data \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
 #' @param xVars \strong{Deprecated} (since 19.15.0). Use \code{variables}
 #'   instead.
@@ -58,6 +61,16 @@
 #' # FDR-adjusted directional heatmap
 #' result$FDRCorrected$plot
 #'
+#' # Show each symmetric variable pair once.
+#' upper <- PlotDirectionalHeatmaps(
+#'   Labelled,
+#'   variables = c("Diagnosis", "sex", "age", "AXL", "Adiponectin",
+#'                 "Alpha_1_Antitrypsin", "C_Reactive_Protein", "Cortisol",
+#'                 "Insulin", "Leptin"),
+#'   triangle = "upper"
+#' )
+#' upper$FDRCorrected$plot
+#'
 #' # How binary variables were coded (which level counts as the positive one)
 #' result$BinaryMapping
 #' @export
@@ -68,6 +81,7 @@ PlotDirectionalHeatmaps <- function(data,
     fdr_scope = c("matrix", "per_outcome", "per_predictor"),
     cluster_rows = FALSE,
     cluster_columns = FALSE,
+    triangle = c("full", "upper", "lower"),
     Data = lifecycle::deprecated(),
     xVars = lifecycle::deprecated(),
     yVars = lifecycle::deprecated()) {
@@ -92,6 +106,7 @@ PlotDirectionalHeatmaps <- function(data,
     if (is.null(yVars)) yVars <- variables
   }
   fdr_scope <- match.arg(fdr_scope)
+  triangle <- match.arg(triangle)
   if (!is.logical(cluster_rows) || length(cluster_rows) != 1 || is.na(cluster_rows)) {
     stop("cluster_rows must be TRUE or FALSE.")
   }
@@ -327,43 +342,48 @@ PlotDirectionalHeatmaps <- function(data,
   }, character(1))
   ordered_ylabels <- unique(ordered_ylabels[!is.na(ordered_ylabels)])
 
-  AxisOrder <- .OrderHeatmapAxes(
-    df_Combined_plot, row_id = "YVar", column_id = "XVar", value = "correlation",
-    row_order = yVars_orig, column_order = xVars_orig,
-    cluster_rows = cluster_rows, cluster_columns = cluster_columns
+  triangle_display <- .ResolveHeatmapTriangle(
+    data = df_Combined_plot, row_id = "YVar", column_id = "XVar",
+    value = "correlation", row_order = yVars_orig, column_order = xVars_orig,
+    cluster_rows = cluster_rows, cluster_columns = cluster_columns,
+    triangle = triangle
   )
+  AxisOrder <- triangle_display$AxisOrder
+  df_Combined_plot_display <- triangle_display$PlotData
   x_axis_labels <- stats::setNames(ordered_xlabels, xVars_orig)
   y_axis_labels <- stats::setNames(ordered_ylabels, yVars_orig)
   df_Combined_plot$XOrder <- factor(df_Combined_plot$XVar, levels = AxisOrder$columns)
   df_Combined_plot$YOrder <- factor(df_Combined_plot$YVar, levels = rev(AxisOrder$rows))
+  df_Combined_plot_display$XOrder <- factor(df_Combined_plot_display$XVar, levels = AxisOrder$columns)
+  df_Combined_plot_display$YOrder <- factor(df_Combined_plot_display$YVar, levels = rev(AxisOrder$rows))
 
   # ---- 5) Build layered heatmap ------------------------------------------
   p <- ggplot2::ggplot()
 
-  if (nrow(dplyr::filter(df_Combined_plot, test == "pearson")) > 0) {
+  if (nrow(dplyr::filter(df_Combined_plot_display, test == "pearson")) > 0) {
     p <- p +
       ggplot2::geom_tile(
-        data = dplyr::filter(df_Combined_plot, test == "pearson"),
+        data = dplyr::filter(df_Combined_plot_display, test == "pearson"),
         ggplot2::aes(x = XOrder, y = YOrder, fill = correlation)
       ) +
       ggplot2::scale_fill_gradient2(limits = c(-1, 1), name = "r") +
       ggnewscale::new_scale_fill()
   }
 
-  if (nrow(dplyr::filter(df_Combined_plot, test == "spearman")) > 0) {
+  if (nrow(dplyr::filter(df_Combined_plot_display, test == "spearman")) > 0) {
     p <- p +
       ggplot2::geom_tile(
-        data = dplyr::filter(df_Combined_plot, test == "spearman"),
+        data = dplyr::filter(df_Combined_plot_display, test == "spearman"),
         ggplot2::aes(x = XOrder, y = YOrder, fill = correlation)
       ) +
       ggplot2::scale_fill_gradient2(limits = c(-1, 1), name = "\u03C1") +
       ggnewscale::new_scale_fill()
   }
 
-  if (nrow(dplyr::filter(df_Combined_plot, test == "Phi")) > 0) {
+  if (nrow(dplyr::filter(df_Combined_plot_display, test == "Phi")) > 0) {
     p <- p +
       ggplot2::geom_tile(
-        data = dplyr::filter(df_Combined_plot, test == "Phi"),
+        data = dplyr::filter(df_Combined_plot_display, test == "Phi"),
         ggplot2::aes(x = XOrder, y = YOrder, fill = correlation)
       ) +
       ggplot2::scale_fill_gradient2(
@@ -375,10 +395,10 @@ PlotDirectionalHeatmaps <- function(data,
       ggnewscale::new_scale_fill()
   }
 
-  if (nrow(dplyr::filter(df_Combined_plot, test == "Point Correlation")) > 0) {
+  if (nrow(dplyr::filter(df_Combined_plot_display, test == "Point Correlation")) > 0) {
     p <- p +
       ggplot2::geom_tile(
-        data = dplyr::filter(df_Combined_plot, test == "Point Correlation"),
+        data = dplyr::filter(df_Combined_plot_display, test == "Point Correlation"),
         ggplot2::aes(x = XOrder, y = YOrder, fill = correlation)
       ) +
       ggplot2::scale_fill_gradient2(
@@ -398,7 +418,7 @@ PlotDirectionalHeatmaps <- function(data,
   # annotate with raw and FDR stars
   p_raw <- p +
     ggplot2::geom_text(
-      data = df_Combined_plot,
+      data = df_Combined_plot_display,
       ggplot2::aes(x = XOrder, y = YOrder, label = stars),
       color = "black"
     ) +
@@ -415,7 +435,7 @@ PlotDirectionalHeatmaps <- function(data,
 
   p_FDR <- p +
     ggplot2::geom_text(
-      data = df_Combined_plot,
+      data = df_Combined_plot_display,
       ggplot2::aes(x = XOrder, y = YOrder, label = stars_FDR),
       color = "black"
     ) +
@@ -439,6 +459,7 @@ PlotDirectionalHeatmaps <- function(data,
     FDRCorrected  = FDRCorrected,
     Relabel       = Relabel,
     AxisOrder     = AxisOrder,
+    Triangle      = triangle,
     BinaryMapping = BinaryMapping,
     Excluded      = Excluded
   )

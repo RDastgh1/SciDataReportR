@@ -12,6 +12,7 @@ PlotDirectionalHeatmaps(
   fdr_scope = c("matrix", "per_outcome", "per_predictor"),
   cluster_rows = FALSE,
   cluster_columns = FALSE,
+  triangle = c("full", "upper", "lower"),
   Data = lifecycle::deprecated(),
   xVars = lifecycle::deprecated(),
   yVars = lifecycle::deprecated()
@@ -37,6 +38,10 @@ through to the three sub-analyses (\code{\link[=PlotCorrelationsHeatmap]{PlotCor
 applied within each sub-analysis block (continuous~continuous,
 binary~binary, binary~continuous), matching historical behavior; each
 sub-function's documented outcome orientation applies within its block.}
+
+\item{triangle}{Display \code{"full"} (default), \code{"upper"}, or \code{"lower"} half
+of a symmetric directional matrix. This affects plots only and is applied
+only when the same variables occur on both axes.}
 
 \item{Data}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
 
@@ -89,6 +94,16 @@ result$Unadjusted$plot
 
 # FDR-adjusted directional heatmap
 result$FDRCorrected$plot
+
+# Show each symmetric variable pair once.
+upper <- PlotDirectionalHeatmaps(
+  Labelled,
+  variables = c("Diagnosis", "sex", "age", "AXL", "Adiponectin",
+                "Alpha_1_Antitrypsin", "C_Reactive_Protein", "Cortisol",
+                "Insulin", "Leptin"),
+  triangle = "upper"
+)
+upper$FDRCorrected$plot
 
 # How binary variables were coded (which level counts as the positive one)
 result$BinaryMapping
