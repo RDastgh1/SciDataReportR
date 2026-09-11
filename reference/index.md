@@ -71,6 +71,8 @@
 - [`DeriveFreesurferVolumes()`](https://rdastgh1.github.io/SciDataReportR/reference/DeriveFreesurferVolumes.md)
   : Derive Freesurfer bilateral measures and optional ICV-adjusted
   ratios
+- [`DiagnosticLikelihoodRatioTable()`](https://rdastgh1.github.io/SciDataReportR/reference/DiagnosticLikelihoodRatioTable.md)
+  : Calculate diagnostic likelihood ratios
 - [`EvaluateBiomarkerPerformance()`](https://rdastgh1.github.io/SciDataReportR/reference/EvaluateBiomarkerPerformance.md)
   : Evaluate biomarker performance
 - [`ExploreDatasetComparison()`](https://rdastgh1.github.io/SciDataReportR/reference/ExploreDatasetComparison.md)
@@ -162,6 +164,8 @@
   : Plot correlations heatmap
 - [`PlotDatasetComparison()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotDatasetComparison.md)
   : Plot dataset comparison diagnostics
+- [`PlotDiagnosticLRHeatmap()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotDiagnosticLRHeatmap.md)
+  : Plot a diagnostic likelihood-ratio heatmap
 - [`PlotDirectionalHeatmaps()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotDirectionalHeatmaps.md)
   : Create directional heatmaps across continuous & binary variables
 - [`PlotForestFromTable()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotForestFromTable.md)

@@ -51,6 +51,7 @@
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/CreateVariableTypesTemplate.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/CreateZScoreObject.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/DeriveFreesurferVolumes.html</loc></url>
+<url><loc>https://rdastgh1.github.io/SciDataReportR/reference/DiagnosticLikelihoodRatioTable.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/EvaluateBiomarkerPerformance.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/ExploreDatasetComparison.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/ExploreMergeValidation.html</loc></url>
@@ -93,6 +94,7 @@
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/PlotCorrelationComparisons.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/PlotCorrelationsHeatmap.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/PlotDatasetComparison.html</loc></url>
+<url><loc>https://rdastgh1.github.io/SciDataReportR/reference/PlotDiagnosticLRHeatmap.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/PlotDirectionalHeatmaps.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/PlotForestFromTable.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/PlotInteractionEffectsContinuous.html</loc></url>
