@@ -71,6 +71,10 @@
 #' @param AddPairwise Logical; add pairwise comparison columns.
 #' @param PairwiseMethod P-value adjustment method. Use `"none"` for no adjustment.
 #' @param Parametric Logical; use parametric tests for continuous outcomes.
+#' @param alternative Hypothesis alternative. Defaults to `"two.sided"`.
+#' For a two-level group factor, `"greater"` tests whether the second factor
+#' level is greater than the first; `"less"` tests the reverse. Directional
+#' hypotheses should be chosen before inspecting the data.
 #' @param ParametricDisplay Logical; display continuous summaries as mean (SD).
 #' If `FALSE`, display median [IQR]. Defaults to `Parametric`.
 #' @param IncludeOverallN Logical; add N column.
@@ -114,6 +118,16 @@
 #'   data = Labelled,
 #'   group_var = "Diagnosis",
 #'   variables = vars_Compare
+#' )
+#'
+#' # Pre-specified directional hypothesis: the second Diagnosis factor level
+#' # is greater than the first. Set the factor order deliberately before testing.
+#' Labelled$Diagnosis <- factor(Labelled$Diagnosis, levels = c("Control", "Impaired"))
+#' MakeComparisonTable(
+#'   data = Labelled,
+#'   group_var = "Diagnosis",
+#'   variables = c("AXL", "Adiponectin"),
+#'   alternative = "greater"
 #' )
 #'
 #' # With effect sizes
@@ -207,6 +221,7 @@ MakeComparisonTable <- function(data,
     AddPairwise = FALSE,
     PairwiseMethod = "bonferroni",
     Parametric = TRUE,
+    alternative = c("two.sided", "greater", "less"),
     ParametricDisplay = NULL,
     IncludeOverallN = FALSE,
     IncludeMissing = FALSE,
@@ -270,6 +285,7 @@ MakeComparisonTable <- function(data,
   }
 
   CatMethod <- match.arg(CatMethod)
+  alternative <- match.arg(alternative)
   MultiCatAdjusted <- match.arg(MultiCatAdjusted)
   ShowNotes <- match.arg(ShowNotes)
   NotesPosition <- match.arg(NotesPosition)
@@ -880,6 +896,20 @@ MakeComparisonTable <- function(data,
 
   lvls_all <- levels(droplevels(as_factor_drop(df[[CompVariable]])))
 
+  if (!identical(alternative, "two.sided") && length(lvls_all) != 2) {
+    warning(
+      "`alternative` is only available for two-group comparisons; retaining existing two-sided/global tests.",
+      call. = FALSE
+    )
+  }
+  if (!identical(alternative, "two.sided") && length(lvls_all) == 2 &&
+      any(!treat_as_continuous & n_unique > 2)) {
+    warning(
+      "`alternative` is not defined for multicategory outcomes; retaining existing two-sided/global tests for those rows.",
+      call. = FALSE
+    )
+  }
+
   combos_all <- if (!is.null(Referent)) {
     if (!Referent %in% lvls_all) stop("Referent level not found: ", Referent)
     lapply(setdiff(lvls_all, Referent), function(x) c(Referent, x))
@@ -906,6 +936,7 @@ MakeComparisonTable <- function(data,
 
     if (is_cont) {
       k <- nlevels(df_vg[[CompVariable]])
+      directional <- !identical(alternative, "two.sided") && k == 2
 
       if (!is.null(Covariates)) {
         cols_cc <- c(var, CompVariable, Covariates)
@@ -944,10 +975,14 @@ MakeComparisonTable <- function(data,
           ))
         }
 
-        p_un <- tryCatch(
-          summary(stats::aov(fmla(var, CompVariable), data = df_cc))[[1]][CompVariable, "Pr(>F)"],
-          error = function(e) NA_real_
-        )
+        p_un <- if (directional && nlevels(df_cc[[CompVariable]]) == 2) {
+          .ScidrDirectedContinuousP(df_cc[[var]], df_cc[[CompVariable]], Parametric, alternative)
+        } else {
+          tryCatch(
+            summary(stats::aov(fmla(var, CompVariable), data = df_cc))[[1]][CompVariable, "Pr(>F)"],
+            error = function(e) NA_real_
+          )
+        }
 
         if (Parametric) {
           a2 <- tryCatch(car::Anova(fit, type = 2), error = function(e) NULL)
@@ -959,7 +994,9 @@ MakeComparisonTable <- function(data,
             if (length(group_rows)) group_rows[1] else NA_integer_
           }
 
-          p_adj <- if (!is.na(group_row)) {
+          p_adj <- if (directional && nlevels(df_cc[[CompVariable]]) == 2) {
+            .ScidrDirectedCoefficientP(fit, CompVariable, alternative)
+          } else if (!is.na(group_row)) {
             as.numeric(a2[group_row, "Pr(>F)"])
           } else {
             NA_real_
@@ -969,35 +1006,43 @@ MakeComparisonTable <- function(data,
             variable = var,
             p_unadj = p_un,
             p_adj = p_adj,
-            test_label = "ANCOVA (Type II)",
-            Notes = notes
+            test_label = if (directional) "ANCOVA directional contrast" else "ANCOVA (Type II)",
+            Notes = if (directional) paste(na.omit(c(notes, paste0("One-sided: ", .ScidrDirectionLabel(df_cc[[CompVariable]], alternative)))), collapse = " ") else notes
           ))
         }
 
-        p_rb <- robust_group_p(fit, CompVariable)
+        p_rb <- if (directional && nlevels(df_cc[[CompVariable]]) == 2) {
+          .ScidrDirectedCoefficientP(fit, CompVariable, alternative, robust = TRUE)
+        } else {
+          robust_group_p(fit, CompVariable)
+        }
 
         return(tibble::tibble(
           variable = var,
           p_unadj = p_un,
           p_adj = p_rb,
-          test_label = "Robust ANCOVA (HC3 Wald)",
-          Notes = notes
+          test_label = if (directional) "Robust ANCOVA directional contrast (HC3)" else "Robust ANCOVA (HC3 Wald)",
+          Notes = if (directional) paste(na.omit(c(notes, paste0("One-sided: ", .ScidrDirectionLabel(df_cc[[CompVariable]], alternative)))), collapse = " ") else notes
         ))
       }
 
       if (Parametric) {
         if (k == 2) {
-          p_un <- tryCatch(
-            stats::t.test(fmla(var, CompVariable), data = df_vg, var.equal = FALSE)$p.value,
-            error = function(e) NA_real_
-          )
+          p_un <- if (directional) {
+            .ScidrDirectedContinuousP(df_vg[[var]], df_vg[[CompVariable]], TRUE, alternative)
+          } else {
+            tryCatch(
+              stats::t.test(fmla(var, CompVariable), data = df_vg, var.equal = FALSE)$p.value,
+              error = function(e) NA_real_
+            )
+          }
 
           return(tibble::tibble(
             variable = var,
             p_unadj = p_un,
             p_adj = NA_real_,
-            test_label = "Welch t-test",
-            Notes = notes
+            test_label = if (directional) "One-sided Welch t-test" else "Welch t-test",
+            Notes = if (directional) paste0("One-sided: ", .ScidrDirectionLabel(df_vg[[CompVariable]], alternative)) else notes
           ))
         }
 
@@ -1016,7 +1061,9 @@ MakeComparisonTable <- function(data,
       }
 
       p_un <- tryCatch(
-        if (k == 2) {
+        if (k == 2 && directional) {
+          .ScidrDirectedContinuousP(df_vg[[var]], df_vg[[CompVariable]], FALSE, alternative)
+        } else if (k == 2) {
           stats::wilcox.test(fmla(var, CompVariable), data = df_vg)$p.value
         } else {
           stats::kruskal.test(fmla(var, CompVariable), data = df_vg)$p.value
@@ -1028,8 +1075,8 @@ MakeComparisonTable <- function(data,
         variable = var,
         p_unadj = p_un,
         p_adj = NA_real_,
-        test_label = if (k == 2) "Wilcoxon rank-sum" else "Kruskal-Wallis",
-        Notes = notes
+        test_label = if (k == 2 && directional) "One-sided Wilcoxon rank-sum" else if (k == 2) "Wilcoxon rank-sum" else "Kruskal-Wallis",
+        Notes = if (k == 2 && directional) paste0("One-sided: ", .ScidrDirectionLabel(df_vg[[CompVariable]], alternative)) else notes
       ))
     }
 
@@ -1037,7 +1084,16 @@ MakeComparisonTable <- function(data,
     g <- as_factor_drop(df_vg[[CompVariable]])
     tab <- table(x, g)
 
-    tst <- cat_global_test(tab, method = CatMethod)
+    directional_binary <- !identical(alternative, "two.sided") &&
+      nlevels(x) == 2 && nlevels(g) == 2
+    if (directional_binary) {
+      notes <- paste(na.omit(c(notes, paste0("One-sided: ", .ScidrDirectionLabel(g, alternative)))), collapse = " ")
+    }
+    tst <- if (directional_binary) {
+      .ScidrDirectedBinaryP(x, g, alternative, method = CatMethod)
+    } else {
+      cat_global_test(tab, method = CatMethod)
+    }
 
     p_un <- tst$p
     test_label <- tst$label
@@ -1081,10 +1137,16 @@ MakeComparisonTable <- function(data,
         )
 
         if (!is.null(gm_full) && !is.null(gm_red)) {
-          an <- tryCatch(stats::anova(gm_red, gm_full, test = "Chisq"), error = function(e) NULL)
-          if (!is.null(an) && "Pr(>Chi)" %in% names(an)) {
-            p_adj <- as.numeric(an$`Pr(>Chi)`[2])
-            test_label <- "Logistic regression (LR)"
+          if (!identical(alternative, "two.sided") && nlevels(df_cc[[CompVariable]]) == 2) {
+            p_adj <- .ScidrDirectedCoefficientP(gm_full, CompVariable, alternative)
+            test_label <- "One-sided logistic regression Wald"
+            notes <- paste(na.omit(c(notes, paste0("One-sided: ", .ScidrDirectionLabel(df_cc[[CompVariable]], alternative)))), collapse = " ")
+          } else {
+            an <- tryCatch(stats::anova(gm_red, gm_full, test = "Chisq"), error = function(e) NULL)
+            if (!is.null(an) && "Pr(>Chi)" %in% names(an)) {
+              p_adj <- as.numeric(an$`Pr(>Chi)`[2])
+              test_label <- "Logistic regression (LR)"
+            }
           }
         }
       }
@@ -1415,6 +1477,51 @@ MakeComparisonTable <- function(data,
     })
 
     if (nrow(pw_long) > 0) {
+      if (!identical(alternative, "two.sided") && length(lvls_all) == 2) {
+        pw_long <- pw_long %>%
+          dplyr::group_by(.data$variable) %>%
+          dplyr::mutate(
+            p_val = {
+              var <- .data$variable[[1]]
+              is_cont <- isTRUE(treat_as_continuous[[var]])
+              cols_test <- c(var, CompVariable, Covariates)
+              df_test <- df[stats::complete.cases(df[, cols_test, drop = FALSE]), , drop = FALSE]
+              df_test[[CompVariable]] <- droplevels(as_factor_drop(df_test[[CompVariable]]))
+
+              p_directional <- NA_real_
+              if (nlevels(df_test[[CompVariable]]) == 2) {
+                if (is_cont && is.null(Covariates)) {
+                  p_directional <- .ScidrDirectedContinuousP(
+                    df_test[[var]], df_test[[CompVariable]], Parametric, alternative
+                  )
+                } else if (is_cont) {
+                  fit <- tryCatch(stats::lm(fmla(var, c(CompVariable, Covariates)), data = df_test), error = function(e) NULL)
+                  if (!is.null(fit)) {
+                    p_directional <- .ScidrDirectedCoefficientP(
+                      fit, CompVariable, alternative, robust = !Parametric
+                    )
+                  }
+                } else {
+                  df_test[[var]] <- droplevels(as_factor_drop(df_test[[var]]))
+                  if (nlevels(df_test[[var]]) == 2 && is.null(Covariates)) {
+                    p_directional <- .ScidrDirectedBinaryP(
+                      df_test[[var]], df_test[[CompVariable]], alternative, CatMethod
+                    )$p
+                  } else if (nlevels(df_test[[var]]) == 2) {
+                    fit <- tryCatch(
+                      stats::glm(fmla(var, c(CompVariable, Covariates)), data = df_test, family = stats::binomial()),
+                      error = function(e) NULL
+                    )
+                    if (!is.null(fit)) p_directional <- .ScidrDirectedCoefficientP(fit, CompVariable, alternative)
+                  }
+                }
+              }
+              if (is.finite(p_directional)) rep(p_directional, dplyr::n()) else .data$p_val
+            }
+          ) %>%
+          dplyr::ungroup()
+      }
+
       contrast_levels <- unique(pw_long$contrast_label)
       # Sequential internal column names. The user-facing label is applied later
       # via modify_header(), so these names only need to be unique and safe.

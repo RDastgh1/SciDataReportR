@@ -4,12 +4,20 @@
 \alias{CreateStatisticsTable}
 \title{Create Statistics Table}
 \usage{
-CreateStatisticsTable(data, TargetVar, Data = lifecycle::deprecated())
+CreateStatisticsTable(
+  data,
+  TargetVar,
+  alternative = c("two.sided", "greater", "less"),
+  Data = lifecycle::deprecated()
+)
 }
 \arguments{
 \item{data}{The data frame containing the variables of interest.}
 
 \item{TargetVar}{The target variable for which statistics will be calculated.}
+
+\item{alternative}{Hypothesis alternative for two-group tests. \code{"greater"}
+tests whether the second target-factor level is greater than the first.}
 
 \item{Data}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
 }

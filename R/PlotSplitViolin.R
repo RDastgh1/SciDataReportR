@@ -11,6 +11,9 @@
 #' @param covariates Character vector of covariates (default `NULL`).
 #' @param nonparametric Logical. If `FALSE`, uses linear model + emmeans contrast.
 #' If `TRUE`, uses Wilcoxon (with residualization if covariates are present).
+#' @param alternative Hypothesis alternative. For two groups, `"greater"` tests
+#' whether the second factor level is greater than the first; defaults to
+#' `"two.sided"`.
 #' @param annotation_text Optional manual annotation (e.g., "*", "ns").
 #' @param show_ns Logical; if `TRUE`, display "ns" for non-significant results.
 #' @param plot_title Optional custom plot title.
@@ -43,12 +46,17 @@
 #'
 #' # Ab_42 has a clear Diagnosis-group difference in the bundled teaching data.
 #' PlotSplitViolin(Labelled, Var = "Ab_42", group_var = "Diagnosis")
+#'
+#' # Pre-specify the direction through factor order before requesting a one-sided test.
+#' Labelled$Diagnosis <- factor(Labelled$Diagnosis, levels = c("Control", "Impaired"))
+#' PlotSplitViolin(Labelled, Var = "Ab_42", group_var = "Diagnosis", alternative = "greater")
 #' @export
 PlotSplitViolin <- function(data,
     Var,
     group_var,
     covariates = NULL,
     nonparametric = FALSE,
+    alternative = c("two.sided", "greater", "less"),
     annotation_text = NULL,
     show_ns = FALSE,
     plot_title = NULL,
@@ -87,6 +95,7 @@ PlotSplitViolin <- function(data,
   star_from  <- match.arg(star_from)
   n_position <- match.arg(n_position)
   p_label <- match.arg(p_label)
+  alternative <- match.arg(alternative)
 
   if (is.null(covars)) covars <- character(0)
 
@@ -158,6 +167,8 @@ PlotSplitViolin <- function(data,
     PValue = NA_real_,
     Method = NA_character_,
     Covariates = covars,
+    Alternative = alternative,
+    Contrast = if (length(g_order) == 2) .ScidrDirectionLabel(df$.Group, alternative) else NA_character_,
     N = nrow(df),
     Error = NULL
   )
@@ -179,27 +190,40 @@ PlotSplitViolin <- function(data,
           TestValue = test_values,
           Group = df$.Group
         )
-        p_value <- stats::wilcox.test(
-          TestValue ~ Group,
-          data = df_Test,
-          exact = FALSE
-        )$p.value
+        p_value <- if (identical(alternative, "two.sided")) {
+          stats::wilcox.test(TestValue ~ Group, data = df_Test, exact = FALSE)$p.value
+        } else {
+          .ScidrDirectedContinuousP(df_Test$TestValue, df_Test$Group, FALSE, alternative)
+        }
       } else {
         model_formula <- stats::reformulate(
           c(".Group", covars),
           response = var_nm
         )
         fit <- stats::lm(model_formula, data = df)
-        p_value <- as.data.frame(
-          emmeans::contrast(
-            emmeans::emmeans(fit, ".Group"),
-            method = "revpairwise"
-          )
-        )$p.value[1]
+        p_value <- if (identical(alternative, "two.sided")) {
+          as.data.frame(
+            emmeans::contrast(
+              emmeans::emmeans(fit, ".Group"),
+              method = "revpairwise"
+            )
+          )$p.value[1]
+        } else if (length(covars) == 0) {
+          .ScidrDirectedContinuousP(df[[var_nm]], df$.Group, TRUE, alternative)
+        } else {
+          .ScidrDirectedCoefficientP(fit, ".Group", alternative)
+        }
         method <- if (length(covars) > 0) {
           "Covariate-adjusted linear model contrast"
         } else {
           "Linear model contrast"
+        }
+        if (!identical(alternative, "two.sided")) {
+          method <- if (length(covars) == 0) {
+            paste0("One-sided Welch t-test: ", .ScidrDirectionLabel(df$.Group, alternative))
+          } else {
+            paste0(method, " (one-sided: ", .ScidrDirectionLabel(df$.Group, alternative), ")")
+          }
         }
       }
 

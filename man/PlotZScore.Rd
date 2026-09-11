@@ -16,6 +16,7 @@ PlotZScore(
   Ordinal = lifecycle::deprecated(),
   TreatOrdinalAs = "Continuous",
   Parametric = TRUE,
+  alternative = c("two.sided", "greater", "less"),
   SigP_YCoord = 1.5,
   SigFDR_YCoord = 1.6,
   Data = lifecycle::deprecated(),
@@ -46,6 +47,9 @@ CreateZScorePlot(...)
 accepts \code{"Continuous"} or \code{"Exclude"}.}
 
 \item{Parametric}{Logical; if TRUE, parametric tests (t-test/ANOVA) will be used; otherwise, non-parametric tests (Wilcoxon/Kruskal-Wallis) will be used.}
+
+\item{alternative}{Hypothesis alternative for two-group tests. \code{"greater"}
+tests whether the second group factor level is greater than the first.}
 
 \item{SigP_YCoord}{Numeric; the y-coordinate for marking significant p-values.}
 

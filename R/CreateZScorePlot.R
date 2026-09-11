@@ -18,6 +18,8 @@
 #' @param Ordinal \strong{Deprecated} (since 20.20.0). Use
 #'   \code{TreatOrdinalAs} instead.
 #' @param Parametric Logical; if TRUE, parametric tests (t-test/ANOVA) will be used; otherwise, non-parametric tests (Wilcoxon/Kruskal-Wallis) will be used.
+#' @param alternative Hypothesis alternative for two-group tests. `"greater"`
+#' tests whether the second group factor level is greater than the first.
 #' @param SigP_YCoord Numeric; the y-coordinate for marking significant p-values.
 #' @param SigFDR_YCoord Numeric; the y-coordinate for marking significant FDR-adjusted p-values.
 #' @return A ggplot object representing the Z-score plot.
@@ -63,6 +65,7 @@ PlotZScore <- function(data,
     Ordinal = lifecycle::deprecated(),
     TreatOrdinalAs = "Continuous",
     Parametric = TRUE,
+    alternative = c("two.sided", "greater", "less"),
     SigP_YCoord = 1.5,
     SigFDR_YCoord = 1.6,
     Data = lifecycle::deprecated(),
@@ -84,6 +87,7 @@ PlotZScore <- function(data,
     TreatOrdinalAs <- if (isTRUE(Ordinal)) "Continuous" else "Exclude"
   }
   TreatOrdinalAs <- match.arg(TreatOrdinalAs, c("Categorical", "Continuous", "Both", "Exclude"))
+  alternative <- match.arg(alternative)
   if (!TreatOrdinalAs %in% c("Continuous", "Exclude")) {
     stop("PlotZScore() requires TreatOrdinalAs = 'Continuous' or 'Exclude'.", call. = FALSE)
   }
@@ -98,6 +102,10 @@ PlotZScore <- function(data,
   scaledData[Variables] <- scale(scaledData[Variables])
   colnames(scaledData)[1] <- "Group"
   n_groups <- length(unique(scaledData$Group))
+  test_alternative <- if (identical(alternative, "greater")) "less" else if (identical(alternative, "less")) "greater" else "two.sided"
+  if (!identical(alternative, "two.sided") && n_groups != 2) {
+    warning("`alternative` is only available for two-group comparisons; retaining existing two-sided/global tests.", call. = FALSE)
+  }
   melted <- tidyr::pivot_longer(scaledData, cols = dplyr::all_of(Variables),
                                 names_to = "variable", values_to = "value")
   melted$variable <- factor(melted$variable, levels = unique(melted$variable))
@@ -115,7 +123,7 @@ PlotZScore <- function(data,
     if (n_groups == 2) {
       stat.test <- melted %>%
         dplyr::group_by(variable) %>%
-        rstatix::t_test(value ~ Group, var.equal = TRUE) %>%
+        rstatix::t_test(value ~ Group, var.equal = TRUE, alternative = test_alternative) %>%
         rstatix::adjust_pvalue(method = "BH") %>%
         rstatix::add_significance()
     } else {
@@ -130,7 +138,7 @@ PlotZScore <- function(data,
     if (n_groups == 2) {
       stat.test <- melted %>%
         dplyr::group_by(variable) %>%
-        rstatix::wilcox_test(value ~ Group) %>%
+        rstatix::wilcox_test(value ~ Group, alternative = test_alternative) %>%
         rstatix::adjust_pvalue(method = "BH") %>%
         rstatix::add_significance()
     } else {
@@ -205,6 +213,11 @@ PlotZScore <- function(data,
     pZ <- pZ + theme(axis.text.x = element_text(angle = 45,
                                                 vjust = 1, hjust = 1))
   }
+  attr(pZ, "comparison") <- list(
+    Alternative = alternative,
+    Contrast = if (n_groups == 2) .ScidrDirectionLabel(scaledData$Group, alternative) else NA_character_,
+    PValueTable = pvaldata
+  )
   return(pZ)
 }
 

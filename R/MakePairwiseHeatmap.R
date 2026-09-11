@@ -11,6 +11,9 @@
 #' @param Referent Character scalar naming the referent level of `group_var`.
 #' @param covariates Optional character vector of covariates.
 #' @param Parametric Logical. If `TRUE`, outcomes are Z-scored before modeling.
+#' @param alternative Hypothesis alternative for an exact two-group contrast.
+#' `"greater"` tests the second factor level against the first. With a
+#' one-sided test, `Referent` must be the first factor level.
 #'   If `FALSE`, outcomes are M-scored and HC3 robust covariance is used for
 #'   estimated marginal mean contrasts.
 #' @param show_caption Logical; add an explanatory caption to the plot.
@@ -159,6 +162,7 @@ MakePairwiseHeatmap <- function(data,
                                 Referent,
                                 covariates = NULL,
                                 Parametric = TRUE,
+                                alternative = c("two.sided", "greater", "less"),
                                 adjust_scope = c("per_group", "per_variable", "matrix", "none"),
                                 p_adjust_method = c("fdr", "bonferroni", "holm", "none"),
                                 star_p = c("raw", "adjusted", "none"),
@@ -182,6 +186,7 @@ MakePairwiseHeatmap <- function(data,
   adjust_scope <- match.arg(adjust_scope)
   p_adjust_method <- match.arg(p_adjust_method)
   star_p <- match.arg(star_p)
+  alternative <- match.arg(alternative)
 
   if (!is.data.frame(data)) {
     stop("data must be a data frame.")
@@ -257,6 +262,13 @@ MakePairwiseHeatmap <- function(data,
   if (!Referent %in% levels(group_for_scaling)) {
     stop("Referent level not found: ", Referent)
   }
+  if (!identical(alternative, "two.sided") && nlevels(group_for_scaling) != 2) {
+    warning("`alternative` is only available for two-group comparisons; retaining existing two-sided referent contrasts.", call. = FALSE)
+  }
+  if (!identical(alternative, "two.sided") && nlevels(group_for_scaling) == 2 &&
+      !identical(Referent, levels(group_for_scaling)[1])) {
+    stop("For one-sided inference, `Referent` must be the first group factor level.", call. = FALSE)
+  }
 
   referent_data <- data[group_for_scaling == Referent & !is.na(group_for_scaling), , drop = FALSE]
   if (nrow(referent_data) < 2) {
@@ -315,6 +327,7 @@ MakePairwiseHeatmap <- function(data,
     transformed_variables = transformed_variables,
     score_type = score_type,
     Parametric = Parametric,
+    alternative = alternative,
     adjust_scope = adjust_scope,
     p_adjust_method = p_adjust_method,
     adjusted_significance_threshold = adjusted_significance_threshold,
@@ -437,6 +450,7 @@ MakePairwiseHeatmap <- function(data,
     Referent = Referent,
     covariates = covariates,
     Parametric = Parametric,
+    alternative = alternative,
     ScoreType = score_type,
     ScalingReference = "Referent",
     adjust_scope = adjust_scope,

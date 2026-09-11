@@ -10,6 +10,7 @@ PlotPValueComparisons(
   variables = NULL,
   VariableCategories = NULL,
   Relabel = TRUE,
+  alternative = c("two.sided", "greater", "less"),
   Data = lifecycle::deprecated(),
   GroupVariable = lifecycle::deprecated(),
   Variables = lifecycle::deprecated()
@@ -30,6 +31,9 @@ each variable. If \code{NULL}, no categories are used.}
 
 \item{Relabel}{Logical indicating whether to replace missing labels with
 the column names.}
+
+\item{alternative}{Hypothesis alternative for two-group tests. \code{"greater"}
+tests whether the second group factor level is greater than the first.}
 
 \item{Data}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
 

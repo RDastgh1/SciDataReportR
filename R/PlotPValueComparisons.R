@@ -13,6 +13,8 @@
 #'   each variable. If `NULL`, no categories are used.
 #' @param Relabel Logical indicating whether to replace missing labels with
 #'   the column names.
+#' @param alternative Hypothesis alternative for two-group tests. `"greater"`
+#'   tests whether the second group factor level is greater than the first.
 #'
 #' @return A ggplot object displaying the p-value comparisons.
 #'
@@ -42,6 +44,7 @@ PlotPValueComparisons <- function(data,
     variables = NULL,
     VariableCategories = NULL,
     Relabel = TRUE,
+    alternative = c("two.sided", "greater", "less"),
     Data = lifecycle::deprecated(),
     GroupVariable = lifecycle::deprecated(),
     Variables = lifecycle::deprecated()) {
@@ -61,6 +64,7 @@ PlotPValueComparisons <- function(data,
     variables <- Variables
   }
   Variables <- variables
+  alternative <- match.arg(alternative)
 
   # Validate and prepare Variables
   if (is.null(Variables)) {
@@ -82,9 +86,17 @@ PlotPValueComparisons <- function(data,
   l <- tData %>% summarise_if(is.numeric, ~ sd(., na.rm = TRUE)) %>% as.list()
   tData <- tData %>% dplyr::select(-dplyr::all_of(names(l[is.na(l) | l == 0])))
 
-  # Perform statistical tests using arsenal::tableby
-  tab1 <- arsenal::tableby(GroupVariablex ~ ., data = tData)
-  pvaltable <- arsenal::tests(tab1)
+  comparison_table <- MakeComparisonTable(
+    data = tData,
+    group_var = "GroupVariablex",
+    variables = setdiff(names(tData), "GroupVariablex"),
+    alternative = alternative,
+    suppress_warnings = TRUE,
+    Relabel = FALSE
+  )
+  pvaltable <- comparison_table$table_body %>%
+    dplyr::filter(.data$row_type == "label") %>%
+    dplyr::transmute(Variable = .data$variable, p.value = .data$p.value)
 
   # Calculate log-transformed p-values and significance levels
   pvaltable$logp <- -log10(pvaltable$p.value)

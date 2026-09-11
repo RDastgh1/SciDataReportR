@@ -17,6 +17,7 @@ MakeComparisonTable(
   AddPairwise = FALSE,
   PairwiseMethod = "bonferroni",
   Parametric = TRUE,
+  alternative = c("two.sided", "greater", "less"),
   ParametricDisplay = NULL,
   IncludeOverallN = FALSE,
   IncludeMissing = FALSE,
@@ -63,6 +64,11 @@ MakeComparisonTable(
 \item{PairwiseMethod}{P-value adjustment method. Use \code{"none"} for no adjustment.}
 
 \item{Parametric}{Logical; use parametric tests for continuous outcomes.}
+
+\item{alternative}{Hypothesis alternative. Defaults to \code{"two.sided"}.
+For a two-level group factor, \code{"greater"} tests whether the second factor
+level is greater than the first; \code{"less"} tests the reverse. Directional
+hypotheses should be chosen before inspecting the data.}
 
 \item{ParametricDisplay}{Logical; display continuous summaries as mean (SD).
 If \code{FALSE}, display median \link{IQR}. Defaults to \code{Parametric}.}
@@ -189,6 +195,16 @@ MakeComparisonTable(
   data = Labelled,
   group_var = "Diagnosis",
   variables = vars_Compare
+)
+
+# Pre-specified directional hypothesis: the second Diagnosis factor level
+# is greater than the first. Set the factor order deliberately before testing.
+Labelled$Diagnosis <- factor(Labelled$Diagnosis, levels = c("Control", "Impaired"))
+MakeComparisonTable(
+  data = Labelled,
+  group_var = "Diagnosis",
+  variables = c("AXL", "Adiponectin"),
+  alternative = "greater"
 )
 
 # With effect sizes

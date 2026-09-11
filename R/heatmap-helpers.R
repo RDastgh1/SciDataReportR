@@ -388,6 +388,7 @@
                                               transformed_variables = variables,
                                               score_type = "ZScore",
                                               Parametric = TRUE,
+                                              alternative = c("two.sided", "greater", "less"),
                                               adjust_scope = c("per_group", "per_variable", "matrix", "none"),
                                               p_adjust_method = "fdr",
                                               adjusted_significance_threshold = 0.05,
@@ -395,6 +396,7 @@
                                               return_models = FALSE) {
   adjust_scope <- match.arg(adjust_scope)
   star_p <- match.arg(star_p)
+  alternative <- match.arg(alternative)
 
   if (!requireNamespace("emmeans", quietly = TRUE)) {
     stop("Package 'emmeans' is required for MakePairwiseHeatmap().")
@@ -466,10 +468,14 @@
       "~",
       paste(model_terms, collapse = " + ")
     )
+    directional <- !identical(alternative, "two.sided") && length(group_levels) == 2
     test_label <- if (isTRUE(Parametric)) {
       "Linear model + emmeans referent contrast"
     } else {
       "Robust linear model (HC3) + emmeans referent contrast"
+    }
+    if (directional) {
+      test_label <- paste0(test_label, " (one-sided: ", .ScidrDirectionLabel(df[[group_var]], alternative), ")")
     }
     adjustment_label <- .DescribePairwiseAdjustment(adjust_scope, p_adjust_method)
 
@@ -629,7 +635,11 @@
       StandardError = as.numeric(ctr_df$SE),
       ConfidenceIntervalLower = if (!is.na(lower_col)) as.numeric(ctr_df[[lower_col]]) else NA_real_,
       ConfidenceIntervalUpper = if (!is.na(upper_col)) as.numeric(ctr_df[[upper_col]]) else NA_real_,
-      PValue = as.numeric(ctr_df$p.value)
+      PValue = if (directional) {
+        rep(.ScidrDirectedCoefficientP(fit, group_var, alternative, robust = !isTRUE(Parametric)), nrow(ctr_df))
+      } else {
+        as.numeric(ctr_df$p.value)
+      }
     )
 
     template %>%

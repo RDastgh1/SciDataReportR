@@ -11,6 +11,7 @@ MakePairwiseHeatmap(
   Referent,
   covariates = NULL,
   Parametric = TRUE,
+  alternative = c("two.sided", "greater", "less"),
   adjust_scope = c("per_group", "per_variable", "matrix", "none"),
   p_adjust_method = c("fdr", "bonferroni", "holm", "none"),
   star_p = c("raw", "adjusted", "none"),
@@ -44,7 +45,11 @@ MakePairwiseHeatmap(
 
 \item{covariates}{Optional character vector of covariates.}
 
-\item{Parametric}{Logical. If \code{TRUE}, outcomes are Z-scored before modeling.
+\item{Parametric}{Logical. If \code{TRUE}, outcomes are Z-scored before modeling.}
+
+\item{alternative}{Hypothesis alternative for an exact two-group contrast.
+\code{"greater"} tests the second factor level against the first. With a
+one-sided test, \code{Referent} must be the first factor level.
 If \code{FALSE}, outcomes are M-scored and HC3 robust covariance is used for
 estimated marginal mean contrasts.}
 
