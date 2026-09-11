@@ -285,7 +285,7 @@ sessionInfo()
 
     R version 4.6.1 (2026-06-24)
     Platform: x86_64-pc-linux-gnu
-    Running under: Ubuntu 24.04.4 LTS
+    Running under: Ubuntu 24.04.5 LTS
 
     Matrix products: default
     BLAS:   /usr/lib/x86_64-linux-gnu/openblas-pthread/libblas.so.3
@@ -310,14 +310,14 @@ sessionInfo()
       [1] Exact_3.3              ggstatsplot_1.1.1      sjlabelled_1.2.0
       [4] tidyselect_1.2.1       rootSolve_1.8.2.4      farver_2.1.2
       [7] statsExpressions_2.1.1 S7_0.2.2               fastmap_1.2.0
-     [10] bayestestR_0.18.1      labelled_2.16.1        digest_0.6.39
+     [10] bayestestR_0.19.0      labelled_2.16.1        digest_0.6.39
      [13] estimability_2.0.0     lifecycle_1.0.5        lmom_3.3
      [16] magrittr_2.0.5         compiler_4.6.1         rlang_1.3.0
      [19] sass_0.4.10            tools_4.6.1            yaml_2.3.12
      [22] gt_1.3.0               data.table_1.18.6.1    knitr_1.52
      [25] xml2_1.6.0             RColorBrewer_1.1-3     abind_1.4-8
      [28] expm_1.0-1             withr_3.0.3            purrr_1.2.2
-     [31] nnet_7.3-20            grid_4.6.1             datawizard_1.3.1
+     [31] nnet_7.3-20            grid_4.6.1             datawizard_1.4.0
      [34] xtable_1.8-8           e1071_1.7-17           gtsummary_2.6.1
      [37] paletteer_1.7.0        ggplot2_4.0.3          emmeans_2.0.4
      [40] scales_1.4.0           MASS_7.3-65            dichromat_2.0-1

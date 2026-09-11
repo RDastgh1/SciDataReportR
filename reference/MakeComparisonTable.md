@@ -21,6 +21,7 @@ MakeComparisonTable(
   AddPairwise = FALSE,
   PairwiseMethod = "bonferroni",
   Parametric = TRUE,
+  alternative = c("two.sided", "greater", "less"),
   ParametricDisplay = NULL,
   IncludeOverallN = FALSE,
   IncludeMissing = FALSE,
@@ -93,6 +94,13 @@ MakeComparisonTable(
 - Parametric:
 
   Logical; use parametric tests for continuous outcomes.
+
+- alternative:
+
+  Hypothesis alternative. Defaults to `"two.sided"`. For a two-level
+  group factor, `"greater"` tests whether the second factor level is
+  greater than the first; `"less"` tests the reverse. Directional
+  hypotheses should be chosen before inspecting the data.
 
 - ParametricDisplay:
 

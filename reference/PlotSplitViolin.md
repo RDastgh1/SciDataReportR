@@ -15,6 +15,7 @@ PlotSplitViolin(
   group_var,
   covariates = NULL,
   nonparametric = FALSE,
+  alternative = c("two.sided", "greater", "less"),
   annotation_text = NULL,
   show_ns = FALSE,
   plot_title = NULL,
@@ -59,6 +60,12 @@ PlotSplitViolin(
 
   Logical. If `FALSE`, uses linear model + emmeans contrast. If `TRUE`,
   uses Wilcoxon (with residualization if covariates are present).
+
+- alternative:
+
+  Hypothesis alternative. For two groups, `"greater"` tests whether the
+  second factor level is greater than the first; defaults to
+  `"two.sided"`.
 
 - annotation_text:
 
@@ -152,4 +159,9 @@ Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
 
 # Ab_42 has a clear Diagnosis-group difference in the bundled teaching data.
 PlotSplitViolin(Labelled, Var = "Ab_42", group_var = "Diagnosis")
+
+
+# Pre-specify the direction through factor order before requesting a one-sided test.
+Labelled$Diagnosis <- factor(Labelled$Diagnosis, levels = c("Control", "Impaired"))
+PlotSplitViolin(Labelled, Var = "Ab_42", group_var = "Diagnosis", alternative = "greater")
 ```

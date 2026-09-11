@@ -12,6 +12,7 @@ PlotPValueComparisons(
   variables = NULL,
   VariableCategories = NULL,
   Relabel = TRUE,
+  alternative = c("two.sided", "greater", "less"),
   Data = lifecycle::deprecated(),
   GroupVariable = lifecycle::deprecated(),
   Variables = lifecycle::deprecated()
@@ -44,6 +45,11 @@ PlotPValueComparisons(
 
   Logical indicating whether to replace missing labels with the column
   names.
+
+- alternative:
+
+  Hypothesis alternative for two-group tests. `"greater"` tests whether
+  the second group factor level is greater than the first.
 
 - Data:
 

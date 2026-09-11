@@ -6,7 +6,12 @@ counts, and p-values.
 ## Usage
 
 ``` r
-CreateStatisticsTable(data, TargetVar, Data = lifecycle::deprecated())
+CreateStatisticsTable(
+  data,
+  TargetVar,
+  alternative = c("two.sided", "greater", "less"),
+  Data = lifecycle::deprecated()
+)
 ```
 
 ## Arguments
@@ -18,6 +23,11 @@ CreateStatisticsTable(data, TargetVar, Data = lifecycle::deprecated())
 - TargetVar:
 
   The target variable for which statistics will be calculated.
+
+- alternative:
+
+  Hypothesis alternative for two-group tests. `"greater"` tests whether
+  the second target-factor level is greater than the first.
 
 - Data:
 
@@ -62,84 +72,84 @@ statistics_table
 #>    <td style="text-align:left;">  </td>
 #>    <td style="text-align:left;">  </td>
 #>    <td style="text-align:left;">  </td>
-#>    <td style="text-align:left;"> <span style="border-radius: 4px; padding-right: 4px; padding-left: 4px; background-color:  !important;">0.554</span> </td>
+#>    <td style="text-align:left;"> <span style="border-radius: 4px; padding-right: 4px; padding-left: 4px; background-color:  !important;">NA</span> </td>
 #>   </tr>
 #>   <tr>
 #>    <td style="text-align:left;">    N-Miss </td>
 #>    <td style="text-align:left;"> 10.0 </td>
 #>    <td style="text-align:left;"> 1.0 </td>
 #>    <td style="text-align:left;"> 11.0 </td>
-#>    <td style="text-align:left;"> <span style="border-radius: 4px; padding-right: 4px; padding-left: 4px; background-color:  !important;"></span> </td>
+#>    <td style="text-align:left;"> <span style="border-radius: 4px; padding-right: 4px; padding-left: 4px; background-color:  !important;">NA</span> </td>
 #>   </tr>
 #>   <tr>
 #>    <td style="text-align:left;">    Mean (SD) </td>
 #>    <td style="text-align:left;"> 72.750 (13.261) </td>
 #>    <td style="text-align:left;"> 71.778 (13.116) </td>
 #>    <td style="text-align:left;"> 72.478 (13.207) </td>
-#>    <td style="text-align:left;"> <span style="border-radius: 4px; padding-right: 4px; padding-left: 4px; background-color:  !important;"></span> </td>
+#>    <td style="text-align:left;"> <span style="border-radius: 4px; padding-right: 4px; padding-left: 4px; background-color:  !important;">NA</span> </td>
 #>   </tr>
 #>   <tr>
 #>    <td style="text-align:left;"> **AXL receptor tyrosine kinase** </td>
 #>    <td style="text-align:left;">  </td>
 #>    <td style="text-align:left;">  </td>
 #>    <td style="text-align:left;">  </td>
-#>    <td style="text-align:left;"> <span style="border-radius: 4px; padding-right: 4px; padding-left: 4px; background-color:  !important;">0.262</span> </td>
+#>    <td style="text-align:left;"> <span style="border-radius: 4px; padding-right: 4px; padding-left: 4px; background-color:  !important;">NA</span> </td>
 #>   </tr>
 #>   <tr>
 #>    <td style="text-align:left;">    N-Miss </td>
 #>    <td style="text-align:left;"> 0.0 </td>
 #>    <td style="text-align:left;"> 0.0 </td>
 #>    <td style="text-align:left;"> 0.0 </td>
-#>    <td style="text-align:left;"> <span style="border-radius: 4px; padding-right: 4px; padding-left: 4px; background-color:  !important;"></span> </td>
+#>    <td style="text-align:left;"> <span style="border-radius: 4px; padding-right: 4px; padding-left: 4px; background-color:  !important;">NA</span> </td>
 #>   </tr>
 #>   <tr>
 #>    <td style="text-align:left;">    Mean (SD) </td>
 #>    <td style="text-align:left;"> 0.281 (0.461) </td>
 #>    <td style="text-align:left;"> 0.343 (0.413) </td>
 #>    <td style="text-align:left;"> 0.298 (0.449) </td>
-#>    <td style="text-align:left;"> <span style="border-radius: 4px; padding-right: 4px; padding-left: 4px; background-color:  !important;"></span> </td>
+#>    <td style="text-align:left;"> <span style="border-radius: 4px; padding-right: 4px; padding-left: 4px; background-color:  !important;">NA</span> </td>
 #>   </tr>
 #>   <tr>
 #>    <td style="text-align:left;"> **Amyloid beta 42** </td>
 #>    <td style="text-align:left;">  </td>
 #>    <td style="text-align:left;">  </td>
 #>    <td style="text-align:left;">  </td>
-#>    <td style="text-align:left;"> <span style="border-radius: 4px; padding-right: 4px; padding-left: 4px; background-color: yellow !important;">&lt; 0.001</span> </td>
+#>    <td style="text-align:left;"> <span style="border-radius: 4px; padding-right: 4px; padding-left: 4px; background-color:  !important;">NA</span> </td>
 #>   </tr>
 #>   <tr>
 #>    <td style="text-align:left;">    N-Miss </td>
 #>    <td style="text-align:left;"> 76.0 </td>
 #>    <td style="text-align:left;"> 24.0 </td>
 #>    <td style="text-align:left;"> 100.0 </td>
-#>    <td style="text-align:left;"> <span style="border-radius: 4px; padding-right: 4px; padding-left: 4px; background-color:  !important;"></span> </td>
+#>    <td style="text-align:left;"> <span style="border-radius: 4px; padding-right: 4px; padding-left: 4px; background-color:  !important;">NA</span> </td>
 #>   </tr>
 #>   <tr>
 #>    <td style="text-align:left;">    Mean (SD) </td>
 #>    <td style="text-align:left;"> 12.802 (1.409) </td>
 #>    <td style="text-align:left;"> 11.274 (1.335) </td>
 #>    <td style="text-align:left;"> 12.363 (1.549) </td>
-#>    <td style="text-align:left;"> <span style="border-radius: 4px; padding-right: 4px; padding-left: 4px; background-color:  !important;"></span> </td>
+#>    <td style="text-align:left;"> <span style="border-radius: 4px; padding-right: 4px; padding-left: 4px; background-color:  !important;">NA</span> </td>
 #>   </tr>
 #>   <tr>
 #>    <td style="text-align:left;"> **Phosphorylated tau protein** </td>
 #>    <td style="text-align:left;">  </td>
 #>    <td style="text-align:left;">  </td>
 #>    <td style="text-align:left;">  </td>
-#>    <td style="text-align:left;"> <span style="border-radius: 4px; padding-right: 4px; padding-left: 4px; background-color: yellow !important;">&lt; 0.001</span> </td>
+#>    <td style="text-align:left;"> <span style="border-radius: 4px; padding-right: 4px; padding-left: 4px; background-color:  !important;">NA</span> </td>
 #>   </tr>
 #>   <tr>
 #>    <td style="text-align:left;">    N-Miss </td>
 #>    <td style="text-align:left;"> 0.0 </td>
 #>    <td style="text-align:left;"> 0.0 </td>
 #>    <td style="text-align:left;"> 0.0 </td>
-#>    <td style="text-align:left;"> <span style="border-radius: 4px; padding-right: 4px; padding-left: 4px; background-color:  !important;"></span> </td>
+#>    <td style="text-align:left;"> <span style="border-radius: 4px; padding-right: 4px; padding-left: 4px; background-color:  !important;">NA</span> </td>
 #>   </tr>
 #>   <tr>
 #>    <td style="text-align:left;">    Mean (SD) </td>
 #>    <td style="text-align:left;"> 3.942 (0.419) </td>
 #>    <td style="text-align:left;"> 4.303 (0.480) </td>
 #>    <td style="text-align:left;"> 4.040 (0.465) </td>
-#>    <td style="text-align:left;"> <span style="border-radius: 4px; padding-right: 4px; padding-left: 4px; background-color:  !important;"></span> </td>
+#>    <td style="text-align:left;"> <span style="border-radius: 4px; padding-right: 4px; padding-left: 4px; background-color:  !important;">NA</span> </td>
 #>   </tr>
 #> </tbody>
 #> </table></div>

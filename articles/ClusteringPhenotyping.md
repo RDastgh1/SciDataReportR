@@ -281,7 +281,7 @@ ObjClustProjected <- ProjectCluster(Obj_ClustFinal, df_Projection)
     13 1.0000000     323.68552 0.00990099               1               5
     14 1.0000000      37.30184 0.15841584               2               4
     15 1.0000000     -13.14147 1.00000000               1               4
-    16 1.0000000      38.32467 0.05940594               1               5
+    16 1.0000000      38.32467 0.02970297               1               5
        MinProfileNodeProportion MaxProfileNodeProportion StabilitySuccessRate
     1                      0.20                     0.80                    1
     2                      0.16                     0.84                    1
@@ -639,7 +639,7 @@ Session information
 
     R version 4.6.1 (2026-06-24)
     Platform: x86_64-pc-linux-gnu
-    Running under: Ubuntu 24.04.4 LTS
+    Running under: Ubuntu 24.04.5 LTS
 
     Matrix products: default
     BLAS:   /usr/lib/x86_64-linux-gnu/openblas-pthread/libblas.so.3
@@ -662,7 +662,7 @@ Session information
 
     loaded via a namespace (and not attached):
       [1] RColorBrewer_1.1-3     rstudioapi_0.19.0      jsonlite_2.0.0
-      [4] datawizard_1.3.1       correlation_0.8.8      magrittr_2.0.5
+      [4] datawizard_1.4.0       correlation_0.8.8      magrittr_2.0.5
       [7] estimability_2.0.0     farver_2.1.2           rmarkdown_2.32
      [10] vctrs_0.7.3            paletteer_1.7.0        CompQuadForm_1.4.4
      [13] base64enc_0.1-6        rstatix_1.1.0          htmltools_0.5.9
@@ -670,42 +670,42 @@ Session information
      [19] broom_1.0.13           Formula_1.2-6          parallelly_1.48.0
      [22] htmlwidgets_1.6.4      gsubfn_0.7             plyr_1.8.9
      [25] sandwich_3.1-3         emmeans_2.0.4          zoo_1.9-0
-     [28] igraph_2.3.3           mime_0.13              lifecycle_1.0.5
-     [31] pkgconfig_2.0.3        sjlabelled_1.2.0       R6_2.6.1
-     [34] fastmap_1.2.0          future_1.75.0          shiny_1.14.0
-     [37] digest_0.6.39          colorspace_2.1-3       rematch2_2.1.2
-     [40] patchwork_1.3.2        Hmisc_5.3-0            labeling_0.4.3
-     [43] gtsummary_2.6.1        progressr_1.0.0        httr_1.4.9
-     [46] abind_1.4-8            compiler_4.6.1         withr_3.0.3
-     [49] pander_0.6.6           htmlTable_2.5.0        S7_0.2.2
-     [52] backports_1.5.1        viridis_0.6.5          carData_3.0-6
-     [55] psych_2.6.5            fastDummies_1.7.6      R.utils_2.13.0
-     [58] MASS_7.3-65            scatterplot3d_0.3-45   tools_4.6.1
-     [61] pbivnorm_0.6.0         MplusAutomation_1.3    foreign_0.8-91
-     [64] otel_0.2.0             httpuv_1.6.17          future.apply_1.20.2
-     [67] statsExpressions_2.1.1 nnet_7.3-20            R.oo_1.27.1
-     [70] glue_1.8.1             quadprog_1.5-8         dbscan_1.2.6
-     [73] nlme_3.1-169           promises_1.5.0         grid_4.6.1
-     [76] checkmate_2.3.4        cluster_2.1.8.2        generics_0.1.4
-     [79] gtable_0.3.6           labelled_2.16.1        R.methodsS3_1.8.2
-     [82] tidyr_1.3.2            aweSOM_1.3             data.table_1.18.6.1
-     [85] hms_1.1.4              car_3.1-5              stringr_1.6.0
-     [88] RANN_2.6.3             pillar_1.11.1          later_1.4.8
-     [91] lattice_0.22-9         ggstatsplot_1.1.1      tidyselect_1.2.1
-     [94] knitr_1.52             gridExtra_2.3.1        stats4_4.6.1
-     [97] xfun_0.60              texreg_1.40            stringi_1.8.9
-    [100] proto_1.0.0            yaml_2.3.12            boot_1.3-32
-    [103] evaluate_1.0.5         codetools_0.2-20       nonnest2_0.5-9
-    [106] tibble_3.3.1           cli_3.6.6              RcppParallel_6.2.1
-    [109] rpart_4.1.27           xtable_1.8-8           parameters_0.29.3
-    [112] lavaan_0.7-2           dichromat_2.0-1        Rcpp_1.1.2
-    [115] tidySEM_0.2.11         globals_0.19.1         coda_0.19-4.1
-    [118] parallel_4.6.1         kohonen_3.0.13         rstantools_2.7.1
-    [121] prettyunits_1.2.0      mclust_6.1.3           bayestestR_0.18.1
-    [124] listenv_1.0.0          viridisLite_0.4.3      mvtnorm_1.4-2
-    [127] scales_1.4.0           insight_1.5.4          purrr_1.2.2
-    [130] crayon_1.5.3           rlang_1.3.0            mnormt_2.1.2
-    [133] poLCA_1.6.0.2          tidyLPA_2.0.2         
+     [28] mime_0.13              lifecycle_1.0.5        pkgconfig_2.0.3
+     [31] sjlabelled_1.2.0       R6_2.6.1               fastmap_1.2.0
+     [34] future_1.75.0          shiny_1.14.0           digest_0.6.39
+     [37] colorspace_2.1-3       rematch2_2.1.2         patchwork_1.3.2
+     [40] Hmisc_5.3-0            labeling_0.4.3         gtsummary_2.6.1
+     [43] progressr_1.0.0        httr_1.4.9             abind_1.4-8
+     [46] compiler_4.6.1         withr_3.0.3            pander_0.6.6
+     [49] htmlTable_2.5.0        S7_0.2.2               backports_1.5.1
+     [52] viridis_0.6.5          carData_3.0-6          psych_2.6.5
+     [55] fastDummies_1.7.6      R.utils_2.13.0         MASS_7.3-65
+     [58] scatterplot3d_0.3-45   tools_4.6.1            pbivnorm_0.6.0
+     [61] MplusAutomation_1.3    foreign_0.8-91         otel_0.2.0
+     [64] httpuv_1.6.17          future.apply_1.20.2    statsExpressions_2.1.1
+     [67] nnet_7.3-20            R.oo_1.27.1            glue_1.8.1
+     [70] quadprog_1.5-8         dbscan_1.2.6           nlme_3.1-169
+     [73] promises_1.5.0         grid_4.6.1             checkmate_2.3.4
+     [76] cluster_2.1.8.2        generics_0.1.4         gtable_0.3.6
+     [79] labelled_2.16.1        R.methodsS3_1.8.2      tidyr_1.3.2
+     [82] aweSOM_1.3             data.table_1.18.6.1    hms_1.1.4
+     [85] car_3.1-5              RANN_2.6.3             pillar_1.11.1
+     [88] stringr_1.6.0          later_1.4.8            lattice_0.22-9
+     [91] ggstatsplot_1.1.1      tidyselect_1.2.1       knitr_1.52
+     [94] gridExtra_2.3.1        stats4_4.6.1           xfun_0.60
+     [97] texreg_1.40            stringi_1.8.9          proto_1.0.0
+    [100] yaml_2.3.12            boot_1.3-32            evaluate_1.0.5
+    [103] codetools_0.2-20       nonnest2_0.5-9         tibble_3.3.1
+    [106] cli_3.6.6              RcppParallel_6.2.1     rpart_4.1.27
+    [109] xtable_1.8-8           parameters_0.29.3      lavaan_0.7-2
+    [112] dichromat_2.0-1        Rcpp_1.1.2             tidySEM_0.2.12
+    [115] globals_0.19.1         coda_0.19-4.1          parallel_4.6.1
+    [118] kohonen_3.0.13         rstantools_2.7.1       prettyunits_1.2.0
+    [121] mclust_6.1.3           bayestestR_0.19.0      listenv_1.0.0
+    [124] viridisLite_0.4.3      mvtnorm_1.4-2          scales_1.4.0
+    [127] insight_1.5.4          purrr_1.2.2            crayon_1.5.3
+    [130] rlang_1.3.0            mnormt_2.1.2           poLCA_1.6.0.2
+    [133] tidyLPA_2.0.2         
 
 ## References
 

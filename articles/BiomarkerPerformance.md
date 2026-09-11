@@ -189,7 +189,7 @@ still not external validation in a new population.
 
     R version 4.6.1 (2026-06-24)
     Platform: x86_64-pc-linux-gnu
-    Running under: Ubuntu 24.04.4 LTS
+    Running under: Ubuntu 24.04.5 LTS
 
     Matrix products: default
     BLAS:   /usr/lib/x86_64-linux-gnu/openblas-pthread/libblas.so.3
@@ -212,11 +212,11 @@ still not external validation in a new population.
     [4] SciDataReportR_21.5.0
 
     loaded via a namespace (and not attached):
-     [1] gtable_0.3.6           xfun_0.60              bayestestR_0.18.1
+     [1] gtable_0.3.6           xfun_0.60              bayestestR_0.19.0
      [4] htmlwidgets_1.6.4      insight_1.5.4          rstatix_1.1.0
      [7] lattice_0.22-9         paletteer_1.7.0        crosstalk_1.2.2
     [10] vctrs_0.7.3            tools_4.6.1            generics_0.1.4
-    [13] datawizard_1.3.1       tibble_3.3.1           pkgconfig_2.0.3
+    [13] datawizard_1.4.0       tibble_3.3.1           pkgconfig_2.0.3
     [16] Matrix_1.7-5           data.table_1.18.6.1    RColorBrewer_1.1-3
     [19] correlation_0.8.8      S7_0.2.2               RcppParallel_6.2.1
     [22] lifecycle_1.0.5        compiler_4.6.1         farver_2.1.2

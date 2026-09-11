@@ -286,7 +286,7 @@ print(sessionInfo())
 
     R version 4.6.1 (2026-06-24)
     Platform: x86_64-pc-linux-gnu
-    Running under: Ubuntu 24.04.4 LTS
+    Running under: Ubuntu 24.04.5 LTS
 
     Matrix products: default
     BLAS:   /usr/lib/x86_64-linux-gnu/openblas-pthread/libblas.so.3
@@ -308,10 +308,10 @@ print(sessionInfo())
     [1] dplyr_1.2.1           SciDataReportR_21.5.0
 
     loaded via a namespace (and not attached):
-     [1] gtable_0.3.6           xfun_0.60              bayestestR_0.18.1
+     [1] gtable_0.3.6           xfun_0.60              bayestestR_0.19.0
      [4] ggplot2_4.0.3          insight_1.5.4          rstatix_1.1.0
      [7] lattice_0.22-9         paletteer_1.7.0        vctrs_0.7.3
-    [10] tools_4.6.1            generics_0.1.4         datawizard_1.3.1
+    [10] tools_4.6.1            generics_0.1.4         datawizard_1.4.0
     [13] tibble_3.3.1           pkgconfig_2.0.3        RColorBrewer_1.1-3
     [16] correlation_0.8.8      S7_0.2.2               RcppParallel_6.2.1
     [19] gt_1.3.0               lifecycle_1.0.5        compiler_4.6.1
