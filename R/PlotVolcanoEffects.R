@@ -47,6 +47,10 @@
 #'   variable names and whose values are categories. Tested predictors without
 #'   a mapping are shown as `"Unmapped"` in grey. When `NULL` (the default),
 #'   the existing significance-based `Format` colors are used unchanged.
+#' @param TooltipData Optional one-row-per-variable data frame joined into the
+#'   result table before plots are built.
+#' @param TooltipFields Columns from `TooltipData` appended to interactive
+#'   point tooltips. Defaults to every supplied annotation column.
 #' @return A named list with `RawPPlot`, `FDRPlot`, and `ResultsTable`.
 #'   `RawPPlot` uses `-log10(PValue)` on the y-axis. `FDRPlot` uses
 #'   `-log10(FDR)` on the y-axis. `ResultsTable` is a tibble with one row per
@@ -141,6 +145,8 @@ PlotVolcanoEffects <- function(data,
     codebook = NULL,
     InteractiveLabels = TRUE,
     ColorBy = NULL,
+    TooltipData = NULL,
+    TooltipFields = NULL,
     Data = lifecycle::deprecated(),
     xVars = lifecycle::deprecated(),
     yVar = lifecycle::deprecated(),
@@ -679,6 +685,24 @@ PlotVolcanoEffects <- function(data,
     results$ColorCategory <- mapped_categories
   }
 
+  if (!is.null(TooltipData)) {
+    if (!is.data.frame(TooltipData) || !"Variable" %in% names(TooltipData)) {
+      stop("`TooltipData` must be a data frame containing `Variable`.", call. = FALSE)
+    }
+    if (anyDuplicated(TooltipData$Variable)) {
+      stop("`TooltipData$Variable` must be unique so each point has one tooltip record.", call. = FALSE)
+    }
+    tooltip_fields <- if (is.null(TooltipFields)) setdiff(names(TooltipData), "Variable") else TooltipFields
+    if (length(setdiff(tooltip_fields, names(TooltipData))) > 0) stop("Requested `TooltipFields` are absent from `TooltipData`.", call. = FALSE)
+    results <- dplyr::left_join(results, TooltipData[, c("Variable", tooltip_fields), drop = FALSE], by = "Variable")
+    tooltip_suffix <- vapply(seq_len(nrow(results)), function(i) {
+      fields <- tooltip_fields[!is.na(results[i, tooltip_fields, drop = TRUE]) & results[i, tooltip_fields, drop = TRUE] != ""]
+      paste0(vapply(fields, function(field) paste0("<br>", field, ": ", results[[field]][[i]]), character(1)), collapse = "")
+    }, character(1))
+  } else {
+    tooltip_suffix <- rep("", nrow(results))
+  }
+
   results <- results %>%
     dplyr::mutate(
       FDR = stats::p.adjust(.data$PValue, method = AdjustMethod),
@@ -706,7 +730,8 @@ PlotVolcanoEffects <- function(data,
         tooltip_extra,
         "<br>P: ", signif(.data$PValue, 3),
         "<br>FDR: ", signif(.data$FDR, 3),
-        "<br>N: ", .data$N
+        "<br>N: ", .data$N,
+        tooltip_suffix
       )
     )
 

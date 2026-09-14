@@ -1,6 +1,6 @@
 # SciDataReportR API reference
 
-Generated from `NAMESPACE` and `man/*.Rd` for SciDataReportR 21.4.0.
+Generated from `NAMESPACE` and `man/*.Rd` for SciDataReportR 21.6.0.
 Run `Rscript tools/build_scidatareportr_skill_reference.R` after changing exports or Rd documentation.
 
 This catalog has one entry per public export. Usage blocks omit arguments explicitly marked `lifecycle::deprecated()`; consult the compatibility guide for migration help.
@@ -1790,7 +1790,11 @@ CreateSOMClusterModel(...)
 
 **Canonical usage**
 ```r
-
+CreateStatisticsTable(
+  data,
+  TargetVar,
+  alternative = c("two.sided", "greater", "less")
+)
 ```
 
 **Description:** Generate a table of statistics including means, standard deviations, counts, and p-values.
@@ -1802,6 +1806,7 @@ CreateSOMClusterModel(...)
 **Arguments**
 - `data`: The data frame containing the variables of interest.
 - `TargetVar`: The target variable for which statistics will be calculated.
+- `alternative`: Hypothesis alternative for two-group tests. code"greater" tests whether the second target-factor level is greater than the first.
 - `Data`: strongDeprecated (since 19.15.0). Use codedata instead.
 
 **Returns:** A formatted HTML table displaying statistics.
@@ -1931,6 +1936,7 @@ PlotZScore(
   RemoveXAxisLabels = TRUE,
   TreatOrdinalAs = "Continuous",
   Parametric = TRUE,
+  alternative = c("two.sided", "greater", "less"),
   SigP_YCoord = 1.5,
   SigFDR_YCoord = 1.6
 )
@@ -1955,6 +1961,7 @@ CreateZScorePlot(...)
 - `Ordinal`: strongDeprecated (since 20.20.0). Use codeTreatOrdinalAs instead.
 - `TreatOrdinalAs`: How ordinal variables are handled. This numeric plot accepts code"Continuous" or code"Exclude".
 - `Parametric`: Logical; if TRUE, parametric tests (t-test/ANOVA) will be used; otherwise, non-parametric tests (Wilcoxon/Kruskal-Wallis) will be used.
+- `alternative`: Hypothesis alternative for two-group tests. code"greater" tests whether the second group factor level is greater than the first.
 - `SigP_YCoord`: Numeric; the y-coordinate for marking significant p-values.
 - `SigFDR_YCoord`: Numeric; the y-coordinate for marking significant FDR-adjusted p-values.
 - `Data`: strongDeprecated (since 19.15.0). Use codedata instead.
@@ -1996,6 +2003,46 @@ DeriveFreesurferVolumes(
 **Returns:** A data frame containing only newly derived variables, with the same number of rows as codedata. A derivation log is stored in the attribute code"Freesurfer_derivation_log".
 
 **See also:** None documented.
+
+## `DiagnosticLikelihoodRatioTable`
+
+**Purpose:** Calculate diagnostic likelihood ratios
+
+**Canonical usage**
+```r
+DiagnosticLikelihoodRatioTable(
+  data,
+  outcome_vars,
+  predictor_vars,
+  positive_level = NULL,
+  predictor_positive_level = NULL,
+  stratify_by = NULL,
+  confidence_level = 0.95,
+  continuity_correction = NULL,
+  Relabel = TRUE
+)
+```
+
+**Description:** Calculates diagnostic likelihood ratios for categorical diagnostic results and binary outcomes. A likelihood ratio is the probability of a result among outcome-positive participants divided by its probability among outcome-negative participants; this is a diagnostic accuracy measure, not a nested-model test.
+
+**Deprecation status:** Current documented interface.
+
+**Related exported aliases:** None.
+
+**Arguments**
+- `data`: A data frame.
+- `outcome_vars`: Character vector of binary outcome variable names.
+- `predictor_vars`: Character vector of categorical or binary diagnostic predictor names.
+- `positive_level`: Optional outcome-positive level specification: codeNULL, one level for all outcomes, or a named vector keyed by outcome variable.
+- `predictor_positive_level`: Optional positive-result specification for binary predictors: codeNULL, one level for all predictors, or a named vector.
+- `stratify_by`: Optional character vector of variables defining strata.
+- `confidence_level`: Confidence level for log-scale LR confidence intervals.
+- `continuity_correction`: Optional positive value added to all four calculation cells only if a zero cell occurs. codeNULL preserves zero and infinite estimates.
+- `Relabel`: Logical; use attached variable labels when available.
+
+**Returns:** A list containing codeResults, codeBinarySummary, compact and expanded codegt tables (codeFormattedTable, codeLargeTable, codeBinaryFormattedTable, and codeBinaryLargeTable), and codeMetadata.
+
+**See also:** codelink[=PlotDiagnosticLRHeatmap]PlotDiagnosticLRHeatmap() for matrix views and codelink[=PlotDiagnosticLRForest]PlotDiagnosticLRForest() for estimate-and-interval views.
 
 ## `EvaluateBiomarkerPerformance`
 
@@ -2550,6 +2597,7 @@ MakeComparisonTable(
   AddPairwise = FALSE,
   PairwiseMethod = "bonferroni",
   Parametric = TRUE,
+  alternative = c("two.sided", "greater", "less"),
   ParametricDisplay = NULL,
   IncludeOverallN = FALSE,
   IncludeMissing = FALSE,
@@ -2585,6 +2633,7 @@ MakeComparisonTable(
 - `AddPairwise`: Logical; add pairwise comparison columns.
 - `PairwiseMethod`: P-value adjustment method. Use code"none" for no adjustment.
 - `Parametric`: Logical; use parametric tests for continuous outcomes.
+- `alternative`: Hypothesis alternative. Defaults to code"two.sided". For a two-level group factor, code"greater" tests whether the second factor level is greater than the first; code"less" tests the reverse. Directional hypotheses should be chosen before inspecting the data.
 - `ParametricDisplay`: Logical; display continuous summaries as mean (SD). If codeFALSE, display median linkIQR. Defaults to codeParametric.
 - `IncludeOverallN`: Logical; add N column.
 - `IncludeMissing`: Logical; include missing rows in summaries.
@@ -2726,6 +2775,7 @@ MakePairwiseHeatmap(
   Referent,
   covariates = NULL,
   Parametric = TRUE,
+  alternative = c("two.sided", "greater", "less"),
   adjust_scope = c("per_group", "per_variable", "matrix", "none"),
   p_adjust_method = c("fdr", "bonferroni", "holm", "none"),
   star_p = c("raw", "adjusted", "none"),
@@ -2761,7 +2811,8 @@ MakePairwiseHeatmap(
 - `variables`: Character vector of continuous outcome variables.
 - `Referent`: Character scalar naming the referent level of codegroup_var.
 - `covariates`: Optional character vector of covariates.
-- `Parametric`: Logical. If codeTRUE, outcomes are Z-scored before modeling. If codeFALSE, outcomes are M-scored and HC3 robust covariance is used for estimated marginal mean contrasts.
+- `Parametric`: Logical. If codeTRUE, outcomes are Z-scored before modeling.
+- `alternative`: Hypothesis alternative for an exact two-group contrast. code"greater" tests the second factor level against the first. With a one-sided test, codeReferent must be the first factor level. If codeFALSE, outcomes are M-scored and HC3 robust covariance is used for estimated marginal mean contrasts.
 - `adjust_scope`: Multiple-comparison correction scope. code"per_group" adjusts across variables within each group-vs-referent contrast; code"per_variable" adjusts across group contrasts within each variable; code"matrix" adjusts across all displayed cells; code"none" applies no correction.
 - `p_adjust_method`: Method passed to codelink[stats:p.adjust]stats::p.adjust(). Use code"none" for no correction.
 - `star_p`: Which p-values should drive cell stars: raw, adjusted, or none.
@@ -4037,7 +4088,8 @@ PlotCorrelationComparisons(
   high_color = "#2166AC",
   color_limits = c(-2, 2),
   cluster_rows = FALSE,
-  cluster_columns = FALSE
+  cluster_columns = FALSE,
+  triangle = c("full", "upper", "lower")
 )
 ```
 
@@ -4067,6 +4119,7 @@ PlotCorrelationComparisons(
 - `mid_color`: Color representing DeltaR = 0.
 - `high_color`: Color representing positive DeltaR values.
 - `color_limits`: Limits for the DeltaR color scale. The theoretical range is -2 to 2.
+- `triangle`: Display "full" (default), "upper", or "lower" half of a symmetric comparison matrix. This affects plots only; returned matrices and Results remain complete.
 
 **Returns:** A list containing: describe itemCorrelationsThe original codelink[=PlotCorrelationsHeatmap]PlotCorrelationsHeatmap() objects for the comparison and reference groups. itemUnadjustedMatrices and heatmap using raw comparison p-values. itemFDRCorrectedMatrices and heatmap using FDR-adjusted comparison p-values. itemResultsA tibble with one row per correlation pair. itemDirectionReversalLogical matrix indicating opposite correlation signs between groups. itemMetadataComparison settings, group information, and the inferential approximation used. itemInteractiveOptional Plotly and/or ggiraph widgets.
 
@@ -4090,7 +4143,8 @@ PlotCorrelationsHeatmap(
   eps = 1e-12,
   fdr_scope = c("matrix", "per_outcome", "per_predictor"),
   cluster_rows = FALSE,
-  cluster_columns = FALSE
+  cluster_columns = FALSE,
+  triangle = c("full", "upper", "lower")
 )
 ```
 
@@ -4113,6 +4167,7 @@ PlotCorrelationsHeatmap(
 - `eps`: variance tolerance
 - `fdr_scope`: Either code"matrix" (default) or code"per_outcome", passed to codelink[=ApplyFDRCorrection]ApplyFDRCorrection(). With code"matrix", FDR correction is applied across the whole p-value matrix at once (historical behavior). With code"per_outcome", correction is applied separately within each outcome: in this function outcomes are the columns of the p-value matrix, i.e. codeoutcome_vars (codeoutcome_margin = 2).
 - `cluster_rows, cluster_columns`: Logical; cluster predictor rows and/or outcome columns from their displayed correlation profiles. Defaults retain the caller-supplied variable order.
+- `triangle`: Display code"full" (default), code"upper", or code"lower" half of a symmetric correlation matrix. This affects the plot only; returned matrices remain complete. Triangle display is applied only when the same variables occur on both axes.
 - `Data`: strongDeprecated (since 19.15.0). Use codedata instead.
 - `xVars`: strongDeprecated (since 19.15.0). Use codepredictor_vars instead.
 - `yVars`: strongDeprecated (since 19.15.0). Use codeoutcome_vars instead.
@@ -4154,6 +4209,88 @@ PlotDatasetComparison(
 
 **See also:** None documented.
 
+## `PlotDiagnosticLRForest`
+
+**Purpose:** Plot diagnostic likelihood ratios as a forest plot
+
+**Canonical usage**
+```r
+PlotDiagnosticLRForest(
+  x,
+  result = c("all", "positive", "negative"),
+  predictor_order = c("original", "alphabetical", "strength"),
+  outcome_order = c("original", "alphabetical", "strength"),
+  facet_by = c("outcome", "predictor"),
+  facet_strata = TRUE,
+  limits = NULL,
+  p_size = 2
+)
+```
+
+**Description:** Visualizes likelihood ratios calculated by codelink[=DiagnosticLikelihoodRatioTable]DiagnosticLikelihoodRatioTable() without recalculating diagnostic statistics. Each point is a diagnostic test result and its horizontal interval is the likelihood-ratio confidence interval. The logarithmic scale makes reciprocal likelihood ratios equally distant from the neutral value of one.
+
+**Deprecation status:** Current documented interface.
+
+**Related exported aliases:** None.
+
+**Arguments**
+- `x`: An object returned by codelink[=DiagnosticLikelihoodRatioTable]DiagnosticLikelihoodRatioTable(), or a tidy data frame compatible with its codeResults element.
+- `result`: Diagnostic result levels to display: code"all", code"positive", or code"negative". Positive and negative selections require the result object.
+- `predictor_order`: Predictor ordering: code"original", code"alphabetical", or code"strength". Strength orders predictors by their largest finite absolute log2 likelihood ratio.
+- `outcome_order`: Outcome ordering with the same choices.
+- `facet_by`: Plot panels by code"outcome" (the default) or code"predictor".
+- `facet_strata`: Logical; add strata as facet row groups when present.
+- `limits`: Optional numeric vector of two positive, increasing likelihood ratio limits. By default, limits are chosen from finite estimates and confidence intervals while always including one.
+- `p_size`: Numeric point size.
+
+**Returns:** A ggplot object. Its codeDiagnosticLRForestData, codeDiagnosticLRForestLimits, and codeDiagnosticLRForestFacetBy attributes retain the prepared data and resolved plotting settings.
+
+**See also:** codelink[=DiagnosticLikelihoodRatioTable]DiagnosticLikelihoodRatioTable() to calculate diagnostic LRs, and codelink[=PlotDiagnosticLRHeatmap]PlotDiagnosticLRHeatmap() for matrix and count-matrix views.
+
+## `PlotDiagnosticLRHeatmap`
+
+**Purpose:** Plot a diagnostic likelihood-ratio heatmap
+
+**Canonical usage**
+```r
+PlotDiagnosticLRHeatmap(
+  x,
+  result = c("all", "positive", "negative"),
+  predictor_order = c("original", "alphabetical", "strength", "cluster"),
+  outcome_order = c("original", "alphabetical", "strength", "cluster"),
+  orientation = c("auto", "predictors_rows", "outcomes_rows"),
+  show_values = "auto",
+  show_ci_marker = TRUE,
+  facet_strata = TRUE,
+  cap = NULL,
+  na_color = "grey90",
+  multi_outcome = c("auto", "combined", "split")
+)
+```
+
+**Description:** Visualizes results created by codelink[=DiagnosticLikelihoodRatioTable]DiagnosticLikelihoodRatioTable() without recomputing statistics. Tile fill is log2(LR), so reciprocal evidence is equally distant from LR 1. Multi-outcome input can return a compact screening overview alongside outcome-specific diagnostic panels.
+
+**Deprecation status:** Current documented interface.
+
+**Related exported aliases:** None.
+
+**Arguments**
+- `x`: An object returned by codelink[=DiagnosticLikelihoodRatioTable]DiagnosticLikelihoodRatioTable(), or a tidy data frame compatible with its codeResults element.
+- `result`: Diagnostic result levels to display: code"all", code"positive", or code"negative". Positive and negative selections require the result object.
+- `predictor_order`: Predictor ordering: code"original", code"alphabetical", code"strength", or code"cluster".
+- `outcome_order`: Outcome ordering with the same choices.
+- `orientation`: Tile orientation: code"auto", code"predictors_rows", or code"outcomes_rows".
+- `show_values`: code"auto", codeTRUE, or codeFALSE; auto labels at most 150 tiles.
+- `show_ci_marker`: Logical; append code* when the unadjusted LR CI excludes 1.
+- `facet_strata`: Logical; facet separate diagnostic strata when present.
+- `cap`: Optional positive maximum absolute log2(LR) for color scaling.
+- `na_color`: Fill color for unavailable LR values.
+- `multi_outcome`: Multi-outcome display: code"auto" returns a split overview/panel list for multiple outcomes, code"combined" returns one all-results matrix, and code"split" always returns the linked plot list.
+
+**Returns:** A named list. Single-outcome and combined displays contain codeDiagnosticLR, codeDiagnosticMatrices, codeDiagnosticLRData, and codeDiagnosticMatrixData. Split multi-outcome displays contain codeOverview, codeByOutcome, codeDiagnosticMatrices, and their corresponding tidy data.
+
+**See also:** codelink[=DiagnosticLikelihoodRatioTable]DiagnosticLikelihoodRatioTable() to calculate displayed LRs.
+
 ## `PlotDirectionalHeatmaps`
 
 **Purpose:** Create directional heatmaps across continuous & binary variables
@@ -4167,7 +4304,8 @@ PlotDirectionalHeatmaps(
   Ordinal = TRUE,
   fdr_scope = c("matrix", "per_outcome", "per_predictor"),
   cluster_rows = FALSE,
-  cluster_columns = FALSE
+  cluster_columns = FALSE,
+  triangle = c("full", "upper", "lower")
 )
 ```
 
@@ -4183,6 +4321,7 @@ PlotDirectionalHeatmaps(
 - `Relabel`: Logical; use sjlabelled variable labels if present.
 - `Ordinal`: Logical; passed to codelink[=PlotPointCorrelationsHeatmap]PlotPointCorrelationsHeatmap() for the binary~continuous block, where it controls whether ordinal variables are treated as continuous. Defaults to codeTRUE.
 - `fdr_scope`: Either code"matrix" (default) or code"per_outcome", threaded through to the three sub-analyses (codelink[=PlotCorrelationsHeatmap]PlotCorrelationsHeatmap(), codelink[=PlotPhiHeatmap]PlotPhiHeatmap(), codelink[=PlotPointCorrelationsHeatmap]PlotPointCorrelationsHeatmap()). Correction is applied within each sub-analysis block (continuous~continuous, binary~binary, binary~continuous), matching historical behavior; each sub-function's documented outcome orientation applies within its block.
+- `triangle`: Display code"full" (default), code"upper", or code"lower" half of a symmetric directional matrix. This affects plots only and is applied only when the same variables occur on both axes.
 - `Data`: strongDeprecated (since 19.15.0). Use codedata instead.
 - `xVars`: strongDeprecated (since 19.15.0). Use codevariables instead.
 - `yVars`: strongDeprecated (since 19.15.0). Use codevariables instead. If supplied, the old rectangular x-by-y display is still honored.
@@ -4607,7 +4746,8 @@ PlotPhiHeatmap(
   binary_map = NULL,
   fdr_scope = c("matrix", "per_outcome", "per_predictor"),
   cluster_rows = FALSE,
-  cluster_columns = FALSE
+  cluster_columns = FALSE,
+  triangle = c("full", "upper", "lower")
 )
 ```
 
@@ -4624,6 +4764,7 @@ PlotPhiHeatmap(
 - `binary_map`: Optional mapping as returned by codecreateBinaryMapping(). If NULL, a mapping is created internally for codeCatVars.
 - `fdr_scope`: Either code"matrix" (default) or code"per_outcome", passed to codelink[=ApplyFDRCorrection]ApplyFDRCorrection(). code"matrix" corrects across all p-values at once (historical behavior). code"per_outcome" corrects separately within each y-axis variable (codeYVar); the Phi matrix is symmetric, so this treats each variable's row of tiles as one family.
 - `cluster_rows, cluster_columns`: Logical; cluster y-axis rows and/or x-axis columns using displayed Phi-coefficient profiles.
+- `triangle`: Display code"full" (default), code"upper", or code"lower" half of the symmetric Phi matrix. This affects the plot only; returned results remain complete.
 - `Data`: strongDeprecated (since 19.15.0). Use codedata instead.
 
 **Returns:** A list with: itemize item codeUnadjusted: list(PvalTable, plot) item codeFDRCorrected: list(PvalTable, plot) item codemethod = "Phi" item codeRelabel item codeBinaryMapping (used)
@@ -4684,7 +4825,8 @@ PlotPValueComparisons(
   group_var,
   variables = NULL,
   VariableCategories = NULL,
-  Relabel = TRUE
+  Relabel = TRUE,
+  alternative = c("two.sided", "greater", "less")
 )
 ```
 
@@ -4700,6 +4842,7 @@ PlotPValueComparisons(
 - `variables`: Character vector specifying the names of the columns in codeData to include in the comparison. If codeNULL, all columns except codeGroupVariable are included.
 - `VariableCategories`: Character vector specifying the categories for each variable. If codeNULL, no categories are used.
 - `Relabel`: Logical indicating whether to replace missing labels with the column names.
+- `alternative`: Hypothesis alternative for two-group tests. code"greater" tests whether the second group factor level is greater than the first.
 - `Data`: strongDeprecated (since 19.15.0). Use codedata instead.
 - `GroupVariable`: strongDeprecated (since 19.15.0). Use codegroup_var instead.
 - `Variables`: strongDeprecated (since 19.15.0). Use codevariables instead.
@@ -4881,6 +5024,7 @@ PlotSplitViolin(
   group_var,
   covariates = NULL,
   nonparametric = FALSE,
+  alternative = c("two.sided", "greater", "less"),
   annotation_text = NULL,
   show_ns = FALSE,
   plot_title = NULL,
@@ -4913,6 +5057,7 @@ PlotSplitViolin(
 - `group_var`: Grouping variable (<= 2 unique values).
 - `covariates`: Character vector of covariates (default codeNULL).
 - `nonparametric`: Logical. If codeFALSE, uses linear model + emmeans contrast. If codeTRUE, uses Wilcoxon (with residualization if covariates are present).
+- `alternative`: Hypothesis alternative. For two groups, code"greater" tests whether the second factor level is greater than the first; defaults to code"two.sided".
 - `annotation_text`: Optional manual annotation (e.g., "*", "ns").
 - `show_ns`: Logical; if codeTRUE, display "ns" for non-significant results.
 - `plot_title`: Optional custom plot title.
@@ -5159,6 +5304,7 @@ PlotZScore(
   RemoveXAxisLabels = TRUE,
   TreatOrdinalAs = "Continuous",
   Parametric = TRUE,
+  alternative = c("two.sided", "greater", "less"),
   SigP_YCoord = 1.5,
   SigFDR_YCoord = 1.6
 )
@@ -5183,6 +5329,7 @@ CreateZScorePlot(...)
 - `Ordinal`: strongDeprecated (since 20.20.0). Use codeTreatOrdinalAs instead.
 - `TreatOrdinalAs`: How ordinal variables are handled. This numeric plot accepts code"Continuous" or code"Exclude".
 - `Parametric`: Logical; if TRUE, parametric tests (t-test/ANOVA) will be used; otherwise, non-parametric tests (Wilcoxon/Kruskal-Wallis) will be used.
+- `alternative`: Hypothesis alternative for two-group tests. code"greater" tests whether the second group factor level is greater than the first.
 - `SigP_YCoord`: Numeric; the y-coordinate for marking significant p-values.
 - `SigFDR_YCoord`: Numeric; the y-coordinate for marking significant FDR-adjusted p-values.
 - `Data`: strongDeprecated (since 19.15.0). Use codedata instead.

@@ -26,7 +26,8 @@
 #'   tables (`FormattedTable`, `LargeTable`, `BinaryFormattedTable`, and
 #'   `BinaryLargeTable`), and `Metadata`.
 #'
-#' @seealso [PlotDiagnosticLRHeatmap()] to visualize `Results`.
+#' @seealso [PlotDiagnosticLRHeatmap()] for matrix views and
+#'   [PlotDiagnosticLRForest()] for estimate-and-interval views.
 #'
 #' @examples
 #' data(SampleData)

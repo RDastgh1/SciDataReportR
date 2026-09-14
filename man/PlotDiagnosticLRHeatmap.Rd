@@ -14,7 +14,8 @@ PlotDiagnosticLRHeatmap(
   show_ci_marker = TRUE,
   facet_strata = TRUE,
   cap = NULL,
-  na_color = "grey90"
+  na_color = "grey90",
+  multi_outcome = c("auto", "combined", "split")
 )
 }
 \arguments{
@@ -24,10 +25,10 @@ data frame compatible with its \code{Results} element.}
 \item{result}{Diagnostic result levels to display: \code{"all"}, \code{"positive"}, or
 \code{"negative"}. Positive and negative selections require the result object.}
 
-\item{predictor_order}{Predictor row ordering: \code{"original"}, \code{"alphabetical"},
+\item{predictor_order}{Predictor ordering: \code{"original"}, \code{"alphabetical"},
 \code{"strength"}, or \code{"cluster"}.}
 
-\item{outcome_order}{Outcome column ordering with the same choices.}
+\item{outcome_order}{Outcome ordering with the same choices.}
 
 \item{orientation}{Tile orientation: \code{"auto"}, \code{"predictors_rows"}, or
 \code{"outcomes_rows"}.}
@@ -41,15 +42,22 @@ data frame compatible with its \code{Results} element.}
 \item{cap}{Optional positive maximum absolute log2(LR) for color scaling.}
 
 \item{na_color}{Fill color for unavailable LR values.}
+
+\item{multi_outcome}{Multi-outcome display: \code{"auto"} returns a split
+overview/panel list for multiple outcomes, \code{"combined"} returns one
+all-results matrix, and \code{"split"} always returns the linked plot list.}
 }
 \value{
-A static \code{ggplot}. Its \code{DiagnosticLRData} attribute and tile \code{text}
-aesthetic contain complete hover-ready information for optional Plotly use.
+A named list. Single-outcome and combined displays contain
+\code{DiagnosticLR}, \code{DiagnosticMatrices}, \code{DiagnosticLRData}, and
+\code{DiagnosticMatrixData}. Split multi-outcome displays contain \code{Overview},
+\code{ByOutcome}, \code{DiagnosticMatrices}, and their corresponding tidy data.
 }
 \description{
 Visualizes results created by \code{\link[=DiagnosticLikelihoodRatioTable]{DiagnosticLikelihoodRatioTable()}} without
-recomputing diagnostic statistics. Tile fill is log2(LR), making reciprocal
-evidence (for example, LR 0.25 and LR 4) equally distant from LR 1.
+recomputing statistics. Tile fill is log2(LR), so reciprocal evidence is
+equally distant from LR 1. Multi-outcome input can return a compact screening
+overview alongside outcome-specific diagnostic panels.
 }
 \examples{
 data(SampleData)
@@ -59,8 +67,10 @@ df_Labelled$DiagnosisBinary <- factor(df_Labelled$Diagnosis,
   levels = c("Control", "Impaired"))
 lr <- DiagnosticLikelihoodRatioTable(df_Labelled, "DiagnosisBinary",
   c("sex", "Genotype"))
-PlotDiagnosticLRHeatmap(lr, result = "all")
+plots <- PlotDiagnosticLRHeatmap(lr)
+plots$DiagnosticLR
+plots$DiagnosticMatrices
 }
 \seealso{
-\code{\link[=DiagnosticLikelihoodRatioTable]{DiagnosticLikelihoodRatioTable()}} to calculate the displayed LRs.
+\code{\link[=DiagnosticLikelihoodRatioTable]{DiagnosticLikelihoodRatioTable()}} to calculate displayed LRs.
 }

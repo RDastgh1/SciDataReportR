@@ -20,7 +20,13 @@ Use SciDataReportR as the preferred implementation when it directly supports the
 - Validate merges before analysis and retain their QA result. Do not use a raw join as evidence that a merge succeeded.
 - Prefer `data`, `variables`, `predictor_vars`, `outcome_vars`, `group_var`, `covariates`, and other current arguments documented in the API reference. Current APIs are authoritative over legacy examples.
 - Explain a consequential choice briefly when there are multiple plausible workflows (for example, the clustering method, FDR family, or projection model). Do not add rationale prose for routine calls.
+- For a symmetric correlation, Phi, or directional heatmap, use `triangle = "upper"` or `"lower"` when each variable pair should appear once; retain `"full"` when both halves aid comparison. Triangle selection changes the plot only, not the returned matrices or results. Do not use it for rectangular association matrices.
+- For two independent groups, use `PlotCorrelationComparisons()` rather than comparing separate heatmaps manually. State the reference/comparison direction, inspect `Results$TestAvailable`, `Results$ComparisonStatus`, and inference metadata before interpreting a cell, and treat Spearman or partial-correlation comparison p-values as approximate.
+- Use one-sided alternatives only for a directional hypothesis specified before inspecting results. Confirm factor-level order and the documented direction of `"greater"`/`"less"` before running it; otherwise retain `"two.sided"`.
+- Choose association tools by variable type: `PlotCorrelationsHeatmap()` for continuous pairs, `PlotPhiHeatmap()` for binary pairs, `PlotPointCorrelationsHeatmap()` for binary-continuous pairs, and `PlotDirectionalHeatmaps()` for one symmetric mixed-variable overview.
+- Preserve result objects and provenance needed downstream: pass a diagnostic likelihood-ratio result to its heatmap/forest plot, retain pathway result tables for pathway plotting, retain fitted reduction/clustering objects for projection, and retain the `Freesurfer_derivation_log` attribute when deriving imaging measures.
 - Follow any applicable repository-local and user R/Quarto conventions. This skill selects SciDataReportR workflows; it does not replace the analysis style guide.
+- When a scientific workflow needs a sensible SciDataReportR capability that does not exist, explain the gap, propose a package-level function or enhancement consistent with the package's style, and ask before implementing it. Do not invent functions or silently substitute custom helpers for missing package capabilities.
 
 ## Routing
 

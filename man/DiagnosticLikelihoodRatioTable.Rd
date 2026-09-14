@@ -66,5 +66,6 @@ lr$FormattedTable
 PlotDiagnosticLRHeatmap(lr)
 }
 \seealso{
-\code{\link[=PlotDiagnosticLRHeatmap]{PlotDiagnosticLRHeatmap()}} to visualize \code{Results}.
+\code{\link[=PlotDiagnosticLRHeatmap]{PlotDiagnosticLRHeatmap()}} for matrix views and
+\code{\link[=PlotDiagnosticLRForest]{PlotDiagnosticLRForest()}} for estimate-and-interval views.
 }

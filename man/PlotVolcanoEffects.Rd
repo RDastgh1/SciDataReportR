@@ -21,6 +21,8 @@ PlotVolcanoEffects(
   codebook = NULL,
   InteractiveLabels = TRUE,
   ColorBy = NULL,
+  TooltipData = NULL,
+  TooltipFields = NULL,
   Data = lifecycle::deprecated(),
   xVars = lifecycle::deprecated(),
   yVar = lifecycle::deprecated(),
@@ -80,6 +82,12 @@ compatibility with \code{plotly::ggplotly(tooltip = "text")}. Default is \code{T
 variable names and whose values are categories. Tested predictors without
 a mapping are shown as \code{"Unmapped"} in grey. When \code{NULL} (the default),
 the existing significance-based \code{Format} colors are used unchanged.}
+
+\item{TooltipData}{Optional one-row-per-variable data frame joined into the
+result table before plots are built.}
+
+\item{TooltipFields}{Columns from \code{TooltipData} appended to interactive
+point tooltips. Defaults to every supplied annotation column.}
 
 \item{Data}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
 
