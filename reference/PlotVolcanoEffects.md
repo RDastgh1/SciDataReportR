@@ -27,6 +27,8 @@ PlotVolcanoEffects(
   codebook = NULL,
   InteractiveLabels = TRUE,
   ColorBy = NULL,
+  TooltipData = NULL,
+  TooltipFields = NULL,
   Data = lifecycle::deprecated(),
   xVars = lifecycle::deprecated(),
   yVar = lifecycle::deprecated(),
@@ -117,6 +119,16 @@ PlotVolcanoEffects(
   names and whose values are categories. Tested predictors without a
   mapping are shown as `"Unmapped"` in grey. When `NULL` (the default),
   the existing significance-based `Format` colors are used unchanged.
+
+- TooltipData:
+
+  Optional one-row-per-variable data frame joined into the result table
+  before plots are built.
+
+- TooltipFields:
+
+  Columns from `TooltipData` appended to interactive point tooltips.
+  Defaults to every supplied annotation column.
 
 - Data:
 

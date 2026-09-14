@@ -15,7 +15,7 @@ Optional covariates are included in the model for each predictor."><meta propert
 
     <a class="navbar-brand me-2" href="../index.html">SciDataReportR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">21.6.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">21.7.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -84,6 +84,8 @@ Optional covariates are included in the model for each predictor.</p>
 <span>  codebook <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  InteractiveLabels <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  ColorBy <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  TooltipData <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  TooltipFields <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  Data <span class="op">=</span> <span class="fu">lifecycle</span><span class="fu">::</span><span class="fu"><a href="https://lifecycle.r-lib.org/reference/deprecated.html" class="external-link">deprecated</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  xVars <span class="op">=</span> <span class="fu">lifecycle</span><span class="fu">::</span><span class="fu"><a href="https://lifecycle.r-lib.org/reference/deprecated.html" class="external-link">deprecated</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  yVar <span class="op">=</span> <span class="fu">lifecycle</span><span class="fu">::</span><span class="fu"><a href="https://lifecycle.r-lib.org/reference/deprecated.html" class="external-link">deprecated</a></span><span class="op">(</span><span class="op">)</span>,</span>
@@ -176,6 +178,16 @@ compatibility with <code>plotly::ggplotly(tooltip = "text")</code>. Default is <
 variable names and whose values are categories. Tested predictors without
 a mapping are shown as <code>"Unmapped"</code> in grey. When <code>NULL</code> (the default),
 the existing significance-based <code>Format</code> colors are used unchanged.</p></dd>
+
+
+<dt id="arg-tooltipdata">TooltipData<a class="anchor" aria-label="anchor" href="#arg-tooltipdata"></a></dt>
+<dd><p>Optional one-row-per-variable data frame joined into the
+result table before plots are built.</p></dd>
+
+
+<dt id="arg-tooltipfields">TooltipFields<a class="anchor" aria-label="anchor" href="#arg-tooltipfields"></a></dt>
+<dd><p>Columns from <code>TooltipData</code> appended to interactive
+point tooltips. Defaults to every supplied annotation column.</p></dd>
 
 
 <dt id="arg-data">Data<a class="anchor" aria-label="anchor" href="#arg-data"></a></dt>

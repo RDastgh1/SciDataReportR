@@ -13,7 +13,7 @@ participants; this is a diagnostic accuracy measure, not a nested-model test."><
 
     <a class="navbar-brand me-2" href="../index.html">SciDataReportR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">21.6.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">21.7.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -134,7 +134,8 @@ Numeric predictors with more than two observed values must be categorized first.
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p><code><a href="PlotDiagnosticLRHeatmap.html">PlotDiagnosticLRHeatmap()</a></code> to visualize <code>Results</code>.</p></div>
+    <div class="dont-index"><p><code><a href="PlotDiagnosticLRHeatmap.html">PlotDiagnosticLRHeatmap()</a></code> for matrix views and
+<code><a href="PlotDiagnosticLRForest.html">PlotDiagnosticLRForest()</a></code> for estimate-and-interval views.</p></div>
     </div>
 
     <div class="section level2">
@@ -207,7 +208,56 @@ Numeric predictors with more than two observed values must be categorized first.
 <td headers="Case %" class="gt_row gt_right gt_striped" style="border-style: none; padding-top: 8px; padding-bottom: 8px; padding-left: 5px; padding-right: 5px; margin: 10px; border-top-style: solid; border-top-width: 1px; border-top-color: #D3D3D3; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; vertical-align: middle; overflow-x: hidden; background-color: rgba(128, 128, 128, 0.05); text-align: right; font-variant-numeric: tabular-nums;" valign="middle" bgcolor="rgba(128, 128, 128, 0.05)" align="right">8.8</td>
 <td headers="Control %" class="gt_row gt_right gt_striped" style="border-style: none; padding-top: 8px; padding-bottom: 8px; padding-left: 5px; padding-right: 5px; margin: 10px; border-top-style: solid; border-top-width: 1px; border-top-color: #D3D3D3; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; vertical-align: middle; overflow-x: hidden; background-color: rgba(128, 128, 128, 0.05); text-align: right; font-variant-numeric: tabular-nums;" valign="middle" bgcolor="rgba(128, 128, 128, 0.05)" align="right">2.1</td>
 <td headers="Likelihood ratio (95% CI)" class="gt_row gt_right gt_striped" style="border-style: none; padding-top: 8px; padding-bottom: 8px; padding-left: 5px; padding-right: 5px; margin: 10px; border-top-style: solid; border-top-width: 1px; border-top-color: #D3D3D3; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; vertical-align: middle; overflow-x: hidden; background-color: rgba(128, 128, 128, 0.05); text-align: right; font-variant-numeric: tabular-nums;" valign="middle" bgcolor="rgba(128, 128, 128, 0.05)" align="right">4.25 (1.43, 12.7)</td></tr></tbody></table></div></div><span class="r-in"><span><span class="fu"><a href="PlotDiagnosticLRHeatmap.html">PlotDiagnosticLRHeatmap</a></span><span class="op">(</span><span class="va">lr</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $DiagnosticLR</span>
 <span class="r-plt img"><img src="DiagnosticLikelihoodRatioTable-1.png" alt="" width="700" height="433"></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $DiagnosticMatrices</span>
+<span class="r-plt img"><img src="DiagnosticLikelihoodRatioTable-2.png" alt="" width="700" height="433"></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $DiagnosticLRData</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 8 × 30</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Outcome         OutcomeLabel    OutcomePositiveLevel Predictor PredictorLabel</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>           <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>           <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> DiagnosisBinary DiagnosisBinary Impaired             sex       Sex           </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span> DiagnosisBinary DiagnosisBinary Impaired             sex       Sex           </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">3</span> DiagnosisBinary DiagnosisBinary Impaired             Genotype  Genotype      </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">4</span> DiagnosisBinary DiagnosisBinary Impaired             Genotype  Genotype      </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">5</span> DiagnosisBinary DiagnosisBinary Impaired             Genotype  Genotype      </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">6</span> DiagnosisBinary DiagnosisBinary Impaired             Genotype  Genotype      </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">7</span> DiagnosisBinary DiagnosisBinary Impaired             Genotype  Genotype      </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">8</span> DiagnosisBinary DiagnosisBinary Impaired             Genotype  Genotype      </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># ℹ 25 more variables: PredictorLevels &lt;int&gt;, ResultLevel &lt;chr&gt;, Stratum &lt;chr&gt;,</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;">#   N &lt;int&gt;, NCase &lt;int&gt;, NControl &lt;int&gt;, CaseWithResult &lt;int&gt;,</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;">#   ControlWithResult &lt;int&gt;, CaseWithoutResult &lt;int&gt;,</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;">#   ControlWithoutResult &lt;int&gt;, CaseProbability &lt;dbl&gt;,</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;">#   ControlProbability &lt;dbl&gt;, LikelihoodRatio &lt;dbl&gt;, LRLowerCI &lt;dbl&gt;,</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;">#   LRUpperCI &lt;dbl&gt;, Log2LR &lt;dbl&gt;, ZeroCell &lt;lgl&gt;, Corrected &lt;lgl&gt;,</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;">#   RowId &lt;chr&gt;, RowLabel &lt;chr&gt;, .OriginalOrder &lt;int&gt;, CIExcludesOne &lt;lgl&gt;, …</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $DiagnosticMatrixData</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 16 × 14</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    Stratum          Predictor PredictorLabel Outcome    OutcomeLabel ResultLevel</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>            <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 1</span> All participants sex       Sex            Diagnosis… DiagnosisBi… Female     </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 2</span> All participants sex       Sex            Diagnosis… DiagnosisBi… Male       </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 3</span> All participants Genotype  Genotype       Diagnosis… DiagnosisBi… E2E2       </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 4</span> All participants Genotype  Genotype       Diagnosis… DiagnosisBi… E2E3       </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 5</span> All participants Genotype  Genotype       Diagnosis… DiagnosisBi… E2E4       </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 6</span> All participants Genotype  Genotype       Diagnosis… DiagnosisBi… E3E3       </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 7</span> All participants Genotype  Genotype       Diagnosis… DiagnosisBi… E3E4       </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 8</span> All participants Genotype  Genotype       Diagnosis… DiagnosisBi… E4E4       </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 9</span> All participants sex       Sex            Diagnosis… DiagnosisBi… Female     </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">10</span> All participants sex       Sex            Diagnosis… DiagnosisBi… Male       </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">11</span> All participants Genotype  Genotype       Diagnosis… DiagnosisBi… E2E2       </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">12</span> All participants Genotype  Genotype       Diagnosis… DiagnosisBi… E2E3       </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">13</span> All participants Genotype  Genotype       Diagnosis… DiagnosisBi… E2E4       </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">14</span> All participants Genotype  Genotype       Diagnosis… DiagnosisBi… E3E3       </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">15</span> All participants Genotype  Genotype       Diagnosis… DiagnosisBi… E3E4       </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">16</span> All participants Genotype  Genotype       Diagnosis… DiagnosisBi… E4E4       </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># ℹ 8 more variables: OutcomeCondition &lt;chr&gt;, Count &lt;int&gt;, Denominator &lt;int&gt;,</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;">#   Probability &lt;dbl&gt;, CellLabel &lt;chr&gt;, MatrixRow &lt;chr&gt;, MatrixRowLabel &lt;chr&gt;,</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;">#   HoverText &lt;chr&gt;</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

@@ -1,5 +1,6 @@
 <urlset xmlns = 'http://www.sitemaps.org/schemas/sitemap/0.9'>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/404.html</loc></url>
+<url><loc>https://rdastgh1.github.io/SciDataReportR/CLAUDE.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/CONTRIBUTING.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/LICENSE-text.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/LICENSE.html</loc></url>
@@ -22,9 +23,12 @@
 <url><loc>https://rdastgh1.github.io/SciDataReportR/index.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/news/index.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/AddToCodebook.html</loc></url>
+<url><loc>https://rdastgh1.github.io/SciDataReportR/reference/AnalyzeFeatureModuleTraits.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/ApplyFDRCorrection.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/ApplyNormativeTScores.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/AssemblePlots.html</loc></url>
+<url><loc>https://rdastgh1.github.io/SciDataReportR/reference/AssessFeatureMissingness.html</loc></url>
+<url><loc>https://rdastgh1.github.io/SciDataReportR/reference/BuildFeatureWGCNA.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/ClusterPlots.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/CodebookMergeApp.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/CombineCodebooks.html</loc></url>
@@ -94,8 +98,12 @@
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/PlotCorrelationComparisons.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/PlotCorrelationsHeatmap.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/PlotDatasetComparison.html</loc></url>
+<url><loc>https://rdastgh1.github.io/SciDataReportR/reference/PlotDiagnosticLRForest.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/PlotDiagnosticLRHeatmap.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/PlotDirectionalHeatmaps.html</loc></url>
+<url><loc>https://rdastgh1.github.io/SciDataReportR/reference/PlotFeatureModuleTraitHeatmap.html</loc></url>
+<url><loc>https://rdastgh1.github.io/SciDataReportR/reference/PlotFeatureWGCNADendrogram.html</loc></url>
+<url><loc>https://rdastgh1.github.io/SciDataReportR/reference/PlotFeatureWGCNASoftThreshold.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/PlotForestFromTable.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/PlotInteractionEffectsContinuous.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/PlotInteractionEffectsMatrix.html</loc></url>
@@ -133,6 +141,7 @@
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/ScreenBiomarkerPerformance.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/SimulatedPhenotypeData.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/SummarizeTransitions.html</loc></url>
+<url><loc>https://rdastgh1.github.io/SciDataReportR/reference/TransformFeatureMatrix.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/UpdateCodebook.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/UpdateDataDictionary.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/ValidateMerge.html</loc></url>

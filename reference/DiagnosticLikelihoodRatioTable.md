@@ -79,7 +79,9 @@ must be categorized first.
 ## See also
 
 [`PlotDiagnosticLRHeatmap()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotDiagnosticLRHeatmap.md)
-to visualize `Results`.
+for matrix views and
+[`PlotDiagnosticLRForest()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotDiagnosticLRForest.md)
+for estimate-and-interval views.
 
 ## Examples
 

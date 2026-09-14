@@ -218,12 +218,18 @@ Contributions, bug reports, and workflow ideas are welcome through
 
 - [`AddToCodebook()`](https://rdastgh1.github.io/SciDataReportR/reference/AddToCodebook.md)
   : Add a new variable to a codebook
+- [`AnalyzeFeatureModuleTraits()`](https://rdastgh1.github.io/SciDataReportR/reference/AnalyzeFeatureModuleTraits.md)
+  : Analyze feature module relationships with sample traits
 - [`ApplyFDRCorrection()`](https://rdastgh1.github.io/SciDataReportR/reference/ApplyFDRCorrection.md)
   : Apply multiple-comparison correction across a p-value matrix
 - [`ApplyNormativeTScores()`](https://rdastgh1.github.io/SciDataReportR/reference/ApplyNormativeTScores.md)
   : Apply a normative T-score model to new data
 - [`AssemblePlots()`](https://rdastgh1.github.io/SciDataReportR/reference/AssemblePlots.md)
   : Assemble ggplot objects into a unified multi-panel figure
+- [`AssessFeatureMissingness()`](https://rdastgh1.github.io/SciDataReportR/reference/AssessFeatureMissingness.md)
+  : Assess missingness in a wide feature matrix
+- [`BuildFeatureWGCNA()`](https://rdastgh1.github.io/SciDataReportR/reference/BuildFeatureWGCNA.md)
+  : Build a weighted feature correlation network
 - [`CodebookMergeApp()`](https://rdastgh1.github.io/SciDataReportR/reference/CodebookMergeApp.md)
   : Interactive codebook harmonization dashboard
 - [`CombineCodebooks()`](https://rdastgh1.github.io/SciDataReportR/reference/CombineCodebooks.md)
@@ -378,10 +384,18 @@ Contributions, bug reports, and workflow ideas are welcome through
   : Plot correlations heatmap
 - [`PlotDatasetComparison()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotDatasetComparison.md)
   : Plot dataset comparison diagnostics
+- [`PlotDiagnosticLRForest()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotDiagnosticLRForest.md)
+  : Plot diagnostic likelihood ratios as a forest plot
 - [`PlotDiagnosticLRHeatmap()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotDiagnosticLRHeatmap.md)
   : Plot a diagnostic likelihood-ratio heatmap
 - [`PlotDirectionalHeatmaps()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotDirectionalHeatmaps.md)
   : Create directional heatmaps across continuous & binary variables
+- [`PlotFeatureModuleTraitHeatmap()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotFeatureModuleTraitHeatmap.md)
+  : Plot feature module-trait associations
+- [`PlotFeatureWGCNADendrogram()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotFeatureWGCNADendrogram.md)
+  : Plot a feature WGCNA dendrogram
+- [`PlotFeatureWGCNASoftThreshold()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotFeatureWGCNASoftThreshold.md)
+  : Plot feature WGCNA soft-threshold diagnostics
 - [`PlotForestFromTable()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotForestFromTable.md)
   [`plotForestFromTable()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotForestFromTable.md)
   : Create a Forest Plot from Univariate Regression Tables
@@ -464,6 +478,8 @@ Contributions, bug reports, and workflow ideas are welcome through
 - [`SummarizeTransitions()`](https://rdastgh1.github.io/SciDataReportR/reference/SummarizeTransitions.md)
   : Summarize participant transitions for a binary longitudinal
   condition
+- [`TransformFeatureMatrix()`](https://rdastgh1.github.io/SciDataReportR/reference/TransformFeatureMatrix.md)
+  : Transform selected features in a wide data frame
 - [`UpdateCodebook()`](https://rdastgh1.github.io/SciDataReportR/reference/UpdateCodebook.md)
   : Update an existing codebook based on a given dataframe
 - [`UpdateDataDictionary()`](https://rdastgh1.github.io/SciDataReportR/reference/UpdateDataDictionary.md)

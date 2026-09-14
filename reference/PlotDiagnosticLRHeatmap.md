@@ -2,9 +2,9 @@
 
 Visualizes results created by
 [`DiagnosticLikelihoodRatioTable()`](https://rdastgh1.github.io/SciDataReportR/reference/DiagnosticLikelihoodRatioTable.md)
-without recomputing diagnostic statistics. Tile fill is log2(LR), making
-reciprocal evidence (for example, LR 0.25 and LR 4) equally distant from
-LR 1.
+without recomputing statistics. Tile fill is log2(LR), so reciprocal
+evidence is equally distant from LR 1. Multi-outcome input can return a
+compact screening overview alongside outcome-specific diagnostic panels.
 
 ## Usage
 
@@ -19,7 +19,8 @@ PlotDiagnosticLRHeatmap(
   show_ci_marker = TRUE,
   facet_strata = TRUE,
   cap = NULL,
-  na_color = "grey90"
+  na_color = "grey90",
+  multi_outcome = c("auto", "combined", "split")
 )
 ```
 
@@ -39,12 +40,12 @@ PlotDiagnosticLRHeatmap(
 
 - predictor_order:
 
-  Predictor row ordering: `"original"`, `"alphabetical"`, `"strength"`,
-  or `"cluster"`.
+  Predictor ordering: `"original"`, `"alphabetical"`, `"strength"`, or
+  `"cluster"`.
 
 - outcome_order:
 
-  Outcome column ordering with the same choices.
+  Outcome ordering with the same choices.
 
 - orientation:
 
@@ -70,16 +71,23 @@ PlotDiagnosticLRHeatmap(
 
   Fill color for unavailable LR values.
 
+- multi_outcome:
+
+  Multi-outcome display: `"auto"` returns a split overview/panel list
+  for multiple outcomes, `"combined"` returns one all-results matrix,
+  and `"split"` always returns the linked plot list.
+
 ## Value
 
-A static `ggplot`. Its `DiagnosticLRData` attribute and tile `text`
-aesthetic contain complete hover-ready information for optional Plotly
-use.
+A named list. Single-outcome and combined displays contain
+`DiagnosticLR`, `DiagnosticMatrices`, `DiagnosticLRData`, and
+`DiagnosticMatrixData`. Split multi-outcome displays contain `Overview`,
+`ByOutcome`, `DiagnosticMatrices`, and their corresponding tidy data.
 
 ## See also
 
 [`DiagnosticLikelihoodRatioTable()`](https://rdastgh1.github.io/SciDataReportR/reference/DiagnosticLikelihoodRatioTable.md)
-to calculate the displayed LRs.
+to calculate displayed LRs.
 
 ## Examples
 
@@ -92,5 +100,8 @@ df_Labelled$DiagnosisBinary <- factor(df_Labelled$Diagnosis,
 lr <- DiagnosticLikelihoodRatioTable(df_Labelled, "DiagnosisBinary",
   c("sex", "Genotype"))
 #> DiagnosisBinary: 'Impaired' treated as outcome-positive.
-PlotDiagnosticLRHeatmap(lr, result = "all")
+plots <- PlotDiagnosticLRHeatmap(lr)
+plots$DiagnosticLR
+
+plots$DiagnosticMatrices
 ```
