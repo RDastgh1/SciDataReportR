@@ -171,7 +171,10 @@ Plot2GroupStats <- function(data,
   tData <- dplyr::select(tData, -dplyr::all_of(setdiff(c(drop_low, drop_high), "GroupVar")))
 
   num_sd <- vapply(tData, function(x) if (is.numeric(x)) stats::sd(x, na.rm = TRUE) else NA_real_, 1.0)
-  drop_nzv <- names(num_sd[is.na(num_sd) | num_sd == 0])
+  # Only numeric variables have a meaningful SD check. Keeping factors here is
+  # necessary both for categorical predictors and for categorical covariates
+  # passed through to MakeComparisonTable().
+  drop_nzv <- names(num_sd[!is.na(num_sd) & num_sd == 0])
   tData <- dplyr::select(tData, -dplyr::all_of(setdiff(drop_nzv, "GroupVar")))
 
   vars_in <- setdiff(names(tData), "GroupVar")
