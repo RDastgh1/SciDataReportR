@@ -413,6 +413,8 @@ Contributions, bug reports, and workflow ideas are welcome through
   : Plot Numerical Interaction Effects Matrix
 - [`PlotPValueComparisons()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotPValueComparisons.md)
   : Plot P-Value Comparisons
+- [`PlotPairwiseMiningMatrix()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotPairwiseMiningMatrix.md)
+  : Plot a mixed-type pairwise mining matrix
 - [`PlotPartialRegressionScatter()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotPartialRegressionScatter.md)
   : Partial Regression Plot
 - [`PlotPathway_KT()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotPathway_KT.md)
