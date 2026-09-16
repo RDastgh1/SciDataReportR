@@ -1,0 +1,338 @@
+#' Plot Phi Correlations Between Binary Variables
+#'
+#' Computes pairwise phi coefficients between binary categorical variables
+#' with explicit 0/1 coding (1 == PositiveLevel from `createBinaryMapping()`),
+#' then renders heatmap-style plots with raw and FDR-adjusted significance.
+#'
+#' @param data A dataframe.
+#' @param CatVars Character vector of binary categorical variable names.
+#' @param Relabel Logical; if TRUE, uses sjlabelled variable labels for axes.
+#' @param binary_map Optional mapping as returned by `createBinaryMapping()`.
+#'   If NULL, a mapping is created internally for `CatVars`.
+#' @return A list with:
+#'   - `Unadjusted`: list(PvalTable, plot)
+#'   - `FDRCorrected`: list(PvalTable, plot)
+#'   - `method` = "Phi"
+#'   - `Relabel`
+#'   - `BinaryMapping` (used)
+#' @param fdr_scope Either `"matrix"` (default) or `"per_outcome"`, passed to
+#'   [ApplyFDRCorrection()]. `"matrix"` corrects across all p-values at once
+#'   (historical behavior). `"per_outcome"` corrects separately within
+#'   each y-axis variable (`YVar`); the Phi matrix is symmetric, so this
+#'   treats each variable's row of tiles as one family.
+#' @param cluster_rows,cluster_columns Logical; cluster y-axis rows and/or
+#'   x-axis columns using displayed Phi-coefficient profiles.
+#' @param triangle Display `"full"` (default), `"upper"`, or `"lower"` half of
+#'   the symmetric Phi matrix. This affects the plot only; returned results
+#'   remain complete.
+#' @param Data \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
+#' @examples
+#' data(SampleData)
+#' data(SampleVariableTypes)
+#'
+#' Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
+#'
+#' # CatVars must be binary (exactly two unique non-NA values). Derive a few
+#' # more binary indicators so the matrix has off-diagonal structure to read;
+#' # self-associations on the diagonal are masked out.
+#' Labelled$APOE4 <- ifelse(
+#'   grepl("E4", as.character(Labelled$Genotype)), "Carrier", "Non-carrier")
+#' Labelled$HighTau <- ifelse(
+#'   Labelled$tau > stats::median(Labelled$tau, na.rm = TRUE), "High", "Low")
+#' Labelled$LowAbeta <- ifelse(
+#'   Labelled$Ab_42 < stats::median(Labelled$Ab_42, na.rm = TRUE), "Low", "High")
+#'
+#' result <- PlotPhiHeatmap(
+#'   Labelled,
+#'   CatVars = c("Diagnosis", "sex", "APOE4", "HighTau", "LowAbeta")
+#' )
+#'
+#' # Raw p-value phi heatmap
+#' result$Unadjusted$plot
+#'
+#' # FDR-adjusted phi heatmap
+#' result$FDRCorrected$plot
+#'
+#' # Show each binary-variable pair once.
+#' upper <- PlotPhiHeatmap(
+#'   Labelled,
+#'   CatVars = c("Diagnosis", "sex", "APOE4", "HighTau", "LowAbeta"),
+#'   triangle = "upper"
+#' )
+#' upper$FDRCorrected$plot
+#' @export
+PlotPhiHeatmap <- function(data,
+    CatVars,
+    Relabel = TRUE,
+    binary_map = NULL,
+    fdr_scope = c("matrix", "per_outcome", "per_predictor"),
+    cluster_rows = FALSE,
+    cluster_columns = FALSE,
+    triangle = c("full", "upper", "lower"),
+    Data = lifecycle::deprecated()) {
+  # Deprecated argument shims (SciDataReportR 19.15.0)
+  if (lifecycle::is_present(Data)) {
+    lifecycle::deprecate_warn("19.15.0", "PlotPhiHeatmap(Data)", "PlotPhiHeatmap(data)")
+    data <- Data
+  }
+  if (!missing(data)) Data <- data
+  fdr_scope <- match.arg(fdr_scope)
+  triangle <- match.arg(triangle)
+  if (!is.logical(cluster_rows) || length(cluster_rows) != 1 || is.na(cluster_rows)) {
+    stop("cluster_rows must be TRUE or FALSE.")
+  }
+  if (!is.logical(cluster_columns) || length(cluster_columns) != 1 || is.na(cluster_columns)) {
+    stop("cluster_columns must be TRUE or FALSE.")
+  }
+
+
+  # ---- helpers -------------------------------------------------------------
+  # encode a binary vector to {0,1} using mapping (1 == PositiveLevel)
+  .to01 <- function(x, var, map) {
+    # strip haven labels; then coerce to character for matching
+    if (inherits(x, "haven_labelled")) x <- haven::zap_labels(x)
+    pos <- map$PositiveLevel[match(var, map$Variable)]
+    if (is.na(pos)) {
+      stop("No PositiveLevel found in mapping for variable: ", var)
+    }
+    as.integer(as.character(x) == pos)
+  }
+
+  # is a vector truly binary (2 unique non-NA values)?
+  .is_binary <- function(x) length(unique(stats::na.omit(x))) == 2
+
+  # safe chisq p-value for 2x2; fallback to cor.test if needed
+  .pval_binbin <- function(x01, y01) {
+    keep <- stats::complete.cases(x01, y01)
+    x <- x01[keep]; y <- y01[keep]
+    if (length(x) < 3L) return(NA_real_)
+    tbl <- table(x, y)
+    if (all(dim(tbl) == c(2, 2))) {
+      # chisq test without continuity correction to match correlation-style tests
+      suppressWarnings(stats::chisq.test(tbl, correct = FALSE)$p.value)
+    } else {
+      # degenerate (one level missing) -> NA
+      NA_real_
+    }
+  }
+
+  # ---- data prep -----------------------------------------------------------
+  # Checked before subsetting, which otherwise fails with base R's
+  # "undefined columns selected" and never names the offending variable.
+  CatVars <- ScidrValidateVariables(Data, CatVars, "CatVars")
+
+  if (length(CatVars) < 2) {
+    stop("Need at least two binary variables for a Phi heatmap.")
+  }
+
+  # keep only requested vars, preserve labels
+  DataSubset <- Data[CatVars]
+  DataSubset <- ReplaceMissingLabels(DataSubset)
+
+  # check all are binary
+  non_binary <- vapply(DataSubset, .is_binary, logical(1))
+  if (!all(non_binary)) {
+    bad <- names(non_binary)[!non_binary]
+    stop("The following variables are not binary (exactly 2 unique non-NA values required): ",
+         paste(bad, collapse = ", "))
+  }
+
+  # mapping: use supplied or create
+  if (is.null(binary_map)) {
+    binary_map <- createBinaryMapping(DataSubset, CatVars)
+  }
+
+  # pre-encode each variable once to 0/1 with 1 == PositiveLevel
+  encoded <- lapply(CatVars, function(v) .to01(DataSubset[[v]], v, binary_map))
+  names(encoded) <- CatVars
+
+  # ---- pairwise phi and p-values ------------------------------------------
+  pairs <- expand.grid(X = CatVars, Y = CatVars, stringsAsFactors = FALSE)
+
+  stat.list <- lapply(seq_len(nrow(pairs)), function(i) {
+    vx <- pairs$X[i]; vy <- pairs$Y[i]
+    x01 <- encoded[[vx]]
+    y01 <- encoded[[vy]]
+
+    keep <- stats::complete.cases(x01, y01)
+    x <- x01[keep]; y <- y01[keep]
+    nPairs <- length(x)
+
+    if (identical(vx, vy)) {
+      # A variable is trivially associated with itself (Phi = 1). Leaving the
+      # diagonal in saturates the colour scale and flattens every real
+      # off-diagonal value, so it is masked out.
+      Phi <- NA_real_
+      p   <- NA_real_
+    } else if (nPairs < 3L || length(unique(x)) < 2L || length(unique(y)) < 2L) {
+      Phi <- NA_real_
+      p   <- NA_real_
+    } else {
+      # Pearson correlation of 0/1 vectors equals Phi
+      Phi <- suppressWarnings(stats::cor(x, y))
+      # Use chi-squared-based p-value; fallback if necessary
+      p <- .pval_binbin(x, y)
+      if (is.na(p)) {
+        p <- suppressWarnings(stats::cor.test(x, y)$p.value)
+      }
+    }
+
+    data.frame(
+      XVar   = vx,
+      YVar   = vy,
+      Phi    = Phi,
+      p_value = p,
+      nPairs = nPairs,
+      stringsAsFactors = FALSE
+    )
+  })
+
+  stat.test <- do.call(rbind, stat.list)
+
+  # multiple testing (FDR); keep NA as NA
+  # The matrix is symmetric; for "per_outcome", p-values are grouped by the
+  # y-axis variable (YVar), i.e. each y-variable's row of tiles is one family.
+  stat.test$p.adj <- ApplyFDRCorrection(
+    stat.test$p_value,
+    fdr_scope = fdr_scope,
+    outcome_ids = stat.test$YVar, predictor_ids = stat.test$XVar
+  )
+
+  # significance stars
+  stat.test <- stat.test %>%
+    rstatix::add_significance("p_value", output.col = "p<.05") %>%
+    rstatix::add_significance("p.adj",   output.col = "p.adj.signif")
+
+  stat.test$`p<.05`[stat.test$`p<.05` == "ns"] <- ""
+  stat.test$p.adj.signif[stat.test$p.adj.signif == "ns"] <- ""
+  stat.test$`p<.05` <- factor(stat.test$`p<.05`,
+                              levels = c("ns","*","**","***","****"),
+                              labels = c("ns","*","**","***","***"))
+  stat.test$p.adj.signif <- factor(stat.test$p.adj.signif,
+                                   levels = c("ns","*","**","***","****"),
+                                   labels = c("ns","*","**","***","***"))
+
+  stat.test$test <- "Phi"
+
+  # ---- labels --------------------------------------------------------------
+  if (Relabel) {
+    XLabel <- vapply(stat.test$XVar, function(v) {
+      lab <- sjlabelled::get_label(DataSubset[[v]])
+      if (is.null(lab) || is.na(lab) || lab == "") v else lab
+    }, character(1))
+    YLabel <- vapply(stat.test$YVar, function(v) {
+      lab <- sjlabelled::get_label(DataSubset[[v]])
+      if (is.null(lab) || is.na(lab) || lab == "") v else lab
+    }, character(1))
+  } else {
+    XLabel <- stat.test$XVar
+    YLabel <- stat.test$YVar
+  }
+  stat.test$XLabel <- XLabel
+  stat.test$YLabel <- YLabel
+
+  triangle_display <- .ResolveHeatmapTriangle(
+    data = stat.test, row_id = "YVar", column_id = "XVar", value = "Phi",
+    row_order = CatVars, column_order = CatVars,
+    cluster_rows = cluster_rows, cluster_columns = cluster_columns,
+    triangle = triangle
+  )
+  AxisOrder <- triangle_display$AxisOrder
+  stat.test_display <- triangle_display$PlotData
+  x_axis_labels <- stats::setNames(
+    XLabel[match(AxisOrder$columns, stat.test$XVar)], AxisOrder$columns
+  )
+  y_axis_labels <- stats::setNames(
+    YLabel[match(AxisOrder$rows, stat.test$YVar)], AxisOrder$rows
+  )
+  stat.test$XOrder <- factor(stat.test$XVar, levels = AxisOrder$columns)
+  stat.test$YOrder <- factor(stat.test$YVar, levels = rev(AxisOrder$rows))
+
+  # tooltip
+  PlotText <- paste0(
+    "</br>X Label: ", stat.test$XLabel,
+    "</br>X Var: ",   stat.test$XVar,
+    "</br>Y Label: ", stat.test$YLabel,
+    "</br>Y Var: ",   stat.test$YVar,
+    "</br> Phi: ",      signif(stat.test$Phi, 3),
+    "</br> P-Value: ", signif(stat.test$p_value, 3), " ", stat.test$`p<.05`,
+    "</br> FDR P: ",   signif(stat.test$p.adj, 3),   " ", stat.test$p.adj.signif,
+    "</br> nPairs: ",  stat.test$nPairs
+  )
+  stat.test_display$XOrder <- factor(
+    stat.test_display$XVar,
+    levels = AxisOrder$columns
+  )
+  stat.test_display$YOrder <- factor(
+    stat.test_display$YVar,
+    levels = rev(AxisOrder$rows)
+  )
+  stat.test_display$PlotText <- PlotText[
+    match(rownames(stat.test_display), rownames(stat.test))
+  ]
+
+  # ---- plots ---------------------------------------------------------------
+  p <- ggplot2::ggplot(
+    stat.test_display,
+    ggplot2::aes(x = XOrder, y = YOrder, fill = Phi, text = PlotText)
+  ) +
+    ggplot2::geom_tile() +
+    ggplot2::geom_text(ggplot2::aes(label = `p<.05`), color = "black") +
+    ggplot2::scale_fill_gradient2(
+      limits = c(-1, 1),
+      name = expression(Phi),                # Phi (plotmath: portable under C locale)
+      low  = scales::muted("purple"),
+      high = scales::muted("green"),
+      na.value = "grey85"
+    ) +
+    ggplot2::scale_x_discrete(labels = x_axis_labels) +
+    ggplot2::scale_y_discrete(labels = y_axis_labels) +
+    ggplot2::theme(
+      axis.title.x = ggplot2::element_blank(),
+      axis.title.y = ggplot2::element_blank(),
+      axis.text.y  = ggplot2::element_text(size = 7),
+      legend.text  = ggplot2::element_text(size = 15),
+      axis.text.x  = ggplot2::element_text(angle = 90, vjust = 0.5, hjust = 1)
+    )
+
+  p_FDR <- ggplot2::ggplot(
+    stat.test_display,
+    ggplot2::aes(x = XOrder, y = YOrder, fill = Phi, text = PlotText)
+  ) +
+    ggplot2::geom_tile() +
+    ggplot2::geom_text(ggplot2::aes(label = p.adj.signif), color = "black") +
+    ggplot2::scale_fill_gradient2(
+      limits = c(-1, 1),
+      name = expression(Phi),                # Phi (plotmath: portable under C locale)
+      low  = scales::muted("purple"),
+      high = scales::muted("green"),
+      na.value = "grey85"
+    ) +
+    ggplot2::scale_x_discrete(labels = x_axis_labels) +
+    ggplot2::scale_y_discrete(labels = y_axis_labels) +
+    ggplot2::theme(
+      axis.title.x = ggplot2::element_blank(),
+      axis.title.y = ggplot2::element_blank(),
+      axis.text.y  = ggplot2::element_text(size = 7),
+      legend.text  = ggplot2::element_text(size = 15),
+      axis.text.x  = ggplot2::element_text(angle = 90, vjust = 0.5, hjust = 1)
+    )
+
+  # ---- return --------------------------------------------------------------
+  M     <- list(PvalTable = stat.test, plot = p)
+  M_FDR <- list(PvalTable = stat.test, plot = p_FDR)
+
+  out <- list(
+    Unadjusted    = M,
+    FDRCorrected  = M_FDR,
+    method        = "Phi",
+    Relabel       = Relabel,
+    AxisOrder     = AxisOrder,
+    Triangle      = triangle,
+    BinaryMapping = binary_map
+  )
+  # Standardized p-value element aliases (old names kept)
+  out$p <- out$Unadjusted
+  out$p_fdr <- out$FDRCorrected
+  out
+}

@@ -1,0 +1,363 @@
+#' Split violin with aligned half-boxplots, significance label, sample sizes, and label-aware title
+#'
+#' Draws a split (left/right) violin for up to two groups at a single x-position,
+#' overlays per-group boxplots aligned with each half, and optionally annotates
+#' the plot with a p-value significance label. Supports displaying sample sizes (n)
+#' and automatically using variable labels for axis and title when available.
+#'
+#' @param data A data frame containing `Var`, `Group`, and optional covariates.
+#' @param Var Numeric outcome variable (tidy-eval).
+#' @param group_var Grouping variable (<= 2 unique values).
+#' @param covariates Character vector of covariates (default `NULL`).
+#' @param nonparametric Logical. If `FALSE`, uses linear model + emmeans contrast.
+#' If `TRUE`, uses Wilcoxon (with residualization if covariates are present).
+#' @param alternative Hypothesis alternative. For two groups, `"greater"` tests
+#' whether the second factor level is greater than the first; defaults to
+#' `"two.sided"`.
+#' @param annotation_text Optional manual annotation (e.g., "*", "ns").
+#' @param show_ns Logical; if `TRUE`, display "ns" for non-significant results.
+#' @param plot_title Optional custom plot title.
+#' @param use_var_label_as_title Logical; if `TRUE`, uses variable label as title.
+#' @param show_n Logical; if `TRUE`, display sample size per group.
+#' @param n_position Where to display n: "legend" or "top".
+#' @param n_size Text size for n labels when shown on top.
+#' @param left_group Optional group to force on left side.
+#' @param color_palette Optional named vector of colors.
+#' @param box_offset Horizontal offset for boxplots.
+#' @param box_width Width of boxplots.
+#' @param star_from Position method ("quantile","data_max","whisker").
+#' @param star_quantile Quantile used for placement.
+#' @param star_pad Padding above anchor.
+#' @param star_size Text size for annotation.
+#' @param p_label P-value annotation style: significance `"stars"` (default),
+#'   exact `"p_value"`, or `"both"`.
+#' @param ... Additional arguments reserved for future extensions.
+#'
+#' @return A ggplot2 object. The exact test result is available from
+#'   `attr(plot, "comparison")`.
+#'
+#' @param Group \strong{Deprecated} (since 19.15.0). Use \code{group_var} instead.
+#' @param covars \strong{Deprecated} (since 19.15.0). Use \code{covariates} instead.
+#' @examples
+#' data(SampleData)
+#' data(SampleVariableTypes)
+#'
+#' Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
+#'
+#' # Ab_42 has a clear Diagnosis-group difference in the bundled teaching data.
+#' PlotSplitViolin(Labelled, Var = "Ab_42", group_var = "Diagnosis")
+#'
+#' # Pre-specify the direction through factor order before requesting a one-sided test.
+#' Labelled$Diagnosis <- factor(Labelled$Diagnosis, levels = c("Control", "Impaired"))
+#' PlotSplitViolin(Labelled, Var = "Ab_42", group_var = "Diagnosis", alternative = "greater")
+#' @export
+PlotSplitViolin <- function(data,
+    Var,
+    group_var,
+    covariates = NULL,
+    nonparametric = FALSE,
+    alternative = c("two.sided", "greater", "less"),
+    annotation_text = NULL,
+    show_ns = FALSE,
+    plot_title = NULL,
+    use_var_label_as_title = FALSE,
+    show_n = TRUE,
+    n_position = c("legend", "top"),
+    n_size = 3.5,
+    left_group = NULL,
+    color_palette = NULL,
+    box_offset = 0.11,
+    box_width = 0.15,
+    star_from = c("quantile", "data_max", "whisker"),
+    star_quantile = 0.995,
+    star_pad = 0.05,
+    star_size = 6,
+    p_label = c("stars", "p_value", "both"),
+    ...,
+    Group = lifecycle::deprecated(),
+    covars = lifecycle::deprecated()) {
+  # Deprecated argument shims (SciDataReportR 19.15.0)
+  # `group_var` (and the deprecated `Group`) accept bare column names (NSE),
+  # so the deprecated argument is detected with missing() and captured with
+  # ensym() below - it must never be evaluated directly.
+  if (!missing(Group)) {
+    lifecycle::deprecate_warn("19.15.0", "PlotSplitViolin(Group)", "PlotSplitViolin(group_var)")
+  }
+  if (lifecycle::is_present(covars)) {
+    lifecycle::deprecate_warn("19.15.0", "PlotSplitViolin(covars)", "PlotSplitViolin(covariates)")
+    covariates <- covars
+  }
+  covars <- covariates
+
+
+  stopifnot(requireNamespace("emmeans", quietly = TRUE))
+
+  star_from  <- match.arg(star_from)
+  n_position <- match.arg(n_position)
+  p_label <- match.arg(p_label)
+  alternative <- match.arg(alternative)
+
+  if (is.null(covars)) covars <- character(0)
+
+  Var   <- rlang::ensym(Var)
+  Group <- if (!missing(group_var)) rlang::ensym(group_var) else rlang::ensym(Group)
+
+  var_nm <- rlang::as_string(Var)
+
+  missing_covars <- setdiff(covars, names(data))
+  if (length(missing_covars) > 0) {
+    stop(
+      "Covariate(s) not found in data: ",
+      paste(missing_covars, collapse = ", "),
+      call. = FALSE
+    )
+  }
+
+  df <- data %>%
+    dplyr::select(!!Group, !!Var, dplyr::all_of(covars)) %>%
+    tidyr::drop_na(!!Group, !!Var, dplyr::all_of(covars)) %>%
+    dplyr::mutate(.Group = as.factor(!!Group))
+
+  if (nlevels(df$.Group) > 2) stop("Group must have <=2 levels")
+
+  n_df <- df %>% dplyr::count(.Group, name = "n")
+
+  g_order <- levels(df$.Group)
+
+  if (!is.null(left_group)) {
+    g_left  <- as.character(left_group)
+    g_right <- setdiff(g_order, g_left)
+  } else {
+    g_left  <- g_order[1]
+    g_right <- if (length(g_order) == 2) g_order[2] else NULL
+  }
+
+  present_groups <- na.omit(c(g_left, g_right))
+
+  if (is.null(color_palette)) {
+    color_palette <- stats::setNames(
+      .SciDataColorValues(length(present_groups)), present_groups)
+  }
+
+  if (show_n && n_position == "legend") {
+    label_map <- n_df %>%
+      dplyr::mutate(label = paste0(.Group, " (n=", n, ")"))
+    legend_labels <- stats::setNames(label_map$label, label_map$.Group)
+  } else {
+    legend_labels <- present_groups
+  }
+
+  # ---- p-value
+  stars_from_p <- function(p) {
+    ScidrPValueStars(
+      p,
+      tiers = ScidrStarTiersThree,
+      ns_label = if (show_ns) "ns" else "",
+      na_label = if (show_ns) "ns" else ""
+    )
+  }
+
+  format_p <- function(p) {
+    if (!is.finite(p)) return("p = NA")
+    if (p < 0.001) return("p < 0.001")
+    paste0("p = ", formatC(p, digits = 3, format = "f"))
+  }
+
+  comparison <- list(
+    PValue = NA_real_,
+    Method = NA_character_,
+    Covariates = covars,
+    Alternative = alternative,
+    Contrast = if (length(g_order) == 2) .ScidrDirectionLabel(df$.Group, alternative) else NA_character_,
+    N = nrow(df),
+    Error = NULL
+  )
+
+  if (is.null(annotation_text) && !is.null(g_right)) {
+    test_result <- tryCatch({
+      if (nonparametric) {
+        test_values <- df[[var_nm]]
+        method <- "Wilcoxon rank-sum test"
+
+        if (length(covars) > 0) {
+          covariate_formula <- stats::reformulate(covars, response = var_nm)
+          covariate_fit <- stats::lm(covariate_formula, data = df)
+          test_values <- stats::residuals(covariate_fit)
+          method <- "Wilcoxon rank-sum test of covariate-adjusted residuals"
+        }
+
+        df_Test <- data.frame(
+          TestValue = test_values,
+          Group = df$.Group
+        )
+        p_value <- if (identical(alternative, "two.sided")) {
+          stats::wilcox.test(TestValue ~ Group, data = df_Test, exact = FALSE)$p.value
+        } else {
+          .ScidrDirectedContinuousP(df_Test$TestValue, df_Test$Group, FALSE, alternative)
+        }
+      } else {
+        model_formula <- stats::reformulate(
+          c(".Group", covars),
+          response = var_nm
+        )
+        fit <- stats::lm(model_formula, data = df)
+        p_value <- if (identical(alternative, "two.sided")) {
+          as.data.frame(
+            emmeans::contrast(
+              emmeans::emmeans(fit, ".Group"),
+              method = "revpairwise"
+            )
+          )$p.value[1]
+        } else if (length(covars) == 0) {
+          .ScidrDirectedContinuousP(df[[var_nm]], df$.Group, TRUE, alternative)
+        } else {
+          .ScidrDirectedCoefficientP(fit, ".Group", alternative)
+        }
+        method <- if (length(covars) > 0) {
+          "Covariate-adjusted linear model contrast"
+        } else {
+          "Linear model contrast"
+        }
+        if (!identical(alternative, "two.sided")) {
+          method <- if (length(covars) == 0) {
+            paste0("One-sided Welch t-test: ", .ScidrDirectionLabel(df$.Group, alternative))
+          } else {
+            paste0(method, " (one-sided: ", .ScidrDirectionLabel(df$.Group, alternative), ")")
+          }
+        }
+      }
+
+      list(PValue = p_value, Method = method, Error = NULL)
+    }, error = function(e) {
+      list(PValue = NA_real_, Method = NA_character_, Error = conditionMessage(e))
+    })
+
+    comparison$PValue <- test_result$PValue
+    comparison$Method <- test_result$Method
+    comparison$Error <- test_result$Error
+
+    if (!is.null(comparison$Error)) {
+      warning(
+        "Could not calculate the group-comparison p-value: ",
+        comparison$Error,
+        call. = FALSE
+      )
+    }
+
+    stars <- stars_from_p(comparison$PValue)
+    formatted_p <- format_p(comparison$PValue)
+    combined_labels <- c(stars, formatted_p)
+    annotation_text <- switch(
+      p_label,
+      stars = stars,
+      p_value = formatted_p,
+      both = paste(combined_labels[nzchar(combined_labels)], collapse = "\n")
+    )
+  }
+
+  # ---- scaling
+  y_vals <- df[[var_nm]]
+  y_min  <- min(y_vals, na.rm = TRUE)
+  y_maxv <- max(y_vals, na.rm = TRUE)
+
+  dr <- y_maxv - y_min
+  if (!is.finite(dr) || dr <= 0) {
+    dr <- abs(y_maxv) * 0.1 + 1e-6
+  }
+
+  dr <- max(dr, 0.01)
+
+  safe_whisker <- function(z) {
+    z <- z[is.finite(z)]
+    if (!length(z)) return(NA_real_)
+    tryCatch(boxplot.stats(z)$stats[5], error = function(e) max(z))
+  }
+
+  anchor <- switch(
+    star_from,
+    quantile = quantile(y_vals, star_quantile, na.rm = TRUE),
+    data_max = y_maxv,
+    whisker  = max(
+      safe_whisker(y_vals[df$.Group == g_left]),
+      safe_whisker(y_vals[df$.Group == g_right]),
+      na.rm = TRUE
+    )
+  )
+
+  y_star <- anchor + star_pad * dr
+
+  # Key fix: padding based on range, not absolute value
+  min_pad <- max(0.03 * dr, 0.001)
+
+  if (!is.null(annotation_text) && nzchar(annotation_text)) {
+    ylim_top <- y_star + min_pad
+  } else {
+    ylim_top <- y_maxv + min_pad
+  }
+
+  ylim_bot <- y_min - 0.05 * dr
+
+  # ---- plot
+  df_left <- df[df$.Group == g_left, ]
+
+  p <- ggplot2::ggplot() +
+    geom_sdr_half_violin(
+      data = df_left,
+      ggplot2::aes(x = 1, y = !!Var, fill = .Group),
+      side = "l", alpha = 0.8
+    )
+
+  if (!is.null(g_right)) {
+    df_right <- df[df$.Group == g_right, ]
+    p <- p +
+      geom_sdr_half_violin(
+        data = df_right,
+        ggplot2::aes(x = 1, y = !!Var, fill = .Group),
+        side = "r", alpha = 0.8
+      )
+  }
+
+  p <- p +
+    ggplot2::geom_boxplot(
+      data = dplyr::mutate(df_left, .x = 1 - box_offset),
+      ggplot2::aes(x = .x, y = !!Var, fill = .Group),
+      width = box_width, outlier.shape = NA
+    )
+
+  if (!is.null(g_right)) {
+    df_right <- df[df$.Group == g_right, ]
+    p <- p +
+      ggplot2::geom_boxplot(
+        data = dplyr::mutate(df_right, .x = 1 + box_offset),
+        ggplot2::aes(x = .x, y = !!Var, fill = .Group),
+        width = box_width, outlier.shape = NA
+      )
+  }
+
+  if (!is.null(annotation_text) && nzchar(annotation_text)) {
+    p <- p +
+      ggplot2::annotate(
+        "text",
+        x = 1,
+        y = y_star,
+        label = annotation_text,
+        size = star_size
+      )
+  }
+
+  p <- p +
+    ggplot2::scale_fill_manual(values = color_palette, labels = legend_labels) +
+    ggplot2::labs(x = NULL) +
+    ggplot2::coord_cartesian(ylim = c(ylim_bot, ylim_top), clip = "off") +
+    ggplot2::theme_minimal() +
+    ggplot2::theme(
+      legend.position = "top",
+      legend.title = ggplot2::element_blank(),
+      axis.text.x = ggplot2::element_blank(),
+      axis.ticks.x = ggplot2::element_blank(),
+      plot.title = ggplot2::element_text(hjust = 0.5, face = "bold")
+    )
+
+  attr(p, "comparison") <- comparison
+  p
+}

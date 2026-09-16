@@ -7,8 +7,12 @@
 * running under: macOS Tahoe 26.5.1
 * using session charset: UTF-8
 * using option ‘--no-manual’
-* checking for file ‘./DESCRIPTION’ ... ERROR
-Required fields missing or empty:
-  ‘Author’ ‘Maintainer’
-* DONE
-Status: 1 ERROR
+* checking for file ‘./DESCRIPTION’ ... OK
+* this is package ‘SciDataReportR’ version ‘21.9.0’
+* package encoding: UTF-8
+* checking package namespace information ... OK
+* checking package dependencies ... OK
+* checking if this is a source package ... NOTE
+Subdirectory ‘.’ seems to contain an installed version of the package.
+* checking if there is a namespace ... OK
+* checking for executable files ...

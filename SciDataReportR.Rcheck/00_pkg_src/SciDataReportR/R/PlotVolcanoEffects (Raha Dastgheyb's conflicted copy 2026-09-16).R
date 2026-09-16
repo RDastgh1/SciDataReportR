@@ -1,0 +1,1046 @@
+#' Plot volcano-style association effects
+#'
+#' Screen a set of predictor variables against one outcome and visualize the
+#' association results as volcano plots. The function supports continuous
+#' outcomes using standardized beta values, and two-group categorical outcomes
+#' using either Cohen-style standardized effects or log2 fold change effects.
+#' Optional covariates are included in the model for each predictor.
+#'
+#' Missingness is handled pairwise by model, so each predictor is analyzed using
+#' all complete observations available for that predictor, the outcome, and any
+#' covariates. Invalid predictor variables are removed with a warning.
+#'
+#' @param data A data frame.
+#' @param predictor_vars Character vector of predictor variable names to screen.
+#' @param outcome_var Character string naming the outcome variable.
+#' @param covariates Optional character vector of covariate variable names.
+#' @param OutcomeType Outcome type. One of `"auto"`, `"continuous"`, or
+#'   `"categorical"`. If `"auto"`, numeric outcomes are treated as continuous
+#'   and nonnumeric two-level outcomes are treated as categorical.
+#' @param EffectMetric Effect metric. One of `"auto"`, `"cohens_d"`, or
+#'   `"log2fc"`. Used for two-group categorical outcomes. For continuous
+#'   outcomes, the effect is always a standardized beta from a model using
+#'   scaled predictor and scaled outcome.
+#' @param AdjustMethod Multiple-comparison correction method passed to
+#'   `stats::p.adjust()`. Default is `"fdr"`.
+#' @param Alpha Significance threshold for raw and adjusted p-values. Default is
+#'   `0.05`.
+#' @param Format Color format. One of `"tiered"`, `"classic"`, `"fdr_only"`,
+#'   `"directional"`, `"effect_gradient"`, `"minimal"`, or `"neon"`.
+#' @param LabelMode Labeling mode. One of `"none"`, `"top_n"`,
+#'   `"raw"`, `"significant"`, `"fdr"`, or `"extreme"`. `"raw"` labels
+#'   variables with `PValue < Alpha`; `"significant"` is retained as an alias
+#'   for `"raw"`. `"fdr"` labels variables with `FDR < Alpha`. The default is
+#'   `"none"`.
+#' @param TopN Number of variables to label when `LabelMode` is `"top_n"` or
+#'   `"extreme"`. Default is `10`.
+#' @param Relabel Logical. If `TRUE`, variable labels are used when available.
+#'   Labels are pulled first from `Codebook` if supplied, then from variable
+#'   label attributes. Default is `TRUE`.
+#' @param codebook Optional codebook data frame with columns `Variable` and
+#'   `Label`.
+#' @param InteractiveLabels Logical. If `TRUE`, a `text` aesthetic is added for
+#'   compatibility with `plotly::ggplotly(tooltip = "text")`. Default is `TRUE`.
+#' @param ColorBy Optional category mapping used to color points in both
+#'   `RawPPlot` and `FDRPlot`. Supply either a data frame with `Variable` and
+#'   `Category` columns or a named atomic vector whose names are predictor
+#'   variable names and whose values are categories. Tested predictors without
+#'   a mapping are shown as `"Unmapped"` in grey. When `NULL` (the default),
+#'   the existing significance-based `Format` colors are used unchanged.
+#' @param TooltipData Optional one-row-per-variable data frame joined into the
+#'   result table before plots are built.
+#' @param TooltipFields Columns from `TooltipData` appended to interactive
+#'   point tooltips. Defaults to every supplied annotation column.
+#' @return A named list with `RawPPlot`, `FDRPlot`, and `ResultsTable`.
+#'   `RawPPlot` uses `-log10(PValue)` on the y-axis. `FDRPlot` uses
+#'   `-log10(FDR)` on the y-axis. `ResultsTable` is a tibble with one row per
+#'   analyzed predictor. For continuous outcomes it includes `R` (the zero-order
+#'   Pearson correlation between the predictor and outcome) and `AdjustedR` (the
+#'   covariate-adjusted partial correlation, `NA` when no covariates are given).
+#'   For two-group categorical outcomes it includes `Group1Level`, `Group2Level`,
+#'   `Group1Mean`, and `Group2Mean` (the raw predictor means within each outcome
+#'   group). These values are also surfaced in the `Tooltip` column used by
+#'   `plotly::ggplotly(tooltip = "text")`.
+#' @examples
+#' data(SampleData)
+#' data(SampleVariableTypes)
+#'
+#' # Attach labels and factor levels for readable point labels
+#' Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
+#'
+#' predictors <- c(
+#'   "ACE_CD143_Angiotensin_Converti", "ACTH_Adrenocorticotropic_Hormon",
+#'   "Adiponectin", "Alpha_1_Antichymotrypsin", "Alpha_1_Antitrypsin",
+#'   "Alpha_2_Macroglobulin", "Apolipoprotein_A1", "Apolipoprotein_B",
+#'   "B_Lymphocyte_Chemoattractant_BL", "C_Reactive_Protein", "Cortisol",
+#'   "Eotaxin_3", "Ferritin", "Fibrinogen", "GRO_alpha", "IGF_BP_2", "MIF",
+#'   "MMP10", "MMP7", "NT_proBNP", "PAI_1", "Resistin", "TRAIL_R3", "VEGF",
+#'   "Ab_42", "p_tau", "tau"
+#' )
+#'
+#' # Continuous outcome, adjusted for age
+#' cont <- PlotVolcanoEffects(
+#'   data = Labelled,
+#'   predictor_vars = predictors,
+#'   outcome_var = "AXL",
+#'   covariates = "age",
+#'   OutcomeType = "continuous",
+#'   LabelMode = "top_n",
+#'   TopN = 3
+#' )
+#' # Raw and FDR-adjusted continuous-outcome volcano plots
+#' cont$RawPPlot
+#' cont$FDRPlot
+#'
+#' # Categorical outcome (Diagnosis), Cohen's d effect metric
+#' cat_res <- PlotVolcanoEffects(
+#'   data = Labelled,
+#'   predictor_vars = predictors,
+#'   outcome_var = "Diagnosis",
+#'   OutcomeType = "categorical",
+#'   EffectMetric = "cohens_d",
+#'   LabelMode = "top_n",
+#'   TopN = 3
+#' )
+#' # Raw and FDR-adjusted categorical-outcome volcano plots
+#' cat_res$RawPPlot
+#' cat_res$FDRPlot
+#'
+#' # Color analytes by categories supplied in a data frame
+#' category_df <- data.frame(
+#'   Variable = predictors,
+#'   Category = rep(c("Inflammatory", "Metabolic"), length.out = length(predictors))
+#' )
+#' PlotVolcanoEffects(
+#'   Labelled, predictors, "AXL",
+#'   ColorBy = category_df,
+#'   LabelMode = "raw"
+#' )$RawPPlot
+#'
+#' # A named vector is also accepted; use FDR-adjusted labels
+#' category_vector <- stats::setNames(category_df$Category, category_df$Variable)
+#' PlotVolcanoEffects(
+#'   Labelled, predictors, "AXL",
+#'   ColorBy = category_vector,
+#'   LabelMode = "fdr"
+#' )$FDRPlot
+#' @param Data \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
+#' @param xVars \strong{Deprecated} (since 19.15.0). Use \code{predictor_vars} instead.
+#' @param yVar \strong{Deprecated} (since 19.15.0). Use \code{outcome_var} instead.
+#' @param Covariates \strong{Deprecated} (since 19.15.0). Use \code{covariates} instead.
+#' @param Codebook \strong{Deprecated} (since 19.15.0). Use \code{codebook} instead.
+#' @export
+PlotVolcanoEffects <- function(data,
+    predictor_vars,
+    outcome_var,
+    covariates = NULL,
+    OutcomeType = c("auto", "continuous", "categorical"),
+    EffectMetric = c("auto", "cohens_d", "log2fc"),
+    AdjustMethod = "fdr",
+    Alpha = 0.05,
+    Format = c("tiered", "classic", "fdr_only", "directional", "effect_gradient", "minimal", "neon"),
+    LabelMode = c("none", "top_n", "raw", "significant", "fdr", "extreme"),
+    TopN = 10,
+    Relabel = TRUE,
+    codebook = NULL,
+    InteractiveLabels = TRUE,
+    ColorBy = NULL,
+    TooltipData = NULL,
+    TooltipFields = NULL,
+    Data = lifecycle::deprecated(),
+    xVars = lifecycle::deprecated(),
+    yVar = lifecycle::deprecated(),
+    Covariates = lifecycle::deprecated(),
+    Codebook = lifecycle::deprecated()) {
+  # Deprecated argument shims (SciDataReportR 19.15.0)
+  if (lifecycle::is_present(Data)) {
+    lifecycle::deprecate_warn("19.15.0", "PlotVolcanoEffects(Data)", "PlotVolcanoEffects(data)")
+    data <- Data
+  }
+  if (!missing(data)) Data <- data
+  if (lifecycle::is_present(xVars)) {
+    lifecycle::deprecate_warn("19.15.0", "PlotVolcanoEffects(xVars)", "PlotVolcanoEffects(predictor_vars)")
+    predictor_vars <- xVars
+  }
+  if (!missing(predictor_vars)) xVars <- predictor_vars
+  if (lifecycle::is_present(yVar)) {
+    lifecycle::deprecate_warn("19.15.0", "PlotVolcanoEffects(yVar)", "PlotVolcanoEffects(outcome_var)")
+    outcome_var <- yVar
+  }
+  if (!missing(outcome_var)) yVar <- outcome_var
+  if (lifecycle::is_present(Covariates)) {
+    lifecycle::deprecate_warn("19.15.0", "PlotVolcanoEffects(Covariates)", "PlotVolcanoEffects(covariates)")
+    covariates <- Covariates
+  }
+  Covariates <- covariates
+  if (lifecycle::is_present(Codebook)) {
+    lifecycle::deprecate_warn("19.15.0", "PlotVolcanoEffects(Codebook)", "PlotVolcanoEffects(codebook)")
+    codebook <- Codebook
+  }
+  Codebook <- codebook
+
+
+  OutcomeType <- match.arg(OutcomeType)
+  EffectMetric <- match.arg(EffectMetric)
+  Format <- match.arg(Format)
+  LabelMode <- match.arg(LabelMode)
+
+  # Validate inputs
+
+  if (!is.data.frame(Data)) {
+    stop("Data must be a data frame.")
+  }
+
+  if (!is.character(xVars) || length(xVars) == 0) {
+    stop("xVars must be a non-empty character vector of predictor variable names.")
+  }
+
+  if (!is.character(yVar) || length(yVar) != 1) {
+    stop("yVar must be a single character string naming the outcome variable.")
+  }
+
+  if (!yVar %in% names(Data)) {
+    stop(
+      "yVar was not found in Data. Expected: ",
+      yVar,
+      ". Available columns include: ",
+      paste(utils::head(names(Data), 20), collapse = ", ")
+    )
+  }
+
+  if (!is.null(Covariates)) {
+    missing_covars <- setdiff(Covariates, names(Data))
+
+    if (length(missing_covars) > 0) {
+      stop(
+        "The following Covariates were not found in Data: ",
+        paste(missing_covars, collapse = ", ")
+      )
+    }
+  }
+
+  missing_xvars <- setdiff(xVars, names(Data))
+
+  if (length(missing_xvars) > 0) {
+    warning(
+      "The following xVars were not found in Data and were removed: ",
+      paste(missing_xvars, collapse = ", "),
+      call. = FALSE
+    )
+  }
+
+  xVars <- intersect(xVars, names(Data))
+
+  if (length(xVars) == 0) {
+    stop("No valid xVars remain after checking against Data.")
+  }
+
+  if (!is.null(Codebook)) {
+    if (!is.data.frame(Codebook)) {
+      stop("Codebook must be a data frame when supplied.")
+    }
+
+    required_codebook_cols <- c("Variable", "Label")
+    missing_codebook_cols <- setdiff(required_codebook_cols, names(Codebook))
+
+    if (length(missing_codebook_cols) > 0) {
+      stop(
+        "Codebook must contain columns Variable and Label. Missing: ",
+        paste(missing_codebook_cols, collapse = ", ")
+      )
+    }
+  }
+
+  color_lookup <- NULL
+
+  if (!is.null(ColorBy)) {
+    if (is.data.frame(ColorBy)) {
+      required_color_cols <- c("Variable", "Category")
+      missing_color_cols <- setdiff(required_color_cols, names(ColorBy))
+
+      if (length(missing_color_cols) > 0) {
+        stop(
+          "ColorBy data frames must contain columns Variable and Category. Missing: ",
+          paste(missing_color_cols, collapse = ", ")
+        )
+      }
+
+      df_color_mapping <- ColorBy %>%
+        dplyr::transmute(
+          Variable = as.character(.data$Variable),
+          Category = as.character(.data$Category)
+        )
+    } else if (is.atomic(ColorBy) && !is.null(names(ColorBy))) {
+      df_color_mapping <- tibble::tibble(
+        Variable = names(ColorBy),
+        Category = as.character(ColorBy)
+      )
+    } else {
+      stop(
+        "ColorBy must be a data frame with Variable and Category columns or ",
+        "a named atomic vector."
+      )
+    }
+
+    if (nrow(df_color_mapping) == 0) {
+      stop("ColorBy must contain at least one variable-to-category mapping.")
+    }
+
+    invalid_color_vars <- is.na(df_color_mapping$Variable) |
+      trimws(df_color_mapping$Variable) == ""
+
+    if (any(invalid_color_vars)) {
+      stop("ColorBy variable names must be non-missing and non-empty.")
+    }
+
+    conflicting_color_vars <- df_color_mapping %>%
+      dplyr::mutate(
+        Category = dplyr::if_else(
+          is.na(.data$Category) | trimws(.data$Category) == "",
+          "Unmapped",
+          .data$Category
+        )
+      ) %>%
+      dplyr::group_by(.data$Variable) %>%
+      dplyr::summarise(NCategories = dplyr::n_distinct(.data$Category), .groups = "drop") %>%
+      dplyr::filter(.data$NCategories > 1) %>%
+      dplyr::pull(.data$Variable)
+
+    if (length(conflicting_color_vars) > 0) {
+      stop(
+        "ColorBy contains conflicting category mappings for: ",
+        paste(conflicting_color_vars, collapse = ", ")
+      )
+    }
+
+    df_color_mapping <- df_color_mapping %>%
+      dplyr::mutate(
+        Category = dplyr::if_else(
+          is.na(.data$Category) | trimws(.data$Category) == "",
+          "Unmapped",
+          .data$Category
+        )
+      ) %>%
+      dplyr::distinct(.data$Variable, .keep_all = TRUE)
+
+    color_lookup <- stats::setNames(
+      df_color_mapping$Category,
+      df_color_mapping$Variable
+    )
+  }
+
+  # Prepare outcome
+
+  outcome_vector <- Data[[yVar]]
+
+  if (OutcomeType == "auto") {
+    if (is.numeric(outcome_vector)) {
+      OutcomeType <- "continuous"
+    } else {
+      OutcomeType <- "categorical"
+    }
+  }
+
+  if (OutcomeType == "continuous" && !is.numeric(outcome_vector)) {
+    stop("OutcomeType is continuous, but yVar is not numeric.")
+  }
+
+  if (OutcomeType == "categorical") {
+    outcome_nonmissing <- outcome_vector[!is.na(outcome_vector)]
+    outcome_levels <- unique(as.character(outcome_nonmissing))
+
+    if (length(outcome_levels) != 2) {
+      stop(
+        "Categorical outcomes must have exactly two non-missing levels. ",
+        "Received ",
+        length(outcome_levels),
+        " levels: ",
+        paste(outcome_levels, collapse = ", ")
+      )
+    }
+
+    outcome_levels <- sort(outcome_levels)
+  } else {
+    outcome_levels <- NULL
+  }
+
+  if (OutcomeType == "continuous") {
+    EffectMetric <- "standardized_beta"
+  } else if (EffectMetric == "auto") {
+    EffectMetric <- "cohens_d"
+  }
+
+  # Prepare labels
+
+  label_lookup <- stats::setNames(xVars, xVars)
+
+  if (Relabel) {
+    if (!is.null(Codebook)) {
+      codebook_labels <- Codebook %>%
+        dplyr::filter(.data$Variable %in% xVars) %>%
+        dplyr::mutate(
+          Label = dplyr::if_else(
+            is.na(.data$Label) | .data$Label == "",
+            .data$Variable,
+            as.character(.data$Label)
+          )
+        ) %>%
+        dplyr::select(.data$Variable, .data$Label)
+
+      label_lookup[codebook_labels$Variable] <- codebook_labels$Label
+    }
+
+    for (this_var in xVars) {
+      if (label_lookup[[this_var]] == this_var) {
+        attr_label <- attr(Data[[this_var]], "label", exact = TRUE)
+
+        if (!is.null(attr_label) && !is.na(attr_label) && attr_label != "") {
+          label_lookup[[this_var]] <- as.character(attr_label)
+        }
+      }
+    }
+  }
+
+  # Remove invalid predictors
+
+  numeric_xvars <- xVars[vapply(Data[xVars], is.numeric, logical(1))]
+  invalid_xvars <- setdiff(xVars, numeric_xvars)
+
+  if (length(invalid_xvars) > 0) {
+    warning(
+      "The following xVars were removed because they are not numeric: ",
+      paste(invalid_xvars, collapse = ", "),
+      call. = FALSE
+    )
+  }
+
+  xVars <- numeric_xvars
+
+  if (length(xVars) == 0) {
+    stop("No numeric xVars remain after removing invalid predictors.")
+  }
+
+  # Fit one model per predictor
+
+  results <- purrr::map_dfr(xVars, function(this_var) {
+
+    model_vars <- c(this_var, yVar, Covariates)
+
+    model_data <- Data %>%
+      dplyr::select(dplyr::all_of(model_vars)) %>%
+      dplyr::filter(stats::complete.cases(.))
+
+    final_n <- nrow(model_data)
+
+    if (final_n < 3) {
+      return(
+        tibble::tibble(
+          Variable = this_var,
+          Label = unname(label_lookup[[this_var]]),
+          Outcome = yVar,
+          OutcomeType = OutcomeType,
+          Effect = NA_real_,
+          EffectType = ifelse(
+            OutcomeType == "continuous",
+            "Standardized beta",
+            ifelse(EffectMetric == "log2fc", "Log2 fold change", "Cohen-style d")
+          ),
+          PValue = NA_real_,
+          N = final_n,
+          Note = "Too few complete observations"
+        )
+      )
+    }
+
+    if (OutcomeType == "continuous") {
+      continuous_result <- CalculateContinuousScreeningEffects(
+        data = Data,
+        predictor_vars = this_var,
+        outcome_var = yVar,
+        covariates = Covariates,
+        label_lookup = label_lookup
+      )
+
+      return(continuous_result %>%
+        dplyr::transmute(
+          Variable = .data$Variable,
+          Label = .data$Label,
+          Outcome = yVar,
+          OutcomeType = OutcomeType,
+          Effect = .data$Beta,
+          EffectType = "Standardized beta",
+          PValue = .data$PValue,
+          N = .data$N,
+          R = .data$R,
+          AdjustedR = .data$AdjustedR,
+          Note = .data$Note
+        ))
+    }
+
+    model_data <- model_data %>%
+      dplyr::mutate(
+        .volcano_group = factor(as.character(.data[[yVar]]), levels = outcome_levels)
+      )
+
+    group_counts <- table(model_data$.volcano_group)
+
+    if (length(group_counts) != 2 || any(group_counts < 2)) {
+      return(
+        tibble::tibble(
+          Variable = this_var,
+          Label = unname(label_lookup[[this_var]]),
+          Outcome = yVar,
+          OutcomeType = OutcomeType,
+          Effect = NA_real_,
+          EffectType = ifelse(
+            EffectMetric == "log2fc",
+            ifelse(!is.null(Covariates), "Adjusted log2 fold change", "Log2 fold change"),
+            ifelse(!is.null(Covariates), "Adjusted Cohen-style d", "Cohen-style d")
+          ),
+          PValue = NA_real_,
+          N = final_n,
+          Note = "Too few observations in one or both outcome groups"
+        )
+      )
+    }
+
+    if (EffectMetric == "log2fc") {
+      if (any(model_data[[this_var]] <= 0, na.rm = TRUE)) {
+        return(
+          tibble::tibble(
+            Variable = this_var,
+            Label = unname(label_lookup[[this_var]]),
+            Outcome = yVar,
+            OutcomeType = OutcomeType,
+            Effect = NA_real_,
+            EffectType = ifelse(!is.null(Covariates), "Adjusted log2 fold change", "Log2 fold change"),
+            PValue = NA_real_,
+            N = final_n,
+            Note = "Log2 fold change requires strictly positive predictor values"
+          )
+        )
+      }
+
+      model_data <- model_data %>%
+        dplyr::mutate(.volcano_x_effect = log2(.data[[this_var]]))
+    } else {
+      model_data <- model_data %>%
+        dplyr::mutate(.volcano_x_effect = as.numeric(scale(.data[[this_var]])))
+    }
+
+    if (
+      all(is.na(model_data$.volcano_x_effect)) ||
+      stats::sd(model_data$.volcano_x_effect, na.rm = TRUE) == 0
+    ) {
+      return(
+        tibble::tibble(
+          Variable = this_var,
+          Label = unname(label_lookup[[this_var]]),
+          Outcome = yVar,
+          OutcomeType = OutcomeType,
+          Effect = NA_real_,
+          EffectType = ifelse(
+            EffectMetric == "log2fc",
+            ifelse(!is.null(Covariates), "Adjusted log2 fold change", "Log2 fold change"),
+            ifelse(!is.null(Covariates), "Adjusted Cohen-style d", "Cohen-style d")
+          ),
+          PValue = NA_real_,
+          N = final_n,
+          Note = "Zero variance in predictor"
+        )
+      )
+    }
+
+    model_formula <- stats::as.formula(
+      paste(
+        ".volcano_x_effect ~ .volcano_group",
+        if (!is.null(Covariates)) {
+          paste("+", paste(Covariates, collapse = " + "))
+        } else {
+          ""
+        }
+      )
+    )
+
+    model_fit <- tryCatch(
+      stats::lm(model_formula, data = model_data),
+      error = function(e) NULL
+    )
+
+    if (is.null(model_fit)) {
+      return(
+        tibble::tibble(
+          Variable = this_var,
+          Label = unname(label_lookup[[this_var]]),
+          Outcome = yVar,
+          OutcomeType = OutcomeType,
+          Effect = NA_real_,
+          EffectType = ifelse(
+            EffectMetric == "log2fc",
+            ifelse(!is.null(Covariates), "Adjusted log2 fold change", "Log2 fold change"),
+            ifelse(!is.null(Covariates), "Adjusted Cohen-style d", "Cohen-style d")
+          ),
+          PValue = NA_real_,
+          N = final_n,
+          Note = "Model failed"
+        )
+      )
+    }
+
+    coefficient_table <- summary(model_fit)$coefficients
+    group_coef <- grep("^\\.volcano_group", rownames(coefficient_table), value = TRUE)
+
+    if (length(group_coef) != 1) {
+      return(
+        tibble::tibble(
+          Variable = this_var,
+          Label = unname(label_lookup[[this_var]]),
+          Outcome = yVar,
+          OutcomeType = OutcomeType,
+          Effect = NA_real_,
+          EffectType = ifelse(
+            EffectMetric == "log2fc",
+            ifelse(!is.null(Covariates), "Adjusted log2 fold change", "Log2 fold change"),
+            ifelse(!is.null(Covariates), "Adjusted Cohen-style d", "Cohen-style d")
+          ),
+          PValue = NA_real_,
+          N = final_n,
+          Note = "Group coefficient not estimable"
+        )
+      )
+    }
+
+    effect <- unname(coefficient_table[group_coef, "Estimate"])
+    p_value <- unname(coefficient_table[group_coef, "Pr(>|t|)"])
+
+    # Group means of the raw predictor within each outcome level. outcome_levels
+    # is length-2 and sorted, so Group1 is the first level and Group2 the second.
+    group_means <- tapply(
+      model_data[[this_var]],
+      model_data$.volcano_group,
+      mean,
+      na.rm = TRUE
+    )
+
+    tibble::tibble(
+      Variable = this_var,
+      Label = unname(label_lookup[[this_var]]),
+      Outcome = yVar,
+      OutcomeType = OutcomeType,
+      Effect = effect,
+      EffectType = ifelse(
+        EffectMetric == "log2fc",
+        ifelse(!is.null(Covariates), "Adjusted log2 fold change", "Log2 fold change"),
+        ifelse(!is.null(Covariates), "Adjusted Cohen-style d", "Cohen-style d")
+      ),
+      PValue = p_value,
+      N = final_n,
+      Group1Level = outcome_levels[1],
+      Group2Level = outcome_levels[2],
+      Group1Mean = unname(group_means[[outcome_levels[1]]]),
+      Group2Mean = unname(group_means[[outcome_levels[2]]]),
+      Note = NA_character_
+    )
+  })
+
+  # Build outputs
+
+  # Guarantee the metric columns exist even when every model of a given type
+  # failed (purrr::map_dfr only creates a column when at least one row supplies
+  # it). Continuous runs carry R/AdjustedR; categorical runs carry group means.
+  ensure_col <- function(df, col, default) {
+    if (!col %in% names(df)) df[[col]] <- default
+    df
+  }
+  results <- results %>%
+    ensure_col("R", NA_real_) %>%
+    ensure_col("AdjustedR", NA_real_) %>%
+    ensure_col("Group1Level", NA_character_) %>%
+    ensure_col("Group2Level", NA_character_) %>%
+    ensure_col("Group1Mean", NA_real_) %>%
+    ensure_col("Group2Mean", NA_real_)
+
+  # Extra tooltip lines depend on the outcome type, which is constant for the
+  # whole call: correlations for continuous outcomes, group means for
+  # categorical ones.
+  if (OutcomeType == "continuous") {
+    tooltip_extra <- paste0(
+      "<br>r: ", ifelse(is.na(results$R), "NA", signif(results$R, 3)),
+      ifelse(
+        is.na(results$AdjustedR),
+        "",
+        paste0("<br>Adjusted r: ", signif(results$AdjustedR, 3))
+      )
+    )
+  } else {
+    tooltip_extra <- paste0(
+      "<br>", results$Group1Level, " mean: ", signif(results$Group1Mean, 3),
+      "<br>", results$Group2Level, " mean: ", signif(results$Group2Mean, 3)
+    )
+  }
+
+  if (!is.null(color_lookup)) {
+    mapped_categories <- unname(color_lookup[results$Variable])
+    mapped_categories[is.na(mapped_categories) | mapped_categories == ""] <- "Unmapped"
+    results$ColorCategory <- mapped_categories
+  }
+
+  if (!is.null(TooltipData)) {
+    if (!is.data.frame(TooltipData) || !"Variable" %in% names(TooltipData)) {
+      stop("`TooltipData` must be a data frame containing `Variable`.", call. = FALSE)
+    }
+    if (anyDuplicated(TooltipData$Variable)) {
+      stop("`TooltipData$Variable` must be unique so each point has one tooltip record.", call. = FALSE)
+    }
+    tooltip_fields <- if (is.null(TooltipFields)) setdiff(names(TooltipData), "Variable") else TooltipFields
+    if (length(setdiff(tooltip_fields, names(TooltipData))) > 0) stop("Requested `TooltipFields` are absent from `TooltipData`.", call. = FALSE)
+    results <- dplyr::left_join(results, TooltipData[, c("Variable", tooltip_fields), drop = FALSE], by = "Variable")
+    tooltip_suffix <- vapply(seq_len(nrow(results)), function(i) {
+      fields <- tooltip_fields[!is.na(results[i, tooltip_fields, drop = TRUE]) & results[i, tooltip_fields, drop = TRUE] != ""]
+      paste0(vapply(fields, function(field) paste0("<br>", field, ": ", results[[field]][[i]]), character(1)), collapse = "")
+    }, character(1))
+  } else {
+    tooltip_suffix <- rep("", nrow(results))
+  }
+
+  results <- results %>%
+    dplyr::mutate(
+      FDR = stats::p.adjust(.data$PValue, method = AdjustMethod),
+      NegLog10P = -log10(.data$PValue),
+      NegLog10FDR = -log10(.data$FDR),
+      Significant = !is.na(.data$PValue) & .data$PValue < Alpha,
+      FDRSignificant = !is.na(.data$FDR) & .data$FDR < Alpha,
+      Direction = dplyr::case_when(
+        is.na(.data$Effect) ~ "Missing",
+        .data$Effect > 0 ~ "Positive",
+        .data$Effect < 0 ~ "Negative",
+        TRUE ~ "Zero"
+      ),
+      SignificanceTier = dplyr::case_when(
+        .data$FDRSignificant ~ "FDR significant",
+        .data$Significant ~ "Raw p significant",
+        TRUE ~ "Not significant"
+      ),
+      Tooltip = paste0(
+        "<b>", .data$Label, "</b>",
+        "<br>Variable: ", .data$Variable,
+        "<br>Outcome: ", .data$Outcome,
+        "<br>Effect type: ", .data$EffectType,
+        "<br>Effect: ", round(.data$Effect, 3),
+        tooltip_extra,
+        "<br>P: ", signif(.data$PValue, 3),
+        "<br>FDR: ", signif(.data$FDR, 3),
+        "<br>N: ", .data$N,
+        tooltip_suffix
+      )
+    )
+
+  label_vars <- character(0)
+
+  if (LabelMode == "top_n") {
+    label_vars <- results %>%
+      dplyr::filter(!is.na(.data$PValue)) %>%
+      dplyr::arrange(.data$PValue) %>%
+      dplyr::slice_head(n = TopN) %>%
+      dplyr::pull(.data$Variable)
+  }
+
+  if (LabelMode %in% c("raw", "significant")) {
+    label_vars <- results %>%
+      dplyr::filter(.data$Significant) %>%
+      dplyr::pull(.data$Variable)
+  }
+
+  if (LabelMode == "fdr") {
+    label_vars <- results %>%
+      dplyr::filter(.data$FDRSignificant) %>%
+      dplyr::pull(.data$Variable)
+  }
+
+  if (LabelMode == "extreme") {
+    top_p <- results %>%
+      dplyr::filter(!is.na(.data$PValue)) %>%
+      dplyr::arrange(.data$PValue) %>%
+      dplyr::slice_head(n = ceiling(TopN / 2)) %>%
+      dplyr::pull(.data$Variable)
+
+    top_effect <- results %>%
+      dplyr::filter(!is.na(.data$Effect)) %>%
+      dplyr::arrange(dplyr::desc(abs(.data$Effect))) %>%
+      dplyr::slice_head(n = floor(TopN / 2)) %>%
+      dplyr::pull(.data$Variable)
+
+    label_vars <- unique(c(top_p, top_effect))
+  }
+
+  results <- results %>%
+    dplyr::mutate(
+      PlotLabel = dplyr::if_else(
+        .data$Variable %in% label_vars,
+        .data$Label,
+        NA_character_
+      )
+    )
+
+  x_axis_label <- unique(results$EffectType)
+  x_axis_label <- x_axis_label[!is.na(x_axis_label)]
+
+  if (length(x_axis_label) != 1) {
+    x_axis_label <- "Effect"
+  }
+
+  make_plot <- function(plot_data, y_col, y_label, plot_title) {
+
+    plot_data <- plot_data %>%
+      dplyr::mutate(
+        PlotY = .data[[y_col]],
+        PlotY = dplyr::if_else(is.infinite(.data$PlotY), NA_real_, .data$PlotY)
+      )
+
+    # Point layer. When InteractiveLabels is TRUE, a `text` aesthetic is added
+    # for plotly::ggplotly(tooltip = "text") compatibility. `text` is not a
+    # standard ggplot2 aesthetic, so it is added via ggplot2::layer() with
+    # check.aes = FALSE to suppress the "Ignoring unknown aesthetics: text"
+    # warning at build time. inherit.aes = TRUE keeps the plot-level x/y/color.
+    volcano_point_layer <- if (InteractiveLabels) {
+      ggplot2::layer(
+        geom = "point",
+        stat = "identity",
+        position = "identity",
+        mapping = ggplot2::aes(text = .data$Tooltip),
+        params = list(na.rm = FALSE, alpha = 0.85, size = 2.4),
+        inherit.aes = TRUE,
+        check.aes = FALSE,
+        show.legend = NA
+      )
+    } else {
+      ggplot2::geom_point(alpha = 0.85, size = 2.4)
+    }
+
+    if (!is.null(color_lookup)) {
+      category_levels <- unique(plot_data$ColorCategory)
+      mapped_levels <- setdiff(category_levels, "Unmapped")
+      category_colors <- character(0)
+
+      if (length(mapped_levels) > 0) {
+        category_colors <- stats::setNames(
+          .SciDataColorValues(length(mapped_levels)),
+          mapped_levels
+        )
+      }
+
+      if ("Unmapped" %in% category_levels) {
+        category_colors <- c(category_colors, "Unmapped" = "grey70")
+      }
+
+      p <- ggplot2::ggplot(
+        plot_data,
+        ggplot2::aes(
+          x = .data$Effect,
+          y = .data$PlotY,
+          color = .data$ColorCategory
+        )
+      ) +
+        volcano_point_layer +
+        ggplot2::scale_color_manual(
+          values = category_colors,
+          breaks = category_levels,
+          na.value = "grey70"
+        )
+    } else if (Format == "effect_gradient") {
+      p <- ggplot2::ggplot(
+        plot_data,
+        ggplot2::aes(
+          x = .data$Effect,
+          y = .data$PlotY,
+          color = .data$Effect
+        )
+      ) +
+        volcano_point_layer +
+        ggplot2::scale_color_gradient2(
+          low = "#3B4CC0",
+          mid = "grey80",
+          high = "#B40426",
+          midpoint = 0,
+          na.value = "grey80"
+        )
+    } else {
+      color_var <- dplyr::case_when(
+        Format %in% c("tiered", "classic", "neon") ~ plot_data$SignificanceTier,
+        Format == "fdr_only" & plot_data$FDRSignificant ~ "FDR significant",
+        Format == "fdr_only" ~ "Not significant",
+        Format == "directional" & plot_data$FDRSignificant & plot_data$Effect > 0 ~ "FDR positive",
+        Format == "directional" & plot_data$FDRSignificant & plot_data$Effect < 0 ~ "FDR negative",
+        Format == "directional" & plot_data$Significant & plot_data$Effect > 0 ~ "Raw positive",
+        Format == "directional" & plot_data$Significant & plot_data$Effect < 0 ~ "Raw negative",
+        Format == "directional" ~ "Not significant",
+        Format == "minimal" & plot_data$FDRSignificant ~ "FDR significant",
+        Format == "minimal" & plot_data$Significant ~ "Raw p significant",
+        Format == "minimal" ~ "Not significant",
+        TRUE ~ plot_data$SignificanceTier
+      )
+
+      plot_data <- plot_data %>%
+        dplyr::mutate(PlotColor = color_var)
+
+      p <- ggplot2::ggplot(
+        plot_data,
+        ggplot2::aes(
+          x = .data$Effect,
+          y = .data$PlotY,
+          color = .data$PlotColor
+        )
+      ) +
+        volcano_point_layer
+
+      if (Format == "tiered") {
+        p <- p +
+          ggplot2::scale_color_manual(
+            values = c(
+              "Not significant" = "grey75",
+              "Raw p significant" = "#F9C74F",
+              "FDR significant" = "#D62828"
+            ),
+            na.value = "grey75"
+          )
+      }
+
+      if (Format == "classic") {
+        p <- p +
+          ggplot2::scale_color_manual(
+            values = c(
+              "Not significant" = "grey70",
+              "Raw p significant" = "#FDB515",
+              "FDR significant" = "#B00020"
+            ),
+            na.value = "grey70"
+          )
+      }
+
+      if (Format == "fdr_only") {
+        p <- p +
+          ggplot2::scale_color_manual(
+            values = c(
+              "Not significant" = "grey78",
+              "FDR significant" = "#D62828"
+            ),
+            na.value = "grey78"
+          )
+      }
+
+      if (Format == "directional") {
+        p <- p +
+          ggplot2::scale_color_manual(
+            values = c(
+              "Not significant" = "grey78",
+              "Raw positive" = "#F9C74F",
+              "Raw negative" = "#90BE6D",
+              "FDR positive" = "#D62828",
+              "FDR negative" = "#277DA1"
+            ),
+            na.value = "grey78"
+          )
+      }
+
+      if (Format == "minimal") {
+        p <- p +
+          ggplot2::scale_color_manual(
+            values = c(
+              "Not significant" = "grey55",
+              "Raw p significant" = "grey20",
+              "FDR significant" = "black"
+            ),
+            na.value = "grey70"
+          )
+      }
+
+      if (Format == "neon") {
+        p <- p +
+          ggplot2::scale_color_manual(
+            values = c(
+              "Not significant" = "grey25",
+              "Raw p significant" = "#F9F871",
+              "FDR significant" = "#FF00A8"
+            ),
+            na.value = "grey40"
+          )
+      }
+    }
+
+    p <- p +
+      ggplot2::geom_hline(
+        yintercept = -log10(Alpha),
+        linetype = "dashed",
+        linewidth = 0.4,
+        color = "grey45"
+      ) +
+      ggplot2::geom_vline(
+        xintercept = 0,
+        linetype = "solid",
+        linewidth = 0.35,
+        color = "grey70"
+      ) +
+      ggplot2::labs(
+        title = plot_title,
+        x = x_axis_label,
+        y = y_label,
+        color = NULL
+      ) +
+      ggplot2::theme_minimal(base_size = 12) +
+      ggplot2::theme(
+        legend.position = "right",
+        panel.grid.minor = ggplot2::element_blank(),
+        plot.title = ggplot2::element_text(face = "bold")
+      )
+
+    label_data <- plot_data %>%
+      dplyr::filter(!is.na(.data$PlotLabel), !is.na(.data$Effect), !is.na(.data$PlotY))
+
+    if (nrow(label_data) > 0) {
+      if (requireNamespace("ggrepel", quietly = TRUE)) {
+        p <- p +
+          ggrepel::geom_text_repel(
+            data = label_data,
+            ggplot2::aes(label = .data$PlotLabel),
+            size = 3.3,
+            max.overlaps = Inf,
+            show.legend = FALSE
+          )
+      } else {
+        p <- p +
+          ggplot2::geom_text(
+            data = label_data,
+            ggplot2::aes(label = .data$PlotLabel),
+            size = 3,
+            check_overlap = TRUE,
+            vjust = -0.5,
+            show.legend = FALSE
+          )
+      }
+    }
+
+    p
+  }
+
+  raw_p_plot <- make_plot(
+    plot_data = results,
+    y_col = "NegLog10P",
+    y_label = expression(-log[10](italic(p))),
+    plot_title = paste0("Volcano plot using raw p-values: ", yVar)
+  )
+
+  fdr_plot <- make_plot(
+    plot_data = results,
+    y_col = "NegLog10FDR",
+    y_label = expression(-log[10]("FDR")),
+    plot_title = paste0("Volcano plot using FDR-adjusted p-values: ", yVar)
+  )
+
+  # Return result
+
+  list(
+    RawPPlot = raw_p_plot,
+    FDRPlot = fdr_plot,
+    ResultsTable = results
+  )
+}

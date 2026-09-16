@@ -1,0 +1,374 @@
+#' Plot & Summarize Group Stats via MakeComparisonTable
+#' (BH q from p; SHAPE by p; COLOR by Category (vector or data frame); stable point size; palette via paletteer)
+#'
+#' @param data data.frame
+#' @param variables character vector of variables to analyze
+#' @param VariableCategories optional:
+#'        - data frame with columns Variable, Category; OR
+#'        - vector of categories (named by variable OR unnamed aligned to `Variables`)
+#' @param impClust,normalClust labels for the two groups (impClust plotted to the RIGHT for signed axes)
+#' @param group_var column name in `Data` holding the group labels
+#' @param missing_threshold drop vars with > this fraction missing (default 0.80)
+#' @param max_levels drop factors with > this many levels (default 10)
+#' @param label_q label threshold using q (default 0.05)
+#' @param x_axis one of c("signed_logp","signed_effect","effect","logp")
+#' @param sort_by one of c("q","p","effect","signed_logp","signed_effect","none")
+#' @param mct_args list of extra args to SciDataReportR::MakeComparisonTable(); e.g., AddEffectSize=TRUE
+#' @param palette Optional paletteer palette string for category colors. When
+#'   `NULL` (the default), the SciDataReportR palette is used. Passing a
+#'   paletteer string such as `"pals::alphabet"` still works as before.
+#' @param point_size numeric constant for point size (default 3.5)
+#'
+#' @return list(plot=ggplot, table=gtsummary, pvaltable=data.frame, data_used=tibble)
+#' @param Data \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
+#' @param Variables \strong{Deprecated} (since 19.15.0). Use \code{variables} instead.
+#' @param GroupVar \strong{Deprecated} (since 19.15.0). Use \code{group_var} instead.
+#' @examples
+#' \donttest{
+#' data(SampleData)
+#' data(SampleVariableTypes)
+#'
+#' # Attach labels and factor levels for readable output
+#' Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
+#'
+#' # A broad biomarker panel compared between Diagnosis groups
+#' vars <- c(
+#'   "age", "ACE_CD143_Angiotensin_Converti", "ACTH_Adrenocorticotropic_Hormon",
+#'   "AXL", "Adiponectin", "Alpha_1_Antichymotrypsin", "Alpha_1_Antitrypsin",
+#'   "Alpha_1_Microglobulin", "Alpha_2_Macroglobulin", "Angiopoietin_2_ANG_2",
+#'   "Angiotensinogen", "Apolipoprotein_A_IV", "Apolipoprotein_A1",
+#'   "Apolipoprotein_A2", "Apolipoprotein_B", "Apolipoprotein_CI",
+#'   "Apolipoprotein_CIII", "Apolipoprotein_D", "Apolipoprotein_E",
+#'   "Apolipoprotein_H", "B_Lymphocyte_Chemoattractant_BL", "BMP_6",
+#'   "Beta_2_Microglobulin", "Betacellulin", "C_Reactive_Protein", "CD40",
+#'   "CD5L", "Calbindin", "Calcitonin", "CgA", "GRO_alpha", "MMP10", "MMP7",
+#'   "NT_proBNP", "PAI_1", "TRAIL_R3", "VEGF", "Ab_42", "p_tau", "tau"
+#' )
+#'
+#' result <- Plot2GroupStats(
+#'   Labelled,
+#'   variables = vars,
+#'   group_var = "Diagnosis",
+#'   impClust = "Impaired",
+#'   normalClust = "Control",
+#'   label_q = 0.0001
+#' )
+#'
+#' # Compact y-axis labels; full results stay in result$pvaltable
+#' result$plot + ggplot2::theme(
+#'   axis.text.y = ggplot2::element_text(size = 6),
+#'   plot.margin = ggplot2::margin(t = 20, r = 10, b = 10, l = 10)
+#' )
+#' }
+#' @export
+#' @import dplyr ggplot2 gtsummary
+Plot2GroupStats <- function(data,
+    variables,
+    VariableCategories = NULL,
+    impClust,
+    normalClust,
+    group_var,
+    missing_threshold = 0.8,
+    max_levels = 10,
+    label_q = 0.05,
+    x_axis = c("signed_logp", "signed_effect", "effect", "logp"),
+    sort_by = c("q", "p", "effect", "signed_logp", "signed_effect", "none"),
+    mct_args = list(),
+    palette = NULL,
+    point_size = 3.5,
+    Data = lifecycle::deprecated(),
+    Variables = lifecycle::deprecated(),
+    GroupVar = lifecycle::deprecated()) {
+  # Deprecated argument shims (SciDataReportR 19.15.0)
+  if (lifecycle::is_present(Data)) {
+    lifecycle::deprecate_warn("19.15.0", "Plot2GroupStats(Data)", "Plot2GroupStats(data)")
+    data <- Data
+  }
+  if (!missing(data)) Data <- data
+  if (lifecycle::is_present(Variables)) {
+    lifecycle::deprecate_warn("19.15.0", "Plot2GroupStats(Variables)", "Plot2GroupStats(variables)")
+    variables <- Variables
+  }
+  if (!missing(variables)) Variables <- variables
+  if (lifecycle::is_present(GroupVar)) {
+    lifecycle::deprecate_warn("19.15.0", "Plot2GroupStats(GroupVar)", "Plot2GroupStats(group_var)")
+    group_var <- GroupVar
+  }
+  if (!missing(group_var)) GroupVar <- group_var
+
+  x_axis  <- match.arg(x_axis)
+  sort_by <- match.arg(sort_by)
+
+  # ---- helpers --------------------------------------------------------------
+  safe_num <- function(x) { if (is.character(x)) suppressWarnings(as.numeric(x)) else x }
+  parse_pvals <- function(x) {
+    if (is.numeric(x)) return(x)
+    y <- gsub(",", "", x); y <- gsub("^\\s*(<|<=)\\s*", "", y)
+    suppressWarnings(as.numeric(y))
+  }
+  # Return a named character vector Category[variable]
+  resolve_categories <- function(VariableCategories, variables_arg, vars_present){
+    if (is.null(VariableCategories))
+      return(stats::setNames(rep(NA_character_, length(vars_present)), vars_present))
+
+    if (is.data.frame(VariableCategories) &&
+        all(c("Variable","Category") %in% names(VariableCategories))) {
+      cat_map <- stats::setNames(as.character(VariableCategories$Category),
+                                 as.character(VariableCategories$Variable))
+      out <- unname(cat_map[vars_present])
+      return(stats::setNames(ifelse(is.na(out), NA_character_, out), vars_present))
+    }
+
+    if (is.atomic(VariableCategories)) {
+      v <- VariableCategories
+      # Named vector -> match by names
+      if (!is.null(names(v)) && any(nzchar(names(v)))) {
+        cat_map <- stats::setNames(as.character(v), names(v))
+        out <- unname(cat_map[vars_present])
+        return(stats::setNames(ifelse(is.na(out), NA_character_, out), vars_present))
+      }
+      # Unnamed vector: align to Variables first, else to present vars
+      if (length(v) == length(variables_arg)) {
+        cat_map <- stats::setNames(as.character(v), variables_arg)
+        out <- unname(cat_map[vars_present])
+        return(stats::setNames(ifelse(is.na(out), NA_character_, out), vars_present))
+      } else if (length(v) == length(vars_present)) {
+        return(stats::setNames(as.character(v), vars_present))
+      } else {
+        return(stats::setNames(rep(NA_character_, length(vars_present)), vars_present))
+      }
+    }
+
+    stats::setNames(rep(NA_character_, length(vars_present)), vars_present)
+  }
+
+  # ---- checks ---------------------------------------------------------------
+  stopifnot(is.data.frame(Data), is.character(Variables), length(Variables) >= 1)
+  if (!GroupVar %in% names(Data)) stop("`GroupVar` not found in `Data`.")
+  miss <- setdiff(Variables, names(Data))
+  if (length(miss)) stop("Variables not in `Data`: ", paste(miss, collapse = ", "))
+
+  # ---- working data ---------------------------------------------------------
+  tData <- Data
+  tData$GroupVar <- Data[[GroupVar]]
+  tData <- tData %>%
+    dplyr::select(GroupVar, dplyr::all_of(Variables)) %>%
+    dplyr::filter(GroupVar %in% c(normalClust, impClust))
+  if (!all(c(normalClust, impClust) %in% unique(tData$GroupVar))) {
+    stop("After filtering, one of the groups is missing. Check `impClust` / `normalClust` and data.")
+  }
+  tData$GroupVar <- factor(tData$GroupVar, levels = c(normalClust, impClust))
+  tData <- tData %>% dplyr::mutate(dplyr::across(dplyr::where(is.character), factor))
+
+  # ---- pruning --------------------------------------------------------------
+  miss_prop <- colMeans(is.na(tData))
+  drop_missing <- setdiff(names(miss_prop[miss_prop > missing_threshold]), "GroupVar")
+  if (length(drop_missing)) tData <- dplyr::select(tData, -dplyr::all_of(drop_missing))
+
+  fac_levels <- vapply(tData, function(x) if (is.factor(x)) nlevels(x) else NA_integer_, 1L)
+  drop_low  <- names(fac_levels[!is.na(fac_levels) & fac_levels < 2])
+  drop_high <- names(fac_levels[!is.na(fac_levels) & fac_levels > max_levels])
+  tData <- dplyr::select(tData, -dplyr::all_of(setdiff(c(drop_low, drop_high), "GroupVar")))
+
+  num_sd <- vapply(tData, function(x) if (is.numeric(x)) stats::sd(x, na.rm = TRUE) else NA_real_, 1.0)
+  # Only numeric variables have a meaningful SD check. Keeping factors here is
+  # necessary both for categorical predictors and for categorical covariates
+  # passed through to MakeComparisonTable().
+  drop_nzv <- names(num_sd[!is.na(num_sd) & num_sd == 0])
+  tData <- dplyr::select(tData, -dplyr::all_of(setdiff(drop_nzv, "GroupVar")))
+
+  vars_in <- setdiff(names(tData), "GroupVar")
+  if (length(vars_in) == 0) stop("No analyzable variables remain after filtering/missingness checks.")
+
+  # ---- MakeComparisonTable --------------------------------------------------
+  mct_defaults <- list(
+    data      = tData,
+    variables = vars_in,
+    group_var = "GroupVar",
+    value_digits = 2,
+    p_digits  = 3
+  )
+  # Ask for absolute effect sizes unless user overrode; direction comes from data
+  if ("AddEffectSize" %in% names(formals(SciDataReportR::MakeComparisonTable)) &&
+      !"AddEffectSize" %in% names(mct_args)) {
+    mct_defaults$AddEffectSize <- TRUE
+  }
+  # Silence gtsummary warnings in the wrapper unless the caller explicitly opts out
+  if ("suppress_warnings" %in% names(formals(SciDataReportR::MakeComparisonTable)) &&
+      !"suppress_warnings" %in% names(mct_args)) {
+    mct_defaults$suppress_warnings <- TRUE
+  }
+  mct_call <- utils::modifyList(mct_defaults, mct_args, keep.null = TRUE)
+
+  MCT <- tryCatch(
+    do.call(SciDataReportR::MakeComparisonTable, mct_call),
+    error = function(e) {
+      fn <- try(get("MakeComparisonTable", asNamespace("SciDataReportR")), silent = TRUE)
+      if (!inherits(fn, "try-error")) {
+        valid <- names(formals(fn))
+        cleaned <- mct_call[intersect(names(mct_call), valid)]
+        do.call(SciDataReportR::MakeComparisonTable, cleaned)
+      } else stop(e)
+    }
+  )
+  if (!inherits(MCT, "gtsummary")) stop("MakeComparisonTable did not return a gtsummary table.")
+
+  # ---- extract p, compute BH q ---------------------------------------------
+  tb <- MCT$table_body
+  if (!all(c("row_type","variable") %in% names(tb))) {
+    stop("Unexpected structure from MakeComparisonTable$table_body (needs `row_type` and `variable`).")
+  }
+  pvaltable <- tb %>%
+    dplyr::filter(.data$row_type == "label") %>%
+    dplyr::select(dplyr::any_of(c("variable","label","p.value","effect_size","es_method")))
+  if (!"p.value" %in% names(pvaltable)) {
+    stop("`p.value` is missing in MakeComparisonTable output.")
+  }
+  pnum <- pvaltable$p.value
+  if (!is.numeric(pnum)) pnum <- parse_pvals(pnum)
+  tiny <- .Machine$double.xmin
+  pnum <- pmax(pnum, tiny)
+  pvaltable$p.value <- pnum
+  pvaltable$q.value <- p.adjust(pnum, method = "BH")
+
+  # ---- absolute effect magnitude & direction -------------------------------
+  pvaltable$effect_abs <- safe_num(pvaltable$effect_size)
+
+  dir_from_data <- function(vname) {
+    if (!vname %in% names(tData)) return(NA_real_)
+    v <- tData[[vname]]; g <- tData$GroupVar
+    if (is.numeric(v)) {
+      return(sign(mean(v[g == impClust], na.rm = TRUE) -
+                    mean(v[g == normalClust], na.rm = TRUE)))
+    }
+    v <- as.factor(v)
+    lv <- levels(v); if (length(lv) < 1) return(NA_real_)
+    pdiff <- sapply(lv, function(l) {
+      mean(v[g == impClust] == l, na.rm = TRUE) -
+        mean(v[g == normalClust] == l, na.rm = TRUE)
+    })
+    sign(pdiff[which.max(abs(pdiff))])
+  }
+  pvaltable$effect_sign <- vapply(pvaltable$variable, dir_from_data, 1.0)
+
+  # ---- metrics & y-order ----------------------------------------------------
+  pvaltable$logp        <- -log10(pvaltable$p.value)
+  pvaltable$signed_logp <- pvaltable$logp * pvaltable$effect_sign
+  pvaltable$signed_es   <- pvaltable$effect_abs * pvaltable$effect_sign
+
+  # `right = TRUE` makes each break an inclusive upper bound, so the labels read
+  # "<=" to match the cut points actually applied (package-wide star convention).
+  brks_p <- c(-Inf, 0.001, 0.01, 0.05, Inf); labs_p <- c("p<=0.001","p<=0.01","p<=0.05","ns")
+  pvaltable$SigP <- cut(pvaltable$p.value, breaks = brks_p, labels = labs_p, right = TRUE)
+
+  brks_q <- c(-Inf, 0.001, 0.01, 0.05, Inf); labs_q <- c("q<=0.001","q<=0.01","q<=0.05","ns")
+  pvaltable$SigQ <- cut(pvaltable$q.value, breaks = brks_q, labels = labs_q, right = TRUE)
+
+  vars_present <- as.character(pvaltable$variable)
+  cat_vec <- resolve_categories(VariableCategories, variables_arg = Variables,
+                                vars_present = vars_present)
+  pvaltable$Category <- unname(cat_vec[vars_present])
+
+  # Make every human-facing plot label come from the labelled input or the
+  # comparison-table label column, never from a truncated variable name.
+  data_labels <- sjlabelled::get_label(tData[vars_present], def.value = vars_present)
+  label_lookup <- stats::setNames(as.character(data_labels), vars_present)
+  pvaltable$display_label <- if ("label" %in% names(pvaltable)) {
+    as.character(pvaltable$label)
+  } else {
+    unname(label_lookup[pvaltable$variable])
+  }
+  missing_labels <- is.na(pvaltable$display_label) | !nzchar(pvaltable$display_label)
+  pvaltable$display_label[missing_labels] <- unname(
+    label_lookup[pvaltable$variable[missing_labels]])
+
+  order_key <- switch(
+    sort_by,
+    q             = pvaltable$q.value,
+    p             = pvaltable$p.value,
+    effect        = -pvaltable$effect_abs,
+    signed_logp   = -pvaltable$signed_logp,
+    signed_effect = -pvaltable$signed_es,
+    none          = seq_len(nrow(pvaltable))
+  )
+  ord <- order(order_key, na.last = TRUE)
+  pvaltable <- pvaltable[ord, , drop = FALSE]
+  pvaltable$display_label <- factor(
+    pvaltable$display_label, levels = rev(pvaltable$display_label))
+
+  x_map <- switch(
+    x_axis,
+    signed_logp   = list(var = "signed_logp",  lab = paste0("signed -log10(p)  (higher in ", impClust, ")"), signed = TRUE),
+    signed_effect = list(var = "signed_es",    lab = paste0("signed effect size  (higher in ", impClust, ")"), signed = TRUE),
+    effect        = list(var = "effect_abs",   lab = "absolute effect size",                                      signed = FALSE),
+    logp          = list(var = "logp",         lab = "-log10(p)",                                                 signed = FALSE)
+  )
+  pvaltable$xvar <- pvaltable[[x_map$var]]
+
+  label_df <- pvaltable[!is.na(pvaltable$q.value) & pvaltable$q.value < label_q, , drop = FALSE]
+
+  # ---- plot (stable point size; silent) ------------------------------------
+  use_categories <- any(!is.na(pvaltable$Category))
+  aes_color <- if (use_categories) ggplot2::aes(color = Category) else ggplot2::aes(color = SigQ)
+
+  p <- ggplot2::ggplot(
+    pvaltable,
+    ggplot2::aes(x = .data$xvar, y = .data$display_label, shape = .data$SigP)
+  ) +
+    aes_color +
+    { if (isTRUE(x_map$signed)) ggplot2::annotate("rect", xmin = 0, xmax = Inf, ymin = -Inf, ymax = Inf, alpha = 0.08) else NULL } +
+    { if (isTRUE(x_map$signed)) ggplot2::geom_vline(xintercept = 0) else NULL } +
+    ggplot2::geom_point(size = point_size) +
+    ggplot2::scale_y_discrete(drop = FALSE) +
+    ggplot2::scale_shape_manual(
+      name   = "Significance (p)",
+      values = c("p<=0.001" = 17, "p<=0.01" = 15, "p<=0.05" = 16, "ns" = 1)
+    ) +
+    ggplot2::xlab(x_map$lab) +
+    ggplot2::ylab(NULL) +
+    ggplot2::ggtitle(paste("---> Higher in", impClust)) +
+    ggplot2::theme_bw() +
+    ggplot2::theme(plot.title = ggplot2::element_text(hjust = 1))
+
+  # Dynamic category palette via paletteer (default pals::alphabet); robust fallback
+  if (use_categories) {
+    ucat <- unique(stats::na.omit(pvaltable$Category))
+    n_cat <- length(ucat)
+    cols <- NULL
+
+    if (is.null(palette)) {
+      cols <- .SciDataColorValues(n_cat)
+    } else if (requireNamespace("paletteer", quietly = TRUE)) {
+      cols <- tryCatch(
+        as.character(paletteer::paletteer_d(palette, n = n_cat)),
+        error = function(e) NULL
+      )
+    }
+    if (is.null(cols) || length(cols) < n_cat) {
+      cols <- .SciDataColorValues(n_cat)
+    }
+    names(cols) <- ucat
+    p <- p + ggplot2::scale_color_manual(name = "Category", values = cols, drop = FALSE)
+  }
+
+  if (nrow(label_df) > 0) {
+    if (requireNamespace("ggrepel", quietly = TRUE)) {
+      p <- p + ggrepel::geom_text_repel(
+        data = label_df, ggplot2::aes(label = .data$display_label),
+        max.overlaps = 30, min.segment.length = 0
+      )
+    } else {
+      p <- p + ggplot2::geom_text(
+        data = label_df, ggplot2::aes(label = .data$display_label),
+        hjust = -0.05, size = 3
+      )
+    }
+  }
+
+  list(
+    plot      = p,
+    table     = MCT,
+    pvaltable = pvaltable,
+    data_used = dplyr::as_tibble(tData)
+  )
+}

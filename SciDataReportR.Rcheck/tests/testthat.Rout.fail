@@ -19,12 +19,39 @@ Type 'q()' to quit R.
 > library(SciDataReportR)
 > 
 > test_check("SciDataReportR")
+Saving _problems/test-assemble-plots-5.R
 Disease Cohort: treating "Disease" as the positive outcome level.
 Outcome: treating "Yes" as the positive outcome level.
 Outcome: treating "Yes" as the positive outcome level.
 Outcome: treating "Yes" as the positive outcome level.
 Outcome: treating "Yes" as the positive outcome level.
 Outcome: treating "Impaired" as the positive outcome level.
+Saving _problems/test-clustering-pipelines-167.R
+Saving _problems/test-clustering-pipelines-231.R
+Saving _problems/test-clustering-pipelines-307.R
+Saving _problems/test-clustering-pipelines-351.R
+Saving _problems/test-clustering-pipelines-368.R
+Saving _problems/test-clustering-pipelines-436.R
+Saving _problems/test-clustering-pipelines-458.R
+Saving _problems/test-clustering-pipelines-480.R
+Saving _problems/test-clustering-pipelines-509.R
+Saving _problems/test-clustering-pipelines-539.R
+Saving _problems/test-clustering-pipelines-598.R
+Saving _problems/test-clustering-pipelines-726.R
+Saving _problems/test-clustering-pipelines-837.R
+Saving _problems/test-clustering-pipelines-859.R
+Saving _problems/test-clustering-pipelines-886.R
+disease: 'Yes' treated as outcome-positive.
+disease: 'Yes' treated as outcome-positive.
+outcome: 'TRUE' treated as outcome-positive.
+outcome: 'TRUE' treated as outcome-positive.
+disease: 'Yes' treated as outcome-positive.
+outcome_a: 'Yes' treated as outcome-positive.
+outcome_b: 'Yes' treated as outcome-positive.
+outcome_a: 'Yes' treated as outcome-positive.
+outcome_b: 'Yes' treated as outcome-positive.
+outcome_a: 'Yes' treated as outcome-positive.
+disease: 'Yes' treated as outcome-positive.
 Joining with `by = join_by(X, Y)`
 Joining with `by = join_by(X, Y)`
 Joining with `by = join_by(X, Y)`
@@ -35,11 +62,7 @@ Joining with `by = join_by(X, Y)`
 Joining with `by = join_by(X, Y)`
 Joining with `by = join_by(X, Y)`
 Joining with `by = join_by(X, Y)`
-Saving _problems/test-make-comparison-table-adjusted-pvalues-34.R
-Saving _problems/test-make-comparison-table-adjusted-pvalues-35.R
-Saving _problems/test-make-comparison-table-adjusted-pvalues-36.R
-Saving _problems/test-make-comparison-table-adjusted-pvalues-66.R
-Saving _problems/test-make-comparison-table-adjusted-pvalues-67.R
+Comparing Comparison to Reference: DeltaR = r(Comparison) - r(Reference).
 
 
 Table: Messy merge: validation checks
@@ -94,30 +117,268 @@ Table: Messy merge: suspicious duplicate-variable conflicts
 |sex      |sex.x     |sex.y     |character |character  |        50|         3|                    3|           0|         6|
 
 Waiting for profiling to be done...
+Saving _problems/test-multivariable-regression-table-20.R
+Waiting for profiling to be done...
+Saving _problems/test-multivariable-regression-table-72.R
+Saving _problems/test-multivariable-regression-table-101.R
+Saving _problems/test-multivariable-regression-table-131.R
+Saving _problems/test-multivariable-regression-table-168.R
+Waiting for profiling to be done...
+Saving _problems/test-multivariable-regression-table-197.R
+Saving _problems/test-multivariable-regression-table-220.R
+Saving _problems/test-multivariable-regression-table-240.R
+Saving _problems/test-multivariable-regression-table-264.R
+Waiting for profiling to be done...
+Saving _problems/test-multivariable-regression-table-300.R
+Waiting for profiling to be done...
+Saving _problems/test-multivariable-regression-table-327.R
+Saving _problems/test-multivariable-regression-table-357.R
 Waiting for profiling to be done...
 Waiting for profiling to be done...
 Waiting for profiling to be done...
 Waiting for profiling to be done...
-Waiting for profiling to be done...
-Waiting for profiling to be done...
-Waiting for profiling to be done...
-Waiting for profiling to be done...
-Error in `test_dir()`:
-! `path` does not exist.
+Comparing Comparison to Reference: DeltaR = r(Comparison) - r(Reference).
+Comparing B to A: DeltaR = r(B) - r(A).
+Comparing B to A: DeltaR = r(B) - r(A).
+Comparing A to B: DeltaR = r(A) - r(B).
+Comparing B to A: DeltaR = r(B) - r(A).
+Saving _problems/test-scidata-colors-348.R
+Saving _problems/test-simulated-phenotype-data-4.R
+Saving _problems/test-simulated-phenotype-data-29.R
+Saving _problems/test-simulated-phenotype-data-41.R
+[ FAIL 32 | WARN 197 | SKIP 10 | PASS 1138 ]
+
+══ Skipped tests (10) ══════════════════════════════════════════════════════════
+• {SciDataReportR} is not installed. (1):
+  'test-create-som-cluster-model.R:162:5'
+• file.exists(path) is not TRUE (2):
+  'test-clustering-stability-documentation.R:40:3',
+  'test-som-projection-documentation.R:3:3'
+• file.exists(vignette_path) is not TRUE (1):
+  'test-clustering-phenotyping-vignette.R:3:3'
+• ordinalNet is installed (1): 'test-multivariable-regression-table.R:516:3'
+• Repository skill source is not included in this package build. (3):
+  'test-scidatareportr-skill.R:36:3', 'test-scidatareportr-skill.R:55:3',
+  'test-scidatareportr-skill.R:76:3'
+• source man/ is unavailable (1):
+  'test-clustering-stability-documentation.R:6:3'
+• source not available: PlotNumInteractionEffectsMatrix.R (1):
+  'test-semantic-colors.R:102:5'
+
+══ Failed tests ════════════════════════════════════════════════════════════════
+── Error ('test-assemble-plots.R:5:3'): AssemblePlots combines categorical and continuous PlotAssociations outputs ──
+Error in `eval(code, test_env)`: object 'SampleData' not found
 Backtrace:
-     ▆
-  1. └─testthat::test_check("SciDataReportR")
-  2.   └─testthat::test_dir("testthat", package = package, reporter = reporter, ..., load_package = "installed")
-  3.     └─testthat:::test_files(...)
-  4.       └─testthat:::test_files_serial(...)
-  5.         ├─testthat::with_reporter(...)
-  6.         │ └─base::tryCatch(...)
-  7.         │   └─base (local) tryCatchList(expr, classes, parentenv, handlers)
-  8.         │     └─base (local) tryCatchOne(expr, names, parentenv, handlers[[1L]])
-  9.         │       └─base (local) doTryCatch(return(expr), name, parentenv, handler)
- 10.         └─base::lapply(...)
- 11.           └─testthat (local) FUN(X[[i]], ...)
- 12.             └─testthat::source_file(...)
- 13.               └─cli::cli_abort("{.arg path} does not exist.", call = error_call)
- 14.                 └─rlang::abort(...)
+    ▆
+ 1. └─SciDataReportR::RevalueData(SampleData, SampleVariableTypes) at test-assemble-plots.R:5:3
+── Error ('test-clustering-pipelines.R:167:3'): PlotClusterComposition supports both clinically useful facet layouts ──
+Error in `eval(code, test_env)`: object 'SimulatedPhenotypeData' not found
+Backtrace:
+    ▆
+ 1. └─base::subset(SimulatedPhenotypeData, Cohort == "Training") at test-clustering-pipelines.R:167:3
+── Error ('test-clustering-pipelines.R:231:3'): clustering figures are ggplots and are never aliased or NULL ──
+Error in `eval(code, test_env)`: object 'SimulatedPhenotypeData' not found
+Backtrace:
+    ▆
+ 1. └─base::subset(SimulatedPhenotypeData, Cohort == "Training") at test-clustering-pipelines.R:231:3
+── Error ('test-clustering-pipelines.R:307:3'): exploratory clustering models return AHP and deterministic stability ──
+Error in `eval(code, test_env)`: object 'SimulatedPhenotypeData' not found
+── Error ('test-clustering-pipelines.R:351:3'): HDBSCAN stability reports noise recovery and handles candidate grids ──
+Error in `eval(code, test_env)`: object 'SimulatedPhenotypeData' not found
+── Error ('test-clustering-pipelines.R:368:3'): every non-SOM pipeline exposes in-sample refit stability ──
+Error in `eval(code, test_env)`: object 'SimulatedPhenotypeData' not found
+Backtrace:
+    ▆
+ 1. └─base::subset(SimulatedPhenotypeData, Cohort == "Training") at test-clustering-pipelines.R:368:3
+── Error ('test-clustering-pipelines.R:435:3'): SOM HDBSCAN freezes node-level assignments for projection ──
+Error in `eval(code, test_env)`: object 'SimulatedPhenotypeData' not found
+Backtrace:
+    ▆
+ 1. ├─... %>% dplyr::slice(1:40) at test-clustering-pipelines.R:435:3
+ 2. ├─dplyr::slice(., 1:40)
+ 3. └─dplyr::filter(SimulatedPhenotypeData, .data$Cohort == "Training")
+── Error ('test-clustering-pipelines.R:457:3'): SOM HDBSCAN exploratory models are not projectable ──
+Error in `eval(code, test_env)`: object 'SimulatedPhenotypeData' not found
+Backtrace:
+    ▆
+ 1. ├─... %>% dplyr::slice(1:40) at test-clustering-pipelines.R:457:3
+ 2. ├─dplyr::slice(., 1:40)
+ 3. └─dplyr::filter(SimulatedPhenotypeData, .data$Cohort == "Training")
+── Error ('test-clustering-pipelines.R:480:3'): projections triage cases against the frozen training reference ──
+Error in `eval(code, test_env)`: object 'SimulatedPhenotypeData' not found
+Backtrace:
+    ▆
+ 1. └─base::subset(SimulatedPhenotypeData, Cohort == "Training") at test-clustering-pipelines.R:480:3
+── Error ('test-clustering-pipelines.R:509:3'): SOM finalized models can report full-pipeline stability ──
+Error in `eval(code, test_env)`: object 'SimulatedPhenotypeData' not found
+Backtrace:
+    ▆
+ 1. └─base::subset(SimulatedPhenotypeData, Cohort == "Training") at test-clustering-pipelines.R:509:3
+── Error ('test-clustering-pipelines.R:539:3'): SOM projection separates assignment certainty from frozen-map fit ──
+Error in `eval(code, test_env)`: object 'SimulatedPhenotypeData' not found
+Backtrace:
+    ▆
+ 1. └─base::subset(SimulatedPhenotypeData, Cohort == "Training") at test-clustering-pipelines.R:539:3
+── Error ('test-clustering-pipelines.R:598:3'): SOM plus HDBSCAN uses the same unique-participant stability contract ──
+Error in `eval(code, test_env)`: object 'SimulatedPhenotypeData' not found
+Backtrace:
+    ▆
+ 1. └─base::subset(SimulatedPhenotypeData, Cohort == "Training") at test-clustering-pipelines.R:598:3
+── Error ('test-clustering-pipelines.R:726:3'): final clustering outputs use clean canonical fields ──
+Error in `eval(code, test_env)`: object 'SimulatedPhenotypeData' not found
+Backtrace:
+    ▆
+ 1. └─base::subset(SimulatedPhenotypeData, Cohort == "Training") at test-clustering-pipelines.R:726:3
+── Error ('test-clustering-pipelines.R:837:3'): confidence figures only pin a probability to a 0-1 axis ──
+Error in `eval(code, test_env)`: object 'SimulatedPhenotypeData' not found
+Backtrace:
+    ▆
+ 1. └─base::subset(SimulatedPhenotypeData, Cohort == "Training") at test-clustering-pipelines.R:837:3
+── Error ('test-clustering-pipelines.R:859:3'): HDBSCAN triages projections against a matching training reference ──
+Error in `eval(code, test_env)`: object 'SimulatedPhenotypeData' not found
+Backtrace:
+    ▆
+ 1. └─base::subset(SimulatedPhenotypeData, Cohort == "Training") at test-clustering-pipelines.R:859:3
+── Error ('test-clustering-pipelines.R:886:3'): SOM plus HDBSCAN clusters the codebook without fitting the LPA grid ──
+Error in `eval(code, test_env)`: object 'SimulatedPhenotypeData' not found
+Backtrace:
+    ▆
+ 1. └─base::subset(SimulatedPhenotypeData, Cohort == "Training") at test-clustering-pipelines.R:886:3
+── Error ('test-multivariable-regression-table.R:14:3'): MultivariableRegressionTable returns a stable ordinary regression object ──
+Error in `x$Priority`: $ operator is invalid for atomic vectors
+Backtrace:
+    ▆
+ 1. └─SciDataReportR::MultivariableRegressionTable(...) at test-multivariable-regression-table.R:14:3
+ 2.   └─utils::sessionInfo()
+ 3.     └─base::sapply(...)
+ 4.       └─base::lapply(X = X, FUN = FUN, ...)
+ 5.         └─utils (local) FUN(X[[i]], ...)
+── Error ('test-multivariable-regression-table.R:67:3'): MultivariableRegressionTable stores logistic diagnostics and predictions ──
+Error in `x$Priority`: $ operator is invalid for atomic vectors
+Backtrace:
+    ▆
+ 1. └─SciDataReportR::MultivariableRegressionTable(...) at test-multivariable-regression-table.R:67:3
+ 2.   └─utils::sessionInfo()
+ 3.     └─base::sapply(...)
+ 4.       └─base::lapply(X = X, FUN = FUN, ...)
+ 5.         └─utils (local) FUN(X[[i]], ...)
+── Error ('test-multivariable-regression-table.R:94:3'): MultivariableRegressionTable stores penalized regression tuning ──
+Error in `x$Priority`: $ operator is invalid for atomic vectors
+Backtrace:
+    ▆
+ 1. └─SciDataReportR::MultivariableRegressionTable(...) at test-multivariable-regression-table.R:94:3
+ 2.   └─utils::sessionInfo()
+ 3.     └─base::sapply(...)
+ 4.       └─base::lapply(X = X, FUN = FUN, ...)
+ 5.         └─utils (local) FUN(X[[i]], ...)
+── Error ('test-multivariable-regression-table.R:124:3'): MultivariableRegressionTable treats covariates as mandatory (unpenalized) adjustments ──
+Error in `x$Priority`: $ operator is invalid for atomic vectors
+Backtrace:
+    ▆
+ 1. └─SciDataReportR::MultivariableRegressionTable(...) at test-multivariable-regression-table.R:124:3
+ 2.   └─utils::sessionInfo()
+ 3.     └─base::sapply(...)
+ 4.       └─base::lapply(X = X, FUN = FUN, ...)
+ 5.         └─utils (local) FUN(X[[i]], ...)
+── Error ('test-multivariable-regression-table.R:162:3'): MultivariableRegressionTable FormattedTable is a gt table matching the univariate style ──
+Error in `x$Priority`: $ operator is invalid for atomic vectors
+Backtrace:
+    ▆
+ 1. └─SciDataReportR::MultivariableRegressionTable(...) at test-multivariable-regression-table.R:162:3
+ 2.   └─utils::sessionInfo()
+ 3.     └─base::sapply(...)
+ 4.       └─base::lapply(X = X, FUN = FUN, ...)
+ 5.         └─utils (local) FUN(X[[i]], ...)
+── Error ('test-multivariable-regression-table.R:192:3'): MultivariableRegressionTable flags separation and blanks unreliable logistic estimates ──
+Error in `x$Priority`: $ operator is invalid for atomic vectors
+Backtrace:
+    ▆
+ 1. └─SciDataReportR::MultivariableRegressionTable(...) at test-multivariable-regression-table.R:192:3
+ 2.   └─utils::sessionInfo()
+ 3.     └─base::sapply(...)
+ 4.       └─base::lapply(X = X, FUN = FUN, ...)
+ 5.         └─utils (local) FUN(X[[i]], ...)
+── Error ('test-multivariable-regression-table.R:215:3'): MultivariableRegressionTable reports perfectly collinear (aliased) terms ──
+Error in `x$Priority`: $ operator is invalid for atomic vectors
+Backtrace:
+    ▆
+ 1. └─SciDataReportR::MultivariableRegressionTable(...) at test-multivariable-regression-table.R:215:3
+ 2.   └─utils::sessionInfo()
+ 3.     └─base::sapply(...)
+ 4.       └─base::lapply(X = X, FUN = FUN, ...)
+ 5.         └─utils (local) FUN(X[[i]], ...)
+── Error ('test-multivariable-regression-table.R:235:3'): MultivariableRegressionTable reports an omnibus model p-value with a matching column annotation ──
+Error in `x$Priority`: $ operator is invalid for atomic vectors
+Backtrace:
+    ▆
+ 1. └─SciDataReportR::MultivariableRegressionTable(...) at test-multivariable-regression-table.R:235:3
+ 2.   └─utils::sessionInfo()
+ 3.     └─base::sapply(...)
+ 4.       └─base::lapply(X = X, FUN = FUN, ...)
+ 5.         └─utils (local) FUN(X[[i]], ...)
+── Error ('test-multivariable-regression-table.R:258:3'): Penalized column annotation reports deviance explained, not a p-value ──
+Error in `x$Priority`: $ operator is invalid for atomic vectors
+Backtrace:
+    ▆
+ 1. └─SciDataReportR::MultivariableRegressionTable(...) at test-multivariable-regression-table.R:258:3
+ 2.   └─utils::sessionInfo()
+ 3.     └─base::sapply(...)
+ 4.       └─base::lapply(X = X, FUN = FUN, ...)
+ 5.         └─utils (local) FUN(X[[i]], ...)
+── Error ('test-multivariable-regression-table.R:296:3'): MultivariableRegressionTable drops sparse predictors and imputes by default ──
+Error in `x$Priority`: $ operator is invalid for atomic vectors
+Backtrace:
+    ▆
+ 1. └─SciDataReportR::MultivariableRegressionTable(...) at test-multivariable-regression-table.R:296:3
+ 2.   └─utils::sessionInfo()
+ 3.     └─base::sapply(...)
+ 4.       └─base::lapply(X = X, FUN = FUN, ...)
+ 5.         └─utils (local) FUN(X[[i]], ...)
+── Error ('test-multivariable-regression-table.R:322:3'): MultivariableRegressionTable preserves strict complete-case behavior when requested ──
+Error in `x$Priority`: $ operator is invalid for atomic vectors
+Backtrace:
+    ▆
+ 1. └─SciDataReportR::MultivariableRegressionTable(...) at test-multivariable-regression-table.R:322:3
+ 2.   └─utils::sessionInfo()
+ 3.     └─base::sapply(...)
+ 4.       └─base::lapply(X = X, FUN = FUN, ...)
+ 5.         └─utils (local) FUN(X[[i]], ...)
+── Error ('test-multivariable-regression-table.R:357:3'): MultivariableRegressionTable supports ordinary multinomial outcomes ──
+Error in `x$Priority`: $ operator is invalid for atomic vectors
+Backtrace:
+    ▆
+ 1. └─SciDataReportR::MultivariableRegressionTable(...) at test-multivariable-regression-table.R:357:3
+ 2.   └─SciDataReportR:::ScidrMulticategoryRegressionDispatch(...)
+ 3.     └─SciDataReportR:::ScidrFitMulticategoryOutcome(...)
+ 4.       └─utils::sessionInfo()
+ 5.         └─base::sapply(...)
+ 6.           └─base::lapply(X = X, FUN = FUN, ...)
+ 7.             └─utils (local) FUN(X[[i]], ...)
+── Error ('test-scidata-colors.R:348:3'): every figure in every clustering pipeline actually builds ──
+Error in `eval(code, test_env)`: object 'SimulatedPhenotypeData' not found
+Backtrace:
+    ▆
+ 1. └─dplyr::filter(SimulatedPhenotypeData, .data$Cohort == "Training") at test-scidata-colors.R:348:3
+── Error ('test-simulated-phenotype-data.R:4:3'): simulated phenotype benchmark has stable training and projection structure ──
+Error in `eval(code, test_env)`: object 'SimulatedPhenotypeData' not found
+Backtrace:
+    ▆
+ 1. ├─testthat::expect_equal(nrow(SimulatedPhenotypeData), 480) at test-simulated-phenotype-data.R:4:3
+ 2. │ └─testthat::quasi_label(enquo(object), label)
+ 3. │   └─rlang::eval_bare(expr, quo_get_env(quo))
+ 4. └─base::nrow(SimulatedPhenotypeData)
+── Error ('test-simulated-phenotype-data.R:29:3'): neutral benchmark retains at least four PCA components ──
+Error in `eval(code, test_env)`: object 'SimulatedPhenotypeData' not found
+Backtrace:
+    ▆
+ 1. └─base::subset(SimulatedPhenotypeData, Cohort == "Training") at test-simulated-phenotype-data.R:29:3
+── Error ('test-simulated-phenotype-data.R:41:3'): categorical benchmark supports truth-known LCA and MCA examples ──
+Error in `eval(code, test_env)`: object 'SimulatedPhenotypeData' not found
+Backtrace:
+    ▆
+ 1. └─base::subset(SimulatedPhenotypeData, Cohort == "Training") at test-simulated-phenotype-data.R:41:3
+
+[ FAIL 32 | WARN 197 | SKIP 10 | PASS 1138 ]
+Error:
+! Test failures.
 Execution halted

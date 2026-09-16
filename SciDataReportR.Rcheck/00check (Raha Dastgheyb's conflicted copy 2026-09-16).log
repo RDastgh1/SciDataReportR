@@ -1,0 +1,277 @@
+* using log directory ‘/Users/rahad/Library/CloudStorage/Dropbox/Coding/Package Development/SciDataReportR/SciDataReportR.Rcheck’
+* using R version 4.5.3 (2026-03-11)
+* using platform: aarch64-apple-darwin20
+* R was compiled by
+    Apple clang version 16.0.0 (clang-1600.0.26.6)
+    GNU Fortran (GCC) 14.2.0
+* running under: macOS Tahoe 26.5.1
+* using session charset: UTF-8
+* using option ‘--no-manual’
+* checking for file ‘SciDataReportR/DESCRIPTION’ ... OK
+* this is package ‘SciDataReportR’ version ‘21.9.0’
+* package encoding: UTF-8
+* checking package namespace information ... OK
+* checking package dependencies ... OK
+* checking if this is a source package ... OK
+* checking if there is a namespace ... OK
+* checking for executable files ... OK
+* checking for hidden files and directories ... OK
+* checking for portable file names ... OK
+* checking for sufficient/correct file permissions ... OK
+* checking whether package ‘SciDataReportR’ can be installed ... OK
+* checking installed package size ... OK
+* checking package directory ... OK
+* checking DESCRIPTION meta-information ... OK
+* checking top-level files ... OK
+* checking for left-over files ... OK
+* checking index information ... OK
+* checking package subdirectories ... OK
+* checking code files for non-ASCII characters ... WARNING
+Found the following file with non-ASCII characters:
+  R/PlotCorrelationComparisons.R
+Portable packages must use only ASCII characters in their R code and
+NAMESPACE directives, except perhaps in comments.
+Use \uxxxx escapes for other characters.
+Function ‘tools::showNonASCIIfile’ can help in finding non-ASCII
+characters in files.
+* checking R files for syntax errors ... OK
+* checking whether the package can be loaded ... OK
+* checking whether the package can be loaded with stated dependencies ... OK
+* checking whether the package can be unloaded cleanly ... OK
+* checking whether the namespace can be loaded with stated dependencies ... OK
+* checking whether the namespace can be unloaded cleanly ... OK
+* checking dependencies in R code ... WARNING
+'::' or ':::' imports not declared from:
+  ‘ggiraph’ ‘ggpattern’
+'loadNamespace' or 'requireNamespace' calls not declared from:
+  ‘ggiraph’ ‘ggpattern’
+* checking S3 generic/method consistency ... OK
+* checking replacement functions ... OK
+* checking foreign function calls ... OK
+* checking R code for possible problems ... NOTE
+add_delta_r_and_stars: no visible binding for global variable ‘DeltaR’
+add_delta_r_and_stars: no visible binding for global variable
+  ‘DeltaLabel’
+add_delta_r_and_stars: no visible binding for global variable
+  ‘StarLabel’
+PlotCorrelationComparisons: no visible binding for global variable
+  ‘PredictorIndex’
+PlotCorrelationComparisons: no visible binding for global variable
+  ‘OutcomeIndex’
+PlotCorrelationComparisons: no visible binding for global variable
+  ‘RComparison’
+PlotCorrelationComparisons: no visible binding for global variable
+  ‘RReference’
+PlotCorrelationComparisons: no visible binding for global variable
+  ‘DeltaR’
+PlotCorrelationComparisons: no visible binding for global variable
+  ‘CohensQ’
+PlotCorrelationComparisons: no visible binding for global variable
+  ‘FisherZ’
+PlotCorrelationComparisons: no visible binding for global variable
+  ‘PValue’
+PlotCorrelationComparisons: no visible binding for global variable
+  ‘PAdjusted’
+PlotCorrelationComparisons: no visible binding for global variable
+  ‘NComparison’
+PlotCorrelationComparisons: no visible binding for global variable
+  ‘NReference’
+PlotCorrelationComparisons: no visible binding for global variable
+  ‘CovariateDfComparison’
+PlotCorrelationComparisons: no visible binding for global variable
+  ‘CovariateDfReference’
+PlotCorrelationComparisons: no visible binding for global variable
+  ‘DirectionReversal’
+PlotCorrelationComparisons: no visible binding for global variable
+  ‘Direction’
+PlotCorrelationComparisons: no visible binding for global variable
+  ‘InferenceStatus’
+PlotCorrelationComparisons: no visible binding for global variable
+  ‘TestAvailable’
+PlotCorrelationComparisons: no visible binding for global variable
+  ‘CellId’
+PlotCorrelationComparisons : build_comparison_heatmap: no visible
+  binding for global variable ‘OutcomeOrder’
+PlotCorrelationComparisons : build_comparison_heatmap: no visible
+  binding for global variable ‘PredictorOrder’
+PlotCorrelationComparisons : build_comparison_heatmap: no visible
+  binding for global variable ‘DeltaR’
+PlotCorrelationComparisons : build_comparison_heatmap: no visible
+  binding for global variable ‘CellId’
+PlotCorrelationComparisons : build_comparison_heatmap: no visible
+  binding for global variable ‘ReversalPattern’
+PlotCorrelationComparisons : build_comparison_heatmap: no visible
+  binding for global variable ‘DirectionReversal’
+PlotCorrelationsHeatmap : BuildPlot: no visible binding for global
+  variable ‘YOrder’
+PlotCorrelationsHeatmap : BuildPlot: no visible binding for global
+  variable ‘XOrder’
+PlotDiagnosticLRForest: no visible binding for global variable
+  ‘Stratum’
+PlotDiagnosticLRHeatmap: no visible binding for global variable
+  ‘Stratum’
+PlotDirectionalHeatmaps: no visible binding for global variable
+  ‘XOrder’
+PlotDirectionalHeatmaps: no visible binding for global variable
+  ‘YOrder’
+PlotPhiHeatmap: no visible binding for global variable ‘XOrder’
+PlotPhiHeatmap: no visible binding for global variable ‘YOrder’
+PlotPointCorrelationsHeatmap: no visible binding for global variable
+  ‘YOrder’
+PlotPointCorrelationsHeatmap: no visible binding for global variable
+  ‘XOrder’
+ScidrDiagnosticBinaryGtTable: no visible binding for global variable
+  ‘Sensitivity’
+ScidrDiagnosticBinaryGtTable: no visible binding for global variable
+  ‘Specificity’
+ScidrDiagnosticLRGtTable: no visible binding for global variable ‘Case
+  %’
+ScidrDiagnosticLRGtTable: no visible binding for global variable
+  ‘Control %’
+ScidrDiagnosticLRGtTable: no visible binding for global variable
+  ‘CaseProbability’
+ScidrDiagnosticLRGtTable: no visible binding for global variable
+  ‘ControlProbability’
+ScidrDiagnosticLRGtTable: no visible binding for global variable
+  ‘LikelihoodRatio’
+ScidrDiagnosticLRGtTable: no visible binding for global variable
+  ‘LRLowerCI’
+ScidrDiagnosticLRGtTable: no visible binding for global variable
+  ‘LRUpperCI’
+ScidrDiagnosticLRGtTable: no visible binding for global variable
+  ‘Log2LR’
+ScidrDiagnosticMatrixData: no visible binding for global variable
+  ‘Stratum’
+ScidrDiagnosticMatrixData: no visible binding for global variable
+  ‘ResultLevel’
+TransformFeatureMatrix: no visible binding for global variable ‘Stage’
+Undefined global functions or variables:
+  Case % CaseProbability CellId CohensQ Control % ControlProbability
+  CovariateDfComparison CovariateDfReference DeltaLabel DeltaR
+  Direction DirectionReversal FisherZ InferenceStatus LikelihoodRatio
+  Log2LR LRLowerCI LRUpperCI NComparison NReference OutcomeIndex
+  OutcomeOrder PAdjusted PredictorIndex PredictorOrder PValue
+  RComparison ResultLevel ReversalPattern RReference Sensitivity
+  Specificity Stage StarLabel Stratum TestAvailable XOrder YOrder
+* checking Rd files ... OK
+* checking Rd metadata ... OK
+* checking Rd cross-references ... OK
+* checking for missing documentation entries ... OK
+* checking for code/documentation mismatches ... OK
+* checking Rd \usage sections ... WARNING
+Undocumented arguments in Rd file 'PlotClusterCentreHeatmap.Rd'
+  ‘cluster_rows’ ‘cluster_columns’
+
+Undocumented arguments in Rd file 'PlotCorrelationComparisons.Rd'
+  ‘cluster_rows’ ‘cluster_columns’
+
+Undocumented arguments in Rd file 'PlotDirectionalHeatmaps.Rd'
+  ‘cluster_rows’ ‘cluster_columns’
+
+Undocumented arguments in Rd file 'ScreenBiomarkerPerformance.Rd'
+  ‘cluster_rows’ ‘cluster_columns’
+
+Functions with \usage entries need to have the appropriate \alias
+entries, and all their arguments documented.
+The \usage entries must correspond to syntactically valid R code.
+See chapter ‘Writing R documentation files’ in the ‘Writing R
+Extensions’ manual.
+* checking Rd contents ... OK
+* checking for unstated dependencies in examples ... OK
+* checking contents of ‘data’ directory ... OK
+* checking data for non-ASCII characters ... OK
+* checking LazyData ... OK
+* checking data for ASCII and uncompressed saves ... OK
+* checking files in ‘vignettes’ ... WARNING
+Files in the 'vignettes' directory but no files in 'inst/doc':
+  ‘argument-renaming.R’ ‘argument-renaming.Rmd’
+  ‘BiomarkerPerformance.qmd’ ‘clustering.scss’
+  ‘ClusteringPhenotyping.knit.md’ ‘ClusteringPhenotyping.qmd’
+  ‘ClusteringPhenotyping.R’ ‘fdr-correction.R’ ‘fdr-correction.Rmd’
+  ‘getting-started.qmd’ ‘getting-started.R’ ‘MakeComparisonTable.qmd’
+  ‘MakeComparisonTable.R’ ‘MakeUnivariateRegressionTable.qmd’
+  ‘MakeUnivariateRegressionTable.R’ ‘merge-qc-workflow.R’
+  ‘merge-qc-workflow.Rmd’ ‘OrdinalVariables.qmd’ ‘OrdinalVariables.R’
+  ‘PlotCorrelationsHeatmap.qmd’ ‘PlotCorrelationsHeatmap.R’
+  ‘PlotForestFromTable.qmd’ ‘PlotForestFromTable.R’
+  ‘PlotMiningMatrix.qmd’ ‘PlotMiningMatrix.R’ ‘PValueColorScales.R’
+  ‘PValueColorScales.Rmd’ ‘UnivariateRegressions.qmd’
+  ‘UnivariateRegressions.R’
+* checking examples ... ERROR
+Running examples in ‘SciDataReportR-Ex.R’ failed
+The error most likely occurred in:
+
+> ### Name: AssemblePlots
+> ### Title: Assemble ggplot objects into a unified multi-panel figure
+> ### Aliases: AssemblePlots
+> 
+> ### ** Examples
+> 
+> data(SampleData)
+Warning in data(SampleData) : data set ‘SampleData’ not found
+> data(SampleVariableTypes)
+Warning in data(SampleVariableTypes) :
+  data set ‘SampleVariableTypes’ not found
+> 
+> df_Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
+Error in RevalueData(SampleData, SampleVariableTypes) : 
+  cannot open file '/Users/rahad/Library/CloudStorage/Dropbox/Coding/Package Development/SciDataReportR/SciDataReportR.Rcheck/SciDataReportR/data/Rdata.rdb': No such file or directory
+Execution halted
+* checking for unstated dependencies in ‘tests’ ... OK
+* checking tests ... ERROR
+  Running ‘testthat.R’
+Running the tests in ‘tests/testthat.R’ failed.
+Last 13 lines of output:
+  ── Error ('test-simulated-phenotype-data.R:29:3'): neutral benchmark retains at least four PCA components ──
+  Error in `eval(code, test_env)`: object 'SimulatedPhenotypeData' not found
+  Backtrace:
+      ▆
+   1. └─base::subset(SimulatedPhenotypeData, Cohort == "Training") at test-simulated-phenotype-data.R:29:3
+  ── Error ('test-simulated-phenotype-data.R:41:3'): categorical benchmark supports truth-known LCA and MCA examples ──
+  Error in `eval(code, test_env)`: object 'SimulatedPhenotypeData' not found
+  Backtrace:
+      ▆
+   1. └─base::subset(SimulatedPhenotypeData, Cohort == "Training") at test-simulated-phenotype-data.R:41:3
+  
+  [ FAIL 32 | WARN 197 | SKIP 10 | PASS 1138 ]
+  Error:
+  ! Test failures.
+  Execution halted
+* checking for unstated dependencies in vignettes ... OK
+* checking package vignettes ... WARNING
+Directory 'inst/doc' does not exist.
+Package vignettes without corresponding single PDF/HTML:
+  ‘BiomarkerPerformance.qmd’
+  ‘ClusteringPhenotyping (Raha Dastgheyb's conflicted copy 2026-08-13 1).qmd’
+  ‘ClusteringPhenotyping (Raha Dastgheyb's conflicted copy 2026-08-13 2).qmd’
+  ‘ClusteringPhenotyping (Raha Dastgheyb's conflicted copy 2026-08-13).qmd’
+  ‘ClusteringPhenotyping (Raha Dastgheyb's conflicted copy 2026-08-20).qmd’
+  ‘ClusteringPhenotyping (Raha Dastgheyb's conflicted copy 2026-09-16).qmd’
+  ‘ClusteringPhenotyping.qmd’
+  ‘getting-started.qmd’
+  ‘MakeComparisonTable (Raha Dastgheyb's conflicted copy 2026-08-13 1).qmd’
+  ‘MakeComparisonTable (Raha Dastgheyb's conflicted copy 2026-08-13 2).qmd’
+  ‘MakeComparisonTable (Raha Dastgheyb's conflicted copy 2026-08-13).qmd’
+  ‘MakeComparisonTable (Raha Dastgheyb's conflicted copy 2026-08-20).qmd’
+  ‘MakeComparisonTable (Raha Dastgheyb's conflicted copy 2026-09-16).qmd’
+  ‘MakeComparisonTable.qmd’
+  ‘MakeUnivariateRegressionTable (Raha Dastgheyb's conflicted copy 2026-08-20).qmd’
+  ‘MakeUnivariateRegressionTable (Raha Dastgheyb's conflicted copy 2026-09-16).qmd’
+  ‘MakeUnivariateRegressionTable.qmd’
+  ‘OrdinalVariables.qmd’
+  ‘PlotCorrelationsHeatmap.qmd’
+  ‘PlotForestFromTable.qmd’
+  ‘PlotMiningMatrix.qmd’
+  ‘UnivariateRegressions (Raha Dastgheyb's conflicted copy 2026-08-20).qmd’
+  ‘UnivariateRegressions (Raha Dastgheyb's conflicted copy 2026-09-16).qmd’
+  ‘UnivariateRegressions.qmd’
+  ‘argument-renaming.Rmd’
+  ‘fdr-correction.Rmd’
+  ‘merge-qc-workflow (Raha Dastgheyb's conflicted copy 2026-08-13 1).Rmd’
+  ‘merge-qc-workflow (Raha Dastgheyb's conflicted copy 2026-08-13 2).Rmd’
+  ‘merge-qc-workflow (Raha Dastgheyb's conflicted copy 2026-08-13).Rmd’
+  ‘merge-qc-workflow (Raha Dastgheyb's conflicted copy 2026-08-20).Rmd’
+  ‘merge-qc-workflow (Raha Dastgheyb's conflicted copy 2026-09-16).Rmd’
+  ‘merge-qc-workflow.Rmd’
+  ‘PValueColorScales.Rmd’
+* checking re-building of vignette outputs ...

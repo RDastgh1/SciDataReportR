@@ -1,0 +1,146 @@
+#' Plot P-Value Comparisons
+#'
+#' This function generates a plot comparing p-values for different variables
+#' across two or more groups.
+#'
+#' @param data Data frame containing the variables to compare.
+#' @param group_var Character string specifying the name of the column in
+#'   `Data` that contains the group labels.
+#' @param variables Character vector specifying the names of the columns in
+#'   `Data` to include in the comparison. If `NULL`, all columns except
+#'   `GroupVariable` are included.
+#' @param VariableCategories Character vector specifying the categories for
+#'   each variable. If `NULL`, no categories are used.
+#' @param Relabel Logical indicating whether to replace missing labels with
+#'   the column names.
+#' @param alternative Hypothesis alternative for two-group tests. `"greater"`
+#'   tests whether the second group factor level is greater than the first.
+#'
+#' @return A ggplot object displaying the p-value comparisons.
+#'
+#' @importFrom dplyr select summarise_if
+#' @importFrom ggplot2 ggplot geom_point scale_y_discrete xlab
+#' @param Data \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
+#' @param GroupVariable \strong{Deprecated} (since 19.15.0). Use \code{group_var} instead.
+#' @param Variables \strong{Deprecated} (since 19.15.0). Use \code{variables} instead.
+#' @examples
+#' data(SampleData)
+#' data(SampleVariableTypes)
+#'
+#' Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
+#'
+#' PlotPValueComparisons(
+#'   Labelled,
+#'   group_var = "Diagnosis",
+#'   variables = c(
+#'     "age", "AXL", "Adiponectin", "Alpha_1_Antitrypsin", "Cortisol",
+#'     "Ferritin", "GRO_alpha", "MMP10", "MMP7", "NT_proBNP", "PAI_1",
+#'     "TRAIL_R3", "VEGF", "Ab_42", "p_tau", "tau"
+#'   )
+#' )
+#' @export
+PlotPValueComparisons <- function(data,
+    group_var,
+    variables = NULL,
+    VariableCategories = NULL,
+    Relabel = TRUE,
+    alternative = c("two.sided", "greater", "less"),
+    Data = lifecycle::deprecated(),
+    GroupVariable = lifecycle::deprecated(),
+    Variables = lifecycle::deprecated()) {
+  # Deprecated argument shims (SciDataReportR 19.15.0)
+  if (lifecycle::is_present(Data)) {
+    lifecycle::deprecate_warn("19.15.0", "PlotPValueComparisons(Data)", "PlotPValueComparisons(data)")
+    data <- Data
+  }
+  if (!missing(data)) Data <- data
+  if (lifecycle::is_present(GroupVariable)) {
+    lifecycle::deprecate_warn("19.15.0", "PlotPValueComparisons(GroupVariable)", "PlotPValueComparisons(group_var)")
+    group_var <- GroupVariable
+  }
+  if (!missing(group_var)) GroupVariable <- group_var
+  if (lifecycle::is_present(Variables)) {
+    lifecycle::deprecate_warn("19.15.0", "PlotPValueComparisons(Variables)", "PlotPValueComparisons(variables)")
+    variables <- Variables
+  }
+  Variables <- variables
+  alternative <- match.arg(alternative)
+
+  # Validate and prepare Variables
+  if (is.null(Variables)) {
+    Variables <- Data %>% dplyr::select(-dplyr::all_of(GroupVariable)) %>% colnames()
+  }
+
+  # Preserve original GroupVariable and create a temporary column
+  Data$GroupVariablex <- Data[[GroupVariable]]
+  Data <- Data %>% dplyr::select(-dplyr::all_of(GroupVariable))
+
+  # Select relevant variables
+  tData <- Data %>% dplyr::select(GroupVariablex, dplyr::all_of(Variables))
+
+  # Remove factor variables with zero levels
+  l <- tData %>% summarise_if(is.factor, ~ nlevels(factor(.))) %>% as.list()
+  tData <- tData %>% dplyr::select(-dplyr::all_of(names(l[l < 2])))
+
+  # Remove numeric variables with zero or missing standard deviation
+  l <- tData %>% summarise_if(is.numeric, ~ sd(., na.rm = TRUE)) %>% as.list()
+  tData <- tData %>% dplyr::select(-dplyr::all_of(names(l[is.na(l) | l == 0])))
+
+  comparison_table <- MakeComparisonTable(
+    data = tData,
+    group_var = "GroupVariablex",
+    variables = setdiff(names(tData), "GroupVariablex"),
+    alternative = alternative,
+    suppress_warnings = TRUE,
+    Relabel = FALSE
+  )
+  pvaltable <- comparison_table$table_body %>%
+    dplyr::filter(.data$row_type == "label") %>%
+    dplyr::transmute(Variable = .data$variable, p.value = .data$p.value)
+
+  # Calculate log-transformed p-values and significance levels
+  pvaltable$logp <- -log10(pvaltable$p.value)
+  pvaltable$Sig <- gtools::stars.pval(pvaltable$p.value)
+  pvaltable$Sig[pvaltable$Sig %in% c(".", "+", " ")] <- "ns"
+  pvaltable$Sig <- factor(pvaltable$Sig, levels = c("ns", "*", "**", "***", "****", "*****"))
+
+  # Adjust p-values for multiple testing
+  pvaltable$p.adj <- p.adjust(pvaltable$p.value, method = "fdr")
+
+  # Optionally relabel variables
+  if (Relabel) {
+    Data <- ReplaceMissingLabels(Data)
+    VarLabels <- sjlabelled::get_label(Data[as.character(pvaltable$Variable)],
+                                       def.value = pvaltable$Variable) %>%
+      as.data.frame() %>% rownames_to_column()
+    pvaltable$VarLabel <- VarLabels$.
+  } else {
+    pvaltable$VarLabel <- pvaltable$Variable
+  }
+  pvaltable$VarLabel <- factor(pvaltable$VarLabel, levels = unique(pvaltable$VarLabel))
+
+  # Generate the plot
+  if (is.null(VariableCategories)) {
+    p <- pvaltable %>% ggplot(aes(y = Variable, x = logp, shape = Sig))
+  } else {
+    pvaltable$Category <- VariableCategories[match(pvaltable$Variable, Variables)]
+    p <- pvaltable %>% ggplot(aes(y = Variable, x = logp, color = Category, shape = Sig))
+  }
+
+  # Add points, text labels for significant variables, and customize scales
+  p <- p +
+    geom_point() +
+    ggrepel::geom_text_repel(data = subset(pvaltable, p.adj < 0.1),
+                             aes(label = Variable)) +
+    scale_y_discrete(limits = rev(pvaltable$Variable)) +
+    xlab("-log10(p-value)") +
+    scale_shape_manual(values = c(21, 16, 17, 15, 18, 8),
+                       breaks = c("ns", "*", "**", "***", "****"), drop = FALSE)
+
+  # Colour is only mapped when categories were supplied.
+  if (!is.null(VariableCategories)) {
+    p <- p + .SciDataColourScale()
+  }
+
+  return(p)
+}
