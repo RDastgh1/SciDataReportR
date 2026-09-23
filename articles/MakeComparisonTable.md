@@ -129,7 +129,9 @@ hypothesis tests used.
 ## 6 Nonparametric analyses
 
 Nonparametric testing uses rank-based methods that are more robust to
-non-normal distributions.
+non-normal distributions. For two-group Wilcoxon rank-sum comparisons,
+the table reports absolute rank-biserial correlation. For Kruskal-Wallis
+comparisons involving more than two groups, it reports epsilon-squared.
 
 ``` r
 
@@ -325,7 +327,7 @@ sessionInfo()
      [46] rmarkdown_2.32         generics_0.1.4         otel_0.2.0
      [49] RcppParallel_6.2.1     rstudioapi_0.19.0      httr_1.4.9
      [52] tzdb_0.5.0             parameters_0.29.3      commonmark_2.0.0
-     [55] readxl_1.5.0           gld_2.6.8              proxy_0.4-29
+     [55] readxl_1.5.0.1         gld_2.6.8              proxy_0.4-29
      [58] effectsize_1.0.3       cellranger_1.1.0       base64enc_0.1-6
      [61] vctrs_0.7.3            Matrix_1.7-5           boot_1.3-32
      [64] sandwich_3.1-3         jsonlite_2.0.0         carData_3.0-6
@@ -338,6 +340,6 @@ sessionInfo()
      [85] markdown_2.0           haven_2.5.5            backports_1.5.1
      [88] cards_0.9.0            broom_1.0.13           snakecase_0.11.1
      [91] rstantools_2.7.1       DescTools_0.99.60      class_7.3-23
-     [94] Rcpp_1.1.2             coda_0.19-4.1          xfun_0.60
+     [94] Rcpp_1.1.2             coda_0.19-4.1          xfun_0.61
      [97] fs_2.1.0               zoo_1.9-0              forcats_1.0.1
     [100] pkgconfig_2.0.3       

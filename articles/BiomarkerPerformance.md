@@ -212,7 +212,7 @@ still not external validation in a new population.
     [4] SciDataReportR_21.10.0
 
     loaded via a namespace (and not attached):
-     [1] gtable_0.3.6           xfun_0.60              bayestestR_0.19.0
+     [1] gtable_0.3.6           xfun_0.61              bayestestR_0.19.0
      [4] htmlwidgets_1.6.4      insight_1.5.4          rstatix_1.1.0
      [7] lattice_0.22-9         paletteer_1.7.0        crosstalk_1.2.2
     [10] vctrs_0.7.3            tools_4.6.1            generics_0.1.4

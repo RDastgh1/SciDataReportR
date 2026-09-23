@@ -281,7 +281,7 @@ ObjClustProjected <- ProjectCluster(Obj_ClustFinal, df_Projection)
     13 1.0000000     323.68552 0.00990099               1               5
     14 1.0000000      37.30184 0.15841584               2               4
     15 1.0000000     -13.14147 1.00000000               1               4
-    16 1.0000000      38.32467 0.01980198               1               5
+    16 1.0000000      38.32467 0.05940594               1               5
        MinProfileNodeProportion MaxProfileNodeProportion StabilitySuccessRate
     1                      0.20                     0.80                    1
     2                      0.16                     0.84                    1
@@ -692,7 +692,7 @@ Session information
      [85] car_3.1-5              RANN_2.6.3             pillar_1.11.1
      [88] stringr_1.6.0          later_1.4.8            lattice_0.22-9
      [91] ggstatsplot_1.1.1      tidyselect_1.2.1       knitr_1.52
-     [94] gridExtra_2.3.1        stats4_4.6.1           xfun_0.60
+     [94] gridExtra_2.3.1        stats4_4.6.1           xfun_0.61
      [97] texreg_1.40            stringi_1.8.9          proto_1.0.0
     [100] yaml_2.3.12            boot_1.3-32            evaluate_1.0.5
     [103] codetools_0.2-20       nonnest2_0.5-9         tibble_3.3.1

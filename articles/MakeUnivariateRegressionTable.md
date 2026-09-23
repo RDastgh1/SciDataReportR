@@ -308,7 +308,7 @@ print(sessionInfo())
     [1] dplyr_1.2.1            SciDataReportR_21.10.0
 
     loaded via a namespace (and not attached):
-     [1] gtable_0.3.6           xfun_0.60              bayestestR_0.19.0
+     [1] gtable_0.3.6           xfun_0.61              bayestestR_0.19.0
      [4] ggplot2_4.0.3          insight_1.5.4          rstatix_1.1.0
      [7] lattice_0.22-9         paletteer_1.7.0        vctrs_0.7.3
     [10] tools_4.6.1            generics_0.1.4         datawizard_1.4.0

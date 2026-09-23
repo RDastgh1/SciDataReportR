@@ -45,7 +45,7 @@
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Build a weighted feature correlation network</h1>
-      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/v21.10.0/R/FeatureWGCNA.R" class="external-link"><code>R/FeatureWGCNA.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/master/R/FeatureWGCNA.R" class="external-link"><code>R/FeatureWGCNA.R</code></a></small>
       <div class="d-none name"><code>BuildFeatureWGCNA.Rd</code></div>
     </div>
 
@@ -63,6 +63,7 @@
 <span>  soft_power <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  sft_rsq <span class="op">=</span> <span class="fl">0.85</span>,</span>
 <span>  min_module_size <span class="op">=</span> <span class="fl">30</span>,</span>
+<span>  deep_split <span class="op">=</span> <span class="fl">2</span>,</span>
 <span>  merge_cut_height <span class="op">=</span> <span class="fl">0.25</span>,</span>
 <span>  keep_tom <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  seed <span class="op">=</span> <span class="cn">NULL</span></span>
@@ -99,6 +100,10 @@
 
 <dt id="arg-min-module-size">min_module_size<a class="anchor" aria-label="anchor" href="#arg-min-module-size"></a></dt>
 <dd><p>Minimum dynamic-tree-cut module size.</p></dd>
+
+
+<dt id="arg-deep-split">deep_split<a class="anchor" aria-label="anchor" href="#arg-deep-split"></a></dt>
+<dd><p>Dynamic tree-cut sensitivity from 0 through 4.</p></dd>
 
 
 <dt id="arg-merge-cut-height">merge_cut_height<a class="anchor" aria-label="anchor" href="#arg-merge-cut-height"></a></dt>

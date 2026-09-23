@@ -200,7 +200,7 @@
 - [`PlotPValueComparisons()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotPValueComparisons.md)
   : Plot P-Value Comparisons
 - [`PlotPairwiseMiningMatrix()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotPairwiseMiningMatrix.md)
-  : Plot a mixed-type pairwise mining matrix
+  : Plot non-directional mixed-type pairwise mining matrices
 - [`PlotPartialRegressionScatter()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotPartialRegressionScatter.md)
   : Partial Regression Plot
 - [`PlotPathway_KT()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotPathway_KT.md)

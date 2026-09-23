@@ -1,10 +1,10 @@
-# Plot a mixed-type pairwise mining matrix
+# Plot non-directional mixed-type pairwise mining matrices
 
-Builds referent-centred phenotype contrasts for continuous and
-categorical measures. It follows
-[`MakePairwiseHeatmap()`](https://rdastgh1.github.io/SciDataReportR/reference/MakePairwiseHeatmap.md)
-conventions while retaining categorical category-level contrasts instead
-of silently discarding them.
+Builds referent-centred phenotype screening matrices that show the
+magnitude of pairwise separation only. Signed continuous contrasts and
+category-level prevalence contrasts are retained in returned audit
+objects for follow-up, but are deliberately not displayed in the mining
+matrices.
 
 ## Usage
 
@@ -18,6 +18,10 @@ PlotPairwiseMiningMatrix(
   adjust_scope = c("per_group", "per_variable", "matrix", "none"),
   p_adjust_method = c("fdr", "bonferroni", "holm", "none"),
   star_p = c("raw", "adjusted", "none"),
+  adjusted_outline = TRUE,
+  adjusted_significance_threshold = 0.05,
+  adjusted_outline_color = "black",
+  adjusted_outline_linewidth = 1,
   variable_metadata = NULL,
   max_levels = 30,
   continuous_fill_limits = NULL,
@@ -47,7 +51,8 @@ PlotPairwiseMiningMatrix(
 
 - covariates:
 
-  Optional character vector of covariates.
+  Optional character vector of covariates. Continuous contrasts use
+  these covariates; Cramer's V screening remains unadjusted.
 
 - adjust_scope:
 
@@ -63,11 +68,22 @@ PlotPairwiseMiningMatrix(
 
   Which p-values drive cell stars: `"raw"`, `"adjusted"`, or `"none"`.
 
+- adjusted_outline:
+
+  Logical; outline cells significant after adjustment.
+
+- adjusted_significance_threshold:
+
+  Threshold for adjusted-significant outlines.
+
+- adjusted_outline_color, adjusted_outline_linewidth:
+
+  Appearance of the adjusted-significant outline.
+
 - variable_metadata:
 
   Optional data frame with `Variable` and optional `AnchorN`,
-  `AlignedN`, `FilledPrior`, `FilledFuture`, and `TimeExtended` columns.
-  These fields are joined to the returned audit table.
+  `AlignedN`, `FilledPrior`, `FilledFuture`, and `TimeExtended`.
 
 - max_levels:
 
@@ -75,8 +91,8 @@ PlotPairwiseMiningMatrix(
 
 - continuous_fill_limits, categorical_fill_limits:
 
-  Optional symmetric plotting limits for the continuous and categorical
-  matrices.
+  Optional non-negative plotting limits for the continuous and
+  categorical magnitude matrices.
 
 - x_axis_text_angle:
 
@@ -84,23 +100,21 @@ PlotPairwiseMiningMatrix(
 
 - row_label_width:
 
-  Approximate character width used to wrap displayed variable and
-  category labels.
+  Approximate character width used to wrap row labels.
 
 ## Value
 
 An object of class `"SciDataReportRPairwiseMiningMatrix"` with `Plots`,
-`Results`, `OmnibusResults`, `Settings`, `Models`, and `Warnings`.
-`Plots$Continuous` is a reference-SD mean-difference matrix;
-`Plots$Categorical` is a percentage-point prevalence-difference matrix;
-and `Plots$Omnibus` summarizes the overall phenotype association for
-every source variable.
+`Results`, `ContinuousAudit`, `CategoryLevelResults`, `Settings`,
+`Models`, and `Warnings`. `Plots$Continuous` displays absolute
+referent-SD mean differences and `Plots$Categorical` displays pairwise
+Cramer's V. Both use an independent pale-gray-to-navy magnitude scale.
 
 ## Details
 
-Continuous cells are `Group - Referent` contrasts after scaling each
-outcome to the referent mean and standard deviation. Categorical
-variables expand to one row per observed level, with cells equal to
-`Group - Referent` prevalence in percentage points. The two plot types
-intentionally have separate scales. Do not compare their colour
-magnitudes as if they were the same effect size.
+The required Referent determines the phenotype comparison columns.
+Continuous cells are absolute `Group - Referent` contrasts in
+reference-SD units. Categorical cells are pairwise Cramer's V values
+from contingency tables, one row per variable. These metrics
+intentionally have separate legends and should not be compared as
+interchangeable effect sizes.
