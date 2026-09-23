@@ -7,6 +7,7 @@
 #' @param soft_power Optional soft-thresholding power.
 #' @param sft_rsq Target scale-free topology fit for automatic power selection.
 #' @param min_module_size Minimum dynamic-tree-cut module size.
+#' @param deep_split Dynamic tree-cut sensitivity from 0 through 4.
 #' @param merge_cut_height Eigengene dissimilarity for module merging.
 #' @param keep_tom Store the topological-overlap matrix.
 #' @param seed Optional random seed.
@@ -22,6 +23,7 @@ BuildFeatureWGCNA <- function(
     soft_power = NULL,
     sft_rsq = 0.85,
     min_module_size = 30,
+    deep_split = 2,
     merge_cut_height = 0.25,
     keep_tom = FALSE,
     seed = NULL
@@ -43,8 +45,9 @@ BuildFeatureWGCNA <- function(
   }
   if (!is.numeric(sft_rsq) || length(sft_rsq) != 1 || sft_rsq <= 0 || sft_rsq > 1 ||
       !is.numeric(min_module_size) || length(min_module_size) != 1 || min_module_size < 2 ||
+      !is.numeric(deep_split) || length(deep_split) != 1 || !is.finite(deep_split) || deep_split != as.integer(deep_split) || !deep_split %in% 0:4 ||
       !is.numeric(merge_cut_height) || length(merge_cut_height) != 1 || merge_cut_height <= 0 || merge_cut_height >= 1) {
-    stop("`sft_rsq`, `min_module_size`, and `merge_cut_height` must be valid scalar WGCNA parameters.", call. = FALSE)
+    stop("`sft_rsq`, `min_module_size`, `deep_split`, and `merge_cut_height` must be valid scalar WGCNA parameters.", call. = FALSE)
   }
   if (!is.null(soft_power) && (!is.numeric(soft_power) || length(soft_power) != 1 || !is.finite(soft_power) || soft_power <= 0)) {
     stop("`soft_power` must be NULL or a positive numeric value.", call. = FALSE)
@@ -77,7 +80,7 @@ BuildFeatureWGCNA <- function(
     tom <- WGCNA::TOMsimilarity(adjacency, TOMType = tom_type, verbose = 0)
     dissimilarity <- 1 - tom
     feature_tree <- stats::hclust(stats::as.dist(dissimilarity), method = "average")
-    dynamic <- dynamicTreeCut::cutreeDynamic(feature_tree, distM = dissimilarity, deepSplit = 2, pamRespectsDendro = FALSE, minClusterSize = min_module_size)
+    dynamic <- dynamicTreeCut::cutreeDynamic(feature_tree, distM = dissimilarity, deepSplit = deep_split, pamRespectsDendro = FALSE, minClusterSize = min_module_size)
     merged <- WGCNA::mergeCloseModules(dat_expr, WGCNA::labels2colors(dynamic), cutHeight = merge_cut_height, verbose = 0)
     module_colors <- merged$colors
     eigengenes <- WGCNA::moduleEigengenes(dat_expr, module_colors)$eigengenes
@@ -89,7 +92,7 @@ BuildFeatureWGCNA <- function(
   modules <- tibble::tibble(Variable = variables, Module = module_colors, ModuleMembership = as.numeric(kme))
   structure(list(modules = modules, module_sizes = table(module_colors), eigengenes = eigengenes,
                  soft_threshold = list(power = chosen_power, auto_selected = auto_selected, sft_rsq_target = sft_rsq, power_estimate = sft$powerEstimate, fit_indices = sft$fitIndices),
-                 network_type = network_type, params = list(min_module_size = min_module_size, merge_cut_height = merge_cut_height, seed = seed),
+                 network_type = network_type, params = list(min_module_size = min_module_size, deep_split = deep_split, merge_cut_height = merge_cut_height, seed = seed),
                  datExpr = dat_expr, gene_tree = feature_tree, module_colors = module_colors,
                  tom = if (isTRUE(keep_tom)) tom else NULL), class = "feature_wgcna_obj")
 }

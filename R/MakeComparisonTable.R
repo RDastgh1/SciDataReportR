@@ -20,6 +20,10 @@
 #' standard deviation, and multi-group Cohen's f is calculated from the Type II
 #' ANCOVA group effect. These effect-size scales are not numerically equivalent.
 #'
+#' For unadjusted nonparametric continuous outcomes, two-group Wilcoxon
+#' rank-sum comparisons report absolute rank-biserial correlation, while
+#' Kruskal-Wallis comparisons with more than two groups report epsilon-squared.
+#'
 #' Binary categorical outcomes with covariates are tested using logistic
 #' regression likelihood-ratio tests. Multicategory categorical outcomes with
 #' covariates are tested using multinomial likelihood-ratio tests.
@@ -1307,6 +1311,22 @@ MakeComparisonTable <- function(data,
           ))
         }
 
+        if (k == 2) {
+          group_levels <- levels(df_vg[[CompVariable]])
+          is_first_group <- df_vg[[CompVariable]] == group_levels[1]
+          n_first <- sum(is_first_group)
+          n_second <- sum(!is_first_group)
+          ranks <- rank(df_vg[[var]], ties.method = "average")
+          u_first <- sum(ranks[is_first_group]) - n_first * (n_first + 1) / 2
+          rank_biserial <- abs(2 * u_first / (n_first * n_second) - 1)
+
+          return(tibble::tibble(
+            variable = var,
+            effect_size = rank_biserial,
+            es_method = "|rank-biserial r|"
+          ))
+        }
+
         n <- nrow(df_vg)
 
         H <- tryCatch(
@@ -1315,6 +1335,7 @@ MakeComparisonTable <- function(data,
         )
 
         eps2 <- suppressWarnings(as.numeric((H - k + 1) / (n - k)))
+        eps2 <- if (is.finite(eps2)) max(eps2, 0) else NA_real_
 
         return(tibble::tibble(
           variable = var,

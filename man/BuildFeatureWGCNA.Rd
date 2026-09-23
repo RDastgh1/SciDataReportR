@@ -12,6 +12,7 @@ BuildFeatureWGCNA(
   soft_power = NULL,
   sft_rsq = 0.85,
   min_module_size = 30,
+  deep_split = 2,
   merge_cut_height = 0.25,
   keep_tom = FALSE,
   seed = NULL
@@ -31,6 +32,8 @@ BuildFeatureWGCNA(
 \item{sft_rsq}{Target scale-free topology fit for automatic power selection.}
 
 \item{min_module_size}{Minimum dynamic-tree-cut module size.}
+
+\item{deep_split}{Dynamic tree-cut sensitivity from 0 through 4.}
 
 \item{merge_cut_height}{Eigengene dissimilarity for module merging.}
 

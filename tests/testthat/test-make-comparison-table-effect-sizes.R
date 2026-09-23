@@ -135,7 +135,51 @@ test_that("multi-group Type II ANCOVA reports partial Cohen's f", {
   expect_identical(got$ES_Method, "partial Cohen's f")
 })
 
-test_that("nonparametric and categorical effect sizes are preserved", {
+test_that("two-group Wilcoxon reports absolute rank-biserial correlation", {
+  df_Test <- data.frame(
+    group = factor(
+      c(rep("A", 4), rep("B", 4), "A", "B", NA),
+      levels = c("A", "B")
+    ),
+    outcome = c(1, 2, 2, 4, 3, 4, 5, 5, NA, 6, 7)
+  )
+
+  tbl <- suppressWarnings(MakeComparisonTable(
+    data = df_Test,
+    group_var = "group",
+    variables = "outcome",
+    Parametric = FALSE,
+    AddEffectSize = TRUE
+  ))
+  got <- GetMainEffectRow(tbl, "outcome")
+
+  df_CC <- df_Test[stats::complete.cases(df_Test), , drop = FALSE]
+  ranks <- rank(df_CC$outcome, ties.method = "average")
+  n_first <- sum(df_CC$group == "A")
+  n_second <- sum(df_CC$group == "B")
+  u_first <- sum(ranks[df_CC$group == "A"]) - n_first * (n_first + 1) / 2
+  expected <- abs(2 * u_first / (n_first * n_second) - 1)
+
+  expect_equal(got$effect_size, expected, tolerance = 1e-10)
+  expect_identical(got$ES_Method, "|rank-biserial r|")
+
+  df_Reordered <- df_Test
+  df_Reordered$group <- factor(df_Reordered$group, levels = c("B", "A"))
+  got_reordered <- GetMainEffectRow(
+    suppressWarnings(MakeComparisonTable(
+      data = df_Reordered,
+      group_var = "group",
+      variables = "outcome",
+      Parametric = FALSE,
+      AddEffectSize = TRUE
+    )),
+    "outcome"
+  )
+
+  expect_equal(got_reordered$effect_size, expected, tolerance = 1e-10)
+})
+
+test_that("multi-group nonparametric and categorical effect sizes are preserved", {
   set.seed(105)
   df_Test <- data.frame(
     group = factor(rep(c("A", "B", "C"), each = 18)),
@@ -154,11 +198,32 @@ test_that("nonparametric and categorical effect sizes are preserved", {
   got_outcome <- GetMainEffectRow(tbl, "outcome")
   got_category <- GetMainEffectRow(tbl, "category")
   H <- as.numeric(stats::kruskal.test(outcome ~ group, data = df_Test)$statistic)
-  expected_epsilon <- (H - 3 + 1) / (nrow(df_Test) - 3)
+  expected_epsilon <- max((H - 3 + 1) / (nrow(df_Test) - 3), 0)
 
   expect_equal(got_outcome$effect_size, expected_epsilon, tolerance = 1e-10)
   expect_identical(got_outcome$ES_Method, "epsilon-squared")
   expect_identical(got_category$ES_Method, "Cramer's V")
+})
+
+test_that("negative epsilon-squared estimates are clamped to zero", {
+  df_Test <- data.frame(
+    group = factor(rep(c("A", "B", "C"), each = 3)),
+    outcome = c(1, 4, 7, 2, 5, 8, 3, 6, 9)
+  )
+
+  got <- GetMainEffectRow(
+    MakeComparisonTable(
+      data = df_Test,
+      group_var = "group",
+      variables = "outcome",
+      Parametric = FALSE,
+      AddEffectSize = TRUE
+    ),
+    "outcome"
+  )
+
+  expect_equal(got$effect_size, 0)
+  expect_identical(got$ES_Method, "epsilon-squared")
 })
 
 test_that("captions stay focused when effect sizes are included", {

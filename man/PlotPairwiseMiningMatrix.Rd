@@ -2,7 +2,7 @@
 % Please edit documentation in R/PlotPairwiseMiningMatrix.R
 \name{PlotPairwiseMiningMatrix}
 \alias{PlotPairwiseMiningMatrix}
-\title{Plot a mixed-type pairwise mining matrix}
+\title{Plot non-directional mixed-type pairwise mining matrices}
 \usage{
 PlotPairwiseMiningMatrix(
   data,
@@ -13,6 +13,10 @@ PlotPairwiseMiningMatrix(
   adjust_scope = c("per_group", "per_variable", "matrix", "none"),
   p_adjust_method = c("fdr", "bonferroni", "holm", "none"),
   star_p = c("raw", "adjusted", "none"),
+  adjusted_outline = TRUE,
+  adjusted_significance_threshold = 0.05,
+  adjusted_outline_color = "black",
+  adjusted_outline_linewidth = 1,
   variable_metadata = NULL,
   max_levels = 30,
   continuous_fill_limits = NULL,
@@ -30,7 +34,8 @@ PlotPairwiseMiningMatrix(
 
 \item{Referent}{Character scalar naming the referent level of \code{group_var}.}
 
-\item{covariates}{Optional character vector of covariates.}
+\item{covariates}{Optional character vector of covariates. Continuous
+contrasts use these covariates; Cramer's V screening remains unadjusted.}
 
 \item{adjust_scope}{Multiple-comparison correction scope: \code{"per_group"},
 \code{"per_variable"}, \code{"matrix"}, or \code{"none"}.}
@@ -40,37 +45,43 @@ PlotPairwiseMiningMatrix(
 \item{star_p}{Which p-values drive cell stars: \code{"raw"}, \code{"adjusted"}, or
 \code{"none"}.}
 
+\item{adjusted_outline}{Logical; outline cells significant after adjustment.}
+
+\item{adjusted_significance_threshold}{Threshold for adjusted-significant
+outlines.}
+
+\item{adjusted_outline_color, adjusted_outline_linewidth}{Appearance of the
+adjusted-significant outline.}
+
 \item{variable_metadata}{Optional data frame with \code{Variable} and optional
-\code{AnchorN}, \code{AlignedN}, \code{FilledPrior}, \code{FilledFuture}, and \code{TimeExtended}
-columns. These fields are joined to the returned audit table.}
+\code{AnchorN}, \code{AlignedN}, \code{FilledPrior}, \code{FilledFuture}, and \code{TimeExtended}.}
 
 \item{max_levels}{Maximum categorical levels allowed for one variable.}
 
-\item{continuous_fill_limits, categorical_fill_limits}{Optional symmetric
-plotting limits for the continuous and categorical matrices.}
+\item{continuous_fill_limits, categorical_fill_limits}{Optional non-negative
+plotting limits for the continuous and categorical magnitude matrices.}
 
 \item{x_axis_text_angle}{Numeric angle for phenotype labels.}
 
-\item{row_label_width}{Approximate character width used to wrap displayed
-variable and category labels.}
+\item{row_label_width}{Approximate character width used to wrap row labels.}
 }
 \value{
 An object of class \code{"SciDataReportRPairwiseMiningMatrix"} with
-\code{Plots}, \code{Results}, \code{OmnibusResults}, \code{Settings}, \code{Models}, and \code{Warnings}.
-\code{Plots$Continuous} is a reference-SD mean-difference matrix;
-\code{Plots$Categorical} is a percentage-point prevalence-difference matrix;
-and \code{Plots$Omnibus} summarizes the overall phenotype association for every
-source variable.
+\code{Plots}, \code{Results}, \code{ContinuousAudit}, \code{CategoryLevelResults}, \code{Settings},
+\code{Models}, and \code{Warnings}. \code{Plots$Continuous} displays absolute
+referent-SD mean differences and \code{Plots$Categorical} displays pairwise
+Cramer's V. Both use an independent pale-gray-to-navy magnitude scale.
 }
 \description{
-Builds referent-centred phenotype contrasts for continuous and categorical
-measures. It follows \code{\link[=MakePairwiseHeatmap]{MakePairwiseHeatmap()}} conventions while retaining
-categorical category-level contrasts instead of silently discarding them.
+Builds referent-centred phenotype screening matrices that show the magnitude
+of pairwise separation only. Signed continuous contrasts and category-level
+prevalence contrasts are retained in returned audit objects for follow-up,
+but are deliberately not displayed in the mining matrices.
 }
 \details{
-Continuous cells are \code{Group - Referent} contrasts after scaling each outcome
-to the referent mean and standard deviation. Categorical variables expand to
-one row per observed level, with cells equal to \code{Group - Referent} prevalence
-in percentage points. The two plot types intentionally have separate scales.
-Do not compare their colour magnitudes as if they were the same effect size.
+The required Referent determines the phenotype comparison columns.
+Continuous cells are absolute \code{Group - Referent} contrasts in reference-SD
+units. Categorical cells are pairwise Cramer's V values from contingency
+tables, one row per variable. These metrics intentionally have separate
+legends and should not be compared as interchangeable effect sizes.
 }

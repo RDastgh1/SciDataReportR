@@ -124,7 +124,7 @@ footnote remain focused on the summaries and hypothesis tests used.
 
 ## Nonparametric analyses
 
-Nonparametric testing uses rank-based methods that are more robust to non-normal distributions.
+Nonparametric testing uses rank-based methods that are more robust to non-normal distributions. For two-group Wilcoxon rank-sum comparisons, the table reports absolute rank-biserial correlation. For Kruskal-Wallis comparisons involving more than two groups, it reports epsilon-squared.
 
 ```{r}
 tbl_nonparametric <- MakeComparisonTable(

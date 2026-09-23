@@ -140,6 +140,10 @@ the estimated marginal mean difference divided by the model residual
 standard deviation, and multi-group Cohen's f is calculated from the Type II
 ANCOVA group effect. These effect-size scales are not numerically equivalent.
 
+For unadjusted nonparametric continuous outcomes, two-group Wilcoxon
+rank-sum comparisons report absolute rank-biserial correlation, while
+Kruskal-Wallis comparisons with more than two groups report epsilon-squared.
+
 Binary categorical outcomes with covariates are tested using logistic
 regression likelihood-ratio tests. Multicategory categorical outcomes with
 covariates are tested using multinomial likelihood-ratio tests.
