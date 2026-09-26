@@ -281,7 +281,7 @@ ObjClustProjected <- ProjectCluster(Obj_ClustFinal, df_Projection)
     13 1.0000000     323.68552 0.00990099               1               5
     14 1.0000000      37.30184 0.15841584               2               4
     15 1.0000000     -13.14147 1.00000000               1               4
-    16 1.0000000      38.32467 0.04950495               1               5
+    16 1.0000000      38.32467 0.05940594               1               5
        MinProfileNodeProportion MaxProfileNodeProportion MinProfileParticipantN
     1                      0.20                     0.80                     72
     2                      0.16                     0.84                     72
@@ -675,7 +675,7 @@ Session information
     [1] stats     graphics  grDevices utils     datasets  methods   base
 
     other attached packages:
-    [1] ggplot2_4.0.3          dplyr_1.2.1            SciDataReportR_21.11.0
+    [1] ggplot2_4.0.3          dplyr_1.2.1            SciDataReportR_21.12.0
 
     loaded via a namespace (and not attached):
       [1] RColorBrewer_1.1-3     rstudioapi_0.19.0      jsonlite_2.0.0
