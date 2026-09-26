@@ -1,4 +1,106 @@
 
+# Node-level columns that describe an individual's assignment: the node's
+# cluster and its posterior summaries, without the node's codebook vector.
+.SOMNodeAssignments <- function(node_df) {
+  dplyr::select(node_df, dplyr::any_of(c("NodeID", "Cluster", "max_prob",
+    "prob_assigned", "uncertainty")), dplyr::matches("^prob_[0-9]+$"))
+}
+
+# Per-variable residuals from each participant's best-matching unit. The
+# squared residuals sum to the squared SOM distance, so each variable's share
+# says how much of a participant's misfit it explains.
+.SOMResiduals <- function(zmat, som_codes, bmu, variables, row_ids) {
+  if (ncol(zmat) != length(variables)) {
+    stop("Internal error: SOM residual columns do not match the clustering variables.")
+  }
+  residual <- zmat - som_codes[bmu, , drop = FALSE]
+  colnames(residual) <- variables
+  squared <- residual^2
+  total <- rowSums(squared)
+  top_index <- max.col(squared, ties.method = "first")
+  residuals <- dplyr::bind_cols(
+    dplyr::tibble(.row_id = row_ids),
+    dplyr::as_tibble(residual, .name_repair = "minimal") %>%
+      stats::setNames(paste0("Resid_", variables)))
+  top <- dplyr::tibble(
+    .row_id = row_ids,
+    Top_Distance_Variable = variables[top_index],
+    Top_Distance_Share = ifelse(total > 0,
+      squared[cbind(seq_along(top_index), top_index)] / total, NA_real_))
+  list(residuals = residuals, top = top, residual = residual)
+}
+
+# Cohort-level summary of which variables the map represents least well.
+.SOMVariableContribution <- function(som_residuals, variables, data) {
+  residual <- som_residuals$residual
+  mean_sq <- colMeans(residual^2)
+  labels <- vapply(variables, function(v) {
+    label <- if (v %in% names(data)) attr(data[[v]], "label", exact = TRUE) else NULL
+    if (is.null(label) || !nzchar(label)) v else as.character(label)[1]
+  }, character(1))
+  dplyr::tibble(
+    Variable = variables,
+    Label = unname(labels),
+    mean_residual = unname(colMeans(residual)),
+    mean_sq_residual = unname(mean_sq),
+    share_of_distance = unname(mean_sq / sum(mean_sq))
+  )
+}
+
+# Criterion weights for the composite rank index. NULL gives equal weights; a
+# named vector gives explicit weights; a reciprocal pairwise-comparison matrix
+# gives Analytic Hierarchy Process weights (principal eigenvector) and Saaty's
+# consistency ratio.
+.ResolveCompositeWeights <- function(criteria_weights) {
+  criteria <- c("AIC", "BIC", "Entropy", "Reproducibility")
+  if (is.null(criteria_weights)) {
+    return(list(weights = NULL, method = "equal", pairwise = NULL,
+      consistency_ratio = NULL))
+  }
+  if (is.matrix(criteria_weights)) {
+    pairwise <- criteria_weights
+    n <- nrow(pairwise)
+    if (n != ncol(pairwise) || n < 2 || is.null(rownames(pairwise)) ||
+        !identical(rownames(pairwise), colnames(pairwise))) {
+      stop("A criteria_weights matrix must be square with matching row and column names.")
+    }
+    if (length(setdiff(rownames(pairwise), criteria))) {
+      stop("criteria_weights may only compare: ", paste(criteria, collapse = ", "), ".")
+    }
+    if (any(!is.finite(pairwise)) || any(pairwise <= 0) ||
+        any(abs(pairwise * t(pairwise) - 1) > 1e-6)) {
+      stop("A criteria_weights matrix must be positive and reciprocal (a[j, i] = 1 / a[i, j]).")
+    }
+    eigen_result <- eigen(pairwise)
+    lead <- which.max(Re(eigen_result$values))
+    weights <- abs(Re(eigen_result$vectors[, lead]))
+    weights <- stats::setNames(weights / sum(weights), rownames(pairwise))
+    lambda_max <- Re(eigen_result$values[lead])
+    random_index <- c(0, 0, 0.58, 0.90)[n]
+    consistency_ratio <- if (random_index > 0) {
+      ((lambda_max - n) / (n - 1)) / random_index
+    } else {
+      0
+    }
+    if (consistency_ratio > 0.10) {
+      warning("The criteria_weights pairwise comparisons are inconsistent (consistency ratio = ",
+        sprintf("%.2f", consistency_ratio), " > 0.10); consider revising them.")
+    }
+    return(list(weights = weights, method = "AHP pairwise", pairwise = pairwise,
+      consistency_ratio = consistency_ratio))
+  }
+  if (!is.numeric(criteria_weights) || is.null(names(criteria_weights)) ||
+      length(setdiff(names(criteria_weights), criteria)) ||
+      anyDuplicated(names(criteria_weights)) ||
+      any(!is.finite(criteria_weights)) || any(criteria_weights < 0) ||
+      sum(criteria_weights) <= 0) {
+    stop("criteria_weights must be NULL, a named non-negative numeric vector over ",
+      paste(criteria, collapse = ", "), ", or a pairwise-comparison matrix.")
+  }
+  list(weights = criteria_weights / sum(criteria_weights), method = "user-specified",
+    pairwise = NULL, consistency_ratio = NULL)
+}
+
 .NodeOccupancyJSD <- function(training_counts, projected_counts) {
   if (length(training_counts) != length(projected_counts)) {
     stop("training_counts and projected_counts must have the same length.")
@@ -340,8 +442,18 @@ ProjectCluster.Pipeline_SOM_MClust <- function(
   SOM_Node_new <- rep(NA_integer_, nrow(new_df_scidr))
   SOM_Node_new[complete_rows] <- mapping$unit.classif
 
+  # Models fitted before SOM distances were reported on the Euclidean scale
+  # keep kohonen's squared distances, so the training baselines still match.
+  euclidean_distance <- identical(object$ModelInfo_SOM$distance_scale, "euclidean")
   SOM_Dist_new <- rep(NA_real_, nrow(new_df_scidr))
-  SOM_Dist_new[complete_rows] <- mapping$distances
+  SOM_Dist_new[complete_rows] <- if (euclidean_distance) {
+    sqrt(mapping$distances)
+  } else {
+    mapping$distances
+  }
+
+  som_residuals <- .SOMResiduals(zmat_new, object$ModelInfo_SOM$som_codes,
+    mapping$unit.classif, vars_used, new_df_scidr$.row_id[complete_rows])
 
   # Node-level info from training -----------------------------------------
 
@@ -357,7 +469,7 @@ ProjectCluster.Pipeline_SOM_MClust <- function(
     SOM_Node     = SOM_Node_new,
     SOM_Distance = SOM_Dist_new
   ) %>%
-    dplyr::left_join(node_df, by = c("SOM_Node" = "NodeID")) %>%
+    dplyr::left_join(.SOMNodeAssignments(node_df), by = c("SOM_Node" = "NodeID")) %>%
     dplyr::mutate(
       SOMDist_z_overall = if (is.finite(overall_sd) && overall_sd > 0)
         (SOM_Distance - overall_mean) / overall_sd else NA_real_,
@@ -393,6 +505,8 @@ ProjectCluster.Pipeline_SOM_MClust <- function(
         TRUE ~ "Good fit"
       )
     )
+  individual_tbl <- individual_tbl %>%
+    dplyr::left_join(som_residuals$top, by = ".row_id")
   attr(individual_tbl$.row_id, "label") <- "Row ID"
   if (!is.null(object$id_var) && object$id_var %in% names(new_df_scidr)) {
     individual_tbl[[object$id_var]] <- new_df_scidr[[object$id_var]]
@@ -501,6 +615,39 @@ ProjectCluster.Pipeline_SOM_MClust <- function(
   distance_ratio <- projected_mean_distance / training_mean_distance
   phenotype_drift_index <- abs(log(distance_ratio))
 
+  # Representation drift: share of projected participants beyond the training
+  # high-distance cutoff, minus the share expected when the projected cohort
+  # resembles training (1 - high_dist_quantile). Near 0 means no excess.
+  high_distance_burden <- mean(somproj_non_na$Flag_SOMDist_overallHigh, na.rm = TRUE)
+  excess_high_distance <- high_distance_burden - (1 - high_dist_quantile)
+
+  # Prevalence drift: divergence between training and projected phenotype
+  # proportions (0 = identical, 1 = disjoint).
+  cluster_levels <- sort(unique(stats::na.omit(c(
+    training_individual$Cluster, somproj_non_na$Cluster))))
+  cluster_js <- .NodeOccupancyJSD(
+    tabulate(match(training_individual$Cluster, cluster_levels), length(cluster_levels)),
+    tabulate(match(somproj_non_na$Cluster, cluster_levels), length(cluster_levels)))
+
+  # Which variables the frozen map represents less well in the projected cohort.
+  variable_reference <- object$ModelInfo_SOM$ProjectionReference$variable_contribution
+  variable_drift <- .SOMVariableContribution(som_residuals, vars_used, new_df)
+  if (!is.null(variable_reference) && euclidean_distance) {
+    variable_drift <- variable_drift %>%
+      dplyr::rename(proj_mean_residual = "mean_residual",
+        proj_mean_sq_residual = "mean_sq_residual",
+        proj_share_of_distance = "share_of_distance") %>%
+      dplyr::left_join(variable_reference %>%
+        dplyr::select("Variable", train_mean_residual = "mean_residual",
+          train_mean_sq_residual = "mean_sq_residual"), by = "Variable") %>%
+      dplyr::mutate(
+        sq_residual_ratio = .data$proj_mean_sq_residual / .data$train_mean_sq_residual,
+        excess_sq_residual = .data$proj_mean_sq_residual - .data$train_mean_sq_residual,
+        share_of_excess = pmax(.data$excess_sq_residual, 0) /
+          sum(pmax(.data$excess_sq_residual, 0))) %>%
+      dplyr::arrange(dplyr::desc(.data$excess_sq_residual))
+  }
+
   ProjectionDiagnostics <- dplyr::tibble(
     metric = c(
       "n_total",
@@ -514,6 +661,8 @@ ProjectCluster.Pipeline_SOM_MClust <- function(
       "high_distance_burden",
       "cluster_high_distance_burden",
       "phenotype_drift_index",
+      "excess_high_distance",
+      "cluster_occupancy_js_divergence",
       "node_occupancy_js_divergence"
     ),
     value = c(
@@ -525,9 +674,11 @@ ProjectCluster.Pipeline_SOM_MClust <- function(
       training_median_distance,
       projected_median_distance,
       distance_ratio,
-      mean(somproj_non_na$Flag_SOMDist_overallHigh, na.rm = TRUE),
+      high_distance_burden,
       mean(somproj_non_na$Flag_SOMDist_clusterHigh, na.rm = TRUE),
       phenotype_drift_index,
+      excess_high_distance,
+      cluster_js,
       node_js
     )
   )
@@ -548,7 +699,7 @@ ProjectCluster.Pipeline_SOM_MClust <- function(
     ggplot2::theme_bw() +
     ggplot2::labs(
       title = "SOM distances (projected cases)",
-      x     = "Distance to BMU",
+      x     = "Distance to BMU (Z-score units)",
       y     = "Count"
     )
 
@@ -561,7 +712,7 @@ ProjectCluster.Pipeline_SOM_MClust <- function(
     ggplot2::theme_bw() +
     ggplot2::labs(
       title = "Training vs projected SOM distance",
-      x = "Distance to BMU",
+      x = "Distance to BMU (Z-score units)",
       y = "Density",
       fill = "Cohort"
     )
@@ -635,23 +786,45 @@ ProjectCluster.Pipeline_SOM_MClust <- function(
       y = "Proportion"
     )
 
+  p_variable_drift <- if ("sq_residual_ratio" %in% names(variable_drift)) {
+    ggplot2::ggplot(variable_drift, ggplot2::aes(
+      x = .data$sq_residual_ratio,
+      y = stats::reorder(.data$Label, .data$sq_residual_ratio))) +
+      ggplot2::geom_col() +
+      ggplot2::geom_vline(xintercept = 1, linetype = "dashed") +
+      ggplot2::theme_bw() +
+      ggplot2::labs(
+        title = "Map misfit by variable: projected vs training",
+        subtitle = "Mean squared residual from the best-matching unit; 1 = same as training",
+        x = "Projected / training mean squared residual", y = NULL)
+  } else {
+    NULL
+  }
+
   DataWithClusters$Projection_Fit_Class <- individual_tbl$Projection_Fit_Class
   ProjectionFit <- list(
     individual = individual_tbl,
     summary = ProjectionDiagnostics,
     by_cluster = cluster_fit_summary,
+    variable_drift = variable_drift,
+    residuals = som_residuals$residuals,
     out_of_support = out_of_range_summary %>%
       dplyr::filter(!is.na(.data$n_out_of_range), .data$n_out_of_range > 0),
     policy = list(
     high_distance_quantile = high_dist_quantile,
     low_probability_threshold = low_prob_threshold,
-    distance_metric = "distance to frozen SOM best-matching unit",
+    distance_metric = if (euclidean_distance) {
+      "Euclidean distance (Z-score units) to frozen SOM best-matching unit"
+    } else {
+      "squared Euclidean distance to frozen SOM best-matching unit"
+    },
     range_policy = "Values beyond observed training minima or maxima are warned but mapped when complete"),
     plots = list(
       distance_hist = p_dist_hist,
       training_vs_projected_distance_density = p_train_proj_dist_density,
       training_vs_projected_distance_qq = p_train_proj_dist_qq,
       projection_fit_class_bar = p_projection_fit_class,
+      variable_drift = p_variable_drift,
       poor_fit_by_cluster = p_poor_fit_by_cluster
     )
   )

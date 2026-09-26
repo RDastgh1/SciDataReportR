@@ -38,6 +38,9 @@ CreateClusterModel_SOM_MClust(
   skip_model_after_n_failures = 2L,
   slow_fit_seconds = 120,
   min_nodes_per_cluster = 5,
+  lpa_min_node_n = 0L,
+  min_cluster_prop = NULL,
+  criteria_weights = NULL,
   high_dist_quantile = 0.95,
   low_prob_threshold = 0.7,
   stability_resamples = 0L,
@@ -155,6 +158,27 @@ fits in diagnostics.}
 
 \item{min_nodes_per_cluster}{Optional minimum average SOM nodes per cluster
 considered before attempting a candidate profile count.}
+
+\item{lpa_min_node_n}{Minimum number of training participants a SOM node
+must hold to enter the node-level mixture fit. Default \code{0} fits every
+node. Use \code{1} to leave empty nodes out, so unoccupied map regions do
+not count as observations in AIC/BIC. Nodes left out are classified
+afterwards by the fitted mixture model, so every node still carries a
+phenotype and posterior probabilities for projection.}
+
+\item{min_cluster_prop}{Optional minimum share of training participants
+(0-1) in a candidate's smallest profile. Candidates below it are marked
+\code{Eligible = FALSE} in the fit table and are not recommended. Use it
+to keep only phenotypes large enough to describe and interpret.}
+
+\item{criteria_weights}{Weights for the composite rank index. \code{NULL}
+(default) weights the criteria equally. A named non-negative vector over
+\code{"AIC"}, \code{"BIC"}, \code{"Entropy"}, and
+\code{"Reproducibility"} sets weights directly. A square reciprocal
+pairwise-comparison matrix with those row and column names derives
+Analytic Hierarchy Process weights from its principal eigenvector and
+reports Saaty's consistency ratio (warning above 0.10).
+\code{"Reproducibility"} requires \code{stability_resamples > 0}.}
 
 \item{high_dist_quantile}{Numeric value between 0 and 1 used to define
 high SOM-distance flags from the training distance distribution. Default
@@ -300,14 +324,31 @@ recovery. \code{ReproducibilityScore} is the mean of their finite values;
 the candidate-table min-max rescaling used only by the AHP index and is not
 an independently interpretable reproducibility measure.
 
-The AHP-style index is computed by:
+The composite rank index (stored as \code{ahp_index}) is computed by:
 \enumerate{
-\item Scaling AIC, BIC, and Entropy across candidate solutions
-(AIC/BIC are negated so that lower values correspond to better
-fit; higher scaled scores are preferred).
-\item Taking the mean of the three scaled indices. The model with the
-highest AHP index is recommended.
+\item Z-scaling AIC, BIC, Entropy, and (when stability is run)
+reproducibility across candidate solutions (AIC/BIC are negated so
+that higher scaled scores are preferred).
+\item Taking their weighted mean. Weights are equal unless
+\code{criteria_weights} supplies them, either directly or as an
+Analytic Hierarchy Process pairwise-comparison matrix.
+\item Recommending the highest-scoring candidate among those marked
+\code{Eligible} (see \code{min_cluster_prop}).
 }
+The chosen weights, their method, and any consistency ratio are returned in
+\code{ModelInfo_MClust$AHP}.
+
+\code{MinProfileParticipantN} and \code{MinProfileParticipantProportion}
+give the size of the smallest profile in training participants rather than
+SOM nodes.
+
+\code{SOM_Distance} is the Euclidean distance, in Z-score units, from a
+participant to their best-matching unit. Its square is the sum of the
+squared per-variable residuals, returned in \code{ModelInfo_SOM$SOMFit$residuals}
+(\code{Resid_<variable>}). \code{ModelInfo_SOM$SOMFit$variable_contribution}
+summarizes each variable's share of training misfit, and each participant's
+largest contributor is recorded in \code{Top_Distance_Variable} and
+\code{Top_Distance_Share}.
 
 LPA model/profile combinations are fit one at a time so that failed or
 warning-producing solutions are captured in diagnostics instead of blocking

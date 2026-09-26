@@ -114,6 +114,24 @@
 #'   fits in diagnostics.
 #' @param min_nodes_per_cluster Optional minimum average SOM nodes per cluster
 #'   considered before attempting a candidate profile count.
+#' @param lpa_min_node_n Minimum number of training participants a SOM node
+#'   must hold to enter the node-level mixture fit. Default \code{0} fits every
+#'   node. Use \code{1} to leave empty nodes out, so unoccupied map regions do
+#'   not count as observations in AIC/BIC. Nodes left out are classified
+#'   afterwards by the fitted mixture model, so every node still carries a
+#'   phenotype and posterior probabilities for projection.
+#' @param min_cluster_prop Optional minimum share of training participants
+#'   (0-1) in a candidate's smallest profile. Candidates below it are marked
+#'   \code{Eligible = FALSE} in the fit table and are not recommended. Use it
+#'   to keep only phenotypes large enough to describe and interpret.
+#' @param criteria_weights Weights for the composite rank index. \code{NULL}
+#'   (default) weights the criteria equally. A named non-negative vector over
+#'   \code{"AIC"}, \code{"BIC"}, \code{"Entropy"}, and
+#'   \code{"Reproducibility"} sets weights directly. A square reciprocal
+#'   pairwise-comparison matrix with those row and column names derives
+#'   Analytic Hierarchy Process weights from its principal eigenvector and
+#'   reports Saaty's consistency ratio (warning above 0.10).
+#'   \code{"Reproducibility"} requires \code{stability_resamples > 0}.
 #' @param high_dist_quantile Numeric value between 0 and 1 used to define
 #'   high SOM-distance flags from the training distance distribution. Default
 #'   is \code{0.95}.
@@ -162,14 +180,31 @@
 #' the candidate-table min-max rescaling used only by the AHP index and is not
 #' an independently interpretable reproducibility measure.
 #'
-#' The AHP-style index is computed by:
+#' The composite rank index (stored as \code{ahp_index}) is computed by:
 #' \enumerate{
-#'   \item Scaling AIC, BIC, and Entropy across candidate solutions
-#'         (AIC/BIC are negated so that lower values correspond to better
-#'         fit; higher scaled scores are preferred).
-#'   \item Taking the mean of the three scaled indices. The model with the
-#'         highest AHP index is recommended.
+#'   \item Z-scaling AIC, BIC, Entropy, and (when stability is run)
+#'         reproducibility across candidate solutions (AIC/BIC are negated so
+#'         that higher scaled scores are preferred).
+#'   \item Taking their weighted mean. Weights are equal unless
+#'         \code{criteria_weights} supplies them, either directly or as an
+#'         Analytic Hierarchy Process pairwise-comparison matrix.
+#'   \item Recommending the highest-scoring candidate among those marked
+#'         \code{Eligible} (see \code{min_cluster_prop}).
 #' }
+#' The chosen weights, their method, and any consistency ratio are returned in
+#' \code{ModelInfo_MClust$AHP}.
+#'
+#' \code{MinProfileParticipantN} and \code{MinProfileParticipantProportion}
+#' give the size of the smallest profile in training participants rather than
+#' SOM nodes.
+#'
+#' \code{SOM_Distance} is the Euclidean distance, in Z-score units, from a
+#' participant to their best-matching unit. Its square is the sum of the
+#' squared per-variable residuals, returned in \code{ModelInfo_SOM$SOMFit$residuals}
+#' (\code{Resid_<variable>}). \code{ModelInfo_SOM$SOMFit$variable_contribution}
+#' summarizes each variable's share of training misfit, and each participant's
+#' largest contributor is recorded in \code{Top_Distance_Variable} and
+#' \code{Top_Distance_Share}.
 #'
 #' LPA model/profile combinations are fit one at a time so that failed or
 #' warning-producing solutions are captured in diagnostics instead of blocking
@@ -355,6 +390,9 @@ CreateClusterModel_SOM_MClust <- function(data,
     skip_model_after_n_failures = 2L,
     slow_fit_seconds = 120,
     min_nodes_per_cluster = 5,
+    lpa_min_node_n = 0L,
+    min_cluster_prop = NULL,
+    criteria_weights = NULL,
     high_dist_quantile = 0.95,
     low_prob_threshold = 0.7,
     stability_resamples = 0L,
@@ -475,6 +513,16 @@ CreateClusterModel_SOM_MClust <- function(data,
       is.na(low_prob_threshold) || low_prob_threshold < 0 || low_prob_threshold > 1) {
     stop("low_prob_threshold must be a single numeric value between 0 and 1.")
   }
+  if (!is.numeric(lpa_min_node_n) || length(lpa_min_node_n) != 1 ||
+      is.na(lpa_min_node_n) || lpa_min_node_n < 0) {
+    stop("lpa_min_node_n must be a single non-negative number.")
+  }
+  if (!is.null(min_cluster_prop) &&
+      (!is.numeric(min_cluster_prop) || length(min_cluster_prop) != 1 ||
+       is.na(min_cluster_prop) || min_cluster_prop < 0 || min_cluster_prop >= 1)) {
+    stop("min_cluster_prop must be NULL or a single numeric value in [0, 1).")
+  }
+  composite_weights <- .ResolveCompositeWeights(criteria_weights)
   if (method == "finalize" && (is.null(final_k) || is.null(final_model))) {
     stop("For method = 'finalize', final_k and final_model must be supplied.")
   }
@@ -500,13 +548,32 @@ CreateClusterModel_SOM_MClust <- function(data,
       skip_model_after_n_failures = skip_model_after_n_failures,
       slow_fit_seconds = slow_fit_seconds,
       min_nodes_per_cluster = min_nodes_per_cluster,
+      lpa_min_node_n = lpa_min_node_n,
+      min_cluster_prop = min_cluster_prop,
+      criteria_weights = criteria_weights,
       high_dist_quantile = high_dist_quantile,
       low_prob_threshold = low_prob_threshold,
       stability_resamples = stability_resamples,
       stability_seed = stability_seed,
       stability_progress = stability_progress,
       stability_cores = stability_cores)
+    # The exploratory path scores its one candidate with AHP and records no
+    # selection; restate it as the user-specified finalized model.
     stable_model$method <- "finalize"
+    fit_table <- stable_model$ModelInfo_MClust$fit_table
+    ahp_cols <- intersect(c("AIC_scaled", "BIC_scaled", "Entropy_scaled",
+      "Reproducibility_scaled", "ahp_index"), names(fit_table))
+    fit_table[ahp_cols] <- NA_real_
+    recommendation_txt <- paste0(
+      "User-specified Model ", final_model, " with k = ", final_k, " profiles.")
+    stable_model$ModelInfo_MClust$fit_table <- fit_table
+    stable_model$ModelInfo_MClust$AHP <- list(
+      ahp_index = fit_table$ahp_index,
+      ahp_best_row = fit_table[1, ],
+      recommendation = recommendation_txt)
+    stable_model$ModelInfo <- stable_model$ModelInfo_MClust
+    stable_model$Specification$candidate_grid <- fit_table
+    stable_model$Specification$selected <- list(k = final_k, model = final_model)
     return(stable_model)
   }
 
@@ -731,10 +798,16 @@ CreateClusterModel_SOM_MClust <- function(data,
   SOM_Node_full <- rep(NA_integer_, nrow(df_scidr))
   SOM_Node_full[complete_rows] <- som_model$unit.classif
 
+  # kohonen reports squared Euclidean distances; SOM_Distance is reported on
+  # the Euclidean scale, in Z-score units.
   SOM_Dist_full <- rep(NA_real_, nrow(df_scidr))
-  SOM_Dist_full[complete_rows] <- som_model$distances
+  SOM_Dist_full[complete_rows] <- sqrt(som_model$distances)
 
-  train_quant_err <- mean(som_model$distances, na.rm = TRUE)
+  train_quant_err <- mean(SOM_Dist_full[complete_rows], na.rm = TRUE)
+
+  som_residuals <- .SOMResiduals(zmat, som_codes, som_model$unit.classif,
+    vars_used, df_scidr$.row_id[complete_rows])
+  som_variable_contribution <- .SOMVariableContribution(som_residuals, vars_used, df)
 
   som_node_occupancy <- dplyr::tibble(
     NodeID = seq_len(nrow(som_codes))
@@ -817,6 +890,17 @@ CreateClusterModel_SOM_MClust <- function(data,
     if (is.null(colnames(X))) {
       colnames(X) <- paste0("V", seq_len(ncol(X)))
     }
+
+    # Nodes holding fewer than lpa_min_node_n training participants are left
+    # out of the mixture fit, so empty map regions do not count as
+    # observations in AIC/BIC. They are assigned afterwards from the fitted
+    # mixture, so every node still carries a phenotype for projection.
+    lpa_nodes <- which(som_node_occupancy$n >= lpa_min_node_n)
+    if (length(lpa_nodes) < 2L) {
+      stop("Fewer than two SOM nodes hold at least lpa_min_node_n = ",
+        lpa_min_node_n, " participants; lower lpa_min_node_n.")
+    }
+    X <- X[lpa_nodes, , drop = FALSE]
 
     dropped_lpa_vars <- character(0)
     if (lpa_drop_zero_sd) {
@@ -907,6 +991,22 @@ CreateClusterModel_SOM_MClust <- function(data,
         )
       }
 
+      # When mclust cannot estimate a solution, tidyLPA still returns fit
+      # indices but attaches no class assignments. Such a fit cannot assign
+      # SOM nodes, so it is recorded as failed rather than as a candidate.
+      if (!is.null(fit_info)) {
+        has_assignments <- tryCatch({
+          profile <- if (inherits(fit, "tidyLPA")) fit[[1]] else fit
+          "Class" %in% names(tidyLPA::get_data(profile))
+        }, error = function(e) FALSE)
+        if (!has_assignments) {
+          fit_info <- NULL
+          fit_error_msg <- paste0(
+            "mclust could not estimate model ", model, " with k = ", k,
+            "; no class assignments were returned.")
+        }
+      }
+
       if (is.null(fit_info)) {
         if (is.na(error_msg) && !is.na(fit_error_msg)) {
           error_msg <- fit_error_msg
@@ -954,7 +1054,10 @@ CreateClusterModel_SOM_MClust <- function(data,
       as.numeric(scale(x))
     }
 
-    get_profile_assignments <- function(lpa_fit) {
+    # Class and posterior for every SOM node. Nodes in the mixture fit take
+    # tidyLPA's assignments; nodes left out by lpa_min_node_n are classified
+    # by the fitted mclust model.
+    get_node_posteriors <- function(lpa_fit) {
       profile <- if (inherits(lpa_fit, "tidyLPA")) {
         if (length(lpa_fit) != 1) {
           stop("An LPA candidate must contain exactly one profile.")
@@ -968,7 +1071,31 @@ CreateClusterModel_SOM_MClust <- function(data,
       if (!"Class" %in% names(profile_data)) {
         stop("The LPA candidate does not contain class assignments.")
       }
-      as.integer(profile_data$Class)
+      prob_cols <- grep("^CPROB", names(profile_data), value = TRUE)
+      k <- length(prob_cols)
+      cluster <- rep(NA_integer_, nrow(som_codes))
+      prob <- matrix(NA_real_, nrow(som_codes), k)
+      cluster[lpa_nodes] <- as.integer(profile_data$Class)
+      prob[lpa_nodes, ] <- as.matrix(profile_data[, prob_cols, drop = FALSE])
+
+      other_nodes <- setdiff(seq_len(nrow(som_codes)), lpa_nodes)
+      if (length(other_nodes) > 0) {
+        predicted <- stats::predict(profile$model, newdata = as.data.frame(
+          som_codes[other_nodes, colnames(X), drop = FALSE]))
+        cluster[other_nodes] <- as.integer(predicted$classification)
+        prob[other_nodes, ] <- predicted$z
+      }
+      list(cluster = cluster, prob = prob)
+    }
+    get_profile_assignments <- function(lpa_fit) {
+      get_node_posteriors(lpa_fit)$cluster
+    }
+    # Participants per profile, from training node occupancy.
+    profile_participant_sizes <- function(node_cluster, k) {
+      counts <- vapply(seq_len(k), function(cluster) {
+        sum(som_node_occupancy$n[node_cluster == cluster], na.rm = TRUE)
+      }, numeric(1))
+      list(min_n = min(counts), min_prop = min(counts) / sum(counts))
     }
 
     cluster_jaccard <- function(reference, resampled) {
@@ -1106,13 +1233,17 @@ CreateClusterModel_SOM_MClust <- function(data,
 
       profile_sizes <- dplyr::bind_rows(lapply(names(lpa_models), function(fit_name) {
         assignment <- get_profile_assignments(lpa_models[[fit_name]])
-        counts <- tabulate(assignment, nbins = as.integer(sub("^.*_class_([0-9]+)$", "\\1", fit_name)))
+        n_classes <- as.integer(sub("^.*_class_([0-9]+)$", "\\1", fit_name))
+        counts <- tabulate(assignment, nbins = n_classes)
+        participants <- profile_participant_sizes(assignment, n_classes)
         dplyr::tibble(
           Model = as.integer(sub("^model_([0-9]+)_class_.*$", "\\1", fit_name)),
-          Classes = as.integer(sub("^.*_class_([0-9]+)$", "\\1", fit_name)),
+          Classes = n_classes,
           MinProfileNodeN = min(counts), MaxProfileNodeN = max(counts),
           MinProfileNodeProportion = min(counts) / length(assignment),
-          MaxProfileNodeProportion = max(counts) / length(assignment)
+          MaxProfileNodeProportion = max(counts) / length(assignment),
+          MinProfileParticipantN = participants$min_n,
+          MinProfileParticipantProportion = participants$min_prop
         )
       }))
       fit_table <- fit_table %>%
@@ -1194,6 +1325,7 @@ CreateClusterModel_SOM_MClust <- function(data,
                 skip_model_after_n_failures = skip_model_after_n_failures,
                 slow_fit_seconds = slow_fit_seconds,
                 min_nodes_per_cluster = min_nodes_per_cluster,
+                lpa_min_node_n = lpa_min_node_n,
                 high_dist_quantile = high_dist_quantile,
                 low_prob_threshold = low_prob_threshold,
                 stability_resamples = 0L
@@ -1373,27 +1505,46 @@ CreateClusterModel_SOM_MClust <- function(data,
       if (stability_resamples > 0) {
         fit_table <- fit_table %>%
           dplyr::mutate(
-            Reproducibility_scaled = scale_for_ahp(ReproducibilityScore),
-            ahp_index = rowMeans(
-              cbind(AIC_scaled, BIC_scaled, Entropy_scaled, Reproducibility_scaled),
-              na.rm = TRUE
-            )
-          )
+            Reproducibility_scaled = scale_for_ahp(ReproducibilityScore))
+      }
+
+      # Composite rank index: a weighted mean of the scaled criteria. Equal
+      # weights by default; criteria_weights supplies explicit weights or an
+      # AHP pairwise-comparison matrix.
+      criteria_used <- c("AIC", "BIC", "Entropy",
+        if (stability_resamples > 0) "Reproducibility")
+      weights_used <- composite_weights$weights
+      if (is.null(weights_used)) {
+        weights_used <- stats::setNames(rep(1, length(criteria_used)), criteria_used)
+      }
+      missing_criteria <- setdiff(names(weights_used), criteria_used)
+      if (length(missing_criteria) > 0) {
+        stop("criteria_weights names criteria that are not computed: ",
+          paste(missing_criteria, collapse = ", "),
+          ". Reproducibility requires stability_resamples > 0.")
+      }
+      weights_used <- weights_used[names(weights_used) %in% criteria_used]
+      weights_used <- weights_used / sum(weights_used)
+      scaled_matrix <- as.matrix(fit_table[paste0(names(weights_used), "_scaled")])
+      fit_table$ahp_index <- as.numeric(scaled_matrix %*% weights_used)
+
+      fit_table$Eligible <- if (is.null(min_cluster_prop)) {
+        TRUE
       } else {
-        fit_table <- fit_table %>%
-          dplyr::mutate(
-            ahp_index = rowMeans(
-              cbind(AIC_scaled, BIC_scaled, Entropy_scaled),
-              na.rm = TRUE
-            )
-          )
+        fit_table$MinProfileParticipantProportion >= min_cluster_prop
       }
 
       if (all(is.na(fit_table$ahp_index))) {
-        stop("LPA models were estimated, but AHP could not be computed because fit indices are missing.")
+        stop("LPA models were estimated, but the composite rank index could not be computed because fit indices are missing.")
       }
 
-      best_idx     <- which.max(fit_table$ahp_index)
+      eligible_rows <- which(fit_table$Eligible & !is.na(fit_table$ahp_index))
+      if (length(eligible_rows) == 0) {
+        warning("No candidate has a smallest profile holding at least min_cluster_prop = ",
+          min_cluster_prop, " of participants; recommending among all candidates.")
+        eligible_rows <- which(!is.na(fit_table$ahp_index))
+      }
+      best_idx     <- eligible_rows[which.max(fit_table$ahp_index[eligible_rows])]
       ahp_best_row <- fit_table[best_idx, ]
       best_model   <- as.integer(ahp_best_row$Model)
       best_k       <- as.integer(ahp_best_row$Classes)
@@ -1401,9 +1552,19 @@ CreateClusterModel_SOM_MClust <- function(data,
       best_fit_name <- best_name
       best_lpa     <- lpa_models[[best_name]]
 
+      weight_txt <- if (is.null(composite_weights$weights)) {
+        "equal weights"
+      } else {
+        paste0(composite_weights$method, " weights: ", paste0(names(weights_used), " ",
+          sprintf("%.2f", weights_used), collapse = ", "))
+      }
       recommendation_txt <- paste0(
-        "AHP (AIC, BIC, Entropy", if (stability_resamples > 0) ", reproducibility" else "", ") recommends Model ",
-        best_model, " with k = ", best_k, " profiles."
+        "Composite rank index (", paste(criteria_used, collapse = ", "), "; ",
+        weight_txt, ")",
+        if (!is.null(min_cluster_prop)) paste0(
+          " among candidates whose smallest profile holds at least ",
+          round(100 * min_cluster_prop, 1), "% of participants") else "",
+        " recommends Model ", best_model, " with k = ", best_k, " profiles."
       )
 
       mdata_wide <- fit_table
@@ -1475,11 +1636,14 @@ CreateClusterModel_SOM_MClust <- function(data,
     if (!all(c("MinProfileNodeN", "MaxProfileNodeN") %in% names(fit_table))) {
       assignment <- get_profile_assignments(best_lpa)
       counts <- tabulate(assignment, nbins = best_k)
+      participants <- profile_participant_sizes(assignment, best_k)
       fit_table <- fit_table %>%
         dplyr::mutate(
           MinProfileNodeN = min(counts), MaxProfileNodeN = max(counts),
           MinProfileNodeProportion = min(counts) / length(assignment),
-          MaxProfileNodeProportion = max(counts) / length(assignment)
+          MaxProfileNodeProportion = max(counts) / length(assignment),
+          MinProfileParticipantN = participants$min_n,
+          MinProfileParticipantProportion = participants$min_prop
         )
     }
     mdata_wide <- fit_table
@@ -1558,28 +1722,24 @@ CreateClusterModel_SOM_MClust <- function(data,
 
     # Node-level cluster and posteriors --------------------------------------
 
+    # One row per SOM node: its codebook vector, class, and posteriors.
     # tidyLPA::get_data.tidyLPA() dispatches through an unqualified generic in
-    # tidyLPA 2.0.2. Extracting the selected tidyProfile first avoids that
-    # dispatch path while preserving the model data used for node assignment.
-    best_profile <- if (inherits(best_lpa, "tidyLPA")) {
-      if (length(best_lpa) != 1) {
-        stop("The selected LPA solution must contain exactly one profile.")
-      }
-      best_lpa[[1]]
-    } else {
-      best_lpa
-    }
+    # tidyLPA 2.0.2, so get_node_posteriors() extracts the tidyProfile first.
+    node_posteriors <- get_node_posteriors(best_lpa)
+    node_prob <- node_posteriors$prob
+    colnames(node_prob) <- paste0("prob_", seq_len(ncol(node_prob)))
 
-    best_data <- tidyLPA::get_data(best_profile)
-
-    node_df <- best_data %>%
-      dplyr::mutate(NodeID = dplyr::row_number()) %>%
-      dplyr::rename(Cluster = Class)
-
-    prob_cols <- grep("^CPROB", names(node_df), value = TRUE)
-    for (i in seq_along(prob_cols)) {
-      names(node_df)[names(node_df) == prob_cols[i]] <- paste0("prob_", i)
-    }
+    node_df <- dplyr::bind_cols(
+      dplyr::tibble(model_number = as.integer(best_model),
+        classes_number = as.integer(best_k)),
+      dplyr::as_tibble(som_codes),
+      dplyr::as_tibble(node_prob),
+      dplyr::tibble(
+        Cluster = node_posteriors$cluster,
+        NodeID = seq_len(nrow(som_codes)),
+        NodeN = som_node_occupancy$n,
+        InLPAFit = seq_len(nrow(som_codes)) %in% lpa_nodes)
+    )
     prob_cols_new <- grep("^prob_", names(node_df), value = TRUE)
 
     if (length(prob_cols_new) > 0) {
@@ -1617,6 +1777,7 @@ CreateClusterModel_SOM_MClust <- function(data,
 
     X <- as.data.frame(som_codes)
     dropped_lpa_vars <- character(0)
+    lpa_nodes <- seq_len(nrow(som_codes))
 
     # No latent-profile model was fitted, so there are no posterior
     # probabilities to report. The columns are kept so that everything
@@ -1653,15 +1814,21 @@ CreateClusterModel_SOM_MClust <- function(data,
   Cluster_full <- rep(NA_integer_, nrow(df_scidr))
   Cluster_full[complete_rows] <- patient_clust
 
+  # Only node assignments and posteriors are carried to individuals. The node
+  # table also holds the codebook vectors under the Z-score names, which would
+  # otherwise read as each participant's own Z-scores.
   individual_tbl <- dplyr::tibble(
     .row_id      = df_scidr$.row_id,
     SOM_Node     = SOM_Node_full,
     SOM_Distance = SOM_Dist_full
   ) %>%
-    dplyr::left_join(node_df, by = c("SOM_Node" = "NodeID")) %>%
+    dplyr::left_join(.SOMNodeAssignments(node_df), by = c("SOM_Node" = "NodeID")) %>%
     dplyr::mutate(
       Cluster = Cluster_full
     )
+
+  individual_tbl <- individual_tbl %>%
+    dplyr::left_join(som_residuals$top, by = ".row_id")
 
   if (!is.null(id_col) && id_col %in% names(df_scidr)) {
     individual_tbl[[id_col]] <- df_scidr[[id_col]]
@@ -1771,7 +1938,7 @@ CreateClusterModel_SOM_MClust <- function(data,
           (is.na(.data$max_prob) | .data$max_prob < low_prob_threshold) ~
           "Potential novel phenotype",
         .data$Flag_SOMDist_overallHigh | .data$Flag_SOMDist_clusterHigh ~
-          "Poor SOM fit",
+          "Poor fit to training structure",
         !is.na(.data$max_prob) & .data$max_prob < low_prob_threshold ~
           "Uncertain membership",
         TRUE ~ "Good fit"
@@ -1793,7 +1960,7 @@ CreateClusterModel_SOM_MClust <- function(data,
       median_distance_percentile = stats::median(.data$SOMDist_percentile_train, na.rm = TRUE),
       prop_high_distance = mean(.data$Flag_SOMDist_overallHigh | .data$Flag_SOMDist_clusterHigh, na.rm = TRUE),
       prop_low_probability = mean(.data$prob_assigned < low_prob_threshold, na.rm = TRUE),
-      prop_poor_fit = mean(.data$Projection_Fit_Class == "Poor SOM fit", na.rm = TRUE),
+      prop_poor_fit = mean(.data$Projection_Fit_Class == "Poor fit to training structure", na.rm = TRUE),
       prop_potential_novel = mean(.data$Projection_Fit_Class == "Potential novel phenotype", na.rm = TRUE),
       .groups = "drop"
     )
@@ -1809,7 +1976,7 @@ CreateClusterModel_SOM_MClust <- function(data,
     ggplot2::theme_bw() +
     ggplot2::labs(
       title = "SOM distances (training data)",
-      x     = "Distance to BMU",
+      x     = "Euclidean distance to BMU (Z-score units)",
       y     = "Count"
     )
 
@@ -1826,6 +1993,8 @@ CreateClusterModel_SOM_MClust <- function(data,
       high_dist_cutoff = overall_high_cutoff
     ),
     node_occupancy = som_node_occupancy,
+    distance_scale = "euclidean",
+    variable_contribution = som_variable_contribution,
     projection_thresholds = list(
       high_dist_quantile = high_dist_quantile,
       low_prob_threshold = low_prob_threshold
@@ -1850,6 +2019,8 @@ CreateClusterModel_SOM_MClust <- function(data,
     overall_p95       = overall_p95,
     node_occupancy    = som_node_occupancy,
     occupancy_summary = som_occupancy_summary,
+    variable_contribution = som_variable_contribution,
+    residuals         = som_residuals$residuals,
     table             = som_fit_tbl,
     plots             = list(distance_hist = p_dist_hist)
   )
@@ -1858,6 +2029,7 @@ CreateClusterModel_SOM_MClust <- function(data,
     som_model = som_model,
     som_codes = som_codes,
     som_grid  = som_grid,
+    distance_scale = "euclidean",
     training_variable_summary = training_variable_summary,
     ProjectionReference = ProjectionReference,
     som_grid_info = list(
@@ -1928,6 +2100,8 @@ CreateClusterModel_SOM_MClust <- function(data,
     n_som_nodes              = nrow(som_codes),
     n_lpa_variables_original = ncol(som_codes),
     n_lpa_variables_used     = ncol(X),
+    n_lpa_nodes_used         = length(lpa_nodes),
+    lpa_min_node_n           = lpa_min_node_n,
     dropped_zero_sd_vars     = dropped_lpa_vars,
     lpa_drop_zero_sd         = lpa_drop_zero_sd,
     lpa_zero_sd_tol          = lpa_zero_sd_tol,
@@ -1946,7 +2120,11 @@ CreateClusterModel_SOM_MClust <- function(data,
     AHP         = list(
       ahp_index      = if ("ahp_index" %in% names(fit_table)) fit_table$ahp_index else NA_real_,
       ahp_best_row   = ahp_best_row,
-      recommendation = recommendation_txt
+      recommendation = recommendation_txt,
+      weights        = composite_weights$weights,
+      weight_method  = composite_weights$method,
+      pairwise       = composite_weights$pairwise,
+      consistency_ratio = composite_weights$consistency_ratio
     ),
     Stability = Stability,
     diagnostics = list(
@@ -1985,8 +2163,10 @@ CreateClusterModel_SOM_MClust <- function(data,
       ZScoreVars = ZScoreVars_used, SOM = ModelInfo_SOM$som_grid_info),
     ModelInfo_MClust$fit_table,
     list(k = final_k, model = final_model), complete_rows,
-    list(distance_metric = "distance to frozen SOM best-matching unit"))
+    list(distance_metric = "Euclidean distance (Z-score units) to frozen SOM best-matching unit"))
   out$Specification$stability <- if (is.null(Stability)) NULL else Stability$settings
+  out$Specification$selection <- list(criteria_weights = composite_weights,
+    min_cluster_prop = min_cluster_prop, lpa_min_node_n = lpa_min_node_n)
 
   class(out) <- c("Pipeline_SOM_MClust", class(out))
   out
