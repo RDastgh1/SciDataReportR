@@ -1,5 +1,62 @@
 # Changelog
 
+## SciDataReportR (development version)
+
+- SOM + Mclust `SOM_Distance` is now the Euclidean distance to the
+  best-matching unit, in Z-score units. It was previously kohonen’s
+  squared distance. Distance flags are unchanged because they use
+  quantiles; distance means, SDs, and z-scores change scale. Models
+  fitted with earlier versions still project on their original squared
+  scale.
+
+- SOM + Mclust training and projection now decompose each participant’s
+  SOM distance into per-variable residuals (`SOMFit$residuals`,
+  `ProjectionFit$residuals`), record the largest contributor
+  (`Top_Distance_Variable`, `Top_Distance_Share`), and summarize
+  variable contributions. `ProjectionFit$variable_drift` and its plot
+  compare each variable’s misfit in the projected cohort with training,
+  showing which measures drive projection drift.
+
+- `ProjectionFit$summary` for SOM + Mclust adds `excess_high_distance`
+  (share beyond the training high-distance cutoff minus the share
+  expected without drift) and `cluster_occupancy_js_divergence`
+  (phenotype prevalence drift).
+
+- [`CreateClusterModel_SOM_MClust()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateClusterModel_SOM_MClust.md)
+  gains `lpa_min_node_n` to leave sparse or empty SOM nodes out of the
+  mixture fit (they are classified afterwards by the fitted model),
+  `min_cluster_prop` to recommend only candidates whose smallest profile
+  holds a minimum share of participants, and `criteria_weights` to
+  weight the composite rank index directly or through an Analytic
+  Hierarchy Process pairwise-comparison matrix with its consistency
+  ratio. The fit table adds `MinProfileParticipantN`,
+  `MinProfileParticipantProportion`, and `Eligible`, and the
+  recommendation is now described as a composite rank index.
+
+- [`CreateClusterModel_SOM_MClust()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateClusterModel_SOM_MClust.md)
+  exploratory runs no longer stop with “This tidyProfile has no data
+  attached” after fitting every candidate. A model/`k` combination that
+  mclust cannot estimate (tidyLPA returns fit indices without class
+  assignments) is now recorded as failed in
+  `ModelInfo_MClust$diagnostics$lpa_fit_diagnostics` and left out of the
+  candidate table.
+
+- `CreateClusterModel_SOM_MClust(method = "finalize")` with
+  `stability_resamples > 0` now records the user-specified `final_k` and
+  `final_model` in `Specification$selected`, reports a “User-specified”
+  recommendation, and leaves the AHP columns `NA` instead of scoring the
+  single candidate.
+
+- SOM + Mclust training fits now label poorly represented participants
+  `"Poor fit to training structure"`, matching
+  [`ProjectCluster()`](https://rdastgh1.github.io/SciDataReportR/reference/ProjectCluster.md),
+  so training and projected `Projection_Fit_Class` values can be
+  compared directly.
+
+- `ProbFit$individual` from SOM + Mclust training and projection no
+  longer carries the matched node’s codebook vector under the `Z_`
+  variable names; those values remain in `ProbFit$node`.
+
 ## SciDataReportR 21.11.0
 
 ## SciDataReportR 21.10.0

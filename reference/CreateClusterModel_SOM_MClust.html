@@ -133,7 +133,7 @@ Deprecated alias for CreateClusterModel_SOM_MClust().'><meta property="og:image"
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>SOM + latent profile clustering pipeline (with AHP and distance baselines)</h1>
-      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/v21.11.0/R/Pipeline_SOMClust.R" class="external-link"><code>R/Pipeline_SOMClust.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/master/R/Pipeline_SOMClust.R" class="external-link"><code>R/Pipeline_SOMClust.R</code></a></small>
       <div class="d-none name"><code>CreateClusterModel_SOM_MClust.Rd</code></div>
     </div>
 
@@ -209,6 +209,9 @@ as-is and does not re-zscore.</p></li>
 <span>  skip_model_after_n_failures <span class="op">=</span> <span class="fl">2L</span>,</span>
 <span>  slow_fit_seconds <span class="op">=</span> <span class="fl">120</span>,</span>
 <span>  min_nodes_per_cluster <span class="op">=</span> <span class="fl">5</span>,</span>
+<span>  lpa_min_node_n <span class="op">=</span> <span class="fl">0L</span>,</span>
+<span>  min_cluster_prop <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  criteria_weights <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  high_dist_quantile <span class="op">=</span> <span class="fl">0.95</span>,</span>
 <span>  low_prob_threshold <span class="op">=</span> <span class="fl">0.7</span>,</span>
 <span>  stability_resamples <span class="op">=</span> <span class="fl">0L</span>,</span>
@@ -383,6 +386,33 @@ fits in diagnostics.</p></dd>
 considered before attempting a candidate profile count.</p></dd>
 
 
+<dt id="arg-lpa-min-node-n">lpa_min_node_n<a class="anchor" aria-label="anchor" href="#arg-lpa-min-node-n"></a></dt>
+<dd><p>Minimum number of training participants a SOM node
+must hold to enter the node-level mixture fit. Default <code>0</code> fits every
+node. Use <code>1</code> to leave empty nodes out, so unoccupied map regions do
+not count as observations in AIC/BIC. Nodes left out are classified
+afterwards by the fitted mixture model, so every node still carries a
+phenotype and posterior probabilities for projection.</p></dd>
+
+
+<dt id="arg-min-cluster-prop">min_cluster_prop<a class="anchor" aria-label="anchor" href="#arg-min-cluster-prop"></a></dt>
+<dd><p>Optional minimum share of training participants
+(0-1) in a candidate's smallest profile. Candidates below it are marked
+<code>Eligible = FALSE</code> in the fit table and are not recommended. Use it
+to keep only phenotypes large enough to describe and interpret.</p></dd>
+
+
+<dt id="arg-criteria-weights">criteria_weights<a class="anchor" aria-label="anchor" href="#arg-criteria-weights"></a></dt>
+<dd><p>Weights for the composite rank index. <code>NULL</code>
+(default) weights the criteria equally. A named non-negative vector over
+<code>"AIC"</code>, <code>"BIC"</code>, <code>"Entropy"</code>, and
+<code>"Reproducibility"</code> sets weights directly. A square reciprocal
+pairwise-comparison matrix with those row and column names derives
+Analytic Hierarchy Process weights from its principal eigenvector and
+reports Saaty's consistency ratio (warning above 0.10).
+<code>"Reproducibility"</code> requires <code>stability_resamples &gt; 0</code>.</p></dd>
+
+
 <dt id="arg-high-dist-quantile">high_dist_quantile<a class="anchor" aria-label="anchor" href="#arg-high-dist-quantile"></a></dt>
 <dd><p>Numeric value between 0 and 1 used to define
 high SOM-distance flags from the training distance distribution. Default
@@ -489,12 +519,27 @@ recovery. <code>ReproducibilityScore</code> is the mean of their finite values;
 <code>StabilitySuccessRate</code> is reported separately. <code>Reproducibility_scaled</code> is
 the candidate-table min-max rescaling used only by the AHP index and is not
 an independently interpretable reproducibility measure.</p>
-<p>The AHP-style index is computed by:</p><ol><li><p>Scaling AIC, BIC, and Entropy across candidate solutions
-(AIC/BIC are negated so that lower values correspond to better
-fit; higher scaled scores are preferred).</p></li>
-<li><p>Taking the mean of the three scaled indices. The model with the
-highest AHP index is recommended.</p></li>
-</ol><p>LPA model/profile combinations are fit one at a time so that failed or
+<p>The composite rank index (stored as <code>ahp_index</code>) is computed by:</p><ol><li><p>Z-scaling AIC, BIC, Entropy, and (when stability is run)
+reproducibility across candidate solutions (AIC/BIC are negated so
+that higher scaled scores are preferred).</p></li>
+<li><p>Taking their weighted mean. Weights are equal unless
+<code>criteria_weights</code> supplies them, either directly or as an
+Analytic Hierarchy Process pairwise-comparison matrix.</p></li>
+<li><p>Recommending the highest-scoring candidate among those marked
+<code>Eligible</code> (see <code>min_cluster_prop</code>).</p></li>
+</ol><p>The chosen weights, their method, and any consistency ratio are returned in
+<code>ModelInfo_MClust$AHP</code>.</p>
+<p><code>MinProfileParticipantN</code> and <code>MinProfileParticipantProportion</code>
+give the size of the smallest profile in training participants rather than
+SOM nodes.</p>
+<p><code>SOM_Distance</code> is the Euclidean distance, in Z-score units, from a
+participant to their best-matching unit. Its square is the sum of the
+squared per-variable residuals, returned in <code>ModelInfo_SOM$SOMFit$residuals</code>
+(<code>Resid_&lt;variable&gt;</code>). <code>ModelInfo_SOM$SOMFit$variable_contribution</code>
+summarizes each variable's share of training misfit, and each participant's
+largest contributor is recorded in <code>Top_Distance_Variable</code> and
+<code>Top_Distance_Share</code>.</p>
+<p>LPA model/profile combinations are fit one at a time so that failed or
 warning-producing solutions are captured in diagnostics instead of blocking
 the entire pipeline. Successful fits are retained and failed fits are listed
 in <code>ModelInfo_MClust$diagnostics</code>.</p>
@@ -704,6 +749,8 @@ a model-based cluster analysis. <em>Entropy</em>. 2017;19:452.</p>
    <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> MaxProfileNodeN </th>
    <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> MinProfileNodeProportion </th>
    <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> MaxProfileNodeProportion </th>
+   <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> MinProfileParticipantN </th>
+   <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> MinProfileParticipantProportion </th>
    <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> StabilitySuccessRate </th>
    <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> StabilityARI_Mean </th>
    <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> StabilityARI_P05 </th>
@@ -715,6 +762,7 @@ a model-based cluster analysis. <em>Entropy</em>. 2017;19:452.</p>
    <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> Entropy_scaled </th>
    <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> Reproducibility_scaled </th>
    <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> ahp_index </th>
+   <th style="text-align:left;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> Eligible </th>
   </tr></thead><tbody><tr><td style="text-align:right;"> 1 </td>
    <td style="text-align:right;"> 2 </td>
    <td style="text-align:right;"> -329.586 </td>
@@ -737,6 +785,8 @@ a model-based cluster analysis. <em>Entropy</em>. 2017;19:452.</p>
    <td style="text-align:right;"> 20 </td>
    <td style="text-align:right;"> 0.20 </td>
    <td style="text-align:right;"> 0.80 </td>
+   <td style="text-align:right;"> 72 </td>
+   <td style="text-align:right;"> 0.225 </td>
    <td style="text-align:right;"> 1 </td>
    <td style="text-align:right;"> 0.418 </td>
    <td style="text-align:right;"> -0.026 </td>
@@ -748,6 +798,7 @@ a model-based cluster analysis. <em>Entropy</em>. 2017;19:452.</p>
    <td style="text-align:right;"> -2.217 </td>
    <td style="text-align:right;"> -0.793 </td>
    <td style="text-align:right;"> -1.404 </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr><tr><td style="text-align:right;"> 3 </td>
    <td style="text-align:right;"> 2 </td>
    <td style="text-align:right;"> 228.125 </td>
@@ -770,6 +821,8 @@ a model-based cluster analysis. <em>Entropy</em>. 2017;19:452.</p>
    <td style="text-align:right;"> 21 </td>
    <td style="text-align:right;"> 0.16 </td>
    <td style="text-align:right;"> 0.84 </td>
+   <td style="text-align:right;"> 72 </td>
+   <td style="text-align:right;"> 0.225 </td>
    <td style="text-align:right;"> 1 </td>
    <td style="text-align:right;"> 0.454 </td>
    <td style="text-align:right;"> -0.037 </td>
@@ -781,6 +834,7 @@ a model-based cluster analysis. <em>Entropy</em>. 2017;19:452.</p>
    <td style="text-align:right;"> 0.500 </td>
    <td style="text-align:right;"> -0.628 </td>
    <td style="text-align:right;"> 0.427 </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr><tr><td style="text-align:right;"> 1 </td>
    <td style="text-align:right;"> 3 </td>
    <td style="text-align:right;"> -287.806 </td>
@@ -803,6 +857,8 @@ a model-based cluster analysis. <em>Entropy</em>. 2017;19:452.</p>
    <td style="text-align:right;"> 15 </td>
    <td style="text-align:right;"> 0.20 </td>
    <td style="text-align:right;"> 0.60 </td>
+   <td style="text-align:right;"> 79 </td>
+   <td style="text-align:right;"> 0.247 </td>
    <td style="text-align:right;"> 1 </td>
    <td style="text-align:right;"> 0.444 </td>
    <td style="text-align:right;"> 0.444 </td>
@@ -814,6 +870,7 @@ a model-based cluster analysis. <em>Entropy</em>. 2017;19:452.</p>
    <td style="text-align:right;"> -0.769 </td>
    <td style="text-align:right;"> -0.790 </td>
    <td style="text-align:right;"> -0.970 </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr><tr><td style="text-align:right;"> 3 </td>
    <td style="text-align:right;"> 3 </td>
    <td style="text-align:right;"> 240.315 </td>
@@ -836,6 +893,8 @@ a model-based cluster analysis. <em>Entropy</em>. 2017;19:452.</p>
    <td style="text-align:right;"> 17 </td>
    <td style="text-align:right;"> 0.16 </td>
    <td style="text-align:right;"> 0.68 </td>
+   <td style="text-align:right;"> 72 </td>
+   <td style="text-align:right;"> 0.225 </td>
    <td style="text-align:right;"> 1 </td>
    <td style="text-align:right;"> 0.372 </td>
    <td style="text-align:right;"> 0.369 </td>
@@ -847,6 +906,7 @@ a model-based cluster analysis. <em>Entropy</em>. 2017;19:452.</p>
    <td style="text-align:right;"> 0.434 </td>
    <td style="text-align:right;"> -1.248 </td>
    <td style="text-align:right;"> 0.240 </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr><tr><td style="text-align:right;"> 1 </td>
    <td style="text-align:right;"> 4 </td>
    <td style="text-align:right;"> -182.881 </td>
@@ -869,6 +929,8 @@ a model-based cluster analysis. <em>Entropy</em>. 2017;19:452.</p>
    <td style="text-align:right;"> 8 </td>
    <td style="text-align:right;"> 0.20 </td>
    <td style="text-align:right;"> 0.32 </td>
+   <td style="text-align:right;"> 79 </td>
+   <td style="text-align:right;"> 0.247 </td>
    <td style="text-align:right;"> 1 </td>
    <td style="text-align:right;"> 0.973 </td>
    <td style="text-align:right;"> 0.956 </td>
@@ -880,6 +942,7 @@ a model-based cluster analysis. <em>Entropy</em>. 2017;19:452.</p>
    <td style="text-align:right;"> 0.470 </td>
    <td style="text-align:right;"> 1.288 </td>
    <td style="text-align:right;"> 0.114 </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr><tr><td style="text-align:right;"> 3 </td>
    <td style="text-align:right;"> 4 </td>
    <td style="text-align:right;"> 258.702 </td>
@@ -902,6 +965,8 @@ a model-based cluster analysis. <em>Entropy</em>. 2017;19:452.</p>
    <td style="text-align:right;"> 9 </td>
    <td style="text-align:right;"> 0.16 </td>
    <td style="text-align:right;"> 0.36 </td>
+   <td style="text-align:right;"> 72 </td>
+   <td style="text-align:right;"> 0.225 </td>
    <td style="text-align:right;"> 1 </td>
    <td style="text-align:right;"> 0.923 </td>
    <td style="text-align:right;"> 0.911 </td>
@@ -913,6 +978,7 @@ a model-based cluster analysis. <em>Entropy</em>. 2017;19:452.</p>
    <td style="text-align:right;"> 0.525 </td>
    <td style="text-align:right;"> 1.079 </td>
    <td style="text-align:right;"> 0.847 </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr><tr><td style="text-align:right;"> 1 </td>
    <td style="text-align:right;"> 5 </td>
    <td style="text-align:right;"> -140.289 </td>
@@ -935,6 +1001,8 @@ a model-based cluster analysis. <em>Entropy</em>. 2017;19:452.</p>
    <td style="text-align:right;"> 7 </td>
    <td style="text-align:right;"> 0.16 </td>
    <td style="text-align:right;"> 0.28 </td>
+   <td style="text-align:right;"> 2 </td>
+   <td style="text-align:right;"> 0.006 </td>
    <td style="text-align:right;"> 1 </td>
    <td style="text-align:right;"> 0.984 </td>
    <td style="text-align:right;"> 0.973 </td>
@@ -946,6 +1014,7 @@ a model-based cluster analysis. <em>Entropy</em>. 2017;19:452.</p>
    <td style="text-align:right;"> 0.529 </td>
    <td style="text-align:right;"> 0.981 </td>
    <td style="text-align:right;"> 0.126 </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr><tr><td style="text-align:right;"> 3 </td>
    <td style="text-align:right;"> 5 </td>
    <td style="text-align:right;"> 280.916 </td>
@@ -968,6 +1037,8 @@ a model-based cluster analysis. <em>Entropy</em>. 2017;19:452.</p>
    <td style="text-align:right;"> 8 </td>
    <td style="text-align:right;"> 0.12 </td>
    <td style="text-align:right;"> 0.32 </td>
+   <td style="text-align:right;"> 30 </td>
+   <td style="text-align:right;"> 0.094 </td>
    <td style="text-align:right;"> 1 </td>
    <td style="text-align:right;"> 0.779 </td>
    <td style="text-align:right;"> 0.771 </td>
@@ -979,6 +1050,7 @@ a model-based cluster analysis. <em>Entropy</em>. 2017;19:452.</p>
    <td style="text-align:right;"> 0.528 </td>
    <td style="text-align:right;"> 0.112 </td>
    <td style="text-align:right;"> 0.620 </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr></tbody></table></div><span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Status, runtime, warnings, and errors for every attempted fit</span></span></span>
 <span class="r-in"><span><span class="fu">ShowFitTable</span><span class="op">(</span></span></span>
@@ -996,7 +1068,7 @@ a model-based cluster analysis. <em>Entropy</em>. 2017;19:452.</p>
   </tr></thead><tbody><tr><td style="text-align:right;"> 1 </td>
    <td style="text-align:right;"> 2 </td>
    <td style="text-align:left;"> success </td>
-   <td style="text-align:right;"> 0.323 </td>
+   <td style="text-align:right;"> 0.333 </td>
    <td style="text-align:left;"> FALSE </td>
    <td style="text-align:right;"> 0 </td>
    <td style="text-align:left;">  </td>
@@ -1004,7 +1076,7 @@ a model-based cluster analysis. <em>Entropy</em>. 2017;19:452.</p>
   </tr><tr><td style="text-align:right;"> 3 </td>
    <td style="text-align:right;"> 2 </td>
    <td style="text-align:left;"> success </td>
-   <td style="text-align:right;"> 0.590 </td>
+   <td style="text-align:right;"> 0.621 </td>
    <td style="text-align:left;"> FALSE </td>
    <td style="text-align:right;"> 0 </td>
    <td style="text-align:left;">  </td>
@@ -1012,7 +1084,7 @@ a model-based cluster analysis. <em>Entropy</em>. 2017;19:452.</p>
   </tr><tr><td style="text-align:right;"> 1 </td>
    <td style="text-align:right;"> 3 </td>
    <td style="text-align:left;"> success </td>
-   <td style="text-align:right;"> 0.598 </td>
+   <td style="text-align:right;"> 0.626 </td>
    <td style="text-align:left;"> FALSE </td>
    <td style="text-align:right;"> 0 </td>
    <td style="text-align:left;">  </td>
@@ -1020,7 +1092,7 @@ a model-based cluster analysis. <em>Entropy</em>. 2017;19:452.</p>
   </tr><tr><td style="text-align:right;"> 3 </td>
    <td style="text-align:right;"> 3 </td>
    <td style="text-align:left;"> success </td>
-   <td style="text-align:right;"> 1.051 </td>
+   <td style="text-align:right;"> 1.093 </td>
    <td style="text-align:left;"> FALSE </td>
    <td style="text-align:right;"> 0 </td>
    <td style="text-align:left;">  </td>
@@ -1028,7 +1100,7 @@ a model-based cluster analysis. <em>Entropy</em>. 2017;19:452.</p>
   </tr><tr><td style="text-align:right;"> 1 </td>
    <td style="text-align:right;"> 4 </td>
    <td style="text-align:left;"> success </td>
-   <td style="text-align:right;"> 0.836 </td>
+   <td style="text-align:right;"> 0.877 </td>
    <td style="text-align:left;"> FALSE </td>
    <td style="text-align:right;"> 0 </td>
    <td style="text-align:left;">  </td>
@@ -1036,7 +1108,7 @@ a model-based cluster analysis. <em>Entropy</em>. 2017;19:452.</p>
   </tr><tr><td style="text-align:right;"> 3 </td>
    <td style="text-align:right;"> 4 </td>
    <td style="text-align:left;"> success </td>
-   <td style="text-align:right;"> 1.763 </td>
+   <td style="text-align:right;"> 1.893 </td>
    <td style="text-align:left;"> FALSE </td>
    <td style="text-align:right;"> 0 </td>
    <td style="text-align:left;">  </td>
@@ -1044,7 +1116,7 @@ a model-based cluster analysis. <em>Entropy</em>. 2017;19:452.</p>
   </tr><tr><td style="text-align:right;"> 1 </td>
    <td style="text-align:right;"> 5 </td>
    <td style="text-align:left;"> success </td>
-   <td style="text-align:right;"> 1.477 </td>
+   <td style="text-align:right;"> 1.531 </td>
    <td style="text-align:left;"> FALSE </td>
    <td style="text-align:right;"> 0 </td>
    <td style="text-align:left;">  </td>
@@ -1052,14 +1124,14 @@ a model-based cluster analysis. <em>Entropy</em>. 2017;19:452.</p>
   </tr><tr><td style="text-align:right;"> 3 </td>
    <td style="text-align:right;"> 5 </td>
    <td style="text-align:left;"> success </td>
-   <td style="text-align:right;"> 2.446 </td>
+   <td style="text-align:right;"> 2.544 </td>
    <td style="text-align:left;"> FALSE </td>
    <td style="text-align:right;"> 0 </td>
    <td style="text-align:left;">  </td>
    <td style="text-align:left;"> NA </td>
   </tr></tbody></table></div><span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="va">review</span><span class="op">$</span><span class="va">ModelInfo_MClust</span><span class="op">$</span><span class="va">AHP</span><span class="op">$</span><span class="va">recommendation</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "AHP (AIC, BIC, Entropy, reproducibility) recommends Model 3 with k = 4 profiles."</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Composite rank index (AIC, BIC, Entropy, Reproducibility; equal weights) recommends Model 3 with k = 4 profiles."</span>
 <span class="r-in"><span><span class="fu">ShowFitTable</span><span class="op">(</span><span class="va">review</span><span class="op">$</span><span class="va">Stability</span><span class="op">$</span><span class="va">summary</span>, height <span class="op">=</span> <span class="st">"260px"</span><span class="op">)</span></span></span>
 <div style="border: 1px solid #ddd; padding: 0px; overflow-y: scroll; height:260px; "><table class="table table table-striped table-hover table-condensed" style="margin-left: auto; margin-right: auto;"><thead><tr><th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> Model </th>
    <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> Classes </th>
@@ -1168,6 +1240,8 @@ a model-based cluster analysis. <em>Entropy</em>. 2017;19:452.</p>
    <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> MaxProfileNodeN </th>
    <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> MinProfileNodeProportion </th>
    <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> MaxProfileNodeProportion </th>
+   <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> MinProfileParticipantN </th>
+   <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> MinProfileParticipantProportion </th>
    <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> StabilitySuccessRate </th>
    <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> StabilityARI_Mean </th>
    <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> StabilityARI_P05 </th>
@@ -1179,6 +1253,7 @@ a model-based cluster analysis. <em>Entropy</em>. 2017;19:452.</p>
    <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> Entropy_scaled </th>
    <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> Reproducibility_scaled </th>
    <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> ahp_index </th>
+   <th style="text-align:left;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> Eligible </th>
   </tr></thead><tbody><tr><td style="text-align:right;"> 1 </td>
    <td style="text-align:right;"> 4 </td>
    <td style="text-align:right;"> -182.881 </td>
@@ -1201,17 +1276,20 @@ a model-based cluster analysis. <em>Entropy</em>. 2017;19:452.</p>
    <td style="text-align:right;"> 8 </td>
    <td style="text-align:right;"> 0.2 </td>
    <td style="text-align:right;"> 0.32 </td>
+   <td style="text-align:right;"> 79 </td>
+   <td style="text-align:right;"> 0.247 </td>
    <td style="text-align:right;"> 1 </td>
    <td style="text-align:right;"> 0.981 </td>
    <td style="text-align:right;"> 0.973 </td>
    <td style="text-align:right;"> 0.986 </td>
    <td style="text-align:right;"> 0.974 </td>
    <td style="text-align:right;"> 0.984 </td>
-   <td style="text-align:right;"> 0 </td>
-   <td style="text-align:right;"> 0 </td>
-   <td style="text-align:right;"> 0 </td>
-   <td style="text-align:right;"> 0 </td>
-   <td style="text-align:right;"> 0 </td>
+   <td style="text-align:right;"> NA </td>
+   <td style="text-align:right;"> NA </td>
+   <td style="text-align:right;"> NA </td>
+   <td style="text-align:right;"> NA </td>
+   <td style="text-align:right;"> NA </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr></tbody></table></div><span class="r-in"><span><span class="co"># }</span></span></span>
 </code></pre></div>
     </div>

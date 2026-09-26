@@ -45,9 +45,20 @@
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Changelog</h1>
-      <small>Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/v21.11.0/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
+      <small>Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/master/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="development version" id="scidatareportr-development-version">SciDataReportR (development version)<a class="anchor" aria-label="anchor" href="#scidatareportr-development-version"></a></h2>
+<ul><li><p>SOM + Mclust <code>SOM_Distance</code> is now the Euclidean distance to the best-matching unit, in Z-score units. It was previously kohonen’s squared distance. Distance flags are unchanged because they use quantiles; distance means, SDs, and z-scores change scale. Models fitted with earlier versions still project on their original squared scale.</p></li>
+<li><p>SOM + Mclust training and projection now decompose each participant’s SOM distance into per-variable residuals (<code>SOMFit$residuals</code>, <code>ProjectionFit$residuals</code>), record the largest contributor (<code>Top_Distance_Variable</code>, <code>Top_Distance_Share</code>), and summarize variable contributions. <code>ProjectionFit$variable_drift</code> and its plot compare each variable’s misfit in the projected cohort with training, showing which measures drive projection drift.</p></li>
+<li><p><code>ProjectionFit$summary</code> for SOM + Mclust adds <code>excess_high_distance</code> (share beyond the training high-distance cutoff minus the share expected without drift) and <code>cluster_occupancy_js_divergence</code> (phenotype prevalence drift).</p></li>
+<li><p><code><a href="../reference/CreateClusterModel_SOM_MClust.html">CreateClusterModel_SOM_MClust()</a></code> gains <code>lpa_min_node_n</code> to leave sparse or empty SOM nodes out of the mixture fit (they are classified afterwards by the fitted model), <code>min_cluster_prop</code> to recommend only candidates whose smallest profile holds a minimum share of participants, and <code>criteria_weights</code> to weight the composite rank index directly or through an Analytic Hierarchy Process pairwise-comparison matrix with its consistency ratio. The fit table adds <code>MinProfileParticipantN</code>, <code>MinProfileParticipantProportion</code>, and <code>Eligible</code>, and the recommendation is now described as a composite rank index.</p></li>
+<li><p><code><a href="../reference/CreateClusterModel_SOM_MClust.html">CreateClusterModel_SOM_MClust()</a></code> exploratory runs no longer stop with “This tidyProfile has no data attached” after fitting every candidate. A model/<code>k</code> combination that mclust cannot estimate (tidyLPA returns fit indices without class assignments) is now recorded as failed in <code>ModelInfo_MClust$diagnostics$lpa_fit_diagnostics</code> and left out of the candidate table.</p></li>
+<li><p><code>CreateClusterModel_SOM_MClust(method = "finalize")</code> with <code>stability_resamples &gt; 0</code> now records the user-specified <code>final_k</code> and <code>final_model</code> in <code>Specification$selected</code>, reports a “User-specified” recommendation, and leaves the AHP columns <code>NA</code> instead of scoring the single candidate.</p></li>
+<li><p>SOM + Mclust training fits now label poorly represented participants <code>"Poor fit to training structure"</code>, matching <code><a href="../reference/ProjectCluster.html">ProjectCluster()</a></code>, so training and projected <code>Projection_Fit_Class</code> values can be compared directly.</p></li>
+<li><p><code>ProbFit$individual</code> from SOM + Mclust training and projection no longer carries the matched node’s codebook vector under the <code>Z_</code> variable names; those values remain in <code>ProbFit$node</code>.</p></li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="21.11.0" id="scidatareportr-21110">SciDataReportR 21.11.0<a class="anchor" aria-label="anchor" href="#scidatareportr-21110"></a></h2>
 </div>
