@@ -1,4 +1,4 @@
-# SciDataReportR (development version)
+# SciDataReportR 21.12.0
 
 * SOM + Mclust `SOM_Distance` is now the Euclidean distance to the
   best-matching unit, in Z-score units. It was previously kohonen's squared
