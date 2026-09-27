@@ -1,5 +1,10 @@
 # SciDataReportR 21.12.0
 
+* `MakeCoxRegressionTable()` now screens event-predictor pairs with ordinary
+  or survey-weighted Cox proportional hazards models and returns labelled `gt`
+  tables, tidy hazard ratios, FDR correction, concordance, and proportional
+  hazards diagnostics compatible with `PlotForestFromTable()`.
+
 * SOM + Mclust `SOM_Distance` is now the Euclidean distance to the
   best-matching unit, in Z-score units. It was previously kohonen's squared
   distance. Distance flags are unchanged because they use quantiles; distance

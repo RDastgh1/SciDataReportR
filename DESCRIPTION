@@ -105,6 +105,7 @@ Suggests:
     htmltools,
     reactable,
     rmarkdown,
+    survey,
     survival
 Depends: 
     R (>= 4.1.0)
