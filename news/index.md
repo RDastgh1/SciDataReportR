@@ -1,5 +1,7 @@
 # Changelog
 
+## SciDataReportR 21.13.0
+
 ## SciDataReportR 21.12.0
 
 - [`MakeCoxRegressionTable()`](https://rdastgh1.github.io/SciDataReportR/reference/MakeCoxRegressionTable.md)
