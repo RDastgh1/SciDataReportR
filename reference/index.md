@@ -104,6 +104,8 @@
 - [`MakeComparisonTable()`](https://rdastgh1.github.io/SciDataReportR/reference/MakeComparisonTable.md)
   : Make comparison table with covariate adjustment, effect sizes, and
   pairwise contrasts
+- [`MakeCoxRegressionTable()`](https://rdastgh1.github.io/SciDataReportR/reference/MakeCoxRegressionTable.md)
+  : Cox Proportional Hazards Regression Table
 - [`MakeDataDictionary()`](https://rdastgh1.github.io/SciDataReportR/reference/MakeDataDictionary.md)
   [`Make_DataDictionary()`](https://rdastgh1.github.io/SciDataReportR/reference/MakeDataDictionary.md)
   : Create a data dictionary for a data frame
