@@ -1,3 +1,5 @@
+# SciDataReportR 21.13.0
+
 # SciDataReportR 21.12.0
 
 * `MakeCoxRegressionTable()` now screens event-predictor pairs with ordinary
