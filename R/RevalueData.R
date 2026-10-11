@@ -143,6 +143,11 @@ RevalueData <- function(data,
   VarTypes$Variable <- trimws(as.character(VarTypes$Variable))
   VarTypes <- VarTypes[!is.na(VarTypes$Variable) & nzchar(VarTypes$Variable), , drop = FALSE]
 
+  # Only Variable is required; absent optional columns are treated as blank.
+  for (cc in c("Recode", "Code", "Type", "Label")) {
+    if (!cc %in% names(VarTypes)) VarTypes[[cc]] <- NA_character_
+  }
+
   # Back-compat: fill MissingCode from Missing when absent/blank
   if (!"MissingCode" %in% names(VarTypes)) VarTypes$MissingCode <- NA_character_
   if ("Missing" %in% names(VarTypes)) {

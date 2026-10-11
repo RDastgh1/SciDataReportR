@@ -40,3 +40,20 @@ test_that("RevalueData identifies the variable that fails", {
   expect_true(any(grepl("Error revaluing variable 'Bad'", out$warninglist, fixed = TRUE)))
   expect_equal(out$RevaluedData$Good, c(1, 2))
 })
+test_that("RevalueData needs only a Variable column in the codebook", {
+  df <- data.frame(year = c(2005L, 2007L), hours = c(7, 99))
+  codebook <- data.frame(
+    Variable = c("year", "hours"),
+    Label = c("Cycle", "Sleep hours"),
+    MissingCode = c(NA, "77,99")
+  )
+
+  result <- RevalueData(df, codebook)$RevaluedData
+
+  expect_identical(result$year, c(2005L, 2007L), ignore_attr = TRUE)
+  expect_identical(attr(result$year, "label"), "Cycle")
+  expect_equal(result$hours, c(7, NA), ignore_attr = TRUE)
+
+  minimal <- RevalueData(df, data.frame(Variable = "year"))$RevaluedData
+  expect_identical(minimal$year, c(2005L, 2007L))
+})
