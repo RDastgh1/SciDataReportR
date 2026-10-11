@@ -11,3 +11,10 @@ inst/doc
 /Meta/
 vignettes/*_files/
 tests/testthat/_problems/
+
+# Regenerable R package build and check output
+*.Rcheck/
+..Rcheck/
+SciDataReportR_*.tar.gz
+_src_tmp.tgz
+Rplots.pdf
