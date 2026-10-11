@@ -453,12 +453,68 @@ labels. **Inspect before naming:** map topology, quantization/SOM distance,
 node occupancy, posterior confidence, stability, and projected distance flags.
 :::
 
-For an analysis, use the complete workflow below. `stability_resamples = 30`
-is a practical internal-stability screen; the rendered vignette uses two
-resamples only to keep build time reasonable. Stability refits run in parallel
-by default, using all available physical cores minus one (and never more than
-the requested resamples). Set `stability_cores = 1L` for serial execution or a
-smaller positive value when each SOM or high-dimensional refit needs more memory.
+Ordinary SOM fitting defaults to `stability_resamples = 0`, so model review
+does not unexpectedly become slow. Use the separate map-design screen below
+before final cluster selection: it uses the largest requested `k` to generate
+coarse, balanced, and fine candidate resolutions (about 10, 20, and 30 nodes
+per maximum planned phenotype), then holds each candidate grid and topology fixed
+within three 90% subsample refits and projects every refit back to the full
+reference cohort. This fast screen compares topology preservation, local
+neighborhood overlap, projected SOM distance, and map occupancy; it fits no
+Mclust model and does not choose a grid automatically. After reviewing the
+result, freeze one grid/topology and compare the clinically meaningful `k`
+values on that same map using fit indices, participant-level ARI, and clinical
+interpretation. The screen reports expected nodes per profile for every
+requested `k`; larger cohorts can support a reviewed map, but do not by
+themselves require more map nodes or more clinical phenotypes. Stability refits run in parallel by default; set
+`stability_cores = 1L` for serial execution or a smaller positive value when
+each SOM or high-dimensional refit needs more memory.
+
+For a finalized SOM + Mclust instrument, ARI is still the primary answer to
+the narrow question, “do the refits recover the same final participant
+partition?” `StabilityARI_P05` is the fifth percentile across refits: a
+stress-test lower-tail summary, not a second selection criterion. When an ARI
+is modest, inspect the stability panel rather than relabeling that result as
+stable: `deletion_curve` shows sensitivity at explicitly requested retained
+fractions, exact memory-safe `co_membership_*` outputs distinguish within-
+phenotype cohesion from cross-phenotype mixing, `split_merge_*` describes
+fragmentation/merging, and `profile_recovery` compares matched phenotype means
+on the frozen training scale. These explain whether membership movement is
+localized while phenotype profiles are retained; none replace the
+all-participant ARI. Boundary participants remain assigned and included in
+that primary metric.
+
+```{r}
+#| label: SOMGridStabilityScreen
+#| eval: false
+Obj_GridScreen <- ScreenSOMGridStability(
+  df_Training, vars_Clust
+)
+Obj_GridScreen$decision_table
+
+# `MapStabilityPlateau` flags, but does not select, designs with strong
+# topology preservation, projected distance within 5% of the best, and <=5%
+# singleton nodes. Choose one map/topology from this review.
+
+# Freeze that map while comparing k = 3, 4, and 5 and uniform versus
+# participant-occupancy node weighting. The grid must not change by k.
+Obj_FixedMap <- CreateClusterModel_SOM_MClust(
+  df_Training, vars_Clust, method = "exploratory", k_range = 3:5,
+  models = c(1, 3), som_xdim = 10, som_ydim = 10,
+  som_topo = "hexagonal", node_weighting = "uniform",
+  stability_resamples = 30
+)
+Obj_FixedMap$ModelInfo_MClust$fit_table
+
+# `screen_scope = "joint"` retains the earlier grid-by-k exploration and can
+# be confirmed with ConfirmSOMGridStability(), but it is not the default path.
+# Sensitivity exclusions are explicit and never modify the original model.
+Obj_Sensitivity <- RefitSOMSensitivity(
+  Obj_FixedMap, df_Training,
+  exclude_row_ids = c(14, 89),
+  exclusion_reason = "Reviewer-approved high-distance, low-inclusion sensitivity analysis"
+)
+```
 
 ```r
 data("SimulatedPhenotypeData")
@@ -483,7 +539,8 @@ ObjClustProjected <- ProjectCluster(Obj_ClustFinal, df_Projection)
 vars_Clust <- paste0("Var", 1:12)
 Obj_ClustReview <- CreateClusterModel_SOM_MClust(
   df_Training, vars_Clust, method = "exploratory", k_range = 2:10,
-  models = c(1, 3), som_xdim = 5, som_ydim = 5, stability_resamples = 2,
+  models = c(1, 3), som_xdim = 5, som_ydim = 5,
+  stability_resamples = 2,
   Relabel = FALSE, min_nodes_per_cluster = NULL
 )
 Obj_ClustReview$ModelInfo_MClust$fit_table
@@ -501,6 +558,7 @@ Obj_ClustFinal <- CreateClusterModel_SOM_MClust(
   df_Training, vars_Clust, method = "finalize", final_k = 4,
   final_model = 3, som_xdim = 5, som_ydim = 5,
   stability_resamples = 2,
+  stability_fractions = c(.95, .90, .80),
   Relabel = FALSE, min_nodes_per_cluster = NULL
 )
 ObjClustProjected <- ProjectCluster(Obj_ClustFinal, df_Projection)
@@ -509,6 +567,10 @@ PrintPlots(Obj_ClustFinal$ModelInfo_SOM$SOMFit$plots)
 PrintPlots(Obj_ClustFinal$ModelInfo_SOM$ProjectionReference$plots)
 PrintPlots(Obj_ClustFinal$ProbFit$plots)
 PrintPlots(Obj_ClustFinal$Stability$plots)
+Obj_ClustFinal$Stability$deletion_curve
+Obj_ClustFinal$Stability$co_membership_by_cluster
+Obj_ClustFinal$Stability$split_merge_reference
+Obj_ClustFinal$Stability$profile_recovery
 PrintPlots(
   ObjClustProjected$ProjectionFit$plots,
   c("projection_fit_class_bar", "som_grid_map"))
@@ -516,10 +578,36 @@ PrintPlots(
 
 ### Interpreting a SOM projection
 
-`ProbFit` answers the assignment question: which cluster was assigned and how
-certain is the node-derived posterior assignment? Use
-`ProbFit$individual` for `Cluster`, `prob_assigned`, `max_prob`, and
-`uncertainty`.
+The SOM map is a frozen phenotype instrument. Each new model uses one seeded,
+full-cohort batch SOM fit from a deterministic initial codebook. This keeps
+training fast and reproducible while retaining the fitted scaling, prototypes,
+grid, topology, neighbourhood, and node-level mixture for projection. When
+dimensions are omitted, the automatic square grid is k-informed: exploratory
+fits use `max(k_range)`, finalized fits use `final_k`, and the engineering
+default targets about 20 SOM nodes per planned phenotype. That density gives
+each plausible phenotype multiple local prototypes without allowing a larger
+cohort alone to create a more sparse map or more clinical phenotypes. Sample
+size is instead reviewed through occupancy and map-health diagnostics. Set
+`som_xdim` and `som_ydim` to preserve a reviewed map design explicitly; that
+frozen map is then used for every compared k and all future projections.
+
+Hard projection uses the Mclust class of the best-matching node. Soft
+projection combines Mclust node posterior probabilities from the nearest
+`soft_n_nodes` codebook nodes using normalized inverse-squared standardized
+feature distances. Both `Cluster_Hard` and `Cluster_Soft` are retained, while
+`assignment` controls which is exposed as canonical `Cluster` (soft-3 by
+default). `SoftEntropy`
+is the normalized entropy of the soft membership probabilities and
+`SoftMargin` is the gap between the two largest probabilities. Boundary status
+(`SoftMargin < boundary_margin_threshold` or
+`SoftEntropy > boundary_entropy_threshold`) is a confidence diagnostic only;
+it never removes or suppresses a participant.
+
+`ProbFit` answers the assignment question. Its node-level `prob_*` columns
+are Mclust posteriors for codebook nodes; participant-level `SoftProb_*`,
+`SoftEntropy`, and `SoftMargin` are proximity-weighted membership diagnostics.
+Use `ProbFit$individual` for these values and for `Cluster`, `Cluster_Hard`,
+and `Cluster_Soft`.
 
 `ProjectionFit` answers the transportability question: how well do these new
 participants fit the frozen training SOM? `ProjectionFit$individual` contains
@@ -789,13 +877,15 @@ ARI and mean Jaccard recovery; subsample success rate is reported separately.
 
 ### Complementary stability diagnostics
 
-Every successful full-pipeline 90% subsample refit records ARI for the
-participants included in that refit. The pipeline is retrained from the subset
-and assignments are joined to the full-data reference by `.row_id`; projection
-is not part of stability. Sampling and model seeds vary independently and are
-recorded for each replicate. `participant_inclusion` reports the probability that a
-participant returns to its reference cluster's label-matched subsample cluster;
-`cluster_inclusion` summarizes that probability by reference cluster.
+Every successful SOM + Mclust 90% subsample refit projects the complete
+reference cohort through that refit's preprocessing, map, and node mixture
+before calculating ARI. `StabilityARI_Mean` and `StabilityARI_P05` are the
+primary whole-partition measures. `StabilityARI_NonBoundary` is secondary: it
+uses the same reference-defined soft margin/entropy mask in every refit, while
+the primary ARI always retains boundary participants. Sampling and model seeds
+are recorded for each replicate. `participant_inclusion` reports the probability
+that a participant returns to its reference cluster's label-matched subsample
+cluster; `cluster_inclusion` summarizes that probability by reference cluster.
 
 For complete-case cohorts of 2,000 or fewer participants, `coassignment`
 contains the subsample probability that each pair is assigned together and
@@ -820,8 +910,10 @@ a frozen header; it is not a SciDataReportR function.
 | `MinProfileNodeProportion`, `MaxProfileNodeProportion` | The corresponding node counts divided by the total SOM-node count. These replace tidyLPA's ambiguous decimal `n_min` and `n_max` fields. |
 | `BLRTStatistic`, `BLRTPValue` | Bootstrap likelihood-ratio statistic and raw p-value for comparing the k-profile fit with k - 1 profiles [@nylund2007]. A small p-value supports the additional profile's statistical fit, but does not by itself establish stability, clinical meaning, or a final choice; it is unavailable for one profile. The last candidate-review panel displays `−log10(BLRTPValue)` and marks `−log10(0.05)`, approximately 1.301. |
 | `StabilityARI_Mean` | Mean adjusted Rand index across successful full-pipeline 90% participant subsample refits without replacement. It may be negative: this means agreement is worse than expected by chance, not an error. |
+| `StabilityARI_P05` | Fifth percentile of whole-partition ARI across successful refits. It describes the lower tail of reproducibility rather than average agreement. |
+| `StabilityARI_NonBoundary`, `StabilityARI_NonBoundary_P05` | Secondary ARI summaries restricted to participants classified as non-boundary in the reference model using the recorded soft margin and entropy thresholds. Boundary participants remain in the primary metrics. |
 | `StabilityJaccard_Mean` | Mean label-matched, per-profile Jaccard recovery across successful 90% participant subsample refits without replacement. |
-| `ReproducibilityScore` | Mean of the finite `StabilityARI_Mean` and `StabilityJaccard_Mean`; `StabilitySuccessRate` remains separate. |
+| `ReproducibilityScore` | Equals `StabilityARI_Mean` for SOM + Mclust, so final participant-partition agreement remains the primary reproducibility measure. `StabilitySuccessRate` remains separate. |
 | `Reproducibility_scaled` | Min-max rescaling of `ReproducibilityScore` across the current candidate table. It is used only as an AHP input [@akogul2017], not as an independently interpretable reproducibility metric. |
 
 | Method | Candidate metrics |

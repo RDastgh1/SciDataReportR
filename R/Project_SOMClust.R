@@ -6,6 +6,59 @@
     "prob_assigned", "uncertainty")), dplyr::matches("^prob_[0-9]+$"))
 }
 
+.SOMSoftProjection <- function(zmat, som_codes, node_df, n_nodes = 3L,
+    margin_threshold = 0.20, entropy_threshold = 0.60) {
+  prob_cols <- grep("^prob_[0-9]+$", names(node_df), value = TRUE)
+  if (!length(prob_cols)) return(NULL)
+  distance2 <- outer(rowSums(zmat^2), rowSums(som_codes^2), "+") - 2 * tcrossprod(zmat, som_codes)
+  distance2 <- pmax(distance2, 0)
+  n_nodes <- min(as.integer(n_nodes), ncol(distance2))
+  nearest <- t(apply(distance2, 1, order)[seq_len(n_nodes), , drop = FALSE])
+  if (n_nodes == 1L) nearest <- matrix(nearest, ncol = 1L)
+  d2 <- matrix(distance2[cbind(rep(seq_len(nrow(distance2)), n_nodes), as.vector(nearest))], ncol = n_nodes)
+  zero_distance <- d2 <= sqrt(.Machine$double.eps)
+  weights <- 1 / pmax(d2, 1e-12)
+  if (any(zero_distance)) {
+    rows_with_zero <- which(rowSums(zero_distance) > 0L)
+    weights[rows_with_zero, ] <- zero_distance[rows_with_zero, , drop = FALSE]
+  }
+  weights <- weights / rowSums(weights)
+  node_prob <- as.matrix(node_df[, prob_cols, drop = FALSE])
+  probability <- matrix(0, nrow(zmat), ncol(node_prob))
+  for (j in seq_len(n_nodes)) probability <- probability + weights[, j] * node_prob[nearest[, j], , drop = FALSE]
+  probability <- probability / rowSums(probability)
+  ordered <- t(apply(probability, 1, sort, decreasing = TRUE))
+  entropy <- -rowSums(probability * log(pmax(probability, .Machine$double.eps))) / log(ncol(probability))
+  margin <- ordered[, 1] - ordered[, 2]
+  reason <- ifelse(margin < margin_threshold & entropy > entropy_threshold, "both",
+    ifelse(margin < margin_threshold, "low_margin", ifelse(entropy > entropy_threshold, "high_entropy", NA_character_)))
+  list(cluster = max.col(probability), probability = probability, entropy = entropy,
+    margin = margin, boundary = !is.na(reason), reason = reason)
+}
+
+# Convert candidate-specific node posterior output into the lightweight node
+# table used by hard and soft participant projection.  Keeping this separate
+# lets stability score every shortlisted Mclust candidate with its own node
+# posterior probabilities rather than borrowing the exploratory winner.
+.SOMNodePosteriorTable <- function(node_posterior) {
+  probability <- as.matrix(node_posterior$prob)
+  colnames(probability) <- paste0("prob_", seq_len(ncol(probability)))
+  node_df <- dplyr::bind_cols(
+    dplyr::tibble(NodeID = seq_len(nrow(probability)),
+      Cluster = as.integer(node_posterior$cluster)),
+    dplyr::as_tibble(probability)
+  )
+  probability_columns <- grep("^prob_[0-9]+$", names(node_df), value = TRUE)
+  node_df %>%
+    dplyr::rowwise() %>%
+    dplyr::mutate(
+      max_prob = max(dplyr::c_across(dplyr::all_of(probability_columns)), na.rm = TRUE),
+      prob_assigned = dplyr::c_across(dplyr::all_of(probability_columns))[Cluster],
+      uncertainty = 1 - max_prob
+    ) %>%
+    dplyr::ungroup()
+}
+
 # Per-variable residuals from each participant's best-matching unit. The
 # squared residuals sum to the squared SOM distance, so each variable's share
 # says how much of a participant's misfit it explains.
@@ -52,7 +105,7 @@
 # gives Analytic Hierarchy Process weights (principal eigenvector) and Saaty's
 # consistency ratio.
 .ResolveCompositeWeights <- function(criteria_weights) {
-  criteria <- c("AIC", "BIC", "Entropy", "Reproducibility")
+  criteria <- c("AIC", "BIC", "Entropy", "Reproducibility", "Posterior")
   if (is.null(criteria_weights)) {
     return(list(weights = NULL, method = "equal", pairwise = NULL,
       consistency_ratio = NULL))
@@ -76,7 +129,7 @@
     weights <- abs(Re(eigen_result$vectors[, lead]))
     weights <- stats::setNames(weights / sum(weights), rownames(pairwise))
     lambda_max <- Re(eigen_result$values[lead])
-    random_index <- c(0, 0, 0.58, 0.90)[n]
+    random_index <- c(0, 0, 0.58, 0.90, 1.12)[n]
     consistency_ratio <- if (random_index > 0) {
       ((lambda_max - n) / (n - 1)) / random_index
     } else {
@@ -469,7 +522,36 @@ ProjectCluster.Pipeline_SOM_MClust <- function(
     SOM_Node     = SOM_Node_new,
     SOM_Distance = SOM_Dist_new
   ) %>%
-    dplyr::left_join(.SOMNodeAssignments(node_df), by = c("SOM_Node" = "NodeID")) %>%
+    dplyr::left_join(.SOMNodeAssignments(node_df), by = c("SOM_Node" = "NodeID"))
+
+  individual_tbl$NodeCluster <- individual_tbl$Cluster
+  individual_tbl$Flag_NodeDisagreement <- FALSE
+
+  soft_projection <- .SOMSoftProjection(zmat_new, object$ModelInfo_SOM$som_codes, node_df,
+    n_nodes = object$Specification$projection$soft_n_nodes %||% 3L,
+    margin_threshold = object$Specification$projection$boundary_margin_threshold %||% 0.20,
+    entropy_threshold = object$Specification$projection$boundary_entropy_threshold %||% 0.60)
+  individual_tbl$Cluster_Hard <- individual_tbl$Cluster
+  individual_tbl$Cluster_Soft <- NA_integer_
+  individual_tbl$SoftEntropy <- NA_real_
+  individual_tbl$SoftMargin <- NA_real_
+  individual_tbl$Flag_BoundaryParticipant <- NA
+  individual_tbl$BoundaryReason <- NA_character_
+  if (!is.null(soft_projection)) {
+    individual_tbl$Cluster_Soft[complete_rows] <- soft_projection$cluster
+    individual_tbl$SoftEntropy[complete_rows] <- soft_projection$entropy
+    individual_tbl$SoftMargin[complete_rows] <- soft_projection$margin
+    individual_tbl$Flag_BoundaryParticipant[complete_rows] <- soft_projection$boundary
+    individual_tbl$BoundaryReason[complete_rows] <- soft_projection$reason
+    for (j in seq_len(ncol(soft_projection$probability))) {
+      individual_tbl[[paste0("SoftProb_", j)]] <- NA_real_
+      individual_tbl[[paste0("SoftProb_", j)]][complete_rows] <- soft_projection$probability[, j]
+    }
+  }
+  projection_assignment <- object$Specification$projection$assignment %||% "hard"
+  individual_tbl$Cluster <- if (projection_assignment == "soft") individual_tbl$Cluster_Soft else individual_tbl$Cluster_Hard
+
+  individual_tbl <- individual_tbl %>%
     dplyr::mutate(
       SOMDist_z_overall = if (is.finite(overall_sd) && overall_sd > 0)
         (SOM_Distance - overall_mean) / overall_sd else NA_real_,
@@ -521,6 +603,11 @@ ProjectCluster.Pipeline_SOM_MClust <- function(
   }
 
   DataWithClusters[[ClusterVariableName]] <- individual_tbl$Cluster
+  projection_columns <- c("Cluster_Hard", "Cluster_Soft", "SoftEntropy", "SoftMargin",
+    "Flag_BoundaryParticipant", "BoundaryReason", grep("^SoftProb_", names(individual_tbl), value = TRUE))
+  for (column in projection_columns) {
+    if (column %in% names(individual_tbl)) DataWithClusters[[column]] <- individual_tbl[[column]]
+  }
   DataWithClusters$Projection_Fit_Class <- individual_tbl$Projection_Fit_Class
 
   # Frozen-SOM fit diagnostics for projected cases -------------------------
@@ -834,7 +921,10 @@ ProjectCluster.Pipeline_SOM_MClust <- function(
   probability_columns <- unique(c(
     ".row_id", object$id_var, "SOM_Node", "model_number", "classes_number",
     grep("^prob_", names(individual_tbl), value = TRUE),
-    "Cluster", "max_prob", "prob_assigned", "uncertainty"
+    "Cluster", "NodeCluster", "Flag_NodeDisagreement",
+    "max_prob", "prob_assigned", "uncertainty", "Cluster_Hard", "Cluster_Soft",
+    "SoftEntropy", "SoftMargin", "Flag_BoundaryParticipant", "BoundaryReason",
+    grep("^SoftProb_", names(individual_tbl), value = TRUE)
   ))
   probability_individual <- individual_tbl[, intersect(
     probability_columns, names(individual_tbl)), drop = FALSE]

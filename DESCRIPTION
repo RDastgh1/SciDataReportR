@@ -38,6 +38,7 @@ Imports:
     tidyselect,
     viridisLite
 Suggests:
+    ggalluvial,
     dynamicTreeCut,
     WGCNA,
     arrow,
@@ -85,6 +86,8 @@ Suggests:
     quarto,
     R.utils,
     RColorBrewer,
+    ranger,
+    fastcluster,
     readr,
     readxl,
     rstudioapi,

@@ -738,6 +738,52 @@ PlotClusterFitReview <- function(fit_table, x = "Classes", metrics = NULL,
         ggplot2::labs(title = "Subsample co-assignment probability", x = "Participant", y = "Participant")
     }
   }
+  if (!is.null(Stability$deletion_curve) && nrow(Stability$deletion_curve)) {
+    df_Curve <- Stability$deletion_curve
+    df_Curve$Candidate <- CandidateLabel(df_Curve)
+    plots$deletion_curve <- ggplot2::ggplot(
+      df_Curve, ggplot2::aes(x = .data$RetainedFraction,
+        y = .data$StabilityARI_Mean, colour = .data$Candidate)) +
+      ggplot2::geom_line() + ggplot2::geom_point() +
+      ggplot2::geom_errorbar(ggplot2::aes(
+        ymin = .data$StabilityARI_P05, ymax = .data$StabilityARI_Mean), width = .005) +
+      ggplot2::scale_x_continuous(labels = scales::percent_format()) +
+      ggplot2::coord_cartesian(ylim = c(-1, 1)) + ggplot2::theme_bw() +
+      ggplot2::labs(title = "Deletion-stability curve", x = "Participants retained",
+        y = "All-participant ARI")
+  }
+  if (!is.null(Stability$co_membership_by_cluster) && nrow(Stability$co_membership_by_cluster)) {
+    df_CoMembership <- Stability$co_membership_by_cluster %>%
+      tidyr::pivot_longer(c("Cohesion", "CrossMixing"), names_to = "Metric", values_to = "Value")
+    df_CoMembership$Candidate <- CandidateLabel(df_CoMembership)
+    plots$co_membership <- ggplot2::ggplot(df_CoMembership,
+      ggplot2::aes(x = factor(.data$ReferenceCluster), y = .data$Value)) +
+      ggplot2::geom_boxplot(fill = "#3B5BDB") +
+      ggplot2::facet_grid(Metric ~ Candidate) +
+      ggplot2::coord_cartesian(ylim = c(0, 1)) + ggplot2::theme_bw() +
+      ggplot2::labs(title = "Reference-cluster co-membership recovery",
+        x = "Reference cluster", y = "Pair probability")
+  }
+  if (!is.null(Stability$split_merge_reference) && nrow(Stability$split_merge_reference)) {
+    df_SplitMerge <- Stability$split_merge_reference
+    df_SplitMerge$Candidate <- CandidateLabel(df_SplitMerge)
+    plots$split_merge <- ggplot2::ggplot(df_SplitMerge,
+      ggplot2::aes(x = factor(.data$ReferenceCluster), y = .data$DominantRefitShare)) +
+      ggplot2::geom_boxplot(fill = "#3B5BDB") + ggplot2::facet_wrap(~Candidate) +
+      ggplot2::coord_cartesian(ylim = c(0, 1)) + ggplot2::theme_bw() +
+      ggplot2::labs(title = "Reference-cluster split recovery",
+        x = "Reference cluster", y = "Dominant refit-cluster share")
+  }
+  if (!is.null(Stability$profile_recovery) && nrow(Stability$profile_recovery)) {
+    df_Profile <- Stability$profile_recovery
+    df_Profile$Candidate <- CandidateLabel(df_Profile)
+    plots$profile_recovery <- ggplot2::ggplot(df_Profile,
+      ggplot2::aes(x = factor(.data$ReferenceCluster), y = .data$ProfileCorrelation)) +
+      ggplot2::geom_boxplot(fill = "#3B5BDB") + ggplot2::facet_wrap(~Candidate) +
+      ggplot2::coord_cartesian(ylim = c(-1, 1)) + ggplot2::theme_bw() +
+      ggplot2::labs(title = "Reference phenotype-profile recovery",
+        x = "Reference cluster", y = "Profile correlation")
+  }
   plots
 }
 

@@ -77,23 +77,28 @@ lower-dimensional category space is useful before mixture clustering.
 Stability assesses internal reproducibility by full-pipeline 90\% participant
 subsampling without replacement. For each replicate, 90\% of complete
 participants are selected once, all preprocessing, any reduction (PCA,
-MCA, or SOM), and the selected clustering method are refit. Assignments from
-that refit are compared with the full-data reference assignments for the
-same sampled participants, joined by \code{.row_id}; projection is not used.
-It is an internal sensitivity analysis, not
+MCA, or SOM), and the selected clustering method are refit. Most pipelines
+compare assignments for sampled participants. SOM + Mclust instead maps the
+complete reference cohort onto every refit and compares the resulting full
+participant partition. \code{Stability$settings$comparison_scope} records the
+policy used. It is an internal sensitivity analysis, not
 independent-cohort validation.
 
 \code{Stability$settings} records the analysis provenance:
 \itemize{
 \item \code{resamples}: requested number of 90\% subsample refits.
 \item \code{seed}: seed used to derive reproducible sampling and model seeds.
-\item \code{refit_scope}: always \code{"full_pipeline_in_sample"}, meaning
-preprocessing, reduction where applicable, and clustering were all refit.
-\item \code{comparison_scope}: always \code{"sampled_participants"}; only the
-participants used in a refit enter that replicate's agreement metrics.
+\item \code{refit_scope}: whether agreement is calculated directly in the
+refitted sample or after refit projection onto the reference cohort.
+\item \code{comparison_scope}: the participants entering replicate agreement
+metrics; most pipelines use \code{"sampled_participants"}, while SOM + Mclust
+uses \code{"all_reference_participants"}.
 \item \code{resample_type}: \code{"subsample_without_replacement"} for the
 primary stability analysis.
 \item \code{resample_fraction}: the retained participant fraction, \code{0.90}.
+\item \code{resample_fractions}: every requested retention fraction. The
+default is \code{0.90}; additional values create an opt-in deletion-stability
+curve without replacing the 90\% primary screen.
 \item \code{coassignment_limit}: maximum number of complete training
 participants (2,000) for which the full pairwise co-assignment matrix is
 calculated.
@@ -106,7 +111,7 @@ ARI but exclude it from phenotype-level Jaccard recovery.
 \code{Classes} identify the selected candidate (for HDBSCAN, \code{Classes} is the
 data-derived extracted count); \code{Replicate} is its sequence number; \code{Status}
 is \code{"success"} or a failure status; \code{SamplingSeed} and \code{ModelSeed} identify
-the independently varied participant draw and stochastic refit; and \code{Error}
+the participant draw and refit initialization policy; and \code{Error}
 contains the error message for an unsuccessful refit. \code{ARI} is the primary
 successful-refit metric: it is invariant to cluster numbering, higher is
 better, and it can be negative when agreement is worse than chance.
@@ -124,8 +129,20 @@ score. \code{StabilityARI_Mean} and \code{StabilityARI_P05} are the mean and fif
 percentile of ARI. \code{StabilityJaccard_Mean} and \code{StabilityJaccard_Min} are
 respectively the mean cluster-level recovery and the minimum of the
 cluster-specific mean recoveries across replicates.
-\code{ReproducibilityScore} is the mean of the finite \code{StabilityARI_Mean} and
-\code{StabilityJaccard_Mean} values only; it does not include success rate.
+\code{ReproducibilityScore} does not include success rate. For most pipelines it
+is the mean of finite \code{StabilityARI_Mean} and \code{StabilityJaccard_Mean}
+values; SOM + Mclust uses \code{StabilityARI_Mean} directly because it selects
+on agreement of the final participant partition.
+
+SOM + Mclust additionally returns \code{StabilityARI_NonBoundary},
+\code{StabilityARI_NonBoundary_P05}, and non-boundary Jaccard summaries. These
+are secondary diagnostics calculated only on the fixed reference-model mask
+with \code{SoftMargin} below its threshold or \code{SoftEntropy} above its threshold
+excluded. The primary all-participant ARI always retains these boundary
+participants. \code{boundary_summary} reports their count and proportion overall
+and within each reference cluster. Earlier posterior-based \code{Core} fields are
+retained for compatibility as descriptive diagnostics; they are not the
+boundary-aware sensitivity measure.
 
 \code{Stability$failures} repeats the replicate columns for unsuccessful refits,
 making fit failures auditable without mixing them with successful metrics.
@@ -154,6 +171,22 @@ matrix values mean more consistent pairwise co-membership.
 Where more than one candidate is summarized, entries are named by its
 \code{Model_Classes} key. The matrix is diagnostic only and is never used for
 selection.
+
+SOM + Mclust additionally returns memory-safe final-partition diagnostics
+for every cohort size. \code{co_membership_by_cluster} reports the proportion of
+within-reference-cluster participant pairs retained together (\code{Cohesion}) and
+the probability of co-assignment with outsiders (\code{CrossMixing}).
+\code{co_membership_between_clusters} reports cross-reference-cluster
+co-assignment probabilities. \code{split_merge_reference} and
+\code{split_merge_refit} identify dominant sources, shares, and effective numbers
+of groups, while \code{profile_recovery} reports matched-cluster correlation and
+RMSE for mean clustering-variable profiles on the frozen reference scale.
+These explain the nature of membership changes; they do not supersede ARI.
+
+\code{deletion_curve} summarizes ARI, VI, NMI, and Fowlkes--Mallows agreement at
+each requested participant-retention fraction. It is useful for describing
+sensitivity to increasing cohort perturbation, not for selecting the least
+demanding fraction.
 
 \code{Stability$plots} contains \code{cluster_recovery} (per-cluster Jaccard),
 \code{partition_metrics} (the ARI distribution), and

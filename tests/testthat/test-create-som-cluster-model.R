@@ -16,6 +16,8 @@ test_that("CreateClusterModel_SOM_MClust returns the complete model-review outpu
     method = "exploratory",
     k_range = 2:4,
     models = 1,
+    lpa_bootstrap_n = 20,
+    stability_resamples = 0,
     lpa_timeout_seconds = 30
   )
 
@@ -64,6 +66,69 @@ test_that("CreateClusterModel_SOM_MClust returns the complete model-review outpu
   expect_equal(model$ModelInfo_MClust$AHP$ahp_best_row$Classes, expected_best$Classes)
 })
 
+test_that("SOM stability fractions retain full-cohort scoring and expose partition diagnostics", {
+  skip_if_not_installed("aweSOM")
+  skip_if_not_installed("kohonen")
+  skip_if_not_installed("mclust")
+  suppressPackageStartupMessages(skip_if_not_installed("tidyLPA"))
+  data("SimulatedPhenotypeData", package = "SciDataReportR")
+  df_Training <- subset(SimulatedPhenotypeData, Cohort == "Training")
+  model <- suppressWarnings(CreateClusterModel_SOM_MClust(
+    df_Training, paste0("Var", 1:6), method = "finalize",
+    final_k = 3, final_model = 1, som_xdim = 4, som_ydim = 4,
+    assignment = "soft", stability_resamples = 2L,
+    stability_fractions = c(.90, .80), stability_seed = 889L,
+    stability_cores = 1L, Relabel = FALSE, min_nodes_per_cluster = NULL,
+    lpa_timeout_seconds = 30
+  ))
+  stability <- model$Stability
+  expect_setequal(unique(stability$replicates$RetainedFraction), c(.90, .80))
+  expect_true(all(stability$replicates$ParticipantsCompared == nrow(df_Training)))
+  expect_setequal(unique(stability$deletion_curve$RetainedFraction), c(.90, .80))
+  expect_true(all(c("VI", "NMI", "FowlkesMallows") %in% names(stability$replicates)))
+  expect_true(nrow(stability$co_membership_by_cluster) > 0)
+  expect_true(nrow(stability$split_merge_reference) > 0)
+  expect_true(nrow(stability$profile_recovery) > 0)
+  expect_error(CreateClusterModel_SOM_MClust(
+    df_Training, paste0("Var", 1:6), method = "finalize",
+    final_k = 3, final_model = 1, stability_fractions = c(.90, 1)),
+    "strictly between 0 and 1")
+})
+
+test_that("co-membership and profile recovery are label invariant", {
+  reference <- c(1L, 1L, 1L, 2L, 2L, 2L)
+  refit <- c(7L, 7L, 7L, 9L, 9L, 9L)
+  profiles <- cbind(
+    x = c(0, 0, 0, 1, 1, 1),
+    y = c(1, 1, 1, 0, 0, 0),
+    z = c(2, 2, 2, 3, 3, 3)
+  )
+  co_membership <- SciDataReportR:::.ClusterCoMembershipSummary(reference, refit)
+  split_merge <- SciDataReportR:::.ClusterSplitMergeDiagnostics(reference, refit)
+  recovery <- SciDataReportR:::.ClusterProfileRecovery(reference, refit, profiles)
+  expect_true(all(co_membership$by_cluster$Cohesion == 1))
+  expect_true(all(co_membership$by_cluster$CrossMixing == 0))
+  expect_true(all(split_merge$reference$DominantRefitShare == 1))
+  expect_true(all(split_merge$reference$EffectiveRefitClusters == 1))
+  expect_true(all(split_merge$reference$BestJaccard == 1))
+  expect_equal(recovery$ProfileCorrelation, rep(1, 2), tolerance = 1e-12)
+  expect_equal(recovery$ProfileRMSE, rep(0, 2), tolerance = 1e-12)
+})
+
+test_that("co-membership summaries equal pairwise hand calculations without a participant matrix", {
+  reference <- c(1L, 1L, 2L, 2L)
+  refit <- c(7L, 9L, 9L, 9L)
+  summary <- SciDataReportR:::.ClusterCoMembershipSummary(reference, refit)
+  expect_equal(summary$by_cluster$Cohesion, c(0, 1))
+  expect_equal(summary$by_cluster$CrossMixing, c(.5, .5))
+  expect_equal(summary$between_clusters$CoassignmentProbability, .5)
+
+  large_summary <- SciDataReportR:::.ClusterCoMembershipSummary(
+    rep(seq_len(5L), each = 1000L), rep(seq_len(5L), each = 1000L))
+  expect_equal(nrow(large_summary$by_cluster), 5L)
+  expect_false(any(vapply(large_summary, is.matrix, logical(1))))
+})
+
 test_that("SOM Mclust lifecycle settings are mutually exclusive", {
   skip_if_not_installed("aweSOM")
   skip_if_not_installed("kohonen")
@@ -96,6 +161,7 @@ test_that("CreateClusterModel_SOM_MClust handles a single exploratory candidate"
     method = "exploratory",
     k_range = 2,
     models = 1,
+    stability_resamples = 0,
     lpa_timeout_seconds = 30
   )
 
@@ -119,6 +185,7 @@ test_that("SOM Mclust supports tidyLPA model 6", {
     c("age", "AXL", "Adiponectin", "Alpha_1_Antitrypsin"),
     method = "finalize", final_k = 2, final_model = 6,
     som_xdim = 4, som_ydim = 4, min_nodes_per_cluster = NULL,
+    stability_resamples = 0,
     lpa_timeout_seconds = 30, Relabel = FALSE
   ))
 
@@ -133,6 +200,7 @@ test_that("SOM Mclust supports tidyLPA model 6", {
     c("age", "AXL", "Adiponectin", "Alpha_1_Antitrypsin"),
     method = "exploratory", k_range = 2, models = c(1, 6),
     som_xdim = 4, som_ydim = 4, min_nodes_per_cluster = NULL,
+    stability_resamples = 0,
     lpa_timeout_seconds = 30, Relabel = FALSE
   ))
   model_six_label <- "Model 6: varying variance, varying covariance"
@@ -176,11 +244,18 @@ test_that("CreateClusterModel_SOM_MClust adds deterministic subsample stability 
   stability <- model_one$ModelInfo_MClust$Stability
   fit_table <- model_one$ModelInfo_MClust$fit_table
 
+  expect_identical(formals(CreateClusterModel_SOM_MClust)$stability_resamples, 0L)
   expect_equal(stability$settings$resamples, 2)
+  expect_identical(stability$settings$comparison_scope, "all_reference_participants")
+  expect_identical(stability$settings$som_grid$initialization_seed_policy,
+    "fixed_to_reference_fit")
   expect_equal(nrow(stability$replicates), 2)
   expect_true(all(stability$replicates$Status == "success"))
+  expect_true(all(stability$replicates$ParticipantsCompared ==
+    sum(!is.na(model_one$DataWithClusters$Cluster))))
   expect_true(all(stability$cluster_recovery$Jaccard >= 0))
   expect_true(all(stability$cluster_recovery$Jaccard <= 1))
+  expect_equal(fit_table$ReproducibilityScore, fit_table$StabilityARI_Mean)
   expect_true(all(c(
     "StabilitySuccessRate", "StabilityARI_Mean", "StabilityARI_P05",
     "StabilityJaccard_Mean", "StabilityJaccard_Min",
@@ -257,6 +332,7 @@ test_that("SOM Mclust records inestimable fits as failed instead of stopping", {
     c("age", "AXL", "Adiponectin", "Alpha_1_Antitrypsin"),
     method = "exploratory", k_range = c(2, 5), models = c(1, 6),
     som_xdim = 4, som_ydim = 4, min_nodes_per_cluster = NULL,
+    stability_resamples = 0,
     lpa_timeout_seconds = 30, Relabel = FALSE
   ))
 
@@ -284,6 +360,7 @@ test_that("SOM Mclust reports Euclidean distances with per-variable residuals", 
   model <- suppressWarnings(CreateClusterModel_SOM_MClust(
     df_Labelled, vars, method = "finalize", final_k = 2, final_model = 1,
     som_xdim = 4, som_ydim = 4, min_nodes_per_cluster = NULL,
+    stability_resamples = 0,
     lpa_timeout_seconds = 30, Relabel = FALSE))
 
   individual <- model$ProbFit$individual
@@ -325,6 +402,7 @@ test_that("SOM Mclust can leave sparse nodes out of the mixture fit", {
     method = "exploratory", k_range = 2:3, models = 1,
     som_xdim = 8, som_ydim = 8, min_nodes_per_cluster = NULL,
     lpa_min_node_n = 3, min_cluster_prop = 0.2,
+    stability_resamples = 0,
     lpa_timeout_seconds = 30, Relabel = FALSE))
 
   node <- model$ProbFit$node
@@ -363,4 +441,303 @@ test_that("SOM Mclust composite index accepts AHP pairwise weights", {
     dimnames = list(c("AIC", "BIC"), c("AIC", "BIC")))), "reciprocal")
   expect_equal(.ResolveCompositeWeights(c(BIC = 2, Entropy = 2))$weights,
     c(BIC = 0.5, Entropy = 0.5))
+})
+
+test_that("SOM Mclust stability can be limited to a shortlist of candidates", {
+  skip_if_not_installed("aweSOM")
+  skip_if_not_installed("kohonen")
+  skip_if_not_installed("mclust")
+  skip_if_not_installed("R.utils")
+  suppressPackageStartupMessages(skip_if_not_installed("tidyLPA"))
+  data("SampleData", package = "SciDataReportR")
+  data("SampleVariableTypes", package = "SciDataReportR")
+  df_Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
+
+  model <- suppressWarnings(CreateClusterModel_SOM_MClust(
+    df_Labelled, c("age", "AXL", "Adiponectin", "Alpha_1_Antitrypsin"),
+    method = "exploratory", k_range = 2:4, models = 1,
+    som_xdim = 4, som_ydim = 4, min_nodes_per_cluster = NULL,
+    stability_resamples = 2, stability_top_n = 2, stability_cores = 1,
+    lpa_timeout_seconds = 30, Relabel = FALSE))
+
+  fit_table <- model$ModelInfo_MClust$fit_table
+  assessed <- !is.na(fit_table$ReproducibilityScore)
+  expect_equal(sum(assessed), 2)
+  expect_length(model$Stability$settings$candidates_assessed, 2)
+  expect_equal(nrow(model$Stability$replicates), 2 * 2)
+  expect_true(all(is.na(fit_table$ahp_index[!assessed])))
+  best <- model$ModelInfo_MClust$AHP$ahp_best_row
+  expect_true(paste0("model_", best$Model, "_class_", best$Classes) %in%
+    model$Stability$settings$candidates_assessed)
+  expect_length(model$ModelInfo_MClust$node_assignments, 3)
+})
+
+test_that("hard SOM Mclust assignment equals the best-matching node class", {
+  skip_if_not_installed("aweSOM")
+  skip_if_not_installed("kohonen")
+  skip_if_not_installed("mclust")
+  skip_if_not_installed("R.utils")
+  suppressPackageStartupMessages(skip_if_not_installed("tidyLPA"))
+  data("SampleData", package = "SciDataReportR")
+  data("SampleVariableTypes", package = "SciDataReportR")
+  df_Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
+  vars <- c("age", "AXL", "Adiponectin", "Alpha_1_Antitrypsin")
+
+  model <- suppressWarnings(CreateClusterModel_SOM_MClust(
+    df_Labelled, vars, method = "finalize", final_k = 3, final_model = 1,
+    som_xdim = 5, som_ydim = 5, stability_resamples = 0,
+    assignment = "hard",
+    min_nodes_per_cluster = NULL, lpa_timeout_seconds = 30, Relabel = FALSE))
+  individual <- model$ProbFit$individual
+  mapped <- !is.na(individual$SOM_Node)
+
+  expect_identical(individual$Cluster[mapped],
+    model$ProbFit$node$Cluster[individual$SOM_Node[mapped]])
+  expect_identical(individual$NodeCluster[mapped],
+    model$ProbFit$node$Cluster[individual$SOM_Node[mapped]])
+  expect_false(any(individual$Flag_NodeDisagreement))
+  expect_identical(model$DataWithClusters$Cluster, individual$Cluster)
+
+  # Projecting the training data preserves the node-inherited assignment.
+  projected <- suppressWarnings(ProjectCluster(model, df_Labelled))
+  expect_identical(projected$DataWithClusters$Cluster, model$DataWithClusters$Cluster)
+  expect_true("Flag_NodeDisagreement" %in% names(projected$ProbFit$individual))
+})
+
+test_that("SOM Mclust stability can assess the best candidate at each k", {
+  skip_if_not_installed("aweSOM")
+  skip_if_not_installed("kohonen")
+  skip_if_not_installed("mclust")
+  skip_if_not_installed("R.utils")
+  suppressPackageStartupMessages(skip_if_not_installed("tidyLPA"))
+  data("SampleData", package = "SciDataReportR")
+  data("SampleVariableTypes", package = "SciDataReportR")
+  df_Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
+
+  model <- suppressWarnings(CreateClusterModel_SOM_MClust(
+    df_Labelled, c("age", "AXL", "Adiponectin", "Alpha_1_Antitrypsin"),
+    method = "exploratory", k_range = 2:3, models = c(1, 2),
+    som_xdim = 4, som_ydim = 4, min_nodes_per_cluster = NULL,
+    stability_resamples = 2, stability_candidates = "best_per_k", stability_cores = 1,
+    lpa_timeout_seconds = 30, Relabel = FALSE))
+
+  assessed <- model$ModelInfo_MClust$fit_table %>%
+    dplyr::filter(!is.na(ReproducibilityScore))
+  expect_setequal(assessed$Classes, 2:3)
+  expect_equal(nrow(assessed), 2)
+})
+
+test_that("SOM Mclust summarizes posteriors and core stability per candidate", {
+  skip_if_not_installed("aweSOM")
+  skip_if_not_installed("kohonen")
+  skip_if_not_installed("mclust")
+  skip_if_not_installed("R.utils")
+  suppressPackageStartupMessages(skip_if_not_installed("tidyLPA"))
+  data("SampleData", package = "SciDataReportR")
+  data("SampleVariableTypes", package = "SciDataReportR")
+  df_Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
+
+  model <- suppressWarnings(CreateClusterModel_SOM_MClust(
+    df_Labelled, c("age", "AXL", "Adiponectin", "Alpha_1_Antitrypsin"),
+    method = "exploratory", k_range = 2:3, models = 1,
+    som_xdim = 4, som_ydim = 4, min_nodes_per_cluster = NULL,
+    stability_resamples = 2, stability_cores = 1, low_prob_threshold = 0.7,
+    criteria_weights = c(Entropy = 1, Posterior = 1, Reproducibility = 1),
+    lpa_timeout_seconds = 30, Relabel = FALSE))
+
+  fit_table <- model$ModelInfo_MClust$fit_table
+  expect_true(all(c("PosteriorMean", "PosteriorMedian", "PropLowPosterior",
+    "StabilityCoreProportion", "StabilityARI_Core", "StabilityJaccard_CoreMin",
+    "ReproducibilityScore_All") %in% names(fit_table)))
+  expect_true(all(fit_table$PosteriorMean > 0 & fit_table$PosteriorMean <= 1))
+
+  # Posterior summaries inherit the assigned node's posterior.
+  best <- model$ModelInfo_MClust$AHP$ahp_best_row
+  individual <- model$ProbFit$individual
+  row <- fit_table[fit_table$Model == best$Model & fit_table$Classes == best$Classes, ]
+  expect_equal(row$PosteriorMean, mean(individual$max_prob, na.rm = TRUE))
+  expect_equal(row$PropLowPosterior, mean(individual$max_prob < 0.7, na.rm = TRUE))
+  expect_true(all(fit_table$StabilityCoreProportion >= 0 & fit_table$StabilityCoreProportion <= 1))
+  expect_match(model$ModelInfo_MClust$AHP$recommendation, "Posterior")
+})
+
+test_that("SOM Mclust skips tidyLPA bootstraps by default", {
+  skip_if_not_installed("aweSOM")
+  skip_if_not_installed("kohonen")
+  skip_if_not_installed("mclust")
+  skip_if_not_installed("R.utils")
+  suppressPackageStartupMessages(skip_if_not_installed("tidyLPA"))
+  data("SampleData", package = "SciDataReportR")
+  data("SampleVariableTypes", package = "SciDataReportR")
+  df_Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
+
+  model <- suppressWarnings(CreateClusterModel_SOM_MClust(
+    df_Labelled, c("age", "AXL", "Adiponectin", "Alpha_1_Antitrypsin"),
+    method = "exploratory", k_range = 2:3, models = 1,
+    som_xdim = 4, som_ydim = 4, min_nodes_per_cluster = NULL,
+    stability_resamples = 0,
+    lpa_timeout_seconds = 30, Relabel = FALSE))
+
+  fit_table <- model$ModelInfo_MClust$fit_table
+  expect_true(all(is.na(fit_table$BLRTPValue)))
+  expect_false(any(grepl("likelihood-ratio", as.character(model$fit_plot$data$name))))
+  expect_error(CreateClusterModel_SOM_MClust(df_Labelled, "age", lpa_bootstrap_n = -1),
+    "lpa_bootstrap_n")
+})
+
+test_that("SOM hard and soft projection retain participant confidence outputs", {
+  skip_if_not_installed("aweSOM")
+  skip_if_not_installed("kohonen")
+  skip_if_not_installed("mclust")
+  suppressPackageStartupMessages(skip_if_not_installed("tidyLPA"))
+  data("SimulatedPhenotypeData", package = "SciDataReportR")
+  df_Training <- subset(SimulatedPhenotypeData, Cohort == "Training")
+
+  model <- suppressWarnings(CreateClusterModel_SOM_MClust(
+    df_Training, paste0("Var", 1:6), method = "finalize",
+    final_k = 3, final_model = 1, som_xdim = 4, som_ydim = 4,
+    soft_n_nodes = 3L,
+    stability_resamples = 0L, Relabel = FALSE,
+    min_nodes_per_cluster = NULL, lpa_timeout_seconds = 30
+  ))
+
+  individual <- model$ProbFit$individual
+  mapped <- !is.na(individual$SOM_Node)
+  soft_probability_columns <- grep("^SoftProb_", names(individual), value = TRUE)
+  expected_columns <- c("Cluster_Hard", "Cluster_Soft", "SoftEntropy",
+    "SoftMargin", "Flag_BoundaryParticipant", "BoundaryReason")
+  expect_true(all(expected_columns %in% names(individual)))
+  expect_true(all(expected_columns %in% names(model$DataWithClusters)))
+  expect_equal(rowSums(as.matrix(individual[mapped, soft_probability_columns])),
+    rep(1, sum(mapped)), tolerance = 1e-8)
+  expect_identical(individual$Cluster, individual$Cluster_Soft)
+  expect_identical(individual$Cluster_Hard[mapped],
+    model$ProbFit$node$Cluster[individual$SOM_Node[mapped]])
+  expect_true(all(individual$SoftEntropy[mapped] >= 0 & individual$SoftEntropy[mapped] <= 1))
+  expect_true(all(individual$SoftMargin[mapped] >= 0 & individual$SoftMargin[mapped] <= 1))
+  expect_true(all(individual$BoundaryReason[!is.na(individual$BoundaryReason)] %in%
+    c("low_margin", "high_entropy", "both")))
+
+  projected <- suppressWarnings(ProjectCluster(model, df_Training[1:20, ]))
+  expect_true(all(expected_columns %in% names(projected$ProbFit$individual)))
+  expect_true(all(expected_columns %in% names(projected$DataWithClusters)))
+  expect_identical(projected$DataWithClusters$Cluster,
+    projected$ProbFit$individual$Cluster)
+
+  # Earlier objects may retain now-unsupported training provenance. Projection
+  # must use their frozen codebook and node mixture rather than inspect it.
+  legacy_model <- model
+  legacy_model$ModelInfo_SOM$consensus <- list(strategy = "median_only")
+  legacy_model$Specification$projection$consensus_strategy <- "median_only"
+  legacy_projection <- suppressWarnings(ProjectCluster(legacy_model, df_Training[1:20, ]))
+  expect_identical(legacy_projection$ProbFit$individual$Cluster,
+    projected$ProbFit$individual$Cluster)
+
+  node_df <- tibble::tibble(NodeID = 1:3, Cluster = c(1L, 2L, 3L),
+    prob_1 = c(0.8, 0.1, 0.2), prob_2 = c(0.1, 0.8, 0.2),
+    prob_3 = c(0.1, 0.1, 0.6))
+  soft_at_node <- .SOMSoftProjection(matrix(c(0, 0), nrow = 1),
+    rbind(c(0, 0), c(1, 0), c(0, 1)), node_df, n_nodes = 3L)
+  expect_equal(unname(soft_at_node$probability[1, ]), c(0.8, 0.1, 0.1))
+  expect_equal(soft_at_node$cluster, 1L)
+})
+
+test_that("standard batch-SOM provenance and boundary stability use a fixed reference mask", {
+  skip_if_not_installed("aweSOM")
+  skip_if_not_installed("kohonen")
+  skip_if_not_installed("mclust")
+  suppressPackageStartupMessages(skip_if_not_installed("tidyLPA"))
+  data("SimulatedPhenotypeData", package = "SciDataReportR")
+  df_Training <- subset(SimulatedPhenotypeData, Cohort == "Training")
+
+  standard_one <- suppressWarnings(CreateClusterModel_SOM_MClust(
+    df_Training, paste0("Var", 1:6), method = "finalize",
+    final_k = 3, final_model = 1, som_xdim = 4, som_ydim = 4,
+    seed_som = 889L, stability_resamples = 0L,
+    Relabel = FALSE, min_nodes_per_cluster = NULL, lpa_timeout_seconds = 30
+  ))
+  standard_two <- suppressWarnings(CreateClusterModel_SOM_MClust(
+    df_Training, paste0("Var", 1:6), method = "finalize",
+    final_k = 3, final_model = 1, som_xdim = 4, som_ydim = 4,
+    seed_som = 889L, stability_resamples = 0L,
+    Relabel = FALSE, min_nodes_per_cluster = NULL, lpa_timeout_seconds = 30
+  ))
+  expect_false("consensus_resamples" %in% names(formals(CreateClusterModel_SOM_MClust)))
+  expect_false("consensus_strategy" %in% names(formals(CreateClusterModel_SOM_MClust)))
+  expect_identical(eval(formals(CreateClusterModel_SOM_MClust)$assignment),
+    c("soft", "hard"))
+  expect_identical(formals(CreateClusterModel_SOM_MClust)$soft_n_nodes, 3L)
+  expect_identical(formals(CreateClusterModel_SOM_MClust)$stability_resamples, 0L)
+  expect_equal(standard_one$ModelInfo_SOM$som_codes,
+    standard_two$ModelInfo_SOM$som_codes)
+  expect_identical(standard_one$ModelInfo_SOM$training$mode, "batch")
+  expect_identical(standard_one$ModelInfo_SOM$training$epochs, 100L)
+  expect_equal(dim(standard_one$ModelInfo_SOM$training$initial_codebook),
+    dim(standard_one$ModelInfo_SOM$som_codes))
+  expect_error(do.call(CreateClusterModel_SOM_MClust, list(
+    data = df_Training, variables = paste0("Var", 1:6), method = "finalize",
+    final_k = 3, final_model = 1, consensus_resamples = 1L)),
+    "unused argument")
+
+  model <- suppressWarnings(CreateClusterModel_SOM_MClust(
+    df_Training, paste0("Var", 1:6), method = "finalize",
+    final_k = 3, final_model = 1, som_xdim = 4, som_ydim = 4,
+    stability_resamples = 2L,
+    stability_seed = 889L, stability_cores = 1L, Relabel = FALSE,
+    min_nodes_per_cluster = NULL, lpa_timeout_seconds = 30
+  ))
+  stability <- model$Stability
+  expect_true(all(stability$replicates$ParticipantsCompared == nrow(df_Training)))
+  expect_true(all(c("ARI_NonBoundary", "NonBoundaryProportion") %in%
+    names(stability$replicates)))
+  expect_true(all(c("StabilityARI_NonBoundary", "StabilityARI_NonBoundary_P05",
+    "StabilityJaccard_NonBoundaryMean") %in% names(stability$summary)))
+  expect_true(all(c("overall", "reference_cluster") %in%
+    stability$boundary_summary$Scope))
+  expect_identical(stability$settings$non_boundary_mask,
+    "reference_soft_margin_and_entropy")
+  expect_identical(stability$settings$som_training$mode, "batch")
+  expect_identical(stability$settings$som_training$epochs, 100L)
+  expect_equal(stability$settings$assignment, "soft")
+  expect_identical(model$ModelInfo_SOM$som_grid_info$GridDesignPolicy,
+    "explicit_dimensions")
+  expect_equal(model$ModelInfo_SOM$som_grid_info$ExpectedNodesPerProfile,
+    16 / 3)
+
+  parallel_model <- suppressWarnings(CreateClusterModel_SOM_MClust(
+    df_Training, paste0("Var", 1:6), method = "finalize",
+    final_k = 3, final_model = 1, som_xdim = 4, som_ydim = 4,
+    assignment = "soft", stability_resamples = 2L,
+    stability_seed = 889L, stability_cores = 2L, Relabel = FALSE,
+    min_nodes_per_cluster = NULL, lpa_timeout_seconds = 30
+  ))
+  expect_identical(stability$replicates$ARI, parallel_model$Stability$replicates$ARI)
+  expect_identical(stability$replicates$ARI_NonBoundary,
+    parallel_model$Stability$replicates$ARI_NonBoundary)
+
+  adaptive <- suppressWarnings(CreateClusterModel_SOM_MClust(
+    df_Training, paste0("Var", 1:6), method = "finalize",
+    final_k = 3, final_model = 1,
+    stability_resamples = 0L, Relabel = FALSE,
+    min_nodes_per_cluster = NULL, lpa_timeout_seconds = 30
+  ))
+  expected_side <- ceiling(sqrt(20 * 3))
+  expect_equal(adaptive$ModelInfo_SOM$som_grid_info$som_xdim_used, expected_side)
+  expect_equal(adaptive$ModelInfo_SOM$som_grid_info$som_ydim_used, expected_side)
+  expect_identical(adaptive$ModelInfo_SOM$som_grid_info$GridDesignK, 3L)
+  expect_identical(adaptive$ModelInfo_SOM$som_grid_info$TargetNodesPerProfile, 20L)
+  expect_identical(adaptive$ModelInfo_SOM$som_grid_info$GridDesignPolicy,
+    "k_informed_20_nodes_per_maximum_planned_profile")
+
+  exploratory <- suppressWarnings(CreateClusterModel_SOM_MClust(
+    df_Training, paste0("Var", 1:6), method = "exploratory",
+    k_range = 3:5, models = 1, stability_resamples = 0L,
+    Relabel = FALSE, min_nodes_per_cluster = NULL, lpa_timeout_seconds = 30
+  ))
+  expect_identical(exploratory$ModelInfo_SOM$som_grid_info$GridDesignK, 5L)
+  expect_equal(exploratory$ModelInfo_SOM$som_grid_info$som_xdim_used,
+    ceiling(sqrt(20 * 5)))
+  expect_equal(exploratory$ModelInfo_SOM$som_grid_info$som_ydim_used,
+    ceiling(sqrt(20 * 5)))
+  expect_true(all(exploratory$ModelInfo_MClust$fit_table$Classes %in% 3:5))
 })

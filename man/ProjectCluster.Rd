@@ -40,6 +40,12 @@ separate. \code{ProbFit$individual} is full length and contains the assigned
 \code{Cluster}, \code{SOM_Node}, available node-derived \verb{prob_*} columns,
 \code{prob_assigned}, \code{max_prob}, and \code{uncertainty}. It answers: \emph{which
 phenotype was assigned, and how certain is that node-derived assignment?}
+Models fitted with the hard/soft projection interface also retain
+\code{Cluster_Hard}, \code{Cluster_Soft}, \verb{SoftProb_*}, \code{SoftEntropy}, \code{SoftMargin},
+\code{Flag_BoundaryParticipant}, and \code{BoundaryReason}. Node-level \verb{prob_*}
+values remain the Mclust posterior for a map node; \verb{SoftProb_*} is a
+participant-level proximity-weighted combination of nearby node posteriors.
+Boundary flags are confidence diagnostics and never suppress projection.
 
 \code{ProjectionFit$individual} is also full length. It contains the frozen
 best-matching-unit \code{SOM_Node}, \code{SOM_Distance},

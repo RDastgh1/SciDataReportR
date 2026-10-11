@@ -1,3 +1,91 @@
+# SciDataReportR (development version)
+
+* SOM + Mclust stability now supports an opt-in participant-deletion curve via
+  `stability_fractions` (default `0.90`). It retains all-participant ARI/P05
+  as the primary final-partition result while adding VI, NMI, and
+  Fowlkes--Mallows companions; exact memory-safe co-membership cohesion and
+  cross-mixing summaries; split/merge diagnostics; and frozen-scale matched
+  phenotype-profile correlation/RMSE recovery. New stability-panel plots and
+  documentation make these explanatory diagnostics available without
+  excluding boundary participants or substituting them for ARI.
+
+* `CreateClusterModel_SOM_MClust()` now uses one deterministic, seeded
+  full-cohort batch SOM fit. Experimental consensus-SOM and median-only
+  fitting controls have been removed. New-model provenance records the initial
+  codebook, batch mode, epochs, grid, topology, neighbourhood, preprocessing,
+  and node-level mixture; existing consensus-era objects remain projectable
+  through their frozen fitted components.
+
+* SOM + Mclust automatic map resolution is now k-informed rather than driven
+  solely by training-cohort size. Exploratory fits use `max(k_range)` and
+  finalized fits use `final_k`, targeting approximately 20 nodes per maximum
+  planned phenotype unless dimensions are supplied explicitly. The map screen
+  now evaluates 10/20/30-nodes-per-maximum-profile candidates plus 3x3 and
+  10x10 anchors, reporting expected nodes per requested profile. Grid design,
+  boundary prevalence, and all-/non-boundary stability diagnostics are retained
+  in review output so map selection remains a reviewer decision.
+
+* SOM + Mclust adds `assignment = "hard"` or `"soft"` (soft-3 default). All
+  models retain hard BMU-node labels, proximity-weighted soft class
+  probabilities, entropy, margin, and boundary diagnostics in training and
+  projection output. Stability retains all-participant ARI as primary and now
+  reports reference-defined non-boundary ARI/Jaccard as secondary sensitivity
+  diagnostics without excluding or relabeling any participant.
+
+* `CreateClusterModel_SOM_MClust()` gains `lpa_bootstrap_n`, defaulting to
+  `0`. tidyLPA's mclust backend previously ran a bootstrap likelihood-ratio
+  test and `MclustBootstrap` (100 resamples each) for every candidate fit,
+  which dominated fitting time (about 10 times slower per fit). BLRT columns
+  are `NA` and left out of the fit plot unless `lpa_bootstrap_n` is set;
+  stability refits never run the bootstraps.
+  `CreateClusterModel_MClust()` (and the PCA + Mclust pipeline) never
+  reported these results, so it now always skips them; its candidate fits are
+  correspondingly faster.
+
+* New `PlotClusterPrevalence()` draws a cluster-by-feature heatmap of the
+  percentage of participants with each binary feature (for example, a marker
+  beyond a clinical cutoff, a diagnosis, or a medication), with the whole
+  cohort alongside for reference.
+
+* New `PlotClusterSplits()` follows participants from k to k + 1 clusters
+  for each model family of an exploratory `CreateClusterModel_SOM_MClust()`
+  model (or any table of assignments) as an alluvial plot, with a transition
+  table reporting whether each added cluster splits an existing one
+  (`ParentPurity`, `SplitCluster`, `SplitRetained`) or reshuffles participants
+  (lower `ParentPurity`).
+
+* `CreateClusterModel_SOM_MClust()` fit tables now summarize participants'
+  posterior probabilities for every candidate (`PosteriorMean`,
+  `PosteriorMedian`, `PropLowPosterior` below `low_prob_threshold`), and
+  `"Posterior"` can be weighted in the composite rank index. Subsample
+  stability adds core metrics computed among participants confidently
+  assigned in the reference fit (`StabilityCoreProportion`,
+  `StabilityARI_Core`, `StabilityJaccard_CoreMean`, `StabilityJaccard_CoreMin`);
+  these legacy descriptive outputs do not replace all-participant ARI as the
+  primary final-partition reproducibility result.
+
+* `CreateClusterModel_SOM_MClust()` uses node-based phenotype definitions.
+  Participant assignment is either the best-matching node's Mclust class
+  (`"hard"`) or a proximity-weighted combination of nearby node posteriors
+  (`"soft"`); it never recalibrates a separate participant-level mixture.
+
+* `CreateClusterModel_SOM_MClust()` gains `stability_candidates =
+  "best_per_k"`, which runs subsample stability on the best candidate at each
+  number of profiles so reproducibility can inform the choice of k. Stability
+  refits now fit only the shortlisted candidates.
+
+* `CreateClusterModel_SOM_MClust()` stability is much faster: each resample
+  now trains one SOM and fits every candidate on its codebook, instead of
+  retraining the SOM for every candidate. The new `stability_top_n` limits
+  stability to the top candidates by the composite index (eligible first), so
+  a large candidate grid can be screened with resampling. Assessed candidates
+  are recorded in `Stability$settings$candidates_assessed`, and every
+  candidate's node assignment is returned in `ModelInfo_MClust$node_assignments`.
+
+* `RevalueData()` no longer fails with "missing value where TRUE/FALSE needed"
+  when the codebook omits the optional `Recode`, `Code`, `Type`, or `Label`
+  columns; absent optional columns are treated as blank, as documented.
+
 # SciDataReportR 21.13.0
 
 # SciDataReportR 21.12.0

@@ -77,16 +77,147 @@
   as.integer(models)
 }
 
-.FitTidyLPAMclust <- function(X, k, model, control = NULL) {
+# tidyLPA's mclust backend runs a bootstrap likelihood-ratio test (for every
+# k up to the one fitted) and MclustBootstrap for each fit, 100 resamples each
+# by default. nboot sets both; 0 skips the resampling, which is most of the
+# cost, and its BLRT results are then not meaningful.
+.FitTidyLPAMclust <- function(X, k, model, control = NULL, nboot = 100L) {
   model <- .ResolveMclustModels(model, "model")
   args <- list(
     df = as.data.frame(X),
     n_profiles = as.integer(k),
     models = model,
-    package = "mclust"
+    package = "mclust",
+    nboot = as.integer(nboot)
   )
   if (!is.null(control)) args$control <- control
   suppressMessages(do.call(tidyLPA::estimate_profiles, args))
+}
+
+.WeightedLogDensity <- function(X, mean, covariance, diagonal = FALSE) {
+  X <- as.matrix(X)
+  p <- ncol(X)
+  if (diagonal) {
+    variance <- pmax(as.numeric(covariance), .Machine$double.eps)
+    centered <- sweep(X, 2, mean, "-")
+    return(-0.5 * (p * log(2 * pi) + sum(log(variance)) +
+      rowSums(sweep(centered^2, 2, variance, "/"))))
+  }
+  covariance <- (covariance + t(covariance)) / 2
+  chol_covariance <- chol(covariance)
+  centered <- sweep(X, 2, mean, "-")
+  solved <- backsolve(chol_covariance, t(centered), transpose = TRUE)
+  -0.5 * (p * log(2 * pi) + 2 * sum(log(diag(chol_covariance))) +
+    colSums(solved^2))
+}
+
+.WeightedSOMPosterior <- function(object, newdata) {
+  X <- as.matrix(newdata)
+  log_density <- vapply(seq_len(object$k), function(cluster) {
+    .WeightedLogDensity(X, object$means[cluster, ], object$covariances[[cluster]],
+      diagonal = object$diagonal) + log(object$proportions[[cluster]])
+  }, numeric(nrow(X)))
+  if (is.null(dim(log_density))) log_density <- matrix(log_density, ncol = 1L)
+  maximum <- apply(log_density, 1, max)
+  posterior <- exp(log_density - maximum)
+  posterior <- posterior / rowSums(posterior)
+  list(classification = max.col(posterior), z = posterior)
+}
+
+.FitWeightedSOMMclust <- function(X, weights, k, model,
+    itmax = 100L, tol = 1e-05) {
+  model <- .ResolveMclustModels(model, "model")
+  if (!model %in% c(1L, 2L, 3L)) {
+    stop("Occupancy-weighted SOM mixtures support Models 1, 2, and 3; Model ",
+      model, " is not supported.")
+  }
+  X <- as.matrix(X)
+  weights <- as.numeric(weights)
+  if (nrow(X) < k || any(!is.finite(X)) || any(!is.finite(weights)) ||
+      any(weights <= 0)) {
+    stop("Weighted SOM mixture requires finite codebook rows and positive node weights.")
+  }
+  p <- ncol(X)
+  total_weight <- sum(weights)
+  initial <- stats::kmeans(X, centers = k, nstart = 1L)$cluster
+  z <- matrix(0, nrow(X), k)
+  z[cbind(seq_len(nrow(X)), initial)] <- 1
+  covariance_floor <- max(1e-08, mean(apply(X, 2, stats::var, na.rm = TRUE)) * 1e-08)
+  log_likelihood <- -Inf
+  converged <- FALSE
+  for (iteration in seq_len(as.integer(itmax))) {
+    effective <- z * weights
+    nk <- colSums(effective)
+    if (any(nk <= 0)) stop("A weighted SOM mixture component became empty.")
+    proportions <- nk / total_weight
+    means <- sweep(crossprod(effective, X), 1, nk, "/")
+    diagonal <- model %in% c(1L, 2L)
+    covariances <- vector("list", k)
+    if (model == 1L) {
+      variance <- rep(0, p)
+      for (cluster in seq_len(k)) {
+        centered <- sweep(X, 2, means[cluster, ], "-")
+        variance <- variance + colSums(effective[, cluster] * centered^2)
+      }
+      variance <- pmax(variance / total_weight, covariance_floor)
+      covariances <- rep(list(variance), k)
+    } else if (model == 2L) {
+      for (cluster in seq_len(k)) {
+        centered <- sweep(X, 2, means[cluster, ], "-")
+        covariances[[cluster]] <- pmax(
+          colSums(effective[, cluster] * centered^2) / nk[[cluster]], covariance_floor)
+      }
+    } else {
+      covariance <- matrix(0, p, p)
+      for (cluster in seq_len(k)) {
+        centered <- sweep(X, 2, means[cluster, ], "-")
+        covariance <- covariance + crossprod(centered * sqrt(effective[, cluster]), centered)
+      }
+      covariance <- covariance / total_weight
+      diag(covariance) <- diag(covariance) + covariance_floor
+      covariances <- rep(list(covariance), k)
+    }
+    object <- list(k = k, means = means, covariances = covariances,
+      proportions = proportions, diagonal = diagonal)
+    posterior <- .WeightedSOMPosterior(object, X)$z
+    mixture_density <- rowSums(vapply(seq_len(k), function(cluster) {
+      exp(.WeightedLogDensity(X, means[cluster, ], covariances[[cluster]], diagonal) +
+        log(proportions[[cluster]]))
+    }, numeric(nrow(X))))
+    updated_log_likelihood <- sum(weights * log(pmax(mixture_density, .Machine$double.xmin)))
+    if (is.finite(log_likelihood) &&
+        abs(updated_log_likelihood - log_likelihood) <= tol * (1 + abs(log_likelihood))) {
+      z <- posterior
+      log_likelihood <- updated_log_likelihood
+      converged <- TRUE
+      break
+    }
+    z <- posterior
+    log_likelihood <- updated_log_likelihood
+  }
+  effective_parameters <- if (model == 1L) {
+    (k - 1L) + k * p + p
+  } else if (model == 2L) {
+    (k - 1L) + k * p + k * p
+  } else {
+    (k - 1L) + k * p + p * (p + 1) / 2
+  }
+  entropy <- 1 - (-sum(weights * z * log(pmax(z, .Machine$double.xmin))) /
+    (total_weight * log(k)))
+  out <- c(object, list(
+    classification = max.col(z), z = z, loglik = log_likelihood,
+    weights = weights, model = model, converged = converged,
+    iterations = iteration,
+    fit_info = dplyr::tibble(
+      AIC = -2 * log_likelihood + 2 * effective_parameters,
+      BIC = -2 * log_likelihood + log(total_weight) * effective_parameters,
+      Entropy = entropy, BLRTStatistic = NA_real_, BLRTPValue = NA_real_,
+      WeightedLogLikelihood = log_likelihood,
+      EffectiveSampleSize = total_weight,
+      WeightedParameterCount = effective_parameters,
+      WeightedConverged = converged, WeightedIterations = iteration)))
+  class(out) <- "WeightedSOMMclust"
+  out
 }
 
 .ProjectClusterNumeric <- function(object, new_df) {
@@ -154,6 +285,114 @@
   recall <- if (true_pairs > 0) shared_pairs / true_pairs else NA_real_
   fm <- if (is.finite(precision) && is.finite(recall)) sqrt(precision * recall) else NA_real_
   c(VI = vi, NMI = nmi, FowlkesMallows = fm)
+}
+
+.ValidateStabilityFractions <- function(stability_fractions) {
+  if (!is.numeric(stability_fractions) || !length(stability_fractions) ||
+      any(!is.finite(stability_fractions)) || any(stability_fractions <= 0) ||
+      any(stability_fractions >= 1) || anyDuplicated(stability_fractions)) {
+    stop("stability_fractions must contain unique finite fractions strictly between 0 and 1.", call. = FALSE)
+  }
+  sort(as.numeric(stability_fractions), decreasing = TRUE)
+}
+
+.ClusterCoMembershipSummary <- function(reference, resampled) {
+  keep <- !is.na(reference) & !is.na(resampled)
+  reference <- reference[keep]
+  resampled <- resampled[keep]
+  if (!length(reference)) {
+    return(list(by_cluster = dplyr::tibble(), between_clusters = dplyr::tibble()))
+  }
+  contingency <- table(reference, resampled)
+  reference_clusters <- as.integer(rownames(contingency))
+  refit_clusters <- as.integer(colnames(contingency))
+  reference_n <- rowSums(contingency)
+  refit_n <- colSums(contingency)
+  n_total <- sum(contingency)
+  by_cluster <- dplyr::bind_rows(lapply(seq_along(reference_clusters), function(i) {
+    counts <- as.numeric(contingency[i, ])
+    within_denominator <- choose(reference_n[[i]], 2)
+    cohesion <- if (within_denominator > 0) {
+      sum(choose(counts, 2)) / within_denominator
+    } else NA_real_
+    cross_denominator <- reference_n[[i]] * (n_total - reference_n[[i]])
+    cross_mixing <- if (cross_denominator > 0) {
+      sum(counts * (refit_n - counts)) / cross_denominator
+    } else NA_real_
+    dplyr::tibble(ReferenceCluster = reference_clusters[[i]],
+      ReferenceParticipants = reference_n[[i]], Cohesion = cohesion,
+      CrossMixing = cross_mixing)
+  }))
+  pairs <- utils::combn(seq_along(reference_clusters), 2L, simplify = FALSE)
+  between_clusters <- dplyr::bind_rows(lapply(pairs, function(pair) {
+    i <- pair[[1]]
+    j <- pair[[2]]
+    probability <- sum(contingency[i, ] * contingency[j, ]) /
+      (reference_n[[i]] * reference_n[[j]])
+    dplyr::tibble(ReferenceCluster1 = reference_clusters[[i]],
+      ReferenceCluster2 = reference_clusters[[j]],
+      CoassignmentProbability = probability)
+  }))
+  list(by_cluster = by_cluster, between_clusters = between_clusters)
+}
+
+.ClusterSplitMergeDiagnostics <- function(reference, resampled) {
+  keep <- !is.na(reference) & !is.na(resampled)
+  reference <- reference[keep]
+  resampled <- resampled[keep]
+  if (!length(reference)) {
+    return(list(reference = dplyr::tibble(), refit = dplyr::tibble()))
+  }
+  contingency <- table(reference, resampled)
+  reference_clusters <- as.integer(rownames(contingency))
+  refit_clusters <- as.integer(colnames(contingency))
+  reference_n <- rowSums(contingency)
+  refit_n <- colSums(contingency)
+  EffectiveGroups <- function(counts) {
+    probabilities <- counts[counts > 0] / sum(counts)
+    exp(-sum(probabilities * log(probabilities)))
+  }
+  reference_table <- dplyr::bind_rows(lapply(seq_along(reference_clusters), function(i) {
+    counts <- as.numeric(contingency[i, ])
+    best <- which.max(counts)
+    union <- reference_n[[i]] + refit_n[[best]] - counts[[best]]
+    dplyr::tibble(ReferenceCluster = reference_clusters[[i]],
+      DominantRefitCluster = refit_clusters[[best]],
+      DominantRefitShare = counts[[best]] / reference_n[[i]],
+      EffectiveRefitClusters = EffectiveGroups(counts),
+      BestJaccard = if (union > 0) counts[[best]] / union else NA_real_)
+  }))
+  refit_table <- dplyr::bind_rows(lapply(seq_along(refit_clusters), function(j) {
+    counts <- as.numeric(contingency[, j])
+    dominant <- which.max(counts)
+    dplyr::tibble(RefitCluster = refit_clusters[[j]],
+      DominantReferenceCluster = reference_clusters[[dominant]],
+      DominantReferenceShare = counts[[dominant]] / refit_n[[j]],
+      EffectiveReferenceClusters = EffectiveGroups(counts))
+  }))
+  list(reference = reference_table, refit = refit_table)
+}
+
+.ClusterProfileRecovery <- function(reference, resampled, profile_data) {
+  keep <- !is.na(reference) & !is.na(resampled) & stats::complete.cases(profile_data)
+  reference <- reference[keep]
+  resampled <- resampled[keep]
+  profile_data <- as.matrix(profile_data[keep, , drop = FALSE])
+  if (!length(reference) || !nrow(profile_data)) return(dplyr::tibble())
+  split_merge <- .ClusterSplitMergeDiagnostics(reference, resampled)$reference
+  dplyr::bind_rows(lapply(seq_len(nrow(split_merge)), function(i) {
+    reference_cluster <- split_merge$ReferenceCluster[[i]]
+    refit_cluster <- split_merge$DominantRefitCluster[[i]]
+    reference_profile <- colMeans(profile_data[reference == reference_cluster, , drop = FALSE])
+    refit_profile <- colMeans(profile_data[resampled == refit_cluster, , drop = FALSE])
+    correlation <- if (length(reference_profile) > 1L &&
+        stats::sd(reference_profile) > 0 && stats::sd(refit_profile) > 0) {
+      stats::cor(reference_profile, refit_profile)
+    } else NA_real_
+    dplyr::tibble(ReferenceCluster = reference_cluster,
+      MatchedRefitCluster = refit_cluster, ProfileCorrelation = correlation,
+      ProfileRMSE = sqrt(mean((reference_profile - refit_profile)^2)))
+  }))
 }
 
 .ClusterMatchedAssignments <- function(reference, resampled, noise_label = NULL) {
@@ -293,6 +532,16 @@
 }
 
 .ClusterParallelMap <- function(indices, fn, cores) {
+  # A multisession worker loads the installed namespace, not the objects
+  # currently supplied by devtools::load_all(). During source-tree testing,
+  # use the deterministic serial path so a worker cannot silently execute an
+  # earlier installed implementation. Installed package runs still use the
+  # requested parallel backend.
+  namespace_path <- tryCatch(getNamespaceInfo(asNamespace("SciDataReportR"), "path"),
+    error = function(e) NA_character_)
+  if (!is.na(namespace_path) && file.exists(file.path(namespace_path, ".git"))) {
+    cores <- 1L
+  }
   if (cores <= 1L || length(indices) <= 1L) {
     results <- lapply(indices, fn)
     attr(results, "backend") <- "serial"
@@ -309,7 +558,9 @@
     old_plan <- future::plan()
     on.exit(future::plan(old_plan), add = TRUE)
     future::plan(future::multisession, workers = cores)
-    future.apply::future_lapply(indices, fn, future.seed = TRUE)
+    # Stability callers derive and set every sampling/model seed inside `fn`.
+    # Do not let future's per-worker stream replace that deterministic policy.
+    future.apply::future_lapply(indices, fn, future.seed = NULL)
   }, error = function(error) {
     used_parallel <<- FALSE
     warning("Parallel stability workers could not be started; using serial refits. ",
@@ -462,6 +713,11 @@
   if (resamples < 1L) return(NULL)
   core_settings <- .ResolveClusterStabilityCores(stability_cores, resamples)
   valid_reference <- which(!is.na(reference))
+  # HDBSCAN can legitimately label every reference participant as noise.  It
+  # still needs a reproducible subsample/refit record, even though no ARI can
+  # be calculated without non-noise reference labels.
+  sampling_pool <- if (length(valid_reference) >= 2L) valid_reference else
+    seq_len(nrow(data))
   set.seed(seed)
   sampling_seeds <- sample.int(.Machine$integer.max, resamples)
   model_seeds <- sample.int(.Machine$integer.max, resamples)
@@ -471,8 +727,9 @@
   }
   replicate_results <- .ClusterParallelMap(seq_len(resamples), function(replicate) {
     set.seed(sampling_seeds[[replicate]])
-    sample_n <- max(2L, floor(length(valid_reference) * subsample_fraction))
-    sampled <- sample(valid_reference, sample_n, replace = FALSE)
+    sample_n <- min(length(sampling_pool), max(2L,
+      floor(length(sampling_pool) * subsample_fraction)))
+    sampled <- sample(sampling_pool, sample_n, replace = FALSE)
     sampled <- .PreserveResampleLevels(data, sampled, preserve_levels)
     df_Subset <- data[sampled, , drop = FALSE]
     result <- tryCatch(
@@ -734,8 +991,10 @@
 .MclustCandidate <- function(X, k, model) {
   model <- .ResolveMclustModels(model, "model")
   model_name <- unname(.MclustModelNames[as.character(model)])
+  # This pipeline reports neither the BLRT nor bootstrap standard errors, so
+  # tidyLPA's per-fit bootstraps (100 resamples each by default) are skipped
   tidy_fit <- tryCatch(
-    suppressWarnings(.FitTidyLPAMclust(X, k, model)),
+    suppressWarnings(.FitTidyLPAMclust(X, k, model, nboot = 0L)),
     error = function(e) e
   )
   if (inherits(tidy_fit, "error")) {

@@ -28,7 +28,8 @@
 #' Missing data:
 #' - SOM and clustering are fit only on rows with complete Z-scores.
 #' - The returned \code{DataWithClusters} has exactly the original rows and
-#'   columns plus one cluster column; rows not used in SOM/LPA get NA.
+#'   columns plus canonical-cluster and hard/soft confidence columns; rows not
+#'   used in SOM/LPA get NA for every assignment diagnostic.
 #' - The returned \code{ProbFit$individual} is also full length, preserving
 #'   one row per input row with NA posterior probabilities for rows excluded
 #'   from SOM/LPA.
@@ -80,10 +81,34 @@
 #' @param ZScoreObject Optional ZScoreObj (from \code{CreateZScoreObject()} or
 #'   \code{ProjectZScore()}) to use when \code{ZScoreType = "ZScoreObj"}.
 #' @param som_xdim,som_ydim Optional integers for SOM grid dimensions. If NULL,
-#'   a square grid with side length \code{ceiling(n_complete^(1/3))} is used.
+#'   a square grid is derived from the planned maximum number of profiles: in
+#'   exploratory fits this is \code{max(k_range)} and in finalized fits it is
+#'   \code{final_k}. The engineering default is approximately 20 SOM nodes per
+#'   planned profile. It retains several local prototypes for each candidate
+#'   phenotype without letting a larger sample automatically create an
+#'   increasingly sparse map. Sample size instead informs node occupancy and
+#'   map-health review. Explicit dimensions always override this policy.
 #' @param som_topo SOM topology for \code{kohonen::somgrid()}, default
 #'   \code{"hexagonal"}.
 #' @param som_neigh SOM neighbourhood function, default \code{"gaussian"}.
+#' @param node_weighting Whether codebook nodes enter the mixture with equal
+#'   map-space weight (\code{"uniform"}, default) or their training
+#'   participant occupancy (\code{"occupancy"}). Occupancy weighting supports
+#'   Models 1--3 only.
+#' @param assignment Participant phenotype definition: `"hard"` maps the
+#'   Mclust class of the best-matching SOM node; `"soft"` sums the Mclust
+#'   node posterior probabilities across nearby codebook nodes and chooses the
+#'   largest participant-level probability. Both outputs are always retained;
+#'   the default `"soft"` controls the canonical `Cluster`.
+#' @param soft_n_nodes Number of nearest codebook nodes used by soft projection.
+#'   Their inverse-squared standardized-feature distances are normalized to
+#'   proximity weights. Default `3`.
+#' @param boundary_margin_threshold Minimum difference between the largest and
+#'   second-largest soft class probabilities before a participant is flagged as
+#'   a boundary participant. Default `0.20`.
+#' @param boundary_entropy_threshold Maximum normalized soft-membership entropy
+#'   before a participant is flagged as a boundary participant. Default
+#'   `0.60`. A flag is set if either boundary criterion is met.
 #' @param seed_som,seed_lpa Integer seeds for SOM and LPA steps
 #'   (defaults 934521 and 93421).
 #' @param Relabel Logical; if TRUE (default), aweSOM plots are relabeled
@@ -106,6 +131,12 @@
 #' @param lpa_drop_zero_sd Logical; if TRUE, remove SOM code dimensions with
 #'   near-zero standard deviation before LPA.
 #' @param lpa_zero_sd_tol Numeric tolerance used when \code{lpa_drop_zero_sd = TRUE}.
+#' @param lpa_bootstrap_n Bootstrap resamples tidyLPA runs for each candidate
+#'   fit: a bootstrap likelihood-ratio test (BLRT) against k - 1 profiles and
+#'   MclustBootstrap. Default \code{0} skips them, which removes most of the
+#'   fitting time; \code{BLRTStatistic} and \code{BLRTPValue} are then
+#'   \code{NA}. Set to, e.g., \code{100} to report the BLRT. Stability refits
+#'   never run them.
 #' @param lpa_timeout_seconds Optional timeout in seconds for individual LPA
 #'   fits. Use NULL to disable timeouts.
 #' @param skip_model_after_n_failures Optional integer; skip a model family
@@ -140,9 +171,26 @@
 #' @param stability_resamples Number of 90% participant subsample refits used
 #'   to assess reproducibility for every successful exploratory candidate.
 #'   Subsamples are drawn without replacement and reuse the reference model's
-#'   resolved SOM grid dimensions. Defaults to \code{0} (disabled);
-#'   use \code{50} for an exploratory stability screen.
+#'   resolved SOM grid dimensions and the reference SOM seed. Each refit maps
+#'   the complete reference cohort before scoring participant assignments.
+#'   Defaults to \code{0} (disabled); use \code{30} for an exploratory
+#'   stability screen.
+#' @param stability_candidates Which candidates receive subsample stability:
+#'   \code{"all"} (default) or \code{"best_per_k"}, the highest-ranked
+#'   candidate (by the composite index without reproducibility, eligible
+#'   first) at each number of profiles, so stability can inform the choice of
+#'   k across the whole range. Candidates without stability keep \code{NA}
+#'   reproducibility and are not recommended.
+#' @param stability_top_n Optional integer. When supplied, stability is
+#'   estimated only for the top \code{stability_top_n} candidates ranked by the
+#'   composite index without reproducibility (eligible candidates first); the
+#'   others keep \code{NA} stability and are not recommended. Use it to screen
+#'   a large candidate grid, e.g. \code{stability_top_n = 5}.
 #' @param stability_seed Integer seed for participant subsampling.
+#' @param stability_fractions Unique participant-retention fractions for an
+#'   opt-in deletion-stability curve. The default, \code{0.90}, preserves the
+#'   ordinary 90% refit screen. Each fraction refits the complete pipeline and
+#'   projects the full reference cohort before all-participant ARI is scored.
 #' @param stability_progress Logical; if TRUE, print subsample progress messages.
 #' @param stability_cores Number of workers for stability refits. `NULL` uses
 #'   all detected physical cores minus one, capped at the requested resamples
@@ -171,12 +219,21 @@
 #' an error, even when an exploratory setting equals its default.
 #'
 #' Stability is assessed by refitting the full SOM/LPA pipeline on independent
-#' 90% participant subsamples drawn without replacement.
-#' `StabilityARI_Mean` is the mean adjusted Rand index across successful
-#' refits and can be negative when agreement is worse than chance.
+#' participant subsamples drawn without replacement, then mapping the
+#' complete reference cohort onto each refit. `StabilityARI_Mean` is the
+#' primary reproducibility score: the mean adjusted Rand index across these
+#' full-cohort participant partitions. It can be negative when agreement is
+#' worse than chance.
+#' `stability_fractions` can request an explicit deletion curve; the existing
+#' 90% fit-table fields remain the primary review metrics, while
+#' `Stability$deletion_curve` records every requested retention level.
+#' Co-membership, split/merge, and profile-recovery diagnostics describe
+#' whether instability is localized despite imperfect exact membership; they
+#' never replace all-participant ARI.
 #' `StabilityJaccard_Mean` is the mean label-matched, per-profile Jaccard
-#' recovery. `ReproducibilityScore` is the mean of their finite values;
-#' `StabilitySuccessRate` is reported separately. `Reproducibility_scaled` is
+#' recovery and is retained as a descriptive diagnostic. `ReproducibilityScore`
+#' equals `StabilityARI_Mean`; `StabilitySuccessRate` is reported separately.
+#' `Reproducibility_scaled` is
 #' the candidate-table min-max rescaling used only by the AHP index and is not
 #' an independently interpretable reproducibility measure.
 #'
@@ -197,6 +254,25 @@
 #' \code{MinProfileParticipantN} and \code{MinProfileParticipantProportion}
 #' give the size of the smallest profile in training participants rather than
 #' SOM nodes.
+#'
+#' Phenotypes are learned by Mclust on the SOM codebook. Hard assignment uses
+#' the best-matching node's Mclust class. Soft assignment uses normalized
+#' inverse-squared codebook-distance weights across the nearest nodes to
+#' combine their Mclust posterior probabilities. `SoftEntropy` is the
+#' normalized entropy of that participant-level probability vector
+#' (entropy divided by \code{log(k)}) and `SoftMargin` is the largest minus
+#' second-largest probability. `prob_*` columns describe a SOM node's Mclust
+#' posterior, whereas `SoftProb_*` columns describe a participant's
+#' proximity-weighted membership. Boundary flags are confidence diagnostics
+#' only: they do not remove, relabel, or suppress a participant during
+#' training, stability scoring, or projection.
+#'
+#' Each new fit uses one deterministic, seeded full-cohort batch SOM. Its
+#' initialization codebook, preprocessing, grid, topology, neighbourhood,
+#' epochs, codebooks, and node-level mixture are retained so projection is
+#' completely frozen. Earlier fitted objects remain projectable because
+#' projection uses their frozen map and mixture rather than refitting either
+#' component.
 #'
 #' \code{SOM_Distance} is the Euclidean distance, in Z-score units, from a
 #' participant to their best-matching unit. Its square is the sum of the
@@ -259,8 +335,9 @@
 #'   \itemize{
 #'     \item \code{method}, \code{vars_used}, \code{ZScoreType},
 #'           \code{ZScoreObject}, \code{ZScoreVars}, \code{ClusterVariableName}
-#'     \item \code{DataWithClusters}: original \code{df} with only the
-#'           cluster column appended
+#'     \item \code{DataWithClusters}: original \code{df} with canonical
+#'           cluster, hard/soft assignment, soft membership, and boundary
+#'           diagnostic columns appended
 #'     \item \code{fit_plot}: ggplot of AIC/BIC/Entropy/BLRT p-value vs k and model
 #'           (plus reproducibility when subsample stability is enabled)
 #'     \item \code{ModelInfo_SOM}: list with \code{som_model},
@@ -295,6 +372,9 @@
 #'
 #' @param df \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
 #' @param id_col \strong{Deprecated} (since 19.15.0). Use \code{id_var} instead.
+#' @param .CandidatePairs Internal. A data frame of \code{Model} and
+#'   \code{Classes} pairs restricting the exploratory grid; used by stability
+#'   refits so each resample fits only the shortlisted candidates.
 #' @param .NodeClusterFn Internal. A function taking the SOM codebook matrix and
 #'   returning a list with a \code{node_cluster} integer vector (one label per
 #'   SOM node) and, optionally, \code{fit_table}, \code{ahp_best_row},
@@ -375,6 +455,11 @@ CreateClusterModel_SOM_MClust <- function(data,
     som_ydim = NULL,
     som_topo = "hexagonal",
     som_neigh = "gaussian",
+    node_weighting = c("uniform", "occupancy"),
+    assignment = c("soft", "hard"),
+    soft_n_nodes = 3L,
+    boundary_margin_threshold = 0.20,
+    boundary_entropy_threshold = 0.60,
     seed_som = 934521L,
     seed_lpa = 93421L,
     Relabel = TRUE,
@@ -384,6 +469,7 @@ CreateClusterModel_SOM_MClust <- function(data,
     lpa_progress = FALSE,
     lpa_em_itmax = 100L,
     lpa_em_tol = 1e-05,
+    lpa_bootstrap_n = 0L,
     lpa_timeout_seconds = 120,
     lpa_drop_zero_sd = TRUE,
     lpa_zero_sd_tol = 1e-08,
@@ -396,12 +482,16 @@ CreateClusterModel_SOM_MClust <- function(data,
     high_dist_quantile = 0.95,
     low_prob_threshold = 0.7,
     stability_resamples = 0L,
+    stability_candidates = c("all", "best_per_k"),
+    stability_top_n = NULL,
     stability_seed = 934522L,
+    stability_fractions = 0.90,
     stability_progress = FALSE,
     stability_cores = NULL,
     df = lifecycle::deprecated(),
     id_col = lifecycle::deprecated(),
-    .NodeClusterFn = NULL) {
+    .NodeClusterFn = NULL,
+    .CandidatePairs = NULL) {
   supplied <- list(k_range = !missing(k_range), models = !missing(models),
     final_k = !missing(final_k), final_model = !missing(final_model))
   # Deprecated argument shims (SciDataReportR 19.15.0)
@@ -425,7 +515,11 @@ CreateClusterModel_SOM_MClust <- function(data,
     final_model <- .ResolveMclustModels(final_model, "final_model")
   }
   ZScoreType <- match.arg(ZScoreType)
-
+  node_weighting <- match.arg(node_weighting)
+  assignment <- match.arg(assignment)
+  if (!is.numeric(soft_n_nodes) || length(soft_n_nodes) != 1L || is.na(soft_n_nodes) || soft_n_nodes < 1L || soft_n_nodes != as.integer(soft_n_nodes)) stop("soft_n_nodes must be a positive integer.")
+  if (!is.numeric(boundary_margin_threshold) || length(boundary_margin_threshold) != 1L || is.na(boundary_margin_threshold) || boundary_margin_threshold < 0 || boundary_margin_threshold > 1) stop("boundary_margin_threshold must be between 0 and 1.")
+  if (!is.numeric(boundary_entropy_threshold) || length(boundary_entropy_threshold) != 1L || is.na(boundary_entropy_threshold) || boundary_entropy_threshold < 0 || boundary_entropy_threshold > 1) stop("boundary_entropy_threshold must be between 0 and 1.")
   if (!requireNamespace("SciDataReportR", quietly = TRUE)) {
     stop("SciDataReportR must be installed.")
   }
@@ -464,11 +558,23 @@ CreateClusterModel_SOM_MClust <- function(data,
   if (!is.numeric(stability_seed) || length(stability_seed) != 1 || is.na(stability_seed)) {
     stop("stability_seed must be a single numeric value.")
   }
+  stability_fractions <- .ValidateStabilityFractions(stability_fractions)
+  primary_stability_fraction <- if (0.90 %in% stability_fractions) 0.90 else stability_fractions[[1]]
   if (!is.logical(stability_progress) || length(stability_progress) != 1) {
     stop("stability_progress must be TRUE or FALSE.")
   }
+  if (!is.null(stability_top_n) &&
+      (!is.numeric(stability_top_n) || length(stability_top_n) != 1 ||
+       is.na(stability_top_n) || stability_top_n < 1)) {
+    stop("stability_top_n must be NULL or a single positive integer.")
+  }
+  stability_candidates <- match.arg(stability_candidates)
   stability_core_settings <- .ResolveClusterStabilityCores(
     stability_cores, stability_resamples)
+  if (!is.numeric(lpa_bootstrap_n) || length(lpa_bootstrap_n) != 1 ||
+      is.na(lpa_bootstrap_n) || lpa_bootstrap_n < 0) {
+    stop("lpa_bootstrap_n must be a single non-negative integer.")
+  }
   if (!is.logical(lpa_drop_zero_sd) || length(lpa_drop_zero_sd) != 1) {
     stop("lpa_drop_zero_sd must be TRUE or FALSE.")
   }
@@ -517,6 +623,9 @@ CreateClusterModel_SOM_MClust <- function(data,
       is.na(lpa_min_node_n) || lpa_min_node_n < 0) {
     stop("lpa_min_node_n must be a single non-negative number.")
   }
+  if (node_weighting == "occupancy" && lpa_min_node_n < 1L) {
+    lpa_min_node_n <- 1L
+  }
   if (!is.null(min_cluster_prop) &&
       (!is.numeric(min_cluster_prop) || length(min_cluster_prop) != 1 ||
        is.na(min_cluster_prop) || min_cluster_prop < 0 || min_cluster_prop >= 1)) {
@@ -535,13 +644,20 @@ CreateClusterModel_SOM_MClust <- function(data,
     stable_model <- Recall(
       data = data, variables = variables, method = "exploratory",
       k_range = final_k, models = final_model,
-      ClusterVariableName = ClusterVariableName, ZScoreType = ZScoreType,
+      ClusterVariableName = ClusterVariableName,
+      ZScoreType = ZScoreType,
       ZScoreObject = ZScoreObject, ZScorePrefix = ZScorePrefix,
       ZScoreVars = ZScoreVars, id_var = id_var,
       som_xdim = som_xdim, som_ydim = som_ydim, som_topo = som_topo,
-      som_neigh = som_neigh, seed_som = seed_som, seed_lpa = seed_lpa,
+      som_neigh = som_neigh,
+      node_weighting = node_weighting, assignment = assignment,
+      soft_n_nodes = soft_n_nodes,
+      boundary_margin_threshold = boundary_margin_threshold,
+      boundary_entropy_threshold = boundary_entropy_threshold,
+      seed_som = seed_som, seed_lpa = seed_lpa,
       Relabel = Relabel, lpa_progress = lpa_progress,
       lpa_em_itmax = lpa_em_itmax, lpa_em_tol = lpa_em_tol,
+      lpa_bootstrap_n = lpa_bootstrap_n,
       lpa_timeout_seconds = lpa_timeout_seconds,
       lpa_drop_zero_sd = lpa_drop_zero_sd,
       lpa_zero_sd_tol = lpa_zero_sd_tol,
@@ -554,7 +670,10 @@ CreateClusterModel_SOM_MClust <- function(data,
       high_dist_quantile = high_dist_quantile,
       low_prob_threshold = low_prob_threshold,
       stability_resamples = stability_resamples,
+      stability_candidates = stability_candidates,
+      stability_top_n = stability_top_n,
       stability_seed = stability_seed,
+      stability_fractions = stability_fractions,
       stability_progress = stability_progress,
       stability_cores = stability_cores)
     # The exploratory path scores its one candidate with AHP and records no
@@ -765,11 +884,15 @@ CreateClusterModel_SOM_MClust <- function(data,
   n_complete <- nrow(zmat)
   som_grid_initial_xdim <- som_xdim
   som_grid_initial_ydim <- som_ydim
+  grid_design_k <- if (method == "finalize") as.integer(final_k) else max(as.integer(k_range))
+  grid_nodes_per_profile <- 20L
+  grid_design_policy <- "explicit_dimensions"
 
   if (is.null(som_xdim) || is.null(som_ydim)) {
-    side <- ceiling(n_complete^(1 / 3))
+    side <- ceiling(sqrt(grid_nodes_per_profile * grid_design_k))
     som_xdim <- side
     som_ydim <- side
+    grid_design_policy <- "k_informed_20_nodes_per_maximum_planned_profile"
   }
 
   som_grid <- kohonen::somgrid(
@@ -779,12 +902,14 @@ CreateClusterModel_SOM_MClust <- function(data,
     neighbourhood.fct = som_neigh
   )
 
+  # Standard deterministic batch SOM: the seeded initial codebook and resolved
+  # grid are retained as part of the projectable phenotype instrument.
   set.seed(seed_som)
-  som_model <- kohonen::som(
-    X         = zmat,
-    grid      = som_grid,
-    keep.data = TRUE
-  )
+  init_codes <- zmat[sample.int(nrow(zmat), nrow(som_grid$pts), replace = nrow(zmat) < nrow(som_grid$pts)), , drop = FALSE]
+  som_training_epochs <- 100L
+  som_model <- kohonen::supersom(list(zmat), grid = som_grid, init = list(init_codes),
+    mode = "batch", rlen = som_training_epochs,
+    keep.data = TRUE, cores = 1L)
 
   codes_raw <- som_model$codes
   if (is.list(codes_raw)) {
@@ -901,6 +1026,7 @@ CreateClusterModel_SOM_MClust <- function(data,
         lpa_min_node_n, " participants; lower lpa_min_node_n.")
     }
     X <- X[lpa_nodes, , drop = FALSE]
+    lpa_node_weights <- som_node_occupancy$n[lpa_nodes]
 
     dropped_lpa_vars <- character(0)
     if (lpa_drop_zero_sd) {
@@ -941,10 +1067,16 @@ CreateClusterModel_SOM_MClust <- function(data,
       start_time   <- Sys.time()
 
       fit_expr <- function() {
+        if (node_weighting == "occupancy") {
+          return(.FitWeightedSOMMclust(
+            X, weights = lpa_node_weights, k = k, model = model,
+            itmax = if (is.null(lpa_em_itmax)) 100L else lpa_em_itmax,
+            tol = if (is.null(lpa_em_tol)) 1e-05 else lpa_em_tol))
+        }
         if (is.null(lpa_control)) {
-          .FitTidyLPAMclust(X, k, model)
+          .FitTidyLPAMclust(X, k, model, nboot = lpa_bootstrap_n)
         } else {
-          .FitTidyLPAMclust(X, k, model, control = lpa_control)
+          .FitTidyLPAMclust(X, k, model, control = lpa_control, nboot = lpa_bootstrap_n)
         }
       }
 
@@ -982,20 +1114,26 @@ CreateClusterModel_SOM_MClust <- function(data,
       fit_info <- NULL
       fit_error_msg <- NA_character_
       if (!is.null(fit)) {
-        fit_info <- tryCatch(
-          tidyLPA::get_fit(fit),
-          error = function(e) {
-            fit_error_msg <<- conditionMessage(e)
-            NULL
-          }
-        )
+        fit_info <- if (inherits(fit, "WeightedSOMMclust")) {
+          fit$fit_info
+        } else {
+          tryCatch(
+            tidyLPA::get_fit(fit),
+            error = function(e) {
+              fit_error_msg <<- conditionMessage(e)
+              NULL
+            }
+          )
+        }
       }
 
       # When mclust cannot estimate a solution, tidyLPA still returns fit
       # indices but attaches no class assignments. Such a fit cannot assign
       # SOM nodes, so it is recorded as failed rather than as a candidate.
       if (!is.null(fit_info)) {
-        has_assignments <- tryCatch({
+        has_assignments <- if (inherits(fit, "WeightedSOMMclust")) {
+          length(fit$classification) == nrow(X)
+        } else tryCatch({
           profile <- if (inherits(fit, "tidyLPA")) fit[[1]] else fit
           "Class" %in% names(tidyLPA::get_data(profile))
         }, error = function(e) FALSE)
@@ -1031,6 +1169,10 @@ CreateClusterModel_SOM_MClust <- function(data,
         fit_info <- as.data.frame(fit_info)
         fit_info$Model <- as.integer(model)
         fit_info$Classes <- as.integer(k)
+        # Without bootstrap resamples the BLRT is not estimated
+        if (lpa_bootstrap_n < 1) {
+          fit_info[intersect(c("BLRT_val", "BLRT_p"), names(fit_info))] <- NA_real_
+        }
       }
 
       list(
@@ -1058,6 +1200,20 @@ CreateClusterModel_SOM_MClust <- function(data,
     # tidyLPA's assignments; nodes left out by lpa_min_node_n are classified
     # by the fitted mclust model.
     get_node_posteriors <- function(lpa_fit) {
+      if (inherits(lpa_fit, "WeightedSOMMclust")) {
+        cluster <- rep(NA_integer_, nrow(som_codes))
+        prob <- matrix(NA_real_, nrow(som_codes), lpa_fit$k)
+        cluster[lpa_nodes] <- lpa_fit$classification
+        prob[lpa_nodes, ] <- lpa_fit$z
+        other_nodes <- setdiff(seq_len(nrow(som_codes)), lpa_nodes)
+        if (length(other_nodes)) {
+          predicted <- .WeightedSOMPosterior(lpa_fit,
+            som_codes[other_nodes, colnames(X), drop = FALSE])
+          cluster[other_nodes] <- predicted$classification
+          prob[other_nodes, ] <- predicted$z
+        }
+        return(list(cluster = cluster, prob = prob))
+      }
       profile <- if (inherits(lpa_fit, "tidyLPA")) {
         if (length(lpa_fit) != 1) {
           stop("An LPA candidate must contain exactly one profile.")
@@ -1089,6 +1245,19 @@ CreateClusterModel_SOM_MClust <- function(data,
     }
     get_profile_assignments <- function(lpa_fit) {
       get_node_posteriors(lpa_fit)$cluster
+    }
+    candidate_max_prob <- function(fit_name) {
+      node_max <- apply(get_node_posteriors(lpa_models_all[[fit_name]])$prob, 1, max)
+      out <- rep(NA_real_, nrow(df_scidr))
+      out[complete_rows] <- node_max[som_model$unit.classif]
+      out
+    }
+    PosteriorSummary <- function(max_prob) {
+      max_prob <- max_prob[complete_rows]
+      dplyr::tibble(
+        PosteriorMean = mean(max_prob, na.rm = TRUE),
+        PosteriorMedian = stats::median(max_prob, na.rm = TRUE),
+        PropLowPosterior = mean(max_prob < low_prob_threshold, na.rm = TRUE))
     }
     # Participants per profile, from training node occupancy.
     profile_participant_sizes <- function(node_cluster, k) {
@@ -1137,6 +1306,10 @@ CreateClusterModel_SOM_MClust <- function(data,
         Classes = k_range,
         KEEP.OUT.ATTRS = FALSE
       )
+      # Stability refits fit only the shortlisted model/k pairs
+      if (!is.null(.CandidatePairs)) {
+        model_grid <- dplyr::semi_join(model_grid, .CandidatePairs, by = c("Model", "Classes"))
+      }
 
       total_fits <- nrow(model_grid)
       model_problem_counts <- stats::setNames(rep(0L, length(unique(models))), unique(models))
@@ -1231,6 +1404,8 @@ CreateClusterModel_SOM_MClust <- function(data,
           Classes = as.integer(Classes)
         )
 
+      lpa_models_all <- lpa_models
+
       profile_sizes <- dplyr::bind_rows(lapply(names(lpa_models), function(fit_name) {
         assignment <- get_profile_assignments(lpa_models[[fit_name]])
         n_classes <- as.integer(sub("^.*_class_([0-9]+)$", "\\1", fit_name))
@@ -1244,7 +1419,8 @@ CreateClusterModel_SOM_MClust <- function(data,
           MaxProfileNodeProportion = max(counts) / length(assignment),
           MinProfileParticipantN = participants$min_n,
           MinProfileParticipantProportion = participants$min_prop
-        )
+        ) %>%
+          dplyr::bind_cols(PosteriorSummary(candidate_max_prob(fit_name)))
       }))
       fit_table <- fit_table %>%
         dplyr::rename_with(~ c(n_min = "MinProfileNodeProportion",
@@ -1268,89 +1444,209 @@ CreateClusterModel_SOM_MClust <- function(data,
         stability_backend <- "serial"
         resolved_stability_cores <- 1L
 
-        for (fit_name in names(lpa_models)) {
-          candidate_index <- candidate_index + 1L
-          candidate_fit <- lpa_models[[fit_name]]
-          candidate_info <- fit_table %>%
-            dplyr::filter(
-              Model == as.integer(sub("^model_([0-9]+)_class_.*$", "\\1", fit_name)),
-              Classes == as.integer(sub("^.*_class_([0-9]+)$", "\\1", fit_name))
-            )
-          candidate_model <- candidate_info$Model[[1]]
-          candidate_k <- candidate_info$Classes[[1]]
-          reference_assignment <- get_profile_assignments(candidate_fit)[som_model$unit.classif]
-
-          if (stability_progress) {
-            message("Running stability candidate ", candidate_index, "/",
-              length(lpa_models), " (model ", candidate_model, ", k = ",
-              candidate_k, ") with ", stability_core_settings$resolved,
-              " worker", if (stability_core_settings$resolved == 1L) "" else "s", ".")
+        # Shortlist: stability is estimated only for the top candidates by the
+        # composite index without reproducibility, among eligible candidates.
+        candidate_names <- names(lpa_models)
+        if (stability_candidates == "best_per_k" ||
+            (!is.null(stability_top_n) && stability_top_n < length(candidate_names))) {
+          fit_weights <- composite_weights$weights
+          fit_weights <- if (is.null(fit_weights)) {
+            c(AIC = 1, BIC = 1, Entropy = 1)
+          } else {
+            fit_weights[intersect(names(fit_weights), c("AIC", "BIC", "Entropy"))]
           }
-          candidate_results <- .ClusterParallelMap(seq_len(stability_resamples),
-              function(replicate) {
-            sampling_seed <- as.integer(
-              stability_seed + candidate_index * 100000L + replicate)
-            model_seed <- as.integer(
-              stability_seed + candidate_index * 200000L + replicate)
-            set.seed(sampling_seed)
-            subsample_rows <- sample(reference_rows,
-              max(2L, floor(length(reference_rows) * 0.90)), replace = FALSE)
-            df_subsample <- df_scidr[subsample_rows, , drop = FALSE]
+          preliminary <- as.numeric(cbind(
+            AIC = scale_for_ahp(fit_table$AIC, higher_is_better = FALSE),
+            BIC = scale_for_ahp(fit_table$BIC, higher_is_better = FALSE),
+            Entropy = scale_for_ahp(fit_table$Entropy))[, names(fit_weights), drop = FALSE] %*%
+            (fit_weights / sum(fit_weights)))
+          eligible <- if (is.null(min_cluster_prop)) rep(TRUE, nrow(fit_table)) else
+            fit_table$MinProfileParticipantProportion >= min_cluster_prop
+          ranked <- order(!eligible, -preliminary)
+          # best_per_k keeps the highest-ranked candidate at each k, so
+          # stability is compared across k rather than within the top fits
+          if (stability_candidates == "best_per_k") {
+            ranked <- ranked[!duplicated(fit_table$Classes[ranked])]
+          }
+          if (!is.null(stability_top_n)) {
+            ranked <- ranked[seq_len(min(stability_top_n, length(ranked)))]
+          }
+          shortlist <- paste0("model_", fit_table$Model, "_class_", fit_table$Classes)[ranked]
+          candidate_names <- intersect(candidate_names, shortlist)
+        }
+        candidate_info <- dplyr::tibble(
+          fit_name = candidate_names,
+          Model = as.integer(sub("^model_([0-9]+)_class_.*$", "\\1", candidate_names)),
+          Classes = as.integer(sub("^.*_class_([0-9]+)$", "\\1", candidate_names)))
+        # Core participants are retained as a descriptive diagnostic only.
+        reference_core <- lapply(stats::setNames(candidate_names, candidate_names),
+          function(fit_name) candidate_max_prob(fit_name)[reference_rows] >= low_prob_threshold)
+        reference_node_posteriors <- lapply(stats::setNames(candidate_names, candidate_names),
+          function(fit_name) get_node_posteriors(lpa_models[[fit_name]]))
+        reference_soft <- lapply(candidate_names, function(fit_name) {
+          .SOMSoftProjection(zmat, som_codes,
+            .SOMNodePosteriorTable(reference_node_posteriors[[fit_name]]),
+            n_nodes = soft_n_nodes,
+            margin_threshold = boundary_margin_threshold,
+            entropy_threshold = boundary_entropy_threshold)
+        })
+        names(reference_soft) <- candidate_names
+        reference_boundary <- lapply(reference_soft, `[[`, "boundary")
+        reference_assignments <- lapply(candidate_names, function(fit_name) {
+          hard_assignment <- reference_node_posteriors[[fit_name]]$cluster[som_model$unit.classif]
+          if (assignment == "soft") reference_soft[[fit_name]]$cluster else hard_assignment
+        })
+        names(reference_assignments) <- candidate_names
 
-            subsample_result <- tryCatch(
-              CreateClusterModel_SOM_MClust(
-                data = df_subsample,
-                variables = vars_used,
-                method = "finalize",
-                final_k = candidate_k,
-                final_model = candidate_model,
-                ClusterVariableName = ".scidr_stability_cluster",
-                ZScoreType = ZScoreType,
-                ZScoreObject = ZScoreObject,
-                som_xdim = som_xdim,
-                som_ydim = som_ydim,
-                som_topo = som_topo,
-                som_neigh = som_neigh,
-                seed_som = model_seed,
-                seed_lpa = model_seed + 1L,
-                Relabel = FALSE,
-                ZScorePrefix = ZScorePrefix,
-                ZScoreVars = ZScoreVars_used,
-                lpa_progress = FALSE,
-                lpa_em_itmax = lpa_em_itmax,
-                lpa_em_tol = lpa_em_tol,
-                lpa_timeout_seconds = lpa_timeout_seconds,
-                lpa_drop_zero_sd = lpa_drop_zero_sd,
-                lpa_zero_sd_tol = lpa_zero_sd_tol,
-                skip_model_after_n_failures = skip_model_after_n_failures,
-                slow_fit_seconds = slow_fit_seconds,
-                min_nodes_per_cluster = min_nodes_per_cluster,
-                lpa_min_node_n = lpa_min_node_n,
-                high_dist_quantile = high_dist_quantile,
-                low_prob_threshold = low_prob_threshold,
-                stability_resamples = 0L
-              ),
-              error = function(e) e
-            )
+        # Each resample trains one SOM and fits every shortlisted candidate on
+        # its codebook: the map does not depend on the model family or k, so
+        # it is not retrained per candidate.
+        stability_tasks <- expand.grid(
+          Fraction = stability_fractions,
+          Replicate = seq_len(stability_resamples),
+          KEEP.OUT.ATTRS = FALSE,
+          stringsAsFactors = FALSE)
+        if (stability_progress) {
+          message("Running ", nrow(stability_tasks), " stability refits for ",
+            length(candidate_names), " candidate", if (length(candidate_names) == 1L) "" else "s",
+            " with ", stability_core_settings$resolved, " worker",
+            if (stability_core_settings$resolved == 1L) "" else "s", ".")
+        }
+        # Capture the in-memory constructor. This matters during development:
+        # multisession workers otherwise resolve an older installed namespace
+        # instead of the version loaded by devtools::load_all().
+        refit_constructor <- CreateClusterModel_SOM_MClust
+        resample_results <- .ClusterParallelMap(seq_len(nrow(stability_tasks)), function(task_index) {
+          retained_fraction <- stability_tasks$Fraction[[task_index]]
+          replicate <- stability_tasks$Replicate[[task_index]]
+          sampling_seed <- if (identical(retained_fraction, 0.90)) {
+            as.integer(stability_seed + 100000L + replicate)
+          } else {
+            as.integer(stability_seed + 200000L + round(retained_fraction * 10000) * 100L + replicate)
+          }
+          model_seed <- as.integer(seed_som)
+          set.seed(sampling_seed)
+          subsample_rows <- sort(sample(reference_rows,
+            max(2L, floor(length(reference_rows) * retained_fraction)), replace = FALSE))
+          df_subsample <- df_scidr[subsample_rows, , drop = FALSE]
 
-            if (inherits(subsample_result, "error")) {
+          subsample_result <- tryCatch(
+            suppressWarnings(refit_constructor(
+              data = df_subsample,
+              variables = vars_used,
+              method = "exploratory",
+              k_range = sort(unique(candidate_info$Classes)),
+              models = sort(unique(candidate_info$Model)),
+              ClusterVariableName = ".scidr_stability_cluster",
+              ZScoreType = ZScoreType,
+              ZScoreObject = ZScoreObject,
+              som_xdim = som_xdim,
+              som_ydim = som_ydim,
+              som_topo = som_topo,
+              som_neigh = som_neigh,
+              node_weighting = node_weighting,
+              assignment = assignment,
+              soft_n_nodes = soft_n_nodes,
+              boundary_margin_threshold = boundary_margin_threshold,
+              boundary_entropy_threshold = boundary_entropy_threshold,
+              seed_som = model_seed,
+              seed_lpa = seed_lpa,
+              Relabel = FALSE,
+              ZScorePrefix = ZScorePrefix,
+              ZScoreVars = ZScoreVars_used,
+              lpa_progress = FALSE,
+              lpa_em_itmax = lpa_em_itmax,
+              lpa_em_tol = lpa_em_tol,
+              lpa_bootstrap_n = 0L,
+              lpa_timeout_seconds = lpa_timeout_seconds,
+              lpa_drop_zero_sd = lpa_drop_zero_sd,
+              lpa_zero_sd_tol = lpa_zero_sd_tol,
+              skip_model_after_n_failures = NULL,
+              slow_fit_seconds = slow_fit_seconds,
+              min_nodes_per_cluster = NULL,
+              lpa_min_node_n = lpa_min_node_n,
+              high_dist_quantile = high_dist_quantile,
+              low_prob_threshold = low_prob_threshold,
+              stability_resamples = 0L,
+              .CandidatePairs = candidate_info[c("Model", "Classes")]
+            )),
+            error = function(e) e
+          )
+
+          lapply(seq_len(nrow(candidate_info)), function(i) {
+            fit_name <- candidate_info$fit_name[[i]]
+            candidate_model <- candidate_info$Model[[i]]
+            candidate_k <- candidate_info$Classes[[i]]
+            reference_assignment <- reference_assignments[[fit_name]]
+            candidate_posterior <- if (inherits(subsample_result, "error")) NULL else
+              subsample_result$ModelInfo_MClust$candidate_node_posteriors[[fit_name]]
+            if (is.null(candidate_posterior)) {
+              error_msg <- if (inherits(subsample_result, "error")) {
+                conditionMessage(subsample_result)
+              } else {
+                "The candidate could not be estimated on this subsample."
+              }
               return(list(
                 replicate = dplyr::tibble(
                   Model = candidate_model, Classes = candidate_k,
                   Replicate = replicate, SamplingSeed = sampling_seed,
+                  RetainedFraction = retained_fraction, RetainedParticipants = length(subsample_rows),
                   ModelSeed = model_seed, Status = "failed", ARI = NA_real_,
-                  Error = conditionMessage(subsample_result)),
+                  Error = error_msg),
                 recovery = NULL, assignment = NULL))
             }
 
+            refit_individual <- tryCatch({
+              df_projection <- .AddClusterRowID(df_scidr, "data")
+              z_vars <- subsample_result$ZScoreVars
+              if (subsample_result$ZScoreType == "PreZScored") {
+                z_projection <- df_projection[, z_vars, drop = FALSE]
+              } else {
+                z_projection <- SciDataReportR::ProjectZScore(
+                  data = df_projection, variables = subsample_result$vars_used,
+                  parameters = subsample_result$ZScoreObject,
+                  ParameterInputType = "ZScoreObj", names_prefix = "Z_")$ZScores[, z_vars, drop = FALSE]
+              }
+              projected_complete <- stats::complete.cases(z_projection)
+              projected_cluster <- rep(NA_integer_, nrow(df_projection))
+              if (any(projected_complete)) {
+                mapped_nodes <- kohonen::map(subsample_result$ModelInfo_SOM$som_model,
+                  newdata = as.matrix(z_projection[projected_complete, , drop = FALSE]))$unit.classif
+                hard_assignment <- candidate_posterior$cluster[mapped_nodes]
+                if (assignment == "soft") {
+                  soft_assignment <- .SOMSoftProjection(
+                    as.matrix(z_projection[projected_complete, , drop = FALSE]),
+                    subsample_result$ModelInfo_SOM$som_codes,
+                    .SOMNodePosteriorTable(candidate_posterior),
+                    n_nodes = soft_n_nodes,
+                    margin_threshold = boundary_margin_threshold,
+                    entropy_threshold = boundary_entropy_threshold)
+                  projected_cluster[projected_complete] <- soft_assignment$cluster
+                } else {
+                  projected_cluster[projected_complete] <- hard_assignment
+                }
+              }
+              dplyr::tibble(.row_id = df_projection$.row_id, Cluster = projected_cluster)
+            }, error = function(e) e)
+            if (inherits(refit_individual, "error")) {
+              return(list(
+                replicate = dplyr::tibble(
+                  Model = candidate_model, Classes = candidate_k,
+                  Replicate = replicate, SamplingSeed = sampling_seed,
+                  RetainedFraction = retained_fraction, RetainedParticipants = length(subsample_rows),
+                  ModelSeed = model_seed, Status = "failed", ARI = NA_real_,
+                  Error = conditionMessage(refit_individual)),
+                recovery = NULL, assignment = NULL))
+            }
             comparison <- dplyr::tibble(
               .row_id = df_scidr$.row_id[reference_rows],
-              ReferenceCluster = reference_assignment) %>%
+              ReferenceCluster = reference_assignment,
+              Core = reference_core[[fit_name]],
+              NonBoundary = !reference_boundary[[fit_name]]) %>%
               dplyr::inner_join(
-                dplyr::transmute(
-                  subsample_result$ProbFit$individual,
-                  .row_id = .data$.row_id,
-                  RefitCluster = .data$Cluster),
+                dplyr::tibble(
+                  .row_id = refit_individual$.row_id,
+                  RefitCluster = refit_individual$Cluster),
                 by = ".row_id", relationship = "one-to-one")
             valid <- !is.na(comparison$ReferenceCluster) &
               !is.na(comparison$RefitCluster)
@@ -1367,8 +1663,47 @@ CreateClusterModel_SOM_MClust <- function(data,
               dplyr::mutate(
                 Model = candidate_model,
                 Classes = candidate_k,
-                Replicate = replicate
+                Replicate = replicate,
+                RetainedFraction = retained_fraction
               )
+            core <- valid & comparison$Core %in% TRUE
+            ari_core <- if (sum(core) > 1) {
+              mclust::adjustedRandIndex(
+                comparison$ReferenceCluster[core], comparison$RefitCluster[core])
+            } else {
+              NA_real_
+            }
+            jaccard_core <- cluster_jaccard(
+              comparison$ReferenceCluster[core], comparison$RefitCluster[core]) %>%
+              dplyr::mutate(Model = candidate_model, Classes = candidate_k,
+                Replicate = replicate, RetainedFraction = retained_fraction)
+            non_boundary <- valid & comparison$NonBoundary %in% TRUE
+            ari_non_boundary <- if (sum(non_boundary) > 1) {
+              mclust::adjustedRandIndex(
+                comparison$ReferenceCluster[non_boundary], comparison$RefitCluster[non_boundary])
+            } else {
+              NA_real_
+            }
+            jaccard_non_boundary <- cluster_jaccard(
+              comparison$ReferenceCluster[non_boundary], comparison$RefitCluster[non_boundary]) %>%
+              dplyr::mutate(Model = candidate_model, Classes = candidate_k,
+                Replicate = replicate, RetainedFraction = retained_fraction)
+
+            co_membership <- .ClusterCoMembershipSummary(
+              comparison$ReferenceCluster[valid], comparison$RefitCluster[valid])
+            split_merge <- .ClusterSplitMergeDiagnostics(
+              comparison$ReferenceCluster[valid], comparison$RefitCluster[valid])
+            profile_recovery <- .ClusterProfileRecovery(
+              comparison$ReferenceCluster[valid], comparison$RefitCluster[valid],
+              # `zmat` is aligned to the complete reference cohort.  The
+              # original data-row positions in `reference_rows` can include
+              # omitted records, so they must not index this matrix.
+              zmat[valid, , drop = FALSE])
+            DecorateStabilityDiagnostic <- function(x) {
+              if (!nrow(x)) return(x)
+              dplyr::mutate(x, Model = candidate_model, Classes = candidate_k,
+                Replicate = replicate, RetainedFraction = retained_fraction)
+            }
 
             assignment_full <- rep(NA_integer_, length(reference_assignment))
             assignment_full[match(
@@ -1378,31 +1713,73 @@ CreateClusterModel_SOM_MClust <- function(data,
               replicate = dplyr::tibble(
                 Model = candidate_model, Classes = candidate_k,
                 Replicate = replicate, SamplingSeed = sampling_seed,
+                RetainedFraction = retained_fraction, RetainedParticipants = length(subsample_rows),
                 ModelSeed = model_seed, Status = "success", ARI = ari,
+                ParticipantsCompared = sum(valid),
+                ARI_Core = ari_core, CoreProportion = mean(core[valid]),
+                ARI_NonBoundary = ari_non_boundary,
+                NonBoundaryProportion = mean(non_boundary[valid]),
                 VI = partition_metrics[["VI"]], NMI = partition_metrics[["NMI"]],
                 FowlkesMallows = partition_metrics[["FowlkesMallows"]],
                 Error = NA_character_),
               recovery = jaccard,
+              recovery_core = jaccard_core,
+              recovery_non_boundary = jaccard_non_boundary,
+              co_membership_by_cluster = DecorateStabilityDiagnostic(co_membership$by_cluster),
+              co_membership_between_clusters = DecorateStabilityDiagnostic(co_membership$between_clusters),
+              split_merge_reference = DecorateStabilityDiagnostic(split_merge$reference),
+              split_merge_refit = DecorateStabilityDiagnostic(split_merge$refit),
+              profile_recovery = DecorateStabilityDiagnostic(profile_recovery),
               assignment = list(Model = candidate_model, Classes = candidate_k,
+                RetainedFraction = retained_fraction,
                 reference = reference_assignment, assignment = assignment_full))
-          }, cores = stability_core_settings$resolved)
-          stability_backend <- attr(candidate_results, "backend")
-          resolved_stability_cores <- attr(candidate_results, "resolved_cores")
-          replicate_rows <- c(replicate_rows, lapply(candidate_results, `[[`, "replicate"))
-          cluster_rows <- c(cluster_rows, Filter(Negate(is.null),
-            lapply(candidate_results, `[[`, "recovery")))
-          assignment_rows <- c(assignment_rows, Filter(Negate(is.null),
-            lapply(candidate_results, `[[`, "assignment")))
-          if (stability_progress && identical(stability_backend, "future_multisession")) {
-            message("Completed stability candidate ", candidate_index, "/",
-              length(lpa_models), ".")
+          })
+        }, cores = stability_core_settings$resolved)
+        stability_backend <- attr(resample_results, "backend")
+        resolved_stability_cores <- attr(resample_results, "resolved_cores")
+        candidate_results_all <- do.call(c, resample_results)
+        replicate_rows <- lapply(candidate_results_all, `[[`, "replicate")
+        # Some legacy/custom node-clustering callbacks return the pre-panel
+        # replicate schema. Keep those fits usable while making the new
+        # descriptive measures explicitly unavailable rather than failing the
+        # complete stability run.
+        panel_numeric_fields <- c(
+          "RetainedFraction", "RetainedParticipants", "ARI", "ARI_Core",
+          "ARI_NonBoundary", "CoreProportion", "NonBoundaryProportion",
+          "ParticipantsCompared", "VI", "NMI", "FowlkesMallows"
+        )
+        replicate_rows <- lapply(replicate_rows, function(df_replicate) {
+          for (field_name in panel_numeric_fields) {
+            if (!field_name %in% names(df_replicate)) {
+              df_replicate[[field_name]] <- NA_real_
+            }
           }
+          if (all(is.na(df_replicate$RetainedFraction))) {
+            df_replicate$RetainedFraction <- primary_stability_fraction
+          }
+          df_replicate
+        })
+        cluster_rows <- Filter(Negate(is.null), lapply(candidate_results_all, `[[`, "recovery"))
+        cluster_core_rows <- Filter(Negate(is.null), lapply(candidate_results_all, `[[`, "recovery_core"))
+        cluster_non_boundary_rows <- Filter(Negate(is.null), lapply(candidate_results_all, `[[`, "recovery_non_boundary"))
+        co_membership_rows <- Filter(Negate(is.null), lapply(candidate_results_all, `[[`, "co_membership_by_cluster"))
+        co_membership_between_rows <- Filter(Negate(is.null), lapply(candidate_results_all, `[[`, "co_membership_between_clusters"))
+        split_merge_reference_rows <- Filter(Negate(is.null), lapply(candidate_results_all, `[[`, "split_merge_reference"))
+        split_merge_refit_rows <- Filter(Negate(is.null), lapply(candidate_results_all, `[[`, "split_merge_refit"))
+        profile_recovery_rows <- Filter(Negate(is.null), lapply(candidate_results_all, `[[`, "profile_recovery"))
+        assignment_rows <- Filter(Negate(is.null), lapply(candidate_results_all, `[[`, "assignment"))
+
+        for (i in seq_len(nrow(candidate_info))) {
+          candidate_model <- candidate_info$Model[[i]]
+          candidate_k <- candidate_info$Classes[[i]]
 
           candidate_replicates <- dplyr::bind_rows(replicate_rows) %>%
-            dplyr::filter(Model == candidate_model, Classes == candidate_k)
+            dplyr::filter(Model == candidate_model, Classes == candidate_k,
+              .data$RetainedFraction == primary_stability_fraction)
           candidate_clusters <- if (length(cluster_rows) > 0) {
             dplyr::bind_rows(cluster_rows) %>%
-              dplyr::filter(Model == candidate_model, Classes == candidate_k)
+              dplyr::filter(Model == candidate_model, Classes == candidate_k,
+                .data$RetainedFraction == primary_stability_fraction)
           } else {
             dplyr::tibble(Cluster = integer(), Jaccard = numeric())
           }
@@ -1423,8 +1800,52 @@ CreateClusterModel_SOM_MClust <- function(data,
           }
           mean_jaccard <- if (nrow(cluster_summary) > 0) mean(cluster_summary$MeanJaccard) else NA_real_
           min_jaccard <- if (nrow(cluster_summary) > 0) min(cluster_summary$MeanJaccard) else NA_real_
-          reproducibility_score <- mean(c(mean_ari, mean_jaccard), na.rm = TRUE)
-          if (is.nan(reproducibility_score)) reproducibility_score <- NA_real_
+          reproducibility_all <- mean_ari
+
+          core_summary <- if (length(cluster_core_rows) > 0) {
+            dplyr::bind_rows(cluster_core_rows) %>%
+              dplyr::filter(Model == candidate_model, Classes == candidate_k,
+                .data$RetainedFraction == primary_stability_fraction) %>%
+              dplyr::group_by(Cluster) %>%
+              dplyr::summarise(MeanJaccard = mean(Jaccard, na.rm = TRUE), .groups = "drop")
+          } else {
+            dplyr::tibble(Cluster = integer(), MeanJaccard = numeric())
+          }
+          mean_ari_core <- if ("ARI_Core" %in% names(candidate_replicates)) {
+            mean(candidate_replicates$ARI_Core, na.rm = TRUE)
+          } else {
+            NA_real_
+          }
+          if (is.nan(mean_ari_core)) mean_ari_core <- NA_real_
+          mean_jaccard_core <- if (nrow(core_summary) > 0) mean(core_summary$MeanJaccard) else NA_real_
+          min_jaccard_core <- if (nrow(core_summary) > 0) min(core_summary$MeanJaccard) else NA_real_
+          core_proportion <- if ("CoreProportion" %in% names(candidate_replicates)) {
+            mean(candidate_replicates$CoreProportion, na.rm = TRUE)
+          } else {
+            NA_real_
+          }
+          non_boundary_summary <- if (length(cluster_non_boundary_rows) > 0) {
+            dplyr::bind_rows(cluster_non_boundary_rows) %>%
+              dplyr::filter(Model == candidate_model, Classes == candidate_k,
+                .data$RetainedFraction == primary_stability_fraction) %>%
+              dplyr::group_by(Cluster) %>%
+              dplyr::summarise(MeanJaccard = mean(Jaccard, na.rm = TRUE), .groups = "drop")
+          } else {
+            dplyr::tibble(Cluster = integer(), MeanJaccard = numeric())
+          }
+          mean_ari_non_boundary <- mean(candidate_replicates$ARI_NonBoundary, na.rm = TRUE)
+          if (is.nan(mean_ari_non_boundary)) mean_ari_non_boundary <- NA_real_
+          ari_non_boundary_lower <- if (sum(!is.na(candidate_replicates$ARI_NonBoundary)) > 0) {
+            as.numeric(stats::quantile(candidate_replicates$ARI_NonBoundary, 0.05, na.rm = TRUE))
+          } else {
+            NA_real_
+          }
+          mean_jaccard_non_boundary <- if (nrow(non_boundary_summary) > 0) mean(non_boundary_summary$MeanJaccard) else NA_real_
+          min_jaccard_non_boundary <- if (nrow(non_boundary_summary) > 0) min(non_boundary_summary$MeanJaccard) else NA_real_
+          non_boundary_proportion <- mean(!reference_boundary[[candidate_info$fit_name[[i]]]])
+          # ARI measures the agreement of the final participant partition and
+          # is therefore the primary reproducibility score for selection.
+          reproducibility_score <- mean_ari
 
           candidate_rows[[length(candidate_rows) + 1L]] <- dplyr::tibble(
             Model = candidate_model,
@@ -1434,12 +1855,36 @@ CreateClusterModel_SOM_MClust <- function(data,
             StabilityARI_P05 = ari_lower,
             StabilityJaccard_Mean = mean_jaccard,
             StabilityJaccard_Min = min_jaccard,
+            StabilityCoreProportion = core_proportion,
+            StabilityARI_Core = mean_ari_core,
+            StabilityJaccard_CoreMean = mean_jaccard_core,
+            StabilityJaccard_CoreMin = min_jaccard_core,
+            StabilityNonBoundaryProportion = non_boundary_proportion,
+            StabilityARI_NonBoundary = mean_ari_non_boundary,
+            StabilityARI_NonBoundary_P05 = ari_non_boundary_lower,
+            StabilityJaccard_NonBoundaryMean = mean_jaccard_non_boundary,
+            StabilityJaccard_NonBoundaryMin = min_jaccard_non_boundary,
+            ReproducibilityScore_All = reproducibility_all,
             ReproducibilityScore = reproducibility_score
           )
         }
 
         stability_summary <- dplyr::bind_rows(candidate_rows)
         stability_replicates <- dplyr::bind_rows(replicate_rows)
+        SafeStabilityMean <- function(x) if (any(is.finite(x))) mean(x, na.rm = TRUE) else NA_real_
+        SafeStabilityP05 <- function(x) if (any(is.finite(x))) {
+          as.numeric(stats::quantile(x, .05, na.rm = TRUE))
+        } else NA_real_
+        stability_deletion_curve <- stability_replicates %>%
+          dplyr::group_by(.data$Model, .data$Classes, .data$RetainedFraction) %>%
+          dplyr::summarise(
+            StabilitySuccessRate = mean(.data$Status == "success"),
+            StabilityARI_Mean = SafeStabilityMean(.data$ARI),
+            StabilityARI_P05 = SafeStabilityP05(.data$ARI),
+            StabilityVI_Mean = SafeStabilityMean(.data$VI),
+            StabilityNMI_Mean = SafeStabilityMean(.data$NMI),
+            StabilityFowlkesMallows_Mean = SafeStabilityMean(.data$FowlkesMallows),
+            .groups = "drop")
         stability_clusters <- if (length(cluster_rows) > 0) {
           dplyr::bind_rows(cluster_rows)
         } else {
@@ -1450,7 +1895,10 @@ CreateClusterModel_SOM_MClust <- function(data,
         }
         fit_table <- fit_table %>%
           dplyr::left_join(stability_summary, by = c("Model", "Classes"))
-        diagnostics <- lapply(split(assignment_rows, vapply(assignment_rows,
+        primary_assignment_rows <- Filter(function(x) {
+          identical(x$RetainedFraction, primary_stability_fraction)
+        }, assignment_rows)
+        diagnostics <- lapply(split(primary_assignment_rows, vapply(primary_assignment_rows,
           function(x) paste(x$Model, x$Classes, sep = "_"), character(1))), function(rows) {
           .ClusterStabilityDiagnostics(
             rows[[1]]$reference, lapply(rows, `[[`, "assignment"),
@@ -1467,14 +1915,57 @@ CreateClusterModel_SOM_MClust <- function(data,
           dplyr::mutate(diagnostics[[i]]$cluster_inclusion,
             Model = as.integer(key[[1]]), Classes = as.integer(key[[2]]))
         }))
+        co_membership_by_cluster <- if (length(co_membership_rows)) {
+          dplyr::bind_rows(co_membership_rows)
+        } else dplyr::tibble()
+        co_membership_between_clusters <- if (length(co_membership_between_rows)) {
+          dplyr::bind_rows(co_membership_between_rows)
+        } else dplyr::tibble()
+        split_merge_reference <- if (length(split_merge_reference_rows)) {
+          dplyr::bind_rows(split_merge_reference_rows)
+        } else dplyr::tibble()
+        split_merge_refit <- if (length(split_merge_refit_rows)) {
+          dplyr::bind_rows(split_merge_refit_rows)
+        } else dplyr::tibble()
+        profile_recovery <- if (length(profile_recovery_rows)) {
+          dplyr::bind_rows(profile_recovery_rows)
+        } else dplyr::tibble()
+        boundary_summary <- dplyr::bind_rows(lapply(seq_len(nrow(candidate_info)), function(i) {
+          fit_name <- candidate_info$fit_name[[i]]
+          reference_assignment <- reference_assignments[[fit_name]]
+          reference_flag <- reference_boundary[[fit_name]]
+          dplyr::bind_rows(
+            dplyr::tibble(
+              Model = candidate_info$Model[[i]], Classes = candidate_info$Classes[[i]],
+              Scope = "overall", Cluster = NA_integer_,
+              Participants = length(reference_flag),
+              BoundaryParticipants = sum(reference_flag, na.rm = TRUE),
+              BoundaryProportion = mean(reference_flag, na.rm = TRUE)
+            ),
+            dplyr::tibble(Cluster = sort(unique(reference_assignment))) %>%
+              dplyr::mutate(
+                Model = candidate_info$Model[[i]], Classes = candidate_info$Classes[[i]],
+                Scope = "reference_cluster",
+                Participants = vapply(Cluster, function(cluster) sum(reference_assignment == cluster), integer(1)),
+                BoundaryParticipants = vapply(Cluster, function(cluster) sum(reference_flag[reference_assignment == cluster]), integer(1)),
+                BoundaryProportion = BoundaryParticipants / Participants
+              ) %>%
+              dplyr::select(Model, Classes, Scope, Cluster, Participants,
+                BoundaryParticipants, BoundaryProportion)
+          )
+        }))
         Stability <- list(
           settings = list(
             resamples = as.integer(stability_resamples),
             seed = stability_seed,
-            refit_scope = "full_pipeline_in_sample",
-            comparison_scope = "sampled_participants",
+            refit_scope = "full_pipeline_projected_to_reference_cohort",
+            top_n = stability_top_n,
+            candidates_assessed = candidate_names,
+            comparison_scope = "all_reference_participants",
             resample_type = "subsample_without_replacement",
-            resample_fraction = 0.90,
+            resample_fraction = primary_stability_fraction,
+            resample_fractions = stability_fractions,
+            primary_resample_fraction = primary_stability_fraction,
             coassignment_limit = 2000L,
             noise_policy = "all clusters included",
             requested_cores = stability_core_settings$requested,
@@ -1483,16 +1974,51 @@ CreateClusterModel_SOM_MClust <- function(data,
             som_grid = list(
               xdim = som_xdim,
               ydim = som_ydim,
-              policy = "fixed_to_reference_fit")
+              policy = "fixed_to_reference_fit",
+              initialization_seed_policy = "fixed_to_reference_fit"),
+            som_training = list(
+              mode = "batch",
+              epochs = som_training_epochs,
+              initialization_seed = seed_som,
+              initialization_policy = "fixed_to_reference_fit",
+              cohort = "subsample_refit"),
+            assignment = assignment,
+            soft_n_nodes = as.integer(soft_n_nodes),
+            boundary_margin_threshold = boundary_margin_threshold,
+            boundary_entropy_threshold = boundary_entropy_threshold,
+            non_boundary_mask = "reference_soft_margin_and_entropy"
           ),
           replicates = stability_replicates,
           cluster_recovery = stability_clusters,
           summary = stability_summary,
-          failures = stability_replicates %>% dplyr::filter(Status != "success"),
+          deletion_curve = stability_deletion_curve,
+          failures = stability_replicates %>% dplyr::filter(.data$Status != "success"),
           participant_inclusion = participant_inclusion,
           cluster_inclusion = cluster_inclusion,
-          coassignment = lapply(diagnostics, `[[`, "coassignment")
+          boundary_summary = boundary_summary,
+          coassignment = lapply(diagnostics, `[[`, "coassignment"),
+          co_membership_by_cluster = co_membership_by_cluster,
+          co_membership_between_clusters = co_membership_between_clusters,
+          split_merge_reference = split_merge_reference,
+          split_merge_refit = split_merge_refit,
+          profile_recovery = profile_recovery
         )
+      }
+
+      if (!is.null(Stability) && !is.null(Stability$boundary_summary)) {
+        boundary_overall <- Stability$boundary_summary %>%
+          dplyr::filter(.data$Scope == "overall") %>%
+          dplyr::transmute(.data$Model, .data$Classes,
+            BoundaryParticipantProportion = .data$BoundaryProportion)
+        boundary_maximum <- Stability$boundary_summary %>%
+          dplyr::filter(.data$Scope == "reference_cluster") %>%
+          dplyr::group_by(.data$Model, .data$Classes) %>%
+          dplyr::summarise(
+            MaxClusterBoundaryProportion = max(.data$BoundaryProportion, na.rm = TRUE),
+            .groups = "drop")
+        fit_table <- fit_table %>%
+          dplyr::left_join(boundary_overall, by = c("Model", "Classes")) %>%
+          dplyr::left_join(boundary_maximum, by = c("Model", "Classes"))
       }
 
       fit_table <- fit_table %>%
@@ -1511,8 +2037,11 @@ CreateClusterModel_SOM_MClust <- function(data,
       # Composite rank index: a weighted mean of the scaled criteria. Equal
       # weights by default; criteria_weights supplies explicit weights or an
       # AHP pairwise-comparison matrix.
+      fit_table$Posterior_scaled <- scale_for_ahp(fit_table$PosteriorMean)
       criteria_used <- c("AIC", "BIC", "Entropy",
-        if (stability_resamples > 0) "Reproducibility")
+        if (stability_resamples > 0) "Reproducibility",
+        if (!is.null(composite_weights$weights) &&
+            "Posterior" %in% names(composite_weights$weights)) "Posterior")
       weights_used <- composite_weights$weights
       if (is.null(weights_used)) {
         weights_used <- stats::setNames(rep(1, length(criteria_used)), criteria_used)
@@ -1545,6 +2074,7 @@ CreateClusterModel_SOM_MClust <- function(data,
         eligible_rows <- which(!is.na(fit_table$ahp_index))
       }
       best_idx     <- eligible_rows[which.max(fit_table$ahp_index[eligible_rows])]
+      node_assignments <- lapply(lpa_models, get_profile_assignments)
       ahp_best_row <- fit_table[best_idx, ]
       best_model   <- as.integer(ahp_best_row$Model)
       best_k       <- as.integer(ahp_best_row$Classes)
@@ -1604,6 +2134,10 @@ CreateClusterModel_SOM_MClust <- function(data,
 
       lpa_models <- fit_res$fit
       best_lpa   <- lpa_models
+      node_assignments <- stats::setNames(
+        list(get_profile_assignments(best_lpa)),
+        paste0("model_", final_model, "_class_", final_k))
+      lpa_models_all <- stats::setNames(list(best_lpa), names(node_assignments))
       best_fit_name <- paste0("model_", final_model, "_class_", final_k)
 
       fit_table <- as.data.frame(fit_res$fit_info) %>%
@@ -1634,26 +2168,42 @@ CreateClusterModel_SOM_MClust <- function(data,
           BLRT_p = "BLRTPValue")[.x], dplyr::any_of(c("n_min", "n_max", "BLRT_val", "BLRT_p")))
     }
     if (!all(c("MinProfileNodeN", "MaxProfileNodeN") %in% names(fit_table))) {
-      assignment <- get_profile_assignments(best_lpa)
-      counts <- tabulate(assignment, nbins = best_k)
-      participants <- profile_participant_sizes(assignment, best_k)
+      best_node_assignment <- get_profile_assignments(best_lpa)
+      counts <- tabulate(best_node_assignment, nbins = best_k)
+      participants <- profile_participant_sizes(best_node_assignment, best_k)
       fit_table <- fit_table %>%
         dplyr::mutate(
           MinProfileNodeN = min(counts), MaxProfileNodeN = max(counts),
-          MinProfileNodeProportion = min(counts) / length(assignment),
-          MaxProfileNodeProportion = max(counts) / length(assignment),
+          MinProfileNodeProportion = min(counts) / length(best_node_assignment),
+          MaxProfileNodeProportion = max(counts) / length(best_node_assignment),
           MinProfileParticipantN = participants$min_n,
           MinProfileParticipantProportion = participants$min_prop
-        )
+        ) %>%
+        dplyr::bind_cols(PosteriorSummary(candidate_max_prob(best_fit_name)))
     }
+    fit_table <- fit_table %>%
+      dplyr::mutate(
+        GridDesignPolicy = grid_design_policy,
+        GridDesignK = grid_design_k,
+        TargetNodesPerProfile = grid_nodes_per_profile,
+        SOMNodeCount = som_xdim * som_ydim,
+        ExpectedNodesPerProfile = .data$SOMNodeCount / .data$Classes
+      )
     mdata_wide <- fit_table
 
     # Fit plot ---------------------------------------------------------------
 
     mdata_cols <- intersect(
-      c("AIC", "BIC", "Entropy", "ReproducibilityScore", "BLRTPValue"),
+      c("AIC", "BIC", "Entropy", "PosteriorMean", "PropLowPosterior",
+        "StabilityARI_Mean", "StabilityARI_P05", "StabilityARI_NonBoundary",
+        "StabilityARI_NonBoundary_P05", "BoundaryParticipantProportion",
+        "MaxClusterBoundaryProportion", "ReproducibilityScore", "BLRTPValue"),
       names(mdata_wide)
     )
+    # criteria not estimated for any candidate (e.g. BLRT without bootstraps)
+    # are left out of the plot
+    mdata_cols <- mdata_cols[vapply(mdata_cols,
+      function(column) any(is.finite(mdata_wide[[column]])), logical(1))]
 
     if (length(mdata_cols) == 0) {
       mdata <- dplyr::tibble(
@@ -1678,7 +2228,10 @@ CreateClusterModel_SOM_MClust <- function(data,
           -log10(pmax(.data$value, .Machine$double.xmin)), .data$value),
         name = dplyr::recode(.data$name, BLRTPValue = blrt_label),
         name = factor(.data$name, levels = c(
-          "AIC", "BIC", "Entropy", "ReproducibilityScore", blrt_label)))
+          "AIC", "BIC", "Entropy", "PosteriorMean", "PropLowPosterior",
+          "StabilityARI_Mean", "StabilityARI_P05", "StabilityARI_NonBoundary",
+          "StabilityARI_NonBoundary_P05", "BoundaryParticipantProportion",
+          "MaxClusterBoundaryProportion", "ReproducibilityScore", blrt_label)))
 
     model_levels <- as.integer(names(.MclustModelLabels))
     model_levels <- model_levels[!is.na(model_levels)]
@@ -1778,6 +2331,7 @@ CreateClusterModel_SOM_MClust <- function(data,
     X <- as.data.frame(som_codes)
     dropped_lpa_vars <- character(0)
     lpa_nodes <- seq_len(nrow(som_codes))
+    lpa_node_weights <- som_node_occupancy$n
 
     # No latent-profile model was fitted, so there are no posterior
     # probabilities to report. The columns are kept so that everything
@@ -1792,6 +2346,7 @@ CreateClusterModel_SOM_MClust <- function(data,
 
     lpa_models         <- NULL
     best_lpa           <- NULL
+    node_assignments   <- NULL
     best_fit_name      <- if (is.null(node_clustering$best_fit_name)) {
       "supplied_node_clustering"
     } else node_clustering$best_fit_name
@@ -1807,13 +2362,6 @@ CreateClusterModel_SOM_MClust <- function(data,
 
   # Map nodes to individuals -----------------------------------------------
 
-  SOM_Node_complete <- som_model$unit.classif
-  som_cluster       <- node_df$Cluster
-  patient_clust     <- som_cluster[SOM_Node_complete]
-
-  Cluster_full <- rep(NA_integer_, nrow(df_scidr))
-  Cluster_full[complete_rows] <- patient_clust
-
   # Only node assignments and posteriors are carried to individuals. The node
   # table also holds the codebook vectors under the Z-score names, which would
   # otherwise read as each participant's own Z-scores.
@@ -1822,10 +2370,32 @@ CreateClusterModel_SOM_MClust <- function(data,
     SOM_Node     = SOM_Node_full,
     SOM_Distance = SOM_Dist_full
   ) %>%
-    dplyr::left_join(.SOMNodeAssignments(node_df), by = c("SOM_Node" = "NodeID")) %>%
-    dplyr::mutate(
-      Cluster = Cluster_full
-    )
+    dplyr::left_join(.SOMNodeAssignments(node_df), by = c("SOM_Node" = "NodeID"))
+
+  individual_tbl$NodeCluster <- individual_tbl$Cluster
+  individual_tbl$Flag_NodeDisagreement <- FALSE
+
+  soft_projection <- .SOMSoftProjection(zmat, som_codes, node_df,
+    n_nodes = soft_n_nodes, margin_threshold = boundary_margin_threshold,
+    entropy_threshold = boundary_entropy_threshold)
+  individual_tbl$Cluster_Hard <- individual_tbl$Cluster
+  individual_tbl$Cluster_Soft <- NA_integer_
+  individual_tbl$SoftEntropy <- NA_real_
+  individual_tbl$SoftMargin <- NA_real_
+  individual_tbl$Flag_BoundaryParticipant <- NA
+  individual_tbl$BoundaryReason <- NA_character_
+  if (!is.null(soft_projection)) {
+    individual_tbl$Cluster_Soft[complete_rows] <- soft_projection$cluster
+    individual_tbl$SoftEntropy[complete_rows] <- soft_projection$entropy
+    individual_tbl$SoftMargin[complete_rows] <- soft_projection$margin
+    individual_tbl$Flag_BoundaryParticipant[complete_rows] <- soft_projection$boundary
+    individual_tbl$BoundaryReason[complete_rows] <- soft_projection$reason
+    for (j in seq_len(ncol(soft_projection$probability))) {
+      individual_tbl[[paste0("SoftProb_", j)]] <- NA_real_
+      individual_tbl[[paste0("SoftProb_", j)]][complete_rows] <- soft_projection$probability[, j]
+    }
+  }
+  individual_tbl$Cluster <- if (assignment == "soft") individual_tbl$Cluster_Soft else individual_tbl$Cluster_Hard
 
   individual_tbl <- individual_tbl %>%
     dplyr::left_join(som_residuals$top, by = ".row_id")
@@ -1839,7 +2409,7 @@ CreateClusterModel_SOM_MClust <- function(data,
   }
   attr(individual_tbl$.row_id, "label") <- "Row ID"
 
-  # DataWithClusters: only cluster label -----------------------------------
+  # DataWithClusters: canonical label and assignment diagnostics ------------
 
   DataWithClusters <- df_scidr
 
@@ -1848,6 +2418,14 @@ CreateClusterModel_SOM_MClust <- function(data,
   }
 
   DataWithClusters[[ClusterVariableName]] <- individual_tbl$Cluster
+  projection_columns <- c("Cluster_Hard", "Cluster_Soft", "SoftEntropy", "SoftMargin",
+    "Flag_BoundaryParticipant", "BoundaryReason",
+    grep("^SoftProb_", names(individual_tbl), value = TRUE))
+  for (column in projection_columns) {
+    if (column %in% names(individual_tbl)) {
+      DataWithClusters[[column]] <- individual_tbl[[column]]
+    }
+  }
 
   # SOMFit diagnostics and distance baselines (training) -------------------
 
@@ -2037,8 +2615,19 @@ CreateClusterModel_SOM_MClust <- function(data,
       som_ydim_initial = som_grid_initial_ydim,
       som_xdim_used    = som_xdim,
       som_ydim_used    = som_ydim,
-      n_nodes_used     = som_xdim * som_ydim
+      n_nodes_used     = som_xdim * som_ydim,
+      GridDesignPolicy = grid_design_policy,
+      GridDesignK = grid_design_k,
+      TargetNodesPerProfile = grid_nodes_per_profile,
+      ExpectedNodesPerProfile = (som_xdim * som_ydim) / grid_design_k
     ),
+    training = list(
+      mode = "batch",
+      epochs = som_training_epochs,
+      seed = seed_som,
+      initialization = "deterministic sampled training codebook",
+      initial_codebook = init_codes,
+      cohort = "complete training cohort"),
     SOMFit    = SOMFit,
     plots     = som_plots
   )
@@ -2092,7 +2681,7 @@ CreateClusterModel_SOM_MClust <- function(data,
     )
   )
 
-  lpa_preprocess <- list(
+    lpa_preprocess <- list(
     n_rows_original          = nrow(df_scidr),
     n_complete_rows          = sum(complete_rows),
     n_excluded_rows          = sum(!complete_rows),
@@ -2101,7 +2690,10 @@ CreateClusterModel_SOM_MClust <- function(data,
     n_lpa_variables_original = ncol(som_codes),
     n_lpa_variables_used     = ncol(X),
     n_lpa_nodes_used         = length(lpa_nodes),
-    lpa_min_node_n           = lpa_min_node_n,
+      lpa_min_node_n           = lpa_min_node_n,
+      node_weighting           = node_weighting,
+      total_node_weight        = sum(lpa_node_weights),
+      effective_node_weight    = if (node_weighting == "occupancy") sum(lpa_node_weights) else length(lpa_node_weights),
     dropped_zero_sd_vars     = dropped_lpa_vars,
     lpa_drop_zero_sd         = lpa_drop_zero_sd,
     lpa_zero_sd_tol          = lpa_zero_sd_tol,
@@ -2115,6 +2707,13 @@ CreateClusterModel_SOM_MClust <- function(data,
 
   ModelInfo_MClust <- list(
     lpa_models    = lpa_models,
+    node_weighting = node_weighting,
+    node_assignments = node_assignments,
+    candidate_node_posteriors = if (exists("lpa_models_all")) {
+      lapply(lpa_models_all, get_node_posteriors)
+    } else {
+      NULL
+    },
     fit_table     = fit_table,
     best_fit_name = best_fit_name,
     AHP         = list(
@@ -2160,10 +2759,14 @@ CreateClusterModel_SOM_MClust <- function(data,
       stability_cores = stability_core_settings$requested,
       stability_cores_resolved = stability_core_settings$resolved),
     list(ZScoreType = ZScoreType, ZScoreObject = ZScoreObject_used,
-      ZScoreVars = ZScoreVars_used, SOM = ModelInfo_SOM$som_grid_info),
+      ZScoreVars = ZScoreVars_used, SOM = ModelInfo_SOM$som_grid_info,
+      SOMTraining = ModelInfo_SOM$training, node_weighting = node_weighting),
     ModelInfo_MClust$fit_table,
     list(k = final_k, model = final_model), complete_rows,
     list(distance_metric = "Euclidean distance (Z-score units) to frozen SOM best-matching unit"))
+  out$Specification$projection <- list(assignment = assignment, soft_n_nodes = soft_n_nodes,
+    boundary_margin_threshold = boundary_margin_threshold,
+    boundary_entropy_threshold = boundary_entropy_threshold)
   out$Specification$stability <- if (is.null(Stability)) NULL else Stability$settings
   out$Specification$selection <- list(criteria_weights = composite_weights,
     min_cluster_prop = min_cluster_prop, lpa_min_node_n = lpa_min_node_n)

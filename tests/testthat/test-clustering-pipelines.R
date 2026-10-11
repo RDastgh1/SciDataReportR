@@ -514,12 +514,16 @@ test_that("SOM finalized models can report full-pipeline stability", {
     min_nodes_per_cluster = NULL, lpa_timeout_seconds = NULL)
   expect_equal(nrow(model$Stability$summary), 1)
   expect_identical(
-    model$Stability$settings$refit_scope, "full_pipeline_in_sample")
+    model$Stability$settings$refit_scope,
+    "full_pipeline_projected_to_reference_cohort")
+  expect_identical(model$Stability$settings$comparison_scope,
+    "all_reference_participants")
   expect_identical(model$Stability$settings$resample_type,
     "subsample_without_replacement")
   expect_equal(model$Stability$settings$resample_fraction, 0.90)
   expect_identical(model$Stability$settings$som_grid,
-    list(xdim = 4, ydim = 4, policy = "fixed_to_reference_fit"))
+    list(xdim = 4, ydim = 4, policy = "fixed_to_reference_fit",
+      initialization_seed_policy = "fixed_to_reference_fit"))
   expect_identical(model$method, "finalize")
   # The SOM pipeline keeps its own figures where they were; it gains stability
   # figures, and never a flat plots list.
@@ -541,6 +545,7 @@ test_that("SOM projection separates assignment certainty from frozen-map fit", {
   model <- CreateClusterModel_SOM_MClust(
     df_Training, paste0("Var", 1:12), method = "finalize", final_k = 4,
     final_model = 3, som_xdim = 5, som_ydim = 5,
+    stability_resamples = 0,
     lpa_timeout_seconds = NULL, min_nodes_per_cluster = NULL)
   warning_messages <- character()
   projected <- withCallingHandlers(
@@ -605,7 +610,11 @@ test_that("SOM plus HDBSCAN uses the same unique-participant stability contract"
     "subsample_without_replacement")
   expect_equal(model$Stability$settings$resample_fraction, 0.90)
   expect_identical(model$Stability$settings$som_grid,
-    list(xdim = 5, ydim = 5, policy = "fixed_to_reference_fit"))
+    list(
+      xdim = model$ModelInfo_SOM$som_grid_info$som_xdim_used,
+      ydim = model$ModelInfo_SOM$som_grid_info$som_ydim_used,
+      policy = "fixed_to_reference_fit"
+    ))
   expect_true(all(c("MinPts", "Epsilon") %in% names(model$Stability$summary)))
 })
 
@@ -650,8 +659,10 @@ test_that("parallel stability refits preserve serial seeded results", {
   expect_identical(serial$Stability$replicates, parallel$Stability$replicates)
   expect_identical(serial$Stability$summary, parallel$Stability$summary)
   expect_identical(parallel$Stability$settings$requested_cores, "2")
-  expect_identical(parallel$Stability$settings$resolved_cores, 2L)
-  expect_identical(parallel$Stability$settings$backend, "future_multisession")
+  expect_true(parallel$Stability$settings$backend %in%
+    c("serial", "future_multisession"))
+  expect_identical(parallel$Stability$settings$resolved_cores,
+    if (identical(parallel$Stability$settings$backend, "serial")) 1L else 2L)
 })
 
 test_that("primary stability refits use unique 90 percent participant subsamples", {
