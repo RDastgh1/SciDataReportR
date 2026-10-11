@@ -1,4 +1,4 @@
-# SciDataReportR (development version)
+# SciDataReportR 21.14.0
 
 * SOM + Mclust stability now supports an opt-in participant-deletion curve via
   `stability_fractions` (default `0.90`). It retains all-participant ARI/P05
