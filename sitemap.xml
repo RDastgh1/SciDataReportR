@@ -32,7 +32,10 @@
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/ClusterPlots.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/CodebookMergeApp.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/CombineCodebooks.html</loc></url>
+<url><loc>https://rdastgh1.github.io/SciDataReportR/reference/CompareClusterMethodStability.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/CompareDatasets.html</loc></url>
+<url><loc>https://rdastgh1.github.io/SciDataReportR/reference/ConfirmClusterMethodStability.html</loc></url>
+<url><loc>https://rdastgh1.github.io/SciDataReportR/reference/ConfirmSOMGridStability.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/ConvertOrdinalToNumeric.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/CreateClusterModel_Gower_PAM.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/CreateClusterModel_HDBSCAN.html</loc></url>
@@ -54,6 +57,7 @@
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/CreateSummaryTable.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/CreateVariableTypesTemplate.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/CreateZScoreObject.html</loc></url>
+<url><loc>https://rdastgh1.github.io/SciDataReportR/reference/DefaultClusterBenchmarkCandidates.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/DeriveFreesurferVolumes.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/DiagnosticLikelihoodRatioTable.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/EvaluateBiomarkerPerformance.html</loc></url>
@@ -93,8 +97,10 @@
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/PlotClusterDiagnostic.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/PlotClusterFitReview.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/PlotClusterMap.html</loc></url>
+<url><loc>https://rdastgh1.github.io/SciDataReportR/reference/PlotClusterPrevalence.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/PlotClusterProfiles.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/PlotClusterSilhouette.html</loc></url>
+<url><loc>https://rdastgh1.github.io/SciDataReportR/reference/PlotClusterSplits.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/PlotContinuousDistributions.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/PlotCorrelationComparisons.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/PlotCorrelationsHeatmap.html</loc></url>
@@ -133,6 +139,7 @@
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/ProjectZScore.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/ReValueFactors.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/ReadSciData.html</loc></url>
+<url><loc>https://rdastgh1.github.io/SciDataReportR/reference/RefitSOMSensitivity.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/ReplaceMissingCode.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/ReplaceMissingLabels.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/RevalueData.html</loc></url>
@@ -141,6 +148,7 @@
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/SciDataPalette.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/SciDataReportR-package.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/ScreenBiomarkerPerformance.html</loc></url>
+<url><loc>https://rdastgh1.github.io/SciDataReportR/reference/ScreenSOMGridStability.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/SimulatedPhenotypeData.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/SummarizeTransitions.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/TransformFeatureMatrix.html</loc></url>

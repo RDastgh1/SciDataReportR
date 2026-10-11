@@ -20,8 +20,15 @@
   : Interactive codebook harmonization dashboard
 - [`CombineCodebooks()`](https://rdastgh1.github.io/SciDataReportR/reference/CombineCodebooks.md)
   : Combine Two Codebooks with Conflict Detection
+- [`CompareClusterMethodStability()`](https://rdastgh1.github.io/SciDataReportR/reference/CompareClusterMethodStability.md)
+  : Compare projectable clustering methods with common participant
+  subsamples
 - [`CompareDatasets()`](https://rdastgh1.github.io/SciDataReportR/reference/CompareDatasets.md)
   : Compare two versions of a dataset
+- [`ConfirmClusterMethodStability()`](https://rdastgh1.github.io/SciDataReportR/reference/ConfirmClusterMethodStability.md)
+  : Confirm method-specific stability leaders
+- [`ConfirmSOMGridStability()`](https://rdastgh1.github.io/SciDataReportR/reference/ConfirmSOMGridStability.md)
+  : Confirm selected SOM grid stability candidates
 - [`ConvertOrdinalToNumeric()`](https://rdastgh1.github.io/SciDataReportR/reference/ConvertOrdinalToNumeric.md)
   : Prepare ordinal variables for analysis
 - [`CreateClusterModel_Gower_PAM()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateClusterModel_Gower_PAM.md)
@@ -74,6 +81,8 @@
   [`CalcZScore()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateZScoreObject.md)
   : Calculate Z-scores (or standardized scores) and return data +
   parameters
+- [`DefaultClusterBenchmarkCandidates()`](https://rdastgh1.github.io/SciDataReportR/reference/DefaultClusterBenchmarkCandidates.md)
+  : Construct default common-method benchmark candidates
 - [`DeriveFreesurferVolumes()`](https://rdastgh1.github.io/SciDataReportR/reference/DeriveFreesurferVolumes.md)
   : Derive Freesurfer bilateral measures and optional ICV-adjusted
   ratios
@@ -160,10 +169,14 @@
 - [`PlotClusterMap()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotClusterMap.md)
   [`PlotClusterAssignment()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotClusterMap.md)
   : Plot a two-dimensional cluster review map
+- [`PlotClusterPrevalence()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotClusterPrevalence.md)
+  : Heatmap of binary feature prevalence by cluster
 - [`PlotClusterProfiles()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotClusterProfiles.md)
   : Plot labelled numeric profiles by cluster
 - [`PlotClusterSilhouette()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotClusterSilhouette.md)
   : Plot a per-participant silhouette profile
+- [`PlotClusterSplits()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotClusterSplits.md)
+  : Show how participants move between clusters as k increases
 - [`PlotContinuousDistributions()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotContinuousDistributions.md)
   : Plot Continuous Distributions
 - [`PlotCorrelationComparisons()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotCorrelationComparisons.md)
@@ -249,6 +262,8 @@
   : Revalue Factors
 - [`ReadSciData()`](https://rdastgh1.github.io/SciDataReportR/reference/ReadSciData.md)
   : Read a scientific data file with optional inspection
+- [`RefitSOMSensitivity()`](https://rdastgh1.github.io/SciDataReportR/reference/RefitSOMSensitivity.md)
+  : Refit an explicit participant-exclusion SOM sensitivity model
 - [`ReplaceMissingCode()`](https://rdastgh1.github.io/SciDataReportR/reference/ReplaceMissingCode.md)
   : Replace Missing Codes with NA
 - [`ReplaceMissingLabels()`](https://rdastgh1.github.io/SciDataReportR/reference/ReplaceMissingLabels.md)
@@ -263,6 +278,8 @@
   : SciDataReportR qualitative color palette
 - [`ScreenBiomarkerPerformance()`](https://rdastgh1.github.io/SciDataReportR/reference/ScreenBiomarkerPerformance.md)
   : Screen biomarker performance across outcomes
+- [`ScreenSOMGridStability()`](https://rdastgh1.github.io/SciDataReportR/reference/ScreenSOMGridStability.md)
+  : Screen fixed SOM map designs before selecting cluster count
 - [`SimulatedPhenotypeData`](https://rdastgh1.github.io/SciDataReportR/reference/SimulatedPhenotypeData.md)
   : Neutral simulated clustering and phenotyping benchmark
 - [`SummarizeTransitions()`](https://rdastgh1.github.io/SciDataReportR/reference/SummarizeTransitions.md)

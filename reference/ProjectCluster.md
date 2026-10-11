@@ -45,7 +45,13 @@ fit separate. `ProbFit$individual` is full length and contains the
 assigned `Cluster`, `SOM_Node`, available node-derived `prob_*` columns,
 `prob_assigned`, `max_prob`, and `uncertainty`. It answers: *which
 phenotype was assigned, and how certain is that node-derived
-assignment?*
+assignment?* Models fitted with the hard/soft projection interface also
+retain `Cluster_Hard`, `Cluster_Soft`, `SoftProb_*`, `SoftEntropy`,
+`SoftMargin`, `Flag_BoundaryParticipant`, and `BoundaryReason`.
+Node-level `prob_*` values remain the Mclust posterior for a map node;
+`SoftProb_*` is a participant-level proximity-weighted combination of
+nearby node posteriors. Boundary flags are confidence diagnostics and
+never suppress projection.
 
 `ProjectionFit$individual` is also full length. It contains the frozen
 best-matching-unit `SOM_Node`, `SOM_Distance`,

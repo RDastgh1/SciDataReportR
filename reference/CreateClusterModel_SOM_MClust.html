@@ -25,7 +25,8 @@ topology-preserving map is clinically informative before model-based profiles.
 Missing data:
 SOM and clustering are fit only on rows with complete Z-scores.
 The returned DataWithClusters has exactly the original rows and
-columns plus one cluster column; rows not used in SOM/LPA get NA.
+columns plus canonical-cluster and hard/soft confidence columns; rows not
+used in SOM/LPA get NA for every assignment diagnostic.
 The returned ProbFit$individual is also full length, preserving
 one row per input row with NA posterior probabilities for rows excluded
 from SOM/LPA.
@@ -69,7 +70,8 @@ topology-preserving map is clinically informative before model-based profiles.
 Missing data:
 SOM and clustering are fit only on rows with complete Z-scores.
 The returned DataWithClusters has exactly the original rows and
-columns plus one cluster column; rows not used in SOM/LPA get NA.
+columns plus canonical-cluster and hard/soft confidence columns; rows not
+used in SOM/LPA get NA for every assignment diagnostic.
 The returned ProbFit$individual is also full length, preserving
 one row per input row with NA posterior probabilities for rows excluded
 from SOM/LPA.
@@ -133,7 +135,7 @@ Deprecated alias for CreateClusterModel_SOM_MClust().'><meta property="og:image"
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>SOM + latent profile clustering pipeline (with AHP and distance baselines)</h1>
-      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/v21.13.0/R/Pipeline_SOMClust.R" class="external-link"><code>R/Pipeline_SOMClust.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/master/R/Pipeline_SOMClust.R" class="external-link"><code>R/Pipeline_SOMClust.R</code></a></small>
       <div class="d-none name"><code>CreateClusterModel_SOM_MClust.Rd</code></div>
     </div>
 
@@ -160,7 +162,8 @@ fixed phenotype space without reclustering.</p>
 topology-preserving map is clinically informative before model-based profiles.</p>
 <p>Missing data:</p><ul><li><p>SOM and clustering are fit only on rows with complete Z-scores.</p></li>
 <li><p>The returned <code>DataWithClusters</code> has exactly the original rows and
-columns plus one cluster column; rows not used in SOM/LPA get NA.</p></li>
+columns plus canonical-cluster and hard/soft confidence columns; rows not
+used in SOM/LPA get NA for every assignment diagnostic.</p></li>
 <li><p>The returned <code>ProbFit$individual</code> is also full length, preserving
 one row per input row with NA posterior probabilities for rows excluded
 from SOM/LPA.</p></li>
@@ -194,6 +197,11 @@ as-is and does not re-zscore.</p></li>
 <span>  som_ydim <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  som_topo <span class="op">=</span> <span class="st">"hexagonal"</span>,</span>
 <span>  som_neigh <span class="op">=</span> <span class="st">"gaussian"</span>,</span>
+<span>  node_weighting <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"uniform"</span>, <span class="st">"occupancy"</span><span class="op">)</span>,</span>
+<span>  assignment <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"soft"</span>, <span class="st">"hard"</span><span class="op">)</span>,</span>
+<span>  soft_n_nodes <span class="op">=</span> <span class="fl">3L</span>,</span>
+<span>  boundary_margin_threshold <span class="op">=</span> <span class="fl">0.2</span>,</span>
+<span>  boundary_entropy_threshold <span class="op">=</span> <span class="fl">0.6</span>,</span>
 <span>  seed_som <span class="op">=</span> <span class="fl">934521L</span>,</span>
 <span>  seed_lpa <span class="op">=</span> <span class="fl">93421L</span>,</span>
 <span>  Relabel <span class="op">=</span> <span class="cn">TRUE</span>,</span>
@@ -203,6 +211,7 @@ as-is and does not re-zscore.</p></li>
 <span>  lpa_progress <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  lpa_em_itmax <span class="op">=</span> <span class="fl">100L</span>,</span>
 <span>  lpa_em_tol <span class="op">=</span> <span class="fl">1e-05</span>,</span>
+<span>  lpa_bootstrap_n <span class="op">=</span> <span class="fl">0L</span>,</span>
 <span>  lpa_timeout_seconds <span class="op">=</span> <span class="fl">120</span>,</span>
 <span>  lpa_drop_zero_sd <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  lpa_zero_sd_tol <span class="op">=</span> <span class="fl">1e-08</span>,</span>
@@ -215,12 +224,16 @@ as-is and does not re-zscore.</p></li>
 <span>  high_dist_quantile <span class="op">=</span> <span class="fl">0.95</span>,</span>
 <span>  low_prob_threshold <span class="op">=</span> <span class="fl">0.7</span>,</span>
 <span>  stability_resamples <span class="op">=</span> <span class="fl">0L</span>,</span>
+<span>  stability_candidates <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"all"</span>, <span class="st">"best_per_k"</span><span class="op">)</span>,</span>
+<span>  stability_top_n <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  stability_seed <span class="op">=</span> <span class="fl">934522L</span>,</span>
+<span>  stability_fractions <span class="op">=</span> <span class="fl">0.9</span>,</span>
 <span>  stability_progress <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  stability_cores <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  df <span class="op">=</span> <span class="fu">lifecycle</span><span class="fu">::</span><span class="fu"><a href="https://lifecycle.r-lib.org/reference/deprecated.html" class="external-link">deprecated</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  id_col <span class="op">=</span> <span class="fu">lifecycle</span><span class="fu">::</span><span class="fu"><a href="https://lifecycle.r-lib.org/reference/deprecated.html" class="external-link">deprecated</a></span><span class="op">(</span><span class="op">)</span>,</span>
-<span>  .NodeClusterFn <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  .NodeClusterFn <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  .CandidatePairs <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu">Pipeline_SOM_MClust</span><span class="op">(</span><span class="va">...</span><span class="op">)</span></span>
@@ -302,7 +315,13 @@ overwritten (with a message).</p></dd>
 
 <dt id="arg-som-xdim-som-ydim">som_xdim, som_ydim<a class="anchor" aria-label="anchor" href="#arg-som-xdim-som-ydim"></a></dt>
 <dd><p>Optional integers for SOM grid dimensions. If NULL,
-a square grid with side length <code>ceiling(n_complete^(1/3))</code> is used.</p></dd>
+a square grid is derived from the planned maximum number of profiles: in
+exploratory fits this is <code>max(k_range)</code> and in finalized fits it is
+<code>final_k</code>. The engineering default is approximately 20 SOM nodes per
+planned profile. It retains several local prototypes for each candidate
+phenotype without letting a larger sample automatically create an
+increasingly sparse map. Sample size instead informs node occupancy and
+map-health review. Explicit dimensions always override this policy.</p></dd>
 
 
 <dt id="arg-som-topo">som_topo<a class="anchor" aria-label="anchor" href="#arg-som-topo"></a></dt>
@@ -312,6 +331,39 @@ a square grid with side length <code>ceiling(n_complete^(1/3))</code> is used.</
 
 <dt id="arg-som-neigh">som_neigh<a class="anchor" aria-label="anchor" href="#arg-som-neigh"></a></dt>
 <dd><p>SOM neighbourhood function, default <code>"gaussian"</code>.</p></dd>
+
+
+<dt id="arg-node-weighting">node_weighting<a class="anchor" aria-label="anchor" href="#arg-node-weighting"></a></dt>
+<dd><p>Whether codebook nodes enter the mixture with equal
+map-space weight (<code>"uniform"</code>, default) or their training
+participant occupancy (<code>"occupancy"</code>). Occupancy weighting supports
+Models 1–3 only.</p></dd>
+
+
+<dt id="arg-assignment">assignment<a class="anchor" aria-label="anchor" href="#arg-assignment"></a></dt>
+<dd><p>Participant phenotype definition: <code>"hard"</code> maps the
+Mclust class of the best-matching SOM node; <code>"soft"</code> sums the Mclust
+node posterior probabilities across nearby codebook nodes and chooses the
+largest participant-level probability. Both outputs are always retained;
+the default <code>"soft"</code> controls the canonical <code>Cluster</code>.</p></dd>
+
+
+<dt id="arg-soft-n-nodes">soft_n_nodes<a class="anchor" aria-label="anchor" href="#arg-soft-n-nodes"></a></dt>
+<dd><p>Number of nearest codebook nodes used by soft projection.
+Their inverse-squared standardized-feature distances are normalized to
+proximity weights. Default <code>3</code>.</p></dd>
+
+
+<dt id="arg-boundary-margin-threshold">boundary_margin_threshold<a class="anchor" aria-label="anchor" href="#arg-boundary-margin-threshold"></a></dt>
+<dd><p>Minimum difference between the largest and
+second-largest soft class probabilities before a participant is flagged as
+a boundary participant. Default <code>0.20</code>.</p></dd>
+
+
+<dt id="arg-boundary-entropy-threshold">boundary_entropy_threshold<a class="anchor" aria-label="anchor" href="#arg-boundary-entropy-threshold"></a></dt>
+<dd><p>Maximum normalized soft-membership entropy
+before a participant is flagged as a boundary participant. Default
+<code>0.60</code>. A flag is set if either boundary criterion is met.</p></dd>
 
 
 <dt id="arg-seed-som-seed-lpa">seed_som, seed_lpa<a class="anchor" aria-label="anchor" href="#arg-seed-som-seed-lpa"></a></dt>
@@ -355,6 +407,15 @@ fitting model/profile combinations.</p></dd>
 <dt id="arg-lpa-em-tol">lpa_em_tol<a class="anchor" aria-label="anchor" href="#arg-lpa-em-tol"></a></dt>
 <dd><p>Numeric; EM convergence tolerance passed to
 <code><a href="https://mclust-org.github.io/mclust/reference/emControl.html" class="external-link">mclust::emControl()</a></code>. Use NULL to leave mclust defaults unchanged.</p></dd>
+
+
+<dt id="arg-lpa-bootstrap-n">lpa_bootstrap_n<a class="anchor" aria-label="anchor" href="#arg-lpa-bootstrap-n"></a></dt>
+<dd><p>Bootstrap resamples tidyLPA runs for each candidate
+fit: a bootstrap likelihood-ratio test (BLRT) against k - 1 profiles and
+MclustBootstrap. Default <code>0</code> skips them, which removes most of the
+fitting time; <code>BLRTStatistic</code> and <code>BLRTPValue</code> are then
+<code>NA</code>. Set to, e.g., <code>100</code> to report the BLRT. Stability refits
+never run them.</p></dd>
 
 
 <dt id="arg-lpa-timeout-seconds">lpa_timeout_seconds<a class="anchor" aria-label="anchor" href="#arg-lpa-timeout-seconds"></a></dt>
@@ -428,12 +489,38 @@ flag uncertain phenotype membership. Default is <code>0.70</code>.</p></dd>
 <dd><p>Number of 90% participant subsample refits used
 to assess reproducibility for every successful exploratory candidate.
 Subsamples are drawn without replacement and reuse the reference model's
-resolved SOM grid dimensions. Defaults to <code>0</code> (disabled);
-use <code>50</code> for an exploratory stability screen.</p></dd>
+resolved SOM grid dimensions and the reference SOM seed. Each refit maps
+the complete reference cohort before scoring participant assignments.
+Defaults to <code>0</code> (disabled); use <code>30</code> for an exploratory
+stability screen.</p></dd>
+
+
+<dt id="arg-stability-candidates">stability_candidates<a class="anchor" aria-label="anchor" href="#arg-stability-candidates"></a></dt>
+<dd><p>Which candidates receive subsample stability:
+<code>"all"</code> (default) or <code>"best_per_k"</code>, the highest-ranked
+candidate (by the composite index without reproducibility, eligible
+first) at each number of profiles, so stability can inform the choice of
+k across the whole range. Candidates without stability keep <code>NA</code>
+reproducibility and are not recommended.</p></dd>
+
+
+<dt id="arg-stability-top-n">stability_top_n<a class="anchor" aria-label="anchor" href="#arg-stability-top-n"></a></dt>
+<dd><p>Optional integer. When supplied, stability is
+estimated only for the top <code>stability_top_n</code> candidates ranked by the
+composite index without reproducibility (eligible candidates first); the
+others keep <code>NA</code> stability and are not recommended. Use it to screen
+a large candidate grid, e.g. <code>stability_top_n = 5</code>.</p></dd>
 
 
 <dt id="arg-stability-seed">stability_seed<a class="anchor" aria-label="anchor" href="#arg-stability-seed"></a></dt>
 <dd><p>Integer seed for participant subsampling.</p></dd>
+
+
+<dt id="arg-stability-fractions">stability_fractions<a class="anchor" aria-label="anchor" href="#arg-stability-fractions"></a></dt>
+<dd><p>Unique participant-retention fractions for an
+opt-in deletion-stability curve. The default, <code>0.90</code>, preserves the
+ordinary 90% refit screen. Each fraction refits the complete pipeline and
+projects the full reference cohort before all-participant ARI is scored.</p></dd>
 
 
 <dt id="arg-stability-progress">stability_progress<a class="anchor" aria-label="anchor" href="#arg-stability-progress"></a></dt>
@@ -465,6 +552,12 @@ latent-profile grid is not fitted. Used by
 <code><a href="CreateClusterModel_SOM_HDBSCAN.html">CreateClusterModel_SOM_HDBSCAN()</a></code>; not part of the user-facing API.</p></dd>
 
 
+<dt id="arg--candidatepairs">.CandidatePairs<a class="anchor" aria-label="anchor" href="#arg--candidatepairs"></a></dt>
+<dd><p>Internal. A data frame of <code>Model</code> and
+<code>Classes</code> pairs restricting the exploratory grid; used by stability
+refits so each resample fits only the shortlisted candidates.</p></dd>
+
+
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
 <dd><p>Arguments passed to <code>CreateClusterModel_SOM_MClust()</code>.</p></dd>
 
@@ -473,8 +566,9 @@ latent-profile grid is not fitted. Used by
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A list of class <code>"Pipeline_SOM_MClust"</code> with components:</p><ul><li><p><code>method</code>, <code>vars_used</code>, <code>ZScoreType</code>,
 <code>ZScoreObject</code>, <code>ZScoreVars</code>, <code>ClusterVariableName</code></p></li>
-<li><p><code>DataWithClusters</code>: original <code>df</code> with only the
-cluster column appended</p></li>
+<li><p><code>DataWithClusters</code>: original <code>df</code> with canonical
+cluster, hard/soft assignment, soft membership, and boundary
+diagnostic columns appended</p></li>
 <li><p><code>fit_plot</code>: ggplot of AIC/BIC/Entropy/BLRT p-value vs k and model
 (plus reproducibility when subsample stability is enabled)</p></li>
 <li><p><code>ModelInfo_SOM</code>: list with <code>som_model</code>,
@@ -511,12 +605,21 @@ reference at <code>-log10(0.05)</code>.</p>
 <code>final_model</code> are finalize-only. Supplying settings from both modes is
 an error, even when an exploratory setting equals its default.</p>
 <p>Stability is assessed by refitting the full SOM/LPA pipeline on independent
-90% participant subsamples drawn without replacement.
-<code>StabilityARI_Mean</code> is the mean adjusted Rand index across successful
-refits and can be negative when agreement is worse than chance.
+participant subsamples drawn without replacement, then mapping the
+complete reference cohort onto each refit. <code>StabilityARI_Mean</code> is the
+primary reproducibility score: the mean adjusted Rand index across these
+full-cohort participant partitions. It can be negative when agreement is
+worse than chance.
+<code>stability_fractions</code> can request an explicit deletion curve; the existing
+90% fit-table fields remain the primary review metrics, while
+<code>Stability$deletion_curve</code> records every requested retention level.
+Co-membership, split/merge, and profile-recovery diagnostics describe
+whether instability is localized despite imperfect exact membership; they
+never replace all-participant ARI.
 <code>StabilityJaccard_Mean</code> is the mean label-matched, per-profile Jaccard
-recovery. <code>ReproducibilityScore</code> is the mean of their finite values;
-<code>StabilitySuccessRate</code> is reported separately. <code>Reproducibility_scaled</code> is
+recovery and is retained as a descriptive diagnostic. <code>ReproducibilityScore</code>
+equals <code>StabilityARI_Mean</code>; <code>StabilitySuccessRate</code> is reported separately.
+<code>Reproducibility_scaled</code> is
 the candidate-table min-max rescaling used only by the AHP index and is not
 an independently interpretable reproducibility measure.</p>
 <p>The composite rank index (stored as <code>ahp_index</code>) is computed by:</p><ol><li><p>Z-scaling AIC, BIC, Entropy, and (when stability is run)
@@ -532,6 +635,23 @@ Analytic Hierarchy Process pairwise-comparison matrix.</p></li>
 <p><code>MinProfileParticipantN</code> and <code>MinProfileParticipantProportion</code>
 give the size of the smallest profile in training participants rather than
 SOM nodes.</p>
+<p>Phenotypes are learned by Mclust on the SOM codebook. Hard assignment uses
+the best-matching node's Mclust class. Soft assignment uses normalized
+inverse-squared codebook-distance weights across the nearest nodes to
+combine their Mclust posterior probabilities. <code>SoftEntropy</code> is the
+normalized entropy of that participant-level probability vector
+(entropy divided by <code>log(k)</code>) and <code>SoftMargin</code> is the largest minus
+second-largest probability. <code>prob_*</code> columns describe a SOM node's Mclust
+posterior, whereas <code>SoftProb_*</code> columns describe a participant's
+proximity-weighted membership. Boundary flags are confidence diagnostics
+only: they do not remove, relabel, or suppress a participant during
+training, stability scoring, or projection.</p>
+<p>Each new fit uses one deterministic, seeded full-cohort batch SOM. Its
+initialization codebook, preprocessing, grid, topology, neighbourhood,
+epochs, codebooks, and node-level mixture are retained so projection is
+completely frozen. Earlier fitted objects remain projectable because
+projection uses their frozen map and mixture rather than refitting either
+component.</p>
 <p><code>SOM_Distance</code> is the Euclidean distance, in Z-score units, from a
 participant to their best-matching unit. Its square is the sum of the
 squared per-variable residuals, returned in <code>ModelInfo_SOM$SOMFit$residuals</code>
@@ -595,20 +715,25 @@ get the reusable, projectable model.</p>
 <p>Stability assesses internal reproducibility by full-pipeline 90% participant
 subsampling without replacement. For each replicate, 90% of complete
 participants are selected once, all preprocessing, any reduction (PCA,
-MCA, or SOM), and the selected clustering method are refit. Assignments from
-that refit are compared with the full-data reference assignments for the
-same sampled participants, joined by <code>.row_id</code>; projection is not used.
-It is an internal sensitivity analysis, not
+MCA, or SOM), and the selected clustering method are refit. Most pipelines
+compare assignments for sampled participants. SOM + Mclust instead maps the
+complete reference cohort onto every refit and compares the resulting full
+participant partition. <code>Stability$settings$comparison_scope</code> records the
+policy used. It is an internal sensitivity analysis, not
 independent-cohort validation.</p>
 <p><code>Stability$settings</code> records the analysis provenance:</p><ul><li><p><code>resamples</code>: requested number of 90% subsample refits.</p></li>
 <li><p><code>seed</code>: seed used to derive reproducible sampling and model seeds.</p></li>
-<li><p><code>refit_scope</code>: always <code>"full_pipeline_in_sample"</code>, meaning
-preprocessing, reduction where applicable, and clustering were all refit.</p></li>
-<li><p><code>comparison_scope</code>: always <code>"sampled_participants"</code>; only the
-participants used in a refit enter that replicate's agreement metrics.</p></li>
+<li><p><code>refit_scope</code>: whether agreement is calculated directly in the
+refitted sample or after refit projection onto the reference cohort.</p></li>
+<li><p><code>comparison_scope</code>: the participants entering replicate agreement
+metrics; most pipelines use <code>"sampled_participants"</code>, while SOM + Mclust
+uses <code>"all_reference_participants"</code>.</p></li>
 <li><p><code>resample_type</code>: <code>"subsample_without_replacement"</code> for the
 primary stability analysis.</p></li>
 <li><p><code>resample_fraction</code>: the retained participant fraction, <code>0.90</code>.</p></li>
+<li><p><code>resample_fractions</code>: every requested retention fraction. The
+default is <code>0.90</code>; additional values create an opt-in deletion-stability
+curve without replacing the 90% primary screen.</p></li>
 <li><p><code>coassignment_limit</code>: maximum number of complete training
 participants (2,000) for which the full pairwise co-assignment matrix is
 calculated.</p></li>
@@ -619,7 +744,7 @@ ARI but exclude it from phenotype-level Jaccard recovery.</p></li>
 <code>Classes</code> identify the selected candidate (for HDBSCAN, <code>Classes</code> is the
 data-derived extracted count); <code>Replicate</code> is its sequence number; <code>Status</code>
 is <code>"success"</code> or a failure status; <code>SamplingSeed</code> and <code>ModelSeed</code> identify
-the independently varied participant draw and stochastic refit; and <code>Error</code>
+the participant draw and refit initialization policy; and <code>Error</code>
 contains the error message for an unsuccessful refit. <code>ARI</code> is the primary
 successful-refit metric: it is invariant to cluster numbering, higher is
 better, and it can be negative when agreement is worse than chance.</p>
@@ -635,8 +760,19 @@ score. <code>StabilityARI_Mean</code> and <code>StabilityARI_P05</code> are the 
 percentile of ARI. <code>StabilityJaccard_Mean</code> and <code>StabilityJaccard_Min</code> are
 respectively the mean cluster-level recovery and the minimum of the
 cluster-specific mean recoveries across replicates.
-<code>ReproducibilityScore</code> is the mean of the finite <code>StabilityARI_Mean</code> and
-<code>StabilityJaccard_Mean</code> values only; it does not include success rate.</p>
+<code>ReproducibilityScore</code> does not include success rate. For most pipelines it
+is the mean of finite <code>StabilityARI_Mean</code> and <code>StabilityJaccard_Mean</code>
+values; SOM + Mclust uses <code>StabilityARI_Mean</code> directly because it selects
+on agreement of the final participant partition.</p>
+<p>SOM + Mclust additionally returns <code>StabilityARI_NonBoundary</code>,
+<code>StabilityARI_NonBoundary_P05</code>, and non-boundary Jaccard summaries. These
+are secondary diagnostics calculated only on the fixed reference-model mask
+with <code>SoftMargin</code> below its threshold or <code>SoftEntropy</code> above its threshold
+excluded. The primary all-participant ARI always retains these boundary
+participants. <code>boundary_summary</code> reports their count and proportion overall
+and within each reference cluster. Earlier posterior-based <code>Core</code> fields are
+retained for compatibility as descriptive diagnostics; they are not the
+boundary-aware sensitivity measure.</p>
 <p><code>Stability$failures</code> repeats the replicate columns for unsuccessful refits,
 making fit failures auditable without mixing them with successful metrics.</p>
 <p><code>Stability$participant_inclusion</code> is one row per complete reference
@@ -661,6 +797,20 @@ matrix values mean more consistent pairwise co-membership.
 Where more than one candidate is summarized, entries are named by its
 <code>Model_Classes</code> key. The matrix is diagnostic only and is never used for
 selection.</p>
+<p>SOM + Mclust additionally returns memory-safe final-partition diagnostics
+for every cohort size. <code>co_membership_by_cluster</code> reports the proportion of
+within-reference-cluster participant pairs retained together (<code>Cohesion</code>) and
+the probability of co-assignment with outsiders (<code>CrossMixing</code>).
+<code>co_membership_between_clusters</code> reports cross-reference-cluster
+co-assignment probabilities. <code>split_merge_reference</code> and
+<code>split_merge_refit</code> identify dominant sources, shares, and effective numbers
+of groups, while <code>profile_recovery</code> reports matched-cluster correlation and
+RMSE for mean clustering-variable profiles on the frozen reference scale.
+These explain the nature of membership changes; they do not supersede ARI.</p>
+<p><code>deletion_curve</code> summarizes ARI, VI, NMI, and Fowlkes–Mallows agreement at
+each requested participant-retention fraction. It is useful for describing
+sensitivity to increasing cohort perturbation, not for selecting the least
+demanding fraction.</p>
 <p><code>Stability$plots</code> contains <code>cluster_recovery</code> (per-cluster Jaccard),
 <code>partition_metrics</code> (the ARI distribution), and
 <code>cluster_inclusion</code>; it also contains a co-assignment heatmap when the
@@ -751,306 +901,495 @@ a model-based cluster analysis. <em>Entropy</em>. 2017;19:452.</p>
    <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> MaxProfileNodeProportion </th>
    <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> MinProfileParticipantN </th>
    <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> MinProfileParticipantProportion </th>
+   <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> PosteriorMean </th>
+   <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> PosteriorMedian </th>
+   <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> PropLowPosterior </th>
    <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> StabilitySuccessRate </th>
    <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> StabilityARI_Mean </th>
    <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> StabilityARI_P05 </th>
    <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> StabilityJaccard_Mean </th>
    <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> StabilityJaccard_Min </th>
+   <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> StabilityCoreProportion </th>
+   <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> StabilityARI_Core </th>
+   <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> StabilityJaccard_CoreMean </th>
+   <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> StabilityJaccard_CoreMin </th>
+   <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> StabilityNonBoundaryProportion </th>
+   <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> StabilityARI_NonBoundary </th>
+   <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> StabilityARI_NonBoundary_P05 </th>
+   <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> StabilityJaccard_NonBoundaryMean </th>
+   <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> StabilityJaccard_NonBoundaryMin </th>
+   <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> ReproducibilityScore_All </th>
    <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> ReproducibilityScore </th>
+   <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> BoundaryParticipantProportion </th>
+   <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> MaxClusterBoundaryProportion </th>
    <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> AIC_scaled </th>
    <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> BIC_scaled </th>
    <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> Entropy_scaled </th>
    <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> Reproducibility_scaled </th>
+   <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> Posterior_scaled </th>
    <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> ahp_index </th>
    <th style="text-align:left;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> Eligible </th>
+   <th style="text-align:left;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> GridDesignPolicy </th>
+   <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> GridDesignK </th>
+   <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> TargetNodesPerProfile </th>
+   <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> SOMNodeCount </th>
+   <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> ExpectedNodesPerProfile </th>
   </tr></thead><tbody><tr><td style="text-align:right;"> 1 </td>
    <td style="text-align:right;"> 2 </td>
-   <td style="text-align:right;"> -329.586 </td>
+   <td style="text-align:right;"> -351.068 </td>
    <td style="text-align:right;"> 37 </td>
    <td style="text-align:right;"> 25 </td>
-   <td style="text-align:right;"> 733.172 </td>
-   <td style="text-align:right;"> 1006.502 </td>
-   <td style="text-align:right;"> 778.270 </td>
-   <td style="text-align:right;"> 815.270 </td>
-   <td style="text-align:right;"> 661.038 </td>
-   <td style="text-align:right;"> 773.172 </td>
-   <td style="text-align:right;"> 663.530 </td>
-   <td style="text-align:right;"> -779.132 </td>
-   <td style="text-align:right;"> 0.933 </td>
-   <td style="text-align:right;"> 0.930 </td>
-   <td style="text-align:right;"> 0.999 </td>
-   <td style="text-align:right;"> 54.520 </td>
-   <td style="text-align:right;"> 0.010 </td>
+   <td style="text-align:right;"> 776.136 </td>
+   <td style="text-align:right;"> 1049.407 </td>
+   <td style="text-align:right;"> 821.234 </td>
+   <td style="text-align:right;"> 858.234 </td>
+   <td style="text-align:right;"> 704.062 </td>
+   <td style="text-align:right;"> 816.136 </td>
+   <td style="text-align:right;"> 706.494 </td>
+   <td style="text-align:right;"> -821.885 </td>
+   <td style="text-align:right;"> 0.963 </td>
+   <td style="text-align:right;"> 0.955 </td>
+   <td style="text-align:right;"> 1 </td>
+   <td style="text-align:right;"> NA </td>
+   <td style="text-align:right;"> NA </td>
+   <td style="text-align:right;"> 6 </td>
+   <td style="text-align:right;"> 19 </td>
+   <td style="text-align:right;"> 0.24 </td>
+   <td style="text-align:right;"> 0.76 </td>
+   <td style="text-align:right;"> 80 </td>
+   <td style="text-align:right;"> 0.250 </td>
+   <td style="text-align:right;"> 1 </td>
+   <td style="text-align:right;"> 1 </td>
+   <td style="text-align:right;"> 0 </td>
+   <td style="text-align:right;"> 1 </td>
+   <td style="text-align:right;"> -0.069 </td>
+   <td style="text-align:right;"> -0.069 </td>
+   <td style="text-align:right;"> 0.417 </td>
+   <td style="text-align:right;"> 0.333 </td>
+   <td style="text-align:right;"> 1 </td>
+   <td style="text-align:right;"> -0.069 </td>
+   <td style="text-align:right;"> 0.417 </td>
+   <td style="text-align:right;"> 0.333 </td>
+   <td style="text-align:right;"> 1.000 </td>
+   <td style="text-align:right;"> -0.069 </td>
+   <td style="text-align:right;"> -0.069 </td>
+   <td style="text-align:right;"> 0.417 </td>
+   <td style="text-align:right;"> 0.333 </td>
+   <td style="text-align:right;"> -0.069 </td>
+   <td style="text-align:right;"> -0.069 </td>
+   <td style="text-align:right;"> 0.000 </td>
+   <td style="text-align:right;"> 0.0 </td>
+   <td style="text-align:right;"> -1.682 </td>
+   <td style="text-align:right;"> -1.852 </td>
+   <td style="text-align:right;"> -2.472 </td>
+   <td style="text-align:right;"> -1.417 </td>
+   <td style="text-align:right;"> -2.475 </td>
+   <td style="text-align:right;"> -1.856 </td>
+   <td style="text-align:left;"> TRUE </td>
+   <td style="text-align:left;"> explicit_dimensions </td>
    <td style="text-align:right;"> 5 </td>
    <td style="text-align:right;"> 20 </td>
-   <td style="text-align:right;"> 0.20 </td>
-   <td style="text-align:right;"> 0.80 </td>
-   <td style="text-align:right;"> 72 </td>
-   <td style="text-align:right;"> 0.225 </td>
-   <td style="text-align:right;"> 1 </td>
-   <td style="text-align:right;"> 0.418 </td>
-   <td style="text-align:right;"> -0.026 </td>
-   <td style="text-align:right;"> 0.678 </td>
-   <td style="text-align:right;"> 0.613 </td>
-   <td style="text-align:right;"> 0.548 </td>
-   <td style="text-align:right;"> -1.291 </td>
-   <td style="text-align:right;"> -1.315 </td>
-   <td style="text-align:right;"> -2.217 </td>
-   <td style="text-align:right;"> -0.793 </td>
-   <td style="text-align:right;"> -1.404 </td>
-   <td style="text-align:left;"> TRUE </td>
+   <td style="text-align:right;"> 25 </td>
+   <td style="text-align:right;"> 12.500 </td>
   </tr><tr><td style="text-align:right;"> 3 </td>
    <td style="text-align:right;"> 2 </td>
-   <td style="text-align:right;"> 228.125 </td>
+   <td style="text-align:right;"> 72.513 </td>
    <td style="text-align:right;"> 169 </td>
    <td style="text-align:right;"> 25 </td>
-   <td style="text-align:right;"> -118.249 </td>
-   <td style="text-align:right;"> 1136.732 </td>
-   <td style="text-align:right;"> 87.741 </td>
-   <td style="text-align:right;"> 256.741 </td>
-   <td style="text-align:right;"> -454.251 </td>
-   <td style="text-align:right;"> 53.751 </td>
-   <td style="text-align:right;"> -436.344 </td>
-   <td style="text-align:right;"> -87.744 </td>
-   <td style="text-align:right;"> 0.999 </td>
+   <td style="text-align:right;"> 192.974 </td>
+   <td style="text-align:right;"> 1447.954 </td>
+   <td style="text-align:right;"> 398.964 </td>
+   <td style="text-align:right;"> 567.964 </td>
+   <td style="text-align:right;"> -143.026 </td>
+   <td style="text-align:right;"> 364.974 </td>
+   <td style="text-align:right;"> -125.121 </td>
+   <td style="text-align:right;"> -398.964 </td>
    <td style="text-align:right;"> 1.000 </td>
    <td style="text-align:right;"> 1.000 </td>
-   <td style="text-align:right;"> 23.218 </td>
-   <td style="text-align:right;"> 0.376 </td>
-   <td style="text-align:right;"> 4 </td>
-   <td style="text-align:right;"> 21 </td>
-   <td style="text-align:right;"> 0.16 </td>
-   <td style="text-align:right;"> 0.84 </td>
-   <td style="text-align:right;"> 72 </td>
-   <td style="text-align:right;"> 0.225 </td>
    <td style="text-align:right;"> 1 </td>
-   <td style="text-align:right;"> 0.454 </td>
-   <td style="text-align:right;"> -0.037 </td>
-   <td style="text-align:right;"> 0.709 </td>
-   <td style="text-align:right;"> 0.644 </td>
-   <td style="text-align:right;"> 0.582 </td>
-   <td style="text-align:right;"> 0.885 </td>
-   <td style="text-align:right;"> 0.951 </td>
-   <td style="text-align:right;"> 0.500 </td>
-   <td style="text-align:right;"> -0.628 </td>
-   <td style="text-align:right;"> 0.427 </td>
+   <td style="text-align:right;"> NA </td>
+   <td style="text-align:right;"> NA </td>
+   <td style="text-align:right;"> 6 </td>
+   <td style="text-align:right;"> 19 </td>
+   <td style="text-align:right;"> 0.24 </td>
+   <td style="text-align:right;"> 0.76 </td>
+   <td style="text-align:right;"> 80 </td>
+   <td style="text-align:right;"> 0.250 </td>
+   <td style="text-align:right;"> 1 </td>
+   <td style="text-align:right;"> 1 </td>
+   <td style="text-align:right;"> 0 </td>
+   <td style="text-align:right;"> 1 </td>
+   <td style="text-align:right;"> -0.069 </td>
+   <td style="text-align:right;"> -0.069 </td>
+   <td style="text-align:right;"> 0.417 </td>
+   <td style="text-align:right;"> 0.333 </td>
+   <td style="text-align:right;"> 1 </td>
+   <td style="text-align:right;"> -0.069 </td>
+   <td style="text-align:right;"> 0.417 </td>
+   <td style="text-align:right;"> 0.333 </td>
+   <td style="text-align:right;"> 1.000 </td>
+   <td style="text-align:right;"> -0.069 </td>
+   <td style="text-align:right;"> -0.069 </td>
+   <td style="text-align:right;"> 0.417 </td>
+   <td style="text-align:right;"> 0.333 </td>
+   <td style="text-align:right;"> -0.069 </td>
+   <td style="text-align:right;"> -0.069 </td>
+   <td style="text-align:right;"> 0.000 </td>
+   <td style="text-align:right;"> 0.0 </td>
+   <td style="text-align:right;"> 0.710 </td>
+   <td style="text-align:right;"> 0.705 </td>
+   <td style="text-align:right;"> 0.373 </td>
+   <td style="text-align:right;"> -1.417 </td>
+   <td style="text-align:right;"> 0.358 </td>
+   <td style="text-align:right;"> 0.092 </td>
    <td style="text-align:left;"> TRUE </td>
+   <td style="text-align:left;"> explicit_dimensions </td>
+   <td style="text-align:right;"> 5 </td>
+   <td style="text-align:right;"> 20 </td>
+   <td style="text-align:right;"> 25 </td>
+   <td style="text-align:right;"> 12.500 </td>
   </tr><tr><td style="text-align:right;"> 1 </td>
    <td style="text-align:right;"> 3 </td>
-   <td style="text-align:right;"> -287.806 </td>
+   <td style="text-align:right;"> -277.860 </td>
    <td style="text-align:right;"> 50 </td>
    <td style="text-align:right;"> 25 </td>
-   <td style="text-align:right;"> 675.613 </td>
-   <td style="text-align:right;"> 1045.563 </td>
-   <td style="text-align:right;"> 736.556 </td>
-   <td style="text-align:right;"> 786.556 </td>
-   <td style="text-align:right;"> 577.549 </td>
-   <td style="text-align:right;"> 728.613 </td>
-   <td style="text-align:right;"> 581.502 </td>
-   <td style="text-align:right;"> -737.075 </td>
-   <td style="text-align:right;"> 0.968 </td>
-   <td style="text-align:right;"> 0.958 </td>
+   <td style="text-align:right;"> 655.719 </td>
+   <td style="text-align:right;"> 1025.610 </td>
+   <td style="text-align:right;"> 716.663 </td>
+   <td style="text-align:right;"> 766.663 </td>
+   <td style="text-align:right;"> 557.715 </td>
+   <td style="text-align:right;"> 708.719 </td>
+   <td style="text-align:right;"> 561.608 </td>
+   <td style="text-align:right;"> -716.678 </td>
+   <td style="text-align:right;"> 0.998 </td>
    <td style="text-align:right;"> 0.999 </td>
-   <td style="text-align:right;"> 83.559 </td>
-   <td style="text-align:right;"> 0.010 </td>
-   <td style="text-align:right;"> 5 </td>
-   <td style="text-align:right;"> 15 </td>
-   <td style="text-align:right;"> 0.20 </td>
-   <td style="text-align:right;"> 0.60 </td>
-   <td style="text-align:right;"> 79 </td>
-   <td style="text-align:right;"> 0.247 </td>
    <td style="text-align:right;"> 1 </td>
-   <td style="text-align:right;"> 0.444 </td>
-   <td style="text-align:right;"> 0.444 </td>
-   <td style="text-align:right;"> 0.652 </td>
-   <td style="text-align:right;"> 0.488 </td>
-   <td style="text-align:right;"> 0.548 </td>
-   <td style="text-align:right;"> -1.144 </td>
-   <td style="text-align:right;"> -1.178 </td>
-   <td style="text-align:right;"> -0.769 </td>
-   <td style="text-align:right;"> -0.790 </td>
-   <td style="text-align:right;"> -0.970 </td>
+   <td style="text-align:right;"> NA </td>
+   <td style="text-align:right;"> NA </td>
+   <td style="text-align:right;"> 6 </td>
+   <td style="text-align:right;"> 13 </td>
+   <td style="text-align:right;"> 0.24 </td>
+   <td style="text-align:right;"> 0.52 </td>
+   <td style="text-align:right;"> 80 </td>
+   <td style="text-align:right;"> 0.250 </td>
+   <td style="text-align:right;"> 1 </td>
+   <td style="text-align:right;"> 1 </td>
+   <td style="text-align:right;"> 0 </td>
+   <td style="text-align:right;"> 1 </td>
+   <td style="text-align:right;"> 0.464 </td>
+   <td style="text-align:right;"> 0.464 </td>
+   <td style="text-align:right;"> 0.667 </td>
+   <td style="text-align:right;"> 0.500 </td>
+   <td style="text-align:right;"> 1 </td>
+   <td style="text-align:right;"> 0.464 </td>
+   <td style="text-align:right;"> 0.667 </td>
+   <td style="text-align:right;"> 0.500 </td>
+   <td style="text-align:right;"> 1.000 </td>
+   <td style="text-align:right;"> 0.464 </td>
+   <td style="text-align:right;"> 0.464 </td>
+   <td style="text-align:right;"> 0.667 </td>
+   <td style="text-align:right;"> 0.500 </td>
+   <td style="text-align:right;"> 0.464 </td>
+   <td style="text-align:right;"> 0.464 </td>
+   <td style="text-align:right;"> 0.000 </td>
+   <td style="text-align:right;"> 0.0 </td>
+   <td style="text-align:right;"> -1.188 </td>
+   <td style="text-align:right;"> -1.219 </td>
+   <td style="text-align:right;"> 0.237 </td>
+   <td style="text-align:right;"> -0.259 </td>
+   <td style="text-align:right;"> 0.358 </td>
+   <td style="text-align:right;"> -0.607 </td>
    <td style="text-align:left;"> TRUE </td>
+   <td style="text-align:left;"> explicit_dimensions </td>
+   <td style="text-align:right;"> 5 </td>
+   <td style="text-align:right;"> 20 </td>
+   <td style="text-align:right;"> 25 </td>
+   <td style="text-align:right;"> 8.333 </td>
   </tr><tr><td style="text-align:right;"> 3 </td>
    <td style="text-align:right;"> 3 </td>
-   <td style="text-align:right;"> 240.315 </td>
+   <td style="text-align:right;"> 93.077 </td>
    <td style="text-align:right;"> 182 </td>
    <td style="text-align:right;"> 25 </td>
-   <td style="text-align:right;"> -116.630 </td>
-   <td style="text-align:right;"> 1235.046 </td>
-   <td style="text-align:right;"> 105.205 </td>
-   <td style="text-align:right;"> 287.205 </td>
-   <td style="text-align:right;"> -478.635 </td>
-   <td style="text-align:right;"> 68.370 </td>
-   <td style="text-align:right;"> -459.194 </td>
-   <td style="text-align:right;"> -105.227 </td>
-   <td style="text-align:right;"> 0.998 </td>
-   <td style="text-align:right;"> 0.998 </td>
+   <td style="text-align:right;"> 177.846 </td>
+   <td style="text-align:right;"> 1529.517 </td>
+   <td style="text-align:right;"> 399.682 </td>
+   <td style="text-align:right;"> 581.682 </td>
+   <td style="text-align:right;"> -184.154 </td>
+   <td style="text-align:right;"> 362.846 </td>
+   <td style="text-align:right;"> -164.717 </td>
+   <td style="text-align:right;"> -399.682 </td>
    <td style="text-align:right;"> 1.000 </td>
-   <td style="text-align:right;"> 24.381 </td>
-   <td style="text-align:right;"> 0.356 </td>
-   <td style="text-align:right;"> 4 </td>
-   <td style="text-align:right;"> 17 </td>
-   <td style="text-align:right;"> 0.16 </td>
-   <td style="text-align:right;"> 0.68 </td>
-   <td style="text-align:right;"> 72 </td>
-   <td style="text-align:right;"> 0.225 </td>
+   <td style="text-align:right;"> 1.000 </td>
    <td style="text-align:right;"> 1 </td>
-   <td style="text-align:right;"> 0.372 </td>
-   <td style="text-align:right;"> 0.369 </td>
-   <td style="text-align:right;"> 0.537 </td>
-   <td style="text-align:right;"> 0.460 </td>
-   <td style="text-align:right;"> 0.454 </td>
-   <td style="text-align:right;"> 0.881 </td>
-   <td style="text-align:right;"> 0.893 </td>
-   <td style="text-align:right;"> 0.434 </td>
-   <td style="text-align:right;"> -1.248 </td>
-   <td style="text-align:right;"> 0.240 </td>
+   <td style="text-align:right;"> NA </td>
+   <td style="text-align:right;"> NA </td>
+   <td style="text-align:right;"> 6 </td>
+   <td style="text-align:right;"> 13 </td>
+   <td style="text-align:right;"> 0.24 </td>
+   <td style="text-align:right;"> 0.52 </td>
+   <td style="text-align:right;"> 80 </td>
+   <td style="text-align:right;"> 0.250 </td>
+   <td style="text-align:right;"> 1 </td>
+   <td style="text-align:right;"> 1 </td>
+   <td style="text-align:right;"> 0 </td>
+   <td style="text-align:right;"> 1 </td>
+   <td style="text-align:right;"> 0.464 </td>
+   <td style="text-align:right;"> 0.464 </td>
+   <td style="text-align:right;"> 0.667 </td>
+   <td style="text-align:right;"> 0.500 </td>
+   <td style="text-align:right;"> 1 </td>
+   <td style="text-align:right;"> 0.464 </td>
+   <td style="text-align:right;"> 0.667 </td>
+   <td style="text-align:right;"> 0.500 </td>
+   <td style="text-align:right;"> 1.000 </td>
+   <td style="text-align:right;"> 0.464 </td>
+   <td style="text-align:right;"> 0.464 </td>
+   <td style="text-align:right;"> 0.667 </td>
+   <td style="text-align:right;"> 0.500 </td>
+   <td style="text-align:right;"> 0.464 </td>
+   <td style="text-align:right;"> 0.464 </td>
+   <td style="text-align:right;"> 0.000 </td>
+   <td style="text-align:right;"> 0.0 </td>
+   <td style="text-align:right;"> 0.772 </td>
+   <td style="text-align:right;"> 0.700 </td>
+   <td style="text-align:right;"> 0.373 </td>
+   <td style="text-align:right;"> -0.259 </td>
+   <td style="text-align:right;"> 0.358 </td>
+   <td style="text-align:right;"> 0.396 </td>
    <td style="text-align:left;"> TRUE </td>
+   <td style="text-align:left;"> explicit_dimensions </td>
+   <td style="text-align:right;"> 5 </td>
+   <td style="text-align:right;"> 20 </td>
+   <td style="text-align:right;"> 25 </td>
+   <td style="text-align:right;"> 8.333 </td>
   </tr><tr><td style="text-align:right;"> 1 </td>
    <td style="text-align:right;"> 4 </td>
-   <td style="text-align:right;"> -182.881 </td>
+   <td style="text-align:right;"> -152.908 </td>
    <td style="text-align:right;"> 63 </td>
    <td style="text-align:right;"> 25 </td>
-   <td style="text-align:right;"> 491.761 </td>
-   <td style="text-align:right;"> 958.343 </td>
-   <td style="text-align:right;"> 568.551 </td>
-   <td style="text-align:right;"> 631.551 </td>
-   <td style="text-align:right;"> 367.758 </td>
-   <td style="text-align:right;"> 557.761 </td>
-   <td style="text-align:right;"> 373.182 </td>
-   <td style="text-align:right;"> -568.566 </td>
-   <td style="text-align:right;"> 0.999 </td>
-   <td style="text-align:right;"> 0.999 </td>
+   <td style="text-align:right;"> 431.816 </td>
+   <td style="text-align:right;"> 898.395 </td>
+   <td style="text-align:right;"> 508.605 </td>
+   <td style="text-align:right;"> 571.605 </td>
+   <td style="text-align:right;"> 307.816 </td>
+   <td style="text-align:right;"> 497.816 </td>
+   <td style="text-align:right;"> 313.237 </td>
+   <td style="text-align:right;"> -508.605 </td>
    <td style="text-align:right;"> 1.000 </td>
-   <td style="text-align:right;"> 209.851 </td>
-   <td style="text-align:right;"> 0.010 </td>
+   <td style="text-align:right;"> 1.000 </td>
+   <td style="text-align:right;"> 1 </td>
+   <td style="text-align:right;"> NA </td>
+   <td style="text-align:right;"> NA </td>
    <td style="text-align:right;"> 5 </td>
    <td style="text-align:right;"> 8 </td>
    <td style="text-align:right;"> 0.20 </td>
    <td style="text-align:right;"> 0.32 </td>
-   <td style="text-align:right;"> 79 </td>
-   <td style="text-align:right;"> 0.247 </td>
+   <td style="text-align:right;"> 80 </td>
+   <td style="text-align:right;"> 0.250 </td>
    <td style="text-align:right;"> 1 </td>
-   <td style="text-align:right;"> 0.973 </td>
-   <td style="text-align:right;"> 0.956 </td>
-   <td style="text-align:right;"> 0.979 </td>
-   <td style="text-align:right;"> 0.970 </td>
-   <td style="text-align:right;"> 0.976 </td>
-   <td style="text-align:right;"> -0.674 </td>
-   <td style="text-align:right;"> -0.627 </td>
-   <td style="text-align:right;"> 0.470 </td>
-   <td style="text-align:right;"> 1.288 </td>
-   <td style="text-align:right;"> 0.114 </td>
+   <td style="text-align:right;"> 1 </td>
+   <td style="text-align:right;"> 0 </td>
+   <td style="text-align:right;"> 1 </td>
+   <td style="text-align:right;"> 1.000 </td>
+   <td style="text-align:right;"> 1.000 </td>
+   <td style="text-align:right;"> 1.000 </td>
+   <td style="text-align:right;"> 1.000 </td>
+   <td style="text-align:right;"> 1 </td>
+   <td style="text-align:right;"> 1.000 </td>
+   <td style="text-align:right;"> 1.000 </td>
+   <td style="text-align:right;"> 1.000 </td>
+   <td style="text-align:right;"> 1.000 </td>
+   <td style="text-align:right;"> 1.000 </td>
+   <td style="text-align:right;"> 1.000 </td>
+   <td style="text-align:right;"> 1.000 </td>
+   <td style="text-align:right;"> 1.000 </td>
+   <td style="text-align:right;"> 1.000 </td>
+   <td style="text-align:right;"> 1.000 </td>
+   <td style="text-align:right;"> 0.000 </td>
+   <td style="text-align:right;"> 0.0 </td>
+   <td style="text-align:right;"> -0.270 </td>
+   <td style="text-align:right;"> 0.041 </td>
+   <td style="text-align:right;"> 0.373 </td>
+   <td style="text-align:right;"> 0.907 </td>
+   <td style="text-align:right;"> 0.358 </td>
+   <td style="text-align:right;"> 0.263 </td>
    <td style="text-align:left;"> TRUE </td>
+   <td style="text-align:left;"> explicit_dimensions </td>
+   <td style="text-align:right;"> 5 </td>
+   <td style="text-align:right;"> 20 </td>
+   <td style="text-align:right;"> 25 </td>
+   <td style="text-align:right;"> 6.250 </td>
   </tr><tr><td style="text-align:right;"> 3 </td>
    <td style="text-align:right;"> 4 </td>
-   <td style="text-align:right;"> 258.702 </td>
+   <td style="text-align:right;"> 121.189 </td>
    <td style="text-align:right;"> 195 </td>
    <td style="text-align:right;"> 25 </td>
-   <td style="text-align:right;"> -127.404 </td>
-   <td style="text-align:right;"> 1320.957 </td>
-   <td style="text-align:right;"> 110.276 </td>
-   <td style="text-align:right;"> 305.276 </td>
-   <td style="text-align:right;"> -515.405 </td>
-   <td style="text-align:right;"> 70.596 </td>
-   <td style="text-align:right;"> -494.437 </td>
-   <td style="text-align:right;"> -110.278 </td>
+   <td style="text-align:right;"> 147.623 </td>
+   <td style="text-align:right;"> 1595.984 </td>
+   <td style="text-align:right;"> 385.304 </td>
+   <td style="text-align:right;"> 580.304 </td>
+   <td style="text-align:right;"> -240.377 </td>
+   <td style="text-align:right;"> 345.623 </td>
+   <td style="text-align:right;"> -219.410 </td>
+   <td style="text-align:right;"> -385.304 </td>
    <td style="text-align:right;"> 1.000 </td>
    <td style="text-align:right;"> 1.000 </td>
-   <td style="text-align:right;"> 1.000 </td>
-   <td style="text-align:right;"> 36.774 </td>
-   <td style="text-align:right;"> 0.069 </td>
-   <td style="text-align:right;"> 4 </td>
-   <td style="text-align:right;"> 9 </td>
-   <td style="text-align:right;"> 0.16 </td>
-   <td style="text-align:right;"> 0.36 </td>
-   <td style="text-align:right;"> 72 </td>
-   <td style="text-align:right;"> 0.225 </td>
    <td style="text-align:right;"> 1 </td>
-   <td style="text-align:right;"> 0.923 </td>
-   <td style="text-align:right;"> 0.911 </td>
-   <td style="text-align:right;"> 0.943 </td>
-   <td style="text-align:right;"> 0.920 </td>
-   <td style="text-align:right;"> 0.933 </td>
-   <td style="text-align:right;"> 0.909 </td>
-   <td style="text-align:right;"> 0.877 </td>
-   <td style="text-align:right;"> 0.525 </td>
-   <td style="text-align:right;"> 1.079 </td>
-   <td style="text-align:right;"> 0.847 </td>
+   <td style="text-align:right;"> NA </td>
+   <td style="text-align:right;"> NA </td>
+   <td style="text-align:right;"> 5 </td>
+   <td style="text-align:right;"> 8 </td>
+   <td style="text-align:right;"> 0.20 </td>
+   <td style="text-align:right;"> 0.32 </td>
+   <td style="text-align:right;"> 80 </td>
+   <td style="text-align:right;"> 0.250 </td>
+   <td style="text-align:right;"> 1 </td>
+   <td style="text-align:right;"> 1 </td>
+   <td style="text-align:right;"> 0 </td>
+   <td style="text-align:right;"> 1 </td>
+   <td style="text-align:right;"> 1.000 </td>
+   <td style="text-align:right;"> 1.000 </td>
+   <td style="text-align:right;"> 1.000 </td>
+   <td style="text-align:right;"> 1.000 </td>
+   <td style="text-align:right;"> 1 </td>
+   <td style="text-align:right;"> 1.000 </td>
+   <td style="text-align:right;"> 1.000 </td>
+   <td style="text-align:right;"> 1.000 </td>
+   <td style="text-align:right;"> 1.000 </td>
+   <td style="text-align:right;"> 1.000 </td>
+   <td style="text-align:right;"> 1.000 </td>
+   <td style="text-align:right;"> 1.000 </td>
+   <td style="text-align:right;"> 1.000 </td>
+   <td style="text-align:right;"> 1.000 </td>
+   <td style="text-align:right;"> 1.000 </td>
+   <td style="text-align:right;"> 0.000 </td>
+   <td style="text-align:right;"> 0.0 </td>
+   <td style="text-align:right;"> 0.896 </td>
+   <td style="text-align:right;"> 0.787 </td>
+   <td style="text-align:right;"> 0.373 </td>
+   <td style="text-align:right;"> 0.907 </td>
+   <td style="text-align:right;"> 0.358 </td>
+   <td style="text-align:right;"> 0.741 </td>
    <td style="text-align:left;"> TRUE </td>
+   <td style="text-align:left;"> explicit_dimensions </td>
+   <td style="text-align:right;"> 5 </td>
+   <td style="text-align:right;"> 20 </td>
+   <td style="text-align:right;"> 25 </td>
+   <td style="text-align:right;"> 6.250 </td>
   </tr><tr><td style="text-align:right;"> 1 </td>
    <td style="text-align:right;"> 5 </td>
-   <td style="text-align:right;"> -140.289 </td>
+   <td style="text-align:right;"> -121.232 </td>
    <td style="text-align:right;"> 76 </td>
    <td style="text-align:right;"> 25 </td>
-   <td style="text-align:right;"> 432.579 </td>
-   <td style="text-align:right;"> 995.848 </td>
-   <td style="text-align:right;"> 525.213 </td>
-   <td style="text-align:right;"> 601.213 </td>
-   <td style="text-align:right;"> 282.579 </td>
-   <td style="text-align:right;"> 511.579 </td>
-   <td style="text-align:right;"> 289.530 </td>
-   <td style="text-align:right;"> -525.214 </td>
+   <td style="text-align:right;"> 394.464 </td>
+   <td style="text-align:right;"> 957.733 </td>
+   <td style="text-align:right;"> 487.099 </td>
+   <td style="text-align:right;"> 563.099 </td>
+   <td style="text-align:right;"> 244.464 </td>
+   <td style="text-align:right;"> 473.464 </td>
+   <td style="text-align:right;"> 251.415 </td>
+   <td style="text-align:right;"> -487.099 </td>
    <td style="text-align:right;"> 1.000 </td>
    <td style="text-align:right;"> 1.000 </td>
-   <td style="text-align:right;"> 1.000 </td>
-   <td style="text-align:right;"> 85.183 </td>
-   <td style="text-align:right;"> 0.010 </td>
-   <td style="text-align:right;"> 4 </td>
-   <td style="text-align:right;"> 7 </td>
-   <td style="text-align:right;"> 0.16 </td>
-   <td style="text-align:right;"> 0.28 </td>
-   <td style="text-align:right;"> 2 </td>
-   <td style="text-align:right;"> 0.006 </td>
    <td style="text-align:right;"> 1 </td>
-   <td style="text-align:right;"> 0.984 </td>
-   <td style="text-align:right;"> 0.973 </td>
-   <td style="text-align:right;"> 0.842 </td>
-   <td style="text-align:right;"> 0.257 </td>
-   <td style="text-align:right;"> 0.913 </td>
-   <td style="text-align:right;"> -0.523 </td>
-   <td style="text-align:right;"> -0.485 </td>
-   <td style="text-align:right;"> 0.529 </td>
+   <td style="text-align:right;"> NA </td>
+   <td style="text-align:right;"> NA </td>
+   <td style="text-align:right;"> 2 </td>
+   <td style="text-align:right;"> 6 </td>
+   <td style="text-align:right;"> 0.08 </td>
+   <td style="text-align:right;"> 0.24 </td>
+   <td style="text-align:right;"> 0 </td>
+   <td style="text-align:right;"> 0.000 </td>
+   <td style="text-align:right;"> 1 </td>
+   <td style="text-align:right;"> 1 </td>
+   <td style="text-align:right;"> 0 </td>
+   <td style="text-align:right;"> 1 </td>
    <td style="text-align:right;"> 0.981 </td>
-   <td style="text-align:right;"> 0.126 </td>
+   <td style="text-align:right;"> 0.976 </td>
+   <td style="text-align:right;"> 0.986 </td>
+   <td style="text-align:right;"> 0.956 </td>
+   <td style="text-align:right;"> 1 </td>
+   <td style="text-align:right;"> 0.981 </td>
+   <td style="text-align:right;"> 0.986 </td>
+   <td style="text-align:right;"> 0.956 </td>
+   <td style="text-align:right;"> 1.000 </td>
+   <td style="text-align:right;"> 0.981 </td>
+   <td style="text-align:right;"> 0.976 </td>
+   <td style="text-align:right;"> 0.986 </td>
+   <td style="text-align:right;"> 0.956 </td>
+   <td style="text-align:right;"> 0.981 </td>
+   <td style="text-align:right;"> 0.981 </td>
+   <td style="text-align:right;"> 0.000 </td>
+   <td style="text-align:right;"> 0.0 </td>
+   <td style="text-align:right;"> -0.117 </td>
+   <td style="text-align:right;"> 0.171 </td>
+   <td style="text-align:right;"> 0.373 </td>
+   <td style="text-align:right;"> 0.867 </td>
+   <td style="text-align:right;"> 0.358 </td>
+   <td style="text-align:right;"> 0.323 </td>
    <td style="text-align:left;"> TRUE </td>
+   <td style="text-align:left;"> explicit_dimensions </td>
+   <td style="text-align:right;"> 5 </td>
+   <td style="text-align:right;"> 20 </td>
+   <td style="text-align:right;"> 25 </td>
+   <td style="text-align:right;"> 5.000 </td>
   </tr><tr><td style="text-align:right;"> 3 </td>
    <td style="text-align:right;"> 5 </td>
-   <td style="text-align:right;"> 280.916 </td>
+   <td style="text-align:right;"> 132.176 </td>
    <td style="text-align:right;"> 208 </td>
    <td style="text-align:right;"> 25 </td>
-   <td style="text-align:right;"> -145.833 </td>
-   <td style="text-align:right;"> 1399.220 </td>
-   <td style="text-align:right;"> 107.694 </td>
-   <td style="text-align:right;"> 315.694 </td>
-   <td style="text-align:right;"> -559.833 </td>
-   <td style="text-align:right;"> 65.167 </td>
-   <td style="text-align:right;"> -537.334 </td>
-   <td style="text-align:right;"> -107.694 </td>
+   <td style="text-align:right;"> 151.648 </td>
+   <td style="text-align:right;"> 1696.700 </td>
+   <td style="text-align:right;"> 405.174 </td>
+   <td style="text-align:right;"> 613.174 </td>
+   <td style="text-align:right;"> -262.352 </td>
+   <td style="text-align:right;"> 362.648 </td>
+   <td style="text-align:right;"> -239.853 </td>
+   <td style="text-align:right;"> -405.174 </td>
    <td style="text-align:right;"> 1.000 </td>
    <td style="text-align:right;"> 1.000 </td>
-   <td style="text-align:right;"> 1.000 </td>
-   <td style="text-align:right;"> 44.428 </td>
-   <td style="text-align:right;"> 0.030 </td>
-   <td style="text-align:right;"> 3 </td>
-   <td style="text-align:right;"> 8 </td>
-   <td style="text-align:right;"> 0.12 </td>
-   <td style="text-align:right;"> 0.32 </td>
+   <td style="text-align:right;"> 1 </td>
+   <td style="text-align:right;"> NA </td>
+   <td style="text-align:right;"> NA </td>
+   <td style="text-align:right;"> 4 </td>
+   <td style="text-align:right;"> 6 </td>
+   <td style="text-align:right;"> 0.16 </td>
+   <td style="text-align:right;"> 0.24 </td>
    <td style="text-align:right;"> 30 </td>
    <td style="text-align:right;"> 0.094 </td>
    <td style="text-align:right;"> 1 </td>
-   <td style="text-align:right;"> 0.779 </td>
-   <td style="text-align:right;"> 0.771 </td>
-   <td style="text-align:right;"> 0.689 </td>
-   <td style="text-align:right;"> 0.220 </td>
-   <td style="text-align:right;"> 0.734 </td>
-   <td style="text-align:right;"> 0.956 </td>
-   <td style="text-align:right;"> 0.885 </td>
-   <td style="text-align:right;"> 0.528 </td>
-   <td style="text-align:right;"> 0.112 </td>
-   <td style="text-align:right;"> 0.620 </td>
+   <td style="text-align:right;"> 1 </td>
+   <td style="text-align:right;"> 0 </td>
+   <td style="text-align:right;"> 1 </td>
+   <td style="text-align:right;"> 0.892 </td>
+   <td style="text-align:right;"> 0.865 </td>
+   <td style="text-align:right;"> 0.770 </td>
+   <td style="text-align:right;"> 0.250 </td>
+   <td style="text-align:right;"> 1 </td>
+   <td style="text-align:right;"> 0.892 </td>
+   <td style="text-align:right;"> 0.770 </td>
+   <td style="text-align:right;"> 0.250 </td>
+   <td style="text-align:right;"> 0.963 </td>
+   <td style="text-align:right;"> 0.907 </td>
+   <td style="text-align:right;"> 0.878 </td>
+   <td style="text-align:right;"> 0.770 </td>
+   <td style="text-align:right;"> 0.235 </td>
+   <td style="text-align:right;"> 0.892 </td>
+   <td style="text-align:right;"> 0.892 </td>
+   <td style="text-align:right;"> 0.038 </td>
+   <td style="text-align:right;"> 0.2 </td>
+   <td style="text-align:right;"> 0.879 </td>
+   <td style="text-align:right;"> 0.667 </td>
+   <td style="text-align:right;"> 0.372 </td>
+   <td style="text-align:right;"> 0.672 </td>
+   <td style="text-align:right;"> 0.326 </td>
+   <td style="text-align:right;"> 0.648 </td>
    <td style="text-align:left;"> TRUE </td>
+   <td style="text-align:left;"> explicit_dimensions </td>
+   <td style="text-align:right;"> 5 </td>
+   <td style="text-align:right;"> 20 </td>
+   <td style="text-align:right;"> 25 </td>
+   <td style="text-align:right;"> 5.000 </td>
   </tr></tbody></table></div><span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Status, runtime, warnings, and errors for every attempted fit</span></span></span>
 <span class="r-in"><span><span class="fu">ShowFitTable</span><span class="op">(</span></span></span>
@@ -1068,7 +1407,7 @@ a model-based cluster analysis. <em>Entropy</em>. 2017;19:452.</p>
   </tr></thead><tbody><tr><td style="text-align:right;"> 1 </td>
    <td style="text-align:right;"> 2 </td>
    <td style="text-align:left;"> success </td>
-   <td style="text-align:right;"> 0.326 </td>
+   <td style="text-align:right;"> 0.021 </td>
    <td style="text-align:left;"> FALSE </td>
    <td style="text-align:right;"> 0 </td>
    <td style="text-align:left;">  </td>
@@ -1076,7 +1415,7 @@ a model-based cluster analysis. <em>Entropy</em>. 2017;19:452.</p>
   </tr><tr><td style="text-align:right;"> 3 </td>
    <td style="text-align:right;"> 2 </td>
    <td style="text-align:left;"> success </td>
-   <td style="text-align:right;"> 0.601 </td>
+   <td style="text-align:right;"> 0.022 </td>
    <td style="text-align:left;"> FALSE </td>
    <td style="text-align:right;"> 0 </td>
    <td style="text-align:left;">  </td>
@@ -1084,7 +1423,7 @@ a model-based cluster analysis. <em>Entropy</em>. 2017;19:452.</p>
   </tr><tr><td style="text-align:right;"> 1 </td>
    <td style="text-align:right;"> 3 </td>
    <td style="text-align:left;"> success </td>
-   <td style="text-align:right;"> 0.610 </td>
+   <td style="text-align:right;"> 0.022 </td>
    <td style="text-align:left;"> FALSE </td>
    <td style="text-align:right;"> 0 </td>
    <td style="text-align:left;">  </td>
@@ -1092,7 +1431,7 @@ a model-based cluster analysis. <em>Entropy</em>. 2017;19:452.</p>
   </tr><tr><td style="text-align:right;"> 3 </td>
    <td style="text-align:right;"> 3 </td>
    <td style="text-align:left;"> success </td>
-   <td style="text-align:right;"> 1.061 </td>
+   <td style="text-align:right;"> 0.022 </td>
    <td style="text-align:left;"> FALSE </td>
    <td style="text-align:right;"> 0 </td>
    <td style="text-align:left;">  </td>
@@ -1100,7 +1439,7 @@ a model-based cluster analysis. <em>Entropy</em>. 2017;19:452.</p>
   </tr><tr><td style="text-align:right;"> 1 </td>
    <td style="text-align:right;"> 4 </td>
    <td style="text-align:left;"> success </td>
-   <td style="text-align:right;"> 0.854 </td>
+   <td style="text-align:right;"> 0.036 </td>
    <td style="text-align:left;"> FALSE </td>
    <td style="text-align:right;"> 0 </td>
    <td style="text-align:left;">  </td>
@@ -1108,7 +1447,7 @@ a model-based cluster analysis. <em>Entropy</em>. 2017;19:452.</p>
   </tr><tr><td style="text-align:right;"> 3 </td>
    <td style="text-align:right;"> 4 </td>
    <td style="text-align:left;"> success </td>
-   <td style="text-align:right;"> 1.794 </td>
+   <td style="text-align:right;"> 0.027 </td>
    <td style="text-align:left;"> FALSE </td>
    <td style="text-align:right;"> 0 </td>
    <td style="text-align:left;">  </td>
@@ -1116,7 +1455,7 @@ a model-based cluster analysis. <em>Entropy</em>. 2017;19:452.</p>
   </tr><tr><td style="text-align:right;"> 1 </td>
    <td style="text-align:right;"> 5 </td>
    <td style="text-align:left;"> success </td>
-   <td style="text-align:right;"> 1.490 </td>
+   <td style="text-align:right;"> 0.026 </td>
    <td style="text-align:left;"> FALSE </td>
    <td style="text-align:right;"> 0 </td>
    <td style="text-align:left;">  </td>
@@ -1124,7 +1463,7 @@ a model-based cluster analysis. <em>Entropy</em>. 2017;19:452.</p>
   </tr><tr><td style="text-align:right;"> 3 </td>
    <td style="text-align:right;"> 5 </td>
    <td style="text-align:left;"> success </td>
-   <td style="text-align:right;"> 2.453 </td>
+   <td style="text-align:right;"> 0.029 </td>
    <td style="text-align:left;"> FALSE </td>
    <td style="text-align:right;"> 0 </td>
    <td style="text-align:left;">  </td>
@@ -1140,71 +1479,161 @@ a model-based cluster analysis. <em>Entropy</em>. 2017;19:452.</p>
    <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> StabilityARI_P05 </th>
    <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> StabilityJaccard_Mean </th>
    <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> StabilityJaccard_Min </th>
+   <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> StabilityCoreProportion </th>
+   <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> StabilityARI_Core </th>
+   <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> StabilityJaccard_CoreMean </th>
+   <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> StabilityJaccard_CoreMin </th>
+   <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> StabilityNonBoundaryProportion </th>
+   <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> StabilityARI_NonBoundary </th>
+   <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> StabilityARI_NonBoundary_P05 </th>
+   <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> StabilityJaccard_NonBoundaryMean </th>
+   <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> StabilityJaccard_NonBoundaryMin </th>
+   <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> ReproducibilityScore_All </th>
    <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> ReproducibilityScore </th>
   </tr></thead><tbody><tr><td style="text-align:right;"> 1 </td>
    <td style="text-align:right;"> 2 </td>
    <td style="text-align:right;"> 1 </td>
-   <td style="text-align:right;"> 0.418 </td>
-   <td style="text-align:right;"> -0.026 </td>
-   <td style="text-align:right;"> 0.678 </td>
-   <td style="text-align:right;"> 0.613 </td>
-   <td style="text-align:right;"> 0.548 </td>
+   <td style="text-align:right;"> -0.069 </td>
+   <td style="text-align:right;"> -0.069 </td>
+   <td style="text-align:right;"> 0.417 </td>
+   <td style="text-align:right;"> 0.333 </td>
+   <td style="text-align:right;"> 1 </td>
+   <td style="text-align:right;"> -0.069 </td>
+   <td style="text-align:right;"> 0.417 </td>
+   <td style="text-align:right;"> 0.333 </td>
+   <td style="text-align:right;"> 1.000 </td>
+   <td style="text-align:right;"> -0.069 </td>
+   <td style="text-align:right;"> -0.069 </td>
+   <td style="text-align:right;"> 0.417 </td>
+   <td style="text-align:right;"> 0.333 </td>
+   <td style="text-align:right;"> -0.069 </td>
+   <td style="text-align:right;"> -0.069 </td>
   </tr><tr><td style="text-align:right;"> 3 </td>
    <td style="text-align:right;"> 2 </td>
    <td style="text-align:right;"> 1 </td>
-   <td style="text-align:right;"> 0.454 </td>
-   <td style="text-align:right;"> -0.037 </td>
-   <td style="text-align:right;"> 0.709 </td>
-   <td style="text-align:right;"> 0.644 </td>
-   <td style="text-align:right;"> 0.582 </td>
+   <td style="text-align:right;"> -0.069 </td>
+   <td style="text-align:right;"> -0.069 </td>
+   <td style="text-align:right;"> 0.417 </td>
+   <td style="text-align:right;"> 0.333 </td>
+   <td style="text-align:right;"> 1 </td>
+   <td style="text-align:right;"> -0.069 </td>
+   <td style="text-align:right;"> 0.417 </td>
+   <td style="text-align:right;"> 0.333 </td>
+   <td style="text-align:right;"> 1.000 </td>
+   <td style="text-align:right;"> -0.069 </td>
+   <td style="text-align:right;"> -0.069 </td>
+   <td style="text-align:right;"> 0.417 </td>
+   <td style="text-align:right;"> 0.333 </td>
+   <td style="text-align:right;"> -0.069 </td>
+   <td style="text-align:right;"> -0.069 </td>
   </tr><tr><td style="text-align:right;"> 1 </td>
    <td style="text-align:right;"> 3 </td>
    <td style="text-align:right;"> 1 </td>
-   <td style="text-align:right;"> 0.444 </td>
-   <td style="text-align:right;"> 0.444 </td>
-   <td style="text-align:right;"> 0.652 </td>
-   <td style="text-align:right;"> 0.488 </td>
-   <td style="text-align:right;"> 0.548 </td>
+   <td style="text-align:right;"> 0.464 </td>
+   <td style="text-align:right;"> 0.464 </td>
+   <td style="text-align:right;"> 0.667 </td>
+   <td style="text-align:right;"> 0.500 </td>
+   <td style="text-align:right;"> 1 </td>
+   <td style="text-align:right;"> 0.464 </td>
+   <td style="text-align:right;"> 0.667 </td>
+   <td style="text-align:right;"> 0.500 </td>
+   <td style="text-align:right;"> 1.000 </td>
+   <td style="text-align:right;"> 0.464 </td>
+   <td style="text-align:right;"> 0.464 </td>
+   <td style="text-align:right;"> 0.667 </td>
+   <td style="text-align:right;"> 0.500 </td>
+   <td style="text-align:right;"> 0.464 </td>
+   <td style="text-align:right;"> 0.464 </td>
   </tr><tr><td style="text-align:right;"> 3 </td>
    <td style="text-align:right;"> 3 </td>
    <td style="text-align:right;"> 1 </td>
-   <td style="text-align:right;"> 0.372 </td>
-   <td style="text-align:right;"> 0.369 </td>
-   <td style="text-align:right;"> 0.537 </td>
-   <td style="text-align:right;"> 0.460 </td>
-   <td style="text-align:right;"> 0.454 </td>
+   <td style="text-align:right;"> 0.464 </td>
+   <td style="text-align:right;"> 0.464 </td>
+   <td style="text-align:right;"> 0.667 </td>
+   <td style="text-align:right;"> 0.500 </td>
+   <td style="text-align:right;"> 1 </td>
+   <td style="text-align:right;"> 0.464 </td>
+   <td style="text-align:right;"> 0.667 </td>
+   <td style="text-align:right;"> 0.500 </td>
+   <td style="text-align:right;"> 1.000 </td>
+   <td style="text-align:right;"> 0.464 </td>
+   <td style="text-align:right;"> 0.464 </td>
+   <td style="text-align:right;"> 0.667 </td>
+   <td style="text-align:right;"> 0.500 </td>
+   <td style="text-align:right;"> 0.464 </td>
+   <td style="text-align:right;"> 0.464 </td>
   </tr><tr><td style="text-align:right;"> 1 </td>
    <td style="text-align:right;"> 4 </td>
    <td style="text-align:right;"> 1 </td>
-   <td style="text-align:right;"> 0.973 </td>
-   <td style="text-align:right;"> 0.956 </td>
-   <td style="text-align:right;"> 0.979 </td>
-   <td style="text-align:right;"> 0.970 </td>
+   <td style="text-align:right;"> 1.000 </td>
+   <td style="text-align:right;"> 1.000 </td>
+   <td style="text-align:right;"> 1.000 </td>
+   <td style="text-align:right;"> 1.000 </td>
+   <td style="text-align:right;"> 1 </td>
+   <td style="text-align:right;"> 1.000 </td>
+   <td style="text-align:right;"> 1.000 </td>
+   <td style="text-align:right;"> 1.000 </td>
+   <td style="text-align:right;"> 1.000 </td>
+   <td style="text-align:right;"> 1.000 </td>
+   <td style="text-align:right;"> 1.000 </td>
+   <td style="text-align:right;"> 1.000 </td>
+   <td style="text-align:right;"> 1.000 </td>
+   <td style="text-align:right;"> 1.000 </td>
+   <td style="text-align:right;"> 1.000 </td>
+  </tr><tr><td style="text-align:right;"> 3 </td>
+   <td style="text-align:right;"> 4 </td>
+   <td style="text-align:right;"> 1 </td>
+   <td style="text-align:right;"> 1.000 </td>
+   <td style="text-align:right;"> 1.000 </td>
+   <td style="text-align:right;"> 1.000 </td>
+   <td style="text-align:right;"> 1.000 </td>
+   <td style="text-align:right;"> 1 </td>
+   <td style="text-align:right;"> 1.000 </td>
+   <td style="text-align:right;"> 1.000 </td>
+   <td style="text-align:right;"> 1.000 </td>
+   <td style="text-align:right;"> 1.000 </td>
+   <td style="text-align:right;"> 1.000 </td>
+   <td style="text-align:right;"> 1.000 </td>
+   <td style="text-align:right;"> 1.000 </td>
+   <td style="text-align:right;"> 1.000 </td>
+   <td style="text-align:right;"> 1.000 </td>
+   <td style="text-align:right;"> 1.000 </td>
+  </tr><tr><td style="text-align:right;"> 1 </td>
+   <td style="text-align:right;"> 5 </td>
+   <td style="text-align:right;"> 1 </td>
+   <td style="text-align:right;"> 0.981 </td>
    <td style="text-align:right;"> 0.976 </td>
-  </tr><tr><td style="text-align:right;"> 3 </td>
-   <td style="text-align:right;"> 4 </td>
+   <td style="text-align:right;"> 0.986 </td>
+   <td style="text-align:right;"> 0.956 </td>
    <td style="text-align:right;"> 1 </td>
-   <td style="text-align:right;"> 0.923 </td>
-   <td style="text-align:right;"> 0.911 </td>
-   <td style="text-align:right;"> 0.943 </td>
-   <td style="text-align:right;"> 0.920 </td>
-   <td style="text-align:right;"> 0.933 </td>
-  </tr><tr><td style="text-align:right;"> 1 </td>
-   <td style="text-align:right;"> 5 </td>
-   <td style="text-align:right;"> 1 </td>
-   <td style="text-align:right;"> 0.984 </td>
-   <td style="text-align:right;"> 0.973 </td>
-   <td style="text-align:right;"> 0.842 </td>
-   <td style="text-align:right;"> 0.257 </td>
-   <td style="text-align:right;"> 0.913 </td>
+   <td style="text-align:right;"> 0.981 </td>
+   <td style="text-align:right;"> 0.986 </td>
+   <td style="text-align:right;"> 0.956 </td>
+   <td style="text-align:right;"> 1.000 </td>
+   <td style="text-align:right;"> 0.981 </td>
+   <td style="text-align:right;"> 0.976 </td>
+   <td style="text-align:right;"> 0.986 </td>
+   <td style="text-align:right;"> 0.956 </td>
+   <td style="text-align:right;"> 0.981 </td>
+   <td style="text-align:right;"> 0.981 </td>
   </tr><tr><td style="text-align:right;"> 3 </td>
    <td style="text-align:right;"> 5 </td>
    <td style="text-align:right;"> 1 </td>
-   <td style="text-align:right;"> 0.779 </td>
-   <td style="text-align:right;"> 0.771 </td>
-   <td style="text-align:right;"> 0.689 </td>
-   <td style="text-align:right;"> 0.220 </td>
-   <td style="text-align:right;"> 0.734 </td>
+   <td style="text-align:right;"> 0.892 </td>
+   <td style="text-align:right;"> 0.865 </td>
+   <td style="text-align:right;"> 0.770 </td>
+   <td style="text-align:right;"> 0.250 </td>
+   <td style="text-align:right;"> 1 </td>
+   <td style="text-align:right;"> 0.892 </td>
+   <td style="text-align:right;"> 0.770 </td>
+   <td style="text-align:right;"> 0.250 </td>
+   <td style="text-align:right;"> 0.963 </td>
+   <td style="text-align:right;"> 0.907 </td>
+   <td style="text-align:right;"> 0.878 </td>
+   <td style="text-align:right;"> 0.770 </td>
+   <td style="text-align:right;"> 0.235 </td>
+   <td style="text-align:right;"> 0.892 </td>
+   <td style="text-align:right;"> 0.892 </td>
   </tr></tbody></table></div><span class="r-in"><span><span class="va">review</span><span class="op">$</span><span class="va">fit_plot</span></span></span>
 <span class="r-plt img"><img src="CreateClusterModel_SOM_MClust-1.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span><span class="va">review</span><span class="op">$</span><span class="va">fit_plot</span></span></span>
@@ -1242,54 +1671,96 @@ a model-based cluster analysis. <em>Entropy</em>. 2017;19:452.</p>
    <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> MaxProfileNodeProportion </th>
    <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> MinProfileParticipantN </th>
    <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> MinProfileParticipantProportion </th>
+   <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> PosteriorMean </th>
+   <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> PosteriorMedian </th>
+   <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> PropLowPosterior </th>
    <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> StabilitySuccessRate </th>
    <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> StabilityARI_Mean </th>
    <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> StabilityARI_P05 </th>
    <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> StabilityJaccard_Mean </th>
    <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> StabilityJaccard_Min </th>
+   <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> StabilityCoreProportion </th>
+   <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> StabilityARI_Core </th>
+   <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> StabilityJaccard_CoreMean </th>
+   <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> StabilityJaccard_CoreMin </th>
+   <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> StabilityNonBoundaryProportion </th>
+   <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> StabilityARI_NonBoundary </th>
+   <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> StabilityARI_NonBoundary_P05 </th>
+   <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> StabilityJaccard_NonBoundaryMean </th>
+   <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> StabilityJaccard_NonBoundaryMin </th>
+   <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> ReproducibilityScore_All </th>
    <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> ReproducibilityScore </th>
+   <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> BoundaryParticipantProportion </th>
+   <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> MaxClusterBoundaryProportion </th>
    <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> AIC_scaled </th>
    <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> BIC_scaled </th>
    <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> Entropy_scaled </th>
    <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> Reproducibility_scaled </th>
+   <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> Posterior_scaled </th>
    <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> ahp_index </th>
    <th style="text-align:left;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> Eligible </th>
+   <th style="text-align:left;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> GridDesignPolicy </th>
+   <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> GridDesignK </th>
+   <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> TargetNodesPerProfile </th>
+   <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> SOMNodeCount </th>
+   <th style="text-align:right;position: sticky; top:0; background-color: white;position: sticky; top:0; background-color: #FFFFFF;"> ExpectedNodesPerProfile </th>
   </tr></thead><tbody><tr><td style="text-align:right;"> 1 </td>
    <td style="text-align:right;"> 4 </td>
-   <td style="text-align:right;"> -182.881 </td>
+   <td style="text-align:right;"> -152.908 </td>
    <td style="text-align:right;"> 63 </td>
    <td style="text-align:right;"> 25 </td>
-   <td style="text-align:right;"> 491.761 </td>
-   <td style="text-align:right;"> 958.343 </td>
-   <td style="text-align:right;"> 568.551 </td>
-   <td style="text-align:right;"> 631.551 </td>
-   <td style="text-align:right;"> 367.758 </td>
-   <td style="text-align:right;"> 557.761 </td>
-   <td style="text-align:right;"> 373.182 </td>
-   <td style="text-align:right;"> -568.566 </td>
-   <td style="text-align:right;"> 0.999 </td>
-   <td style="text-align:right;"> 0.999 </td>
+   <td style="text-align:right;"> 431.816 </td>
+   <td style="text-align:right;"> 898.395 </td>
+   <td style="text-align:right;"> 508.605 </td>
+   <td style="text-align:right;"> 571.605 </td>
+   <td style="text-align:right;"> 307.816 </td>
+   <td style="text-align:right;"> 497.816 </td>
+   <td style="text-align:right;"> 313.237 </td>
+   <td style="text-align:right;"> -508.605 </td>
    <td style="text-align:right;"> 1 </td>
-   <td style="text-align:right;"> 209.851 </td>
-   <td style="text-align:right;"> 0.01 </td>
+   <td style="text-align:right;"> 1 </td>
+   <td style="text-align:right;"> 1 </td>
+   <td style="text-align:right;"> NA </td>
+   <td style="text-align:right;"> NA </td>
    <td style="text-align:right;"> 5 </td>
    <td style="text-align:right;"> 8 </td>
    <td style="text-align:right;"> 0.2 </td>
    <td style="text-align:right;"> 0.32 </td>
-   <td style="text-align:right;"> 79 </td>
-   <td style="text-align:right;"> 0.247 </td>
+   <td style="text-align:right;"> 80 </td>
+   <td style="text-align:right;"> 0.25 </td>
    <td style="text-align:right;"> 1 </td>
-   <td style="text-align:right;"> 0.981 </td>
-   <td style="text-align:right;"> 0.973 </td>
-   <td style="text-align:right;"> 0.986 </td>
-   <td style="text-align:right;"> 0.974 </td>
-   <td style="text-align:right;"> 0.984 </td>
+   <td style="text-align:right;"> 1 </td>
+   <td style="text-align:right;"> 0 </td>
+   <td style="text-align:right;"> 1 </td>
+   <td style="text-align:right;"> 0.996 </td>
+   <td style="text-align:right;"> 0.992 </td>
+   <td style="text-align:right;"> 0.997 </td>
+   <td style="text-align:right;"> 0.994 </td>
+   <td style="text-align:right;"> 1 </td>
+   <td style="text-align:right;"> 0.996 </td>
+   <td style="text-align:right;"> 0.997 </td>
+   <td style="text-align:right;"> 0.994 </td>
+   <td style="text-align:right;"> 1 </td>
+   <td style="text-align:right;"> 0.996 </td>
+   <td style="text-align:right;"> 0.992 </td>
+   <td style="text-align:right;"> 0.997 </td>
+   <td style="text-align:right;"> 0.994 </td>
+   <td style="text-align:right;"> 0.996 </td>
+   <td style="text-align:right;"> 0.996 </td>
+   <td style="text-align:right;"> 0 </td>
+   <td style="text-align:right;"> 0 </td>
    <td style="text-align:right;"> NA </td>
    <td style="text-align:right;"> NA </td>
    <td style="text-align:right;"> NA </td>
    <td style="text-align:right;"> NA </td>
+   <td style="text-align:right;"> 0 </td>
    <td style="text-align:right;"> NA </td>
    <td style="text-align:left;"> TRUE </td>
+   <td style="text-align:left;"> explicit_dimensions </td>
+   <td style="text-align:right;"> 4 </td>
+   <td style="text-align:right;"> 20 </td>
+   <td style="text-align:right;"> 25 </td>
+   <td style="text-align:right;"> 6.25 </td>
   </tr></tbody></table></div><span class="r-in"><span><span class="co"># }</span></span></span>
 </code></pre></div>
     </div>

@@ -55,7 +55,7 @@ Deprecated alias for ProjectCluster()."><meta property="og:image" content="https
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Project cases through a fitted clustering model</h1>
-      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/v21.13.0/R/ProjectCluster.R" class="external-link"><code>R/ProjectCluster.R</code></a>, <a href="https://github.com/RDastgh1/SciDataReportR/blob/v21.13.0/R/Project_SOMClust.R" class="external-link"><code>R/Project_SOMClust.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/master/R/ProjectCluster.R" class="external-link"><code>R/ProjectCluster.R</code></a>, <a href="https://github.com/RDastgh1/SciDataReportR/blob/master/R/Project_SOMClust.R" class="external-link"><code>R/Project_SOMClust.R</code></a></small>
       <div class="d-none name"><code>ProjectCluster.Rd</code></div>
     </div>
 
@@ -106,7 +106,13 @@ contract and <code>ProbFit</code> assignment table.</p>
 separate. <code>ProbFit$individual</code> is full length and contains the assigned
 <code>Cluster</code>, <code>SOM_Node</code>, available node-derived <code>prob_*</code> columns,
 <code>prob_assigned</code>, <code>max_prob</code>, and <code>uncertainty</code>. It answers: <em>which
-phenotype was assigned, and how certain is that node-derived assignment?</em></p>
+phenotype was assigned, and how certain is that node-derived assignment?</em>
+Models fitted with the hard/soft projection interface also retain
+<code>Cluster_Hard</code>, <code>Cluster_Soft</code>, <code>SoftProb_*</code>, <code>SoftEntropy</code>, <code>SoftMargin</code>,
+<code>Flag_BoundaryParticipant</code>, and <code>BoundaryReason</code>. Node-level <code>prob_*</code>
+values remain the Mclust posterior for a map node; <code>SoftProb_*</code> is a
+participant-level proximity-weighted combination of nearby node posteriors.
+Boundary flags are confidence diagnostics and never suppress projection.</p>
 <p><code>ProjectionFit$individual</code> is also full length. It contains the frozen
 best-matching-unit <code>SOM_Node</code>, <code>SOM_Distance</code>,
 <code>SOMDist_percentile_train</code>, <code>Flag_SOMDist_overallHigh</code>,

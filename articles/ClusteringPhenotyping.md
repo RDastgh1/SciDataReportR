@@ -204,13 +204,40 @@ Self-organizing maps preserve local topology before mixture clustering
 > quantization/SOM distance, node occupancy, posterior confidence,
 > stability, and projected distance flags.
 
-For an analysis, use the complete workflow below.
-`stability_resamples = 30` is a practical internal-stability screen; the
-rendered vignette uses two resamples only to keep build time reasonable.
-Stability refits run in parallel by default, using all available
-physical cores minus one (and never more than the requested resamples).
-Set `stability_cores = 1L` for serial execution or a smaller positive
-value when each SOM or high-dimensional refit needs more memory.
+Ordinary SOM fitting defaults to `stability_resamples = 0`, so model
+review does not unexpectedly become slow. Use the separate map-design
+screen below before final cluster selection: it uses the largest
+requested `k` to generate coarse, balanced, and fine candidate
+resolutions (about 10, 20, and 30 nodes per maximum planned phenotype),
+then holds each candidate grid and topology fixed within three 90%
+subsample refits and projects every refit back to the full reference
+cohort. This fast screen compares topology preservation, local
+neighborhood overlap, projected SOM distance, and map occupancy; it fits
+no Mclust model and does not choose a grid automatically. After
+reviewing the result, freeze one grid/topology and compare the
+clinically meaningful `k` values on that same map using fit indices,
+participant-level ARI, and clinical interpretation. The screen reports
+expected nodes per profile for every requested `k`; larger cohorts can
+support a reviewed map, but do not by themselves require more map nodes
+or more clinical phenotypes. Stability refits run in parallel by
+default; set `stability_cores = 1L` for serial execution or a smaller
+positive value when each SOM or high-dimensional refit needs more
+memory.
+
+For a finalized SOM + Mclust instrument, ARI is still the primary answer
+to the narrow question, “do the refits recover the same final
+participant partition?” `StabilityARI_P05` is the fifth percentile
+across refits: a stress-test lower-tail summary, not a second selection
+criterion. When an ARI is modest, inspect the stability panel rather
+than relabeling that result as stable: `deletion_curve` shows
+sensitivity at explicitly requested retained fractions, exact
+memory-safe `co_membership_*` outputs distinguish within- phenotype
+cohesion from cross-phenotype mixing, `split_merge_*` describes
+fragmentation/merging, and `profile_recovery` compares matched phenotype
+means on the frozen training scale. These explain whether membership
+movement is localized while phenotype profiles are retained; none
+replace the all-participant ARI. Boundary participants remain assigned
+and included in that primary metric.
 
 ``` r
 
@@ -231,165 +258,340 @@ Obj_ClustFinal <- CreateClusterModel_SOM_MClust(
 ObjClustProjected <- ProjectCluster(Obj_ClustFinal, df_Projection)
 ```
 
-       Model Classes     LogLik parameters  n        AIC       AWE       BIC
-    1      1       2 -329.58579         37 25  733.17158 1006.5018 778.26998
-    2      3       2  228.12475        169 25 -118.24949 1136.7320  87.74052
-    3      1       3 -287.80626         50 25  675.61252 1045.5632 736.55631
-    4      3       3  240.31502        182 25 -116.63003 1235.0455 105.20537
-    5      1       4 -182.88068         63 25  491.76135  958.3427 568.55053
-    6      3       4  258.70221        195 25 -127.40442 1320.9575 110.27637
-    7      1       5 -140.28938         76 25  432.57876  995.8480 525.21332
-    8      3       5  280.91625        208 25 -145.83250 1399.2200 107.69367
-    9      1       6 -104.86298         89 25  387.72596 1047.6860 496.20591
-    10     3       6  294.29764        221 25 -146.59528 1495.1479 122.77628
-    11     1       7  -68.97640        102 25  341.95280 1098.6035 466.27814
-    12     3       7  305.52382        234 25 -143.04764 1595.3863 142.16930
-    13     1       8   92.86636        115 25   44.26728  897.6087 184.43800
-    14     3       8  324.17474        247 25 -154.34948 1680.7754 146.71285
-    15     1       9   86.29563        128 25   83.40875 1033.4415 239.42485
-    16     1      10  105.45796        141 25   71.08408 1117.8079 242.94557
-           CAIC       CLC       KIC     SABIC        ICL   Entropy  prob_min
-    1  815.2700  661.0382 773.17158  663.5296 -779.13189 0.9332915 0.9301147
-    2  256.7405 -454.2510  53.75051 -436.3442  -87.74373 0.9992454 0.9996001
-    3  786.5563  577.5494 728.61252  581.5017 -737.07542 0.9684421 0.9582059
-    4  287.2054 -478.6348  68.36997 -459.1935 -105.22744 0.9976273 0.9975544
-    5  631.5505  367.7584 557.76135  373.1817 -568.56586 0.9985197 0.9989606
-    6  305.2764 -515.4047  70.59558 -494.4367 -110.27761 0.9998412 0.9998736
-    7  601.2133  282.5787 511.57876  289.5303 -525.21375 0.9999468 0.9999677
-    8  315.6937 -559.8327  65.16750 -537.3336 -107.69446 0.9999071 0.9999318
-    9  585.2059  211.7258 479.72596  220.2087 -496.20645 0.9999445 0.9999460
-    10 343.7763 -586.5953  77.40472 -562.5652 -122.77641 0.9999835 0.9999910
-    11 568.2781  139.9528 446.95280  149.9667 -466.27815 0.9999983 0.9999985
-    12 376.1693 -609.0477  93.95236 -583.4864 -142.16948 0.9999800 0.9999596
-    13 299.4380 -183.7327 162.26728 -172.1877 -184.43800 1.0000000 1.0000000
-    14 393.7129 -646.3497  95.65052 -619.2571 -146.71397 0.9999090 0.9997218
-    15 367.4249 -170.5918 214.40875 -157.5150 -239.42880 0.9997308 0.9980997
-    16 383.9456 -208.9167 215.08408 -194.3085 -242.95179 0.9995963 0.9978376
-        prob_max BLRTStatistic BLRTPValue MinProfileNodeN MaxProfileNodeN
-    1  0.9988990      54.51982 0.00990099               5              20
-    2  0.9999998      23.21785 0.37623762               4              21
-    3  0.9994780      83.55906 0.00990099               5              15
-    4  0.9999982      24.38054 0.35643564               4              17
-    5  1.0000000     209.85117 0.00990099               5               8
-    6  1.0000000      36.77438 0.06930693               4               9
-    7  1.0000000      85.18259 0.00990099               4               7
-    8  1.0000000      44.42809 0.02970297               3               8
-    9  1.0000000      70.85280 0.00990099               2               6
-    10 1.0000000      26.76278 0.25742574               3               6
-    11 1.0000000      71.77316 0.00990099               2               6
-    12 1.0000000      22.45236 0.42574257               2               5
-    13 1.0000000     323.68552 0.00990099               1               5
-    14 1.0000000      37.30184 0.15841584               2               4
-    15 1.0000000     -13.14147 1.00000000               1               4
-    16 1.0000000      38.32467 0.05940594               1               5
+       Model Classes     LogLik parameters  n      AIC       AWE      BIC     CAIC
+    1      1       2 -351.06784         37 25 776.1357 1049.4065 821.2341 858.2341
+    2      3       2   72.51292        169 25 192.9742 1447.9542 398.9642 567.9642
+    3      1       3 -277.85952         50 25 655.7190 1025.6102 716.6628 766.6628
+    4      3       3   93.07687        182 25 177.8463 1529.5171 399.6817 581.6817
+    5      1       4 -152.90811         63 25 431.8162  898.3946 508.6054 571.6054
+    6      3       4  121.18864        195 25 147.6227 1595.9843 385.3035 580.3035
+    7      1       5 -121.23197         76 25 394.4639  957.7331 487.0985 563.0985
+    8      3       5  132.17612        208 25 151.6478 1696.7001 405.1739 613.1739
+    9      1       6 -112.97339         89 25 403.9468 1063.9107 512.4267 601.4267
+    10     3       6  132.01242        221 25 177.9752 1819.7243 447.3467 668.3467
+    11     1       7 -118.45913        102 25 440.9183 1197.5701 565.2436 667.2436
+    12     3       7  150.29455        234 25 167.4109 1905.8448 452.6278 686.6278
+    13     1       8 -110.08009        115 25 450.1602 1303.5040 590.3309 705.3309
+    14     3       8  157.93308        247 25 178.1338 2013.2585 479.1962 726.1962
+    15     1       9 -100.13395        128 25 456.2679 1406.3006 612.2840 740.2840
+    16     3       9  184.01651        260 25 151.9670 2083.7824 468.8747 728.8747
+    17     1      10  -85.65194        141 25 453.3039 1500.0273 625.1654 766.1654
+    18     3      10  193.34826        273 25 159.3035 2187.8097 492.0566 765.0566
+             CLC      KIC     SABIC       ICL   Entropy  prob_min  prob_max
+    1   704.0617 816.1357  706.4937 -821.8855 0.9629876 0.9553981 0.9999889
+    2  -143.0258 364.9742 -125.1205 -398.9642 1.0000000 1.0000000 1.0000000
+    3   557.7155 708.7190  561.6082 -716.6779 0.9982285 0.9990952 0.9999986
+    4  -184.1537 362.8463 -164.7172 -399.6817 0.9999973 0.9999996 1.0000000
+    5   307.8162 497.8162  313.2365 -508.6054 1.0000000 1.0000000 1.0000000
+    6  -240.3773 345.6227 -219.4096 -385.3035 0.9999977 0.9999992 1.0000000
+    7   244.4639 473.4639  251.4155 -487.0985 1.0000000 1.0000000 1.0000000
+    8  -262.3523 362.6478 -239.8534 -405.1740 0.9999933 0.9999963 1.0000000
+    9   227.9428 495.9468  236.4295 -512.4582 0.9979917 0.9960938 1.0000000
+    10 -262.0309 401.9752 -237.9948 -447.3914 0.9969976 0.9971487 1.0000000
+    11  238.9171 545.9183  248.9321 -565.2508 0.9994202 0.9982046 1.0000000
+    12 -298.5891 404.4109 -273.0279 -452.6278 0.9999994 0.9999994 1.0000000
+    13  222.1578 568.1602  233.7052 -590.3498 0.9987990 0.9983064 1.0000000
+    14 -313.8662 428.1338 -286.7738 -479.1962 0.9999962 0.9999942 1.0000000
+    15  202.2674 587.2679  215.3441 -612.2874 0.9997389 0.9994257 1.0000000
+    16 -366.0330 414.9670 -337.4094 -468.8747 0.9999966 0.9999924 1.0000000
+    17  173.3035 597.3039  187.9113 -625.1683 0.9998065 0.9986208 1.0000000
+    18 -384.6965 435.3035 -354.5417 -492.0566 0.9999992 0.9999966 1.0000000
+       BLRTStatistic BLRTPValue MinProfileNodeN MaxProfileNodeN
+    1             NA         NA               6              19
+    2             NA         NA               6              19
+    3             NA         NA               6              13
+    4             NA         NA               6              13
+    5             NA         NA               5               8
+    6             NA         NA               5               8
+    7             NA         NA               2               6
+    8             NA         NA               4               6
+    9             NA         NA               2               6
+    10            NA         NA               2               6
+    11            NA         NA               1               6
+    12            NA         NA               1               6
+    13            NA         NA               1               6
+    14            NA         NA               1               5
+    15            NA         NA               1               6
+    16            NA         NA               1               5
+    17            NA         NA               1               5
+    18            NA         NA               1               5
        MinProfileNodeProportion MaxProfileNodeProportion MinProfileParticipantN
-    1                      0.20                     0.80                     72
-    2                      0.16                     0.84                     72
-    3                      0.20                     0.60                     79
-    4                      0.16                     0.68                     72
-    5                      0.20                     0.32                     79
-    6                      0.16                     0.36                     72
-    7                      0.16                     0.28                      2
-    8                      0.12                     0.32                     30
-    9                      0.08                     0.24                      2
-    10                     0.12                     0.24                     30
-    11                     0.08                     0.24                      1
-    12                     0.08                     0.20                      1
-    13                     0.04                     0.20                      0
-    14                     0.08                     0.16                      0
-    15                     0.04                     0.16                      0
-    16                     0.04                     0.20                      0
-       MinProfileParticipantProportion StabilitySuccessRate StabilityARI_Mean
-    1                         0.225000                    1       -0.07405551
-    2                         0.225000                    1       -0.07739523
-    3                         0.246875                    1        0.46903693
-    4                         0.225000                    1        0.66684005
-    5                         0.246875                    1        0.99077955
-    6                         0.225000                    1        0.84171019
-    7                         0.006250                    1        0.98119947
-    8                         0.093750                    1        0.86403318
-    9                         0.006250                    1        0.88472023
-    10                        0.093750                    1        0.77634504
-    11                        0.003125                    1        0.96333112
-    12                        0.003125                    1        0.69848800
-    13                        0.000000                    1        0.88987084
-    14                        0.000000                    1        0.72071710
-    15                        0.000000                    1        0.79588039
-    16                        0.000000                    1        0.76227531
-       StabilityARI_P05 StabilityJaccard_Mean StabilityJaccard_Min
-    1       -0.07567585             0.4073339           0.30251509
-    2       -0.07903535             0.4105530           0.30374495
-    3        0.46422493             0.6720126           0.51563697
-    4        0.39746911             0.7902435           0.71103448
-    5        0.99077791             0.9930542           0.98591549
-    6        0.76306706             0.8873817           0.78075460
-    7        0.96857320             0.8405554           0.25714286
-    8        0.85231845             0.8396266           0.52350427
-    9        0.82271465             0.6213525           0.02787559
-    10       0.75942331             0.7367578           0.55000000
-    11       0.94721579             0.6773956           0.01459932
-    12       0.62654505             0.6472360           0.26087963
-    13       0.83527273             0.6002413           0.03326023
-    14       0.70706574             0.6239612           0.02152015
-    15       0.79055734             0.5152091           0.09047619
-    16       0.72678383             0.5559166           0.14285714
-       ReproducibilityScore AIC_scaled BIC_scaled Entropy_scaled
-    1             0.1666392 -1.8609971 -1.9292787     -3.3733248
-    2             0.1665789  0.8299159  0.9543761      0.3220404
-    3             0.5705247 -1.6790819 -1.7550822     -1.4038551
-    4             0.7285418  0.8247976  0.8814428      0.2313773
-    5             0.9919169 -1.0980210 -1.0534891      0.2813776
-    6             0.8645459  0.8588500  0.8602663      0.3554200
-    7             0.9108774 -0.9109747 -0.8725127      0.3613381
-    8             0.8518299  0.9170919  0.8710516      0.3591120
-    9             0.7530364 -0.7692176 -0.7513776      0.3612093
-    10            0.7565514  0.9195026  0.8080666      0.3633963
-    11            0.8203633 -0.6245517 -0.6263991      0.3642272
-    12            0.6728620  0.9082903  0.7270812      0.3631978
-    13            0.7450560  0.3162822  0.5505669      0.3643198
-    14            0.6723391  0.9440097  0.7081073      0.3592224
-    15            0.6555447  0.1925758  0.3209415      0.3492384
-    16            0.6590959  0.2315279  0.3062390      0.3417032
-       Reproducibility_scaled   ahp_index Eligible
-    1             -2.26413420 -2.35693371     TRUE
-    2             -2.26439680 -0.03951609     TRUE
-    3             -0.50559061 -1.33590246     TRUE
-    4              0.18242570  0.53001085     TRUE
-    5              1.32917783 -0.13523868     TRUE
-    6              0.77459651  0.71228320     TRUE
-    7              0.97632683 -0.11145562     TRUE
-    8              0.71923007  0.71662141     TRUE
-    9              0.28907667 -0.21757729     TRUE
-    10             0.30438144  0.59883673     TRUE
-    11             0.58222270 -0.07612520     TRUE
-    12            -0.06000766  0.48464042     TRUE
-    13             0.25432988  0.37137470     TRUE
-    14            -0.06228425  0.48726382     TRUE
-    15            -0.13540814  0.18183689     TRUE
-    16            -0.11994596  0.18988101     TRUE
+    1                      0.24                     0.76                     80
+    2                      0.24                     0.76                     80
+    3                      0.24                     0.52                     80
+    4                      0.24                     0.52                     80
+    5                      0.20                     0.32                     80
+    6                      0.20                     0.32                     80
+    7                      0.08                     0.24                      0
+    8                      0.16                     0.24                     30
+    9                      0.08                     0.24                      0
+    10                     0.08                     0.24                     27
+    11                     0.04                     0.24                      8
+    12                     0.04                     0.24                     21
+    13                     0.04                     0.24                      8
+    14                     0.04                     0.20                     21
+    15                     0.04                     0.24                      3
+    16                     0.04                     0.20                      3
+    17                     0.04                     0.20                      3
+    18                     0.04                     0.20                      3
+       MinProfileParticipantProportion PosteriorMean PosteriorMedian
+    1                         0.250000     0.9999309       0.9999990
+    2                         0.250000     1.0000000       1.0000000
+    3                         0.250000     1.0000000       1.0000000
+    4                         0.250000     1.0000000       1.0000000
+    5                         0.250000     1.0000000       1.0000000
+    6                         0.250000     1.0000000       1.0000000
+    7                         0.000000     1.0000000       1.0000000
+    8                         0.093750     0.9999992       1.0000000
+    9                         0.000000     0.9990130       1.0000000
+    10                        0.084375     0.9986431       1.0000000
+    11                        0.025000     0.9998089       0.9999998
+    12                        0.065625     0.9999998       1.0000000
+    13                        0.025000     0.9996616       0.9999992
+    14                        0.065625     0.9999992       1.0000000
+    15                        0.009375     0.9999342       0.9999998
+    16                        0.009375     0.9999992       1.0000000
+    17                        0.009375     0.9999504       1.0000000
+    18                        0.009375     0.9999999       1.0000000
+       PropLowPosterior StabilitySuccessRate StabilityARI_Mean StabilityARI_P05
+    1                 0                    1         0.4656616      -0.01524288
+    2                 0                    1         0.4656616      -0.01524288
+    3                 0                    1         0.4624432       0.46116314
+    4                 0                    1         0.4624432       0.46116314
+    5                 0                    1         0.9958202       0.99205833
+    6                 0                    1         0.9958202       0.99205833
+    7                 0                    1         0.9897228       0.98047339
+    8                 0                    1         0.8956853       0.86045376
+    9                 0                    1         0.9151670       0.90782561
+    10                0                    1         0.7626110       0.67909257
+    11                0                    1         0.8016879       0.77806202
+    12                0                    1         0.7225818       0.69660212
+    13                0                    1         0.6866398       0.66857645
+    14                0                    1         0.7317106       0.69663241
+    15                0                    1         0.6493978       0.62649461
+    16                0                    1         0.6964294       0.65997935
+    17                0                    1         0.7380422       0.70948639
+    18                0                    1         0.7594990       0.75070975
+       StabilityJaccard_Mean StabilityJaccard_Min StabilityCoreProportion
+    1              0.7083333           0.66666667                       1
+    2              0.7083333           0.66666667                       1
+    3              0.6651074           0.49687500                       1
+    4              0.6651074           0.49687500                       1
+    5              0.9968943           0.99375000                       1
+    6              0.9968943           0.99375000                       1
+    7              0.9921875           0.97500000                       1
+    8              0.7725000           0.25000000                       1
+    9              0.7946044           0.31875000                       1
+    10             0.6132120           0.23750000                       1
+    11             0.6032487           0.23259494                       1
+    12             0.5920687           0.28149693                       1
+    13             0.4869087           0.11164954                       1
+    14             0.6426372           0.28149693                       1
+    15             0.4195441           0.03750000                       1
+    16             0.5609762           0.04592363                       1
+    17             0.5611938           0.03835784                       1
+    18             0.6494702           0.04592363                       1
+       StabilityARI_Core StabilityJaccard_CoreMean StabilityJaccard_CoreMin
+    1          0.4656616                 0.7083333               0.66666667
+    2          0.4656616                 0.7083333               0.66666667
+    3          0.4624432                 0.6651074               0.49687500
+    4          0.4624432                 0.6651074               0.49687500
+    5          0.9958202                 0.9968943               0.99375000
+    6          0.9958202                 0.9968943               0.99375000
+    7          0.9897228                 0.9921875               0.97500000
+    8          0.8956853                 0.7725000               0.25000000
+    9          0.9151670                 0.7946044               0.31875000
+    10         0.7626110                 0.6132120               0.23750000
+    11         0.8016879                 0.6032487               0.23259494
+    12         0.7225818                 0.5920687               0.28149693
+    13         0.6866398                 0.4869087               0.11164954
+    14         0.7317106                 0.6426372               0.28149693
+    15         0.6493978                 0.4195441               0.03750000
+    16         0.6964294                 0.5609762               0.04592363
+    17         0.7380422                 0.5611938               0.03835784
+    18         0.7594990                 0.6494702               0.04592363
+       StabilityNonBoundaryProportion StabilityARI_NonBoundary
+    1                        1.000000                0.4656616
+    2                        1.000000                0.4656616
+    3                        1.000000                0.4624432
+    4                        1.000000                0.4624432
+    5                        1.000000                0.9958202
+    6                        1.000000                0.9958202
+    7                        1.000000                0.9897228
+    8                        0.962500                0.9103017
+    9                        0.993750                0.9170130
+    10                       0.956250                0.7682828
+    11                       0.978125                0.8135826
+    12                       0.937500                0.7363608
+    13                       0.968750                0.6955504
+    14                       0.928125                0.7469045
+    15                       0.968750                0.6564588
+    16                       0.928125                0.7070187
+    17                       0.962500                0.7468363
+    18                       0.921875                0.7678478
+       StabilityARI_NonBoundary_P05 StabilityJaccard_NonBoundaryMean
+    1                   -0.01524288                        0.7083333
+    2                   -0.01524288                        0.7083333
+    3                    0.46116314                        0.6651074
+    4                    0.46116314                        0.6651074
+    5                    0.99205833                        0.9968943
+    6                    0.99205833                        0.9968943
+    7                    0.98047339                        0.9921875
+    8                    0.87298331                        0.7725000
+    9                    0.90954936                        0.7945837
+    10                   0.67788872                        0.6131948
+    11                   0.78985527                        0.6041955
+    12                   0.70457768                        0.5922588
+    13                   0.67774734                        0.4876779
+    14                   0.71257501                        0.6452262
+    15                   0.63276808                        0.4201939
+    16                   0.66837196                        0.5607031
+    17                   0.71759872                        0.5634501
+    18                   0.75732105                        0.6521223
+       StabilityJaccard_NonBoundaryMin ReproducibilityScore_All
+    1                       0.66666667                0.4656616
+    2                       0.66666667                0.4656616
+    3                       0.49687500                0.4624432
+    4                       0.49687500                0.4624432
+    5                       0.99375000                0.9958202
+    6                       0.99375000                0.9958202
+    7                       0.97500000                0.9897228
+    8                       0.23529412                0.8956853
+    9                       0.32692308                0.9151670
+    10                      0.22058824                0.7626110
+    11                      0.20000000                0.8016879
+    12                      0.27525253                0.7225818
+    13                      0.11164954                0.6866398
+    14                      0.27525253                0.7317106
+    15                      0.03896104                0.6493978
+    16                      0.04861111                0.6964294
+    17                      0.04031385                0.7380422
+    18                      0.04861111                0.7594990
+       ReproducibilityScore BoundaryParticipantProportion
+    1             0.4656616                      0.000000
+    2             0.4656616                      0.000000
+    3             0.4624432                      0.000000
+    4             0.4624432                      0.000000
+    5             0.9958202                      0.000000
+    6             0.9958202                      0.000000
+    7             0.9897228                      0.000000
+    8             0.8956853                      0.037500
+    9             0.9151670                      0.006250
+    10            0.7626110                      0.043750
+    11            0.8016879                      0.021875
+    12            0.7225818                      0.062500
+    13            0.6866398                      0.031250
+    14            0.7317106                      0.071875
+    15            0.6493978                      0.031250
+    16            0.6964294                      0.071875
+    17            0.7380422                      0.037500
+    18            0.7594990                      0.078125
+       MaxClusterBoundaryProportion AIC_scaled  BIC_scaled Entropy_scaled
+    1                    0.00000000 -2.3217180 -2.57142713    -3.98596017
+    2                    0.00000000  0.7235624  1.03870975     0.29597332
+    3                    0.00000000 -1.6928999 -1.67740986     0.09103470
+    4                    0.00000000  0.8025605  1.03257570     0.29566559
+    5                    0.00000000 -0.5236752  0.10134775     0.29597317
+    6                    0.00000000  0.9603884  1.15549972     0.29570174
+    7                    0.00000000 -0.3286210  0.28521775     0.29597333
+    8                    0.20000000  0.9393696  0.98562035     0.29519501
+    9                    0.03703704 -0.3781406  0.06867773     0.06363850
+    10                   0.21052632  0.8018875  0.62507018    -0.05137539
+    11                   0.20000000 -0.5712063 -0.38287255     0.22890167
+    12                   0.21052632  0.8570542  0.57991985     0.29590390
+    13                   0.20000000 -0.6194677 -0.59735287     0.15702885
+    14                   0.21052632  0.8010588  0.35277774     0.29553557
+    15                   0.20000000 -0.6513624 -0.78503789     0.26576360
+    16                   0.21052632  0.9377027  0.44101974     0.29557465
+    17                   0.20000000 -0.6358843 -0.89516541     0.27359220
+    18                   0.21052632  0.8993913  0.24282944     0.29587976
+       Reproducibility_scaled Posterior_scaled  ahp_index Eligible
+    1            -1.460958081       0.26536601 -2.5850158     TRUE
+    2            -1.460958081       0.44719763  0.1493218     TRUE
+    3            -1.478535111       0.44719716 -1.1894526     TRUE
+    4            -1.478535111       0.44719763  0.1630667     TRUE
+    5             1.434447183       0.44719763  0.3270232     TRUE
+    6             1.434447183       0.44719763  0.9615093     TRUE
+    7             1.401147205       0.44719762  0.4134293     TRUE
+    8             0.887571052       0.44515837  0.7769390     TRUE
+    9             0.993968265      -2.14876252  0.1870360     TRUE
+    10            0.160799529      -3.12154031  0.3840955     TRUE
+    11            0.374213962      -0.05534519 -0.0877408     TRUE
+    12           -0.057815682       0.44678403  0.4187656     TRUE
+    13           -0.254108935      -0.44289951 -0.3284752     TRUE
+    14           -0.007959829       0.44513967  0.3603531     TRUE
+    15           -0.457502390       0.27411167 -0.4070348     TRUE
+    16           -0.200644329       0.44504462  0.3684132     TRUE
+    17            0.026619558       0.31686578 -0.3077095     TRUE
+    18            0.143803611       0.44689206  0.3954760     TRUE
+          GridDesignPolicy GridDesignK TargetNodesPerProfile SOMNodeCount
+    1  explicit_dimensions          10                    20           25
+    2  explicit_dimensions          10                    20           25
+    3  explicit_dimensions          10                    20           25
+    4  explicit_dimensions          10                    20           25
+    5  explicit_dimensions          10                    20           25
+    6  explicit_dimensions          10                    20           25
+    7  explicit_dimensions          10                    20           25
+    8  explicit_dimensions          10                    20           25
+    9  explicit_dimensions          10                    20           25
+    10 explicit_dimensions          10                    20           25
+    11 explicit_dimensions          10                    20           25
+    12 explicit_dimensions          10                    20           25
+    13 explicit_dimensions          10                    20           25
+    14 explicit_dimensions          10                    20           25
+    15 explicit_dimensions          10                    20           25
+    16 explicit_dimensions          10                    20           25
+    17 explicit_dimensions          10                    20           25
+    18 explicit_dimensions          10                    20           25
+       ExpectedNodesPerProfile
+    1                12.500000
+    2                12.500000
+    3                 8.333333
+    4                 8.333333
+    5                 6.250000
+    6                 6.250000
+    7                 5.000000
+    8                 5.000000
+    9                 4.166667
+    10                4.166667
+    11                3.571429
+    12                3.571429
+    13                3.125000
+    14                3.125000
+    15                2.777778
+    16                2.777778
+    17                2.500000
+    18                2.500000
 
-    [1] "Composite rank index (AIC, BIC, Entropy, Reproducibility; equal weights) recommends Model 3 with k = 5 profiles."
+    [1] "Composite rank index (AIC, BIC, Entropy, Reproducibility; equal weights) recommends Model 3 with k = 4 profiles."
 
-    # A tibble: 16 × 8
+    # A tibble: 18 × 18
        Model Classes StabilitySuccessRate StabilityARI_Mean StabilityARI_P05
        <int>   <int>                <dbl>             <dbl>            <dbl>
-     1     1       2                    1           -0.0741          -0.0757
-     2     3       2                    1           -0.0774          -0.0790
-     3     1       3                    1            0.469            0.464
-     4     3       3                    1            0.667            0.397
-     5     1       4                    1            0.991            0.991
-     6     3       4                    1            0.842            0.763
-     7     1       5                    1            0.981            0.969
-     8     3       5                    1            0.864            0.852
-     9     1       6                    1            0.885            0.823
-    10     3       6                    1            0.776            0.759
-    11     1       7                    1            0.963            0.947
-    12     3       7                    1            0.698            0.627
-    13     1       8                    1            0.890            0.835
-    14     3       8                    1            0.721            0.707
-    15     1       9                    1            0.796            0.791
-    16     1      10                    1            0.762            0.727
-    # ℹ 3 more variables: StabilityJaccard_Mean <dbl>, StabilityJaccard_Min <dbl>,
+     1     1       2                    1             0.466          -0.0152
+     2     3       2                    1             0.466          -0.0152
+     3     1       3                    1             0.462           0.461
+     4     3       3                    1             0.462           0.461
+     5     1       4                    1             0.996           0.992
+     6     3       4                    1             0.996           0.992
+     7     1       5                    1             0.990           0.980
+     8     3       5                    1             0.896           0.860
+     9     1       6                    1             0.915           0.908
+    10     3       6                    1             0.763           0.679
+    11     1       7                    1             0.802           0.778
+    12     3       7                    1             0.723           0.697
+    13     1       8                    1             0.687           0.669
+    14     3       8                    1             0.732           0.697
+    15     1       9                    1             0.649           0.626
+    16     3       9                    1             0.696           0.660
+    17     1      10                    1             0.738           0.709
+    18     3      10                    1             0.759           0.751
+    # ℹ 13 more variables: StabilityJaccard_Mean <dbl>, StabilityJaccard_Min <dbl>,
+    #   StabilityCoreProportion <dbl>, StabilityARI_Core <dbl>,
+    #   StabilityJaccard_CoreMean <dbl>, StabilityJaccard_CoreMin <dbl>,
+    #   StabilityNonBoundaryProportion <dbl>, StabilityARI_NonBoundary <dbl>,
+    #   StabilityARI_NonBoundary_P05 <dbl>, StabilityJaccard_NonBoundaryMean <dbl>,
+    #   StabilityJaccard_NonBoundaryMin <dbl>, ReproducibilityScore_All <dbl>,
     #   ReproducibilityScore <dbl>
 
 ![](ClusteringPhenotyping_files/figure-html/SOMReview-1.png)
@@ -398,19 +600,19 @@ ObjClustProjected <- ProjectCluster(Obj_ClustFinal, df_Projection)
 
 ##### 
 
-![](data:image/svg+xml;base64,PHN2ZyBpZD0iYXdlU09Nd2lkZ2V0LWJmNzBiOWUzMjQyZTU5ZDYwNmM5LXBsYWNlSG9sZGVyIj48L3N2Zz4=)
+![](data:image/svg+xml;base64,PHN2ZyBpZD0iYXdlU09Nd2lkZ2V0LTI2MzY0YTQ4N2Y3NDVkNWRmMmJhLXBsYWNlSG9sZGVyIj48L3N2Zz4=)
 
 ##### 
 
 ##### 
 
-![](data:image/svg+xml;base64,PHN2ZyBpZD0iYXdlU09Nd2lkZ2V0LTI2YzBiODZjZWQ5YjgxMDQ0MWY1LXBsYWNlSG9sZGVyIj48L3N2Zz4=)
+![](data:image/svg+xml;base64,PHN2ZyBpZD0iYXdlU09Nd2lkZ2V0LTgzOWE1MTgwYmMyY2VhNmRiZmE5LXBsYWNlSG9sZGVyIj48L3N2Zz4=)
 
 ##### 
 
 ##### 
 
-![](data:image/svg+xml;base64,PHN2ZyBpZD0iYXdlU09Nd2lkZ2V0LTUyMjZiNjBlOTIyMmI0NjgzNWUxLXBsYWNlSG9sZGVyIj48L3N2Zz4=)
+![](data:image/svg+xml;base64,PHN2ZyBpZD0iYXdlU09Nd2lkZ2V0LTA0ZGFhNzQwNDM1ODQxYzQwNWUxLXBsYWNlSG9sZGVyIj48L3N2Zz4=)
 
 ![](ClusteringPhenotyping_files/figure-html/SOMFinalize-1.png)
 
@@ -428,12 +630,106 @@ ObjClustProjected <- ProjectCluster(Obj_ClustFinal, df_Projection)
 
 ![](ClusteringPhenotyping_files/figure-html/SOMFinalize-8.png)
 
+![](ClusteringPhenotyping_files/figure-html/SOMFinalize-9.png)
+
+![](ClusteringPhenotyping_files/figure-html/SOMFinalize-10.png)
+
+    # A tibble: 3 × 9
+      Model Classes RetainedFraction StabilitySuccessRate StabilityARI_Mean
+      <int>   <int>            <dbl>                <dbl>             <dbl>
+    1     3       4             0.8                     1             1
+    2     3       4             0.9                     1             0.996
+    3     3       4             0.95                    1             1
+    # ℹ 4 more variables: StabilityARI_P05 <dbl>, StabilityVI_Mean <dbl>,
+    #   StabilityNMI_Mean <dbl>, StabilityFowlkesMallows_Mean <dbl>
+
+    # A tibble: 24 × 8
+       ReferenceCluster ReferenceParticipants Cohesion CrossMixing Model Classes
+                  <int>                 <dbl>    <dbl>       <dbl> <int>   <int>
+     1                1                    80    1         0           3       4
+     2                2                    80    1         0           3       4
+     3                3                    80    1         0           3       4
+     4                4                    80    1         0           3       4
+     5                1                    80    1         0           3       4
+     6                2                    80    1         0.00417     3       4
+     7                3                    80    1         0           3       4
+     8                4                    80    0.975     0.00417     3       4
+     9                1                    80    1         0           3       4
+    10                2                    80    1         0           3       4
+    # ℹ 14 more rows
+    # ℹ 2 more variables: Replicate <int>, RetainedFraction <dbl>
+
+    # A tibble: 24 × 9
+       ReferenceCluster DominantRefitCluster DominantRefitShare
+                  <int>                <int>              <dbl>
+     1                1                    3              1
+     2                2                    4              1
+     3                3                    1              1
+     4                4                    2              1
+     5                1                    1              1
+     6                2                    4              1
+     7                3                    3              1
+     8                4                    2              0.988
+     9                1                    4              1
+    10                2                    1              1
+    # ℹ 14 more rows
+    # ℹ 6 more variables: EffectiveRefitClusters <dbl>, BestJaccard <dbl>,
+    #   Model <int>, Classes <int>, Replicate <int>, RetainedFraction <dbl>
+
+    # A tibble: 24 × 8
+       ReferenceCluster MatchedRefitCluster ProfileCorrelation ProfileRMSE Model
+                  <int>               <int>              <dbl>       <dbl> <int>
+     1                1                   3              1          0          3
+     2                2                   4              1          0          3
+     3                3                   1              1          0          3
+     4                4                   2              1          0          3
+     5                1                   1              1          0          3
+     6                2                   4              1.000      0.0158     3
+     7                3                   3              1          0          3
+     8                4                   2              1.000      0.0111     3
+     9                1                   4              1          0          3
+    10                2                   1              1          0          3
+    # ℹ 14 more rows
+    # ℹ 3 more variables: Classes <int>, Replicate <int>, RetainedFraction <dbl>
+
+![](ClusteringPhenotyping_files/figure-html/SOMFinalize-11.png)
+
+![](ClusteringPhenotyping_files/figure-html/SOMFinalize-12.png)
+
 #### Interpreting a SOM projection
 
-`ProbFit` answers the assignment question: which cluster was assigned
-and how certain is the node-derived posterior assignment? Use
-`ProbFit$individual` for `Cluster`, `prob_assigned`, `max_prob`, and
-`uncertainty`.
+The SOM map is a frozen phenotype instrument. Each new model uses one
+seeded, full-cohort batch SOM fit from a deterministic initial codebook.
+This keeps training fast and reproducible while retaining the fitted
+scaling, prototypes, grid, topology, neighbourhood, and node-level
+mixture for projection. When dimensions are omitted, the automatic
+square grid is k-informed: exploratory fits use `max(k_range)`,
+finalized fits use `final_k`, and the engineering default targets about
+20 SOM nodes per planned phenotype. That density gives each plausible
+phenotype multiple local prototypes without allowing a larger cohort
+alone to create a more sparse map or more clinical phenotypes. Sample
+size is instead reviewed through occupancy and map-health diagnostics.
+Set `som_xdim` and `som_ydim` to preserve a reviewed map design
+explicitly; that frozen map is then used for every compared k and all
+future projections.
+
+Hard projection uses the Mclust class of the best-matching node. Soft
+projection combines Mclust node posterior probabilities from the nearest
+`soft_n_nodes` codebook nodes using normalized inverse-squared
+standardized feature distances. Both `Cluster_Hard` and `Cluster_Soft`
+are retained, while `assignment` controls which is exposed as canonical
+`Cluster` (soft-3 by default). `SoftEntropy` is the normalized entropy
+of the soft membership probabilities and `SoftMargin` is the gap between
+the two largest probabilities. Boundary status
+(`SoftMargin < boundary_margin_threshold` or
+`SoftEntropy > boundary_entropy_threshold`) is a confidence diagnostic
+only; it never removes or suppresses a participant.
+
+`ProbFit` answers the assignment question. Its node-level `prob_*`
+columns are Mclust posteriors for codebook nodes; participant-level
+`SoftProb_*`, `SoftEntropy`, and `SoftMargin` are proximity-weighted
+membership diagnostics. Use `ProbFit$individual` for these values and
+for `Cluster`, `Cluster_Hard`, and `Cluster_Soft`.
 
 `ProjectionFit` answers the transportability question: how well do these
 new participants fit the frozen training SOM? `ProjectionFit$individual`
@@ -532,14 +828,17 @@ success rate is reported separately.
 
 #### Complementary stability diagnostics
 
-Every successful full-pipeline 90% subsample refit records ARI for the
-participants included in that refit. The pipeline is retrained from the
-subset and assignments are joined to the full-data reference by
-`.row_id`; projection is not part of stability. Sampling and model seeds
-vary independently and are recorded for each replicate.
-`participant_inclusion` reports the probability that a participant
-returns to its reference cluster’s label-matched subsample cluster;
-`cluster_inclusion` summarizes that probability by reference cluster.
+Every successful SOM + Mclust 90% subsample refit projects the complete
+reference cohort through that refit’s preprocessing, map, and node
+mixture before calculating ARI. `StabilityARI_Mean` and
+`StabilityARI_P05` are the primary whole-partition measures.
+`StabilityARI_NonBoundary` is secondary: it uses the same
+reference-defined soft margin/entropy mask in every refit, while the
+primary ARI always retains boundary participants. Sampling and model
+seeds are recorded for each replicate. `participant_inclusion` reports
+the probability that a participant returns to its reference cluster’s
+label-matched subsample cluster; `cluster_inclusion` summarizes that
+probability by reference cluster.
 
 For complete-case cohorts of 2,000 or fewer participants, `coassignment`
 contains the subsample probability that each pair is assigned together
@@ -566,8 +865,10 @@ it is not a SciDataReportR function.
 | `MinProfileNodeProportion`, `MaxProfileNodeProportion` | The corresponding node counts divided by the total SOM-node count. These replace tidyLPA’s ambiguous decimal `n_min` and `n_max` fields. |
 | `BLRTStatistic`, `BLRTPValue` | Bootstrap likelihood-ratio statistic and raw p-value for comparing the k-profile fit with k - 1 profiles ([Nylund et al. 2007](#ref-nylund2007)). A small p-value supports the additional profile’s statistical fit, but does not by itself establish stability, clinical meaning, or a final choice; it is unavailable for one profile. The last candidate-review panel displays `−log10(BLRTPValue)` and marks `−log10(0.05)`, approximately 1.301. |
 | `StabilityARI_Mean` | Mean adjusted Rand index across successful full-pipeline 90% participant subsample refits without replacement. It may be negative: this means agreement is worse than expected by chance, not an error. |
+| `StabilityARI_P05` | Fifth percentile of whole-partition ARI across successful refits. It describes the lower tail of reproducibility rather than average agreement. |
+| `StabilityARI_NonBoundary`, `StabilityARI_NonBoundary_P05` | Secondary ARI summaries restricted to participants classified as non-boundary in the reference model using the recorded soft margin and entropy thresholds. Boundary participants remain in the primary metrics. |
 | `StabilityJaccard_Mean` | Mean label-matched, per-profile Jaccard recovery across successful 90% participant subsample refits without replacement. |
-| `ReproducibilityScore` | Mean of the finite `StabilityARI_Mean` and `StabilityJaccard_Mean`; `StabilitySuccessRate` remains separate. |
+| `ReproducibilityScore` | Equals `StabilityARI_Mean` for SOM + Mclust, so final participant-partition agreement remains the primary reproducibility measure. `StabilitySuccessRate` remains separate. |
 | `Reproducibility_scaled` | Min-max rescaling of `ReproducibilityScore` across the current candidate table. It is used only as an AHP input ([Akogul and Erisoglu 2017](#ref-akogul2017)), not as an independently interpretable reproducibility metric. |
 
 | Method | Candidate metrics |
@@ -690,35 +991,35 @@ Session information
      [28] mime_0.13              lifecycle_1.0.5        pkgconfig_2.0.3
      [31] sjlabelled_1.2.0       R6_2.6.1               fastmap_1.2.0
      [34] future_1.76.0          shiny_1.14.0           digest_0.6.39
-     [37] colorspace_2.1-3       rematch2_2.1.2         patchwork_1.3.2
+     [37] colorspace_2.1-4       rematch2_2.1.2         patchwork_1.3.2
      [40] Hmisc_5.3-0            labeling_0.4.3         gtsummary_2.6.1
      [43] progressr_1.0.0        httr_1.4.9             abind_1.4-8
      [46] compiler_4.6.1         withr_3.0.3            pander_0.6.6
      [49] htmlTable_2.5.0        S7_0.2.2               backports_1.5.1
-     [52] viridis_0.6.5          carData_3.0-6          psych_2.6.5
+     [52] viridis_0.6.5          carData_3.0-6          psych_2.6.9
      [55] fastDummies_1.7.6      R.utils_2.13.0         MASS_7.3-65
      [58] scatterplot3d_0.3-45   tools_4.6.1            pbivnorm_0.6.0
      [61] MplusAutomation_1.3    foreign_0.8-91         otel_0.2.0
-     [64] httpuv_1.6.17          future.apply_1.20.2    statsExpressions_2.1.1
+     [64] httpuv_1.6.17          future.apply_1.20.2    statsExpressions_2.1.2
      [67] nnet_7.3-20            R.oo_1.27.1            glue_1.8.1
-     [70] quadprog_1.5-8         dbscan_1.2.6           nlme_3.1-169
+     [70] quadprog_1.5-8         dbscan_1.2.7           nlme_3.1-169
      [73] promises_1.5.0         grid_4.6.1             checkmate_2.3.4
      [76] cluster_2.1.8.2        generics_0.1.4         gtable_0.3.6
      [79] labelled_2.16.1        R.methodsS3_1.8.2      tidyr_1.3.2
      [82] aweSOM_1.3             data.table_1.18.6.1    hms_1.1.4
      [85] car_3.1-5              RANN_2.6.3             pillar_1.11.1
      [88] stringr_1.6.0          later_1.4.8            lattice_0.22-9
-     [91] ggstatsplot_1.1.1      tidyselect_1.2.1       knitr_1.52
+     [91] ggstatsplot_1.1.2      tidyselect_1.2.1       knitr_1.52
      [94] gridExtra_2.3.1        stats4_4.6.1           xfun_0.61
      [97] texreg_1.40            stringi_1.8.9          proto_1.0.0
     [100] yaml_2.3.12            boot_1.3-32            evaluate_1.0.5
     [103] codetools_0.2-20       nonnest2_0.5-9         tibble_3.3.1
     [106] cli_3.6.6              RcppParallel_6.2.1     rpart_4.1.27
-    [109] xtable_1.8-8           parameters_0.29.3      lavaan_0.7-2
+    [109] xtable_1.8-8           parameters_0.29.3      lavaan_0.7-3
     [112] dichromat_2.0-1        Rcpp_1.1.2             tidySEM_0.2.12
     [115] globals_0.19.1         coda_0.19-4.1          parallel_4.6.1
     [118] kohonen_3.0.13         rstantools_2.7.1       prettyunits_1.2.0
-    [121] mclust_6.1.3           bayestestR_0.19.0      listenv_1.0.0
+    [121] mclust_6.1.3           bayestestR_0.19.0      listenv_1.1.0
     [124] viridisLite_0.4.3      mvtnorm_1.4-2          scales_1.4.0
     [127] insight_1.5.4          purrr_1.2.2            crayon_1.5.3
     [130] rlang_1.3.0            mnormt_2.1.2           poLCA_1.6.0.2

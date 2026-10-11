@@ -222,12 +222,12 @@ still not external validation in a new population.
     [22] lifecycle_1.0.5        compiler_4.6.1         farver_2.1.2
     [25] snakecase_0.11.1       carData_3.0-6          htmltools_0.5.9
     [28] yaml_2.3.12            Formula_1.2-6          pillar_1.11.1
-    [31] car_3.1-5              tidyr_1.3.2            statsExpressions_2.1.1
+    [31] car_3.1-5              tidyr_1.3.2            statsExpressions_2.1.2
     [34] abind_1.4-8            nlme_3.1-169           tidyselect_1.2.1
     [37] sjlabelled_1.2.0       digest_0.6.39          mvtnorm_1.4-2
     [40] gtsummary_2.6.1        purrr_1.2.2            rematch2_2.1.2
     [43] splines_4.6.1          labeling_0.4.3         forcats_1.0.1
-    [46] ggstatsplot_1.1.1      labelled_2.16.1        fastmap_1.2.0
+    [46] ggstatsplot_1.1.2      labelled_2.16.1        fastmap_1.2.0
     [49] grid_4.6.1             cli_3.6.6              magrittr_2.0.5
     [52] patchwork_1.3.2        utf8_1.2.6             dichromat_2.0-1
     [55] broom_1.0.13           withr_3.0.3            scales_1.4.0

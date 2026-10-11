@@ -47,7 +47,7 @@ numeric feature space; use scaling unless all variables are commensurate."><meta
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Fit a projectable K-means clustering model</h1>
-      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/v21.13.0/R/ClusteringPipelines.R" class="external-link"><code>R/ClusteringPipelines.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/master/R/ClusteringPipelines.R" class="external-link"><code>R/ClusteringPipelines.R</code></a></small>
       <div class="d-none name"><code>CreateClusterModel_KMeans.Rd</code></div>
     </div>
 
@@ -167,20 +167,25 @@ affect clustering.</p>
 <p>Stability assesses internal reproducibility by full-pipeline 90% participant
 subsampling without replacement. For each replicate, 90% of complete
 participants are selected once, all preprocessing, any reduction (PCA,
-MCA, or SOM), and the selected clustering method are refit. Assignments from
-that refit are compared with the full-data reference assignments for the
-same sampled participants, joined by <code>.row_id</code>; projection is not used.
-It is an internal sensitivity analysis, not
+MCA, or SOM), and the selected clustering method are refit. Most pipelines
+compare assignments for sampled participants. SOM + Mclust instead maps the
+complete reference cohort onto every refit and compares the resulting full
+participant partition. <code>Stability$settings$comparison_scope</code> records the
+policy used. It is an internal sensitivity analysis, not
 independent-cohort validation.</p>
 <p><code>Stability$settings</code> records the analysis provenance:</p><ul><li><p><code>resamples</code>: requested number of 90% subsample refits.</p></li>
 <li><p><code>seed</code>: seed used to derive reproducible sampling and model seeds.</p></li>
-<li><p><code>refit_scope</code>: always <code>"full_pipeline_in_sample"</code>, meaning
-preprocessing, reduction where applicable, and clustering were all refit.</p></li>
-<li><p><code>comparison_scope</code>: always <code>"sampled_participants"</code>; only the
-participants used in a refit enter that replicate's agreement metrics.</p></li>
+<li><p><code>refit_scope</code>: whether agreement is calculated directly in the
+refitted sample or after refit projection onto the reference cohort.</p></li>
+<li><p><code>comparison_scope</code>: the participants entering replicate agreement
+metrics; most pipelines use <code>"sampled_participants"</code>, while SOM + Mclust
+uses <code>"all_reference_participants"</code>.</p></li>
 <li><p><code>resample_type</code>: <code>"subsample_without_replacement"</code> for the
 primary stability analysis.</p></li>
 <li><p><code>resample_fraction</code>: the retained participant fraction, <code>0.90</code>.</p></li>
+<li><p><code>resample_fractions</code>: every requested retention fraction. The
+default is <code>0.90</code>; additional values create an opt-in deletion-stability
+curve without replacing the 90% primary screen.</p></li>
 <li><p><code>coassignment_limit</code>: maximum number of complete training
 participants (2,000) for which the full pairwise co-assignment matrix is
 calculated.</p></li>
@@ -191,7 +196,7 @@ ARI but exclude it from phenotype-level Jaccard recovery.</p></li>
 <code>Classes</code> identify the selected candidate (for HDBSCAN, <code>Classes</code> is the
 data-derived extracted count); <code>Replicate</code> is its sequence number; <code>Status</code>
 is <code>"success"</code> or a failure status; <code>SamplingSeed</code> and <code>ModelSeed</code> identify
-the independently varied participant draw and stochastic refit; and <code>Error</code>
+the participant draw and refit initialization policy; and <code>Error</code>
 contains the error message for an unsuccessful refit. <code>ARI</code> is the primary
 successful-refit metric: it is invariant to cluster numbering, higher is
 better, and it can be negative when agreement is worse than chance.</p>
@@ -207,8 +212,19 @@ score. <code>StabilityARI_Mean</code> and <code>StabilityARI_P05</code> are the 
 percentile of ARI. <code>StabilityJaccard_Mean</code> and <code>StabilityJaccard_Min</code> are
 respectively the mean cluster-level recovery and the minimum of the
 cluster-specific mean recoveries across replicates.
-<code>ReproducibilityScore</code> is the mean of the finite <code>StabilityARI_Mean</code> and
-<code>StabilityJaccard_Mean</code> values only; it does not include success rate.</p>
+<code>ReproducibilityScore</code> does not include success rate. For most pipelines it
+is the mean of finite <code>StabilityARI_Mean</code> and <code>StabilityJaccard_Mean</code>
+values; SOM + Mclust uses <code>StabilityARI_Mean</code> directly because it selects
+on agreement of the final participant partition.</p>
+<p>SOM + Mclust additionally returns <code>StabilityARI_NonBoundary</code>,
+<code>StabilityARI_NonBoundary_P05</code>, and non-boundary Jaccard summaries. These
+are secondary diagnostics calculated only on the fixed reference-model mask
+with <code>SoftMargin</code> below its threshold or <code>SoftEntropy</code> above its threshold
+excluded. The primary all-participant ARI always retains these boundary
+participants. <code>boundary_summary</code> reports their count and proportion overall
+and within each reference cluster. Earlier posterior-based <code>Core</code> fields are
+retained for compatibility as descriptive diagnostics; they are not the
+boundary-aware sensitivity measure.</p>
 <p><code>Stability$failures</code> repeats the replicate columns for unsuccessful refits,
 making fit failures auditable without mixing them with successful metrics.</p>
 <p><code>Stability$participant_inclusion</code> is one row per complete reference
@@ -233,6 +249,20 @@ matrix values mean more consistent pairwise co-membership.
 Where more than one candidate is summarized, entries are named by its
 <code>Model_Classes</code> key. The matrix is diagnostic only and is never used for
 selection.</p>
+<p>SOM + Mclust additionally returns memory-safe final-partition diagnostics
+for every cohort size. <code>co_membership_by_cluster</code> reports the proportion of
+within-reference-cluster participant pairs retained together (<code>Cohesion</code>) and
+the probability of co-assignment with outsiders (<code>CrossMixing</code>).
+<code>co_membership_between_clusters</code> reports cross-reference-cluster
+co-assignment probabilities. <code>split_merge_reference</code> and
+<code>split_merge_refit</code> identify dominant sources, shares, and effective numbers
+of groups, while <code>profile_recovery</code> reports matched-cluster correlation and
+RMSE for mean clustering-variable profiles on the frozen reference scale.
+These explain the nature of membership changes; they do not supersede ARI.</p>
+<p><code>deletion_curve</code> summarizes ARI, VI, NMI, and Fowlkes–Mallows agreement at
+each requested participant-retention fraction. It is useful for describing
+sensitivity to increasing cohort perturbation, not for selecting the least
+demanding fraction.</p>
 <p><code>Stability$plots</code> contains <code>cluster_recovery</code> (per-cluster Jaccard),
 <code>partition_metrics</code> (the ARI distribution), and
 <code>cluster_inclusion</code>; it also contains a co-assignment heatmap when the

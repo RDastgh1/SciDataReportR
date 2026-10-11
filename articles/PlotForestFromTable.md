@@ -252,11 +252,11 @@ print(sessionInfo())
     [22] farver_2.1.2           carData_3.0-6          snakecase_0.11.1
     [25] sass_0.4.10            htmltools_0.5.9        yaml_2.3.12
     [28] Formula_1.2-6          pillar_1.11.1          car_3.1-5
-    [31] tidyr_1.3.2            statsExpressions_2.1.1 abind_1.4-8
+    [31] tidyr_1.3.2            statsExpressions_2.1.2 abind_1.4-8
     [34] tidyselect_1.2.1       sjlabelled_1.2.0       digest_0.6.39
     [37] mvtnorm_1.4-2          gtsummary_2.6.1        purrr_1.2.2
     [40] rematch2_2.1.2         labeling_0.4.3         forcats_1.0.1
-    [43] ggstatsplot_1.1.1      labelled_2.16.1        fastmap_1.2.0
+    [43] ggstatsplot_1.1.2      labelled_2.16.1        fastmap_1.2.0
     [46] grid_4.6.1             cli_3.6.6              magrittr_2.0.5
     [49] patchwork_1.3.2        dichromat_2.0-1        broom_1.0.13
     [52] withr_3.0.3            scales_1.4.0           backports_1.5.1

@@ -39,7 +39,8 @@ Missing data:
 - SOM and clustering are fit only on rows with complete Z-scores.
 
 - The returned `DataWithClusters` has exactly the original rows and
-  columns plus one cluster column; rows not used in SOM/LPA get NA.
+  columns plus canonical-cluster and hard/soft confidence columns; rows
+  not used in SOM/LPA get NA for every assignment diagnostic.
 
 - The returned `ProbFit$individual` is also full length, preserving one
   row per input row with NA posterior probabilities for rows excluded
@@ -84,6 +85,11 @@ CreateClusterModel_SOM_MClust(
   som_ydim = NULL,
   som_topo = "hexagonal",
   som_neigh = "gaussian",
+  node_weighting = c("uniform", "occupancy"),
+  assignment = c("soft", "hard"),
+  soft_n_nodes = 3L,
+  boundary_margin_threshold = 0.2,
+  boundary_entropy_threshold = 0.6,
   seed_som = 934521L,
   seed_lpa = 93421L,
   Relabel = TRUE,
@@ -93,6 +99,7 @@ CreateClusterModel_SOM_MClust(
   lpa_progress = FALSE,
   lpa_em_itmax = 100L,
   lpa_em_tol = 1e-05,
+  lpa_bootstrap_n = 0L,
   lpa_timeout_seconds = 120,
   lpa_drop_zero_sd = TRUE,
   lpa_zero_sd_tol = 1e-08,
@@ -105,12 +112,16 @@ CreateClusterModel_SOM_MClust(
   high_dist_quantile = 0.95,
   low_prob_threshold = 0.7,
   stability_resamples = 0L,
+  stability_candidates = c("all", "best_per_k"),
+  stability_top_n = NULL,
   stability_seed = 934522L,
+  stability_fractions = 0.9,
   stability_progress = FALSE,
   stability_cores = NULL,
   df = lifecycle::deprecated(),
   id_col = lifecycle::deprecated(),
-  .NodeClusterFn = NULL
+  .NodeClusterFn = NULL,
+  .CandidatePairs = NULL
 )
 
 Pipeline_SOM_MClust(...)
@@ -196,8 +207,14 @@ CreateSOMClusterModel(...)
 
 - som_xdim, som_ydim:
 
-  Optional integers for SOM grid dimensions. If NULL, a square grid with
-  side length `ceiling(n_complete^(1/3))` is used.
+  Optional integers for SOM grid dimensions. If NULL, a square grid is
+  derived from the planned maximum number of profiles: in exploratory
+  fits this is `max(k_range)` and in finalized fits it is `final_k`. The
+  engineering default is approximately 20 SOM nodes per planned profile.
+  It retains several local prototypes for each candidate phenotype
+  without letting a larger sample automatically create an increasingly
+  sparse map. Sample size instead informs node occupancy and map-health
+  review. Explicit dimensions always override this policy.
 
 - som_topo:
 
@@ -208,6 +225,38 @@ CreateSOMClusterModel(...)
 - som_neigh:
 
   SOM neighbourhood function, default `"gaussian"`.
+
+- node_weighting:
+
+  Whether codebook nodes enter the mixture with equal map-space weight
+  (`"uniform"`, default) or their training participant occupancy
+  (`"occupancy"`). Occupancy weighting supports Models 1–3 only.
+
+- assignment:
+
+  Participant phenotype definition: `"hard"` maps the Mclust class of
+  the best-matching SOM node; `"soft"` sums the Mclust node posterior
+  probabilities across nearby codebook nodes and chooses the largest
+  participant-level probability. Both outputs are always retained; the
+  default `"soft"` controls the canonical `Cluster`.
+
+- soft_n_nodes:
+
+  Number of nearest codebook nodes used by soft projection. Their
+  inverse-squared standardized-feature distances are normalized to
+  proximity weights. Default `3`.
+
+- boundary_margin_threshold:
+
+  Minimum difference between the largest and second-largest soft class
+  probabilities before a participant is flagged as a boundary
+  participant. Default `0.20`.
+
+- boundary_entropy_threshold:
+
+  Maximum normalized soft-membership entropy before a participant is
+  flagged as a boundary participant. Default `0.60`. A flag is set if
+  either boundary criterion is met.
 
 - seed_som, seed_lpa:
 
@@ -252,6 +301,14 @@ CreateSOMClusterModel(...)
   Numeric; EM convergence tolerance passed to
   [`mclust::emControl()`](https://mclust-org.github.io/mclust/reference/emControl.html).
   Use NULL to leave mclust defaults unchanged.
+
+- lpa_bootstrap_n:
+
+  Bootstrap resamples tidyLPA runs for each candidate fit: a bootstrap
+  likelihood-ratio test (BLRT) against k - 1 profiles and
+  MclustBootstrap. Default `0` skips them, which removes most of the
+  fitting time; `BLRTStatistic` and `BLRTPValue` are then `NA`. Set to,
+  e.g., `100` to report the BLRT. Stability refits never run them.
 
 - lpa_timeout_seconds:
 
@@ -321,12 +378,39 @@ CreateSOMClusterModel(...)
   Number of 90% participant subsample refits used to assess
   reproducibility for every successful exploratory candidate. Subsamples
   are drawn without replacement and reuse the reference model's resolved
-  SOM grid dimensions. Defaults to `0` (disabled); use `50` for an
-  exploratory stability screen.
+  SOM grid dimensions and the reference SOM seed. Each refit maps the
+  complete reference cohort before scoring participant assignments.
+  Defaults to `0` (disabled); use `30` for an exploratory stability
+  screen.
+
+- stability_candidates:
+
+  Which candidates receive subsample stability: `"all"` (default) or
+  `"best_per_k"`, the highest-ranked candidate (by the composite index
+  without reproducibility, eligible first) at each number of profiles,
+  so stability can inform the choice of k across the whole range.
+  Candidates without stability keep `NA` reproducibility and are not
+  recommended.
+
+- stability_top_n:
+
+  Optional integer. When supplied, stability is estimated only for the
+  top `stability_top_n` candidates ranked by the composite index without
+  reproducibility (eligible candidates first); the others keep `NA`
+  stability and are not recommended. Use it to screen a large candidate
+  grid, e.g. `stability_top_n = 5`.
 
 - stability_seed:
 
   Integer seed for participant subsampling.
+
+- stability_fractions:
+
+  Unique participant-retention fractions for an opt-in
+  deletion-stability curve. The default, `0.90`, preserves the ordinary
+  90% refit screen. Each fraction refits the complete pipeline and
+  projects the full reference cohort before all-participant ARI is
+  scored.
 
 - stability_progress:
 
@@ -358,6 +442,12 @@ CreateSOMClusterModel(...)
   [`CreateClusterModel_SOM_HDBSCAN()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateClusterModel_SOM_HDBSCAN.md);
   not part of the user-facing API.
 
+- .CandidatePairs:
+
+  Internal. A data frame of `Model` and `Classes` pairs restricting the
+  exploratory grid; used by stability refits so each resample fits only
+  the shortlisted candidates.
+
 - ...:
 
   Arguments passed to `CreateClusterModel_SOM_MClust()`.
@@ -369,8 +459,8 @@ A list of class `"Pipeline_SOM_MClust"` with components:
 - `method`, `vars_used`, `ZScoreType`, `ZScoreObject`, `ZScoreVars`,
   `ClusterVariableName`
 
-- `DataWithClusters`: original `df` with only the cluster column
-  appended
+- `DataWithClusters`: original `df` with canonical cluster, hard/soft
+  assignment, soft membership, and boundary diagnostic columns appended
 
 - `fit_plot`: ggplot of AIC/BIC/Entropy/BLRT p-value vs k and model
   (plus reproducibility when subsample stability is enabled)
@@ -414,14 +504,23 @@ Supplying settings from both modes is an error, even when an exploratory
 setting equals its default.
 
 Stability is assessed by refitting the full SOM/LPA pipeline on
-independent 90% participant subsamples drawn without replacement.
-`StabilityARI_Mean` is the mean adjusted Rand index across successful
-refits and can be negative when agreement is worse than chance.
-`StabilityJaccard_Mean` is the mean label-matched, per-profile Jaccard
-recovery. `ReproducibilityScore` is the mean of their finite values;
-`StabilitySuccessRate` is reported separately. `Reproducibility_scaled`
-is the candidate-table min-max rescaling used only by the AHP index and
-is not an independently interpretable reproducibility measure.
+independent participant subsamples drawn without replacement, then
+mapping the complete reference cohort onto each refit.
+`StabilityARI_Mean` is the primary reproducibility score: the mean
+adjusted Rand index across these full-cohort participant partitions. It
+can be negative when agreement is worse than chance.
+`stability_fractions` can request an explicit deletion curve; the
+existing 90% fit-table fields remain the primary review metrics, while
+`Stability$deletion_curve` records every requested retention level.
+Co-membership, split/merge, and profile-recovery diagnostics describe
+whether instability is localized despite imperfect exact membership;
+they never replace all-participant ARI. `StabilityJaccard_Mean` is the
+mean label-matched, per-profile Jaccard recovery and is retained as a
+descriptive diagnostic. `ReproducibilityScore` equals
+`StabilityARI_Mean`; `StabilitySuccessRate` is reported separately.
+`Reproducibility_scaled` is the candidate-table min-max rescaling used
+only by the AHP index and is not an independently interpretable
+reproducibility measure.
 
 The composite rank index (stored as `ahp_index`) is computed by:
 
@@ -442,6 +541,25 @@ in `ModelInfo_MClust$AHP`.
 `MinProfileParticipantN` and `MinProfileParticipantProportion` give the
 size of the smallest profile in training participants rather than SOM
 nodes.
+
+Phenotypes are learned by Mclust on the SOM codebook. Hard assignment
+uses the best-matching node's Mclust class. Soft assignment uses
+normalized inverse-squared codebook-distance weights across the nearest
+nodes to combine their Mclust posterior probabilities. `SoftEntropy` is
+the normalized entropy of that participant-level probability vector
+(entropy divided by `log(k)`) and `SoftMargin` is the largest minus
+second-largest probability. `prob_*` columns describe a SOM node's
+Mclust posterior, whereas `SoftProb_*` columns describe a participant's
+proximity-weighted membership. Boundary flags are confidence diagnostics
+only: they do not remove, relabel, or suppress a participant during
+training, stability scoring, or projection.
+
+Each new fit uses one deterministic, seeded full-cohort batch SOM. Its
+initialization codebook, preprocessing, grid, topology, neighbourhood,
+epochs, codebooks, and node-level mixture are retained so projection is
+completely frozen. Earlier fitted objects remain projectable because
+projection uses their frozen map and mixture rather than refitting
+either component.
 
 `SOM_Distance` is the Euclidean distance, in Z-score units, from a
 participant to their best-matching unit. Its square is the sum of the
@@ -509,10 +627,11 @@ Stability assesses internal reproducibility by full-pipeline 90%
 participant subsampling without replacement. For each replicate, 90% of
 complete participants are selected once, all preprocessing, any
 reduction (PCA, MCA, or SOM), and the selected clustering method are
-refit. Assignments from that refit are compared with the full-data
-reference assignments for the same sampled participants, joined by
-`.row_id`; projection is not used. It is an internal sensitivity
-analysis, not independent-cohort validation.
+refit. Most pipelines compare assignments for sampled participants.
+SOM + Mclust instead maps the complete reference cohort onto every refit
+and compares the resulting full participant partition.
+`Stability$settings$comparison_scope` records the policy used. It is an
+internal sensitivity analysis, not independent-cohort validation.
 
 `Stability$settings` records the analysis provenance:
 
@@ -520,17 +639,21 @@ analysis, not independent-cohort validation.
 
 - `seed`: seed used to derive reproducible sampling and model seeds.
 
-- `refit_scope`: always `"full_pipeline_in_sample"`, meaning
-  preprocessing, reduction where applicable, and clustering were all
-  refit.
+- `refit_scope`: whether agreement is calculated directly in the
+  refitted sample or after refit projection onto the reference cohort.
 
-- `comparison_scope`: always `"sampled_participants"`; only the
-  participants used in a refit enter that replicate's agreement metrics.
+- `comparison_scope`: the participants entering replicate agreement
+  metrics; most pipelines use `"sampled_participants"`, while SOM +
+  Mclust uses `"all_reference_participants"`.
 
 - `resample_type`: `"subsample_without_replacement"` for the primary
   stability analysis.
 
 - `resample_fraction`: the retained participant fraction, `0.90`.
+
+- `resample_fractions`: every requested retention fraction. The default
+  is `0.90`; additional values create an opt-in deletion-stability curve
+  without replacing the 90% primary screen.
 
 - `coassignment_limit`: maximum number of complete training participants
   (2,000) for which the full pairwise co-assignment matrix is
@@ -544,11 +667,11 @@ analysis, not independent-cohort validation.
 `Classes` identify the selected candidate (for HDBSCAN, `Classes` is the
 data-derived extracted count); `Replicate` is its sequence number;
 `Status` is `"success"` or a failure status; `SamplingSeed` and
-`ModelSeed` identify the independently varied participant draw and
-stochastic refit; and `Error` contains the error message for an
-unsuccessful refit. `ARI` is the primary successful-refit metric: it is
-invariant to cluster numbering, higher is better, and it can be negative
-when agreement is worse than chance.
+`ModelSeed` identify the participant draw and refit initialization
+policy; and `Error` contains the error message for an unsuccessful
+refit. `ARI` is the primary successful-refit metric: it is invariant to
+cluster numbering, higher is better, and it can be negative when
+agreement is worse than chance.
 
 `Stability$cluster_recovery` has one row for each reference `Cluster` in
 each successful `Replicate`. `Jaccard` is the recovery of that reference
@@ -563,9 +686,22 @@ reproducibility score. `StabilityARI_Mean` and `StabilityARI_P05` are
 the mean and fifth percentile of ARI. `StabilityJaccard_Mean` and
 `StabilityJaccard_Min` are respectively the mean cluster-level recovery
 and the minimum of the cluster-specific mean recoveries across
-replicates. `ReproducibilityScore` is the mean of the finite
-`StabilityARI_Mean` and `StabilityJaccard_Mean` values only; it does not
-include success rate.
+replicates. `ReproducibilityScore` does not include success rate. For
+most pipelines it is the mean of finite `StabilityARI_Mean` and
+`StabilityJaccard_Mean` values; SOM + Mclust uses `StabilityARI_Mean`
+directly because it selects on agreement of the final participant
+partition.
+
+SOM + Mclust additionally returns `StabilityARI_NonBoundary`,
+`StabilityARI_NonBoundary_P05`, and non-boundary Jaccard summaries.
+These are secondary diagnostics calculated only on the fixed
+reference-model mask with `SoftMargin` below its threshold or
+`SoftEntropy` above its threshold excluded. The primary all-participant
+ARI always retains these boundary participants. `boundary_summary`
+reports their count and proportion overall and within each reference
+cluster. Earlier posterior-based `Core` fields are retained for
+compatibility as descriptive diagnostics; they are not the
+boundary-aware sensitivity measure.
 
 `Stability$failures` repeats the replicate columns for unsuccessful
 refits, making fit failures auditable without mixing them with
@@ -596,6 +732,23 @@ matrix rows and columns to the same identifiers returned in
 more consistent pairwise co-membership. Where more than one candidate is
 summarized, entries are named by its `Model_Classes` key. The matrix is
 diagnostic only and is never used for selection.
+
+SOM + Mclust additionally returns memory-safe final-partition
+diagnostics for every cohort size. `co_membership_by_cluster` reports
+the proportion of within-reference-cluster participant pairs retained
+together (`Cohesion`) and the probability of co-assignment with
+outsiders (`CrossMixing`). `co_membership_between_clusters` reports
+cross-reference-cluster co-assignment probabilities.
+`split_merge_reference` and `split_merge_refit` identify dominant
+sources, shares, and effective numbers of groups, while
+`profile_recovery` reports matched-cluster correlation and RMSE for mean
+clustering-variable profiles on the frozen reference scale. These
+explain the nature of membership changes; they do not supersede ARI.
+
+`deletion_curve` summarizes ARI, VI, NMI, and Fowlkes–Mallows agreement
+at each requested participant-retention fraction. It is useful for
+describing sensitivity to increasing cohort perturbation, not for
+selecting the least demanding fraction.
 
 `Stability$plots` contains `cluster_recovery` (per-cluster Jaccard),
 `partition_metrics` (the ARI distribution), and `cluster_inclusion`; it

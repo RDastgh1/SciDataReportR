@@ -309,9 +309,9 @@ sessionInfo()
     [1] dplyr_1.2.1            SciDataReportR_21.13.0
 
     loaded via a namespace (and not attached):
-      [1] Exact_3.3              ggstatsplot_1.1.1      sjlabelled_1.2.0
+      [1] Exact_3.3              ggstatsplot_1.1.2      sjlabelled_1.2.0
       [4] tidyselect_1.2.1       rootSolve_1.8.2.4      farver_2.1.2
-      [7] statsExpressions_2.1.1 S7_0.2.2               fastmap_1.2.0
+      [7] statsExpressions_2.1.2 S7_0.2.2               fastmap_1.2.0
      [10] bayestestR_0.19.0      labelled_2.16.1        digest_0.6.39
      [13] estimability_2.0.0     lifecycle_1.0.5        lmom_3.3
      [16] magrittr_2.0.5         compiler_4.6.1         rlang_1.3.0
