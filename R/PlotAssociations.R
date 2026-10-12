@@ -31,11 +31,13 @@
 #'
 #' # One continuous and one categorical variable (box/violin plot)
 #' PlotAssociations(Labelled, "Diagnosis", "AXL")
+#' @param IncludeTrendSymbol Logical; append a plus sign to a nominal-trend subtitle.
 #' @export
 PlotAssociations <- function(data,
     Var1,
     Var2,
     Ordinal = FALSE,
+    IncludeTrendSymbol = FALSE,
     DataFrame = lifecycle::deprecated()) {
   # Deprecated argument shims (SciDataReportR 19.15.0)
   if (lifecycle::is_present(DataFrame)) {
@@ -99,5 +101,18 @@ PlotAssociations <- function(data,
                                      ggtheme = ggplot2::theme_bw())
   }
   p <- ApplySciDataPalette(p) + theme(text = element_text(size = 10))
+  if (isTRUE(IncludeTrendSymbol)) {
+    trend_p <- tryCatch(
+      ggstatsplot::extract_stats(p)$subtitle_data$p.value[[1]],
+      error = function(e) NA_real_
+    )
+    if (is.finite(trend_p) && trend_p > 0.05 && trend_p <= 0.10) {
+      existing_subtitle <- p$labels$subtitle
+      trend_label <- "+ trend (0.05 < p <= 0.10)"
+      p <- p + ggplot2::labs(
+        subtitle = paste(c(existing_subtitle, trend_label)[!is.na(c(existing_subtitle, trend_label))], collapse = " ")
+      )
+    }
+  }
   return(p)
 }

@@ -403,6 +403,7 @@ PlotClusterSilhouette <- function(silhouette, title = "Silhouette profile") {
 #' @param variable_labels Optional display labels for the columns.
 #' @param title Plot title.
 #' @param value_label Legend title describing the centre scale.
+#' @param cluster_rows,cluster_columns Logical; cluster heatmap rows and columns.
 #' @return A `ggplot` object, or `NULL` when centres are unavailable.
 #' @examples
 #' \donttest{
@@ -629,20 +630,37 @@ PlotClusterFitReview <- function(fit_table, x = "Classes", metrics = NULL,
   }
   df_Long <- tidyr::pivot_longer(
     fit_table, dplyr::all_of(metrics), names_to = "Metric", values_to = "Value")
+  has_support_status <- "SupportStatus" %in% names(df_Long)
   if (is.null(group)) {
-    plot <- ggplot2::ggplot(
-      df_Long, ggplot2::aes(x = .data[[x]], y = .data$Value)) +
-      ggplot2::geom_point()
+    plot <- if (has_support_status) {
+      ggplot2::ggplot(df_Long, ggplot2::aes(
+        x = .data[[x]], y = .data$Value, shape = .data$SupportStatus)) +
+        ggplot2::geom_point()
+    } else {
+      ggplot2::ggplot(
+        df_Long, ggplot2::aes(x = .data[[x]], y = .data$Value)) +
+        ggplot2::geom_point()
+    }
     if (nrow(fit_table) > 1) {
       plot <- plot + ggplot2::geom_line(ggplot2::aes(group = .data$Metric))
     }
   } else {
-    plot <- ggplot2::ggplot(
-      df_Long,
-      ggplot2::aes(
-        x = .data[[x]], y = .data$Value, color = factor(.data[[group]]),
-        group = interaction(.data$Metric, .data[[group]]))) +
-      ggplot2::geom_point()
+    plot <- if (has_support_status) {
+      ggplot2::ggplot(
+        df_Long,
+        ggplot2::aes(
+          x = .data[[x]], y = .data$Value, color = factor(.data[[group]]),
+          shape = .data$SupportStatus,
+          group = interaction(.data$Metric, .data[[group]]))) +
+        ggplot2::geom_point()
+    } else {
+      ggplot2::ggplot(
+        df_Long,
+        ggplot2::aes(
+          x = .data[[x]], y = .data$Value, color = factor(.data[[group]]),
+          group = interaction(.data$Metric, .data[[group]]))) +
+        ggplot2::geom_point()
+    }
     if (nrow(fit_table) > 1) plot <- plot + ggplot2::geom_line()
     legend_title <- if (identical(group, "ModelLabel")) "Model" else group
     plot <- plot + .SciDataColourScale() + ggplot2::labs(color = legend_title)
@@ -654,6 +672,12 @@ PlotClusterFitReview <- function(fit_table, x = "Classes", metrics = NULL,
     ggplot2::theme_bw() +
     ggplot2::labs(
       title = title, x = .ClusterMetricLabel(x), y = "Fit metric")
+  if (has_support_status) {
+    plot <- plot + ggplot2::scale_shape_manual(
+      values = c("supported" = 16, "under-supported" = 1,
+        "over-parameterized" = 4),
+      name = "SOM mixture support", drop = FALSE)
+  }
   plot
 }
 

@@ -22,6 +22,7 @@
 #' @param r_nudge_y,star_nudge_y Vertical nudges (r down, stars up)
 #' @param remove_existing_stars If TRUE, remove any pre-existing star text layers
 #' @param p_breaks,p_labels Cutpoints/labels for computing stars from p
+#' @param IncludeTrendSymbol Logical; add a plus sign for `0.05 < p <= 0.10`.
 #' @return A ggplot with r-values and stars added.
 #'
 #' @section Input requirements:
@@ -46,6 +47,7 @@ add_r_and_stars <- function(res,
                             star_color = "black",
                             star_nudge_y = 0.15,
                             remove_existing_stars = TRUE,
+                            IncludeTrendSymbol = FALSE,
                             p_breaks = c(-Inf, 0.001, 0.01, 0.05, Inf),
                             p_labels = c("***","**","*","")) {
 
@@ -118,6 +120,10 @@ add_r_and_stars <- function(res,
 
   # Function to compute stars from p-values
   stars_from_p <- function(pvec) {
+    if (identical(p_breaks, c(-Inf, 0.001, 0.01, 0.05, Inf)) &&
+        identical(p_labels, c("***", "**", "*", ""))) {
+      return(.FormatPValueStars(pvec, IncludeTrendSymbol = IncludeTrendSymbol))
+    }
     as.character(cut(pvec, breaks = p_breaks, labels = p_labels))
   }
 

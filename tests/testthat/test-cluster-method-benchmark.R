@@ -6,7 +6,7 @@ test_that("default method benchmark candidates match the planned comparison", {
   expect_setequal(sort(unique(candidates$NodeWeighting[candidates$Method == "som_mclust"])),
     c("occupancy", "uniform"))
   expect_setequal(sort(unique(candidates$MinPts[candidates$Method == "hdbscan"])),
-    c(20L, 50L, 100L, 180L))
+    c(20L, 50L, 100L))
 })
 
 test_that("common benchmark projects every complete participant from shared draws", {
@@ -89,6 +89,8 @@ test_that("benchmark confirmation retains exactly selected settings", {
   expect_identical(confirmed$decision_table$Classes, 2L)
   expect_identical(confirmed$decision_table$Model, 1L)
   expect_identical(confirmed$settings$refits_requested, 2L)
+  expect_true(isTRUE(confirmed$settings$keep_models))
+  expect_identical(names(confirmed$models), "mclust_2")
 })
 
 test_that("benchmark defaults SOM candidates to standard soft-3 projection", {
@@ -102,12 +104,25 @@ test_that("benchmark defaults SOM candidates to standard soft-3 projection", {
     SOM_YDim = 3L, SOM_Topology = "hexagonal")
   benchmark <- suppressWarnings(CompareClusterMethodStability(
     SampleData, variables = c("age", "AXL", "Adiponectin"), candidates = candidates,
-    stability_resamples = 1L, stability_seed = 6006L, stability_cores = 1L
+    stability_resamples = 1L, stability_seed = 6006L, stability_cores = 1L,
+    keep_models = TRUE
   ))
   expect_identical(benchmark$models$som_standard$Specification$projection$assignment,
     "soft")
   expect_identical(benchmark$models$som_standard$Specification$projection$soft_n_nodes,
     3L)
+})
+
+test_that("benchmark screen drops full models but retains worker audit", {
+  data("SampleData", package = "SciDataReportR")
+  candidates <- dplyr::tibble(CandidateID = "km", Method = "kmeans", Classes = 2L)
+  benchmark <- CompareClusterMethodStability(SampleData,
+    variables = c("age", "AXL", "Adiponectin"), candidates = candidates,
+    stability_resamples = 1L, stability_seed = 6010L, stability_cores = 1L)
+  expect_length(benchmark$models, 0L)
+  expect_true(all(c("ResolvedWorkers", "WorkerPolicy") %in% names(benchmark$decision_table)))
+  expect_true(all(c("bytes_per_worker", "safe_memory_budget_bytes") %in%
+    names(benchmark$settings$worker_estimates$km)))
 })
 
 test_that("benchmark stability is deterministic in serial and parallel", {

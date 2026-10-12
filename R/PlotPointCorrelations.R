@@ -40,6 +40,7 @@
 #'
 #' # FDR-adjusted point-biserial heatmap
 #' result$FDRCorrected$plot
+#' @param IncludeTrendSymbol Logical; add a plus sign for `0.05 < p <= 0.10`.
 #' @export
 PlotPointCorrelationsHeatmap <- function(data,
     CatVars,
@@ -51,6 +52,7 @@ PlotPointCorrelationsHeatmap <- function(data,
     fdr_scope = c("matrix", "per_outcome", "per_predictor"),
     cluster_rows = FALSE,
     cluster_columns = FALSE,
+    IncludeTrendSymbol = FALSE,
     Data = lifecycle::deprecated(),
     Covariates = lifecycle::deprecated()) {
   # Deprecated argument shims (SciDataReportR 19.15.0)
@@ -164,18 +166,14 @@ PlotPointCorrelationsHeatmap <- function(data,
     outcome_ids = stat.test$ContinuousVariable,
     predictor_ids = stat.test$CategoricalVariable
   )
-  stat.test <- stat.test %>%
-    rstatix::add_significance("p_value", output.col = "p<.05") %>%
-    rstatix::add_significance("p.adj",   output.col = "p.adj.signif")
-
-  stat.test$`p<.05`[stat.test$`p<.05` == "ns"] <- ""
-  stat.test$p.adj.signif[stat.test$p.adj.signif == "ns"] <- ""
-  stat.test$`p<.05` <- factor(stat.test$`p<.05`,
-                              levels = c("ns","*","**","***","****"),
-                              labels = c("ns","*","**","***","***"))
-  stat.test$p.adj.signif <- factor(stat.test$p.adj.signif,
-                                   levels = c("ns","*","**","***","****"),
-                                   labels = c("ns","*","**","***","***"))
+  stat.test$`p<.05` <- .FormatPValueStars(
+    stat.test$p_value,
+    IncludeTrendSymbol = IncludeTrendSymbol
+  )
+  stat.test$p.adj.signif <- .FormatPValueStars(
+    stat.test$p.adj,
+    IncludeTrendSymbol = IncludeTrendSymbol
+  )
 
   stat.test$test <- "point biserial correlation"
 

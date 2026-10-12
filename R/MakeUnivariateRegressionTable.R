@@ -181,6 +181,7 @@
 #' summary(urt_Models$ModelSummaries[[1]])
 #' }
 #'
+#' @param IncludeTrendSymbol Logical; add a plus sign for `0.05 < p <= 0.10`.
 #' @export
 #'
 MakeUnivariateRegressionTable <- function(data,
@@ -193,6 +194,7 @@ MakeUnivariateRegressionTable <- function(data,
     ReturnModels = FALSE,
     Relabel = TRUE,
     TreatOrdinalAs = "Categorical",
+    IncludeTrendSymbol = FALSE,
     Data = lifecycle::deprecated(),
     OutcomeVars = lifecycle::deprecated(),
     PredictorVars = lifecycle::deprecated(),
@@ -418,7 +420,9 @@ MakeUnivariateRegressionTable <- function(data,
 
   results <- dplyr::bind_rows(results_list)
   FinalTable <- ScidrUnivariateGtTable(results, formatted = FALSE)
-  FinalFormattedTable <- ScidrUnivariateGtTable(results, formatted = TRUE)
+  FinalFormattedTable <- ScidrUnivariateGtTable(
+    results, formatted = TRUE, IncludeTrendSymbol = IncludeTrendSymbol
+  )
 
   metadata <- list(
     Outcomes = dplyr::bind_rows(outcome_metadata),
@@ -463,7 +467,7 @@ UnivariateRegressionTable <- function(data,
   eval.parent(call)
 }
 
-ScidrUnivariateGtTable <- function(results, formatted = TRUE) {
+ScidrUnivariateGtTable <- function(results, formatted = TRUE, IncludeTrendSymbol = FALSE) {
   # Results remains the source of truth. These two tables deliberately only
   # reshape it for reporting, so users can always filter Results for plotting.
   results <- results %>%
@@ -503,7 +507,11 @@ ScidrUnivariateGtTable <- function(results, formatted = TRUE) {
       p_column <- paste0(column_prefix, "_P")
       stars <- ifelse(
         outcome_results$Significant,
-        ScidrPValueStars(outcome_results$PValue, ns_label = ""),
+        ScidrPValueStars(
+          outcome_results$PValue,
+          ns_label = "",
+          IncludeTrendSymbol = IncludeTrendSymbol
+        ),
         ""
       )
       stars[is.na(stars)] <- ""

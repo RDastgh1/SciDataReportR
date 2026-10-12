@@ -30,9 +30,9 @@
 #' @param stability_seed Seed controlling participant subsampling.
 #' @param stability_progress Whether to print subsample progress messages.
 #' @param stability_cores Number of workers for stability refits. `NULL` uses
-#'   all detected physical cores minus one, capped at the requested resamples
-#'   and any scheduler limit. Each worker holds a refit in memory, so lower this
-#'   setting for large or high-dimensional analyses.
+#'   a conservative CPU/memory cap: the smaller of 50% physical RAM and 75% of
+#'   available RAM. Explicit values warn when their estimated memory exceeds
+#'   this budget.
 #' @inheritSection cluster-stability-output Stability output
 #' @return A fitted latent-class model with BIC, AIC, log likelihood, entropy,
 #'   class-size and subsample stability metrics in `ModelInfo$fit_table`. Log
@@ -128,7 +128,8 @@ CreateClusterModel_LatentClass <- function(data, variables = NULL,
           fitted$ProbFit$individual, dplyr::all_of(c(".row_id", "Cluster")))
       }, stability_resamples, stability_seed + i, list(Classes = ks[[i]]),
       progress = stability_progress, preserve_levels = variables,
-      stability_cores = stability_cores)
+      stability_cores = stability_cores, memory_method = "latent_class",
+      memory_variables = variables)
     })
     stability_summary <- dplyr::bind_rows(lapply(stabilities, `[[`, "summary"))
     rows <- dplyr::left_join(rows, stability_summary, by = "Classes")
@@ -407,7 +408,8 @@ CreateClusterModel_MCA_MClust <- function(data, variables,
       }, stability_resamples, stability_seed + i,
       list(Model = candidate_model, Classes = candidate_k),
       progress = stability_progress, preserve_levels = variables,
-      stability_cores = stability_cores)
+      stability_cores = stability_cores, memory_method = "mca_mclust",
+      memory_variables = variables)
     })
     Stability <- .CombineClusterStabilities(
       stabilities, stability_resamples, stability_seed)

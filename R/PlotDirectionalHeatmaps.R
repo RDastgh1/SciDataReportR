@@ -73,6 +73,8 @@
 #'
 #' # How binary variables were coded (which level counts as the positive one)
 #' result$BinaryMapping
+#' @param IncludeTrendSymbol Logical; add a plus sign for `0.05 < p <= 0.10`.
+#' @param cluster_rows,cluster_columns Logical; cluster heatmap rows and columns.
 #' @export
 PlotDirectionalHeatmaps <- function(data,
     variables = NULL,
@@ -82,6 +84,7 @@ PlotDirectionalHeatmaps <- function(data,
     cluster_rows = FALSE,
     cluster_columns = FALSE,
     triangle = c("full", "upper", "lower"),
+    IncludeTrendSymbol = FALSE,
     Data = lifecycle::deprecated(),
     xVars = lifecycle::deprecated(),
     yVars = lifecycle::deprecated()) {
@@ -252,7 +255,8 @@ PlotDirectionalHeatmaps <- function(data,
   # Continuous ~ Continuous
   if (length(ContVars_safe) > 0) {
     O_ContCont <- PlotCorrelationsHeatmap(Data_safe, ContVars_safe, Relabel = Relabel,
-                                          fdr_scope = fdr_scope)
+                                          fdr_scope = fdr_scope,
+                                          IncludeTrendSymbol = IncludeTrendSymbol)
     df_ContCont <- O_ContCont$Unadjusted$plot$data %>%
       dplyr::mutate(correlation = R, test = O_ContCont$method)
 
@@ -262,7 +266,8 @@ PlotDirectionalHeatmaps <- function(data,
   # Binary ~ Binary (Phi)
   if (length(CatVars_safe) > 1) {
     O_CatCat <- PlotPhiHeatmap(Data_safe, CatVars_safe, Relabel = Relabel,
-                               binary_map = BinaryMapping, fdr_scope = fdr_scope)
+                               binary_map = BinaryMapping, fdr_scope = fdr_scope,
+                               IncludeTrendSymbol = IncludeTrendSymbol)
     df_CatCat <- O_CatCat$Unadjusted$plot$data %>%
       dplyr::mutate(correlation = Phi, test = "Phi")
 
@@ -274,7 +279,7 @@ PlotDirectionalHeatmaps <- function(data,
     O_CatCont <- PlotPointCorrelationsHeatmap(
       Data_safe, CatVars_safe, ContVars_safe,
       Relabel = Relabel, Ordinal = Ordinal, binary_map = BinaryMapping,
-      fdr_scope = fdr_scope
+      fdr_scope = fdr_scope, IncludeTrendSymbol = IncludeTrendSymbol
     )
 
     df_CatCont <- O_CatCont$Unadjusted$plot$data %>%

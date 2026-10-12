@@ -86,8 +86,17 @@
 #'   \code{final_k}. The engineering default is approximately 20 SOM nodes per
 #'   planned profile. It retains several local prototypes for each candidate
 #'   phenotype without letting a larger sample automatically create an
-#'   increasingly sparse map. Sample size instead informs node occupancy and
-#'   map-health review. Explicit dimensions always override this policy.
+#'   increasingly sparse map. The automatic side is also enlarged when needed
+#'   to provide `min_nodes_per_parameter` codebook observations per estimated
+#'   Mclust parameter, but is capped so that it targets at least
+#'   `min_participants_per_node` complete participants per map node. Sample size
+#'   therefore informs map health rather than indefinitely increasing map
+#'   resolution. Explicit dimensions always override this policy.
+#' @param map_from Optional exploratory `Pipeline_SOM_MClust` object. In a
+#'   finalized fit, reuse only its resolved dimensions, topology, neighbourhood,
+#'   and SOM seed. Clustering-variable names and order must match. Training
+#'   preprocessing is deliberately recomputed on `data`; pass
+#'   `ZScoreType = "ZScoreObj"` to reuse scaling explicitly.
 #' @param som_topo SOM topology for \code{kohonen::somgrid()}, default
 #'   \code{"hexagonal"}.
 #' @param som_neigh SOM neighbourhood function, default \code{"gaussian"}.
@@ -145,6 +154,16 @@
 #'   fits in diagnostics.
 #' @param min_nodes_per_cluster Optional minimum average SOM nodes per cluster
 #'   considered before attempting a candidate profile count.
+#' @param min_nodes_per_parameter Positive target number of codebook nodes per
+#'   estimated free Gaussian-mixture parameter for automatic maps. Default `3`.
+#'   Mclust is fit to SOM codebooks, so codebook nodes—not cohort rows—are its
+#'   effective observations. This conservative support floor supplements the
+#'   20-nodes-per-planned-profile representation target. Explicit map dimensions
+#'   are reported but never resized.
+#' @param min_participants_per_node Positive target number of complete training
+#'   participants per SOM node for automatically sized maps. Default `10` is an
+#'   engineering occupancy target, not a universal statistical threshold. It
+#'   prevents the codebook-support floor from silently producing sparse maps.
 #' @param lpa_min_node_n Minimum number of training participants a SOM node
 #'   must hold to enter the node-level mixture fit. Default \code{0} fits every
 #'   node. Use \code{1} to leave empty nodes out, so unoccupied map regions do
@@ -193,9 +212,10 @@
 #'   projects the full reference cohort before all-participant ARI is scored.
 #' @param stability_progress Logical; if TRUE, print subsample progress messages.
 #' @param stability_cores Number of workers for stability refits. `NULL` uses
-#'   all detected physical cores minus one, capped at the requested resamples
-#'   and any scheduler limit. Each worker holds a refit in memory, so lower this
-#'   setting for large SOM or high-dimensional analyses.
+#'   a conservative estimate based on CPU, refit count, and memory: the smaller
+#'   of 50% physical RAM and 75% currently available RAM. Explicit values are
+#'   retained up to the scheduler/CPU limit and warn if their estimated memory
+#'   exceeds that budget. Each worker holds a refit in memory.
 #'
 #' @details
 #' `ModelInfo_MClust$fit_table` uses the fit indices returned by tidyLPA's
@@ -453,6 +473,7 @@ CreateClusterModel_SOM_MClust <- function(data,
     ZScoreObject = NULL,
     som_xdim = NULL,
     som_ydim = NULL,
+    map_from = NULL,
     som_topo = "hexagonal",
     som_neigh = "gaussian",
     node_weighting = c("uniform", "occupancy"),
@@ -476,6 +497,8 @@ CreateClusterModel_SOM_MClust <- function(data,
     skip_model_after_n_failures = 2L,
     slow_fit_seconds = 120,
     min_nodes_per_cluster = 5,
+    min_nodes_per_parameter = 3,
+    min_participants_per_node = 10,
     lpa_min_node_n = 0L,
     min_cluster_prop = NULL,
     criteria_weights = NULL,
@@ -569,8 +592,7 @@ CreateClusterModel_SOM_MClust <- function(data,
     stop("stability_top_n must be NULL or a single positive integer.")
   }
   stability_candidates <- match.arg(stability_candidates)
-  stability_core_settings <- .ResolveClusterStabilityCores(
-    stability_cores, stability_resamples)
+  .ValidateClusterStabilityCores(stability_cores)
   if (!is.numeric(lpa_bootstrap_n) || length(lpa_bootstrap_n) != 1 ||
       is.na(lpa_bootstrap_n) || lpa_bootstrap_n < 0) {
     stop("lpa_bootstrap_n must be a single non-negative integer.")
@@ -623,6 +645,16 @@ CreateClusterModel_SOM_MClust <- function(data,
       is.na(lpa_min_node_n) || lpa_min_node_n < 0) {
     stop("lpa_min_node_n must be a single non-negative number.")
   }
+  if (!is.numeric(min_nodes_per_parameter) || length(min_nodes_per_parameter) != 1L ||
+      is.na(min_nodes_per_parameter) || !is.finite(min_nodes_per_parameter) ||
+      min_nodes_per_parameter <= 0) {
+    stop("min_nodes_per_parameter must be a single positive finite number.")
+  }
+  if (!is.numeric(min_participants_per_node) || length(min_participants_per_node) != 1L ||
+      is.na(min_participants_per_node) || !is.finite(min_participants_per_node) ||
+      min_participants_per_node <= 0) {
+    stop("min_participants_per_node must be a single positive finite number.")
+  }
   if (node_weighting == "occupancy" && lpa_min_node_n < 1L) {
     lpa_min_node_n <- 1L
   }
@@ -641,6 +673,28 @@ CreateClusterModel_SOM_MClust <- function(data,
   # the evaluated arguments keeps this correct when the caller passed locals or
   # unevaluated promises.
   if (method == "finalize" && stability_resamples > 0L) {
+    ## Resolve the map-design portion of map_from before recursive stability
+    ## fitting. The refits intentionally receive dimensions rather than the
+    ## source object, so they relearn preprocessing and the full pipeline.
+    if (!is.null(map_from)) {
+      if (!inherits(map_from, "Pipeline_SOM_MClust")) {
+        stop("map_from must be a Pipeline_SOM_MClust object.")
+      }
+      if (!is.null(variables) && !identical(variables, map_from$vars_used)) {
+        stop("map_from must use the same clustering variables in the same order as the finalization data.")
+      }
+      map_info <- map_from$ModelInfo_SOM$som_grid_info
+      source_grid <- map_from$ModelInfo_SOM$som_grid
+      if (is.null(map_info) || is.null(source_grid)) {
+        stop("map_from does not contain a reusable SOM grid specification.")
+      }
+      som_xdim <- map_info$som_xdim_used
+      som_ydim <- map_info$som_ydim_used
+      som_topo <- source_grid$topo
+      som_neigh <- as.character(source_grid$neighbourhood.fct)
+      seed_som <- map_from$ModelInfo_SOM$training$seed
+      map_from <- NULL
+    }
     stable_model <- Recall(
       data = data, variables = variables, method = "exploratory",
       k_range = final_k, models = final_model,
@@ -648,7 +702,7 @@ CreateClusterModel_SOM_MClust <- function(data,
       ZScoreType = ZScoreType,
       ZScoreObject = ZScoreObject, ZScorePrefix = ZScorePrefix,
       ZScoreVars = ZScoreVars, id_var = id_var,
-      som_xdim = som_xdim, som_ydim = som_ydim, som_topo = som_topo,
+      som_xdim = som_xdim, som_ydim = som_ydim, map_from = NULL, som_topo = som_topo,
       som_neigh = som_neigh,
       node_weighting = node_weighting, assignment = assignment,
       soft_n_nodes = soft_n_nodes,
@@ -664,6 +718,8 @@ CreateClusterModel_SOM_MClust <- function(data,
       skip_model_after_n_failures = skip_model_after_n_failures,
       slow_fit_seconds = slow_fit_seconds,
       min_nodes_per_cluster = min_nodes_per_cluster,
+      min_nodes_per_parameter = min_nodes_per_parameter,
+      min_participants_per_node = min_participants_per_node,
       lpa_min_node_n = lpa_min_node_n,
       min_cluster_prop = min_cluster_prop,
       criteria_weights = criteria_weights,
@@ -784,6 +840,30 @@ CreateClusterModel_SOM_MClust <- function(data,
   }
 
 
+  if (!is.null(map_from)) {
+    if (method != "finalize" || !inherits(map_from, "Pipeline_SOM_MClust")) {
+      stop("map_from must be an exploratory Pipeline_SOM_MClust object used with method = 'finalize'.")
+    }
+    if (!identical(vars_used, map_from$vars_used)) {
+      stop("map_from must use the same clustering variables in the same order as the finalization data.")
+    }
+    map_info <- map_from$ModelInfo_SOM$som_grid_info
+    source_grid <- map_from$ModelInfo_SOM$som_grid
+    if (is.null(map_info) || is.null(source_grid)) {
+      stop("map_from does not contain a reusable SOM grid specification.")
+    }
+    if ((!is.null(som_xdim) && som_xdim != map_info$som_xdim_used) ||
+        (!is.null(som_ydim) && som_ydim != map_info$som_ydim_used)) {
+      stop("som_xdim and som_ydim must match map_from, or be omitted.")
+    }
+    som_xdim <- map_info$som_xdim_used
+    som_ydim <- map_info$som_ydim_used
+    som_topo <- source_grid$topo
+    som_neigh <- as.character(source_grid$neighbourhood.fct)
+    seed_som <- map_from$ModelInfo_SOM$training$seed
+  } else if (method == "finalize" && is.null(som_xdim) && is.null(som_ydim)) {
+    message("Automatic SOM dimensions in method = 'finalize' are based on final_k/final_model and can differ from exploration. Supply map_from or the exploratory dimensions to preserve map design.")
+  }
 
   # Training variable summary ---------------------------------------------
 
@@ -887,36 +967,173 @@ CreateClusterModel_SOM_MClust <- function(data,
   grid_design_k <- if (method == "finalize") as.integer(final_k) else max(as.integer(k_range))
   grid_nodes_per_profile <- 20L
   grid_design_policy <- "explicit_dimensions"
+  som_training_epochs <- 100L
 
-  if (is.null(som_xdim) || is.null(som_ydim)) {
-    side <- ceiling(sqrt(grid_nodes_per_profile * grid_design_k))
+  FitSOMForGrid <- function(xdim, ydim) {
+    som_grid <- kohonen::somgrid(
+      xdim = xdim, ydim = ydim, topo = som_topo,
+      neighbourhood.fct = som_neigh)
+    # The same seed gives each sizing iteration a deterministic initialization
+    # appropriate to its own resolved grid.
+    set.seed(seed_som)
+    init_codes <- zmat[sample.int(nrow(zmat), nrow(som_grid$pts),
+      replace = nrow(zmat) < nrow(som_grid$pts)), , drop = FALSE]
+    som_model <- kohonen::supersom(list(zmat), grid = som_grid,
+      init = list(init_codes), mode = "batch", rlen = som_training_epochs,
+      keep.data = TRUE, cores = 1L)
+    codes_raw <- som_model$codes
+    som_codes <- if (is.list(codes_raw)) as.matrix(codes_raw[[1]]) else as.matrix(codes_raw)
+    som_node_occupancy <- dplyr::tibble(NodeID = seq_len(nrow(som_codes))) %>%
+      dplyr::left_join(
+        as.data.frame(table(som_model$unit.classif)) %>%
+          dplyr::transmute(NodeID = as.integer(as.character(Var1)),
+            n = as.integer(Freq)),
+        by = "NodeID") %>%
+      dplyr::mutate(n = dplyr::if_else(is.na(n), 0L, n))
+    lpa_nodes <- if (is.null(.NodeClusterFn)) {
+      which(som_node_occupancy$n >= lpa_min_node_n)
+    } else seq_len(nrow(som_codes))
+    if (length(lpa_nodes) < 2L) {
+      stop("Fewer than two SOM nodes hold at least lpa_min_node_n = ",
+        lpa_min_node_n, " participants; lower lpa_min_node_n.")
+    }
+    mixture_codes <- som_codes[lpa_nodes, , drop = FALSE]
+    dropped_lpa_vars <- character(0)
+    if (is.null(.NodeClusterFn) && lpa_drop_zero_sd) {
+      lpa_sd <- apply(mixture_codes, 2, stats::sd, na.rm = TRUE)
+      keep_lpa_vars <- is.finite(lpa_sd) & lpa_sd > lpa_zero_sd_tol
+      dropped_lpa_vars <- colnames(mixture_codes)[!keep_lpa_vars]
+      mixture_codes <- mixture_codes[, keep_lpa_vars, drop = FALSE]
+    }
+    if (!ncol(mixture_codes)) {
+      stop("No SOM code dimensions with non-zero variance are available for LPA.")
+    }
+    list(som_grid = som_grid, init_codes = init_codes, som_model = som_model,
+      som_codes = som_codes, som_node_occupancy = som_node_occupancy,
+      lpa_nodes = lpa_nodes, mixture_codes = mixture_codes,
+      dropped_lpa_vars = dropped_lpa_vars)
+  }
+
+  requested_parameters <- function(p) {
+    if (!is.null(.NodeClusterFn)) return(NA_integer_)
+    parameter_grid <- if (method == "finalize") {
+      data.frame(Model = as.integer(final_model), Classes = as.integer(final_k))
+    } else {
+      expand.grid(Model = as.integer(models), Classes = as.integer(k_range),
+        KEEP.OUT.ATTRS = FALSE)
+    }
+    max(vapply(seq_len(nrow(parameter_grid)), function(i) {
+      .SOMMclustParameterCount(parameter_grid$Model[[i]], p,
+        parameter_grid$Classes[[i]])
+    }, integer(1)))
+  }
+
+  sizing_iterations <- 0L
+  parameter_floor_nodes <- NA_real_
+  parameter_floor_side <- NA_integer_
+  max_mixture_parameters <- NA_integer_
+  occupancy_ceiling_side <- floor(sqrt(n_complete / min_participants_per_node))
+  base_side <- ceiling(sqrt(grid_nodes_per_profile * grid_design_k))
+  automatic_dimensions <- is.null(som_xdim) || is.null(som_ydim)
+  binding_constraint <- if (is.null(map_from)) "explicit_dimensions" else "map_from"
+  support_table <- NULL
+  if (automatic_dimensions) {
+    side <- base_side
+    grid_design_policy <- "k_informed_parameter_and_occupancy_aware"
+    repeat {
+      sizing_iterations <- sizing_iterations + 1L
+      som_fit_for_grid <- FitSOMForGrid(side, side)
+      mixture_dimension <- ncol(som_fit_for_grid$mixture_codes)
+      support_table <- if (is.null(.NodeClusterFn)) {
+        SOMMapSupport(n_complete, mixture_dimension,
+          if (method == "finalize") final_k else k_range,
+          if (method == "finalize") final_model else models,
+          min_nodes_per_parameter, min_participants_per_node)
+      } else NULL
+      max_mixture_parameters <- if (is.null(support_table)) NA_integer_ else
+        max(support_table$MixtureParameters)
+      parameter_floor_nodes <- if (is.na(max_mixture_parameters)) NA_real_ else
+        min_nodes_per_parameter * max_mixture_parameters
+      parameter_floor_side <- if (is.na(parameter_floor_nodes)) side else
+        ceiling(sqrt(parameter_floor_nodes))
+      required_side <- if (is.null(support_table)) side else support_table$RecommendedSide[[1]]
+      if (required_side == side) break
+      if (sizing_iterations >= 3L) {
+        stop("Automatic SOM sizing did not converge after three mixture-dimension iterations.")
+      }
+      side <- required_side
+    }
     som_xdim <- side
     som_ydim <- side
-    grid_design_policy <- "k_informed_20_nodes_per_maximum_planned_profile"
-  }
-
-  som_grid <- kohonen::somgrid(
-    xdim              = som_xdim,
-    ydim              = som_ydim,
-    topo              = som_topo,
-    neighbourhood.fct = som_neigh
-  )
-
-  # Standard deterministic batch SOM: the seeded initial codebook and resolved
-  # grid are retained as part of the projectable phenotype instrument.
-  set.seed(seed_som)
-  init_codes <- zmat[sample.int(nrow(zmat), nrow(som_grid$pts), replace = nrow(zmat) < nrow(som_grid$pts)), , drop = FALSE]
-  som_training_epochs <- 100L
-  som_model <- kohonen::supersom(list(zmat), grid = som_grid, init = list(init_codes),
-    mode = "batch", rlen = som_training_epochs,
-    keep.data = TRUE, cores = 1L)
-
-  codes_raw <- som_model$codes
-  if (is.list(codes_raw)) {
-    som_codes <- as.matrix(codes_raw[[1]])
   } else {
-    som_codes <- as.matrix(codes_raw)
+    som_fit_for_grid <- FitSOMForGrid(som_xdim, som_ydim)
+    sizing_iterations <- 1L
+    mixture_dimension <- ncol(som_fit_for_grid$mixture_codes)
+    support_table <- if (is.null(.NodeClusterFn)) {
+      SOMMapSupport(n_complete, mixture_dimension,
+        if (method == "finalize") final_k else k_range,
+        if (method == "finalize") final_model else models,
+        min_nodes_per_parameter, min_participants_per_node)
+    } else NULL
+    max_mixture_parameters <- if (is.null(support_table)) NA_integer_ else
+      max(support_table$MixtureParameters)
+    parameter_floor_nodes <- if (is.na(max_mixture_parameters)) NA_real_ else
+      min_nodes_per_parameter * max_mixture_parameters
+    parameter_floor_side <- if (is.na(parameter_floor_nodes)) NA_integer_ else
+      ceiling(sqrt(parameter_floor_nodes))
   }
+
+  som_grid <- som_fit_for_grid$som_grid
+  init_codes <- som_fit_for_grid$init_codes
+  som_model <- som_fit_for_grid$som_model
+  som_codes <- som_fit_for_grid$som_codes
+  som_node_occupancy <- som_fit_for_grid$som_node_occupancy
+  lpa_nodes <- som_fit_for_grid$lpa_nodes
+  X <- som_fit_for_grid$mixture_codes
+  lpa_node_weights <- som_node_occupancy$n[lpa_nodes]
+  dropped_lpa_vars <- som_fit_for_grid$dropped_lpa_vars
+  if (length(dropped_lpa_vars)) {
+    warning("Dropping near-zero SD SOM code dimensions before LPA: ",
+      paste(dropped_lpa_vars, collapse = ", "))
+  }
+  mixture_dimension <- ncol(X)
+  if (!is.null(support_table)) {
+    support_table <- .SOMSupportAtNodes(support_table, n_complete,
+      som_xdim * som_ydim, min_nodes_per_parameter, min_participants_per_node)
+    binding_constraint <- if (automatic_dimensions &&
+        support_table$BindingConstraint[[1]] == "participant_occupancy") {
+      "participant_occupancy"
+    } else if (automatic_dimensions && support_table$FloorSide[[1]] > base_side) {
+      "parameter_floor"
+    } else if (automatic_dimensions) {
+      "k_informed"
+    } else if (!is.null(map_from)) {
+      "map_from"
+    } else {
+      "explicit_dimensions"
+    }
+    if (automatic_dimensions && support_table$BindingConstraint[[1]] == "participant_occupancy") {
+      requested_models <- sort(unique(support_table$Model))
+      support_text <- paste0("Model ", requested_models, ": k <= ",
+        vapply(requested_models, function(model) {
+          supported_k <- support_table$Classes[support_table$Model == model &
+            support_table$SupportStatus == "supported"]
+          if (length(supported_k)) as.character(max(supported_k)) else "none"
+        }, character(1)), collapse = "; ")
+      warning("The participant-occupancy ceiling prevented the requested mixture-support floor. Largest supported k values: ",
+        support_text, ". Consider a narrower k_range or a lower-parameter model family.", call. = FALSE)
+    }
+    if (!automatic_dimensions && is.null(map_from) &&
+        (any(!support_table$OccupancyCompliant) ||
+         any(support_table$SupportStatus != "supported"))) {
+      warning("Explicit SOM dimensions do not meet one or more requested mixture-support or participant-occupancy targets; diagnostics are retained for review.",
+        call. = FALSE)
+    }
+  }
+  stability_core_settings <- .ResolveClusterStabilityCores(
+    stability_cores, stability_resamples, n = n_complete,
+    p = mixture_dimension, method = "som_mclust", som_nodes = nrow(som_codes),
+    subsample_fraction = max(stability_fractions))
 
   # SOM distances (distance to BMU) ----------------------------------------
 
@@ -933,19 +1150,6 @@ CreateClusterModel_SOM_MClust <- function(data,
   som_residuals <- .SOMResiduals(zmat, som_codes, som_model$unit.classif,
     vars_used, df_scidr$.row_id[complete_rows])
   som_variable_contribution <- .SOMVariableContribution(som_residuals, vars_used, df)
-
-  som_node_occupancy <- dplyr::tibble(
-    NodeID = seq_len(nrow(som_codes))
-  ) %>%
-    dplyr::left_join(
-      as.data.frame(table(som_model$unit.classif)) %>%
-        dplyr::transmute(
-          NodeID = as.integer(as.character(Var1)),
-          n = as.integer(Freq)
-        ),
-      by = "NodeID"
-    ) %>%
-    dplyr::mutate(n = dplyr::if_else(is.na(n), 0L, n))
 
   som_occupancy_summary <- dplyr::tibble(
     n_nodes = nrow(som_node_occupancy),
@@ -1010,43 +1214,7 @@ CreateClusterModel_SOM_MClust <- function(data,
   if (is.null(.NodeClusterFn)) {
     # LPA / mclust on SOM codes ----------------------------------------------
 
-    X <- som_codes
-
-    if (is.null(colnames(X))) {
-      colnames(X) <- paste0("V", seq_len(ncol(X)))
-    }
-
-    # Nodes holding fewer than lpa_min_node_n training participants are left
-    # out of the mixture fit, so empty map regions do not count as
-    # observations in AIC/BIC. They are assigned afterwards from the fitted
-    # mixture, so every node still carries a phenotype for projection.
-    lpa_nodes <- which(som_node_occupancy$n >= lpa_min_node_n)
-    if (length(lpa_nodes) < 2L) {
-      stop("Fewer than two SOM nodes hold at least lpa_min_node_n = ",
-        lpa_min_node_n, " participants; lower lpa_min_node_n.")
-    }
-    X <- X[lpa_nodes, , drop = FALSE]
-    lpa_node_weights <- som_node_occupancy$n[lpa_nodes]
-
-    dropped_lpa_vars <- character(0)
-    if (lpa_drop_zero_sd) {
-      lpa_sd <- apply(X, 2, stats::sd, na.rm = TRUE)
-      keep_lpa_vars <- is.finite(lpa_sd) & lpa_sd > lpa_zero_sd_tol
-      dropped_lpa_vars <- colnames(X)[!keep_lpa_vars]
-
-      if (length(dropped_lpa_vars) > 0) {
-        warning(
-          "Dropping near-zero SD SOM code dimensions before LPA: ",
-          paste(dropped_lpa_vars, collapse = ", ")
-        )
-        X <- X[, keep_lpa_vars, drop = FALSE]
-      }
-
-      if (ncol(X) == 0) {
-        stop("No SOM code dimensions with non-zero variance are available for LPA.")
-      }
-    }
-
+    if (is.null(colnames(X))) colnames(X) <- paste0("V", seq_len(ncol(X)))
     X <- as.data.frame(X)
     set.seed(seed_lpa)
 
@@ -1265,6 +1433,24 @@ CreateClusterModel_SOM_MClust <- function(data,
         sum(som_node_occupancy$n[node_cluster == cluster], na.rm = TRUE)
       }, numeric(1))
       list(min_n = min(counts), min_prop = min(counts) / sum(counts))
+    }
+    AddMixtureSupport <- function(table) {
+      mixture_parameters <- vapply(seq_len(nrow(table)), function(i) {
+        .SOMMclustParameterCount(table$Model[[i]], ncol(X), table$Classes[[i]])
+      }, integer(1))
+      table %>%
+        dplyr::mutate(
+          MixtureParameters = mixture_parameters,
+          MixtureNodes = nrow(X),
+          ParticipantsPerNode = n_complete / (som_xdim * som_ydim),
+          OccupancyCompliant = .data$ParticipantsPerNode >= min_participants_per_node,
+          NodesPerParameter = .data$MixtureNodes / .data$MixtureParameters,
+          Overparameterized = .data$NodesPerParameter < 1,
+          SupportStatus = dplyr::case_when(
+            .data$Overparameterized ~ "over-parameterized",
+            .data$NodesPerParameter < min_nodes_per_parameter ~ "under-supported",
+            TRUE ~ "supported")
+        )
     }
 
     cluster_jaccard <- function(reference, resampled) {
@@ -1564,6 +1750,8 @@ CreateClusterModel_SOM_MClust <- function(data,
               skip_model_after_n_failures = NULL,
               slow_fit_seconds = slow_fit_seconds,
               min_nodes_per_cluster = NULL,
+              min_nodes_per_parameter = min_nodes_per_parameter,
+              min_participants_per_node = min_participants_per_node,
               lpa_min_node_n = lpa_min_node_n,
               high_dist_quantile = high_dist_quantile,
               low_prob_threshold = low_prob_threshold,
@@ -1971,6 +2159,13 @@ CreateClusterModel_SOM_MClust <- function(data,
             requested_cores = stability_core_settings$requested,
             resolved_cores = resolved_stability_cores,
             backend = stability_backend,
+            worker_policy = stability_core_settings$worker_policy,
+            estimated_bytes_per_worker = stability_core_settings$bytes_per_worker,
+            estimated_total_bytes = stability_core_settings$estimated_total_bytes,
+            physical_memory_bytes = stability_core_settings$physical_memory_bytes,
+            available_memory_bytes = stability_core_settings$available_memory_bytes,
+            safe_memory_budget_bytes = stability_core_settings$safe_memory_budget_bytes,
+            memory_method = stability_core_settings$method,
             som_grid = list(
               xdim = som_xdim,
               ydim = som_ydim,
@@ -2021,7 +2216,7 @@ CreateClusterModel_SOM_MClust <- function(data,
           dplyr::left_join(boundary_maximum, by = c("Model", "Classes"))
       }
 
-      fit_table <- fit_table %>%
+      fit_table <- AddMixtureSupport(fit_table) %>%
         dplyr::mutate(
           AIC_scaled = scale_for_ahp(AIC, higher_is_better = FALSE),
           BIC_scaled = scale_for_ahp(BIC, higher_is_better = FALSE),
@@ -2057,7 +2252,16 @@ CreateClusterModel_SOM_MClust <- function(data,
       scaled_matrix <- as.matrix(fit_table[paste0(names(weights_used), "_scaled")])
       fit_table$ahp_index <- as.numeric(scaled_matrix %*% weights_used)
 
-      fit_table$Eligible <- if (is.null(min_cluster_prop)) {
+      overparameterized <- fit_table %>%
+        dplyr::filter(.data$Overparameterized) %>%
+        dplyr::transmute(label = paste0("Model ", .data$Model,
+          ", k = ", .data$Classes)) %>%
+        dplyr::pull(.data$label)
+      if (length(overparameterized)) {
+        warning("The following SOM mixture candidates have fewer mixture nodes than free parameters and are ineligible for recommendation: ",
+          paste(overparameterized, collapse = "; "), call. = FALSE)
+      }
+      fit_table$Eligible <- !fit_table$Overparameterized & if (is.null(min_cluster_prop)) {
         TRUE
       } else {
         fit_table$MinProfileParticipantProportion >= min_cluster_prop
@@ -2068,16 +2272,19 @@ CreateClusterModel_SOM_MClust <- function(data,
       }
 
       eligible_rows <- which(fit_table$Eligible & !is.na(fit_table$ahp_index))
+      recommended <- length(eligible_rows) > 0L
       if (length(eligible_rows) == 0) {
-        warning("No candidate has a smallest profile holding at least min_cluster_prop = ",
-          min_cluster_prop, " of participants; recommending among all candidates.")
+        warning("No candidate is eligible for the composite recommendation; an internal fallback is retained only to construct the review object.",
+          call. = FALSE)
         eligible_rows <- which(!is.na(fit_table$ahp_index))
       }
       best_idx     <- eligible_rows[which.max(fit_table$ahp_index[eligible_rows])]
+      fit_table$Recommended <- FALSE
+      if (recommended) fit_table$Recommended[[best_idx]] <- TRUE
       node_assignments <- lapply(lpa_models, get_profile_assignments)
-      ahp_best_row <- fit_table[best_idx, ]
-      best_model   <- as.integer(ahp_best_row$Model)
-      best_k       <- as.integer(ahp_best_row$Classes)
+      ahp_best_row <- if (recommended) fit_table[best_idx, ] else fit_table[0, , drop = FALSE]
+      best_model   <- as.integer(fit_table$Model[[best_idx]])
+      best_k       <- as.integer(fit_table$Classes[[best_idx]])
       best_name    <- paste0("model_", best_model, "_class_", best_k)
       best_fit_name <- best_name
       best_lpa     <- lpa_models[[best_name]]
@@ -2088,14 +2295,15 @@ CreateClusterModel_SOM_MClust <- function(data,
         paste0(composite_weights$method, " weights: ", paste0(names(weights_used), " ",
           sprintf("%.2f", weights_used), collapse = ", "))
       }
-      recommendation_txt <- paste0(
+      recommendation_txt <- if (!recommended) {
+        "No eligible SOM mixture candidate is available for composite recommendation."
+      } else paste0(
         "Composite rank index (", paste(criteria_used, collapse = ", "), "; ",
         weight_txt, ")",
         if (!is.null(min_cluster_prop)) paste0(
           " among candidates whose smallest profile holds at least ",
           round(100 * min_cluster_prop, 1), "% of participants") else "",
-        " recommends Model ", best_model, " with k = ", best_k, " profiles."
-      )
+        " recommends Model ", best_model, " with k = ", best_k, " profiles.")
 
       mdata_wide <- fit_table
 
@@ -2181,6 +2389,29 @@ CreateClusterModel_SOM_MClust <- function(data,
         ) %>%
         dplyr::bind_cols(PosteriorSummary(candidate_max_prob(best_fit_name)))
     }
+    if (!all(c("MixtureParameters", "MixtureNodes", "ParticipantsPerNode",
+        "OccupancyCompliant", "NodesPerParameter", "Overparameterized",
+        "SupportStatus") %in% names(fit_table))) {
+      fit_table <- AddMixtureSupport(fit_table)
+      overparameterized <- fit_table %>% dplyr::filter(.data$Overparameterized)
+      if (nrow(overparameterized)) {
+        warning("The requested SOM mixture has fewer mixture nodes than free parameters and is marked ineligible.",
+          call. = FALSE)
+      }
+    }
+    if (!"Eligible" %in% names(fit_table)) {
+      fit_table$Eligible <- !fit_table$Overparameterized
+    }
+    if (method == "finalize") {
+      fit_table$Recommended <- isTRUE(fit_table$Eligible[[1]])
+      if (!isTRUE(fit_table$Eligible[[1]])) {
+        ahp_best_row <- fit_table[0, , drop = FALSE]
+        recommendation_txt <- paste0(
+          "User-specified Model ", final_model, " with k = ", final_k,
+          " is retained as a projectable review fit but is overparameterized and not recommended."
+        )
+      }
+    }
     fit_table <- fit_table %>%
       dplyr::mutate(
         GridDesignPolicy = grid_design_policy,
@@ -2251,12 +2482,16 @@ CreateClusterModel_SOM_MClust <- function(data,
       .SciDataColorValues(length(model_families)), model_families)
     pal_cols <- pal_cols[names(pal_cols) %in% levels(mdata$Model)]
 
-    fit_plot <- ggplot2::ggplot(
-      mdata,
-      ggplot2::aes(x = Classes, y = PlotValue, color = Model)
-    ) +
-      ggplot2::geom_point() +
-      ggplot2::geom_line() +
+    fit_plot <- if ("SupportStatus" %in% names(mdata)) {
+      ggplot2::ggplot(mdata, ggplot2::aes(
+        x = Classes, y = PlotValue, color = Model, shape = SupportStatus)) +
+        ggplot2::geom_point() + ggplot2::geom_line()
+    } else {
+      ggplot2::ggplot(mdata, ggplot2::aes(
+        x = Classes, y = PlotValue, color = Model)) +
+        ggplot2::geom_point() + ggplot2::geom_line()
+    }
+    fit_plot <- fit_plot +
       ggplot2::facet_wrap(~name, scales = "free_y", ncol = 1) +
       ggplot2::theme_bw() +
       ggplot2::theme(legend.position = "top") +
@@ -2264,6 +2499,12 @@ CreateClusterModel_SOM_MClust <- function(data,
 
     if (length(pal_cols) > 0) {
       fit_plot <- fit_plot + ggplot2::scale_color_manual(values = pal_cols)
+    }
+    if ("SupportStatus" %in% names(mdata)) {
+      fit_plot <- fit_plot + ggplot2::scale_shape_manual(
+        values = c("supported" = 16, "under-supported" = 1,
+          "over-parameterized" = 4), name = "SOM mixture support",
+        drop = FALSE)
     }
     if ("BLRTPValue" %in% mdata_cols) {
       fit_plot <- fit_plot + ggplot2::geom_hline(
@@ -2619,6 +2860,18 @@ CreateClusterModel_SOM_MClust <- function(data,
       GridDesignPolicy = grid_design_policy,
       GridDesignK = grid_design_k,
       TargetNodesPerProfile = grid_nodes_per_profile,
+      MinNodesPerParameter = min_nodes_per_parameter,
+      MinParticipantsPerNode = min_participants_per_node,
+      MixtureDimension = mixture_dimension,
+      MaxMixtureParameters = max_mixture_parameters,
+      ParameterFloorNodes = parameter_floor_nodes,
+      ParameterFloorSide = parameter_floor_side,
+      OccupancyCeilingSide = occupancy_ceiling_side,
+      ParticipantsPerNode = n_complete / (som_xdim * som_ydim),
+      OccupancyCompliant = n_complete / (som_xdim * som_ydim) >= min_participants_per_node,
+      BindingConstraint = binding_constraint,
+      MapFrom = !is.null(map_from),
+      SizingIterations = sizing_iterations,
       ExpectedNodesPerProfile = (som_xdim * som_ydim) / grid_design_k
     ),
     training = list(
@@ -2690,6 +2943,10 @@ CreateClusterModel_SOM_MClust <- function(data,
     n_lpa_variables_original = ncol(som_codes),
     n_lpa_variables_used     = ncol(X),
     n_lpa_nodes_used         = length(lpa_nodes),
+    min_nodes_per_parameter  = min_nodes_per_parameter,
+    min_participants_per_node = min_participants_per_node,
+    max_mixture_parameters   = max_mixture_parameters,
+    parameter_floor_nodes    = parameter_floor_nodes,
       lpa_min_node_n           = lpa_min_node_n,
       node_weighting           = node_weighting,
       total_node_weight        = sum(lpa_node_weights),
@@ -2769,7 +3026,10 @@ CreateClusterModel_SOM_MClust <- function(data,
     boundary_entropy_threshold = boundary_entropy_threshold)
   out$Specification$stability <- if (is.null(Stability)) NULL else Stability$settings
   out$Specification$selection <- list(criteria_weights = composite_weights,
-    min_cluster_prop = min_cluster_prop, lpa_min_node_n = lpa_min_node_n)
+    min_cluster_prop = min_cluster_prop, lpa_min_node_n = lpa_min_node_n,
+    min_nodes_per_parameter = min_nodes_per_parameter,
+    min_participants_per_node = min_participants_per_node,
+    map_from = !is.null(map_from))
 
   class(out) <- c("Pipeline_SOM_MClust", class(out))
   out

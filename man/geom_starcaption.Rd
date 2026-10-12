@@ -4,7 +4,10 @@
 \alias{geom_starcaption}
 \title{Add a Caption Explaining Star Annotations}
 \usage{
-geom_starcaption()
+geom_starcaption(IncludeTrendSymbol = FALSE)
+}
+\arguments{
+\item{IncludeTrendSymbol}{Logical; include the nominal-trend plus sign in the caption.}
 }
 \value{
 A \code{labs()} object that can be added to a ggplot, especially

@@ -114,6 +114,7 @@
 #'   ContVars = c("AXL", "Adiponectin", "Alpha_1_Antitrypsin"),
 #'   covariates = "age"
 #' )$FDRCorrected$plot
+#' @param IncludeTrendSymbol Logical; add a plus sign for `0.05 < p <= 0.10`.
 #' @export
 PlotAnovaRelationshipsMatrix <- function(data,
     CatVars,
@@ -126,6 +127,7 @@ PlotAnovaRelationshipsMatrix <- function(data,
     eps = 1e-08,
     Data = lifecycle::deprecated(),
     fdr_scope = c("matrix", "per_outcome", "per_predictor"),
+    IncludeTrendSymbol = FALSE,
     Covariates = lifecycle::deprecated()) {
   # Deprecated argument shims (SciDataReportR 19.15.0)
   if (lifecycle::is_present(Data)) {
@@ -290,8 +292,9 @@ PlotAnovaRelationshipsMatrix <- function(data,
     stat.test <- dplyr::rename(stat.test, p = p.value)
   }
 
-  stat.test <- stat.test %>%
-    rstatix::add_significance(p.col = "p", output.col = "p.signif")
+  stat.test$p.signif <- ScidrPValueStars(
+    stat.test$p, ns_label = "ns", IncludeTrendSymbol = IncludeTrendSymbol
+  )
   # Outcomes are the continuous variables (ContVars) for "per_outcome".
   stat.test$p.adj <- ApplyFDRCorrection(
     stat.test$p,
@@ -299,13 +302,19 @@ PlotAnovaRelationshipsMatrix <- function(data,
     outcome_ids = stat.test$ContinuousVariable,
     predictor_ids = stat.test$CategoricalVariable
   )
-  stat.test <- stat.test %>%
-    rstatix::add_significance(p.col = "p.adj", output.col = "p.adj.signif")
+  stat.test$p.adj.signif <- ScidrPValueStars(
+    stat.test$p.adj, ns_label = "ns", IncludeTrendSymbol = IncludeTrendSymbol
+  )
 
   stat.test$logp <- -log10(stat.test$p)
   stat.test$logp_FDR <- -log10(stat.test$p.adj)
-  stat.test$`p<.05` <- factor(stat.test$p.signif, levels = c("ns","*","**","***","****"))
-  stat.test$p.adj.signif <- factor(stat.test$p.adj.signif, levels = c("ns","*","**","***","****"))
+  significance_levels <- if (IncludeTrendSymbol) {
+    c("ns", "+", "*", "**", "***", "****")
+  } else {
+    c("ns", "*", "**", "***", "****")
+  }
+  stat.test$`p<.05` <- factor(stat.test$p.signif, levels = significance_levels)
+  stat.test$p.adj.signif <- factor(stat.test$p.adj.signif, levels = significance_levels)
 
   # Keep only main effect row if present
   if ("Effect" %in% names(stat.test)) {

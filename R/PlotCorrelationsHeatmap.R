@@ -80,6 +80,7 @@
 #'                    "C_Reactive_Protein", "Ferritin", "Leptin")
 #' )
 #' rectangular$Unadjusted$plot
+#' @param IncludeTrendSymbol Logical; add a plus sign for `0.05 < p <= 0.10`.
 #' @export
 
 PlotCorrelationsHeatmap <- function(data,
@@ -96,6 +97,7 @@ PlotCorrelationsHeatmap <- function(data,
     cluster_rows = FALSE,
     cluster_columns = FALSE,
     triangle = c("full", "upper", "lower"),
+    IncludeTrendSymbol = FALSE,
     Data = lifecycle::deprecated(),
     xVars = lifecycle::deprecated(),
     yVars = lifecycle::deprecated(),
@@ -648,31 +650,14 @@ PlotCorrelationsHeatmap <- function(data,
   plot.data$P_adj <- as.vector(M_FDR)
   plot.data$nPairs <- as.vector(MN)
 
-  plot.data$stars <- as.character(
-
-    cut(
-      plot.data$P,
-      breaks = c(-Inf, 0.001, 0.01, 0.05, Inf),
-      labels = c("***", "**", "*", "")
-    )
+  plot.data$stars <- .FormatPValueStars(
+    plot.data$P,
+    IncludeTrendSymbol = IncludeTrendSymbol
   )
-
-  plot.data$stars_FDR <- as.character(
-
-    cut(
-      plot.data$P_adj,
-      breaks = c(-Inf, 0.001, 0.01, 0.05, Inf),
-      labels = c("***", "**", "*", "")
-    )
+  plot.data$stars_FDR <- .FormatPValueStars(
+    plot.data$P_adj,
+    IncludeTrendSymbol = IncludeTrendSymbol
   )
-
-  plot.data$stars[
-    is.na(plot.data$stars)
-  ] <- ""
-
-  plot.data$stars_FDR[
-    is.na(plot.data$stars_FDR)
-  ] <- ""
 
   # =========================================================
   # Labels

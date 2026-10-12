@@ -5,6 +5,7 @@
 #' produced by [PlotCorrelationsHeatmap()] or to downstream plots derived from
 #' that function with [add_r_and_stars()].
 #'
+#' @param IncludeTrendSymbol Logical; include the nominal-trend plus sign in the caption.
 #' @return A `labs()` object that can be added to a ggplot, especially
 #'   SciDataReportR heatmaps that use star annotations.
 #'
@@ -27,10 +28,10 @@
 #' )
 #' heatmap$Unadjusted$plot + geom_starcaption()
 #' @export
-geom_starcaption <- function() {
+geom_starcaption <- function(IncludeTrendSymbol = FALSE) {
   # Caption text comes from the shared star scale so it cannot drift from the
   # thresholds the plotting code actually applies.
-  caption <- ScidrStarCaptionText()
+  caption <- ScidrStarCaptionText(IncludeTrendSymbol = IncludeTrendSymbol)
 
   # Use labs to add the caption to the plot
   labs(caption = caption)

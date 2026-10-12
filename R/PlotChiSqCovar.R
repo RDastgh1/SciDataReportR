@@ -57,6 +57,7 @@
 #'
 #' # FDR-adjusted associations
 #' result$p_FDR
+#' @param IncludeTrendSymbol Logical; add a plus sign for `0.05 < p <= 0.10`.
 #' @export
 PlotChiSqCovar <- function(data,
     predictor_vars,
@@ -69,6 +70,7 @@ PlotChiSqCovar <- function(data,
     xVars = lifecycle::deprecated(),
     yVars = lifecycle::deprecated(),
     fdr_scope = c("matrix", "per_outcome", "per_predictor"),
+    IncludeTrendSymbol = FALSE,
     covars = lifecycle::deprecated()) {
   # Deprecated argument shims (SciDataReportR 19.15.0)
   if (lifecycle::is_present(Data)) {
@@ -194,21 +196,29 @@ PlotChiSqCovar <- function(data,
     ) %>%
     dplyr::ungroup() %>%
     dplyr::filter(!is.na(pval)) %>%
-    rstatix::add_significance(p.col = "pval", output.col = "pval.signif") %>%
     # Outcomes are the y-axis variables (outcome_vars / YVar) for "per_outcome".
     dplyr::mutate(pval.adj = ApplyFDRCorrection(
       .data$pval,
       fdr_scope = fdr_scope,
       outcome_ids = .data$YVar, predictor_ids = .data$XVar
     )) %>%
-    rstatix::add_significance(p.col = "pval.adj", output.col = "pval.adj.signif") %>%
     dplyr::mutate(
+      pval.signif = ScidrPValueStars(.data$pval, IncludeTrendSymbol = IncludeTrendSymbol),
+      pval.adj.signif = ScidrPValueStars(.data$pval.adj, IncludeTrendSymbol = IncludeTrendSymbol),
       Test = "Chi Squared",
       logp = -log10(pval),
       logp_FDR = -log10(pval.adj),
-      `p<.05` = factor(pval.signif, levels = c("ns","*","**","***","****")),
-      pval.adj.signif = factor(pval.adj.signif, levels = c("ns","*","**","***","****"))
+      `p<.05` = pval.signif,
+      pval.adj.signif = pval.adj.signif
     )
+
+  significance_levels <- if (IncludeTrendSymbol) {
+    c("ns", "+", "*", "**", "***", "****")
+  } else {
+    c("ns", "*", "**", "***", "****")
+  }
+  stat.test$`p<.05` <- factor(stat.test$`p<.05`, levels = significance_levels)
+  stat.test$pval.adj.signif <- factor(stat.test$pval.adj.signif, levels = significance_levels)
 
   if (nrow(stat.test) == 0) return(empty_return())
 

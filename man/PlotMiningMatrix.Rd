@@ -16,6 +16,7 @@ PlotMiningMatrix(
   OutcomeVars = lifecycle::deprecated(),
   PredictorVars = lifecycle::deprecated(),
   fdr_scope = c("matrix", "per_outcome", "per_predictor"),
+  IncludeTrendSymbol = FALSE,
   Covariates = lifecycle::deprecated()
 )
 }
@@ -46,6 +47,8 @@ PlotMiningMatrix(
 at once (historical behavior, computed on the symmetrized pair table).
 \code{"per_outcome"} corrects separately within each x-axis variable (\code{XVar},
 ordered by \code{outcome_vars}).}
+
+\item{IncludeTrendSymbol}{Logical; add a plus sign for \verb{0.05 < p <= 0.10}.}
 
 \item{Covariates}{\strong{Deprecated} (since 19.15.0). Use \code{covariates} instead.}
 }

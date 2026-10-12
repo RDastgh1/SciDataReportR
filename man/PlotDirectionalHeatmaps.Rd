@@ -13,6 +13,7 @@ PlotDirectionalHeatmaps(
   cluster_rows = FALSE,
   cluster_columns = FALSE,
   triangle = c("full", "upper", "lower"),
+  IncludeTrendSymbol = FALSE,
   Data = lifecycle::deprecated(),
   xVars = lifecycle::deprecated(),
   yVars = lifecycle::deprecated()
@@ -39,9 +40,13 @@ applied within each sub-analysis block (continuous~continuous,
 binary~binary, binary~continuous), matching historical behavior; each
 sub-function's documented outcome orientation applies within its block.}
 
+\item{cluster_rows, cluster_columns}{Logical; cluster heatmap rows and columns.}
+
 \item{triangle}{Display \code{"full"} (default), \code{"upper"}, or \code{"lower"} half
 of a symmetric directional matrix. This affects plots only and is applied
 only when the same variables occur on both axes.}
+
+\item{IncludeTrendSymbol}{Logical; add a plus sign for \verb{0.05 < p <= 0.10}.}
 
 \item{Data}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
 

@@ -12,6 +12,7 @@ ScreenSOMGridStability(
   grid_candidates = NULL,
   topologies = c("hexagonal", "rectangular"),
   node_weighting = c("uniform", "occupancy"),
+  min_participants_per_node = 10,
   screen_scope = c("map", "joint"),
   screen_resamples = 3L,
   seed_som = 934521L,
@@ -32,16 +33,23 @@ ScreenSOMGridStability(
 requested value defines the automatic candidate-resolution ladder but
 Mclust is not fitted and no k is selected.}
 
-\item{models}{Mclust covariance-model families. Ignored in \code{"map"} scope.}
+\item{models}{Mclust covariance-model families. In \code{"map"} scope they are
+not fitted, but their largest requested parameter count supplies a
+candidate-map support floor.}
 
 \item{grid_candidates}{Optional square side lengths or a data frame with
 \code{som_xdim} and \code{som_ydim}. The map-scope default includes approximately
 10, 20, and 30 nodes per maximum requested profile, plus 3x3 and 10x10
-anchors. User-supplied candidates are retained unchanged.}
+anchors and a parameter-support floor for the largest requested Mclust
+family. User-supplied candidates are retained unchanged.}
 
 \item{topologies}{SOM topologies to screen.}
 
 \item{node_weighting}{Node-mixture definitions. Ignored in \code{"map"} scope.}
+
+\item{min_participants_per_node}{Target complete participants per SOM node
+for automatic candidates. Default \code{10}; anchors and user grids remain in
+the review table even when they do not meet this map-health target.}
 
 \item{screen_scope}{\code{"map"} (default) for k-informed, Mclust-free SOM screening or
 \code{"joint"} for the earlier grid-by-k Mclust workflow.}

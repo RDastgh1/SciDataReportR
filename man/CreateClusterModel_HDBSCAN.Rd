@@ -52,9 +52,9 @@ replacement. Use \code{0} to disable stability analysis.}
 \item{stability_progress}{Whether to print subsample progress messages.}
 
 \item{stability_cores}{Number of workers for stability refits. \code{NULL} uses
-all detected physical cores minus one, capped at the requested resamples
-and any scheduler limit. Each worker holds a refit in memory, so lower this
-setting for large SOM or high-dimensional analyses.}
+a conservative CPU/memory cap: the smaller of 50\% physical RAM and 75\% of
+available RAM. Explicit values warn when their estimated memory exceeds
+this budget.}
 }
 \value{
 A fitted HDBSCAN model with cluster/noise assignments, membership
@@ -109,6 +109,16 @@ calculated.
 \item \code{noise_policy}: whether the method has noise labels. For ordinary
 methods it is \code{"all clusters included"}; HDBSCAN variants retain noise in
 ARI but exclude it from phenotype-level Jaccard recovery.
+\item \code{requested_cores}, \code{resolved_cores}, and \code{worker_policy}: the
+requested and resolved refit workers and the reason for the resolution.
+Automatic resolution is capped by CPU, refit count, and the smaller of
+50\% physical RAM and 75\% currently available RAM. Pairwise-memory methods
+are run serially automatically.
+\item \code{estimated_bytes_per_worker}, \code{estimated_total_bytes},
+\code{physical_memory_bytes}, \code{available_memory_bytes}, and
+\code{safe_memory_budget_bytes}: the conservative memory audit used to resolve
+automatic workers. An explicit worker request is preserved (within the
+CPU/scheduler cap) but warns if it exceeds the estimated safe budget.
 }
 
 \code{Stability$replicates} has one row per requested refit. \code{Model} and

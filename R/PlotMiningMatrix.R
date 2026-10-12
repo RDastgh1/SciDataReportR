@@ -58,6 +58,7 @@
 #' if (requireNamespace("plotly", quietly = TRUE)) {
 #'   plotly::ggplotly(result$Unadjusted$plot)
 #' }
+#' @param IncludeTrendSymbol Logical; add a plus sign for `0.05 < p <= 0.10`.
 #' @export
 PlotMiningMatrix <- function(data,
     outcome_vars,
@@ -70,6 +71,7 @@ PlotMiningMatrix <- function(data,
     OutcomeVars = lifecycle::deprecated(),
     PredictorVars = lifecycle::deprecated(),
     fdr_scope = c("matrix", "per_outcome", "per_predictor"),
+    IncludeTrendSymbol = FALSE,
     Covariates = lifecycle::deprecated()) {
   # Deprecated argument shims (SciDataReportR 19.15.0)
   if (lifecycle::is_present(Data)) {
@@ -303,8 +305,9 @@ PlotMiningMatrix <- function(data,
     predictor_ids = results$YVar
   )
 
-  results <- results %>%
-    rstatix::add_significance(p.col = "p", output.col = "stars")
+  results$stars <- ScidrPValueStars(
+    results$p, IncludeTrendSymbol = IncludeTrendSymbol
+  )
 
   # Safe label application
   if (Relabel) {
@@ -332,17 +335,18 @@ PlotMiningMatrix <- function(data,
   # the legend matches the four documented cutpoints.
   results$stars <- as.character(results$stars)
   results$stars[results$stars == "****"] <- "***"
-  results$stars <- factor(results$stars, levels = c("ns", "*", "**", "***"))
+  results$stars <- factor(results$stars, levels = c("ns", "+", "*", "**", "***"))
 
   # Sizes are compensated for the differing apparent area of shapes 15-18 so
   # that the marker grows monotonically with significance.
-  size_map  <- c("ns" = 2, "*" = 3.5, "**" = 4, "***" = 6)
-  shape_map <- c("ns" = 16, "*" = 17, "**" = 15, "***" = 18)
+  size_map  <- c("ns" = 2, "+" = 2.7, "*" = 3.5, "**" = 4, "***" = 6)
+  shape_map <- c("ns" = 16, "+" = 3, "*" = 17, "**" = 15, "***" = 18)
 
   results$size_val <- size_map[as.character(results$stars)]
 
   shape_labels <- c(
     "ns" = "ns (p >= 0.05)",
+    "+" = "+ (0.05 < p <= 0.10)",
     "*"  = "* (p <= 0.05)",
     "**" = "** (p <= 0.01)",
     "***"= "*** (p <= 0.001)"

@@ -95,6 +95,8 @@
 #' #
 #' # res$FDRCorrected$plot
 #'
+#' @param IncludeTrendSymbol Logical; add a plus sign for `0.05 < p <= 0.10`.
+#' @param cluster_rows,cluster_columns Logical; cluster heatmap rows and columns.
 #' @export
 PlotCorrelationComparisons <- function(
     data,
@@ -118,7 +120,8 @@ PlotCorrelationComparisons <- function(
     color_limits = c(-2, 2),
     cluster_rows = FALSE,
     cluster_columns = FALSE,
-    triangle = c("full", "upper", "lower")) {
+    triangle = c("full", "upper", "lower"),
+    IncludeTrendSymbol = FALSE) {
 
   # Validate inputs
 
@@ -813,7 +816,7 @@ PlotCorrelationComparisons <- function(
     dplyr::mutate(
       HoverText = paste0(
         PredictorLabel,
-        " × ",
+        " x ",
         OutcomeLabel,
         "<br>",
         comparison_group,
@@ -827,7 +830,7 @@ PlotCorrelationComparisons <- function(
         sprintf("%.2f", RReference),
         ", n = ",
         NReference,
-        "<br>Δr (",
+        "<br>Delta r (",
         comparison_group,
         " - ",
         reference_group,
@@ -862,8 +865,8 @@ PlotCorrelationComparisons <- function(
           "Unavailable: insufficient pairwise observations after covariate adjustment"
       ),
       InferenceApproximate = method == "spearman" || length(covariates) > 0,
-      stars = .FormatPValueStars(PValue),
-      stars_FDR = .FormatPValueStars(PAdjusted),
+      stars = .FormatPValueStars(PValue, IncludeTrendSymbol = IncludeTrendSymbol),
+      stars_FDR = .FormatPValueStars(PAdjusted, IncludeTrendSymbol = IncludeTrendSymbol),
       ReversalPattern = dplyr::if_else(
         DirectionReversal,
         "Opposite signs",
@@ -979,7 +982,7 @@ PlotCorrelationComparisons <- function(
         fill_midpoint = 0,
         fill_limits = color_limits,
         fill_oob = scales::squish,
-        name = paste0("Δr\n", comparison_group, " - ", reference_group)
+        name = paste0("Delta r\n", comparison_group, " - ", reference_group)
       ) +
       ggplot2::scale_x_discrete(labels = outcome_axis_labels) +
       ggplot2::scale_y_discrete(labels = predictor_axis_labels) +
@@ -1110,6 +1113,7 @@ PlotCorrelationComparisons <- function(
 #' @param star_nudge_y Vertical position adjustment for stars.
 #' @param remove_existing_stars Logical. Remove the original star-only layer
 #'   before adding the combined annotations.
+#' @param IncludeTrendSymbol Logical; add a plus sign for `0.05 < p <= 0.10`.
 #'
 #' @return A ggplot containing DeltaR values and significance stars.
 #'
@@ -1128,7 +1132,8 @@ add_delta_r_and_stars <- function(
     star_color = "black",
     delta_nudge_y = -0.18,
     star_nudge_y = 0.20,
-    remove_existing_stars = TRUE) {
+    remove_existing_stars = TRUE,
+    IncludeTrendSymbol = FALSE) {
 
   star_from <- match.arg(star_from)
 
@@ -1173,12 +1178,12 @@ add_delta_r_and_stars <- function(
           DeltaR
         )
       ),
-      StarLabel = dplyr::case_when(
-        is.na(.data[[p_column]]) ~ "",
-        .data[[p_column]] < 0.001 ~ "***",
-        .data[[p_column]] < 0.01 ~ "**",
-        .data[[p_column]] < 0.05 ~ "*",
-        TRUE ~ ""
+      StarLabel = ScidrPValueStars(
+        .data[[p_column]],
+        tiers = ScidrStarTiersThree,
+        ns_label = "",
+        na_label = "",
+        IncludeTrendSymbol = IncludeTrendSymbol
       )
     )
 

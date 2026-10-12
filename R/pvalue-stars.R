@@ -13,13 +13,23 @@
 ScidrPValueStars <- function(p,
     tiers = c("****" = 0.0001, "***" = 0.001, "**" = 0.01, "*" = 0.05),
     ns_label = "ns",
-    na_label = NA_character_) {
+    na_label = NA_character_,
+    IncludeTrendSymbol = FALSE) {
+  if (!is.logical(IncludeTrendSymbol) || length(IncludeTrendSymbol) != 1 ||
+      is.na(IncludeTrendSymbol)) {
+    stop("IncludeTrendSymbol must be TRUE or FALSE.", call. = FALSE)
+  }
   p <- suppressWarnings(as.numeric(p))
   out <- rep(ns_label, length(p))
 
   # Assign least-stringent first so the most stringent tier wins the overwrite.
   for (i in order(tiers, decreasing = TRUE)) {
     out[!is.na(p) & p <= tiers[[i]]] <- names(tiers)[i]
+  }
+
+  if (IncludeTrendSymbol) {
+    significance_threshold <- max(tiers)
+    out[!is.na(p) & p > significance_threshold & p <= 0.10] <- "+"
   }
 
   out[is.na(p)] <- na_label
@@ -31,6 +41,10 @@ ScidrStarTiersThree <- c("***" = 0.001, "**" = 0.01, "*" = 0.05)
 
 # Single caption string describing the scale, so plots cannot drift from the
 # thresholds the code actually applies. ASCII only (CRAN).
-ScidrStarCaptionText <- function() {
-  "* = p <= 0.05, ** = p <= 0.01, *** = p <= 0.001"
+ScidrStarCaptionText <- function(IncludeTrendSymbol = FALSE) {
+  caption <- "* = p <= 0.05, ** = p <= 0.01, *** = p <= 0.001"
+  if (isTRUE(IncludeTrendSymbol)) {
+    caption <- paste0(caption, ", + = 0.05 < p <= 0.10")
+  }
+  caption
 }

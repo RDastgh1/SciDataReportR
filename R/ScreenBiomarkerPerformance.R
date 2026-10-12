@@ -27,6 +27,7 @@
 #' @param Seed Random seed used for resampling.
 #' @param Relabel Logical indicating whether labels should be used when available.
 #' @param codebook Optional data frame with columns `Variable` and `Label`.
+#' @param cluster_rows,cluster_columns Logical; cluster heatmap rows and columns.
 #'
 #' @return A named list with `PerformanceTable`, `RegressionTable`,
 #'   `ThresholdTable`, `FailureTable`, `Evaluations`, `Plots`, and `Metadata`.

@@ -27,6 +27,7 @@ PlotSplitViolin(
   star_pad = 0.05,
   star_size = 6,
   p_label = c("stars", "p_value", "both"),
+  IncludeTrendSymbol = FALSE,
   ...,
   Group = lifecycle::deprecated(),
   covars = lifecycle::deprecated()
@@ -80,6 +81,8 @@ whether the second factor level is greater than the first; defaults to
 
 \item{p_label}{P-value annotation style: significance \code{"stars"} (default),
 exact \code{"p_value"}, or \code{"both"}.}
+
+\item{IncludeTrendSymbol}{Logical; add a plus sign for \verb{0.05 < p <= 0.10}.}
 
 \item{...}{Additional arguments reserved for future extensions.}
 

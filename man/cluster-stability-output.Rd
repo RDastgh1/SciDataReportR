@@ -45,6 +45,16 @@ calculated.
 \item \code{noise_policy}: whether the method has noise labels. For ordinary
 methods it is \code{"all clusters included"}; HDBSCAN variants retain noise in
 ARI but exclude it from phenotype-level Jaccard recovery.
+\item \code{requested_cores}, \code{resolved_cores}, and \code{worker_policy}: the
+requested and resolved refit workers and the reason for the resolution.
+Automatic resolution is capped by CPU, refit count, and the smaller of
+50\% physical RAM and 75\% currently available RAM. Pairwise-memory methods
+are run serially automatically.
+\item \code{estimated_bytes_per_worker}, \code{estimated_total_bytes},
+\code{physical_memory_bytes}, \code{available_memory_bytes}, and
+\code{safe_memory_budget_bytes}: the conservative memory audit used to resolve
+automatic workers. An explicit worker request is preserved (within the
+CPU/scheduler cap) but warns if it exceeds the estimated safe budget.
 }
 
 \code{Stability$replicates} has one row per requested refit. \code{Model} and

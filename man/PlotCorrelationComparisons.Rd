@@ -26,7 +26,8 @@ PlotCorrelationComparisons(
   color_limits = c(-2, 2),
   cluster_rows = FALSE,
   cluster_columns = FALSE,
-  triangle = c("full", "upper", "lower")
+  triangle = c("full", "upper", "lower"),
+  IncludeTrendSymbol = FALSE
 )
 }
 \arguments{
@@ -83,9 +84,13 @@ under \code{Interactive}.}
 \item{color_limits}{Limits for the DeltaR color scale. The theoretical
 range is -2 to 2.}
 
+\item{cluster_rows, cluster_columns}{Logical; cluster heatmap rows and columns.}
+
 \item{triangle}{Display "full" (default), "upper", or "lower" half of a
 symmetric comparison matrix. This affects plots only; returned matrices
 and Results remain complete.}
+
+\item{IncludeTrendSymbol}{Logical; add a plus sign for \verb{0.05 < p <= 0.10}.}
 }
 \value{
 A list containing:

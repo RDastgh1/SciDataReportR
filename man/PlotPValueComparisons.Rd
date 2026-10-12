@@ -11,6 +11,7 @@ PlotPValueComparisons(
   VariableCategories = NULL,
   Relabel = TRUE,
   alternative = c("two.sided", "greater", "less"),
+  IncludeTrendSymbol = FALSE,
   Data = lifecycle::deprecated(),
   GroupVariable = lifecycle::deprecated(),
   Variables = lifecycle::deprecated()
@@ -34,6 +35,8 @@ the column names.}
 
 \item{alternative}{Hypothesis alternative for two-group tests. \code{"greater"}
 tests whether the second group factor level is greater than the first.}
+
+\item{IncludeTrendSymbol}{Logical; add a plus sign for \verb{0.05 < p <= 0.10}.}
 
 \item{Data}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
 

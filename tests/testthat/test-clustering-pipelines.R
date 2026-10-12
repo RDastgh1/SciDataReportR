@@ -909,3 +909,18 @@ test_that("SOM plus HDBSCAN clusters the codebook without fitting the LPA grid",
     model$ProbFit$individual$Cluster)
   expect_true(inherits(model$fit_plot, "ggplot"))
 })
+
+test_that("automatic stability workers are capped by a conservative memory budget", {
+  local_mocked_bindings(
+    .ClusterSystemMemory = function() list(total_bytes = 1024^3,
+      available_bytes = 1024^3),
+    .package = "SciDataReportR")
+  automatic <- SciDataReportR:::.ResolveClusterStabilityCores(NULL,
+    resamples = 10L, n = 20000L, p = 15L, method = "mclust")
+  expect_lte(automatic$resolved, automatic$memory_cap)
+  expect_equal(SciDataReportR:::.ResolveClusterStabilityCores(NULL,
+    resamples = 10L, n = 20000L, p = 15L, method = "hdbscan")$resolved, 1L)
+  expect_warning(SciDataReportR:::.ResolveClusterStabilityCores(2L,
+    resamples = 10L, n = 20000L, p = 15L, method = "hdbscan"),
+    "pairwise-memory")
+})

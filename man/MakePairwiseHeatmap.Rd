@@ -31,7 +31,8 @@ MakePairwiseHeatmap(
   x_axis_text_angle = 0,
   return_models = FALSE,
   star_color = "black",
-  star_size = 4
+  star_size = 4,
+  IncludeTrendSymbol = FALSE
 )
 }
 \arguments{
@@ -91,6 +92,8 @@ columns based on estimated mean differences.}
 \item{return_models}{Logical; include fitted model objects in the return.}
 
 \item{star_color, star_size}{Appearance of p-value stars.}
+
+\item{IncludeTrendSymbol}{Logical; add a plus sign for \verb{0.05 < p <= 0.10}.}
 }
 \value{
 An object of class \code{"SciDataReportRPairwiseHeatmap"} with \code{Plot},

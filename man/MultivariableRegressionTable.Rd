@@ -14,6 +14,7 @@ MultivariableRegressionTable(
   TreatOrdinalAs = "Categorical",
   FDR = TRUE,
   FDRAlpha = 0.05,
+  IncludeTrendSymbol = FALSE,
   Method = c("lm", "ridge", "lasso", "elasticnet"),
   CVFolds = 10,
   Lambda = c("lambda.min", "lambda.1se"),
@@ -58,6 +59,8 @@ when available.}
 regression terms.}
 
 \item{FDRAlpha}{Numeric FDR threshold retained in metadata.}
+
+\item{IncludeTrendSymbol}{Logical; add a plus sign for \verb{0.05 < p <= 0.10}.}
 
 \item{Method}{Regression method. One of \code{"lm"}, \code{"ridge"}, \code{"lasso"}, or
 \code{"elasticnet"}.}

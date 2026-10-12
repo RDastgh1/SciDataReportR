@@ -65,6 +65,22 @@
   `6` = "Model 6: varying variance, varying covariance"
 )
 
+.SOMMclustParameterCount <- function(model, p, k) {
+  model <- .ResolveMclustModels(model, "model")
+  if (length(model) != 1L || !is.numeric(p) || length(p) != 1L ||
+      !is.finite(p) || p < 1L || !is.numeric(k) || length(k) != 1L ||
+      !is.finite(k) || k < 1L) {
+    stop("model, p, and k must each identify one valid mixture specification.",
+      call. = FALSE)
+  }
+  if (!requireNamespace("mclust", quietly = TRUE)) {
+    stop("Package 'mclust' is required to count SOM mixture parameters.",
+      call. = FALSE)
+  }
+  as.integer(mclust::nMclustParams(.MclustModelNames[[as.character(model)]],
+    d = as.integer(p), G = as.integer(k)))
+}
+
 .ResolveMclustModels <- function(models, argument = "models") {
   if (!is.numeric(models) || !length(models) || anyNA(models) ||
       any(models != as.integer(models)) ||
@@ -503,18 +519,78 @@
       is.na(stability_progress)) {
     stop("stability_progress must be TRUE or FALSE.")
   }
-  resamples <- as.integer(stability_resamples)
-  .ResolveClusterStabilityCores(stability_cores, resamples)
-  resamples
+  .ValidateClusterStabilityCores(stability_cores)
+  as.integer(stability_resamples)
 }
 
-.ResolveClusterStabilityCores <- function(stability_cores, resamples) {
+.ValidateClusterStabilityCores <- function(stability_cores) {
   if (!is.null(stability_cores) &&
       (!is.numeric(stability_cores) || length(stability_cores) != 1L ||
        is.na(stability_cores) || !is.finite(stability_cores) ||
        stability_cores < 1 || stability_cores != as.integer(stability_cores))) {
     stop("stability_cores must be NULL or a single positive integer.", call. = FALSE)
   }
+  invisible(TRUE)
+}
+
+.ClusterSystemMemory <- function() {
+  memory <- tryCatch(ps::ps_system_memory(), error = function(e) NULL)
+  available <- if (!is.null(memory$avail)) memory$avail else memory$available
+  if (is.null(memory) || is.null(memory$total) || is.null(available) ||
+      !is.finite(memory$total) || !is.finite(available) ||
+      memory$total <= 0 || available <= 0) {
+    return(list(total_bytes = NA_real_, available_bytes = NA_real_))
+  }
+  list(total_bytes = as.numeric(memory$total),
+    available_bytes = as.numeric(available))
+}
+
+.EstimateClusterStabilityMemory <- function(n, p, method = "generic",
+    som_nodes = NULL, ward_n = NULL, subsample_fraction = .90) {
+  n_refit <- max(2, floor(as.numeric(n) * subsample_fraction))
+  p <- max(1, as.integer(p))
+  mib <- 1024^2
+  # Eight dense n x p doubles cover the scaled data, projection, temporary
+  # matrices, and conservative copies held by R/method backends.
+  dense_work_bytes <- 8 * n_refit * p * 8
+  base_bytes <- 256 * mib
+  fit_bytes <- 64 * mib
+  method <- match.arg(method, c("generic", "som_mclust", "mclust", "kmeans",
+    "pca", "mca_mclust", "latent_class", "hdbscan", "ward_rf",
+    "gower_pam", "som_hdbscan"))
+  method_bytes <- switch(method,
+    som_mclust = {
+      nodes <- if (is.null(som_nodes) || !is.finite(som_nodes)) 100 else som_nodes
+      64 * mib + 4 * nodes * p * 8
+    },
+    som_hdbscan = {
+      nodes <- if (is.null(som_nodes) || !is.finite(som_nodes)) 100 else som_nodes
+      64 * mib + 4 * nodes * p * 8
+    },
+    mclust = 64 * mib + n_refit * p * 8,
+    pca = 64 * mib + p * p * 8,
+    mca_mclust = 96 * mib + n_refit * p * 8,
+    latent_class = 64 * mib + n_refit * p * 16,
+    kmeans = 32 * mib + n_refit * p * 8,
+    hdbscan = 1.5 * 8 * n_refit^2,
+    ward_rf = {
+      ward_rows <- min(n_refit, if (is.null(ward_n) || !is.finite(ward_n)) 6000 else ward_n)
+      128 * mib + 1.5 * 8 * ward_rows^2
+    },
+    gower_pam = 1.5 * 8 * n_refit^2,
+    generic = 0
+  )
+  list(method = method, retained_n = as.integer(n_refit), variables = p,
+    base_bytes = base_bytes, dense_work_bytes = dense_work_bytes,
+    method_bytes = method_bytes,
+    bytes_per_worker = as.numeric(base_bytes + dense_work_bytes + fit_bytes + method_bytes),
+    pairwise_memory = method %in% c("hdbscan", "ward_rf", "gower_pam"))
+}
+
+.ResolveClusterStabilityCores <- function(stability_cores, resamples,
+    n = NULL, p = NULL, method = "generic", som_nodes = NULL,
+    ward_n = NULL, subsample_fraction = .90) {
+  .ValidateClusterStabilityCores(stability_cores)
   requested_cores <- if (is.null(stability_cores)) "automatic" else
     as.character(as.integer(stability_cores))
   detected_cores <- suppressWarnings(parallel::detectCores(logical = FALSE))
@@ -523,12 +599,49 @@
     future::availableCores()
   } else detected_cores
   if (is.na(available_cores) || available_cores < 1L) available_cores <- 1L
-  automatic_cores <- max(1L, as.integer(detected_cores) - 1L)
-  resolved_cores <- if (is.null(stability_cores)) automatic_cores else
-    as.integer(stability_cores)
-  resolved_cores <- min(resolved_cores, as.integer(available_cores))
-  if (resamples > 0L) resolved_cores <- min(resolved_cores, as.integer(resamples))
-  list(requested = requested_cores, resolved = as.integer(resolved_cores))
+  cpu_cap <- min(max(1L, as.integer(detected_cores) - 1L),
+    as.integer(available_cores), max(1L, as.integer(resamples)))
+  estimate <- .EstimateClusterStabilityMemory(
+    n = if (is.null(n)) 2L else n,
+    p = if (is.null(p)) 1L else p,
+    method = method, som_nodes = som_nodes, ward_n = ward_n,
+    subsample_fraction = subsample_fraction)
+  memory <- .ClusterSystemMemory()
+  safe_budget <- if (is.finite(memory$total_bytes) && is.finite(memory$available_bytes)) {
+    min(0.50 * memory$total_bytes, 0.75 * memory$available_bytes)
+  } else NA_real_
+  memory_cap <- if (is.finite(safe_budget) && estimate$bytes_per_worker > 0) {
+    max(1L, floor(safe_budget / estimate$bytes_per_worker))
+  } else 1L
+  automatic_cap <- if (estimate$pairwise_memory) 1L else memory_cap
+  worker_policy <- if (is.null(stability_cores)) {
+    if (estimate$pairwise_memory) "automatic_pairwise_serial" else "automatic_memory_capped"
+  } else "user_requested"
+  resolved_cores <- if (is.null(stability_cores)) {
+    min(cpu_cap, automatic_cap)
+  } else {
+    min(as.integer(stability_cores), as.integer(available_cores),
+      max(1L, as.integer(resamples)))
+  }
+  resolved_cores <- max(1L, as.integer(resolved_cores))
+  estimated_total <- estimate$bytes_per_worker * resolved_cores
+  if (!is.null(stability_cores) && is.finite(safe_budget) && estimated_total > safe_budget) {
+    warning("Requested stability_cores = ", resolved_cores,
+      " is estimated to require ", format(round(estimated_total / 1024^3, 2), nsmall = 2),
+      " GiB, exceeding the safe memory budget of ",
+      format(round(safe_budget / 1024^3, 2), nsmall = 2), " GiB.",
+      if (estimate$pairwise_memory) " This pairwise-memory method is recommended to run serially." else "",
+      call. = FALSE)
+  } else if (!is.null(stability_cores) && estimate$pairwise_memory && resolved_cores > 1L) {
+    warning("Requested parallel refits for a pairwise-memory method. Serial execution is recommended.",
+      call. = FALSE)
+  }
+  c(list(requested = requested_cores, resolved = resolved_cores,
+    worker_policy = worker_policy, cpu_cap = as.integer(cpu_cap),
+    memory_cap = as.integer(memory_cap), safe_memory_budget_bytes = safe_budget,
+    physical_memory_bytes = memory$total_bytes,
+    available_memory_bytes = memory$available_bytes,
+    estimated_total_bytes = estimated_total), estimate)
 }
 
 .ClusterParallelMap <- function(indices, fn, cores) {
@@ -632,7 +745,14 @@
       noise_policy = settings$noise_policy,
       requested_cores = settings$requested_cores,
       resolved_cores = settings$resolved_cores,
-      backend = settings$backend),
+      backend = settings$backend,
+      worker_policy = settings$worker_policy,
+      estimated_bytes_per_worker = settings$estimated_bytes_per_worker,
+      estimated_total_bytes = settings$estimated_total_bytes,
+      physical_memory_bytes = settings$physical_memory_bytes,
+      available_memory_bytes = settings$available_memory_bytes,
+      safe_memory_budget_bytes = settings$safe_memory_budget_bytes,
+      memory_method = settings$memory_method),
     replicates = dplyr::bind_rows(lapply(stabilities, `[[`, "replicates")),
     cluster_recovery = dplyr::bind_rows(lapply(stabilities, `[[`, "cluster_recovery")),
     summary = dplyr::bind_rows(lapply(stabilities, `[[`, "summary")),
@@ -703,7 +823,8 @@
     resamples = 0L, seed = 93422L, candidate = list(), noise_label = NULL,
     progress = FALSE, preserve_levels = character(),
     coassignment_limit = 2000L, subsample_fraction = .90,
-    stability_cores = NULL) {
+    stability_cores = NULL, memory_method = "generic", som_nodes = NULL,
+    ward_n = NULL, memory_variables = NULL) {
   data <- .AddClusterRowID(data)
   if (!is.numeric(resamples) || length(resamples) != 1L || is.na(resamples) ||
       resamples < 0 || resamples != as.integer(resamples)) {
@@ -711,7 +832,12 @@
   }
   resamples <- as.integer(resamples)
   if (resamples < 1L) return(NULL)
-  core_settings <- .ResolveClusterStabilityCores(stability_cores, resamples)
+  memory_p <- if (is.null(memory_variables)) max(1L, ncol(data) - 1L) else
+    length(memory_variables)
+  core_settings <- .ResolveClusterStabilityCores(stability_cores, resamples,
+    n = nrow(data), p = memory_p, method = memory_method,
+    som_nodes = som_nodes, ward_n = ward_n,
+    subsample_fraction = subsample_fraction)
   valid_reference <- which(!is.na(reference))
   # HDBSCAN can legitimately label every reference participant as noise.  It
   # still needs a reproducible subsample/refit record, even though no ARI can
@@ -833,7 +959,14 @@
       "noise included in ARI and excluded from phenotype Jaccard",
     requested_cores = core_settings$requested,
     resolved_cores = resolved_cores,
-    backend = stability_backend),
+    backend = stability_backend,
+    worker_policy = core_settings$worker_policy,
+    estimated_bytes_per_worker = core_settings$bytes_per_worker,
+    estimated_total_bytes = core_settings$estimated_total_bytes,
+    physical_memory_bytes = core_settings$physical_memory_bytes,
+    available_memory_bytes = core_settings$available_memory_bytes,
+    safe_memory_budget_bytes = core_settings$safe_memory_budget_bytes,
+    memory_method = core_settings$method),
     replicates = replicates,
     cluster_recovery = cluster_recovery, summary = summary,
     failures = dplyr::filter(replicates, .data$Status != "success"),
@@ -1055,9 +1188,9 @@
 #' @param stability_seed Seed controlling participant subsampling.
 #' @param stability_progress Whether to print subsample progress messages.
 #' @param stability_cores Number of workers for stability refits. `NULL` uses
-#'   all detected physical cores minus one, capped at the requested resamples
-#'   and any scheduler limit. Each worker holds a refit in memory, so lower this
-#'   setting for large SOM or high-dimensional analyses.
+#'   a conservative CPU/memory cap: the smaller of 50% physical RAM and 75% of
+#'   available RAM. Explicit values warn when their estimated memory exceeds
+#'   this budget.
 #' @inheritSection cluster-stability-output Stability output
 #' @return A projectable mixture model. `ModelInfo$fit_table` contains BIC,
 #'   ICL, entropy, uncertainty, and subsample stability metrics. `BIC` and
@@ -1141,7 +1274,8 @@ CreateClusterModel_MClust <- function(data, variables = NULL,
         dplyr::select(
           fitted$ProbFit$individual, dplyr::all_of(c(".row_id", "Cluster")))
       }, stability_resamples, stability_seed + i, list(Model = model, Classes = k),
-      progress = stability_progress, stability_cores = stability_cores)
+      progress = stability_progress, stability_cores = stability_cores,
+      memory_method = "mclust", memory_variables = prep$variables)
     })
     stability_summary <- dplyr::bind_rows(lapply(stabilities, `[[`, "summary"))
     fit_table <- dplyr::left_join(fit_table, stability_summary, by = c("Model", "Classes"))
@@ -1432,7 +1566,8 @@ CreateClusterModel_KMeans <- function(data, variables = NULL,
         dplyr::select(
           fitted$ProbFit$individual, dplyr::all_of(c(".row_id", "Cluster")))
       }, stability_resamples, stability_seed + k, list(Classes = k),
-      progress = stability_progress, stability_cores = stability_cores)
+      progress = stability_progress, stability_cores = stability_cores,
+      memory_method = "kmeans", memory_variables = prep$variables)
     })
     stability_summary <- dplyr::bind_rows(lapply(stabilities, `[[`, "summary"))
     rows <- dplyr::left_join(rows, stability_summary, by = "Classes")
@@ -1632,7 +1767,9 @@ ProjectCluster.Pipeline_KMeans <- function(object, new_df, ClusterVariableName =
       candidate = if (algorithm == "mclust") {
         list(Model = candidate_model, Classes = candidate_k)
       } else list(Classes = candidate_k), progress = stability_progress,
-      stability_cores = stability_cores)
+      stability_cores = stability_cores,
+      memory_method = if (algorithm == "mclust") "mca_mclust" else "pca",
+      memory_variables = prep$variables)
     })
     Stability <- .CombineClusterStabilities(
       stabilities, stability_resamples, stability_seed)
@@ -2050,7 +2187,8 @@ CreateClusterModel_HDBSCAN <- function(data, variables = NULL,
           fitted$ProbFit$individual, dplyr::all_of(c(".row_id", "Cluster")))
       }, stability_resamples, stability_seed + i,
       list(MinPts = grid$MinPts[[i]], Epsilon = grid$Epsilon[[i]]), noise_label = 0L,
-      progress = stability_progress, stability_cores = stability_cores)
+      progress = stability_progress, stability_cores = stability_cores,
+      memory_method = "hdbscan", memory_variables = prep$variables)
     })
     stability_summary <- dplyr::bind_rows(lapply(stabilities, `[[`, "summary"))
     rows <- dplyr::left_join(rows, stability_summary, by = c("MinPts", "Epsilon"))
@@ -2308,9 +2446,9 @@ ProjectCluster.Pipeline_HDBSCAN <- function(object, new_df, ClusterVariableName 
 #' @param stability_seed Seed controlling participant subsampling.
 #' @param stability_progress Whether to print subsample progress messages.
 #' @param stability_cores Number of workers for stability refits. `NULL` uses
-#'   all detected physical cores minus one, capped at the requested resamples
-#'   and any scheduler limit. Each worker holds a refit in memory, so lower this
-#'   setting for large or high-dimensional analyses.
+#'   a conservative CPU/memory cap: the smaller of 50% physical RAM and 75% of
+#'   available RAM. Explicit values warn when their estimated memory exceeds
+#'   this budget.
 #' @param ClusterVariableName Output cluster column name.
 #' @inheritSection cluster-stability-output Stability output
 #' @return A fitted PAM model with frozen medoids, numeric ranges, categorical
@@ -2392,7 +2530,8 @@ CreateClusterModel_Gower_PAM <- function(data, variables = NULL,
           fitted$ProbFit$individual, dplyr::all_of(c(".row_id", "Cluster")))
       }, stability_resamples, stability_seed + i, list(Classes = ks[[i]]),
       progress = stability_progress, preserve_levels = variables,
-      stability_cores = stability_cores)
+      stability_cores = stability_cores, memory_method = "gower_pam",
+      memory_variables = variables)
     })
     stability_summary <- dplyr::bind_rows(lapply(stabilities, `[[`, "summary"))
     rows <- dplyr::left_join(rows, stability_summary, by = "Classes")

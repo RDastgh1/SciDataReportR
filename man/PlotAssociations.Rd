@@ -9,6 +9,7 @@ PlotAssociations(
   Var1,
   Var2,
   Ordinal = FALSE,
+  IncludeTrendSymbol = FALSE,
   DataFrame = lifecycle::deprecated()
 )
 }
@@ -20,6 +21,8 @@ PlotAssociations(
 \item{Var2}{The name of the second variable.}
 
 \item{Ordinal}{Logical, indicating whether ordinal variables should be included.}
+
+\item{IncludeTrendSymbol}{Logical; append a plus sign to a nominal-trend subtitle.}
 
 \item{DataFrame}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
 }

@@ -21,6 +21,7 @@ CreateClusterModel_SOM_MClust(
   ZScoreObject = NULL,
   som_xdim = NULL,
   som_ydim = NULL,
+  map_from = NULL,
   som_topo = "hexagonal",
   som_neigh = "gaussian",
   node_weighting = c("uniform", "occupancy"),
@@ -44,6 +45,8 @@ CreateClusterModel_SOM_MClust(
   skip_model_after_n_failures = 2L,
   slow_fit_seconds = 120,
   min_nodes_per_cluster = 5,
+  min_nodes_per_parameter = 3,
+  min_participants_per_node = 10,
   lpa_min_node_n = 0L,
   min_cluster_prop = NULL,
   criteria_weights = NULL,
@@ -123,8 +126,18 @@ exploratory fits this is \code{max(k_range)} and in finalized fits it is
 \code{final_k}. The engineering default is approximately 20 SOM nodes per
 planned profile. It retains several local prototypes for each candidate
 phenotype without letting a larger sample automatically create an
-increasingly sparse map. Sample size instead informs node occupancy and
-map-health review. Explicit dimensions always override this policy.}
+increasingly sparse map. The automatic side is also enlarged when needed
+to provide \code{min_nodes_per_parameter} codebook observations per estimated
+Mclust parameter, but is capped so that it targets at least
+\code{min_participants_per_node} complete participants per map node. Sample size
+therefore informs map health rather than indefinitely increasing map
+resolution. Explicit dimensions always override this policy.}
+
+\item{map_from}{Optional exploratory \code{Pipeline_SOM_MClust} object. In a
+finalized fit, reuse only its resolved dimensions, topology, neighbourhood,
+and SOM seed. Clustering-variable names and order must match. Training
+preprocessing is deliberately recomputed on \code{data}; pass
+\code{ZScoreType = "ZScoreObj"} to reuse scaling explicitly.}
 
 \item{som_topo}{SOM topology for \code{kohonen::somgrid()}, default
 \code{"hexagonal"}.}
@@ -205,6 +218,18 @@ fits in diagnostics.}
 \item{min_nodes_per_cluster}{Optional minimum average SOM nodes per cluster
 considered before attempting a candidate profile count.}
 
+\item{min_nodes_per_parameter}{Positive target number of codebook nodes per
+estimated free Gaussian-mixture parameter for automatic maps. Default \code{3}.
+Mclust is fit to SOM codebooks, so codebook nodes—not cohort rows—are its
+effective observations. This conservative support floor supplements the
+20-nodes-per-planned-profile representation target. Explicit map dimensions
+are reported but never resized.}
+
+\item{min_participants_per_node}{Positive target number of complete training
+participants per SOM node for automatically sized maps. Default \code{10} is an
+engineering occupancy target, not a universal statistical threshold. It
+prevents the codebook-support floor from silently producing sparse maps.}
+
 \item{lpa_min_node_n}{Minimum number of training participants a SOM node
 must hold to enter the node-level mixture fit. Default \code{0} fits every
 node. Use \code{1} to leave empty nodes out, so unoccupied map regions do
@@ -264,9 +289,10 @@ projects the full reference cohort before all-participant ARI is scored.}
 \item{stability_progress}{Logical; if TRUE, print subsample progress messages.}
 
 \item{stability_cores}{Number of workers for stability refits. \code{NULL} uses
-all detected physical cores minus one, capped at the requested resamples
-and any scheduler limit. Each worker holds a refit in memory, so lower this
-setting for large SOM or high-dimensional analyses.}
+a conservative estimate based on CPU, refit count, and memory: the smaller
+of 50\% physical RAM and 75\% currently available RAM. Explicit values are
+retained up to the scheduler/CPU limit and warn if their estimated memory
+exceeds that budget. Each worker holds a refit in memory.}
 
 \item{df}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
 
@@ -535,6 +561,16 @@ calculated.
 \item \code{noise_policy}: whether the method has noise labels. For ordinary
 methods it is \code{"all clusters included"}; HDBSCAN variants retain noise in
 ARI but exclude it from phenotype-level Jaccard recovery.
+\item \code{requested_cores}, \code{resolved_cores}, and \code{worker_policy}: the
+requested and resolved refit workers and the reason for the resolution.
+Automatic resolution is capped by CPU, refit count, and the smaller of
+50\% physical RAM and 75\% currently available RAM. Pairwise-memory methods
+are run serially automatically.
+\item \code{estimated_bytes_per_worker}, \code{estimated_total_bytes},
+\code{physical_memory_bytes}, \code{available_memory_bytes}, and
+\code{safe_memory_budget_bytes}: the conservative memory audit used to resolve
+automatic workers. An explicit worker request is preserved (within the
+CPU/scheduler cap) but warns if it exceeds the estimated safe budget.
 }
 
 \code{Stability$replicates} has one row per requested refit. \code{Model} and

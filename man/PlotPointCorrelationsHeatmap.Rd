@@ -15,6 +15,7 @@ PlotPointCorrelationsHeatmap(
   fdr_scope = c("matrix", "per_outcome", "per_predictor"),
   cluster_rows = FALSE,
   cluster_columns = FALSE,
+  IncludeTrendSymbol = FALSE,
   Data = lifecycle::deprecated(),
   Covariates = lifecycle::deprecated()
 )
@@ -42,6 +43,8 @@ continuous variable: outcomes are the continuous variables (\code{ContVars}).}
 
 \item{cluster_rows, cluster_columns}{Logical; cluster continuous y-axis rows
 and/or binary x-axis columns using displayed correlation profiles.}
+
+\item{IncludeTrendSymbol}{Logical; add a plus sign for \verb{0.05 < p <= 0.10}.}
 
 \item{Data}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
 

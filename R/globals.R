@@ -2,7 +2,7 @@
 # pipelines. Declaring them silences the R CMD check NOTE
 # "no visible binding for global variable".
 
-#' @importFrom stats dist hclust reorder setNames complete.cases resid
+#' @importFrom stats dist hclust reorder setNames complete.cases resid predict
 #' @importFrom grDevices boxplot.stats
 #' @importFrom utils head tail
 #' @importFrom rlang :=
@@ -346,5 +346,14 @@ utils::globalVariables(c(
   "xvar",
   "y",
   "yVar",
-  "yend"
+  "yend",
+  "BoundaryParticipants", "BoundaryProportion", "Case %", "CaseProbability",
+  "CellId", "CohensQ", "Control %", "ControlProbability",
+  "CovariateDfComparison", "CovariateDfReference", "DeltaLabel", "DeltaR",
+  "Direction", "DirectionReversal", "FisherZ", "InferenceStatus",
+  "LRLowerCI", "LRUpperCI", "LikelihoodRatio", "Log2LR", "NComparison",
+  "NReference", "OutcomeIndex", "OutcomeOrder", "PAdjusted", "PValue",
+  "Participants", "PredictorIndex", "PredictorOrder", "RComparison", "RReference",
+  "ResultLevel", "ReversalPattern", "Scope", "Sensitivity", "Specificity",
+  "Stage", "StarLabel", "Stratum", "SupportStatus", "TestAvailable", "XOrder", "YOrder"
 ))

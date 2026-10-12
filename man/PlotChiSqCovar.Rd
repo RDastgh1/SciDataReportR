@@ -16,6 +16,7 @@ PlotChiSqCovar(
   xVars = lifecycle::deprecated(),
   yVars = lifecycle::deprecated(),
   fdr_scope = c("matrix", "per_outcome", "per_predictor"),
+  IncludeTrendSymbol = FALSE,
   covars = lifecycle::deprecated()
 )
 }
@@ -44,6 +45,8 @@ PlotChiSqCovar(
 \code{\link[=ApplyFDRCorrection]{ApplyFDRCorrection()}}. \code{"matrix"} corrects across all p-values at once
 (historical behavior). \code{"per_outcome"} corrects separately within each
 outcome: outcomes are the y-axis variables (\code{outcome_vars}).}
+
+\item{IncludeTrendSymbol}{Logical; add a plus sign for \verb{0.05 < p <= 0.10}.}
 
 \item{covars}{\strong{Deprecated} (since 19.15.0). Use \code{covariates} instead.}
 }

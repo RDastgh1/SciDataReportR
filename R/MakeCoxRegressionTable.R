@@ -32,6 +32,7 @@
 #' @param FDR Logical. If `TRUE`, add `FDR`, adjusted across all returned rows
 #'   using [ApplyFDRCorrection()].
 #' @param FDRAlpha Numeric threshold used for FDR-adjusted significance.
+#' @param IncludeTrendSymbol Logical; add a plus sign for `0.05 < p <= 0.10`.
 #' @param CheckPH Logical. If `TRUE`, calculate the global [survival::cox.zph()]
 #'   p-value for ordinary Cox models. Survey models return `NA`.
 #' @param ReturnModels Logical. If `TRUE`, retain fitted models in
@@ -76,6 +77,7 @@ MakeCoxRegressionTable <- function(data,
     Standardize = FALSE,
     FDR = TRUE,
     FDRAlpha = 0.05,
+    IncludeTrendSymbol = FALSE,
     CheckPH = TRUE,
     ReturnModels = FALSE,
     Relabel = TRUE,
@@ -377,7 +379,7 @@ MakeCoxRegressionTable <- function(data,
   )
 
   list(
-    FormattedTable = ScidrCoxGtTable(results, formatted = TRUE),
+    FormattedTable = ScidrCoxGtTable(results, formatted = TRUE, IncludeTrendSymbol = IncludeTrendSymbol),
     LargeTable = ScidrCoxGtTable(results, formatted = FALSE),
     Results = results,
     ModelSummaries = if (ReturnModels) model_list else NULL,
@@ -490,7 +492,7 @@ ScidrCoxFormula <- function(time_var, event_var, model_terms) {
   )
 }
 
-ScidrCoxGtTable <- function(results, formatted = TRUE) {
+ScidrCoxGtTable <- function(results, formatted = TRUE, IncludeTrendSymbol = FALSE) {
   results <- results %>%
     dplyr::mutate(RowKey = paste(.data$Predictor, .data$Term, sep = "\r"))
   row_data <- results %>%
@@ -520,10 +522,11 @@ ScidrCoxGtTable <- function(results, formatted = TRUE) {
           formatC(outcome_results$Estimate, digits = 3, format = "fg"),
           " (", formatC(outcome_results$ConfLow, digits = 3, format = "fg"),
           ", ", formatC(outcome_results$ConfHigh, digits = 3, format = "fg"), ")",
-          ifelse(outcome_results$Significant, ScidrPValueStars(
+          ScidrPValueStars(
             if ("FDR" %in% names(outcome_results)) outcome_results$FDR else outcome_results$PValue,
-            ns_label = ""
-          ), "")
+            ns_label = "",
+            IncludeTrendSymbol = IncludeTrendSymbol
+          )
         )
       )
       table_data[[p_column]] <- dplyr::case_when(

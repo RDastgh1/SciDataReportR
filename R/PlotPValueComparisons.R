@@ -38,6 +38,7 @@
 #'     "TRAIL_R3", "VEGF", "Ab_42", "p_tau", "tau"
 #'   )
 #' )
+#' @param IncludeTrendSymbol Logical; add a plus sign for `0.05 < p <= 0.10`.
 #' @export
 PlotPValueComparisons <- function(data,
     group_var,
@@ -45,6 +46,7 @@ PlotPValueComparisons <- function(data,
     VariableCategories = NULL,
     Relabel = TRUE,
     alternative = c("two.sided", "greater", "less"),
+    IncludeTrendSymbol = FALSE,
     Data = lifecycle::deprecated(),
     GroupVariable = lifecycle::deprecated(),
     Variables = lifecycle::deprecated()) {
@@ -100,9 +102,11 @@ PlotPValueComparisons <- function(data,
 
   # Calculate log-transformed p-values and significance levels
   pvaltable$logp <- -log10(pvaltable$p.value)
-  pvaltable$Sig <- gtools::stars.pval(pvaltable$p.value)
-  pvaltable$Sig[pvaltable$Sig %in% c(".", "+", " ")] <- "ns"
-  pvaltable$Sig <- factor(pvaltable$Sig, levels = c("ns", "*", "**", "***", "****", "*****"))
+  pvaltable$Sig <- ScidrPValueStars(
+    pvaltable$p.value,
+    IncludeTrendSymbol = IncludeTrendSymbol
+  )
+  pvaltable$Sig <- factor(pvaltable$Sig, levels = c("ns", "+", "*", "**", "***", "****"))
 
   # Adjust p-values for multiple testing
   pvaltable$p.adj <- p.adjust(pvaltable$p.value, method = "fdr")
@@ -134,8 +138,8 @@ PlotPValueComparisons <- function(data,
                              aes(label = Variable)) +
     scale_y_discrete(limits = rev(pvaltable$Variable)) +
     xlab("-log10(p-value)") +
-    scale_shape_manual(values = c(21, 16, 17, 15, 18, 8),
-                       breaks = c("ns", "*", "**", "***", "****"), drop = FALSE)
+    scale_shape_manual(values = c("ns" = 21, "+" = 3, "*" = 16, "**" = 17, "***" = 15, "****" = 18),
+                       breaks = c("ns", "+", "*", "**", "***", "****"), drop = FALSE)
 
   # Colour is only mapped when categories were supplied.
   if (!is.null(VariableCategories)) {

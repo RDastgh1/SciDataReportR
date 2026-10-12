@@ -15,6 +15,7 @@ MakeCoxRegressionTable(
   Standardize = FALSE,
   FDR = TRUE,
   FDRAlpha = 0.05,
+  IncludeTrendSymbol = FALSE,
   CheckPH = TRUE,
   ReturnModels = FALSE,
   Relabel = TRUE,
@@ -48,6 +49,8 @@ covariates within each model's complete-case analysis set.}
 using \code{\link[=ApplyFDRCorrection]{ApplyFDRCorrection()}}.}
 
 \item{FDRAlpha}{Numeric threshold used for FDR-adjusted significance.}
+
+\item{IncludeTrendSymbol}{Logical; add a plus sign for \verb{0.05 < p <= 0.10}.}
 
 \item{CheckPH}{Logical. If \code{TRUE}, calculate the global \code{\link[survival:cox.zph]{survival::cox.zph()}}
 p-value for ordinary Cox models. Survey models return \code{NA}.}

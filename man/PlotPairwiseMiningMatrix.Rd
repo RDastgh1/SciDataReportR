@@ -22,7 +22,8 @@ PlotPairwiseMiningMatrix(
   continuous_fill_limits = NULL,
   categorical_fill_limits = NULL,
   x_axis_text_angle = 0,
-  row_label_width = 58
+  row_label_width = 58,
+  IncludeTrendSymbol = FALSE
 )
 }
 \arguments{
@@ -64,6 +65,8 @@ plotting limits for the continuous and categorical magnitude matrices.}
 \item{x_axis_text_angle}{Numeric angle for phenotype labels.}
 
 \item{row_label_width}{Approximate character width used to wrap row labels.}
+
+\item{IncludeTrendSymbol}{Logical; add a plus sign for \verb{0.05 < p <= 0.10}.}
 }
 \value{
 An object of class \code{"SciDataReportRPairwiseMiningMatrix"} with

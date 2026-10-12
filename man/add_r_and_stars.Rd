@@ -17,6 +17,7 @@ add_r_and_stars(
   star_color = "black",
   star_nudge_y = 0.15,
   remove_existing_stars = TRUE,
+  IncludeTrendSymbol = FALSE,
   p_breaks = c(-Inf, 0.001, 0.01, 0.05, Inf),
   p_labels = c("***", "**", "*", "")
 )
@@ -46,6 +47,8 @@ with plot data columns such as \code{R}, \code{P}, \code{P_adj}, \code{stars}, o
 \item{r_nudge_y, star_nudge_y}{Vertical nudges (r down, stars up)}
 
 \item{remove_existing_stars}{If TRUE, remove any pre-existing star text layers}
+
+\item{IncludeTrendSymbol}{Logical; add a plus sign for \verb{0.05 < p <= 0.10}.}
 
 \item{p_breaks, p_labels}{Cutpoints/labels for computing stars from p}
 }

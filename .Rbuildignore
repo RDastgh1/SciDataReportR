@@ -31,3 +31,5 @@ conflicted copy
 ^tests/testthat/_problems$
 ^skills$
 ^tools$
+^CLAUDE\.md$
+^talks$

@@ -131,6 +131,7 @@
 #'   Method = "lm"
 #' )
 #' }
+#' @param IncludeTrendSymbol Logical; add a plus sign for `0.05 < p <= 0.10`.
 #' @export
 MultivariableRegressionTable <- function(data,
     outcome_vars,
@@ -141,6 +142,7 @@ MultivariableRegressionTable <- function(data,
     TreatOrdinalAs = "Categorical",
     FDR = TRUE,
     FDRAlpha = 0.05,
+    IncludeTrendSymbol = FALSE,
     Method = c("lm", "ridge", "lasso", "elasticnet"),
     CVFolds = 10,
     Lambda = c("lambda.min", "lambda.1se"),
@@ -487,7 +489,10 @@ MultivariableRegressionTable <- function(data,
   }
 
   star_source <- if (FDR) large_table$FDR else large_table$PValue
-  large_table$Stars <- ScidrPValueStars(star_source)
+  large_table$Stars <- ScidrPValueStars(
+    star_source,
+    IncludeTrendSymbol = IncludeTrendSymbol
+  )
   large_table$HoverText <- ScidrRegressionHoverText(large_table)
 
   reporting_rows <- large_table$Predictor %in% PredictorVars

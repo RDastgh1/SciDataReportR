@@ -50,6 +50,7 @@
 #' # Pre-specify the direction through factor order before requesting a one-sided test.
 #' Labelled$Diagnosis <- factor(Labelled$Diagnosis, levels = c("Control", "Impaired"))
 #' PlotSplitViolin(Labelled, Var = "Ab_42", group_var = "Diagnosis", alternative = "greater")
+#' @param IncludeTrendSymbol Logical; add a plus sign for `0.05 < p <= 0.10`.
 #' @export
 PlotSplitViolin <- function(data,
     Var,
@@ -73,6 +74,7 @@ PlotSplitViolin <- function(data,
     star_pad = 0.05,
     star_size = 6,
     p_label = c("stars", "p_value", "both"),
+    IncludeTrendSymbol = FALSE,
     ...,
     Group = lifecycle::deprecated(),
     covars = lifecycle::deprecated()) {
@@ -153,7 +155,8 @@ PlotSplitViolin <- function(data,
       p,
       tiers = ScidrStarTiersThree,
       ns_label = if (show_ns) "ns" else "",
-      na_label = if (show_ns) "ns" else ""
+      na_label = if (show_ns) "ns" else "",
+      IncludeTrendSymbol = IncludeTrendSymbol
     )
   }
 

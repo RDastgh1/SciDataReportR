@@ -60,6 +60,7 @@
 #'   triangle = "upper"
 #' )
 #' upper$FDRCorrected$plot
+#' @param IncludeTrendSymbol Logical; add a plus sign for `0.05 < p <= 0.10`.
 #' @export
 PlotPhiHeatmap <- function(data,
     CatVars,
@@ -69,6 +70,7 @@ PlotPhiHeatmap <- function(data,
     cluster_rows = FALSE,
     cluster_columns = FALSE,
     triangle = c("full", "upper", "lower"),
+    IncludeTrendSymbol = FALSE,
     Data = lifecycle::deprecated()) {
   # Deprecated argument shims (SciDataReportR 19.15.0)
   if (lifecycle::is_present(Data)) {
@@ -198,19 +200,14 @@ PlotPhiHeatmap <- function(data,
     outcome_ids = stat.test$YVar, predictor_ids = stat.test$XVar
   )
 
-  # significance stars
-  stat.test <- stat.test %>%
-    rstatix::add_significance("p_value", output.col = "p<.05") %>%
-    rstatix::add_significance("p.adj",   output.col = "p.adj.signif")
-
-  stat.test$`p<.05`[stat.test$`p<.05` == "ns"] <- ""
-  stat.test$p.adj.signif[stat.test$p.adj.signif == "ns"] <- ""
-  stat.test$`p<.05` <- factor(stat.test$`p<.05`,
-                              levels = c("ns","*","**","***","****"),
-                              labels = c("ns","*","**","***","***"))
-  stat.test$p.adj.signif <- factor(stat.test$p.adj.signif,
-                                   levels = c("ns","*","**","***","****"),
-                                   labels = c("ns","*","**","***","***"))
+  stat.test$`p<.05` <- .FormatPValueStars(
+    stat.test$p_value,
+    IncludeTrendSymbol = IncludeTrendSymbol
+  )
+  stat.test$p.adj.signif <- .FormatPValueStars(
+    stat.test$p.adj,
+    IncludeTrendSymbol = IncludeTrendSymbol
+  )
 
   stat.test$test <- "Phi"
 

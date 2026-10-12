@@ -721,13 +721,13 @@ test_that("standard batch-SOM provenance and boundary stability use a fixed refe
     stability_resamples = 0L, Relabel = FALSE,
     min_nodes_per_cluster = NULL, lpa_timeout_seconds = 30
   ))
-  expected_side <- ceiling(sqrt(20 * 3))
+  expected_side <- SOMMapSupport(nrow(df_Training), 6, 3, 1)$RecommendedSide[[1]]
   expect_equal(adaptive$ModelInfo_SOM$som_grid_info$som_xdim_used, expected_side)
   expect_equal(adaptive$ModelInfo_SOM$som_grid_info$som_ydim_used, expected_side)
   expect_identical(adaptive$ModelInfo_SOM$som_grid_info$GridDesignK, 3L)
   expect_identical(adaptive$ModelInfo_SOM$som_grid_info$TargetNodesPerProfile, 20L)
   expect_identical(adaptive$ModelInfo_SOM$som_grid_info$GridDesignPolicy,
-    "k_informed_20_nodes_per_maximum_planned_profile")
+    "k_informed_parameter_and_occupancy_aware")
 
   exploratory <- suppressWarnings(CreateClusterModel_SOM_MClust(
     df_Training, paste0("Var", 1:6), method = "exploratory",
@@ -735,9 +735,77 @@ test_that("standard batch-SOM provenance and boundary stability use a fixed refe
     Relabel = FALSE, min_nodes_per_cluster = NULL, lpa_timeout_seconds = 30
   ))
   expect_identical(exploratory$ModelInfo_SOM$som_grid_info$GridDesignK, 5L)
+  expected_exploratory_side <- SOMMapSupport(nrow(df_Training), 6, 3:5, 1)$RecommendedSide[[1]]
   expect_equal(exploratory$ModelInfo_SOM$som_grid_info$som_xdim_used,
-    ceiling(sqrt(20 * 5)))
+    expected_exploratory_side)
   expect_equal(exploratory$ModelInfo_SOM$som_grid_info$som_ydim_used,
-    ceiling(sqrt(20 * 5)))
+    expected_exploratory_side)
   expect_true(all(exploratory$ModelInfo_MClust$fit_table$Classes %in% 3:5))
+})
+
+test_that("SOM map support combines parameter and occupancy constraints", {
+  expect_equal(SciDataReportR:::.SOMMclustParameterCount(2, 15, 5),
+    mclust::nMclustParams("VVI", 15, 5))
+  support <- SOMMapSupport(18196, 15, 5, 2)
+  expect_equal(support$RecommendedSide[[1]], ceiling(sqrt(3 * 154)))
+  expect_identical(support$BindingConstraint[[1]], "parameter_floor")
+  capped <- SOMMapSupport(400, 15, 5, 2)
+  expect_equal(capped$RecommendedSide[[1]], floor(sqrt(400 / 10)))
+  expect_identical(capped$BindingConstraint[[1]], "participant_occupancy")
+  expect_identical(capped$SupportStatus[[1]], "over-parameterized")
+
+  set.seed(6031)
+  df_ParameterTest <- as.data.frame(matrix(stats::rnorm(200 * 6), ncol = 6))
+  names(df_ParameterTest) <- paste0("V", seq_len(6))
+
+  df_ExplicitTest <- df_ParameterTest[, seq_len(6)]
+  expect_warning(explicit <- CreateClusterModel_SOM_MClust(
+    df_ExplicitTest, variables = names(df_ExplicitTest), method = "exploratory",
+    k_range = 5, models = 1, som_xdim = 6, som_ydim = 6,
+    stability_resamples = 0L, Relabel = FALSE, min_nodes_per_cluster = NULL,
+    lpa_timeout_seconds = 30
+  ), "Explicit SOM dimensions")
+  expect_equal(explicit$ModelInfo_SOM$som_grid_info$som_xdim_used, 6L)
+  expect_true(explicit$ModelInfo_MClust$fit_table$Overparameterized[[1]])
+  expect_false(explicit$ModelInfo_MClust$fit_table$Eligible[[1]])
+  expect_true(all(c("ParticipantsPerNode", "OccupancyCompliant",
+    "SupportStatus") %in% names(explicit$ModelInfo_MClust$fit_table)))
+})
+
+test_that("map_from reuses map design but not training preprocessing", {
+  skip_if_not_installed("aweSOM")
+  skip_if_not_installed("kohonen")
+  skip_if_not_installed("mclust")
+  suppressPackageStartupMessages(skip_if_not_installed("tidyLPA"))
+  set.seed(6032)
+  df_Explore <- data.frame(A = stats::rnorm(150), B = stats::rnorm(150))
+  exploratory <- suppressWarnings(CreateClusterModel_SOM_MClust(
+    df_Explore, c("A", "B"), k_range = 2, models = 1,
+    som_xdim = 4, som_ydim = 4, Relabel = FALSE,
+    lpa_timeout_seconds = NULL))
+  df_Final <- dplyr::mutate(df_Explore, A = .data$A + 100)
+  finalized <- suppressWarnings(CreateClusterModel_SOM_MClust(
+    df_Final, c("A", "B"), method = "finalize", final_k = 2,
+    final_model = 1, map_from = exploratory, Relabel = FALSE,
+    lpa_timeout_seconds = NULL))
+  expect_equal(finalized$ModelInfo_SOM$som_grid_info$som_xdim_used, 4L)
+  expect_equal(finalized$ModelInfo_SOM$som_grid_info$som_ydim_used, 4L)
+  expect_identical(finalized$ModelInfo_SOM$som_grid$topo,
+    exploratory$ModelInfo_SOM$som_grid$topo)
+  expect_identical(as.character(finalized$ModelInfo_SOM$som_grid$neighbourhood.fct),
+    as.character(exploratory$ModelInfo_SOM$som_grid$neighbourhood.fct))
+  expect_identical(finalized$ModelInfo_SOM$training$seed,
+    exploratory$ModelInfo_SOM$training$seed)
+  expect_identical(finalized$ModelInfo_SOM$som_grid_info$BindingConstraint,
+    "map_from")
+  expect_false(identical(finalized$ZScoreObject, exploratory$ZScoreObject))
+})
+
+test_that("fit review plots expose SOM mixture support status", {
+  fit_table <- data.frame(Classes = c(2L, 3L, 4L), Model = 1L,
+    BIC = c(-10, -12, -14),
+    SupportStatus = c("supported", "under-supported", "over-parameterized"))
+  plot <- PlotClusterFitReview(fit_table, metrics = "BIC")
+  expect_identical(ggplot2::ggplot_build(plot)$plot$scales$
+    get_scales("shape")$name, "SOM mixture support")
 })

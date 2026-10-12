@@ -16,6 +16,7 @@ MakeUnivariateRegressionTable(
   ReturnModels = FALSE,
   Relabel = TRUE,
   TreatOrdinalAs = "Categorical",
+  IncludeTrendSymbol = FALSE,
   Data = lifecycle::deprecated(),
   OutcomeVars = lifecycle::deprecated(),
   PredictorVars = lifecycle::deprecated(),
@@ -61,6 +62,8 @@ are exponentiated and reported as odds ratios.}
 \item{Relabel}{Logical; if TRUE (default), display attached variable labels.}
 
 \item{TreatOrdinalAs}{How ordinal outcomes and predictors are handled.}
+
+\item{IncludeTrendSymbol}{Logical; add a plus sign for \verb{0.05 < p <= 0.10}.}
 
 \item{Data}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
 

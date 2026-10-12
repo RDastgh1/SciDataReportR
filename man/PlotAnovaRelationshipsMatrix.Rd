@@ -16,6 +16,7 @@ PlotAnovaRelationshipsMatrix(
   eps = 1e-08,
   Data = lifecycle::deprecated(),
   fdr_scope = c("matrix", "per_outcome", "per_predictor"),
+  IncludeTrendSymbol = FALSE,
   Covariates = lifecycle::deprecated()
 )
 }
@@ -44,6 +45,8 @@ PlotAnovaRelationshipsMatrix(
 \code{\link[=ApplyFDRCorrection]{ApplyFDRCorrection()}}. \code{"matrix"} corrects across all p-values at once
 (historical behavior). \code{"per_outcome"} corrects separately within each
 outcome: outcomes are the continuous variables (\code{ContVars}).}
+
+\item{IncludeTrendSymbol}{Logical; add a plus sign for \verb{0.05 < p <= 0.10}.}
 
 \item{Covariates}{\strong{Deprecated} (since 19.15.0). Use \code{covariates} instead.}
 }

@@ -11,6 +11,10 @@
 #'   `Classes`; mixture candidates also require `Model`. SOM candidates use
 #'   `NodeWeighting`, `SOM_XDim`, `SOM_YDim`, and `SOM_Topology`; HDBSCAN uses
 #'   `MinPts` and `Epsilon`; and Ward-plus-RF uses `WardN` and `RF_Trees`.
+#'   Full benchmarks near 20,000 participants can be slow and memory-intensive.
+#'   HDBSCAN and Ward + RF allocate pairwise structures and are automatically
+#'   serial under the memory policy; use a small, reviewed candidate table for
+#'   large cohorts.
 #'
 #' @param data A data frame containing the clustering variables.
 #' @param variables Numeric clustering variables.
@@ -23,14 +27,17 @@
 #' @param stability_cores Optional number of parallel workers.
 #' @param subsample_fraction Proportion of complete reference participants
 #'   retained in each refit.
+#' @param keep_models Logical; retain full-data reference models in the screen
+#'   result. Defaults to `FALSE` to avoid holding one large model per candidate.
+#'   Confirmation always retains its selected projectable models.
 #'
 #' @return A `ClusterMethodStabilityBenchmark` object with `decision_table`,
 #'   `replicates`, shared `subsamples`, `participant_inclusion`, and full-data
-#'   `models`.
+#'   `models`. With `keep_models = FALSE`, `models` is an empty list.
 #' @export
 CompareClusterMethodStability <- function(data, variables,
     candidates = NULL, stability_resamples = 10L, stability_seed = 934522L,
-    stability_cores = NULL, subsample_fraction = .90) {
+    stability_cores = NULL, subsample_fraction = .90, keep_models = FALSE) {
   if (!is.data.frame(data)) stop("data must be a data frame.")
   if (!is.character(variables) || !length(variables) ||
       length(setdiff(variables, names(data)))) {
@@ -45,11 +52,13 @@ CompareClusterMethodStability <- function(data, variables,
       subsample_fraction >= 1) {
     stop("subsample_fraction must be a single value strictly between zero and one.")
   }
+  if (!is.logical(keep_models) || length(keep_models) != 1L || is.na(keep_models)) {
+    stop("keep_models must be TRUE or FALSE.")
+  }
   df_scidr <- .AddClusterRowID(data)
   complete_rows <- which(stats::complete.cases(df_scidr[, variables, drop = FALSE]))
   if (length(complete_rows) < 3L) stop("At least three complete participants are required.")
   candidates <- .ValidateClusterBenchmarkCandidates(candidates)
-  core_settings <- .ResolveClusterStabilityCores(stability_cores, stability_resamples)
 
   set.seed(stability_seed)
   subsamples <- lapply(seq_len(stability_resamples), function(replicate) {
@@ -75,10 +84,12 @@ CompareClusterMethodStability <- function(data, variables,
     labels <- projected$Cluster[match(df_scidr$.row_id, projected$.row_id)]
     non_noise <- sort(unique(labels[!is.na(labels) & labels != 0L]))
     applicable <- candidate$Method[[1]] != "hdbscan" || length(non_noise) >= 2L
-    models[[candidate_id]] <- fitted
+    if (isTRUE(keep_models)) models[[candidate_id]] <- fitted
     reference[[candidate_id]] <- list(labels = labels, applicable = applicable,
       native = .BenchmarkNativeMetrics(fitted, candidate),
       non_noise_clusters = length(non_noise))
+    rm(projected)
+    if (!isTRUE(keep_models)) rm(fitted)
   }
 
   run_candidate <- function(candidate_index) {
@@ -86,12 +97,21 @@ CompareClusterMethodStability <- function(data, variables,
     candidate_id <- candidate$CandidateID[[1]]
     ref <- reference[[candidate_id]]
     if (is.null(ref)) return(NULL)
+    memory_method <- .BenchmarkMemoryMethod(candidate$Method[[1]])
+    som_nodes <- if (identical(candidate$Method[[1]], "som_mclust")) {
+      as.integer(candidate$SOM_XDim[[1]] * candidate$SOM_YDim[[1]])
+    } else NULL
+    worker_settings <- .ResolveClusterStabilityCores(
+      stability_cores, stability_resamples, n = length(complete_rows),
+      p = length(variables), method = memory_method, som_nodes = som_nodes,
+      ward_n = if (identical(candidate$Method[[1]], "ward_rf")) candidate$WardN[[1]] else NULL,
+      subsample_fraction = subsample_fraction)
     if (!isTRUE(ref$applicable)) {
       return(list(replicates = dplyr::tibble(
         CandidateID = candidate_id, Replicate = seq_len(stability_resamples),
         Status = "not_applicable", ARI = NA_real_, ParticipantsCompared = length(complete_rows),
         Error = "Fewer than two non-noise reference clusters.", JaccardMean = NA_real_),
-        assignments = list()))
+        assignments = list(), worker_settings = worker_settings))
     }
     results <- .ClusterParallelMap(seq_len(stability_resamples), function(replicate) {
       sampled_ids <- subsamples[[replicate]]$.row_id
@@ -107,6 +127,8 @@ CompareClusterMethodStability <- function(data, variables,
       projected <- tryCatch(.ProjectBenchmarkCandidate(fitted, df_scidr, candidate),
         error = function(e) e)
       if (inherits(projected, "error")) {
+        rm(projected, fitted)
+        gc(FALSE)
         return(list(replicate = dplyr::tibble(CandidateID = candidate_id,
           Replicate = replicate, Status = "failed", ARI = NA_real_,
           ParticipantsCompared = NA_integer_, Error = conditionMessage(projected)), assignment = NULL))
@@ -116,14 +138,17 @@ CompareClusterMethodStability <- function(data, variables,
       ari <- if (sum(valid) > 1L) mclust::adjustedRandIndex(ref$labels[valid], refit[valid]) else NA_real_
       jaccard <- .ClusterJaccard(ref$labels[valid], refit[valid],
         noise_label = if (candidate$Method[[1]] == "hdbscan") 0L else NULL)
+      rm(projected, fitted)
+      gc(FALSE)
       list(replicate = dplyr::tibble(CandidateID = candidate_id,
         Replicate = replicate, Status = "success", ARI = ari,
         ParticipantsCompared = sum(valid), Error = NA_character_,
         JaccardMean = if (nrow(jaccard)) mean(jaccard$Jaccard, na.rm = TRUE) else NA_real_),
       assignment = refit)
-    }, cores = core_settings$resolved)
+    }, cores = worker_settings$resolved)
     list(replicates = dplyr::bind_rows(lapply(results, `[[`, "replicate")),
-      assignments = lapply(results, `[[`, "assignment"))
+      assignments = lapply(results, `[[`, "assignment"),
+      worker_settings = worker_settings)
   }
   benchmark_results <- lapply(seq_len(nrow(candidates)), run_candidate)
 
@@ -150,6 +175,11 @@ CompareClusterMethodStability <- function(data, variables,
         StabilityARI_P05 = .BenchmarkSafeQuantile(successful$ARI, .05),
         StabilityJaccard_Mean = .BenchmarkSafeMean(successful$JaccardMean),
         StabilitySuccessRate = mean(replicates$Status == "success"),
+        ResolvedWorkers = result$worker_settings$resolved,
+        WorkerPolicy = result$worker_settings$worker_policy,
+        EstimatedBytesPerWorker = result$worker_settings$bytes_per_worker,
+        EstimatedTotalBytes = result$worker_settings$estimated_total_bytes,
+        SafeMemoryBudgetBytes = result$worker_settings$safe_memory_budget_bytes,
         Persistence = .BenchmarkMetricValue(ref$native, "Persistence"),
         NoiseProportion = .BenchmarkMetricValue(ref$native, "NoiseProportion"),
         MeanMembershipProbability = .BenchmarkMetricValue(ref$native, "MeanMembershipProbability"),
@@ -173,8 +203,14 @@ CompareClusterMethodStability <- function(data, variables,
       perturbation = "90% subsample without replacement",
       refits_requested = as.integer(stability_resamples),
       subsample_fraction = subsample_fraction, stability_seed = stability_seed,
-      stability_cores = core_settings$requested,
-      stability_cores_resolved = core_settings$resolved,
+      stability_cores = if (is.null(stability_cores)) "automatic" else as.integer(stability_cores),
+      stability_cores_resolved = max(vapply(benchmark_results, function(result) {
+        if (is.null(result)) 1L else result$worker_settings$resolved
+      }, integer(1))),
+      worker_estimates = stats::setNames(lapply(benchmark_results, function(result) {
+        if (is.null(result)) NULL else result$worker_settings
+      }), candidates$CandidateID),
+      keep_models = keep_models,
       ranking = "StabilityARI_Mean, then StabilityARI_P05 and StabilityJaccard_Mean",
       automatic_selection = FALSE))
   class(out) <- "ClusterMethodStabilityBenchmark"
@@ -214,8 +250,9 @@ ConfirmClusterMethodStability <- function(benchmark, candidates = NULL,
     candidates = dplyr::select(table, dplyr::all_of(names(benchmark$candidates))),
     stability_resamples = confirm_resamples,
     stability_seed = benchmark$settings$stability_seed,
-    stability_cores = benchmark$settings$stability_cores_resolved,
-    subsample_fraction = benchmark$settings$subsample_fraction)
+    stability_cores = if (identical(benchmark$settings$stability_cores, "automatic")) NULL else benchmark$settings$stability_cores,
+    subsample_fraction = benchmark$settings$subsample_fraction,
+    keep_models = TRUE)
   out <- list(decision_table = confirmed$decision_table, replicates = confirmed$replicates,
     subsamples = confirmed$subsamples, participant_inclusion = confirmed$participant_inclusion,
     models = confirmed$models, settings = confirmed$settings, screen = benchmark)
@@ -235,7 +272,7 @@ DefaultClusterBenchmarkCandidates <- function() {
       SOM_Topology = "hexagonal")
   mclust <- tidyr::expand_grid(Method = "mclust", Model = 1:3, Classes = ks)
   kmeans <- dplyr::tibble(Method = "kmeans", Classes = ks)
-  hdbscan <- tidyr::expand_grid(Method = "hdbscan", MinPts = c(20L, 50L, 100L, 180L),
+  hdbscan <- dplyr::tibble(Method = "hdbscan", MinPts = c(20L, 50L, 100L),
     Epsilon = c(0, .05, .10))
   ward <- dplyr::tibble(Method = "ward_rf", Classes = ks, WardN = 6000L, RF_Trees = 500L)
   dplyr::bind_rows(som, mclust, kmeans, hdbscan, ward) %>%
@@ -246,6 +283,16 @@ DefaultClusterBenchmarkCandidates <- function() {
 .BenchmarkCandidateColumns <- c("CandidateID", "Method", "MethodVariant", "Classes", "Model",
   "NodeWeighting", "SOM_XDim", "SOM_YDim", "SOM_Topology", "Assignment",
   "SoftNodes", "MinPts", "Epsilon", "WardN", "RF_Trees")
+
+.BenchmarkMemoryMethod <- function(method) {
+  switch(method,
+    som_mclust = "som_mclust",
+    mclust = "mclust",
+    kmeans = "kmeans",
+    hdbscan = "hdbscan",
+    ward_rf = "ward_rf",
+    "generic")
+}
 
 .ValidateClusterBenchmarkCandidates <- function(candidates) {
   if (is.null(candidates)) candidates <- DefaultClusterBenchmarkCandidates()

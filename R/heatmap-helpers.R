@@ -1,5 +1,13 @@
-.FormatPValueStars <- function(p_values, thresholds = ScidrStarTiersThree) {
-  ScidrPValueStars(p_values, tiers = thresholds, ns_label = "", na_label = "")
+.FormatPValueStars <- function(p_values,
+                                thresholds = ScidrStarTiersThree,
+                                IncludeTrendSymbol = FALSE) {
+  ScidrPValueStars(
+    p_values,
+    tiers = thresholds,
+    ns_label = "",
+    na_label = "",
+    IncludeTrendSymbol = IncludeTrendSymbol
+  )
 }
 
 # Keep ordering logic in one place so every matrix-style plot clusters the
@@ -211,7 +219,8 @@
                                             raw_p_col = "PValue",
                                             adjusted_p_col = "AdjustedPValue",
                                             star_p = c("raw", "adjusted", "none"),
-                                            adjusted_significance_threshold = 0.05) {
+                                            adjusted_significance_threshold = 0.05,
+                                            IncludeTrendSymbol = FALSE) {
   star_p <- match.arg(star_p)
 
   if (!raw_p_col %in% names(data)) {
@@ -231,7 +240,10 @@
   data$SignificanceLabel <- if (identical(star_p, "none")) {
     rep("", nrow(data))
   } else {
-    .FormatPValueStars(star_values)
+    .FormatPValueStars(
+      star_values,
+      IncludeTrendSymbol = IncludeTrendSymbol
+    )
   }
 
   adjusted_p <- suppressWarnings(as.numeric(data[[adjusted_p_col]]))
@@ -471,7 +483,8 @@
                                               alternative = c("two.sided", "greater", "less"),
                                               adjust_scope = c("per_group", "per_variable", "matrix", "none"),
                                               p_adjust_method = "fdr",
-                                              adjusted_significance_threshold = 0.05,
+                                               adjusted_significance_threshold = 0.05,
+                                               IncludeTrendSymbol = FALSE,
                                               star_p = c("raw", "adjusted", "none"),
                                               return_models = FALSE) {
   adjust_scope <- match.arg(adjust_scope)
@@ -753,7 +766,8 @@
     raw_p_col = "PValue",
     adjusted_p_col = "AdjustedPValue",
     star_p = star_p,
-    adjusted_significance_threshold = adjusted_significance_threshold
+    adjusted_significance_threshold = adjusted_significance_threshold,
+    IncludeTrendSymbol = IncludeTrendSymbol
   )
 
   list(

@@ -40,6 +40,7 @@
 #'   columns based on estimated mean differences.
 #' @param return_models Logical; include fitted model objects in the return.
 #' @param star_color,star_size Appearance of p-value stars.
+#' @param IncludeTrendSymbol Logical; add a plus sign for `0.05 < p <= 0.10`.
 #'
 #' @return An object of class `"SciDataReportRPairwiseHeatmap"` with `Plot`,
 #'   `Results`, `Models`, `Settings`, `ScalingParameters`, and `Warnings`.
@@ -182,7 +183,8 @@ MakePairwiseHeatmap <- function(data,
                                 x_axis_text_angle = 0,
                                 return_models = FALSE,
                                 star_color = "black",
-                                star_size = 4) {
+                                star_size = 4,
+                                IncludeTrendSymbol = FALSE) {
   adjust_scope <- match.arg(adjust_scope)
   p_adjust_method <- match.arg(p_adjust_method)
   star_p <- match.arg(star_p)
@@ -331,6 +333,7 @@ MakePairwiseHeatmap <- function(data,
     adjust_scope = adjust_scope,
     p_adjust_method = p_adjust_method,
     adjusted_significance_threshold = adjusted_significance_threshold,
+    IncludeTrendSymbol = IncludeTrendSymbol,
     star_p = star_p,
     return_models = return_models
   )
@@ -458,6 +461,7 @@ MakePairwiseHeatmap <- function(data,
     star_p = star_p,
     adjusted_outline = adjusted_outline,
     adjusted_significance_threshold = adjusted_significance_threshold,
+    IncludeTrendSymbol = IncludeTrendSymbol,
     fill_limits = fill_limits,
     fill_limits_used = fill_limits_used,
     fill_midpoint = fill_midpoint,

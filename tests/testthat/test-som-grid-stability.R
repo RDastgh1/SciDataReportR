@@ -2,7 +2,7 @@ test_that("SOM grid candidates include k-informed resolutions", {
   expect_identical(eval(formals(ScreenSOMGridStability)$screen_scope),
     c("map", "joint"))
   expect_identical(formals(ScreenSOMGridStability)$screen_resamples, 3L)
-  grids <- SciDataReportR:::.SOMGridCandidates(1000, k_range = 3:6,
+  grids <- SciDataReportR:::.SOMGridCandidates(10000, k_range = 3:6,
     policy = "k_informed")
   k_informed_sides <- ceiling(sqrt(max(3:6) * c(10, 20, 30)))
 
@@ -12,11 +12,16 @@ test_that("SOM grid candidates include k-informed resolutions", {
   expect_true(all(c(8L, 11L, 14L) %in%
     SciDataReportR:::.SOMGridCandidates(18196, k_range = 3:6,
       policy = "k_informed")$som_xdim))
-  explicit <- SciDataReportR:::.SOMGridCandidates(1000,
+  explicit <- SciDataReportR:::.SOMGridCandidates(10000,
     grid_candidates = data.frame(som_xdim = c(4L, 4L), som_ydim = c(6L, 6L)),
     k_range = 3:6, policy = "k_informed")
   expect_identical(as.data.frame(explicit),
     data.frame(som_xdim = 4L, som_ydim = 6L))
+  parameter_aware <- SciDataReportR:::.SOMGridCandidates(1000,
+    k_range = 5, policy = "k_informed", models = 2, p = 15)
+  expect_false(ceiling(sqrt(3 * 154)) %in% parameter_aware$som_xdim)
+  expect_true(all(parameter_aware$som_xdim <= floor(sqrt(1000 / 10)) |
+    parameter_aware$som_xdim %in% c(3L, 10L)))
 })
 
 test_that("default SOM map screen is k-agnostic and projects the full cohort", {
@@ -42,8 +47,11 @@ test_that("default SOM map screen is k-agnostic and projects the full cohort", {
   expect_false("NodeWeighting" %in% names(screen$decision_table))
   expect_true(all(c("TopologyPreservation_Mean", "NeighborhoodOverlap_Mean",
     "ProjectedDistance_Mean", "ProjectedDistance_P95",
-    "EmptyNodes", "SingletonNodes", "NodeUtilization", "SOMDistance_P95") %in%
+    "EmptyNodes", "SingletonNodes", "NodeUtilization", "SOMDistance_P95",
+    "ParticipantsPerNode", "OccupancyCompliant",
+    "SupportStatus_MaxRequestedModel") %in%
     names(screen$decision_table)))
+  expect_true(all(screen$decision_table$ParticipantsPerNode > 0))
   expect_true("MapStabilityPlateau" %in% names(screen$decision_table))
   expect_identical(screen$settings$scoring_cohort, "all_reference_participants")
   expect_identical(screen$settings$screen_scope, "map")

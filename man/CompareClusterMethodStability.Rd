@@ -11,7 +11,8 @@ CompareClusterMethodStability(
   stability_resamples = 10L,
   stability_seed = 934522L,
   stability_cores = NULL,
-  subsample_fraction = 0.9
+  subsample_fraction = 0.9,
+  keep_models = FALSE
 )
 }
 \arguments{
@@ -32,11 +33,15 @@ candidate set. See \code{DefaultClusterBenchmarkCandidates()}.}
 
 \item{subsample_fraction}{Proportion of complete reference participants
 retained in each refit.}
+
+\item{keep_models}{Logical; retain full-data reference models in the screen
+result. Defaults to \code{FALSE} to avoid holding one large model per candidate.
+Confirmation always retains its selected projectable models.}
 }
 \value{
 A \code{ClusterMethodStabilityBenchmark} object with \code{decision_table},
 \code{replicates}, shared \code{subsamples}, \code{participant_inclusion}, and full-data
-\code{models}.
+\code{models}. With \code{keep_models = FALSE}, \code{models} is an empty list.
 }
 \description{
 Fits each requested candidate on the same full reference cohort,
@@ -51,4 +56,8 @@ Candidate rows use \code{Method} values \code{"som_mclust"}, \code{"mclust"},
 \code{Classes}; mixture candidates also require \code{Model}. SOM candidates use
 \code{NodeWeighting}, \code{SOM_XDim}, \code{SOM_YDim}, and \code{SOM_Topology}; HDBSCAN uses
 \code{MinPts} and \code{Epsilon}; and Ward-plus-RF uses \code{WardN} and \code{RF_Trees}.
+Full benchmarks near 20,000 participants can be slow and memory-intensive.
+HDBSCAN and Ward + RF allocate pairwise structures and are automatically
+serial under the memory policy; use a small, reviewed candidate table for
+large cohorts.
 }

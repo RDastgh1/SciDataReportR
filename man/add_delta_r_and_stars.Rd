@@ -14,7 +14,8 @@ add_delta_r_and_stars(
   star_color = "black",
   delta_nudge_y = -0.18,
   star_nudge_y = 0.2,
-  remove_existing_stars = TRUE
+  remove_existing_stars = TRUE,
+  IncludeTrendSymbol = FALSE
 )
 }
 \arguments{
@@ -39,6 +40,8 @@ p-values.}
 
 \item{remove_existing_stars}{Logical. Remove the original star-only layer
 before adding the combined annotations.}
+
+\item{IncludeTrendSymbol}{Logical; add a plus sign for \verb{0.05 < p <= 0.10}.}
 }
 \value{
 A ggplot containing DeltaR values and significance stars.

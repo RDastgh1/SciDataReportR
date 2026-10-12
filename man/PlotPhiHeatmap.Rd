@@ -13,6 +13,7 @@ PlotPhiHeatmap(
   cluster_rows = FALSE,
   cluster_columns = FALSE,
   triangle = c("full", "upper", "lower"),
+  IncludeTrendSymbol = FALSE,
   Data = lifecycle::deprecated()
 )
 }
@@ -38,6 +39,8 @@ x-axis columns using displayed Phi-coefficient profiles.}
 \item{triangle}{Display \code{"full"} (default), \code{"upper"}, or \code{"lower"} half of
 the symmetric Phi matrix. This affects the plot only; returned results
 remain complete.}
+
+\item{IncludeTrendSymbol}{Logical; add a plus sign for \verb{0.05 < p <= 0.10}.}
 
 \item{Data}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
 }

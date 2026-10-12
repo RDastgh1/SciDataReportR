@@ -29,6 +29,8 @@ PlotClusterCentreProfile(
 \item{title}{Plot title.}
 
 \item{value_label}{Legend title describing the centre scale.}
+
+\item{cluster_rows, cluster_columns}{Logical; cluster heatmap rows and columns.}
 }
 \value{
 A \code{ggplot} object, or \code{NULL} when centres are unavailable.

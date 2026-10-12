@@ -32,6 +32,22 @@ test_that("ns and NA labels are configurable and NA never becomes a star", {
   expect_equal(ScidrPValueStars(NA_real_, na_label = "n/a"), "n/a")
 })
 
+test_that("trend symbols are opt-in and use the conventional range", {
+  Probs <- c(0.05, 0.050001, 0.10, 0.100001, NA)
+
+  expect_equal(
+    ScidrPValueStars(Probs, ns_label = "", na_label = ""),
+    c("*", "", "", "", "")
+  )
+  expect_equal(
+    ScidrPValueStars(
+      Probs, ns_label = "", na_label = "", IncludeTrendSymbol = TRUE
+    ),
+    c("*", "+", "+", "", "")
+  )
+  expect_match(ScidrStarCaptionText(TRUE), "+ = 0.05 < p <= 0.10", fixed = TRUE)
+})
+
 test_that("caption text states the same thresholds the code applies", {
   Caption <- ScidrStarCaptionText()
 

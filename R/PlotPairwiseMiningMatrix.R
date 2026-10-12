@@ -17,6 +17,7 @@
 #' @param star_p Which p-values drive cell stars: `"raw"`, `"adjusted"`, or
 #'   `"none"`.
 #' @param adjusted_outline Logical; outline cells significant after adjustment.
+#' @param IncludeTrendSymbol Logical; add a plus sign for `0.05 < p <= 0.10`.
 #' @param adjusted_significance_threshold Threshold for adjusted-significant
 #'   outlines.
 #' @param adjusted_outline_color,adjusted_outline_linewidth Appearance of the
@@ -60,7 +61,8 @@ PlotPairwiseMiningMatrix <- function(data,
                                      continuous_fill_limits = NULL,
                                      categorical_fill_limits = NULL,
                                      x_axis_text_angle = 0,
-                                     row_label_width = 58) {
+                                     row_label_width = 58,
+                                     IncludeTrendSymbol = FALSE) {
   adjust_scope <- match.arg(adjust_scope)
   p_adjust_method <- match.arg(p_adjust_method)
   star_p <- match.arg(star_p)
@@ -87,7 +89,10 @@ PlotPairwiseMiningMatrix <- function(data,
     contrast[level] <- 1
     stats::setNames(list(contrast), level)
   }
-  AddStars <- function(p) dplyr::case_when(is.na(p) ~ "", p <= 0.001 ~ "***", p <= 0.01 ~ "**", p <= 0.05 ~ "*", TRUE ~ "")
+  AddStars <- function(p) ScidrPValueStars(
+    p, tiers = ScidrStarTiersThree, ns_label = "", na_label = "",
+    IncludeTrendSymbol = IncludeTrendSymbol
+  )
   AdjustP <- function(df_Results) {
     if (!nrow(df_Results)) {
       df_Results$AdjustedPValue <- numeric(0)

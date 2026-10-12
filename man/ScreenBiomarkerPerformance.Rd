@@ -60,6 +60,8 @@ intervals.}
 \item{Relabel}{Logical indicating whether labels should be used when available.}
 
 \item{codebook}{Optional data frame with columns \code{Variable} and \code{Label}.}
+
+\item{cluster_rows, cluster_columns}{Logical; cluster heatmap rows and columns.}
 }
 \value{
 A named list with \code{PerformanceTable}, \code{RegressionTable},

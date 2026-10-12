@@ -22,9 +22,9 @@
 #' @param stability_seed Seed controlling participant subsampling.
 #' @param stability_progress Whether to print subsample progress messages.
 #' @param stability_cores Number of workers for stability refits. `NULL` uses
-#'   all detected physical cores minus one, capped at the requested resamples
-#'   and any scheduler limit. Each worker holds a refit in memory, so lower this
-#'   setting for large SOM or high-dimensional analyses.
+#'   a conservative CPU/memory cap: the smaller of 50% physical RAM and 75% of
+#'   available RAM. Explicit values warn when their estimated memory exceeds
+#'   this budget.
 #' @param ... Additional arguments passed to [CreateClusterModel_SOM_MClust()].
 #' @inheritSection cluster-stability-output Stability output
 #' @return A `Pipeline_SOM_HDBSCAN` object containing frozen SOM and HDBSCAN
@@ -154,7 +154,8 @@ CreateClusterModel_SOM_HDBSCAN <- function(data, variables = NULL,
     }, resamples = stability_resamples, seed = stability_seed,
     candidate = list(MinPts = selected_minPts, Epsilon = selected_epsilon),
     noise_label = 0L, progress = stability_progress,
-    stability_cores = stability_cores)
+    stability_cores = stability_cores, memory_method = "som_hdbscan",
+    som_nodes = nrow(som$ModelInfo_SOM$som_codes), memory_variables = variables)
     Stability$settings$som_grid <- list(
       xdim = stability_args$som_xdim,
       ydim = stability_args$som_ydim,

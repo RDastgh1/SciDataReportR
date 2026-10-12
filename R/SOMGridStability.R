@@ -13,13 +13,19 @@
 #' @param k_range Requested profile counts. In `"map"` scope, the largest
 #'   requested value defines the automatic candidate-resolution ladder but
 #'   Mclust is not fitted and no k is selected.
-#' @param models Mclust covariance-model families. Ignored in `"map"` scope.
+#' @param models Mclust covariance-model families. In `"map"` scope they are
+#'   not fitted, but their largest requested parameter count supplies a
+#'   candidate-map support floor.
 #' @param grid_candidates Optional square side lengths or a data frame with
 #'   `som_xdim` and `som_ydim`. The map-scope default includes approximately
 #'   10, 20, and 30 nodes per maximum requested profile, plus 3x3 and 10x10
-#'   anchors. User-supplied candidates are retained unchanged.
+#'   anchors and a parameter-support floor for the largest requested Mclust
+#'   family. User-supplied candidates are retained unchanged.
 #' @param topologies SOM topologies to screen.
 #' @param node_weighting Node-mixture definitions. Ignored in `"map"` scope.
+#' @param min_participants_per_node Target complete participants per SOM node
+#'   for automatic candidates. Default `10`; anchors and user grids remain in
+#'   the review table even when they do not meet this map-health target.
 #' @param screen_resamples Map refits per candidate. The map default is 3;
 #'   the explicit joint workflow retains its prior default of 10.
 #' @param seed_som Fixed SOM initialization seed used for every refit of a
@@ -45,6 +51,7 @@ ScreenSOMGridStability <- function(data,
     grid_candidates = NULL,
     topologies = c("hexagonal", "rectangular"),
     node_weighting = c("uniform", "occupancy"),
+    min_participants_per_node = 10,
     screen_scope = c("map", "joint"),
     screen_resamples = 3L,
     seed_som = 934521L,
@@ -56,6 +63,11 @@ ScreenSOMGridStability <- function(data,
     ...) {
   resamples_was_missing <- missing(screen_resamples)
   screen_scope <- match.arg(screen_scope)
+  if (!is.numeric(min_participants_per_node) ||
+      length(min_participants_per_node) != 1L ||
+      !is.finite(min_participants_per_node) || min_participants_per_node <= 0) {
+    stop("min_participants_per_node must be a single positive finite number.")
+  }
   if (screen_scope == "joint") {
     if (resamples_was_missing) screen_resamples <- 10L
     return(.ScreenSOMGridJointStability(
@@ -63,15 +75,18 @@ ScreenSOMGridStability <- function(data,
       grid_candidates = grid_candidates, topologies = topologies,
       node_weighting = node_weighting, screen_resamples = screen_resamples,
       seed_som = seed_som, stability_seed = stability_seed,
-      stability_cores = stability_cores, ...))
+      stability_cores = stability_cores,
+      min_participants_per_node = min_participants_per_node, ...))
   }
   .ScreenSOMMapStability(
     data = data, variables = variables, k_range = k_range,
+    models = models,
     grid_candidates = grid_candidates,
     topologies = topologies, screen_resamples = screen_resamples,
     seed_som = seed_som, stability_seed = stability_seed,
     pair_sample = pair_sample, neighborhood_sample = neighborhood_sample,
-    neighborhood_k = neighborhood_k, ...)
+    neighborhood_k = neighborhood_k,
+    min_participants_per_node = min_participants_per_node, ...)
 }
 
 #' Screen SOM map designs using participant-level cluster reproducibility
@@ -121,6 +136,7 @@ ScreenSOMGridStability <- function(data,
     seed_som = 934521L,
     stability_seed = 934522L,
     stability_cores = NULL,
+    min_participants_per_node = 10,
     ...) {
   if (!is.data.frame(data)) stop("data must be a data frame.")
   if (!is.numeric(screen_resamples) || length(screen_resamples) != 1L ||
@@ -148,7 +164,12 @@ ScreenSOMGridStability <- function(data,
   }
   n_complete <- sum(stats::complete.cases(df_scidr[, vars_complete, drop = FALSE]))
   if (n_complete < 3L) stop("At least three complete participants are required.")
-  grids <- .SOMGridCandidates(n_complete, grid_candidates)
+  grids <- .SOMGridCandidates(n_complete, grid_candidates,
+    k_range = k_range, policy = "k_informed", models = models,
+    p = length(vars_complete),
+    min_participants_per_node = min_participants_per_node)
+  requested_parameter_count <- .SOMGridMaxParameters(models,
+    max(as.integer(k_range)), length(vars_complete))
 
   dots <- list(...)
   prohibited <- intersect(names(dots), c(
@@ -174,7 +195,8 @@ ScreenSOMGridStability <- function(data,
         seed_som = seed_som, Relabel = FALSE,
         stability_resamples = as.integer(screen_resamples),
         stability_candidates = "best_per_k",
-        stability_seed = stability_seed, stability_cores = stability_cores), dots)
+        stability_seed = stability_seed, stability_cores = stability_cores,
+        min_participants_per_node = min_participants_per_node), dots)
       fitted <- tryCatch(do.call(CreateClusterModel_SOM_MClust, fit_args),
         error = function(e) e)
       if (inherits(fitted, "error")) {
@@ -185,6 +207,20 @@ ScreenSOMGridStability <- function(data,
           SOM_XDim = grids$som_xdim[[grid_index]],
           SOM_YDim = grids$som_ydim[[grid_index]],
           NodeCount = grids$som_xdim[[grid_index]] * grids$som_ydim[[grid_index]],
+          ParticipantsPerNode = n_complete / (grids$som_xdim[[grid_index]] * grids$som_ydim[[grid_index]]),
+          OccupancyCompliant = n_complete / (grids$som_xdim[[grid_index]] * grids$som_ydim[[grid_index]]) >= min_participants_per_node,
+          MaxMixtureParameters = requested_parameter_count,
+          MixtureDimension = length(vars_complete),
+          NodesPerParameter_MaxRequestedModel =
+            (grids$som_xdim[[grid_index]] * grids$som_ydim[[grid_index]]) /
+              requested_parameter_count,
+          Overparameterized_MaxRequestedModel =
+            (grids$som_xdim[[grid_index]] * grids$som_ydim[[grid_index]]) /
+              requested_parameter_count < 1,
+          SupportStatus_MaxRequestedModel = dplyr::case_when(
+            (grids$som_xdim[[grid_index]] * grids$som_ydim[[grid_index]]) / requested_parameter_count < 1 ~ "over-parameterized",
+            (grids$som_xdim[[grid_index]] * grids$som_ydim[[grid_index]]) / requested_parameter_count < 3 ~ "under-supported",
+            TRUE ~ "supported"),
           Model = NA_integer_, Classes = NA_integer_, Eligible = FALSE,
           StabilityARI_Mean = NA_real_, StabilityARI_P05 = NA_real_,
           StabilityJaccard_Mean = NA_real_, StabilitySuccessRate = NA_real_,
@@ -203,6 +239,19 @@ ScreenSOMGridStability <- function(data,
           SOM_XDim = grids$som_xdim[[grid_index]],
           SOM_YDim = grids$som_ydim[[grid_index]],
           NodeCount = grids$som_xdim[[grid_index]] * grids$som_ydim[[grid_index]],
+          ParticipantsPerNode = n_complete / .data$NodeCount,
+          OccupancyCompliant = .data$ParticipantsPerNode >= min_participants_per_node,
+          MaxMixtureParameters = .SOMGridMaxParameters(models,
+            max(as.integer(k_range)), lpa_preprocess$n_lpa_variables_used),
+          MixtureDimension = lpa_preprocess$n_lpa_variables_used,
+          NodesPerParameter_MaxRequestedModel = .data$NodeCount /
+            .data$MaxMixtureParameters,
+          Overparameterized_MaxRequestedModel =
+            .data$NodesPerParameter_MaxRequestedModel < 1,
+          SupportStatus_MaxRequestedModel = dplyr::case_when(
+            .data$Overparameterized_MaxRequestedModel ~ "over-parameterized",
+            .data$NodesPerParameter_MaxRequestedModel < 3 ~ "under-supported",
+            TRUE ~ "supported"),
           FitSuccessRate = .data$StabilitySuccessRate,
           EmptyNodes = occupancy$n_empty_nodes,
           SingletonNodes = occupancy$n_singleton_nodes,
@@ -248,6 +297,7 @@ ScreenSOMGridStability <- function(data,
       projection_comparison = "refit projected to full reference cohort",
       ranking = "StabilityARI_Mean, then StabilityARI_P05",
       screen_scope = "joint",
+      min_participants_per_node = min_participants_per_node,
       stability_plateau = "within 0.02 mean ARI and 0.05 ARI P05 within topology, weighting, and k",
       automatic_selection = FALSE),
     data = data,
@@ -362,9 +412,11 @@ ScreenSOMGridStability <- function(data,
 }
 
 .ScreenSOMMapStability <- function(data, variables = NULL, k_range = 2:10,
+    models = c(1, 2, 3),
     grid_candidates = NULL, topologies = c("hexagonal", "rectangular"),
     screen_resamples = 3L, seed_som = 934521L, stability_seed = 934522L,
     pair_sample = 10000L, neighborhood_sample = 500L, neighborhood_k = 10L,
+    min_participants_per_node = 10,
     ...) {
   if (!is.data.frame(data)) stop("data must be a data frame.")
   if (!is.numeric(screen_resamples) || length(screen_resamples) != 1L ||
@@ -376,7 +428,9 @@ ScreenSOMGridStability <- function(data,
   reference_rows <- which(stats::complete.cases(df_scidr[, vars_complete, drop = FALSE]))
   if (length(reference_rows) < 3L) stop("At least three complete participants are required.")
   grids <- .SOMGridCandidates(length(reference_rows), grid_candidates,
-    k_range = k_range, policy = "k_informed")
+    k_range = k_range, policy = "k_informed", models = models,
+    p = length(vars_complete),
+    min_participants_per_node = min_participants_per_node)
   dots <- list(...)
   prohibited <- intersect(names(dots), c("data", "variables", "method", "k_range", "models",
     "som_xdim", "som_ydim", "som_topo", "seed_som", "stability_resamples",
@@ -395,6 +449,7 @@ ScreenSOMGridStability <- function(data,
         k_range = 2, models = 1, som_xdim = grids$som_xdim[[grid_index]],
         som_ydim = grids$som_ydim[[grid_index]], som_topo = topology,
         seed_som = seed_som, Relabel = FALSE, stability_resamples = 0L,
+        min_participants_per_node = min_participants_per_node,
         .NodeClusterFn = .SOMMapOnlyNodeClustering), dots)
       reference_model <- tryCatch(do.call(CreateClusterModel_SOM_MClust, fit_args), error = function(e) e)
       row_index <- row_index + 1L
@@ -402,6 +457,10 @@ ScreenSOMGridStability <- function(data,
         rows[[row_index]] <- dplyr::tibble(.ScreenRow = row_index, Topology = topology,
           SOM_XDim = grids$som_xdim[[grid_index]], SOM_YDim = grids$som_ydim[[grid_index]],
           NodeCount = grids$som_xdim[[grid_index]] * grids$som_ydim[[grid_index]],
+          ParticipantsPerNode = length(reference_rows) /
+            (grids$som_xdim[[grid_index]] * grids$som_ydim[[grid_index]]),
+          OccupancyCompliant = length(reference_rows) /
+            (grids$som_xdim[[grid_index]] * grids$som_ydim[[grid_index]]) >= min_participants_per_node,
           FitError = conditionMessage(reference_model))
         next
       }
@@ -442,10 +501,27 @@ ScreenSOMGridStability <- function(data,
       successes <- Filter(function(x) identical(x$status, "success"), refits)
       occupancy <- reference_model$ModelInfo_SOM$SOMFit$occupancy_summary
       distances <- reference_model$ModelInfo_SOM$SOMFit$distance_summary
+      mixture_dimension <- reference_model$ModelInfo_MClust$diagnostics$lpa_preprocess$n_lpa_variables_used
+      max_mixture_parameters <- .SOMGridMaxParameters(models, max(as.integer(k_range)),
+        mixture_dimension)
+      nodes_per_parameter <- (grids$som_xdim[[grid_index]] * grids$som_ydim[[grid_index]]) /
+        max_mixture_parameters
       rows[[row_index]] <- dplyr::tibble(
         .ScreenRow = row_index, Topology = topology,
         SOM_XDim = grids$som_xdim[[grid_index]], SOM_YDim = grids$som_ydim[[grid_index]],
         NodeCount = grids$som_xdim[[grid_index]] * grids$som_ydim[[grid_index]],
+        ParticipantsPerNode = length(reference_rows) /
+          (grids$som_xdim[[grid_index]] * grids$som_ydim[[grid_index]]),
+        OccupancyCompliant = length(reference_rows) /
+          (grids$som_xdim[[grid_index]] * grids$som_ydim[[grid_index]]) >= min_participants_per_node,
+        MaxMixtureParameters = max_mixture_parameters,
+        MixtureDimension = mixture_dimension,
+        NodesPerParameter_MaxRequestedModel = nodes_per_parameter,
+        Overparameterized_MaxRequestedModel = nodes_per_parameter < 1,
+        SupportStatus_MaxRequestedModel = dplyr::case_when(
+          nodes_per_parameter < 1 ~ "over-parameterized",
+          nodes_per_parameter < 3 ~ "under-supported",
+          TRUE ~ "supported"),
         TopologyPreservation_Mean = if (length(successes)) mean(vapply(successes, `[[`, numeric(1), "topology"), na.rm = TRUE) else NA_real_,
         TopologyPreservation_P05 = if (length(successes)) stats::quantile(vapply(successes, `[[`, numeric(1), "topology"), .05, na.rm = TRUE) else NA_real_,
         NeighborhoodOverlap_Mean = if (length(successes)) mean(vapply(successes, `[[`, numeric(1), "neighborhood"), na.rm = TRUE) else NA_real_,
@@ -468,8 +544,10 @@ ScreenSOMGridStability <- function(data,
     initialization_seed_policy = "fixed_to_reference_fit", pair_sample = pair_sample,
     neighborhood_sample = neighborhood_sample, neighborhood_k = neighborhood_k,
     mclust_fitted = FALSE,
-    grid_design_policy = "k_informed_10_20_30_nodes_per_maximum_requested_profile",
+    grid_design_policy = "k_informed_10_20_30_nodes_per_maximum_requested_profile_plus_parameter_floor",
     grid_design_k = max(as.integer(k_range)),
+    min_nodes_per_parameter = 3,
+    min_participants_per_node = min_participants_per_node,
     map_stability_plateau = "within 0.02 topology preservation, 5% projected distance, and 5% singleton nodes",
     automatic_selection = FALSE), map_replicates = dplyr::bind_rows(replicate_rows),
     data = data, variables = variables, fit_arguments = dots,
@@ -479,7 +557,9 @@ ScreenSOMGridStability <- function(data,
 }
 
 .SOMGridCandidates <- function(n_complete, grid_candidates = NULL,
-    k_range = 2:10, policy = c("occupancy", "k_informed")) {
+    k_range = 2:10, policy = "k_informed",
+    models = c(1, 2, 3), p = NULL, min_nodes_per_parameter = 3,
+    min_participants_per_node = 10) {
   policy <- match.arg(policy)
   if (is.null(grid_candidates)) {
     if (!is.numeric(k_range) || !length(k_range) || anyNA(k_range) ||
@@ -491,7 +571,19 @@ ScreenSOMGridStability <- function(data,
     } else {
       ceiling(sqrt(n_complete / c(100, 50, 25)))
     }
-    sides <- sort(unique(as.integer(c(3L, sides, 10L))))
+    parameter_floor_side <- integer()
+    if (policy == "k_informed" && !is.null(p)) {
+      max_parameters <- .SOMGridMaxParameters(models, max(as.integer(k_range)), p)
+      parameter_floor_side <- ceiling(sqrt(min_nodes_per_parameter * max_parameters))
+    }
+    ## The fixed anchors are always shown. Generated ladder/floor candidates
+    ## above the occupancy ceiling are excluded so an automatic screen cannot
+    ## recommend a sparse map.
+    anchors <- c(3L, 10L)
+    occupancy_ceiling_side <- floor(sqrt(n_complete / min_participants_per_node))
+    generated <- c(sides, parameter_floor_side)
+    generated <- generated[generated <= occupancy_ceiling_side]
+    sides <- sort(unique(as.integer(c(anchors, generated))))
     return(dplyr::tibble(som_xdim = sides, som_ydim = sides))
   }
   if (is.numeric(grid_candidates) && is.null(dim(grid_candidates))) {
@@ -518,6 +610,15 @@ ScreenSOMGridStability <- function(data,
     stop("All candidate grid dimensions must be integers of at least 2.")
   }
   grids
+}
+
+.SOMGridMaxParameters <- function(models, k, p) {
+  if (!is.numeric(p) || length(p) != 1L || !is.finite(p) || p < 1L) {
+    stop("p must be a positive finite mixture dimension.")
+  }
+  max(vapply(as.integer(models), function(model) {
+    .SOMMclustParameterCount(model, as.integer(p), as.integer(k))
+  }, integer(1)))
 }
 
 .AddExpectedNodesPerProfile <- function(decision_table, k_range) {
