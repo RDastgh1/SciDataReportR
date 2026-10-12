@@ -13,6 +13,7 @@ PlotPValueComparisons(
   VariableCategories = NULL,
   Relabel = TRUE,
   alternative = c("two.sided", "greater", "less"),
+  IncludeTrendSymbol = FALSE,
   Data = lifecycle::deprecated(),
   GroupVariable = lifecycle::deprecated(),
   Variables = lifecycle::deprecated()
@@ -50,6 +51,10 @@ PlotPValueComparisons(
 
   Hypothesis alternative for two-group tests. `"greater"` tests whether
   the second group factor level is greater than the first.
+
+- IncludeTrendSymbol:
+
+  Logical; add a plus sign for `0.05 < p <= 0.10`.
 
 - Data:
 

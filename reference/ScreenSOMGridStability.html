@@ -75,6 +75,7 @@ The legacy joint SOM + Mclust screen remains available with
 <span>  grid_candidates <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  topologies <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"hexagonal"</span>, <span class="st">"rectangular"</span><span class="op">)</span>,</span>
 <span>  node_weighting <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"uniform"</span>, <span class="st">"occupancy"</span><span class="op">)</span>,</span>
+<span>  min_participants_per_node <span class="op">=</span> <span class="fl">10</span>,</span>
 <span>  screen_scope <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"map"</span>, <span class="st">"joint"</span><span class="op">)</span>,</span>
 <span>  screen_resamples <span class="op">=</span> <span class="fl">3L</span>,</span>
 <span>  seed_som <span class="op">=</span> <span class="fl">934521L</span>,</span>
@@ -106,14 +107,17 @@ Mclust is not fitted and no k is selected.</p></dd>
 
 
 <dt id="arg-models">models<a class="anchor" aria-label="anchor" href="#arg-models"></a></dt>
-<dd><p>Mclust covariance-model families. Ignored in <code>"map"</code> scope.</p></dd>
+<dd><p>Mclust covariance-model families. In <code>"map"</code> scope they are
+not fitted, but their largest requested parameter count supplies a
+candidate-map support floor.</p></dd>
 
 
 <dt id="arg-grid-candidates">grid_candidates<a class="anchor" aria-label="anchor" href="#arg-grid-candidates"></a></dt>
 <dd><p>Optional square side lengths or a data frame with
 <code>som_xdim</code> and <code>som_ydim</code>. The map-scope default includes approximately
 10, 20, and 30 nodes per maximum requested profile, plus 3x3 and 10x10
-anchors. User-supplied candidates are retained unchanged.</p></dd>
+anchors and a parameter-support floor for the largest requested Mclust
+family. User-supplied candidates are retained unchanged.</p></dd>
 
 
 <dt id="arg-topologies">topologies<a class="anchor" aria-label="anchor" href="#arg-topologies"></a></dt>
@@ -122,6 +126,12 @@ anchors. User-supplied candidates are retained unchanged.</p></dd>
 
 <dt id="arg-node-weighting">node_weighting<a class="anchor" aria-label="anchor" href="#arg-node-weighting"></a></dt>
 <dd><p>Node-mixture definitions. Ignored in <code>"map"</code> scope.</p></dd>
+
+
+<dt id="arg-min-participants-per-node">min_participants_per_node<a class="anchor" aria-label="anchor" href="#arg-min-participants-per-node"></a></dt>
+<dd><p>Target complete participants per SOM node
+for automatic candidates. Default <code>10</code>; anchors and user grids remain in
+the review table even when they do not meet this map-health target.</p></dd>
 
 
 <dt id="arg-screen-scope">screen_scope<a class="anchor" aria-label="anchor" href="#arg-screen-scope"></a></dt>

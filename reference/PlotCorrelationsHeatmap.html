@@ -94,6 +94,7 @@ Handles:</p><ul><li><p>continuous + categorical covariates</p></li>
 <span>  cluster_rows <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  cluster_columns <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  triangle <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"full"</span>, <span class="st">"upper"</span>, <span class="st">"lower"</span><span class="op">)</span>,</span>
+<span>  IncludeTrendSymbol <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  Data <span class="op">=</span> <span class="fu">lifecycle</span><span class="fu">::</span><span class="fu"><a href="https://lifecycle.r-lib.org/reference/deprecated.html" class="external-link">deprecated</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  xVars <span class="op">=</span> <span class="fu">lifecycle</span><span class="fu">::</span><span class="fu"><a href="https://lifecycle.r-lib.org/reference/deprecated.html" class="external-link">deprecated</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  yVars <span class="op">=</span> <span class="fu">lifecycle</span><span class="fu">::</span><span class="fu"><a href="https://lifecycle.r-lib.org/reference/deprecated.html" class="external-link">deprecated</a></span><span class="op">(</span><span class="op">)</span>,</span>
@@ -167,6 +168,10 @@ the caller-supplied variable order.</p></dd>
 a symmetric correlation matrix. This affects the plot only; returned
 matrices remain complete. Triangle display is applied only when the same
 variables occur on both axes.</p></dd>
+
+
+<dt id="arg-includetrendsymbol">IncludeTrendSymbol<a class="anchor" aria-label="anchor" href="#arg-includetrendsymbol"></a></dt>
+<dd><p>Logical; add a plus sign for <code>0.05 &lt; p &lt;= 0.10</code>.</p></dd>
 
 
 <dt id="arg-data">Data<a class="anchor" aria-label="anchor" href="#arg-data"></a></dt>

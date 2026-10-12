@@ -22,6 +22,7 @@ add_r_and_stars(
   star_color = "black",
   star_nudge_y = 0.15,
   remove_existing_stars = TRUE,
+  IncludeTrendSymbol = FALSE,
   p_breaks = c(-Inf, 0.001, 0.01, 0.05, Inf),
   p_labels = c("***", "**", "*", "")
 )
@@ -71,6 +72,10 @@ add_r_and_stars(
 - remove_existing_stars:
 
   If TRUE, remove any pre-existing star text layers
+
+- IncludeTrendSymbol:
+
+  Logical; add a plus sign for `0.05 < p <= 0.10`.
 
 - p_breaks, p_labels:
 

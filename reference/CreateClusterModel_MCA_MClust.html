@@ -139,9 +139,9 @@ replacement. Use <code>0</code> to disable stability analysis.</p></dd>
 
 <dt id="arg-stability-cores">stability_cores<a class="anchor" aria-label="anchor" href="#arg-stability-cores"></a></dt>
 <dd><p>Number of workers for stability refits. <code>NULL</code> uses
-all detected physical cores minus one, capped at the requested resamples
-and any scheduler limit. Each worker holds a refit in memory, so lower this
-setting for large SOM or high-dimensional analyses.</p></dd>
+a conservative CPU/memory cap: the smaller of 50% physical RAM and 75% of
+available RAM. Explicit values warn when their estimated memory exceeds
+this budget.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -185,6 +185,16 @@ calculated.</p></li>
 <li><p><code>noise_policy</code>: whether the method has noise labels. For ordinary
 methods it is <code>"all clusters included"</code>; HDBSCAN variants retain noise in
 ARI but exclude it from phenotype-level Jaccard recovery.</p></li>
+<li><p><code>requested_cores</code>, <code>resolved_cores</code>, and <code>worker_policy</code>: the
+requested and resolved refit workers and the reason for the resolution.
+Automatic resolution is capped by CPU, refit count, and the smaller of
+50% physical RAM and 75% currently available RAM. Pairwise-memory methods
+are run serially automatically.</p></li>
+<li><p><code>estimated_bytes_per_worker</code>, <code>estimated_total_bytes</code>,
+<code>physical_memory_bytes</code>, <code>available_memory_bytes</code>, and
+<code>safe_memory_budget_bytes</code>: the conservative memory audit used to resolve
+automatic workers. An explicit worker request is preserved (within the
+CPU/scheduler cap) but warns if it exceeds the estimated safe budget.</p></li>
 </ul><p><code>Stability$replicates</code> has one row per requested refit. <code>Model</code> and
 <code>Classes</code> identify the selected candidate (for HDBSCAN, <code>Classes</code> is the
 data-derived extracted count); <code>Replicate</code> is its sequence number; <code>Status</code>

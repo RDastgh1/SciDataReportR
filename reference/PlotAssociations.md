@@ -11,6 +11,7 @@ PlotAssociations(
   Var1,
   Var2,
   Ordinal = FALSE,
+  IncludeTrendSymbol = FALSE,
   DataFrame = lifecycle::deprecated()
 )
 ```
@@ -32,6 +33,10 @@ PlotAssociations(
 - Ordinal:
 
   Logical, indicating whether ordinal variables should be included.
+
+- IncludeTrendSymbol:
+
+  Logical; append a plus sign to a nominal-trend subtitle.
 
 - DataFrame:
 

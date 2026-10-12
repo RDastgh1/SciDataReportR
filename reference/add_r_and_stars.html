@@ -77,6 +77,7 @@ plotting function.</p>
 <span>  star_color <span class="op">=</span> <span class="st">"black"</span>,</span>
 <span>  star_nudge_y <span class="op">=</span> <span class="fl">0.15</span>,</span>
 <span>  remove_existing_stars <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  IncludeTrendSymbol <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  p_breaks <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">-</span><span class="cn">Inf</span>, <span class="fl">0.001</span>, <span class="fl">0.01</span>, <span class="fl">0.05</span>, <span class="cn">Inf</span><span class="op">)</span>,</span>
 <span>  p_labels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"***"</span>, <span class="st">"**"</span>, <span class="st">"*"</span>, <span class="st">""</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -127,6 +128,10 @@ with plot data columns such as <code>R</code>, <code>P</code>, <code>P_adj</code
 
 <dt id="arg-remove-existing-stars">remove_existing_stars<a class="anchor" aria-label="anchor" href="#arg-remove-existing-stars"></a></dt>
 <dd><p>If TRUE, remove any pre-existing star text layers</p></dd>
+
+
+<dt id="arg-includetrendsymbol">IncludeTrendSymbol<a class="anchor" aria-label="anchor" href="#arg-includetrendsymbol"></a></dt>
+<dd><p>Logical; add a plus sign for <code>0.05 &lt; p &lt;= 0.10</code>.</p></dd>
 
 
 <dt id="arg-p-breaks-p-labels">p_breaks, p_labels<a class="anchor" aria-label="anchor" href="#arg-p-breaks-p-labels"></a></dt>

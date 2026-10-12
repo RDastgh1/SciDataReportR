@@ -22,6 +22,7 @@ MakeUnivariateRegressionTable(
   ReturnModels = FALSE,
   Relabel = TRUE,
   TreatOrdinalAs = "Categorical",
+  IncludeTrendSymbol = FALSE,
   Data = lifecycle::deprecated(),
   OutcomeVars = lifecycle::deprecated(),
   PredictorVars = lifecycle::deprecated(),
@@ -91,6 +92,10 @@ UnivariateRegressionTable(
 - TreatOrdinalAs:
 
   How ordinal outcomes and predictors are handled.
+
+- IncludeTrendSymbol:
+
+  Logical; add a plus sign for `0.05 < p <= 0.10`.
 
 - Data:
 

@@ -98,6 +98,10 @@ ScreenBiomarkerPerformance(
 
   Optional data frame with columns `Variable` and `Label`.
 
+- cluster_rows, cluster_columns:
+
+  Logical; cluster heatmap rows and columns.
+
 ## Value
 
 A named list with `PerformanceTable`, `RegressionTable`,

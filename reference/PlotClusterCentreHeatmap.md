@@ -46,6 +46,10 @@ PlotClusterCentreProfile(
 
   Legend title describing the centre scale.
 
+- cluster_rows, cluster_columns:
+
+  Logical; cluster heatmap rows and columns.
+
 ## Value
 
 A `ggplot` object, or `NULL` when centres are unavailable.

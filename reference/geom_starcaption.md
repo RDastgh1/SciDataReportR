@@ -10,8 +10,14 @@ or to downstream plots derived from that function with
 ## Usage
 
 ``` r
-geom_starcaption()
+geom_starcaption(IncludeTrendSymbol = FALSE)
 ```
+
+## Arguments
+
+- IncludeTrendSymbol:
+
+  Logical; include the nominal-trend plus sign in the caption.
 
 ## Value
 

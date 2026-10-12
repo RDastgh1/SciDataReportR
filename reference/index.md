@@ -270,6 +270,8 @@
   : Replace Missing Labels in Dataframe Columns
 - [`RevalueData()`](https://rdastgh1.github.io/SciDataReportR/reference/RevalueData.md)
   : Revalue Data
+- [`SOMMapSupport()`](https://rdastgh1.github.io/SciDataReportR/reference/SOMMapSupport.md)
+  : Review SOM map support before fitting a SOM + Mclust model
 - [`SampleData`](https://rdastgh1.github.io/SciDataReportR/reference/SampleData.md)
   : SampleData for practicing SciDataReportR functions
 - [`SampleVariableTypes`](https://rdastgh1.github.io/SciDataReportR/reference/SampleVariableTypes.md)

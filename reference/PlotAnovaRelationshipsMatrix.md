@@ -23,6 +23,7 @@ PlotAnovaRelationshipsMatrix(
   eps = 1e-08,
   Data = lifecycle::deprecated(),
   fdr_scope = c("matrix", "per_outcome", "per_predictor"),
+  IncludeTrendSymbol = FALSE,
   Covariates = lifecycle::deprecated()
 )
 ```
@@ -79,6 +80,10 @@ PlotAnovaRelationshipsMatrix(
   `"matrix"` corrects across all p-values at once (historical behavior).
   `"per_outcome"` corrects separately within each outcome: outcomes are
   the continuous variables (`ContVars`).
+
+- IncludeTrendSymbol:
+
+  Logical; add a plus sign for `0.05 < p <= 0.10`.
 
 - Covariates:
 

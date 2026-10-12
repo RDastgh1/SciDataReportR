@@ -486,44 +486,82 @@ ObjClustProjected <- ProjectCluster(Obj_ClustFinal, df_Projection)
     16            0.6964294                      0.071875
     17            0.7380422                      0.037500
     18            0.7594990                      0.078125
-       MaxClusterBoundaryProportion AIC_scaled  BIC_scaled Entropy_scaled
-    1                    0.00000000 -2.3217180 -2.57142713    -3.98596017
-    2                    0.00000000  0.7235624  1.03870975     0.29597332
-    3                    0.00000000 -1.6928999 -1.67740986     0.09103470
-    4                    0.00000000  0.8025605  1.03257570     0.29566559
-    5                    0.00000000 -0.5236752  0.10134775     0.29597317
-    6                    0.00000000  0.9603884  1.15549972     0.29570174
-    7                    0.00000000 -0.3286210  0.28521775     0.29597333
-    8                    0.20000000  0.9393696  0.98562035     0.29519501
-    9                    0.03703704 -0.3781406  0.06867773     0.06363850
-    10                   0.21052632  0.8018875  0.62507018    -0.05137539
-    11                   0.20000000 -0.5712063 -0.38287255     0.22890167
-    12                   0.21052632  0.8570542  0.57991985     0.29590390
-    13                   0.20000000 -0.6194677 -0.59735287     0.15702885
-    14                   0.21052632  0.8010588  0.35277774     0.29553557
-    15                   0.20000000 -0.6513624 -0.78503789     0.26576360
-    16                   0.21052632  0.9377027  0.44101974     0.29557465
-    17                   0.20000000 -0.6358843 -0.89516541     0.27359220
-    18                   0.21052632  0.8993913  0.24282944     0.29587976
-       Reproducibility_scaled Posterior_scaled  ahp_index Eligible
-    1            -1.460958081       0.26536601 -2.5850158     TRUE
-    2            -1.460958081       0.44719763  0.1493218     TRUE
-    3            -1.478535111       0.44719716 -1.1894526     TRUE
-    4            -1.478535111       0.44719763  0.1630667     TRUE
-    5             1.434447183       0.44719763  0.3270232     TRUE
-    6             1.434447183       0.44719763  0.9615093     TRUE
-    7             1.401147205       0.44719762  0.4134293     TRUE
-    8             0.887571052       0.44515837  0.7769390     TRUE
-    9             0.993968265      -2.14876252  0.1870360     TRUE
-    10            0.160799529      -3.12154031  0.3840955     TRUE
-    11            0.374213962      -0.05534519 -0.0877408     TRUE
-    12           -0.057815682       0.44678403  0.4187656     TRUE
-    13           -0.254108935      -0.44289951 -0.3284752     TRUE
-    14           -0.007959829       0.44513967  0.3603531     TRUE
-    15           -0.457502390       0.27411167 -0.4070348     TRUE
-    16           -0.200644329       0.44504462  0.3684132     TRUE
-    17            0.026619558       0.31686578 -0.3077095     TRUE
-    18            0.143803611       0.44689206  0.3954760     TRUE
+       MaxClusterBoundaryProportion MixtureParameters MixtureNodes
+    1                    0.00000000                37           25
+    2                    0.00000000               103           25
+    3                    0.00000000                50           25
+    4                    0.00000000               116           25
+    5                    0.00000000                63           25
+    6                    0.00000000               129           25
+    7                    0.00000000                76           25
+    8                    0.20000000               142           25
+    9                    0.03703704                89           25
+    10                   0.21052632               155           25
+    11                   0.20000000               102           25
+    12                   0.21052632               168           25
+    13                   0.20000000               115           25
+    14                   0.21052632               181           25
+    15                   0.20000000               128           25
+    16                   0.21052632               194           25
+    17                   0.20000000               141           25
+    18                   0.21052632               207           25
+       ParticipantsPerNode OccupancyCompliant NodesPerParameter Overparameterized
+    1                 12.8               TRUE         0.6756757              TRUE
+    2                 12.8               TRUE         0.2427184              TRUE
+    3                 12.8               TRUE         0.5000000              TRUE
+    4                 12.8               TRUE         0.2155172              TRUE
+    5                 12.8               TRUE         0.3968254              TRUE
+    6                 12.8               TRUE         0.1937984              TRUE
+    7                 12.8               TRUE         0.3289474              TRUE
+    8                 12.8               TRUE         0.1760563              TRUE
+    9                 12.8               TRUE         0.2808989              TRUE
+    10                12.8               TRUE         0.1612903              TRUE
+    11                12.8               TRUE         0.2450980              TRUE
+    12                12.8               TRUE         0.1488095              TRUE
+    13                12.8               TRUE         0.2173913              TRUE
+    14                12.8               TRUE         0.1381215              TRUE
+    15                12.8               TRUE         0.1953125              TRUE
+    16                12.8               TRUE         0.1288660              TRUE
+    17                12.8               TRUE         0.1773050              TRUE
+    18                12.8               TRUE         0.1207729              TRUE
+            SupportStatus AIC_scaled  BIC_scaled Entropy_scaled
+    1  over-parameterized -2.3217180 -2.57142713    -3.98596017
+    2  over-parameterized  0.7235624  1.03870975     0.29597332
+    3  over-parameterized -1.6928999 -1.67740986     0.09103470
+    4  over-parameterized  0.8025605  1.03257570     0.29566559
+    5  over-parameterized -0.5236752  0.10134775     0.29597317
+    6  over-parameterized  0.9603884  1.15549972     0.29570174
+    7  over-parameterized -0.3286210  0.28521775     0.29597333
+    8  over-parameterized  0.9393696  0.98562035     0.29519501
+    9  over-parameterized -0.3781406  0.06867773     0.06363850
+    10 over-parameterized  0.8018875  0.62507018    -0.05137539
+    11 over-parameterized -0.5712063 -0.38287255     0.22890167
+    12 over-parameterized  0.8570542  0.57991985     0.29590390
+    13 over-parameterized -0.6194677 -0.59735287     0.15702885
+    14 over-parameterized  0.8010588  0.35277774     0.29553557
+    15 over-parameterized -0.6513624 -0.78503789     0.26576360
+    16 over-parameterized  0.9377027  0.44101974     0.29557465
+    17 over-parameterized -0.6358843 -0.89516541     0.27359220
+    18 over-parameterized  0.8993913  0.24282944     0.29587976
+       Reproducibility_scaled Posterior_scaled  ahp_index Eligible Recommended
+    1            -1.460958081       0.26536601 -2.5850158    FALSE       FALSE
+    2            -1.460958081       0.44719763  0.1493218    FALSE       FALSE
+    3            -1.478535111       0.44719716 -1.1894526    FALSE       FALSE
+    4            -1.478535111       0.44719763  0.1630667    FALSE       FALSE
+    5             1.434447183       0.44719763  0.3270232    FALSE       FALSE
+    6             1.434447183       0.44719763  0.9615093    FALSE       FALSE
+    7             1.401147205       0.44719762  0.4134293    FALSE       FALSE
+    8             0.887571052       0.44515837  0.7769390    FALSE       FALSE
+    9             0.993968265      -2.14876252  0.1870360    FALSE       FALSE
+    10            0.160799529      -3.12154031  0.3840955    FALSE       FALSE
+    11            0.374213962      -0.05534519 -0.0877408    FALSE       FALSE
+    12           -0.057815682       0.44678403  0.4187656    FALSE       FALSE
+    13           -0.254108935      -0.44289951 -0.3284752    FALSE       FALSE
+    14           -0.007959829       0.44513967  0.3603531    FALSE       FALSE
+    15           -0.457502390       0.27411167 -0.4070348    FALSE       FALSE
+    16           -0.200644329       0.44504462  0.3684132    FALSE       FALSE
+    17            0.026619558       0.31686578 -0.3077095    FALSE       FALSE
+    18            0.143803611       0.44689206  0.3954760    FALSE       FALSE
           GridDesignPolicy GridDesignK TargetNodesPerProfile SOMNodeCount
     1  explicit_dimensions          10                    20           25
     2  explicit_dimensions          10                    20           25
@@ -563,7 +601,7 @@ ObjClustProjected <- ProjectCluster(Obj_ClustFinal, df_Projection)
     17                2.500000
     18                2.500000
 
-    [1] "Composite rank index (AIC, BIC, Entropy, Reproducibility; equal weights) recommends Model 3 with k = 4 profiles."
+    [1] "No eligible SOM mixture candidate is available for composite recommendation."
 
     # A tibble: 18 × 18
        Model Classes StabilitySuccessRate StabilityARI_Mean StabilityARI_P05
@@ -991,39 +1029,39 @@ Session information
      [28] mime_0.13              lifecycle_1.0.5        pkgconfig_2.0.3
      [31] sjlabelled_1.2.0       R6_2.6.1               fastmap_1.2.0
      [34] future_1.76.0          shiny_1.14.0           digest_0.6.39
-     [37] colorspace_2.1-4       rematch2_2.1.2         patchwork_1.3.2
-     [40] Hmisc_5.3-0            labeling_0.4.3         gtsummary_2.6.1
-     [43] progressr_1.0.0        httr_1.4.9             abind_1.4-8
-     [46] compiler_4.6.1         withr_3.0.3            pander_0.6.6
-     [49] htmlTable_2.5.0        S7_0.2.2               backports_1.5.1
-     [52] viridis_0.6.5          carData_3.0-6          psych_2.6.9
-     [55] fastDummies_1.7.6      R.utils_2.13.0         MASS_7.3-65
-     [58] scatterplot3d_0.3-45   tools_4.6.1            pbivnorm_0.6.0
-     [61] MplusAutomation_1.3    foreign_0.8-91         otel_0.2.0
-     [64] httpuv_1.6.17          future.apply_1.20.2    statsExpressions_2.1.2
-     [67] nnet_7.3-20            R.oo_1.27.1            glue_1.8.1
-     [70] quadprog_1.5-8         dbscan_1.2.7           nlme_3.1-169
-     [73] promises_1.5.0         grid_4.6.1             checkmate_2.3.4
-     [76] cluster_2.1.8.2        generics_0.1.4         gtable_0.3.6
-     [79] labelled_2.16.1        R.methodsS3_1.8.2      tidyr_1.3.2
-     [82] aweSOM_1.3             data.table_1.18.6.1    hms_1.1.4
-     [85] car_3.1-5              RANN_2.6.3             pillar_1.11.1
-     [88] stringr_1.6.0          later_1.4.8            lattice_0.22-9
-     [91] ggstatsplot_1.1.2      tidyselect_1.2.1       knitr_1.52
-     [94] gridExtra_2.3.1        stats4_4.6.1           xfun_0.61
-     [97] texreg_1.40            stringi_1.8.9          proto_1.0.0
-    [100] yaml_2.3.12            boot_1.3-32            evaluate_1.0.5
-    [103] codetools_0.2-20       nonnest2_0.5-9         tibble_3.3.1
-    [106] cli_3.6.6              RcppParallel_6.2.1     rpart_4.1.27
-    [109] xtable_1.8-8           parameters_0.29.3      lavaan_0.7-3
-    [112] dichromat_2.0-1        Rcpp_1.1.2             tidySEM_0.2.12
-    [115] globals_0.19.1         coda_0.19-4.1          parallel_4.6.1
-    [118] kohonen_3.0.13         rstantools_2.7.1       prettyunits_1.2.0
-    [121] mclust_6.1.3           bayestestR_0.19.0      listenv_1.1.0
-    [124] viridisLite_0.4.3      mvtnorm_1.4-2          scales_1.4.0
-    [127] insight_1.5.4          purrr_1.2.2            crayon_1.5.3
-    [130] rlang_1.3.0            mnormt_2.1.2           poLCA_1.6.0.2
-    [133] tidyLPA_2.0.2         
+     [37] colorspace_2.1-4       rematch2_2.1.2         ps_1.9.3
+     [40] patchwork_1.3.2        Hmisc_5.3-0            labeling_0.4.3
+     [43] gtsummary_2.6.1        progressr_1.0.0        httr_1.4.9
+     [46] abind_1.4-8            compiler_4.6.1         withr_3.0.3
+     [49] pander_0.6.6           htmlTable_2.5.0        S7_0.2.2
+     [52] backports_1.5.1        viridis_0.6.5          carData_3.0-6
+     [55] psych_2.6.9            fastDummies_1.7.6      R.utils_2.13.0
+     [58] MASS_7.3-65            scatterplot3d_0.3-45   tools_4.6.1
+     [61] pbivnorm_0.6.0         MplusAutomation_1.3    foreign_0.8-91
+     [64] otel_0.2.0             httpuv_1.6.17          future.apply_1.20.2
+     [67] statsExpressions_2.1.2 nnet_7.3-20            R.oo_1.27.1
+     [70] glue_1.8.1             quadprog_1.5-8         dbscan_1.2.7
+     [73] nlme_3.1-169           promises_1.5.0         grid_4.6.1
+     [76] checkmate_2.3.4        cluster_2.1.8.2        generics_0.1.4
+     [79] gtable_0.3.6           labelled_2.16.1        R.methodsS3_1.8.2
+     [82] tidyr_1.3.2            aweSOM_1.3             data.table_1.18.6.1
+     [85] hms_1.1.4              car_3.1-5              RANN_2.6.3
+     [88] pillar_1.11.1          stringr_1.6.0          later_1.4.8
+     [91] lattice_0.22-9         ggstatsplot_1.1.2      tidyselect_1.2.1
+     [94] knitr_1.52             gridExtra_2.3.1        stats4_4.6.1
+     [97] xfun_0.61              texreg_1.40            stringi_1.8.9
+    [100] proto_1.0.0            yaml_2.3.12            boot_1.3-32
+    [103] evaluate_1.0.5         codetools_0.2-20       nonnest2_0.5-9
+    [106] tibble_3.3.1           cli_3.6.6              RcppParallel_6.2.1
+    [109] rpart_4.1.27           xtable_1.8-8           parameters_0.29.3
+    [112] lavaan_0.7-3           dichromat_2.0-1        Rcpp_1.1.2
+    [115] tidySEM_0.2.12         globals_0.20.0         coda_0.19-4.1
+    [118] parallel_4.6.1         kohonen_3.0.13         rstantools_2.7.1
+    [121] prettyunits_1.2.0      mclust_6.1.3           bayestestR_0.19.0
+    [124] listenv_1.1.0          viridisLite_0.4.3      mvtnorm_1.4-2
+    [127] scales_1.4.0           insight_1.5.4          purrr_1.2.2
+    [130] crayon_1.5.3           rlang_1.3.0            mnormt_2.1.2
+    [133] poLCA_1.6.0.2          tidyLPA_2.0.2         
 
 ## References
 

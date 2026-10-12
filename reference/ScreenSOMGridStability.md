@@ -17,6 +17,7 @@ ScreenSOMGridStability(
   grid_candidates = NULL,
   topologies = c("hexagonal", "rectangular"),
   node_weighting = c("uniform", "occupancy"),
+  min_participants_per_node = 10,
   screen_scope = c("map", "joint"),
   screen_resamples = 3L,
   seed_som = 934521L,
@@ -48,13 +49,16 @@ ScreenSOMGridStability(
 
 - models:
 
-  Mclust covariance-model families. Ignored in `"map"` scope.
+  Mclust covariance-model families. In `"map"` scope they are not
+  fitted, but their largest requested parameter count supplies a
+  candidate-map support floor.
 
 - grid_candidates:
 
   Optional square side lengths or a data frame with `som_xdim` and
   `som_ydim`. The map-scope default includes approximately 10, 20, and
-  30 nodes per maximum requested profile, plus 3x3 and 10x10 anchors.
+  30 nodes per maximum requested profile, plus 3x3 and 10x10 anchors and
+  a parameter-support floor for the largest requested Mclust family.
   User-supplied candidates are retained unchanged.
 
 - topologies:
@@ -64,6 +68,12 @@ ScreenSOMGridStability(
 - node_weighting:
 
   Node-mixture definitions. Ignored in `"map"` scope.
+
+- min_participants_per_node:
+
+  Target complete participants per SOM node for automatic candidates.
+  Default `10`; anchors and user grids remain in the review table even
+  when they do not meet this map-health target.
 
 - screen_scope:
 

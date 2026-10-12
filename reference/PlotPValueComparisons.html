@@ -65,6 +65,7 @@ across two or more groups.</p>
 <span>  VariableCategories <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  Relabel <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  alternative <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"two.sided"</span>, <span class="st">"greater"</span>, <span class="st">"less"</span><span class="op">)</span>,</span>
+<span>  IncludeTrendSymbol <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  Data <span class="op">=</span> <span class="fu">lifecycle</span><span class="fu">::</span><span class="fu"><a href="https://lifecycle.r-lib.org/reference/deprecated.html" class="external-link">deprecated</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  GroupVariable <span class="op">=</span> <span class="fu">lifecycle</span><span class="fu">::</span><span class="fu"><a href="https://lifecycle.r-lib.org/reference/deprecated.html" class="external-link">deprecated</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  Variables <span class="op">=</span> <span class="fu">lifecycle</span><span class="fu">::</span><span class="fu"><a href="https://lifecycle.r-lib.org/reference/deprecated.html" class="external-link">deprecated</a></span><span class="op">(</span><span class="op">)</span></span>
@@ -103,6 +104,10 @@ the column names.</p></dd>
 <dt id="arg-alternative">alternative<a class="anchor" aria-label="anchor" href="#arg-alternative"></a></dt>
 <dd><p>Hypothesis alternative for two-group tests. <code>"greater"</code>
 tests whether the second group factor level is greater than the first.</p></dd>
+
+
+<dt id="arg-includetrendsymbol">IncludeTrendSymbol<a class="anchor" aria-label="anchor" href="#arg-includetrendsymbol"></a></dt>
+<dd><p>Logical; add a plus sign for <code>0.05 &lt; p &lt;= 0.10</code>.</p></dd>
 
 
 <dt id="arg-data">Data<a class="anchor" aria-label="anchor" href="#arg-data"></a></dt>

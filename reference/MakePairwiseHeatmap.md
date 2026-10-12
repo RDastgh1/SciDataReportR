@@ -35,7 +35,8 @@ MakePairwiseHeatmap(
   x_axis_text_angle = 0,
   return_models = FALSE,
   star_color = "black",
-  star_size = 4
+  star_size = 4,
+  IncludeTrendSymbol = FALSE
 )
 ```
 
@@ -139,6 +140,10 @@ MakePairwiseHeatmap(
 - star_color, star_size:
 
   Appearance of p-value stars.
+
+- IncludeTrendSymbol:
+
+  Logical; add a plus sign for `0.05 < p <= 0.10`.
 
 ## Value
 

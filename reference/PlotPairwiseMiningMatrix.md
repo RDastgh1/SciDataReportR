@@ -27,7 +27,8 @@ PlotPairwiseMiningMatrix(
   continuous_fill_limits = NULL,
   categorical_fill_limits = NULL,
   x_axis_text_angle = 0,
-  row_label_width = 58
+  row_label_width = 58,
+  IncludeTrendSymbol = FALSE
 )
 ```
 
@@ -101,6 +102,10 @@ PlotPairwiseMiningMatrix(
 - row_label_width:
 
   Approximate character width used to wrap row labels.
+
+- IncludeTrendSymbol:
+
+  Logical; add a plus sign for `0.05 < p <= 0.10`.
 
 ## Value
 

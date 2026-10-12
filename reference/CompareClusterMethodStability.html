@@ -74,7 +74,8 @@ comparing only participants retained by a particular refit.</p>
 <span>  stability_resamples <span class="op">=</span> <span class="fl">10L</span>,</span>
 <span>  stability_seed <span class="op">=</span> <span class="fl">934522L</span>,</span>
 <span>  stability_cores <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  subsample_fraction <span class="op">=</span> <span class="fl">0.9</span></span>
+<span>  subsample_fraction <span class="op">=</span> <span class="fl">0.9</span>,</span>
+<span>  keep_models <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -113,12 +114,18 @@ candidate set. See <code><a href="DefaultClusterBenchmarkCandidates.html">Defaul
 <dd><p>Proportion of complete reference participants
 retained in each refit.</p></dd>
 
+
+<dt id="arg-keep-models">keep_models<a class="anchor" aria-label="anchor" href="#arg-keep-models"></a></dt>
+<dd><p>Logical; retain full-data reference models in the screen
+result. Defaults to <code>FALSE</code> to avoid holding one large model per candidate.
+Confirmation always retains its selected projectable models.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A <code>ClusterMethodStabilityBenchmark</code> object with <code>decision_table</code>,
 <code>replicates</code>, shared <code>subsamples</code>, <code>participant_inclusion</code>, and full-data
-<code>models</code>.</p>
+<code>models</code>. With <code>keep_models = FALSE</code>, <code>models</code> is an empty list.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
@@ -126,7 +133,11 @@ retained in each refit.</p></dd>
 <code>"kmeans"</code>, <code>"hdbscan"</code>, or <code>"ward_rf"</code>. K-based candidates require
 <code>Classes</code>; mixture candidates also require <code>Model</code>. SOM candidates use
 <code>NodeWeighting</code>, <code>SOM_XDim</code>, <code>SOM_YDim</code>, and <code>SOM_Topology</code>; HDBSCAN uses
-<code>MinPts</code> and <code>Epsilon</code>; and Ward-plus-RF uses <code>WardN</code> and <code>RF_Trees</code>.</p>
+<code>MinPts</code> and <code>Epsilon</code>; and Ward-plus-RF uses <code>WardN</code> and <code>RF_Trees</code>.
+Full benchmarks near 20,000 participants can be slow and memory-intensive.
+HDBSCAN and Ward + RF allocate pairwise structures and are automatically
+serial under the memory policy; use a small, reviewed candidate table for
+large cohorts.</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

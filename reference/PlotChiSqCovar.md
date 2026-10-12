@@ -23,6 +23,7 @@ PlotChiSqCovar(
   xVars = lifecycle::deprecated(),
   yVars = lifecycle::deprecated(),
   fdr_scope = c("matrix", "per_outcome", "per_predictor"),
+  IncludeTrendSymbol = FALSE,
   covars = lifecycle::deprecated()
 )
 ```
@@ -78,6 +79,10 @@ PlotChiSqCovar(
   `"matrix"` corrects across all p-values at once (historical behavior).
   `"per_outcome"` corrects separately within each outcome: outcomes are
   the y-axis variables (`outcome_vars`).
+
+- IncludeTrendSymbol:
+
+  Logical; add a plus sign for `0.05 < p <= 0.10`.
 
 - covars:
 

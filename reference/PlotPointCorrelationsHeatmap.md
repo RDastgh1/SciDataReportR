@@ -19,6 +19,7 @@ PlotPointCorrelationsHeatmap(
   fdr_scope = c("matrix", "per_outcome", "per_predictor"),
   cluster_rows = FALSE,
   cluster_columns = FALSE,
+  IncludeTrendSymbol = FALSE,
   Data = lifecycle::deprecated(),
   Covariates = lifecycle::deprecated()
 )
@@ -69,6 +70,10 @@ PlotPointCorrelationsHeatmap(
   Logical; cluster continuous y-axis rows and/or binary x-axis columns
   using displayed correlation profiles.
 
+- IncludeTrendSymbol:
+
+  Logical; add a plus sign for `0.05 < p <= 0.10`.
+
 - Data:
 
   **Deprecated** (since 19.15.0). Use `data` instead.
@@ -101,12 +106,8 @@ result <- PlotPointCorrelationsHeatmap(
 
 # Raw p-value point-biserial heatmap
 result$Unadjusted$plot
-#> Warning: Removed 4 rows containing missing values or values outside the scale range
-#> (`geom_text()`).
 
 
 # FDR-adjusted point-biserial heatmap
 result$FDRCorrected$plot
-#> Warning: Removed 4 rows containing missing values or values outside the scale range
-#> (`geom_text()`).
 ```

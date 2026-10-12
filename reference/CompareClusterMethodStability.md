@@ -16,7 +16,8 @@ CompareClusterMethodStability(
   stability_resamples = 10L,
   stability_seed = 934522L,
   stability_cores = NULL,
-  subsample_fraction = 0.9
+  subsample_fraction = 0.9,
+  keep_models = FALSE
 )
 ```
 
@@ -53,11 +54,18 @@ CompareClusterMethodStability(
 
   Proportion of complete reference participants retained in each refit.
 
+- keep_models:
+
+  Logical; retain full-data reference models in the screen result.
+  Defaults to `FALSE` to avoid holding one large model per candidate.
+  Confirmation always retains its selected projectable models.
+
 ## Value
 
 A `ClusterMethodStabilityBenchmark` object with `decision_table`,
 `replicates`, shared `subsamples`, `participant_inclusion`, and
-full-data `models`.
+full-data `models`. With `keep_models = FALSE`, `models` is an empty
+list.
 
 ## Details
 
@@ -66,4 +74,7 @@ Candidate rows use `Method` values `"som_mclust"`, `"mclust"`,
 `Classes`; mixture candidates also require `Model`. SOM candidates use
 `NodeWeighting`, `SOM_XDim`, `SOM_YDim`, and `SOM_Topology`; HDBSCAN
 uses `MinPts` and `Epsilon`; and Ward-plus-RF uses `WardN` and
-`RF_Trees`.
+`RF_Trees`. Full benchmarks near 20,000 participants can be slow and
+memory-intensive. HDBSCAN and Ward + RF allocate pairwise structures and
+are automatically serial under the memory policy; use a small, reviewed
+candidate table for large cohorts.

@@ -21,6 +21,7 @@ PlotDirectionalHeatmaps(
   cluster_rows = FALSE,
   cluster_columns = FALSE,
   triangle = c("full", "upper", "lower"),
+  IncludeTrendSymbol = FALSE,
   Data = lifecycle::deprecated(),
   xVars = lifecycle::deprecated(),
   yVars = lifecycle::deprecated()
@@ -63,11 +64,19 @@ PlotDirectionalHeatmaps(
   historical behavior; each sub-function's documented outcome
   orientation applies within its block.
 
+- cluster_rows, cluster_columns:
+
+  Logical; cluster heatmap rows and columns.
+
 - triangle:
 
   Display `"full"` (default), `"upper"`, or `"lower"` half of a
   symmetric directional matrix. This affects plots only and is applied
   only when the same variables occur on both axes.
+
+- IncludeTrendSymbol:
+
+  Logical; add a plus sign for `0.05 < p <= 0.10`.
 
 - Data:
 
@@ -118,13 +127,13 @@ result <- PlotDirectionalHeatmaps(
 
 # Raw p-value directional heatmap
 result$Unadjusted$plot
-#> Warning: Removed 24 rows containing missing values or values outside the scale range
+#> Warning: Removed 4 rows containing missing values or values outside the scale range
 #> (`geom_text()`).
 
 
 # FDR-adjusted directional heatmap
 result$FDRCorrected$plot
-#> Warning: Removed 26 rows containing missing values or values outside the scale range
+#> Warning: Removed 4 rows containing missing values or values outside the scale range
 #> (`geom_text()`).
 
 
@@ -137,7 +146,7 @@ upper <- PlotDirectionalHeatmaps(
   triangle = "upper"
 )
 upper$FDRCorrected$plot
-#> Warning: Removed 12 rows containing missing values or values outside the scale range
+#> Warning: Removed 1 row containing missing values or values outside the scale range
 #> (`geom_text()`).
 
 

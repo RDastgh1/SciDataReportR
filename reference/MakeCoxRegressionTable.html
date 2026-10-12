@@ -72,6 +72,7 @@ report-ready tables plus a tidy results dataframe compatible with
 <span>  Standardize <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  FDR <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  FDRAlpha <span class="op">=</span> <span class="fl">0.05</span>,</span>
+<span>  IncludeTrendSymbol <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  CheckPH <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  ReturnModels <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  Relabel <span class="op">=</span> <span class="cn">TRUE</span>,</span>
@@ -128,6 +129,10 @@ using <code><a href="ApplyFDRCorrection.html">ApplyFDRCorrection()</a></code>.</
 
 <dt id="arg-fdralpha">FDRAlpha<a class="anchor" aria-label="anchor" href="#arg-fdralpha"></a></dt>
 <dd><p>Numeric threshold used for FDR-adjusted significance.</p></dd>
+
+
+<dt id="arg-includetrendsymbol">IncludeTrendSymbol<a class="anchor" aria-label="anchor" href="#arg-includetrendsymbol"></a></dt>
+<dd><p>Logical; add a plus sign for <code>0.05 &lt; p &lt;= 0.10</code>.</p></dd>
 
 
 <dt id="arg-checkph">CheckPH<a class="anchor" aria-label="anchor" href="#arg-checkph"></a></dt>

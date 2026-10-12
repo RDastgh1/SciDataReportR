@@ -91,10 +91,10 @@ CreateClusterModel_MClust(
 
 - stability_cores:
 
-  Number of workers for stability refits. `NULL` uses all detected
-  physical cores minus one, capped at the requested resamples and any
-  scheduler limit. Each worker holds a refit in memory, so lower this
-  setting for large SOM or high-dimensional analyses.
+  Number of workers for stability refits. `NULL` uses a conservative
+  CPU/memory cap: the smaller of 50% physical RAM and 75% of available
+  RAM. Explicit values warn when their estimated memory exceeds this
+  budget.
 
 ## Value
 
@@ -154,6 +154,19 @@ internal sensitivity analysis, not independent-cohort validation.
 - `noise_policy`: whether the method has noise labels. For ordinary
   methods it is `"all clusters included"`; HDBSCAN variants retain noise
   in ARI but exclude it from phenotype-level Jaccard recovery.
+
+- `requested_cores`, `resolved_cores`, and `worker_policy`: the
+  requested and resolved refit workers and the reason for the
+  resolution. Automatic resolution is capped by CPU, refit count, and
+  the smaller of 50% physical RAM and 75% currently available RAM.
+  Pairwise-memory methods are run serially automatically.
+
+- `estimated_bytes_per_worker`, `estimated_total_bytes`,
+  `physical_memory_bytes`, `available_memory_bytes`, and
+  `safe_memory_budget_bytes`: the conservative memory audit used to
+  resolve automatic workers. An explicit worker request is preserved
+  (within the CPU/scheduler cap) but warns if it exceeds the estimated
+  safe budget.
 
 `Stability$replicates` has one row per requested refit. `Model` and
 `Classes` identify the selected candidate (for HDBSCAN, `Classes` is the

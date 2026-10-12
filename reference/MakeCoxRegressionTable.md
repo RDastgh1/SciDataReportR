@@ -19,6 +19,7 @@ MakeCoxRegressionTable(
   Standardize = FALSE,
   FDR = TRUE,
   FDRAlpha = 0.05,
+  IncludeTrendSymbol = FALSE,
   CheckPH = TRUE,
   ReturnModels = FALSE,
   Relabel = TRUE,
@@ -77,6 +78,10 @@ MakeCoxRegressionTable(
 - FDRAlpha:
 
   Numeric threshold used for FDR-adjusted significance.
+
+- IncludeTrendSymbol:
+
+  Logical; add a plus sign for `0.05 < p <= 0.10`.
 
 - CheckPH:
 

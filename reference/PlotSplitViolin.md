@@ -32,6 +32,7 @@ PlotSplitViolin(
   star_pad = 0.05,
   star_size = 6,
   p_label = c("stars", "p_value", "both"),
+  IncludeTrendSymbol = FALSE,
   ...,
   Group = lifecycle::deprecated(),
   covars = lifecycle::deprecated()
@@ -131,6 +132,10 @@ PlotSplitViolin(
 
   P-value annotation style: significance `"stars"` (default), exact
   `"p_value"`, or `"both"`.
+
+- IncludeTrendSymbol:
+
+  Logical; add a plus sign for `0.05 < p <= 0.10`.
 
 - ...:
 

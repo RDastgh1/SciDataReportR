@@ -82,6 +82,7 @@ model <- CreateClusterModel_SOM_MClust(
   method = "exploratory", k_range = 2:4, models = 1,
   som_xdim = 5, som_ydim = 5, min_nodes_per_cluster = NULL,
   Relabel = FALSE)
+#> Warning: Explicit SOM dimensions do not meet one or more requested mixture-support or participant-occupancy targets; diagnostics are retained for review.
 splits <- PlotClusterSplits(model)
 splits$plot
 

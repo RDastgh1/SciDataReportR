@@ -17,6 +17,7 @@ MultivariableRegressionTable(
   TreatOrdinalAs = "Categorical",
   FDR = TRUE,
   FDRAlpha = 0.05,
+  IncludeTrendSymbol = FALSE,
   Method = c("lm", "ridge", "lasso", "elasticnet"),
   CVFolds = 10,
   Lambda = c("lambda.min", "lambda.1se"),
@@ -81,6 +82,10 @@ MultivariableRegressionTable(
 - FDRAlpha:
 
   Numeric FDR threshold retained in metadata.
+
+- IncludeTrendSymbol:
+
+  Logical; add a plus sign for `0.05 < p <= 0.10`.
 
 - Method:
 

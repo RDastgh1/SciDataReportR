@@ -33,6 +33,7 @@ PlotCorrelationsHeatmap(
   cluster_rows = FALSE,
   cluster_columns = FALSE,
   triangle = c("full", "upper", "lower"),
+  IncludeTrendSymbol = FALSE,
   Data = lifecycle::deprecated(),
   xVars = lifecycle::deprecated(),
   yVars = lifecycle::deprecated(),
@@ -105,6 +106,10 @@ PlotCorrelationsHeatmap(
   symmetric correlation matrix. This affects the plot only; returned
   matrices remain complete. Triangle display is applied only when the
   same variables occur on both axes.
+
+- IncludeTrendSymbol:
+
+  Logical; add a plus sign for `0.05 < p <= 0.10`.
 
 - Data:
 

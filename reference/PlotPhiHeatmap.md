@@ -17,6 +17,7 @@ PlotPhiHeatmap(
   cluster_rows = FALSE,
   cluster_columns = FALSE,
   triangle = c("full", "upper", "lower"),
+  IncludeTrendSymbol = FALSE,
   Data = lifecycle::deprecated()
 )
 ```
@@ -61,6 +62,10 @@ PlotPhiHeatmap(
   symmetric Phi matrix. This affects the plot only; returned results
   remain complete.
 
+- IncludeTrendSymbol:
+
+  Logical; add a plus sign for `0.05 < p <= 0.10`.
+
 - Data:
 
   **Deprecated** (since 19.15.0). Use `data` instead.
@@ -104,14 +109,10 @@ result <- PlotPhiHeatmap(
 
 # Raw p-value phi heatmap
 result$Unadjusted$plot
-#> Warning: Removed 11 rows containing missing values or values outside the scale range
-#> (`geom_text()`).
 
 
 # FDR-adjusted phi heatmap
 result$FDRCorrected$plot
-#> Warning: Removed 13 rows containing missing values or values outside the scale range
-#> (`geom_text()`).
 
 
 # Show each binary-variable pair once.
@@ -121,6 +122,4 @@ upper <- PlotPhiHeatmap(
   triangle = "upper"
 )
 upper$FDRCorrected$plot
-#> Warning: Removed 4 rows containing missing values or values outside the scale range
-#> (`geom_text()`).
 ```

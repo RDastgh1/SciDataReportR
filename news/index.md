@@ -2,6 +2,38 @@
 
 ## SciDataReportR 21.14.0
 
+- Plot and formatted-table functions that show p-value stars now support
+  `IncludeTrendSymbol = TRUE`, which adds `†` for nominal trends
+  (`0.05 < p <= 0.10`) without changing significance thresholds or
+  defaults.
+
+- Stability refits and common-method benchmarks now resolve automatic
+  workers from a conservative memory estimate (the smaller of 50%
+  physical RAM and 75% currently available RAM), retain a worker/memory
+  audit in settings, and run pairwise-memory methods serially by
+  default. Benchmark screens no longer retain every full-data candidate
+  model unless `keep_models = TRUE`; selected confirmation models remain
+  projectable. The default HDBSCAN benchmark set is reduced to three
+  representative settings.
+
+- SOM + Mclust automatic maps now supplement the k-informed
+  20-nodes-per- planned-profile target with a mixture-support floor. New
+  `min_nodes_per_parameter = 3` uses Mclust’s free-parameter count after
+  SOM preprocessing to size automatic maps, while explicit dimensions
+  are never changed. Fit and map-screen tables report mixture nodes,
+  parameters, nodes-per-parameter, and overparameterized candidates,
+  which remain visible but are ineligible for a composite
+  recommendation.
+
+- Automatic SOM + Mclust sizing now also applies the map-health ceiling
+  `min_participants_per_node = 10`. New
+  [`SOMMapSupport()`](https://rdastgh1.github.io/SciDataReportR/reference/SOMMapSupport.md)
+  reports the competing parameter-support and occupancy constraints
+  before fitting. Candidate tables and fit-review points identify
+  supported, under-supported, and over-parameterized mixtures. Finalized
+  fits can use `map_from` to reuse an exploratory map’s design while
+  recalculating preprocessing on their finalization data.
+
 - SOM + Mclust stability now supports an opt-in participant-deletion
   curve via `stability_fractions` (default `0.90`). It retains
   all-participant ARI/P05 as the primary final-partition result while
