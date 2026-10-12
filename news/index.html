@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">SciDataReportR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">21.13.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">21.14.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -49,7 +49,7 @@
     </div>
 
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="development version" id="scidatareportr-development-version">SciDataReportR (development version)<a class="anchor" aria-label="anchor" href="#scidatareportr-development-version"></a></h2>
+<h2 class="pkg-version" data-toc-text="21.14.0" id="scidatareportr-21140">SciDataReportR 21.14.0<a class="anchor" aria-label="anchor" href="#scidatareportr-21140"></a></h2>
 <ul><li><p>SOM + Mclust stability now supports an opt-in participant-deletion curve via <code>stability_fractions</code> (default <code>0.90</code>). It retains all-participant ARI/P05 as the primary final-partition result while adding VI, NMI, and Fowlkes–Mallows companions; exact memory-safe co-membership cohesion and cross-mixing summaries; split/merge diagnostics; and frozen-scale matched phenotype-profile correlation/RMSE recovery. New stability-panel plots and documentation make these explanatory diagnostics available without excluding boundary participants or substituting them for ARI.</p></li>
 <li><p><code><a href="../reference/CreateClusterModel_SOM_MClust.html">CreateClusterModel_SOM_MClust()</a></code> now uses one deterministic, seeded full-cohort batch SOM fit. Experimental consensus-SOM and median-only fitting controls have been removed. New-model provenance records the initial codebook, batch mode, epochs, grid, topology, neighbourhood, preprocessing, and node-level mixture; existing consensus-era objects remain projectable through their frozen fitted components.</p></li>
 <li><p>SOM + Mclust automatic map resolution is now k-informed rather than driven solely by training-cohort size. Exploratory fits use <code>max(k_range)</code> and finalized fits use <code>final_k</code>, targeting approximately 20 nodes per maximum planned phenotype unless dimensions are supplied explicitly. The map screen now evaluates 10/20/30-nodes-per-maximum-profile candidates plus 3x3 and 10x10 anchors, reporting expected nodes per requested profile. Grid design, boundary prevalence, and all-/non-boundary stability diagnostics are retained in review output so map selection remains a reviewer decision.</p></li>
