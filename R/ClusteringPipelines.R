@@ -775,6 +775,8 @@
     out
   }
   metrics <- intersect(c(higher, lower), names(fit_table))
+  fit_table <- .SetClusterMetricDirection(fit_table,
+    intersect(higher, metrics), intersect(lower, metrics))
   for (metric in metrics) fit_table[[paste0(metric, "_scaled")]] <- scale_metric(fit_table[[metric]], metric %in% higher)
   scaled <- grep("_scaled$", names(fit_table), value = TRUE)
   fit_table$ahp_index <- if (length(scaled)) rowMeans(as.matrix(fit_table[scaled]), na.rm = TRUE) else NA_real_

@@ -50,6 +50,10 @@
 #' compares every group against one reference level instead of against each
 #' other, which is usually what a control group is for.
 #'
+#' **`addQ = TRUE`** adds Benjamini-Hochberg FDR q-values across the main
+#' outcome tests, counting each tested outcome once. Pairwise p-values retain
+#' their separate within-outcome correction selected by `PairwiseMethod`.
+#'
 #' **`covariates`** replaces the simple test with a model-based one that holds
 #' the named variables constant. An unadjusted group difference in a biomarker
 #' may only reflect that the groups differ in age or sex; adjusting reports the
@@ -98,6 +102,11 @@
 #' @param Relabel Logical; if TRUE (default), use attached variable labels.
 #' @param TreatOrdinalAs How ordinal variables are treated: `"Categorical"`,
 #' `"Continuous"`, `"Both"`, or `"Exclude"`.
+#' @param addQ Logical; add Benjamini-Hochberg FDR q-values across valid main
+#' outcome tests. Defaults to `FALSE`. Uses the reported main p-values, including
+#' covariate adjustment when applicable. Missing tests are excluded. Q-values
+#' appear only on main outcome rows, with values <= 0.05 bolded independently
+#' of p-values. Pairwise columns are unchanged. Summary-only tables omit q-values.
 #'
 #' @return A `gtsummary` object.
 #'
@@ -168,6 +177,15 @@
 #'   variables = c("age", "tau", "p_tau"),
 #'   AddPairwise = TRUE,
 #'   PairwiseMethod = "fdr"
+#' )
+#'
+#' # FDR across main outcomes, alongside within-outcome pairwise correction
+#' MakeComparisonTable(
+#'   data = Labelled,
+#'   group_var = "ApoeGroup",
+#'   variables = vars_Compare,
+#'   AddPairwise = TRUE,
+#'   addQ = TRUE
 #' )
 #'
 #' # Every group against one reference level
@@ -245,7 +263,12 @@ MakeComparisonTable <- function(data,
     Covariates = lifecycle::deprecated(),
     ValueDigits = lifecycle::deprecated(),
     pDigits = lifecycle::deprecated(),
-    EffectSizeDigits = lifecycle::deprecated()) {
+    EffectSizeDigits = lifecycle::deprecated(),
+    addQ = FALSE) {
+  if (!is.logical(addQ) || length(addQ) != 1L || is.na(addQ)) {
+    stop("addQ must be a single nonmissing logical value.")
+  }
+
   # Deprecated argument shims (SciDataReportR 19.15.0)
   if (lifecycle::is_present(DataFrame)) {
     lifecycle::deprecate_warn("19.15.0", "MakeComparisonTable(DataFrame)", "MakeComparisonTable(data)")
@@ -1716,6 +1739,38 @@ MakeComparisonTable <- function(data,
       cap,
       " Pairwise p-values are ", pairwise_phrase, " within outcome."
     )
+  }
+
+  if (addQ) {
+    # Category levels and missingness rows repeat the underlying main p-value.
+    # Only valid main-row tests belong to the FDR family.
+    valid_main <- tbl$table_body$.is_main_row &
+      is.finite(tbl$table_body$p.value) &
+      tbl$table_body$p.value >= 0 & tbl$table_body$p.value <= 1
+    q_values <- rep(NA_real_, nrow(tbl$table_body))
+    q_values[valid_main] <- stats::p.adjust(
+      tbl$table_body$p.value[valid_main], method = "fdr"
+    )
+
+    tbl <- tbl %>%
+      gtsummary::modify_table_body(
+        ~ .x %>%
+          dplyr::mutate(q.value = q_values) %>%
+          dplyr::relocate("q.value", .after = "p.value_fmt")
+      ) %>%
+      gtsummary::modify_header(q.value ~ "**q-value**") %>%
+      gtsummary::modify_fmt_fun(
+        q.value ~ function(x) vapply(x, fmt_p, character(1), digits = pDigits)
+      ) %>%
+      gtsummary::modify_column_unhide(columns = "q.value") %>%
+      gtsummary::modify_footnote(
+        q.value ~ "Benjamini-Hochberg false discovery rate correction across valid main outcome tests; excludes missing tests and pairwise comparisons."
+      ) %>%
+      gtsummary::modify_table_styling(
+        columns = "q.value",
+        rows = .data$.is_main_row & !is.na(.data$q.value) & .data$q.value <= 0.05,
+        text_format = "bold"
+      )
   }
 
   tbl %>%

@@ -219,16 +219,22 @@
 #'
 #' @details
 #' `ModelInfo_MClust$fit_table` uses the fit indices returned by tidyLPA's
-#' mclust backend. AIC, AWE, BIC, CAIC, CLC, KIC, SABIC, and ICL are
-#' likelihood/information criteria, for which lower values are preferred when
-#' comparing candidate fits estimated on the same data. Entropy summarizes
-#' classification separation (higher is better). `MinProfileNodeN` and
-#' `MaxProfileNodeN` are integer SOM-node counts in the smallest and largest
-#' profile; the corresponding `*Proportion` fields divide those counts by the
-#' total number of SOM nodes. `BLRTStatistic` and `BLRTPValue` compare a
-#' k-profile model with k - 1 profiles under the same covariance model. A
-#' small p-value supports the added profile's statistical fit, but does not
-#' establish clinical meaning or reproducibility; it is unavailable for k = 1.
+#' mclust backend. AIC, AWE, BIC, CAIC, CLC, KIC, and SABIC are
+#' likelihood/information criteria on tidyLPA's -2 log-likelihood scale, for
+#' which lower values are preferred when comparing candidate fits estimated on
+#' the same data. ICL follows mclust's convention instead (\code{-BIC} plus
+#' twice the summed log maximum posterior, matching \code{mclust::icl()}), so
+#' higher ICL values are preferred: ICL and BIC point in opposite directions,
+#' and [PlotClusterFitReview()] labels each panel with its preferred
+#' direction. ICL is reported for review only and is not part of the composite
+#' index. Entropy summarizes classification separation (higher is better).
+#' `MinProfileNodeN` and `MaxProfileNodeN` are integer SOM-node counts in the
+#' smallest and largest profile; the corresponding `*Proportion` fields divide
+#' those counts by the total number of SOM nodes. `BLRTStatistic` and
+#' `BLRTPValue` compare a k-profile model with k - 1 profiles under the same
+#' covariance model. A small p-value supports the added profile's statistical
+#' fit, but does not establish clinical meaning or reproducibility; it is
+#' unavailable for k = 1.
 #' The raw \code{BLRTPValue} remains in the table. Its candidate-review panel
 #' displays \code{-log10(BLRTPValue)} with a dashed \code{0.05} p-value
 #' reference at \code{-log10(0.05)}.
@@ -2420,6 +2426,11 @@ CreateClusterModel_SOM_MClust <- function(data,
         SOMNodeCount = som_xdim * som_ydim,
         ExpectedNodesPerProfile = .data$SOMNodeCount / .data$Classes
       )
+    # tidyLPA reports the information criteria on the -2 log-likelihood scale
+    # (lower is better) but ICL on mclust's scale (higher is better).
+    fit_table <- .SetClusterMetricDirection(fit_table,
+      higher = c("ICL", "Entropy"),
+      lower = c("AIC", "AWE", "BIC", "CAIC", "CLC", "KIC", "SABIC"))
     mdata_wide <- fit_table
 
     # Fit plot ---------------------------------------------------------------
@@ -2492,7 +2503,12 @@ CreateClusterModel_SOM_MClust <- function(data,
         ggplot2::geom_point() + ggplot2::geom_line()
     }
     fit_plot <- fit_plot +
-      ggplot2::facet_wrap(~name, scales = "free_y", ncol = 1) +
+      ggplot2::facet_wrap(~name, scales = "free_y", ncol = 1,
+        labeller = ggplot2::labeller(name = function(values) {
+          preferred <- .ClusterMetricDirection(values, fit_table)
+          ifelse(is.na(preferred), values,
+            paste0(values, " (", preferred, " is better)"))
+        })) +
       ggplot2::theme_bw() +
       ggplot2::theme(legend.position = "top") +
       ggplot2::labs(x = "Number of clusters", y = "Fit index value")

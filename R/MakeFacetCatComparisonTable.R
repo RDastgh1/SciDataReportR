@@ -32,7 +32,9 @@
 #' @param CompFun Comparison function to apply; defaults to `MakeComparisonTable`.
 #' @param Relabel Logical; if TRUE (default), use attached variable labels.
 #' @param TreatOrdinalAs How ordinal variables are treated in each table.
-#' @param ... Additional arguments passed to the comparison function.
+#' @param ... Additional arguments passed to the comparison function. With the
+#' default `CompFun`, `addQ = TRUE` adds BH/FDR q-values across main outcomes
+#' separately within each facet's table; pairwise p-values are unchanged.
 #'
 #' @return A `gtsummary` table created by merging each facet's `MakeComparisonTable()` output
 #'   side-by-side using `gtsummary::tbl_merge()`. Each facet variable is labeled with its own

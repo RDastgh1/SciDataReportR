@@ -61,6 +61,10 @@ test_that("CreateClusterModel_SOM_MClust returns the complete model-review outpu
     model$fit_plot$data$PlotValue[model$fit_plot$data$name ==
       "Bootstrap likelihood-ratio test p-value (−log10 scale)"],
     -log10(pmax(fit_table$BLRTPValue, .Machine$double.xmin)))
+  expect_identical(.ClusterMetricDirection(c("BIC", "ICL"), fit_table),
+    c("lower", "higher"))
+  expect_true("BIC (lower is better)" %in%
+    model$fit_plot$facet$params$labeller(data.frame(name = "BIC"))[[1]])
   expected_best <- fit_table[which.max(fit_table$ahp_index), , drop = FALSE]
   expect_equal(model$ModelInfo_MClust$AHP$ahp_best_row$Model, expected_best$Model)
   expect_equal(model$ModelInfo_MClust$AHP$ahp_best_row$Classes, expected_best$Classes)
@@ -808,4 +812,39 @@ test_that("fit review plots expose SOM mixture support status", {
   plot <- PlotClusterFitReview(fit_table, metrics = "BIC")
   expect_identical(ggplot2::ggplot_build(plot)$plot$scales$
     get_scales("shape")$name, "SOM mixture support")
+})
+
+test_that("tidyLPA ICL is higher-is-better while its BIC is lower-is-better", {
+  skip_if_not_installed("mclust")
+  suppressPackageStartupMessages(skip_if_not_installed("tidyLPA"))
+  X <- scale(datasets::iris[, 1:4])
+  fit <- .FitTidyLPAMclust(X, 3L, 1L, nboot = 0L)
+  fit_info <- tidyLPA::get_fit(fit)
+  z_map <- apply(fit[[1]]$model$z, 1, max)
+  # tidyLPA: BIC = -2 logLik + penalty, ICL = -BIC + 2 sum(log max z), i.e.
+  # mclust's ICL on its higher-is-better scale.
+  expect_equal(fit_info$BIC,
+    -2 * fit[[1]]$model$loglik + fit[[1]]$model$df * log(nrow(X)))
+  expect_equal(fit_info$ICL, -fit_info$BIC + 2 * sum(log(z_map + 1e-12)),
+    tolerance = 1e-6)
+  expect_equal(fit_info$ICL, mclust::icl(fit[[1]]$model), tolerance = 1e-6)
+  expect_lt(fit_info$ICL, 0)
+  expect_gt(fit_info$BIC, 0)
+
+  som_table <- .SetClusterMetricDirection(
+    data.frame(Classes = 2:3, Model = 1L, BIC = c(880, 876), ICL = c(-890, -884)),
+    higher = "ICL", lower = "BIC")
+  plot <- PlotClusterFitReview(som_table, metrics = c("BIC", "ICL"))
+  labels <- plot$facet$params$labeller(data.frame(Metric = c("BIC", "ICL")))[[1]]
+  expect_identical(labels, c("BIC (lower is better)", "ICL (higher is better)"))
+
+  # mclust's own BIC is higher-is-better, and an override wins over the table.
+  mclust_table <- .ClusterAHP(som_table, higher = c("BIC", "ICL"))$fit_table
+  expect_identical(.ClusterMetricDirection(c("BIC", "ICL"), mclust_table),
+    c("higher", "higher"))
+  expect_identical(
+    .ClusterMetricDirection("BIC", mclust_table, c(BIC = "lower")), "lower")
+  # Without a recorded direction BIC is left unlabelled rather than guessed.
+  expect_identical(.ClusterMetricDirectionLabel(c("BIC", "ICL")),
+    c("BIC", "ICL (higher is better)"))
 })

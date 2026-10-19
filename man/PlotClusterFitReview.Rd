@@ -9,7 +9,8 @@ PlotClusterFitReview(
   x = "Classes",
   metrics = NULL,
   group = NULL,
-  title = "Candidate model review"
+  title = "Candidate model review",
+  metric_direction = NULL
 )
 }
 \arguments{
@@ -25,12 +26,30 @@ Mclust or \code{"Epsilon"} for HDBSCAN. When \code{NULL}, it is inferred when
 possible.}
 
 \item{title}{Plot title.}
+
+\item{metric_direction}{Optional named character vector giving the
+preferred direction (\code{"higher"} or \code{"lower"}) of metrics, for example
+\code{c(BIC = "lower")}. It overrides the directions recorded by the
+clustering pipeline in \code{attr(fit_table, "MetricDirection")} and the
+package defaults.}
 }
 \value{
 A \code{ggplot} object.
 }
 \description{
 Plot cluster fit-review metrics
+}
+\details{
+Each panel is labelled with the metric's preferred direction, such
+as "BIC (lower is better)". Directions that do not depend on the backend
+are built in (for example AIC lower, ICL and Entropy higher). BIC's
+direction does: mclust reports it on a higher-is-better scale, while
+tidyLPA (used by \code{\link[=CreateClusterModel_SOM_MClust]{CreateClusterModel_SOM_MClust()}}) and poLCA report it on
+a lower-is-better scale. Fit tables returned by the package's clustering
+pipelines record the direction they used; for other tables, supply it via
+\code{metric_direction}, otherwise the BIC panel is shown without a direction.
+ICL is higher-is-better on both mclust's and tidyLPA's scale, so in a
+tidyLPA fit table BIC and ICL panels point in opposite directions.
 }
 \examples{
 \donttest{

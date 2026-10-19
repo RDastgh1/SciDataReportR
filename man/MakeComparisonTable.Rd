@@ -37,7 +37,8 @@ MakeComparisonTable(
   Covariates = lifecycle::deprecated(),
   ValueDigits = lifecycle::deprecated(),
   pDigits = lifecycle::deprecated(),
-  EffectSizeDigits = lifecycle::deprecated()
+  EffectSizeDigits = lifecycle::deprecated(),
+  addQ = FALSE
 )
 }
 \arguments{
@@ -115,6 +116,12 @@ or \code{"before_pairwise"}.}
 \item{pDigits}{\strong{Deprecated} (since 19.15.0). Use \code{p_digits} instead.}
 
 \item{EffectSizeDigits}{\strong{Deprecated} (since 19.15.0). Use \code{effect_size_digits} instead.}
+
+\item{addQ}{Logical; add Benjamini-Hochberg FDR q-values across valid main
+outcome tests. Defaults to \code{FALSE}. Uses the reported main p-values, including
+covariate adjustment when applicable. Missing tests are excluded. Q-values
+appear only on main outcome rows, with values <= 0.05 bolded independently
+of p-values. Pairwise columns are unchanged. Summary-only tables omit q-values.}
 }
 \value{
 A \code{gtsummary} object.
@@ -170,6 +177,10 @@ contrasts so that hunting through them does not inflate the error rate.
 when there are many contrasts, \code{"none"} for exploratory work. \code{Referent}
 compares every group against one reference level instead of against each
 other, which is usually what a control group is for.
+
+\strong{\code{addQ = TRUE}} adds Benjamini-Hochberg FDR q-values across the main
+outcome tests, counting each tested outcome once. Pairwise p-values retain
+their separate within-outcome correction selected by \code{PairwiseMethod}.
 
 \strong{\code{covariates}} replaces the simple test with a model-based one that holds
 the named variables constant. An unadjusted group difference in a biomarker
@@ -245,6 +256,15 @@ MakeComparisonTable(
   variables = c("age", "tau", "p_tau"),
   AddPairwise = TRUE,
   PairwiseMethod = "fdr"
+)
+
+# FDR across main outcomes, alongside within-outcome pairwise correction
+MakeComparisonTable(
+  data = Labelled,
+  group_var = "ApoeGroup",
+  variables = vars_Compare,
+  AddPairwise = TRUE,
+  addQ = TRUE
 )
 
 # Every group against one reference level

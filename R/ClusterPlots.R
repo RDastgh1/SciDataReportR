@@ -45,6 +45,63 @@ NULL
   gsub("A[hH][pP]", "AHP", labels)
 }
 
+# Preferred direction of each fit metric whose direction does not depend on the
+# backend. BIC is deliberately absent: mclust reports 2 logLik - penalty
+# (higher is better), whereas tidyLPA and poLCA report -2 logLik + penalty
+# (lower is better). ICL is higher-is-better on both mclust::icl() and
+# tidyLPA's icl_default() (-BIC + 2 sum(log max z)), even when the BIC beside it
+# is on the lower-is-better scale. Pipelines record the direction they scored
+# BIC with in attr(fit_table, "MetricDirection").
+.ClusterMetricDirections <- c(
+  AIC = "lower", AWE = "lower", CAIC = "lower", CLC = "lower", KIC = "lower",
+  SABIC = "lower", ICL = "higher", LogLik = "higher", Entropy = "higher",
+  WSS = "lower", Silhouette = "higher", CalinskiHarabasz = "higher",
+  Persistence = "higher", MeanMembershipProbability = "higher",
+  NoiseProportion = "lower", AverageSilhouette = "higher",
+  MeanMedoidDistance = "lower", MinClusterN = "higher", MinClassN = "higher",
+  SizeBalance = "higher", ReproducibilityScore = "higher",
+  MaxUncertainty = "lower", PosteriorMean = "higher",
+  PropLowPosterior = "lower", StabilityARI_Mean = "higher",
+  StabilityARI_P05 = "higher", StabilityARI_NonBoundary = "higher",
+  StabilityARI_NonBoundary_P05 = "higher",
+  BoundaryParticipantProportion = "lower",
+  MaxClusterBoundaryProportion = "lower")
+
+.SetClusterMetricDirection <- function(fit_table, higher = character(),
+    lower = character()) {
+  direction <- attr(fit_table, "MetricDirection", exact = TRUE)
+  if (is.null(direction)) direction <- character()
+  direction[higher] <- "higher"
+  direction[lower] <- "lower"
+  attr(fit_table, "MetricDirection") <- direction
+  fit_table
+}
+
+# Fixed directions, then the fit table's recorded directions, then any explicit
+# override. Metrics with no known direction return NA.
+.ClusterMetricDirection <- function(metrics, fit_table = NULL,
+    direction = NULL) {
+  known <- .ClusterMetricDirections
+  recorded <- attr(fit_table, "MetricDirection", exact = TRUE)
+  if (length(recorded)) known[names(recorded)] <- recorded
+  if (length(direction)) {
+    if (is.null(names(direction)) || any(!direction %in% c("higher", "lower"))) {
+      stop("metric_direction must be a named vector of \"higher\" or \"lower\".")
+    }
+    known[names(direction)] <- direction
+  }
+  unname(known[metrics])
+}
+
+.ClusterMetricDirectionLabel <- function(metrics, fit_table = NULL,
+    direction = NULL) {
+  metrics <- as.character(metrics)
+  preferred <- .ClusterMetricDirection(metrics, fit_table, direction)
+  labels <- .ClusterMetricLabel(metrics)
+  ifelse(is.na(preferred), labels,
+    paste0(labels, " (", preferred, " is better)"))
+}
+
 # Clusters are integers internally, with 0 reserved for the density-based noise
 # group. Display always separates noise so a reader never mistakes it for a
 # phenotype.
@@ -583,6 +640,21 @@ PlotClusterComposition <- function(data, variables, cluster,
 #'   Mclust or `"Epsilon"` for HDBSCAN. When `NULL`, it is inferred when
 #'   possible.
 #' @param title Plot title.
+#' @param metric_direction Optional named character vector giving the
+#'   preferred direction (`"higher"` or `"lower"`) of metrics, for example
+#'   `c(BIC = "lower")`. It overrides the directions recorded by the
+#'   clustering pipeline in `attr(fit_table, "MetricDirection")` and the
+#'   package defaults.
+#' @details Each panel is labelled with the metric's preferred direction, such
+#'   as "BIC (lower is better)". Directions that do not depend on the backend
+#'   are built in (for example AIC lower, ICL and Entropy higher). BIC's
+#'   direction does: mclust reports it on a higher-is-better scale, while
+#'   tidyLPA (used by [CreateClusterModel_SOM_MClust()]) and poLCA report it on
+#'   a lower-is-better scale. Fit tables returned by the package's clustering
+#'   pipelines record the direction they used; for other tables, supply it via
+#'   `metric_direction`, otherwise the BIC panel is shown without a direction.
+#'   ICL is higher-is-better on both mclust's and tidyLPA's scale, so in a
+#'   tidyLPA fit table BIC and ICL panels point in opposite directions.
 #' @return A `ggplot` object.
 #' @examples
 #' \donttest{
@@ -595,7 +667,7 @@ PlotClusterComposition <- function(data, variables, cluster,
 #' }
 #' @export
 PlotClusterFitReview <- function(fit_table, x = "Classes", metrics = NULL,
-    group = NULL, title = "Candidate model review") {
+    group = NULL, title = "Candidate model review", metric_direction = NULL) {
   if (!x %in% names(fit_table)) {
     stop("x was not found in fit_table: ", x)
   }
@@ -668,7 +740,8 @@ PlotClusterFitReview <- function(fit_table, x = "Classes", metrics = NULL,
   plot <- plot +
     ggplot2::facet_wrap(
       ~Metric, scales = "free_y", ncol = 1,
-      labeller = ggplot2::labeller(Metric = .ClusterMetricLabel)) +
+      labeller = ggplot2::labeller(Metric = function(values)
+        .ClusterMetricDirectionLabel(values, fit_table, metric_direction))) +
     ggplot2::theme_bw() +
     ggplot2::labs(
       title = title, x = .ClusterMetricLabel(x), y = "Fit metric")
@@ -689,7 +762,9 @@ PlotClusterFitReview <- function(fit_table, x = "Classes", metrics = NULL,
       !any(is.finite(fit_table[[metric]]))) return(NULL)
   PlotClusterFitReview(fit_table, x = x, metrics = metric, title = title) +
     ggplot2::facet_null() +
-    ggplot2::labs(y = if (is.null(ylab)) .ClusterMetricLabel(metric) else ylab)
+    ggplot2::labs(y = if (is.null(ylab)) {
+      .ClusterMetricDirectionLabel(metric, fit_table)
+    } else ylab)
 }
 
 .ClusterStabilityPlots <- function(Stability) {

@@ -27,5 +27,10 @@ Authors:
   \item Raha Dastgheyb \email{raha@jhmi.edu} (\href{https://orcid.org/0000-0002-4992-711X}{ORCID})
 }
 
+Other contributors:
+\itemize{
+  \item Aparna Bhattacharyya (Original split-triangle correlation heatmap wrapper) [contributor]
+}
+
 }
 \keyword{internal}

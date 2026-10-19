@@ -79,7 +79,9 @@ The function automatically selects those that are categorical (\code{factor} or 
 
 \item{TreatOrdinalAs}{How ordinal variables are treated in each table.}
 
-\item{...}{Additional arguments passed to the comparison function.}
+\item{...}{Additional arguments passed to the comparison function. With the
+default \code{CompFun}, \code{addQ = TRUE} adds BH/FDR q-values across main outcomes
+separately within each facet's table; pairwise p-values are unchanged.}
 
 \item{DataFrame}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
 
