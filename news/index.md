@@ -2,6 +2,19 @@
 
 ## SciDataReportR 21.15.0
 
+- [`PlotSplitCorrelationHeatmap()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotSplitCorrelationHeatmap.md)
+  displays correlations within two strata of long data as paired
+  triangles, with separate FDR correction, labelled axes, missing-result
+  diagnostics, and optional Plotly widgets. The design is based on the
+  original wrapper written by Aparna Bhattacharyya.
+
+- `MakeComparisonTable(addQ = TRUE)` adds Benjamini-Hochberg FDR
+  q-values across valid main outcome tests, with one test per outcome
+  and separate q-value highlighting. Pairwise corrections remain within
+  outcome. The option also passes through
+  [`MakeFacetCatComparisonTable()`](https://rdastgh1.github.io/SciDataReportR/reference/MakeFacetCatComparisonTable.md)
+  for correction within each constituent table.
+
 ## SciDataReportR 21.14.0
 
 - Plot and formatted-table functions that show p-value stars now support

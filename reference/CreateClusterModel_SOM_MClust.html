@@ -135,7 +135,7 @@ Deprecated alias for CreateClusterModel_SOM_MClust().'><meta property="og:image"
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>SOM + latent profile clustering pipeline (with AHP and distance baselines)</h1>
-      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/v21.15.0/R/Pipeline_SOMClust.R" class="external-link"><code>R/Pipeline_SOMClust.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/master/R/Pipeline_SOMClust.R" class="external-link"><code>R/Pipeline_SOMClust.R</code></a></small>
       <div class="d-none name"><code>CreateClusterModel_SOM_MClust.Rd</code></div>
     </div>
 
@@ -619,16 +619,22 @@ and probabilities), and probability plots</p></li>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p><code>ModelInfo_MClust$fit_table</code> uses the fit indices returned by tidyLPA's
-mclust backend. AIC, AWE, BIC, CAIC, CLC, KIC, SABIC, and ICL are
-likelihood/information criteria, for which lower values are preferred when
-comparing candidate fits estimated on the same data. Entropy summarizes
-classification separation (higher is better). <code>MinProfileNodeN</code> and
-<code>MaxProfileNodeN</code> are integer SOM-node counts in the smallest and largest
-profile; the corresponding <code>*Proportion</code> fields divide those counts by the
-total number of SOM nodes. <code>BLRTStatistic</code> and <code>BLRTPValue</code> compare a
-k-profile model with k - 1 profiles under the same covariance model. A
-small p-value supports the added profile's statistical fit, but does not
-establish clinical meaning or reproducibility; it is unavailable for k = 1.
+mclust backend. AIC, AWE, BIC, CAIC, CLC, KIC, and SABIC are
+likelihood/information criteria on tidyLPA's -2 log-likelihood scale, for
+which lower values are preferred when comparing candidate fits estimated on
+the same data. ICL follows mclust's convention instead (<code>-BIC</code> plus
+twice the summed log maximum posterior, matching <code><a href="https://mclust-org.github.io/mclust/reference/icl.html" class="external-link">mclust::icl()</a></code>), so
+higher ICL values are preferred: ICL and BIC point in opposite directions,
+and <code><a href="PlotClusterFitReview.html">PlotClusterFitReview()</a></code> labels each panel with its preferred
+direction. ICL is reported for review only and is not part of the composite
+index. Entropy summarizes classification separation (higher is better).
+<code>MinProfileNodeN</code> and <code>MaxProfileNodeN</code> are integer SOM-node counts in the
+smallest and largest profile; the corresponding <code>*Proportion</code> fields divide
+those counts by the total number of SOM nodes. <code>BLRTStatistic</code> and
+<code>BLRTPValue</code> compare a k-profile model with k - 1 profiles under the same
+covariance model. A small p-value supports the added profile's statistical
+fit, but does not establish clinical meaning or reproducibility; it is
+unavailable for k = 1.
 The raw <code>BLRTPValue</code> remains in the table. Its candidate-review panel
 displays <code>-log10(BLRTPValue)</code> with a dashed <code>0.05</code> p-value
 reference at <code>-log10(0.05)</code>.</p>
@@ -1524,7 +1530,7 @@ a model-based cluster analysis. <em>Entropy</em>. 2017;19:452.</p>
   </tr></thead><tbody><tr><td style="text-align:right;"> 1 </td>
    <td style="text-align:right;"> 2 </td>
    <td style="text-align:left;"> success </td>
-   <td style="text-align:right;"> 0.027 </td>
+   <td style="text-align:right;"> 0.039 </td>
    <td style="text-align:left;"> FALSE </td>
    <td style="text-align:right;"> 0 </td>
    <td style="text-align:left;">  </td>
@@ -1532,7 +1538,7 @@ a model-based cluster analysis. <em>Entropy</em>. 2017;19:452.</p>
   </tr><tr><td style="text-align:right;"> 3 </td>
    <td style="text-align:right;"> 2 </td>
    <td style="text-align:left;"> success </td>
-   <td style="text-align:right;"> 0.026 </td>
+   <td style="text-align:right;"> 0.039 </td>
    <td style="text-align:left;"> FALSE </td>
    <td style="text-align:right;"> 0 </td>
    <td style="text-align:left;">  </td>
@@ -1540,7 +1546,7 @@ a model-based cluster analysis. <em>Entropy</em>. 2017;19:452.</p>
   </tr><tr><td style="text-align:right;"> 1 </td>
    <td style="text-align:right;"> 3 </td>
    <td style="text-align:left;"> success </td>
-   <td style="text-align:right;"> 0.028 </td>
+   <td style="text-align:right;"> 0.041 </td>
    <td style="text-align:left;"> FALSE </td>
    <td style="text-align:right;"> 0 </td>
    <td style="text-align:left;">  </td>
@@ -1548,29 +1554,13 @@ a model-based cluster analysis. <em>Entropy</em>. 2017;19:452.</p>
   </tr><tr><td style="text-align:right;"> 3 </td>
    <td style="text-align:right;"> 3 </td>
    <td style="text-align:left;"> success </td>
-   <td style="text-align:right;"> 0.029 </td>
+   <td style="text-align:right;"> 0.041 </td>
    <td style="text-align:left;"> FALSE </td>
    <td style="text-align:right;"> 0 </td>
    <td style="text-align:left;">  </td>
    <td style="text-align:left;"> NA </td>
   </tr><tr><td style="text-align:right;"> 1 </td>
    <td style="text-align:right;"> 4 </td>
-   <td style="text-align:left;"> success </td>
-   <td style="text-align:right;"> 0.031 </td>
-   <td style="text-align:left;"> FALSE </td>
-   <td style="text-align:right;"> 0 </td>
-   <td style="text-align:left;">  </td>
-   <td style="text-align:left;"> NA </td>
-  </tr><tr><td style="text-align:right;"> 3 </td>
-   <td style="text-align:right;"> 4 </td>
-   <td style="text-align:left;"> success </td>
-   <td style="text-align:right;"> 0.033 </td>
-   <td style="text-align:left;"> FALSE </td>
-   <td style="text-align:right;"> 0 </td>
-   <td style="text-align:left;">  </td>
-   <td style="text-align:left;"> NA </td>
-  </tr><tr><td style="text-align:right;"> 1 </td>
-   <td style="text-align:right;"> 5 </td>
    <td style="text-align:left;"> success </td>
    <td style="text-align:right;"> 0.043 </td>
    <td style="text-align:left;"> FALSE </td>
@@ -1578,9 +1568,25 @@ a model-based cluster analysis. <em>Entropy</em>. 2017;19:452.</p>
    <td style="text-align:left;">  </td>
    <td style="text-align:left;"> NA </td>
   </tr><tr><td style="text-align:right;"> 3 </td>
+   <td style="text-align:right;"> 4 </td>
+   <td style="text-align:left;"> success </td>
+   <td style="text-align:right;"> 0.047 </td>
+   <td style="text-align:left;"> FALSE </td>
+   <td style="text-align:right;"> 0 </td>
+   <td style="text-align:left;">  </td>
+   <td style="text-align:left;"> NA </td>
+  </tr><tr><td style="text-align:right;"> 1 </td>
    <td style="text-align:right;"> 5 </td>
    <td style="text-align:left;"> success </td>
-   <td style="text-align:right;"> 0.037 </td>
+   <td style="text-align:right;"> 0.057 </td>
+   <td style="text-align:left;"> FALSE </td>
+   <td style="text-align:right;"> 0 </td>
+   <td style="text-align:left;">  </td>
+   <td style="text-align:left;"> NA </td>
+  </tr><tr><td style="text-align:right;"> 3 </td>
+   <td style="text-align:right;"> 5 </td>
+   <td style="text-align:left;"> success </td>
+   <td style="text-align:right;"> 0.052 </td>
    <td style="text-align:left;"> FALSE </td>
    <td style="text-align:right;"> 0 </td>
    <td style="text-align:left;">  </td>

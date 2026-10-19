@@ -515,14 +515,22 @@ A list of class `"Pipeline_SOM_MClust"` with components:
 ## Details
 
 `ModelInfo_MClust$fit_table` uses the fit indices returned by tidyLPA's
-mclust backend. AIC, AWE, BIC, CAIC, CLC, KIC, SABIC, and ICL are
-likelihood/information criteria, for which lower values are preferred
-when comparing candidate fits estimated on the same data. Entropy
-summarizes classification separation (higher is better).
-`MinProfileNodeN` and `MaxProfileNodeN` are integer SOM-node counts in
-the smallest and largest profile; the corresponding `*Proportion` fields
-divide those counts by the total number of SOM nodes. `BLRTStatistic`
-and `BLRTPValue` compare a k-profile model with k - 1 profiles under the
+mclust backend. AIC, AWE, BIC, CAIC, CLC, KIC, and SABIC are
+likelihood/information criteria on tidyLPA's -2 log-likelihood scale,
+for which lower values are preferred when comparing candidate fits
+estimated on the same data. ICL follows mclust's convention instead
+(`-BIC` plus twice the summed log maximum posterior, matching
+[`mclust::icl()`](https://mclust-org.github.io/mclust/reference/icl.html)),
+so higher ICL values are preferred: ICL and BIC point in opposite
+directions, and
+[`PlotClusterFitReview()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotClusterFitReview.md)
+labels each panel with its preferred direction. ICL is reported for
+review only and is not part of the composite index. Entropy summarizes
+classification separation (higher is better). `MinProfileNodeN` and
+`MaxProfileNodeN` are integer SOM-node counts in the smallest and
+largest profile; the corresponding `*Proportion` fields divide those
+counts by the total number of SOM nodes. `BLRTStatistic` and
+`BLRTPValue` compare a k-profile model with k - 1 profiles under the
 same covariance model. A small p-value supports the added profile's
 statistical fit, but does not establish clinical meaning or
 reproducibility; it is unavailable for k = 1. The raw `BLRTPValue`

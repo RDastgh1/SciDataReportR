@@ -228,6 +228,8 @@
   Variables
 - [`PlotSpiderChart()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotSpiderChart.md)
   : Plot a spider chart across continuous and binary variables
+- [`PlotSplitCorrelationHeatmap()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotSplitCorrelationHeatmap.md)
+  : Plot correlations within two strata as split triangles
 - [`PlotSplitViolin()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotSplitViolin.md)
   : Split violin with aligned half-boxplots, significance label, sample
   sizes, and label-aware title

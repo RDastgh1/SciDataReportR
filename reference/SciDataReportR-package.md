@@ -25,3 +25,8 @@ Authors:
 
 - Raha Dastgheyb <raha@jhmi.edu>
   ([ORCID](https://orcid.org/0000-0002-4992-711X))
+
+Other contributors:
+
+- Aparna Bhattacharyya (Original split-triangle correlation heatmap
+  wrapper) \[contributor\]

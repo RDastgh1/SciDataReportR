@@ -41,7 +41,8 @@ MakeComparisonTable(
   Covariates = lifecycle::deprecated(),
   ValueDigits = lifecycle::deprecated(),
   pDigits = lifecycle::deprecated(),
-  EffectSizeDigits = lifecycle::deprecated()
+  EffectSizeDigits = lifecycle::deprecated(),
+  addQ = FALSE
 )
 ```
 
@@ -189,6 +190,15 @@ MakeComparisonTable(
 
   **Deprecated** (since 19.15.0). Use `effect_size_digits` instead.
 
+- addQ:
+
+  Logical; add Benjamini-Hochberg FDR q-values across valid main outcome
+  tests. Defaults to `FALSE`. Uses the reported main p-values, including
+  covariate adjustment when applicable. Missing tests are excluded.
+  Q-values appear only on main outcome rows, with values \<= 0.05 bolded
+  independently of p-values. Pairwise columns are unchanged.
+  Summary-only tables omit q-values.
+
 ## Value
 
 A `gtsummary` object.
@@ -245,6 +255,11 @@ default, `"fdr"` when there are many contrasts, `"none"` for exploratory
 work. `Referent` compares every group against one reference level
 instead of against each other, which is usually what a control group is
 for.
+
+**`addQ = TRUE`** adds Benjamini-Hochberg FDR q-values across the main
+outcome tests, counting each tested outcome once. Pairwise p-values
+retain their separate within-outcome correction selected by
+`PairwiseMethod`.
 
 **`covariates`** replaces the simple test with a model-based one that
 holds the named variables constant. An unadjusted group difference in a

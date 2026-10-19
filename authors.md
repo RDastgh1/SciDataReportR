@@ -5,10 +5,13 @@
 - **Raha Dastgheyb**. Author, maintainer.
   [](https://orcid.org/0000-0002-4992-711X)
 
+- **Aparna Bhattacharyya**. Contributor.  
+  Original split-triangle correlation heatmap wrapper
+
 ## Citation
 
 Source:
-[`DESCRIPTION`](https://github.com/RDastgh1/SciDataReportR/blob/v21.15.0/DESCRIPTION)
+[`DESCRIPTION`](https://github.com/RDastgh1/SciDataReportR/blob/master/DESCRIPTION)
 
 Dastgheyb R (2026). *SciDataReportR: Workflow Infrastructure for
 Reproducible Scientific Data Reporting*. R package version 21.15.0,

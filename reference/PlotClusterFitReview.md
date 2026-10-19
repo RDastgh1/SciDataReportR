@@ -10,7 +10,8 @@ PlotClusterFitReview(
   x = "Classes",
   metrics = NULL,
   group = NULL,
-  title = "Candidate model review"
+  title = "Candidate model review",
+  metric_direction = NULL
 )
 ```
 
@@ -38,9 +39,31 @@ PlotClusterFitReview(
 
   Plot title.
 
+- metric_direction:
+
+  Optional named character vector giving the preferred direction
+  (`"higher"` or `"lower"`) of metrics, for example `c(BIC = "lower")`.
+  It overrides the directions recorded by the clustering pipeline in
+  `attr(fit_table, "MetricDirection")` and the package defaults.
+
 ## Value
 
 A `ggplot` object.
+
+## Details
+
+Each panel is labelled with the metric's preferred direction, such as
+"BIC (lower is better)". Directions that do not depend on the backend
+are built in (for example AIC lower, ICL and Entropy higher). BIC's
+direction does: mclust reports it on a higher-is-better scale, while
+tidyLPA (used by
+[`CreateClusterModel_SOM_MClust()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateClusterModel_SOM_MClust.md))
+and poLCA report it on a lower-is-better scale. Fit tables returned by
+the package's clustering pipelines record the direction they used; for
+other tables, supply it via `metric_direction`, otherwise the BIC panel
+is shown without a direction. ICL is higher-is-better on both mclust's
+and tidyLPA's scale, so in a tidyLPA fit table BIC and ICL panels point
+in opposite directions.
 
 ## Examples
 

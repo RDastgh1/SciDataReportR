@@ -212,30 +212,29 @@ still not external validation in a new population.
     [4] SciDataReportR_21.15.0
 
     loaded via a namespace (and not attached):
-     [1] gtable_0.3.6           xfun_0.61              bayestestR_0.19.0
-     [4] htmlwidgets_1.6.4      insight_1.5.4          rstatix_1.1.0
+     [1] gtable_0.3.6           xfun_0.62              bayestestR_0.20.0
+     [4] htmlwidgets_1.6.4      insight_1.6.0          rstatix_1.1.0
      [7] lattice_0.22-9         paletteer_1.7.0        crosstalk_1.2.2
     [10] vctrs_0.7.3            tools_4.6.1            generics_0.1.4
-    [13] datawizard_1.4.0       tibble_3.3.1           pkgconfig_2.0.3
+    [13] datawizard_1.4.1       tibble_3.3.1           pkgconfig_2.0.3
     [16] Matrix_1.7-5           data.table_1.18.6.1    RColorBrewer_1.1-3
-    [19] correlation_0.8.8      S7_0.2.2               RcppParallel_6.2.1
-    [22] lifecycle_1.0.5        compiler_4.6.1         farver_2.1.2
-    [25] snakecase_0.11.1       carData_3.0-6          htmltools_0.5.9
-    [28] yaml_2.3.12            Formula_1.2-6          pillar_1.11.1
-    [31] car_3.1-5              tidyr_1.3.2            statsExpressions_2.1.2
-    [34] abind_1.4-8            nlme_3.1-169           tidyselect_1.2.1
-    [37] sjlabelled_1.2.0       digest_0.6.39          mvtnorm_1.4-2
-    [40] gtsummary_2.6.1        purrr_1.2.2            rematch2_2.1.2
-    [43] splines_4.6.1          labeling_0.4.3         forcats_1.0.1
-    [46] ggstatsplot_1.1.2      labelled_2.16.1        fastmap_1.2.0
-    [49] grid_4.6.1             cli_3.6.6              magrittr_2.0.5
-    [52] patchwork_1.3.2        utf8_1.2.6             dichromat_2.0-1
-    [55] broom_1.0.13           withr_3.0.3            scales_1.4.0
-    [58] backports_1.5.1        estimability_2.0.0     rmarkdown_2.32
-    [61] httr_1.4.9             emmeans_2.0.4          otel_0.2.0
-    [64] hms_1.1.4              coda_0.19-4.1          evaluate_1.0.5
-    [67] knitr_1.52             haven_2.5.5            parameters_0.29.3
-    [70] viridisLite_0.4.3      mgcv_1.9-4             rstantools_2.7.1
-    [73] rlang_1.3.0            Rcpp_1.1.2             xtable_1.8-8
-    [76] glue_1.8.1             pROC_1.19.1            jsonlite_2.0.0
-    [79] R6_2.6.1              
+    [19] S7_0.2.2               RcppParallel_6.2.1     lifecycle_1.0.5
+    [22] compiler_4.6.1         farver_2.1.2           carData_3.0-6
+    [25] snakecase_0.11.1       htmltools_0.5.9        yaml_2.3.12
+    [28] Formula_1.2-6          pillar_1.11.1          car_3.1-5
+    [31] tidyr_1.3.2            statsExpressions_2.2.0 abind_1.4-8
+    [34] nlme_3.1-169           tidyselect_1.2.1       sjlabelled_1.2.0
+    [37] digest_0.6.39          mvtnorm_1.4-2          gtsummary_2.6.1
+    [40] purrr_1.2.2            rematch2_2.1.2         splines_4.6.1
+    [43] labeling_0.4.3         forcats_1.0.1          ggstatsplot_1.1.3
+    [46] labelled_2.16.1        fastmap_1.2.0          grid_4.6.1
+    [49] cli_3.6.6              magrittr_2.0.5         utf8_1.2.6
+    [52] dichromat_2.0-1        broom_1.0.13           withr_3.0.3
+    [55] scales_1.4.0           backports_1.5.1        estimability_2.0.0
+    [58] rmarkdown_2.32         httr_1.4.9             emmeans_2.0.4
+    [61] otel_0.2.0             hms_1.1.4              coda_0.19-4.1
+    [64] evaluate_1.0.5         knitr_1.52             haven_2.5.5
+    [67] parameters_0.30.0      viridisLite_0.4.3      mgcv_1.9-4
+    [70] rstantools_2.7.1       rlang_1.3.0            Rcpp_1.1.2
+    [73] xtable_1.8-8           glue_1.8.1             pROC_1.19.1
+    [76] jsonlite_2.0.0         R6_2.6.1              

@@ -279,6 +279,24 @@ review <- CreateClusterModel_PCA_MClust(
   df_Training, vars_Numeric, k_range = 2:4, models = 1,
   stability_resamples = 2
 )
+#> Registered S3 method overwritten by 'tidyLPA':
+#>   method    from   
+#>   print.LRT tidySEM
+#> Registered S3 method overwritten by 'tidyLPA':
+#>   method    from   
+#>   print.LRT tidySEM
+#> Registered S3 method overwritten by 'tidyLPA':
+#>   method    from   
+#>   print.LRT tidySEM
+#> Registered S3 method overwritten by 'tidyLPA':
+#>   method    from   
+#>   print.LRT tidySEM
+#> Registered S3 method overwritten by 'tidyLPA':
+#>   method    from   
+#>   print.LRT tidySEM
+#> Registered S3 method overwritten by 'tidyLPA':
+#>   method    from   
+#>   print.LRT tidySEM
 review$ModelInfo$fit_table
 #> # A tibble: 3 × 28
 #>   Model ModelName ModelLabel     Classes    BIC    ICL   AIC Entropy MinClusterN

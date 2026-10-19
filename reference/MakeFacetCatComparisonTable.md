@@ -143,7 +143,10 @@ MakeFacetCatComparisonTable(
 
 - ...:
 
-  Additional arguments passed to the comparison function.
+  Additional arguments passed to the comparison function. With the
+  default `CompFun`, `addQ = TRUE` adds BH/FDR q-values across main
+  outcomes separately within each facet's table; pairwise p-values are
+  unchanged.
 
 - DataFrame:
 
