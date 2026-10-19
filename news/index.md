@@ -1,5 +1,7 @@
 # Changelog
 
+## SciDataReportR 21.16.0
+
 ## SciDataReportR 21.15.0
 
 - [`PlotSplitCorrelationHeatmap()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotSplitCorrelationHeatmap.md)

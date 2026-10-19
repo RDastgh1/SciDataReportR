@@ -436,7 +436,7 @@ sessionInfo()
 
     other attached packages:
     [1] plotly_4.12.1          ggplot2_4.0.3          dplyr_1.2.1
-    [4] SciDataReportR_21.15.0
+    [4] SciDataReportR_21.16.0
 
     loaded via a namespace (and not attached):
      [1] generics_0.1.4         tidyr_1.3.2            rstatix_1.1.0

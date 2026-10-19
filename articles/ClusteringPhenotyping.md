@@ -1014,7 +1014,7 @@ Session information
     [1] stats     graphics  grDevices utils     datasets  methods   base
 
     other attached packages:
-    [1] ggplot2_4.0.3          dplyr_1.2.1            SciDataReportR_21.15.0
+    [1] ggplot2_4.0.3          dplyr_1.2.1            SciDataReportR_21.16.0
 
     loaded via a namespace (and not attached):
       [1] RColorBrewer_1.1-3     rstudioapi_0.19.0      jsonlite_2.0.0
