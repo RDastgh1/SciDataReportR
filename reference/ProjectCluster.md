@@ -97,6 +97,7 @@ df_New <- dplyr::filter(SimulatedPhenotypeData, .data$Cohort == "Projection")
 model <- CreateClusterModel_KMeans(
   df_Training, paste0("Var", 1:6), method = "finalize", final_k = 3
 )
+#> Warning: PlotClusterBoxplot(): `ClusterVar = "Cluster"` is numeric with 3 observed non-missing values (examples: 2, 1, 3); converting locally to a factor. Few unique values do not establish categorical meaning. Explicitly convert this column to a factor if categorical treatment is intended.
 projected <- ProjectCluster(model, df_New)
 projected$ProjectionFit$summary
 #> # A tibble: 1 × 9

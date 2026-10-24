@@ -287,11 +287,11 @@ sessionInfo()
 
     R version 4.6.1 (2026-06-24)
     Platform: x86_64-pc-linux-gnu
-    Running under: Ubuntu 24.04.5 LTS
+    Running under: Ubuntu 26.04.1 LTS
 
     Matrix products: default
     BLAS:   /usr/lib/x86_64-linux-gnu/openblas-pthread/libblas.so.3
-    LAPACK: /usr/lib/x86_64-linux-gnu/openblas-pthread/libopenblasp-r0.3.26.so;  LAPACK version 3.12.0
+    LAPACK: /usr/lib/x86_64-linux-gnu/openblas-pthread/libopenblasp-r0.3.32.so;  LAPACK version 3.12.0
 
     locale:
      [1] LC_CTYPE=C.UTF-8       LC_NUMERIC=C           LC_TIME=C.UTF-8
@@ -309,9 +309,9 @@ sessionInfo()
     [1] dplyr_1.2.1            SciDataReportR_21.16.0
 
     loaded via a namespace (and not attached):
-     [1] Exact_3.3              ggstatsplot_1.1.3      sjlabelled_1.2.0
+     [1] Exact_3.3              ggstatsplot_1.1.4      sjlabelled_1.2.0
      [4] tidyselect_1.2.1       rootSolve_1.8.2.4      farver_2.1.2
-     [7] statsExpressions_2.2.0 S7_0.2.2               fastmap_1.2.0
+     [7] statsExpressions_2.2.1 S7_0.2.2               fastmap_1.2.0
     [10] bayestestR_0.20.0      labelled_2.16.1        digest_0.6.39
     [13] estimability_2.0.0     lifecycle_1.0.5        lmom_3.3
     [16] magrittr_2.0.5         compiler_4.6.1         rlang_1.3.0

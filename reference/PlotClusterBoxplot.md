@@ -146,6 +146,18 @@ By default, reference lines are only added automatically when
 Variable labels are used by default when available from a codebook or
 from variable label attributes.
 
+Categorical input safeguards apply to `ClusterVar`. Numeric columns are
+converted locally to factors, with a warning, only when all observed
+values are finite whole-number codes and there are at most 10 distinct
+non-missing values. Other numeric inputs error: explicitly convert the
+column to a factor first if categorical treatment is intended (for
+example, `df_All$cohort <- factor(df_All$cohort)`). Few unique values
+alone do not establish categorical meaning. Factors, character columns,
+and logical columns are accepted; more than 10 observed categories warn
+and continue. Entirely missing or unsupported columns error. Caller data
+are unchanged, and existing restrictions on the required number of
+groups still apply.
+
 ## Examples
 
 ``` r
@@ -156,6 +168,7 @@ PlotClusterBoxplot(
   Scale = TRUE,
   ReferenceLines = "z"
 )
+#> Warning: PlotClusterBoxplot(): `ClusterVar = "cyl"` is numeric with 3 observed non-missing values (examples: 6, 4, 8); converting locally to a factor. Few unique values do not establish categorical meaning. Explicitly convert this column to a factor if categorical treatment is intended.
 
 
 PlotClusterBoxplot(
@@ -164,5 +177,6 @@ PlotClusterBoxplot(
   variables = c("mpg", "disp", "hp"),
   ClusterLabel = "n"
 )
+#> Warning: PlotClusterBoxplot(): `ClusterVar = "cyl"` is numeric with 3 observed non-missing values (examples: 6, 4, 8); converting locally to a factor. Few unique values do not establish categorical meaning. Explicitly convert this column to a factor if categorical treatment is intended.
 
 ```

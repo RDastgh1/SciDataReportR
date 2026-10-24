@@ -995,11 +995,11 @@ Session information
 
     R version 4.6.1 (2026-06-24)
     Platform: x86_64-pc-linux-gnu
-    Running under: Ubuntu 24.04.5 LTS
+    Running under: Ubuntu 26.04.1 LTS
 
     Matrix products: default
     BLAS:   /usr/lib/x86_64-linux-gnu/openblas-pthread/libblas.so.3
-    LAPACK: /usr/lib/x86_64-linux-gnu/openblas-pthread/libopenblasp-r0.3.26.so;  LAPACK version 3.12.0
+    LAPACK: /usr/lib/x86_64-linux-gnu/openblas-pthread/libopenblasp-r0.3.32.so;  LAPACK version 3.12.0
 
     locale:
      [1] LC_CTYPE=C.UTF-8       LC_NUMERIC=C           LC_TIME=C.UTF-8
@@ -1038,7 +1038,7 @@ Session information
      [55] R.utils_2.13.0         MASS_7.3-65            scatterplot3d_0.3-45
      [58] tools_4.6.1            pbivnorm_0.6.0         MplusAutomation_1.3
      [61] foreign_0.8-91         otel_0.2.0             httpuv_1.6.17
-     [64] future.apply_1.21.0    statsExpressions_2.2.0 nnet_7.3-20
+     [64] future.apply_1.21.0    statsExpressions_2.2.1 nnet_7.3-20
      [67] R.oo_1.27.1            glue_1.8.1             quadprog_1.5-8
      [70] dbscan_1.2.7           nlme_3.1-169           promises_1.5.0
      [73] grid_4.6.1             checkmate_2.3.4        cluster_2.1.8.2
@@ -1046,7 +1046,7 @@ Session information
      [79] R.methodsS3_1.8.2      tidyr_1.3.2            aweSOM_1.3
      [82] data.table_1.18.6.1    hms_1.1.4              car_3.1-5
      [85] RANN_2.6.3             pillar_1.11.1          stringr_1.6.0
-     [88] later_1.4.8            lattice_0.22-9         ggstatsplot_1.1.3
+     [88] later_1.4.8            lattice_0.22-9         ggstatsplot_1.1.4
      [91] tidyselect_1.2.1       knitr_1.52             gridExtra_2.3.1
      [94] stats4_4.6.1           xfun_0.62              texreg_1.40
      [97] proto_1.0.0            stringi_1.8.9          yaml_2.3.12

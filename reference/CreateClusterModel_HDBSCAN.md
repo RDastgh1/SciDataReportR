@@ -274,6 +274,15 @@ review <- CreateClusterModel_HDBSCAN(
   cluster_selection_epsilon_range = c(0, 0.05),
   stability_resamples = 2
 )
+#> Warning: PlotClusterBoxplot(): `ClusterVar = "Cluster"` is numeric with 3 observed non-missing values (examples: 3, 2, 1); converting locally to a factor. Few unique values do not establish categorical meaning. Explicitly convert this column to a factor if categorical treatment is intended.
+#> Warning: PlotClusterBoxplot(): `ClusterVar = "Cluster"` is numeric with 3 observed non-missing values (examples: 3, 2, 1); converting locally to a factor. Few unique values do not establish categorical meaning. Explicitly convert this column to a factor if categorical treatment is intended.
+#> Warning: PlotClusterBoxplot(): `ClusterVar = "Cluster"` is numeric with 2 observed non-missing values (examples: 2, 1); converting locally to a factor. Few unique values do not establish categorical meaning. Explicitly convert this column to a factor if categorical treatment is intended.
+#> Warning: PlotClusterBoxplot(): `ClusterVar = "Cluster"` is numeric with 2 observed non-missing values (examples: 2, 1); converting locally to a factor. Few unique values do not establish categorical meaning. Explicitly convert this column to a factor if categorical treatment is intended.
+#> Warning: PlotClusterBoxplot(): `ClusterVar = "Cluster"` is numeric with 3 observed non-missing values (examples: 2, 1, 3); converting locally to a factor. Few unique values do not establish categorical meaning. Explicitly convert this column to a factor if categorical treatment is intended.
+#> Warning: PlotClusterBoxplot(): `ClusterVar = "Cluster"` is numeric with 3 observed non-missing values (examples: 3, 2, 1); converting locally to a factor. Few unique values do not establish categorical meaning. Explicitly convert this column to a factor if categorical treatment is intended.
+#> Warning: PlotClusterBoxplot(): `ClusterVar = "Cluster"` is numeric with 2 observed non-missing values (examples: 2, 1); converting locally to a factor. Few unique values do not establish categorical meaning. Explicitly convert this column to a factor if categorical treatment is intended.
+#> Warning: PlotClusterBoxplot(): `ClusterVar = "Cluster"` is numeric with 2 observed non-missing values (examples: 2, 1); converting locally to a factor. Few unique values do not establish categorical meaning. Explicitly convert this column to a factor if categorical treatment is intended.
+#> Warning: PlotClusterBoxplot(): `ClusterVar = "Cluster"` is numeric with 2 observed non-missing values (examples: 2, 1); converting locally to a factor. Few unique values do not establish categorical meaning. Explicitly convert this column to a factor if categorical treatment is intended.
 review$ModelInfo$fit_table
 #> # A tibble: 4 × 26
 #>   Classes MinPts Epsilon Persistence NoiseProportion MeanMembershipProbability
@@ -300,6 +309,9 @@ model <- CreateClusterModel_HDBSCAN(
   final_minPts = 10, final_cluster_selection_epsilon = 0,
   stability_resamples = 2
 )
+#> Warning: PlotClusterBoxplot(): `ClusterVar = "Cluster"` is numeric with 2 observed non-missing values (examples: 2, 1); converting locally to a factor. Few unique values do not establish categorical meaning. Explicitly convert this column to a factor if categorical treatment is intended.
+#> Warning: PlotClusterBoxplot(): `ClusterVar = "Cluster"` is numeric with 2 observed non-missing values (examples: 2, 1); converting locally to a factor. Few unique values do not establish categorical meaning. Explicitly convert this column to a factor if categorical treatment is intended.
+#> Warning: PlotClusterBoxplot(): `ClusterVar = "Cluster"` is numeric with 2 observed non-missing values (examples: 2, 1); converting locally to a factor. Few unique values do not establish categorical meaning. Explicitly convert this column to a factor if categorical treatment is intended.
 model$ModelInfo$plots$density_review
 #> `geom_line()`: Each group consists of only one observation.
 #> ℹ Do you need to adjust the group aesthetic?

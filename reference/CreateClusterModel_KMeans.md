@@ -274,6 +274,15 @@ review <- CreateClusterModel_KMeans(
   df_Training, vars_Numeric, k_range = 2:5, nstart = 10,
   stability_resamples = 2
 )
+#> Warning: PlotClusterBoxplot(): `ClusterVar = "Cluster"` is numeric with 2 observed non-missing values (examples: 2, 1); converting locally to a factor. Few unique values do not establish categorical meaning. Explicitly convert this column to a factor if categorical treatment is intended.
+#> Warning: PlotClusterBoxplot(): `ClusterVar = "Cluster"` is numeric with 2 observed non-missing values (examples: 1, 2); converting locally to a factor. Few unique values do not establish categorical meaning. Explicitly convert this column to a factor if categorical treatment is intended.
+#> Warning: PlotClusterBoxplot(): `ClusterVar = "Cluster"` is numeric with 3 observed non-missing values (examples: 3, 1, 2); converting locally to a factor. Few unique values do not establish categorical meaning. Explicitly convert this column to a factor if categorical treatment is intended.
+#> Warning: PlotClusterBoxplot(): `ClusterVar = "Cluster"` is numeric with 3 observed non-missing values (examples: 1, 2, 3); converting locally to a factor. Few unique values do not establish categorical meaning. Explicitly convert this column to a factor if categorical treatment is intended.
+#> Warning: PlotClusterBoxplot(): `ClusterVar = "Cluster"` is numeric with 4 observed non-missing values (examples: 2, 3, 4, 1); converting locally to a factor. Few unique values do not establish categorical meaning. Explicitly convert this column to a factor if categorical treatment is intended.
+#> Warning: PlotClusterBoxplot(): `ClusterVar = "Cluster"` is numeric with 4 observed non-missing values (examples: 2, 3, 4, 1); converting locally to a factor. Few unique values do not establish categorical meaning. Explicitly convert this column to a factor if categorical treatment is intended.
+#> Warning: PlotClusterBoxplot(): `ClusterVar = "Cluster"` is numeric with 5 observed non-missing values (examples: 4, 5, 2, 1, 3); converting locally to a factor. Few unique values do not establish categorical meaning. Explicitly convert this column to a factor if categorical treatment is intended.
+#> Warning: PlotClusterBoxplot(): `ClusterVar = "Cluster"` is numeric with 5 observed non-missing values (examples: 4, 2, 3, 5, 1); converting locally to a factor. Few unique values do not establish categorical meaning. Explicitly convert this column to a factor if categorical treatment is intended.
+#> Warning: PlotClusterBoxplot(): `ClusterVar = "Cluster"` is numeric with 4 observed non-missing values (examples: 1, 4, 2, 3); converting locally to a factor. Few unique values do not establish categorical meaning. Explicitly convert this column to a factor if categorical treatment is intended.
 review$ModelInfo$fit_table
 #> # A tibble: 4 × 23
 #>   Classes   WSS BetweenSS CalinskiHarabasz Silhouette MinClusterN SizeBalance
@@ -301,6 +310,9 @@ model <- CreateClusterModel_KMeans(
   df_Training, vars_Numeric, method = "finalize", final_k = 4,
   nstart = 10, stability_resamples = 2
 )
+#> Warning: PlotClusterBoxplot(): `ClusterVar = "Cluster"` is numeric with 4 observed non-missing values (examples: 2, 3, 4, 1); converting locally to a factor. Few unique values do not establish categorical meaning. Explicitly convert this column to a factor if categorical treatment is intended.
+#> Warning: PlotClusterBoxplot(): `ClusterVar = "Cluster"` is numeric with 4 observed non-missing values (examples: 2, 3, 4, 1); converting locally to a factor. Few unique values do not establish categorical meaning. Explicitly convert this column to a factor if categorical treatment is intended.
+#> Warning: PlotClusterBoxplot(): `ClusterVar = "Cluster"` is numeric with 4 observed non-missing values (examples: 1, 4, 2, 3); converting locally to a factor. Few unique values do not establish categorical meaning. Explicitly convert this column to a factor if categorical treatment is intended.
 model$ModelInfo$plots$silhouette
 
 model$ModelInfo$plots$centre_heatmap

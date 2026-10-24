@@ -39,7 +39,9 @@ df_Training <- dplyr::filter(SimulatedPhenotypeData, .data$Cohort == "Training")
 model <- CreateClusterModel_KMeans(
   df_Training, paste0("Var", 1:12), method = "finalize", final_k = 4
 )
+#> Warning: PlotClusterBoxplot(): `ClusterVar = "Cluster"` is numeric with 4 observed non-missing values (examples: 1, 4, 2, 3); converting locally to a factor. Few unique values do not establish categorical meaning. Explicitly convert this column to a factor if categorical treatment is intended.
 PlotClusterProfiles(model$DataWithClusters, "Cluster", paste0("Var", 1:12))
+#> Warning: PlotClusterBoxplot(): `ClusterVar = "Cluster"` is numeric with 4 observed non-missing values (examples: 1, 4, 2, 3); converting locally to a factor. Few unique values do not establish categorical meaning. Explicitly convert this column to a factor if categorical treatment is intended.
 
 # }
 ```

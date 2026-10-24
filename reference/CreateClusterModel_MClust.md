@@ -286,21 +286,28 @@ review <- CreateClusterModel_MClust(
 #> Registered S3 method overwritten by 'tidyLPA':
 #>   method    from   
 #>   print.LRT tidySEM
+#> Warning: PlotClusterBoxplot(): `ClusterVar = "Cluster"` is numeric with 2 observed non-missing values (examples: 1, 2); converting locally to a factor. Few unique values do not establish categorical meaning. Explicitly convert this column to a factor if categorical treatment is intended.
 #> Registered S3 method overwritten by 'tidyLPA':
 #>   method    from   
 #>   print.LRT tidySEM
+#> Warning: PlotClusterBoxplot(): `ClusterVar = "Cluster"` is numeric with 2 observed non-missing values (examples: 1, 2); converting locally to a factor. Few unique values do not establish categorical meaning. Explicitly convert this column to a factor if categorical treatment is intended.
 #> Registered S3 method overwritten by 'tidyLPA':
 #>   method    from   
 #>   print.LRT tidySEM
+#> Warning: PlotClusterBoxplot(): `ClusterVar = "Cluster"` is numeric with 3 observed non-missing values (examples: 1, 2, 3); converting locally to a factor. Few unique values do not establish categorical meaning. Explicitly convert this column to a factor if categorical treatment is intended.
 #> Registered S3 method overwritten by 'tidyLPA':
 #>   method    from   
 #>   print.LRT tidySEM
+#> Warning: PlotClusterBoxplot(): `ClusterVar = "Cluster"` is numeric with 3 observed non-missing values (examples: 1, 2, 3); converting locally to a factor. Few unique values do not establish categorical meaning. Explicitly convert this column to a factor if categorical treatment is intended.
 #> Registered S3 method overwritten by 'tidyLPA':
 #>   method    from   
 #>   print.LRT tidySEM
+#> Warning: PlotClusterBoxplot(): `ClusterVar = "Cluster"` is numeric with 4 observed non-missing values (examples: 1, 2, 3, 4); converting locally to a factor. Few unique values do not establish categorical meaning. Explicitly convert this column to a factor if categorical treatment is intended.
 #> Registered S3 method overwritten by 'tidyLPA':
 #>   method    from   
 #>   print.LRT tidySEM
+#> Warning: PlotClusterBoxplot(): `ClusterVar = "Cluster"` is numeric with 4 observed non-missing values (examples: 1, 2, 3, 4); converting locally to a factor. Few unique values do not establish categorical meaning. Explicitly convert this column to a factor if categorical treatment is intended.
+#> Warning: PlotClusterBoxplot(): `ClusterVar = "Cluster"` is numeric with 4 observed non-missing values (examples: 1, 2, 3, 4); converting locally to a factor. Few unique values do not establish categorical meaning. Explicitly convert this column to a factor if categorical treatment is intended.
 review$ModelInfo$fit_table
 #> # A tibble: 3 × 28
 #>   Model ModelName ModelLabel  Classes     BIC     ICL    AIC Entropy MinClusterN
@@ -328,9 +335,12 @@ model <- CreateClusterModel_MClust(
 #> Registered S3 method overwritten by 'tidyLPA':
 #>   method    from   
 #>   print.LRT tidySEM
+#> Warning: PlotClusterBoxplot(): `ClusterVar = "Cluster"` is numeric with 4 observed non-missing values (examples: 1, 2, 3, 4); converting locally to a factor. Few unique values do not establish categorical meaning. Explicitly convert this column to a factor if categorical treatment is intended.
 #> Registered S3 method overwritten by 'tidyLPA':
 #>   method    from   
 #>   print.LRT tidySEM
+#> Warning: PlotClusterBoxplot(): `ClusterVar = "Cluster"` is numeric with 4 observed non-missing values (examples: 1, 2, 3, 4); converting locally to a factor. Few unique values do not establish categorical meaning. Explicitly convert this column to a factor if categorical treatment is intended.
+#> Warning: PlotClusterBoxplot(): `ClusterVar = "Cluster"` is numeric with 4 observed non-missing values (examples: 1, 2, 3, 4); converting locally to a factor. Few unique values do not establish categorical meaning. Explicitly convert this column to a factor if categorical treatment is intended.
 model$ModelInfo$plots$centre_heatmap
 
 model$ModelInfo$plots$centre_profile

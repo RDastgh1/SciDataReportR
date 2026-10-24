@@ -272,11 +272,11 @@ sessionInfo()
 
     R version 4.6.1 (2026-06-24)
     Platform: x86_64-pc-linux-gnu
-    Running under: Ubuntu 24.04.5 LTS
+    Running under: Ubuntu 26.04.1 LTS
 
     Matrix products: default
     BLAS:   /usr/lib/x86_64-linux-gnu/openblas-pthread/libblas.so.3
-    LAPACK: /usr/lib/x86_64-linux-gnu/openblas-pthread/libopenblasp-r0.3.26.so;  LAPACK version 3.12.0
+    LAPACK: /usr/lib/x86_64-linux-gnu/openblas-pthread/libopenblasp-r0.3.32.so;  LAPACK version 3.12.0
 
     locale:
      [1] LC_CTYPE=C.UTF-8       LC_NUMERIC=C           LC_TIME=C.UTF-8
@@ -304,8 +304,8 @@ sessionInfo()
     [22] purrr_1.2.2            scales_1.4.0           abind_1.4-8
     [25] cli_3.6.6              labelled_2.16.1        rlang_1.3.0
     [28] withr_3.0.3            yaml_2.3.12            otel_0.2.0
-    [31] statsExpressions_2.2.0 tools_4.6.1            datawizard_1.4.1
-    [34] rstantools_2.7.1       ggstatsplot_1.1.3      coda_0.19-4.1
+    [31] statsExpressions_2.2.1 tools_4.6.1            datawizard_1.4.1
+    [34] rstantools_2.7.1       ggstatsplot_1.1.4      coda_0.19-4.1
     [37] ggplot2_4.0.3          sjlabelled_1.2.0       bayestestR_0.20.0
     [40] forcats_1.0.1          broom_1.0.13           paletteer_1.7.0
     [43] vctrs_0.7.3            R6_2.6.1               lifecycle_1.0.5

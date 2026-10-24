@@ -2,6 +2,21 @@
 
 ## SciDataReportR 21.16.0
 
+- Categorical plotting and analysis inputs now share safeguards: finite
+  whole-number numeric codes with at most 10 observed values convert
+  locally with a warning. Other numeric categorical inputs fail early
+  and explain how to explicitly prepare a factor. No new arguments are
+  required. Declared categories above 10 observed groups warn and
+  continue. Continuous analysis inputs are unchanged.
+- [`PlotContinuousDistributions()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotContinuousDistributions.md)
+  now supports numeric binary `Fill` columns, excludes grouping columns
+  from automatic outcome selection, rejects explicit grouping/outcome
+  overlap, and uses the group variable label for its legend.
+- [`DiagnosticLikelihoodRatioTable()`](https://rdastgh1.github.io/SciDataReportR/reference/DiagnosticLikelihoodRatioTable.md)
+  applies the same policy to numeric categorical predictors (including
+  codes with 3–10 levels) and strata; binary outcome checks remain
+  unchanged.
+
 ## SciDataReportR 21.15.0
 
 - [`PlotSplitCorrelationHeatmap()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotSplitCorrelationHeatmap.md)

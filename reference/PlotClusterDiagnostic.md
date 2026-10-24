@@ -41,6 +41,7 @@ model <- CreateClusterModel_MClust(
   df_Training, paste0("Var", 1:12), method = "finalize",
   final_k = 4, final_model = 1
 )
+#> Warning: PlotClusterBoxplot(): `ClusterVar = "Cluster"` is numeric with 4 observed non-missing values (examples: 1, 2, 3, 4); converting locally to a factor. Few unique values do not establish categorical meaning. Explicitly convert this column to a factor if categorical treatment is intended.
 PlotClusterDiagnostic(model$ProbFit$individual, "PosteriorMax")
 
 # }

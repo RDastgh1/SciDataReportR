@@ -52,6 +52,8 @@ av <- PlotAnovaRelationshipsMatrix(
   CatVars = c("cyl", "gear"),
   ContVars = c("mpg", "wt", "hp")
 )
+#> Warning: PlotAnovaRelationshipsMatrix(): `CatVars = "cyl"` is numeric with 3 observed non-missing values (examples: 6, 4, 8); converting locally to a factor. Few unique values do not establish categorical meaning. Explicitly convert this column to a factor if categorical treatment is intended.
+#> Warning: PlotAnovaRelationshipsMatrix(): `CatVars = "gear"` is numeric with 3 observed non-missing values (examples: 4, 3, 5); converting locally to a factor. Few unique values do not establish categorical meaning. Explicitly convert this column to a factor if categorical treatment is intended.
 
 plots <- plotSigAssociations(mtcars, av)
 

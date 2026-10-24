@@ -52,6 +52,7 @@ model <- CreateClusterModel_Gower_PAM(
   df_Training, c("Var1", "Var2", "CatVar1", "CatVar2"),
   method = "finalize", final_k = 4
 )
+#> Warning: PlotClusterBoxplot(): `ClusterVar = "Cluster"` is numeric with 4 observed non-missing values (examples: 1, 2, 3, 4); converting locally to a factor. Few unique values do not establish categorical meaning. Explicitly convert this column to a factor if categorical treatment is intended.
 model$ModelInfo$plots$categorical_composition
 
 # }

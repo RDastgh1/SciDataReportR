@@ -189,11 +189,11 @@ still not external validation in a new population.
 
     R version 4.6.1 (2026-06-24)
     Platform: x86_64-pc-linux-gnu
-    Running under: Ubuntu 24.04.5 LTS
+    Running under: Ubuntu 26.04.1 LTS
 
     Matrix products: default
     BLAS:   /usr/lib/x86_64-linux-gnu/openblas-pthread/libblas.so.3
-    LAPACK: /usr/lib/x86_64-linux-gnu/openblas-pthread/libopenblasp-r0.3.26.so;  LAPACK version 3.12.0
+    LAPACK: /usr/lib/x86_64-linux-gnu/openblas-pthread/libopenblasp-r0.3.32.so;  LAPACK version 3.12.0
 
     locale:
      [1] LC_CTYPE=C.UTF-8       LC_NUMERIC=C           LC_TIME=C.UTF-8
@@ -222,11 +222,11 @@ still not external validation in a new population.
     [22] compiler_4.6.1         farver_2.1.2           carData_3.0-6
     [25] snakecase_0.11.1       htmltools_0.5.9        yaml_2.3.12
     [28] Formula_1.2-6          pillar_1.11.1          car_3.1-5
-    [31] tidyr_1.3.2            statsExpressions_2.2.0 abind_1.4-8
+    [31] tidyr_1.3.2            statsExpressions_2.2.1 abind_1.4-8
     [34] nlme_3.1-169           tidyselect_1.2.1       sjlabelled_1.2.0
     [37] digest_0.6.39          mvtnorm_1.4-2          gtsummary_2.6.1
     [40] purrr_1.2.2            rematch2_2.1.2         splines_4.6.1
-    [43] labeling_0.4.3         forcats_1.0.1          ggstatsplot_1.1.3
+    [43] labeling_0.4.3         forcats_1.0.1          ggstatsplot_1.1.4
     [46] labelled_2.16.1        fastmap_1.2.0          grid_4.6.1
     [49] cli_3.6.6              magrittr_2.0.5         utf8_1.2.6
     [52] dichromat_2.0-1        broom_1.0.13           withr_3.0.3
