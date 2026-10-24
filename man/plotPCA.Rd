@@ -76,6 +76,13 @@ The function can optionally color points by a variable in
 \code{PCAObj$CombinedData} and customize hover text using one or more variables.
 When \code{Relabel = TRUE}, labels attached to hover variables are used in the
 hover display when available.
+
+Continuous colour modes are unchanged. Categorical colour modes use the
+package categorical-input safeguards. Explicit \code{ColorType = "factor"}
+authorizes categorical treatment of numeric values, including decimals;
+more than 10 observed categories warn and continue. In automatic categorical
+mode, numeric codes must be finite whole numbers with at most 10 observed
+values, or must be explicitly prepared as factors.
 }
 \examples{
 \donttest{

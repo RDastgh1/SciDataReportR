@@ -34,7 +34,7 @@ test_that("DiagnosticLikelihoodRatioTable resolves levels and handles zero cells
     outcome = c(FALSE, FALSE, TRUE, TRUE),
     numeric_test = c(0, 0, 1, 1),
     character_test = c("z", "z", "a", "a"),
-    continuous = 1:4
+    continuous = seq(0.1, 0.4, by = 0.1)
   )
   out <- suppressWarnings(DiagnosticLikelihoodRatioTable(df_Test, "outcome", c("numeric_test", "character_test")))
   expect_equal(out$Metadata$OutcomeLevels$outcome$positive, "TRUE")
@@ -42,10 +42,13 @@ test_that("DiagnosticLikelihoodRatioTable resolves levels and handles zero cells
   expect_equal(out$Metadata$BinaryPredictorLevels$character_test$positive, "z")
   expect_true(any(is.infinite(out$Results$LikelihoodRatio)))
   expect_true(all(is.na(out$Results$LRLowerCI)))
-  corrected <- DiagnosticLikelihoodRatioTable(df_Test, "outcome", "numeric_test", continuity_correction = 0.5)
+  expect_warning(
+    corrected <- DiagnosticLikelihoodRatioTable(df_Test, "outcome", "numeric_test", continuity_correction = 0.5),
+    "converting locally to a factor"
+  )
   expect_true(all(corrected$Results$Corrected))
   expect_true(all(is.finite(corrected$Results$LRLowerCI)))
-  expect_error(DiagnosticLikelihoodRatioTable(df_Test, "outcome", "continuous"), "does not automatically dichotomize")
+  expect_error(DiagnosticLikelihoodRatioTable(df_Test, "outcome", "continuous"), "explicitly convert `continuous` to a factor")
 })
 
 test_that("PlotDiagnosticLRHeatmap preserves static diagnostic data", {

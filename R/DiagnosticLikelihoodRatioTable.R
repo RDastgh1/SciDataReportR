@@ -39,6 +39,17 @@
 #'   c("sex", "Genotype"))
 #' lr$FormattedTable
 #' PlotDiagnosticLRHeatmap(lr)
+#' @details
+#' Categorical input safeguards apply to `predictor_vars` and `stratify_by`.
+#' Numeric columns are converted locally to factors, with a warning, only when
+#' all observed values are finite whole-number codes and there are at most 10
+#' distinct non-missing values. Other numeric inputs error: explicitly convert
+#' the column to a factor first if categorical treatment is intended (for
+#' example, `df_All$cohort <- factor(df_All$cohort)`). Few unique values alone
+#' do not establish categorical meaning. Factors, character columns, and logical
+#' columns are accepted; more than 10 observed categories warn and continue.
+#' Entirely missing or unsupported columns error. Caller data are unchanged,
+#' and existing restrictions on the required number of groups still apply.
 #' @export
 DiagnosticLikelihoodRatioTable <- function(data, outcome_vars, predictor_vars,
     positive_level = NULL, predictor_positive_level = NULL, stratify_by = NULL,
@@ -57,11 +68,8 @@ DiagnosticLikelihoodRatioTable <- function(data, outcome_vars, predictor_vars,
   missing_vars <- setdiff(all_vars, names(data))
   if (length(missing_vars)) stop("Variables not found in data: ", paste(missing_vars, collapse = ", "), call. = FALSE)
   if (!requireNamespace("gt", quietly = TRUE)) stop("Package 'gt' is required by DiagnosticLikelihoodRatioTable().", call. = FALSE)
-  continuous_predictors <- predictor_vars[vapply(predictor_vars, function(variable) {
-    values <- stats::na.omit(data[[variable]])
-    is.numeric(values) && length(unique(values)) > 2
-  }, logical(1))]
-  if (length(continuous_predictors)) stop("DiagnosticLikelihoodRatioTable() does not automatically dichotomize continuous predictors. Categorize these variables before analysis: ", paste(continuous_predictors, collapse = ", "), call. = FALSE)
+  data <- ScidrPrepareCategorical(data, predictor_vars, "predictor_vars")
+  data <- ScidrPrepareCategorical(data, stratify_by, "stratify_by")
 
   # Prepare data
 

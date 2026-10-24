@@ -103,6 +103,17 @@ When \code{include_practice_effect = FALSE}, the normative model is fit only on
 rows where \code{count_var == baseline_count_value}. When
 \code{include_practice_effect = TRUE}, \code{count_var} is added to the model and all
 available visits in the reference group are used.
+
+Categorical input safeguards apply to \code{reference_var} when \code{return_plots = TRUE}.
+Numeric columns are converted locally to factors, with a warning, only when
+all observed values are finite whole-number codes and there are at most 10
+distinct non-missing values. Other numeric inputs error: explicitly convert
+the column to a factor first if categorical treatment is intended (for
+example, \code{df_All$cohort <- factor(df_All$cohort)}). Few unique values alone
+do not establish categorical meaning. Factors, character columns, and logical
+columns are accepted; more than 10 observed categories warn and continue.
+Entirely missing or unsupported columns error. Caller data are unchanged,
+and existing restrictions on the required number of groups still apply.
 }
 \examples{
 # A reference sample large enough to estimate the covariate effects

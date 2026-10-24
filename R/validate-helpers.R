@@ -63,3 +63,66 @@ ScidrValidateVariable <- function(data,
   }
   ScidrValidateVariables(data, variable, arg_name, data_arg, allow_null = FALSE)
 }
+
+# Prepare only inputs whose public role is categorical. Warning state lives in
+# the calling stack, never in the caller's data or package-global options.
+ScidrPrepareCategorical <- function(data, variables, arg_name) {
+  vars_Categorical <- ScidrValidateVariables(data, variables, arg_name)
+  if (!length(vars_Categorical)) return(data)
+
+  caller <- parent.frame()
+  warning_state <- NULL
+  for (frame in rev(sys.frames()[-length(sys.frames())])) {
+    if (exists(".ScidrCategoricalWarnings", envir = frame, inherits = FALSE)) {
+      warning_state <- get(".ScidrCategoricalWarnings", envir = frame, inherits = FALSE)
+      break
+    }
+  }
+  if (is.null(warning_state)) warning_state <- new.env(parent = emptyenv())
+  assign(".ScidrCategoricalWarnings", warning_state, envir = caller)
+
+  for (variable in vars_Categorical) {
+    x <- data[[variable]]
+    function_name <- paste(deparse(sys.call(sys.parent())[[1L]]), collapse = "")
+    context <- paste0(function_name, "(): `", arg_name, " = \"", variable, "\"`")
+    if (!is.null(dim(x)) || !(is.factor(x) || is.character(x) ||
+        is.logical(x) || (is.numeric(x) && !is.complex(x) &&
+        !inherits(x, c("Date", "POSIXt", "difftime"))))) {
+      stop(context, " requires a categorical vector; unsupported column type.", call. = FALSE)
+    }
+    observed <- unique(x[!is.na(x)])
+    n_groups <- length(observed)
+    if (!n_groups) {
+      stop(context, " has no observed non-missing values for categorical grouping.", call. = FALSE)
+    }
+    examples <- paste(utils::head(as.character(observed), 5L), collapse = ", ")
+    warning_text <- NULL
+    if (is.numeric(x)) {
+      valid_codes <- all(is.finite(observed)) && all(observed == trunc(observed))
+      if (!valid_codes || n_groups > 10L) {
+        stop(context, " is numeric with ", n_groups, " observed non-missing values (examples: ",
+          examples, "). Categorical inputs are converted automatically only for finite whole-number codes with at most 10 observed values. ",
+          "If these values intentionally represent categories, explicitly convert `", variable,
+          "` to a factor before calling this function.", call. = FALSE)
+      }
+      warning_text <- paste0(context, " is numeric with ", n_groups,
+        " observed non-missing values (examples: ", examples,
+        "); converting locally to a factor. Few unique values do not establish categorical meaning. ",
+        "Explicitly convert this column to a factor if categorical treatment is intended.")
+      label <- attr(x, "label", exact = TRUE)
+      data[[variable]] <- factor(x, levels = sort(observed))
+      if (!is.null(label)) attr(data[[variable]], "label") <- label
+    } else if (n_groups > 10L) {
+      warning_text <- paste0(context, " has ", n_groups,
+        " observed categories; more than 10 groups may make plots or comparisons difficult to interpret. Continuing with the declared categories.")
+    }
+    if (!is.null(warning_text)) {
+      # The same column can occur in multiple categorical roles or wrappers.
+      if (!isTRUE(warning_state[[variable]])) {
+        warning_state[[variable]] <- TRUE
+        warning(warning_text, call. = FALSE)
+      }
+    }
+  }
+  data
+}

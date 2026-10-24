@@ -28,6 +28,17 @@
 #' # the reference page. Do not wrap it in `browsable()` a second time.
 #' statistics_table
 #' }
+#' @details
+#' Categorical input safeguards apply to `TargetVar`.
+#' Numeric columns are converted locally to factors, with a warning, only when
+#' all observed values are finite whole-number codes and there are at most 10
+#' distinct non-missing values. Other numeric inputs error: explicitly convert
+#' the column to a factor first if categorical treatment is intended (for
+#' example, `df_All$cohort <- factor(df_All$cohort)`). Few unique values alone
+#' do not establish categorical meaning. Factors, character columns, and logical
+#' columns are accepted; more than 10 observed categories warn and continue.
+#' Entirely missing or unsupported columns error. Caller data are unchanged,
+#' and existing restrictions on the required number of groups still apply.
 #' @export
 
 CreateStatisticsTable <- function(data,
@@ -41,6 +52,8 @@ CreateStatisticsTable <- function(data,
   }
   if (!missing(data)) Data <- data
   alternative <- match.arg(alternative)
+
+  Data <- ScidrPrepareCategorical(Data, TargetVar, "TargetVar")
 
   for (pkg in c("arsenal", "data.table", "kableExtra")) {
     if (!requireNamespace(pkg, quietly = TRUE)) {

@@ -39,6 +39,17 @@
 #'   Fill = "Diagnosis",
 #'   ncol = 3
 #' )
+#' @details
+#' Categorical input safeguards apply to `Fill`.
+#' Numeric columns are converted locally to factors, with a warning, only when
+#' all observed values are finite whole-number codes and there are at most 10
+#' distinct non-missing values. Other numeric inputs error: explicitly convert
+#' the column to a factor first if categorical treatment is intended (for
+#' example, `df_All$cohort <- factor(df_All$cohort)`). Few unique values alone
+#' do not establish categorical meaning. Factors, character columns, and logical
+#' columns are accepted; more than 10 observed categories warn and continue.
+#' Entirely missing or unsupported columns error. Caller data are unchanged,
+#' and existing restrictions on the required number of groups still apply.
 #' @export
 PlotContinuousDistributions <- function(data,
     variables = NULL,
@@ -77,11 +88,19 @@ PlotContinuousDistributions <- function(data,
 
   FacetLabelStyle <- match.arg(FacetLabelStyle)
 
+  ScidrValidateVariable(DataFrame, Fill, "Fill", allow_null = TRUE)
+  DataFrame <- ScidrPrepareCategorical(DataFrame, Fill, "Fill")
+  if (!is.null(Fill) && Fill %in% Variables) {
+    stop("`Fill` must not also be included in `variables`.", call. = FALSE)
+  }
+
   # Select Variables
   if (is.null(Variables)) {
     Variables <- getNumVars(DataFrame, Ordinal = FALSE)
     if (TreatOrdinalAs == "Continuous") Variables <- getNumVars(DataFrame, Ordinal = TRUE)
   }
+
+  Variables <- setdiff(Variables, Fill)
 
   ordinal <- ConvertOrdinalToNumeric(
     DataFrame, Variables, TreatOrdinalAs = TreatOrdinalAs,
@@ -166,7 +185,8 @@ PlotContinuousDistributions <- function(data,
       ggplot2::scale_fill_manual(values = "#6EC259") +
       ggplot2::scale_colour_manual(values = "#6EC259")
   } else {
-    p <- p + .SciDataFillScale() + .SciDataColourScale()
+    fill_label <- ScidrDisplayLabels(DataFrame, Fill, Relabel)[[Fill]]
+    p <- p + .SciDataFillScale(name = fill_label) + .SciDataColourScale(name = fill_label)
   }
 
   return(p)

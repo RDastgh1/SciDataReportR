@@ -66,6 +66,17 @@
 #' #   covariates = "Age", interactive = "plotly"
 #' # )
 #' # result$Interactive$Plotly$FDRCorrected
+#' @details
+#' Categorical input safeguards apply to `split_var`.
+#' Numeric columns are converted locally to factors, with a warning, only when
+#' all observed values are finite whole-number codes and there are at most 10
+#' distinct non-missing values. Other numeric inputs error: explicitly convert
+#' the column to a factor first if categorical treatment is intended (for
+#' example, `df_All$cohort <- factor(df_All$cohort)`). Few unique values alone
+#' do not establish categorical meaning. Factors, character columns, and logical
+#' columns are accepted; more than 10 observed categories warn and continue.
+#' Entirely missing or unsupported columns error. Caller data are unchanged,
+#' and existing restrictions on the required number of groups still apply.
 #' @export
 PlotSplitCorrelationHeatmap <- function(
     data,
@@ -92,6 +103,7 @@ PlotSplitCorrelationHeatmap <- function(
   if (!is.atomic(data[[split_var]]) || !is.null(dim(data[[split_var]]))) {
     stop("`split_var` must be an atomic vector.", call. = FALSE)
   }
+  data <- ScidrPrepareCategorical(data, split_var, "split_var")
   interactive <- match.arg(interactive)
   fdr_scope <- match.arg(fdr_scope)
   if (interactive == "plotly" && !requireNamespace("plotly", quietly = TRUE)) {

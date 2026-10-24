@@ -27,6 +27,18 @@ A formatted HTML table displaying statistics.
 \description{
 Generate a table of statistics including means, standard deviations, counts, and p-values.
 }
+\details{
+Categorical input safeguards apply to \code{TargetVar}.
+Numeric columns are converted locally to factors, with a warning, only when
+all observed values are finite whole-number codes and there are at most 10
+distinct non-missing values. Other numeric inputs error: explicitly convert
+the column to a factor first if categorical treatment is intended (for
+example, \code{df_All$cohort <- factor(df_All$cohort)}). Few unique values alone
+do not establish categorical meaning. Factors, character columns, and logical
+columns are accepted; more than 10 observed categories warn and continue.
+Entirely missing or unsupported columns error. Caller data are unchanged,
+and existing restrictions on the required number of groups still apply.
+}
 \examples{
 \donttest{
 data(SampleData)

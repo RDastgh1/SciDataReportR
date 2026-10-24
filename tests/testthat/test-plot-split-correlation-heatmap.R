@@ -116,7 +116,10 @@ test_that("duplicate labels retain distinct cells, correct vertices and stars", 
 test_that("numeric splits are excluded from default predictor selection", {
   df_Test <- MakeSplitCorrelationData()
   df_Test$Compartment <- as.integer(df_Test$Compartment)
-  out <- PlotSplitCorrelationHeatmap(df_Test, split_var = "Compartment")
+  expect_warning(
+    out <- PlotSplitCorrelationHeatmap(df_Test, split_var = "Compartment"),
+    "converting locally to a factor"
+  )
   expect_false("Compartment" %in% out$Metadata$AxisOrder$rows)
   expect_equal(out$Metadata$AxisOrder$rows, out$Metadata$AxisOrder$columns)
   expect_true(all(is.na(out$Results$R[out$Results$XVar == out$Results$YVar])))

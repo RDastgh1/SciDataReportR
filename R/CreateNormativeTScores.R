@@ -109,6 +109,17 @@
 #' out$plots$Education
 #' out$plots$Sex
 #' @param df \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
+#' @details
+#' Categorical input safeguards apply to `reference_var` when `return_plots = TRUE`.
+#' Numeric columns are converted locally to factors, with a warning, only when
+#' all observed values are finite whole-number codes and there are at most 10
+#' distinct non-missing values. Other numeric inputs error: explicitly convert
+#' the column to a factor first if categorical treatment is intended (for
+#' example, `df_All$cohort <- factor(df_All$cohort)`). Few unique values alone
+#' do not establish categorical meaning. Factors, character columns, and logical
+#' columns are accepted; more than 10 observed categories warn and continue.
+#' Entirely missing or unsupported columns error. Caller data are unchanged,
+#' and existing restrictions on the required number of groups still apply.
 #' @export
 CreateNormativeTScoreModel <- function(data,
     test_var,
@@ -185,6 +196,9 @@ CreateNormativeTScoreModel <- function(data,
 
   if (!is.logical(return_plots) || length(return_plots) != 1) {
     stop("`return_plots` must be TRUE or FALSE.")
+  }
+  if (isTRUE(return_plots)) {
+    df_PlotReference <- ScidrPrepareCategorical(df, reference_var, "reference_var")
   }
 
   if (!is.numeric(seconds_divisor) || length(seconds_divisor) != 1 || seconds_divisor <= 0) {
@@ -349,7 +363,9 @@ CreateNormativeTScoreModel <- function(data,
   plots <- NULL
 
   if (isTRUE(return_plots)) {
-    plot_data_v1 <- df_scored %>%
+    df_Plot <- df_scored
+    df_Plot[[reference_var]] <- df_PlotReference[[reference_var]]
+    plot_data_v1 <- df_Plot %>%
       dplyr::filter(.data[[count_var]] == baseline_count_value)
 
     p_raw <- ggplot2::ggplot(
@@ -413,7 +429,7 @@ CreateNormativeTScoreModel <- function(data,
       )
 
     p_practice <- ggplot2::ggplot(
-      df_scored,
+      df_Plot,
       ggplot2::aes(
         x = .data[[count_var]],
         y = NormT,

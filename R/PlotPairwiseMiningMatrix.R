@@ -43,6 +43,17 @@
 #' tables, one row per variable. These metrics intentionally have separate
 #' legends and should not be compared as interchangeable effect sizes.
 #'
+#' @details
+#' Categorical input safeguards apply to `group_var`.
+#' Numeric columns are converted locally to factors, with a warning, only when
+#' all observed values are finite whole-number codes and there are at most 10
+#' distinct non-missing values. Other numeric inputs error: explicitly convert
+#' the column to a factor first if categorical treatment is intended (for
+#' example, `df_All$cohort <- factor(df_All$cohort)`). Few unique values alone
+#' do not establish categorical meaning. Factors, character columns, and logical
+#' columns are accepted; more than 10 observed categories warn and continue.
+#' Entirely missing or unsupported columns error. Caller data are unchanged,
+#' and existing restrictions on the required number of groups still apply.
 #' @export
 PlotPairwiseMiningMatrix <- function(data,
                                      group_var,
@@ -76,6 +87,7 @@ PlotPairwiseMiningMatrix <- function(data,
   if (!is.null(covariates) && !all(covariates %in% names(data))) stop("Covariate(s) not found: ", paste(setdiff(covariates, names(data)), collapse = ", "))
   if (!is.null(variable_metadata) && (!is.data.frame(variable_metadata) || !"Variable" %in% names(variable_metadata))) stop("variable_metadata must be NULL or a data frame containing Variable.")
 
+  data <- ScidrPrepareCategorical(data, group_var, "group_var")
   variables <- unique(variables)
   df_Data <- data
   df_Data$.PMM_Group <- if (is.factor(df_Data[[group_var]])) droplevels(df_Data[[group_var]]) else factor(df_Data[[group_var]])

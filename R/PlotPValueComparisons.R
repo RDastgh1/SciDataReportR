@@ -39,6 +39,17 @@
 #'   )
 #' )
 #' @param IncludeTrendSymbol Logical; add a plus sign for `0.05 < p <= 0.10`.
+#' @details
+#' Categorical input safeguards apply to `group_var`.
+#' Numeric columns are converted locally to factors, with a warning, only when
+#' all observed values are finite whole-number codes and there are at most 10
+#' distinct non-missing values. Other numeric inputs error: explicitly convert
+#' the column to a factor first if categorical treatment is intended (for
+#' example, `df_All$cohort <- factor(df_All$cohort)`). Few unique values alone
+#' do not establish categorical meaning. Factors, character columns, and logical
+#' columns are accepted; more than 10 observed categories warn and continue.
+#' Entirely missing or unsupported columns error. Caller data are unchanged,
+#' and existing restrictions on the required number of groups still apply.
 #' @export
 PlotPValueComparisons <- function(data,
     group_var,
@@ -68,6 +79,9 @@ PlotPValueComparisons <- function(data,
   Variables <- variables
   alternative <- match.arg(alternative)
 
+  ScidrValidateVariable(Data, GroupVariable, "group_var")
+  Data <- ScidrPrepareCategorical(Data, GroupVariable, "group_var")
+
   # Validate and prepare Variables
   if (is.null(Variables)) {
     Variables <- Data %>% dplyr::select(-dplyr::all_of(GroupVariable)) %>% colnames()
@@ -75,6 +89,8 @@ PlotPValueComparisons <- function(data,
 
   # Preserve original GroupVariable and create a temporary column
   Data$GroupVariablex <- Data[[GroupVariable]]
+  warning_state <- get(".ScidrCategoricalWarnings", inherits = FALSE)
+  warning_state[["GroupVariablex"]] <- TRUE
   Data <- Data %>% dplyr::select(-dplyr::all_of(GroupVariable))
 
   # Select relevant variables

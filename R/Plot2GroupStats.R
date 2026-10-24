@@ -60,6 +60,17 @@
 #'   plot.margin = ggplot2::margin(t = 20, r = 10, b = 10, l = 10)
 #' )
 #' }
+#' @details
+#' Categorical input safeguards apply to `group_var`.
+#' Numeric columns are converted locally to factors, with a warning, only when
+#' all observed values are finite whole-number codes and there are at most 10
+#' distinct non-missing values. Other numeric inputs error: explicitly convert
+#' the column to a factor first if categorical treatment is intended (for
+#' example, `df_All$cohort <- factor(df_All$cohort)`). Few unique values alone
+#' do not establish categorical meaning. Factors, character columns, and logical
+#' columns are accepted; more than 10 observed categories warn and continue.
+#' Entirely missing or unsupported columns error. Caller data are unchanged,
+#' and existing restrictions on the required number of groups still apply.
 #' @export
 #' @import dplyr ggplot2 gtsummary
 Plot2GroupStats <- function(data,
@@ -149,6 +160,7 @@ Plot2GroupStats <- function(data,
   if (length(miss)) stop("Variables not in `Data`: ", paste(miss, collapse = ", "))
 
   # ---- working data ---------------------------------------------------------
+  Data <- ScidrPrepareCategorical(Data, GroupVar, "group_var")
   tData <- Data
   tData$GroupVar <- Data[[GroupVar]]
   tData <- tData %>%

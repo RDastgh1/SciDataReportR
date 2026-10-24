@@ -126,6 +126,17 @@
 #' @param ValueDigits \strong{Deprecated} (since 19.15.0). Use \code{value_digits} instead.
 #' @param pDigits \strong{Deprecated} (since 19.15.0). Use \code{p_digits} instead.
 #' @param EffectSizeDigits \strong{Deprecated} (since 19.15.0). Use \code{effect_size_digits} instead.
+#' @details
+#' Categorical input safeguards apply to retained factor/character `FacetVariables`.
+#' Numeric columns are converted locally to factors, with a warning, only when
+#' all observed values are finite whole-number codes and there are at most 10
+#' distinct non-missing values. Other numeric inputs error: explicitly convert
+#' the column to a factor first if categorical treatment is intended (for
+#' example, `df_All$cohort <- factor(df_All$cohort)`). Few unique values alone
+#' do not establish categorical meaning. Factors, character columns, and logical
+#' columns are accepted; more than 10 observed categories warn and continue.
+#' Entirely missing or unsupported columns error. Caller data are unchanged,
+#' and existing restrictions on the required number of groups still apply.
 #' @export
 MakeFacetCatComparisonTable <- function(data,
     FacetVariables,
@@ -195,6 +206,8 @@ MakeFacetCatComparisonTable <- function(data,
   if (length(FacetVariables) == 0) {
     stop("No categorical variables found in FacetVariables. Please provide factor or character columns.")
   }
+
+  DataFrame <- ScidrPrepareCategorical(DataFrame, FacetVariables, "FacetVariables")
 
   # Generate comparison subtables for each facet
   subtables <- lapply(FacetVariables, function(facet_var) {

@@ -77,6 +77,13 @@
 #' )
 #' }
 #'
+#' @details
+#' Continuous colour modes are unchanged. Categorical colour modes use the
+#' package categorical-input safeguards. Explicit `ColorType = "factor"`
+#' authorizes categorical treatment of numeric values, including decimals;
+#' more than 10 observed categories warn and continue. In automatic categorical
+#' mode, numeric codes must be finite whole numbers with at most 10 observed
+#' values, or must be explicitly prepared as factors.
 #' @export
 plotPCA <- function(PCAObj,
                     Var = NULL,
@@ -338,6 +345,7 @@ plotPCA <- function(PCAObj,
 
   if (!is.null(Var)) {
     colour_vec <- CombinedData[[Var]]
+    categorical_requested <- identical(ColorType, "factor") || identical(t, "Factor")
 
     if (!identical(t, "NULL")) {
       if (identical(t, "Factor")) {
@@ -359,7 +367,12 @@ plotPCA <- function(PCAObj,
     }
 
     if (ColorType == "factor") {
-      colour_vec <- as.factor(colour_vec)
+      df_Colour <- CombinedData[Var]
+      # An explicit colour-type choice authorizes categorical treatment even
+      # for decimal or high-cardinality numeric values.
+      if (categorical_requested) df_Colour[[Var]] <- as.factor(colour_vec)
+      df_Colour <- ScidrPrepareCategorical(df_Colour, Var, "Var")
+      colour_vec <- as.factor(df_Colour[[Var]])
     }
   }
 
