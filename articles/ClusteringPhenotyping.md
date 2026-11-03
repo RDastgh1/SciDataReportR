@@ -993,7 +993,7 @@ folded into the score.
 
 Session information
 
-    R version 4.6.1 (2026-06-24)
+    R version 4.6.2 (2026-10-29)
     Platform: x86_64-pc-linux-gnu
     Running under: Ubuntu 26.04.1 LTS
 
@@ -1023,42 +1023,42 @@ Session information
      [10] paletteer_1.7.0        CompQuadForm_1.4.4     base64enc_0.1-6
      [13] rstatix_1.1.0          htmltools_0.5.9        forcats_1.0.1
      [16] progress_1.2.3         haven_2.5.5            broom_1.0.13
-     [19] Formula_1.2-6          parallelly_1.48.0      htmlwidgets_1.6.4
+     [19] Formula_1.2-6          parallelly_1.50.0      htmlwidgets_1.6.4
      [22] gsubfn_0.7             plyr_1.8.9             sandwich_3.1-3
      [25] emmeans_2.0.4          zoo_1.9-1              mime_0.13
      [28] lifecycle_1.0.5        pkgconfig_2.0.3        sjlabelled_1.2.0
-     [31] R6_2.6.1               fastmap_1.2.0          future_1.80.0
+     [31] R6_2.6.1               fastmap_1.2.0          future_1.82.0
      [34] shiny_1.14.0           digest_0.6.39          colorspace_2.1-4
      [37] rematch2_2.1.2         ps_1.9.3               Hmisc_5.3-0
      [40] labeling_0.4.3         gtsummary_2.6.1        progressr_1.1.0
-     [43] httr_1.4.9             abind_1.4-8            compiler_4.6.1
+     [43] httr_1.4.9             abind_1.4-8            compiler_4.6.2
      [46] withr_3.0.3            pander_0.6.6           htmlTable_2.5.0
      [49] S7_0.2.2               backports_1.5.1        carData_3.0-6
      [52] viridis_0.6.5          psych_2.6.9            fastDummies_1.7.6
-     [55] R.utils_2.13.0         MASS_7.3-65            scatterplot3d_0.3-45
-     [58] tools_4.6.1            pbivnorm_0.6.0         MplusAutomation_1.3
-     [61] foreign_0.8-91         otel_0.2.0             httpuv_1.6.17
-     [64] future.apply_1.21.0    statsExpressions_2.2.1 nnet_7.3-20
+     [55] R.utils_2.13.0         MASS_7.3-66            scatterplot3d_0.3-45
+     [58] tools_4.6.2            pbivnorm_0.6.0         MplusAutomation_1.3
+     [61] foreign_0.8-92         otel_0.2.0             httpuv_1.6.17
+     [64] future.apply_1.21.0    statsExpressions_2.2.1 nnet_7.3-21
      [67] R.oo_1.27.1            glue_1.8.1             quadprog_1.5-8
-     [70] dbscan_1.2.7           nlme_3.1-169           promises_1.5.0
-     [73] grid_4.6.1             checkmate_2.3.4        cluster_2.1.8.2
+     [70] dbscan_1.2.7           nlme_3.1-171           promises_1.5.0
+     [73] grid_4.6.2             checkmate_2.3.4        cluster_2.1.8.3
      [76] generics_0.1.4         gtable_0.3.6           labelled_2.16.1
      [79] R.methodsS3_1.8.2      tidyr_1.3.2            aweSOM_1.3
      [82] data.table_1.18.6.1    hms_1.1.4              car_3.1-5
      [85] RANN_2.6.3             pillar_1.11.1          stringr_1.6.0
-     [88] later_1.4.8            lattice_0.22-9         ggstatsplot_1.1.4
+     [88] later_1.4.8            lattice_0.23-1         ggstatsplot_1.1.4
      [91] tidyselect_1.2.1       knitr_1.52             gridExtra_2.3.1
-     [94] stats4_4.6.1           xfun_0.62              texreg_1.40
+     [94] stats4_4.6.2           xfun_0.62              texreg_1.40
      [97] proto_1.0.0            stringi_1.8.9          yaml_2.3.12
     [100] boot_1.3-32            evaluate_1.0.5         codetools_0.2-20
     [103] nonnest2_0.5-9         tibble_3.3.1           cli_3.6.6
     [106] RcppParallel_6.2.1     rpart_4.1.27           xtable_1.8-8
     [109] parameters_0.30.0      lavaan_0.7-3           dichromat_2.0-1
     [112] Rcpp_1.1.2             tidySEM_0.2.12         globals_0.20.0
-    [115] coda_0.19-4.1          parallel_4.6.1         kohonen_3.0.13
+    [115] coda_0.19-4.1          parallel_4.6.2         kohonen_3.0.13
     [118] rstantools_2.7.1       prettyunits_1.2.0      mclust_6.1.3
     [121] bayestestR_0.20.0      listenv_1.1.0          viridisLite_0.4.3
-    [124] mvtnorm_1.4-2          scales_1.4.0           insight_1.6.0
+    [124] mvtnorm_1.4-2          scales_1.4.0           insight_1.7.0
     [127] purrr_1.2.2            crayon_1.5.3           rlang_1.3.0
     [130] mnormt_2.1.2           poLCA_1.6.0.2          tidyLPA_2.0.2         
 

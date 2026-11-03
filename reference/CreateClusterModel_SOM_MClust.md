@@ -594,6 +594,16 @@ proximity-weighted membership. Boundary flags are confidence diagnostics
 only: they do not remove, relabel, or suppress a participant during
 training, stability scoring, or projection.
 
+Changing `assignment` does not change SOM training or the fitted node
+mixture. With the same seeds and selected model, node posteriors and
+likelihood-based fit indices are identical. Both modes return a single
+participant class; soft mode takes the largest `SoftProb_*`. Hard and
+soft classes can therefore agree even when their probability vectors
+differ, especially when nearby nodes belong to the same phenotype. Exact
+soft-probability ties select the first class deterministically.
+`Flag_NodeDisagreement` compares the canonical participant class with
+the best-matching node's class; unmapped rows are `NA`.
+
 Each new fit uses one deterministic, seeded full-cohort batch SOM. Its
 initialization codebook, preprocessing, grid, topology, neighbourhood,
 epochs, codebooks, and node-level mixture are retained so projection is
@@ -867,6 +877,7 @@ review <- CreateClusterModel_SOM_MClust(
   min_nodes_per_cluster = NULL
 )
 #> Warning: Explicit SOM dimensions do not meet one or more requested mixture-support or participant-occupancy targets; diagnostics are retained for review.
+#> Warning: future::availableCores() is deprecated. Please use the identical parallelly::availableCores() instead [pkgdown::build_site_github_pages() -> pkgdown::build_site() -> pkgdown::build_site_local() -> pkgdown::build_reference() -> pkgdown::unwrap_purrr_error() -> base::withCallingHandlers() -> purrr::map() -> purrr::map_() -> purrr::with_indexed_errors() -> base::withCallingHandlers() -> purrr::call_with_cleanup() -> pkgdown::.f() -> base::withCallingHandlers() -> pkgdown::data_reference_topic() -> pkgdown::run_examples() -> pkgdown::highlight_examples() -> downlit::evaluate_and_highlight() -> evaluate::evaluate() -> base::withRestarts() -> withRestartList() -> withOneRestart() -> doWithOneRestart() -> withRestartList() -> withOneRestart() -> doWithOneRestart() -> evaluate::with_handlers() -> base::eval() -> eval() -> base::withCallingHandlers() -> base::withVisible() -> base::eval() -> eval() -> SciDataReportR::CreateClusterModel_SOM_MClust() -> SciDataReportR::.ResolveClusterStabilityCores() -> future::availableCores()]
 #> Warning: The following SOM mixture candidates have fewer mixture nodes than free parameters and are ineligible for recommendation: Model 1, k = 2; Model 3, k = 2; Model 1, k = 3; Model 3, k = 3; Model 1, k = 4; Model 3, k = 4; Model 1, k = 5; Model 3, k = 5
 #> Warning: No candidate is eligible for the composite recommendation; an internal fallback is retained only to construct the review object.
 

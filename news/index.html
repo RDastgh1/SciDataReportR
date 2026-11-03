@@ -50,11 +50,10 @@
 
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="21.16.0" id="scidatareportr-21160">SciDataReportR 21.16.0<a class="anchor" aria-label="anchor" href="#scidatareportr-21160"></a></h2>
-<ul><li>Categorical plotting and analysis inputs now share safeguards: finite whole-number numeric codes with at most 10 observed values convert locally with a warning. Other numeric categorical inputs fail early and explain how to explicitly prepare a factor. No new arguments are required. Declared categories above 10 observed groups warn and continue. Continuous analysis inputs are unchanged.</li>
-<li>
-<code><a href="../reference/PlotContinuousDistributions.html">PlotContinuousDistributions()</a></code> now supports numeric binary <code>Fill</code> columns, excludes grouping columns from automatic outcome selection, rejects explicit grouping/outcome overlap, and uses the group variable label for its legend.</li>
-<li>
-<code><a href="../reference/DiagnosticLikelihoodRatioTable.html">DiagnosticLikelihoodRatioTable()</a></code> applies the same policy to numeric categorical predictors (including codes with 3–10 levels) and strata; binary outcome checks remain unchanged.</li>
+<ul><li><p>SOM + Mclust now reports actual participant/node disagreement in <code>Flag_NodeDisagreement</code> during training and projection, and resolves tied soft probabilities deterministically. Documentation clarifies why hard and soft assignment share model-fit indices and can yield the same participant classes.</p></li>
+<li><p>Categorical plotting and analysis inputs now share safeguards: finite whole-number numeric codes with at most 10 observed values convert locally with a warning. Other numeric categorical inputs fail early and explain how to explicitly prepare a factor. No new arguments are required. Declared categories above 10 observed groups warn and continue. Continuous analysis inputs are unchanged.</p></li>
+<li><p><code><a href="../reference/PlotContinuousDistributions.html">PlotContinuousDistributions()</a></code> now supports numeric binary <code>Fill</code> columns, excludes grouping columns from automatic outcome selection, rejects explicit grouping/outcome overlap, and uses the group variable label for its legend.</p></li>
+<li><p><code><a href="../reference/DiagnosticLikelihoodRatioTable.html">DiagnosticLikelihoodRatioTable()</a></code> applies the same policy to numeric categorical predictors (including codes with 3–10 levels) and strata; binary outcome checks remain unchanged.</p></li>
 </ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="21.15.0" id="scidatareportr-21150">SciDataReportR 21.15.0<a class="anchor" aria-label="anchor" href="#scidatareportr-21150"></a></h2>

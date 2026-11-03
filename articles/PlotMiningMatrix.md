@@ -344,7 +344,7 @@ Key features include:
 sessionInfo()
 ```
 
-    R version 4.6.1 (2026-06-24)
+    R version 4.6.2 (2026-10-29)
     Platform: x86_64-pc-linux-gnu
     Running under: Ubuntu 26.04.1 LTS
 
@@ -370,12 +370,12 @@ sessionInfo()
 
     loaded via a namespace (and not attached):
      [1] gtable_0.3.6           xfun_0.62              bayestestR_0.20.0
-     [4] htmlwidgets_1.6.4      insight_1.6.0          rstatix_1.1.0
-     [7] lattice_0.22-9         paletteer_1.7.0        vctrs_0.7.3
-    [10] tools_4.6.1            generics_0.1.4         datawizard_1.4.1
+     [4] htmlwidgets_1.6.4      insight_1.7.0          rstatix_1.1.0
+     [7] lattice_0.23-1         paletteer_1.7.0        vctrs_0.7.3
+    [10] tools_4.6.2            generics_0.1.4         datawizard_1.4.1
     [13] tibble_3.3.1           pkgconfig_2.0.3        data.table_1.18.6.1
     [16] RColorBrewer_1.1-3     S7_0.2.2               RcppParallel_6.2.1
-    [19] lifecycle_1.0.5        compiler_4.6.1         farver_2.1.2
+    [19] lifecycle_1.0.5        compiler_4.6.2         farver_2.1.2
     [22] carData_3.0-6          snakecase_0.11.1       htmltools_0.5.9
     [25] yaml_2.3.12            Formula_1.2-6          pillar_1.11.1
     [28] car_3.1-5              tidyr_1.3.2            statsExpressions_2.2.1
@@ -383,7 +383,7 @@ sessionInfo()
     [34] digest_0.6.39          mvtnorm_1.4-2          gtsummary_2.6.1
     [37] purrr_1.2.2            rematch2_2.1.2         labeling_0.4.3
     [40] forcats_1.0.1          ggstatsplot_1.1.4      labelled_2.16.1
-    [43] fastmap_1.2.0          grid_4.6.1             cli_3.6.6
+    [43] fastmap_1.2.0          grid_4.6.2             cli_3.6.6
     [46] magrittr_2.0.5         dichromat_2.0-1        utf8_1.2.6
     [49] broom_1.0.13           withr_3.0.3            scales_1.4.0
     [52] backports_1.5.1        estimability_2.0.0     rmarkdown_2.32

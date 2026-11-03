@@ -414,7 +414,7 @@ including:
 sessionInfo()
 ```
 
-    R version 4.6.1 (2026-06-24)
+    R version 4.6.2 (2026-10-29)
     Platform: x86_64-pc-linux-gnu
     Running under: Ubuntu 26.04.1 LTS
 
@@ -440,25 +440,25 @@ sessionInfo()
 
     loaded via a namespace (and not attached):
      [1] generics_0.1.4         tidyr_1.3.2            rstatix_1.1.0
-     [4] gtsummary_2.6.1        lattice_0.22-9         hms_1.1.4
+     [4] gtsummary_2.6.1        lattice_0.23-1         hms_1.1.4
      [7] digest_0.6.39          magrittr_2.0.5         evaluate_1.0.5
-    [10] grid_4.6.1             estimability_2.0.0     RColorBrewer_1.1-3
+    [10] grid_4.6.2             estimability_2.0.0     RColorBrewer_1.1-3
     [13] mvtnorm_1.4-2          fastmap_1.2.0          jsonlite_2.0.0
     [16] backports_1.5.1        Formula_1.2-6          rematch2_2.1.2
     [19] httr_1.4.9             purrr_1.2.2            viridisLite_0.4.3
     [22] scales_1.4.0           abind_1.4-8            cli_3.6.6
     [25] labelled_2.16.1        rlang_1.3.0            withr_3.0.3
     [28] yaml_2.3.12            otel_0.2.0             statsExpressions_2.2.1
-    [31] tools_4.6.1            datawizard_1.4.1       rstantools_2.7.1
+    [31] tools_4.6.2            datawizard_1.4.1       rstantools_2.7.1
     [34] ggstatsplot_1.1.4      coda_0.19-4.1          sjlabelled_1.2.0
     [37] bayestestR_0.20.0      forcats_1.0.1          broom_1.0.13
     [40] paletteer_1.7.0        vctrs_0.7.3            R6_2.6.1
     [43] lifecycle_1.0.5        emmeans_2.0.4          snakecase_0.11.1
-    [46] htmlwidgets_1.6.4      car_3.1-5              insight_1.6.0
+    [46] htmlwidgets_1.6.4      car_3.1-5              insight_1.7.0
     [49] pkgconfig_2.0.3        RcppParallel_6.2.1     pillar_1.11.1
     [52] gtable_0.3.6           data.table_1.18.6.1    glue_1.8.1
     [55] haven_2.5.5            xfun_0.62              tibble_3.3.1
     [58] tidyselect_1.2.1       parameters_0.30.0      knitr_1.52
     [61] dichromat_2.0-1        farver_2.1.2           xtable_1.8-8
     [64] htmltools_0.5.9        labeling_0.4.3         carData_3.0-6
-    [67] rmarkdown_2.32         compiler_4.6.1         S7_0.2.2              
+    [67] rmarkdown_2.32         compiler_4.6.2         S7_0.2.2              

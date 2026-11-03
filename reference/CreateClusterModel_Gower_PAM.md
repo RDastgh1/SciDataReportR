@@ -255,15 +255,7 @@ vars_Mixed <- c("Var1", "Var2", "Var3", "CatVar1", "CatVar2", "CatVar3")
 review <- CreateClusterModel_Gower_PAM(
   df_Training, vars_Mixed, k_range = 2:5, stability_resamples = 2
 )
-#> Warning: PlotClusterBoxplot(): `ClusterVar = "Cluster"` is numeric with 2 observed non-missing values (examples: 1, 2); converting locally to a factor. Few unique values do not establish categorical meaning. Explicitly convert this column to a factor if categorical treatment is intended.
-#> Warning: PlotClusterBoxplot(): `ClusterVar = "Cluster"` is numeric with 2 observed non-missing values (examples: 1, 2); converting locally to a factor. Few unique values do not establish categorical meaning. Explicitly convert this column to a factor if categorical treatment is intended.
-#> Warning: PlotClusterBoxplot(): `ClusterVar = "Cluster"` is numeric with 3 observed non-missing values (examples: 1, 2, 3); converting locally to a factor. Few unique values do not establish categorical meaning. Explicitly convert this column to a factor if categorical treatment is intended.
-#> Warning: PlotClusterBoxplot(): `ClusterVar = "Cluster"` is numeric with 3 observed non-missing values (examples: 1, 2, 3); converting locally to a factor. Few unique values do not establish categorical meaning. Explicitly convert this column to a factor if categorical treatment is intended.
-#> Warning: PlotClusterBoxplot(): `ClusterVar = "Cluster"` is numeric with 4 observed non-missing values (examples: 1, 2, 3, 4); converting locally to a factor. Few unique values do not establish categorical meaning. Explicitly convert this column to a factor if categorical treatment is intended.
-#> Warning: PlotClusterBoxplot(): `ClusterVar = "Cluster"` is numeric with 4 observed non-missing values (examples: 1, 2, 3, 4); converting locally to a factor. Few unique values do not establish categorical meaning. Explicitly convert this column to a factor if categorical treatment is intended.
-#> Warning: PlotClusterBoxplot(): `ClusterVar = "Cluster"` is numeric with 5 observed non-missing values (examples: 1, 2, 3, 4, 5); converting locally to a factor. Few unique values do not establish categorical meaning. Explicitly convert this column to a factor if categorical treatment is intended.
-#> Warning: PlotClusterBoxplot(): `ClusterVar = "Cluster"` is numeric with 5 observed non-missing values (examples: 1, 2, 3, 4, 5); converting locally to a factor. Few unique values do not establish categorical meaning. Explicitly convert this column to a factor if categorical treatment is intended.
-#> Warning: PlotClusterBoxplot(): `ClusterVar = "Cluster"` is numeric with 4 observed non-missing values (examples: 1, 2, 3, 4); converting locally to a factor. Few unique values do not establish categorical meaning. Explicitly convert this column to a factor if categorical treatment is intended.
+#> Warning: future::availableCores() is deprecated. Please use the identical parallelly::availableCores() instead [pkgdown::build_site_github_pages() -> pkgdown::build_site() -> pkgdown::build_site_local() -> pkgdown::build_reference() -> pkgdown::unwrap_purrr_error() -> base::withCallingHandlers() -> purrr::map() -> purrr::map_() -> purrr::with_indexed_errors() -> base::withCallingHandlers() -> purrr::call_with_cleanup() -> pkgdown::.f() -> base::withCallingHandlers() -> pkgdown::data_reference_topic() -> pkgdown::run_examples() -> pkgdown::highlight_examples() -> downlit::evaluate_and_highlight() -> evaluate::evaluate() -> base::withRestarts() -> withRestartList() -> withOneRestart() -> doWithOneRestart() -> withRestartList() -> withOneRestart() -> doWithOneRestart() -> evaluate::with_handlers() -> base::eval() -> eval() -> base::withCallingHandlers() -> base::withVisible() -> base::eval() -> eval() -> SciDataReportR::CreateClusterModel_Gower_PAM() -> base::lapply() -> FUN() -> SciDataReportR::.ClusterSubsampleStability() -> SciDataReportR::.ResolveClusterStabilityCores() -> future::availableCores()]
 review$ModelInfo$fit_table
 #> # A tibble: 4 × 20
 #>   Classes Silhouette MinClusterN SizeBalance MeanMedoidDistance
@@ -289,9 +281,6 @@ model <- CreateClusterModel_Gower_PAM(
   df_Training, vars_Mixed, method = "finalize", final_k = 4,
   stability_resamples = 2
 )
-#> Warning: PlotClusterBoxplot(): `ClusterVar = "Cluster"` is numeric with 4 observed non-missing values (examples: 1, 2, 3, 4); converting locally to a factor. Few unique values do not establish categorical meaning. Explicitly convert this column to a factor if categorical treatment is intended.
-#> Warning: PlotClusterBoxplot(): `ClusterVar = "Cluster"` is numeric with 4 observed non-missing values (examples: 1, 2, 3, 4); converting locally to a factor. Few unique values do not establish categorical meaning. Explicitly convert this column to a factor if categorical treatment is intended.
-#> Warning: PlotClusterBoxplot(): `ClusterVar = "Cluster"` is numeric with 4 observed non-missing values (examples: 1, 2, 3, 4); converting locally to a factor. Few unique values do not establish categorical meaning. Explicitly convert this column to a factor if categorical treatment is intended.
 model$ModelInfo$plots$silhouette
 
 model$ModelInfo$plots$gower_map
