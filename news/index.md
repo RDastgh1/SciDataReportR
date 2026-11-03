@@ -1,5 +1,7 @@
 # Changelog
 
+## SciDataReportR 21.17.0
+
 ## SciDataReportR 21.16.0
 
 - SOM + Mclust now reports actual participant/node disagreement in
