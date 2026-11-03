@@ -537,8 +537,12 @@ PlotClusterCentreProfile <- function(centers, variable_labels = NULL,
 #' }
 #' @export
 PlotClusterProfiles <- function(data, ClusterVar, variables, codebook = NULL) {
+  df_Profiles <- dplyr::filter(data, !is.na(.data[[ClusterVar]]))
+  if (!nrow(df_Profiles)) return(NULL)
+  # Cluster assignments are declared categories, including numeric cluster IDs.
+  df_Profiles[[ClusterVar]] <- factor(df_Profiles[[ClusterVar]])
   PlotClusterBoxplot(
-    data = dplyr::filter(data, !is.na(.data[[ClusterVar]])),
+    data = df_Profiles,
     ClusterVar = ClusterVar, variables = variables, codebook = codebook,
     FillTitle = "Measure") +
     ggplot2::labs(title = "Numeric cluster profiles")

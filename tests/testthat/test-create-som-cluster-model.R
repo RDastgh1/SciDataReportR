@@ -499,7 +499,8 @@ test_that("hard SOM Mclust assignment equals the best-matching node class", {
     model$ProbFit$node$Cluster[individual$SOM_Node[mapped]])
   expect_identical(individual$NodeCluster[mapped],
     model$ProbFit$node$Cluster[individual$SOM_Node[mapped]])
-  expect_false(any(individual$Flag_NodeDisagreement))
+  expect_false(any(individual$Flag_NodeDisagreement[mapped]))
+  expect_true(all(is.na(individual$Flag_NodeDisagreement[!mapped])))
   expect_identical(model$DataWithClusters$Cluster, individual$Cluster)
 
   # Projecting the training data preserves the node-inherited assignment.

@@ -1,5 +1,10 @@
 # SciDataReportR 21.16.0
 
+* SOM + Mclust now reports actual participant/node disagreement in
+  `Flag_NodeDisagreement` during training and projection, and resolves tied soft
+  probabilities deterministically. Documentation clarifies why hard and soft
+  assignment share model-fit indices and can yield the same participant classes.
+
 * Categorical plotting and analysis inputs now share safeguards: finite whole-number
   numeric codes with at most 10 observed values convert locally with a warning.
   Other numeric categorical inputs fail early and explain how to explicitly

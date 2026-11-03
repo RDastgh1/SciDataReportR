@@ -124,7 +124,7 @@ CreateRCIObject <- function(data,
   )
 
   ClassificationColors <- c(
-    "Reliable Improvement" = "#1f4e79",
+    "Reliable Increase" = "#1f4e79",
     "Stable" = "grey70",
     "Reliable Decline" = "#b35806"
   )
@@ -403,7 +403,7 @@ CreateRCIObject <- function(data,
     )
 
     merged$Classification <- dplyr::case_when(
-      merged$RCI >= z_threshold ~ "Reliable Improvement",
+      merged$RCI >= z_threshold ~ "Reliable Increase",
       merged$RCI <= -z_threshold ~ "Reliable Decline",
       TRUE ~ "Stable"
     )
@@ -413,7 +413,7 @@ CreateRCIObject <- function(data,
       levels = c(
         "Reliable Decline",
         "Stable",
-        "Reliable Improvement"
+        "Reliable Increase"
       )
     )
 
@@ -702,7 +702,7 @@ CreateRCIObject <- function(data,
       levels = c(
         "Reliable Decline",
         "Stable",
-        "Reliable Improvement"
+        "Reliable Increase"
       )
     )
 

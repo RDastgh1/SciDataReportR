@@ -92,7 +92,7 @@ ProjectRCI <- function(data,
   }
 
   ClassificationColors <- c(
-    "Reliable Improvement" = "#1f4e79",
+    "Reliable Increase" = "#1f4e79",
     "Stable" = "grey70",
     "Reliable Decline" = "#b35806"
   )
@@ -321,7 +321,7 @@ followup_df <- purrr::map_dfr(
     )
 
     merged$Classification <- dplyr::case_when(
-      merged$RCI >= z_threshold ~ "Reliable Improvement",
+      merged$RCI >= z_threshold ~ "Reliable Increase",
       merged$RCI <= -z_threshold ~ "Reliable Decline",
       TRUE ~ "Stable"
     )
@@ -331,7 +331,7 @@ followup_df <- purrr::map_dfr(
       levels = c(
         "Reliable Decline",
         "Stable",
-        "Reliable Improvement"
+        "Reliable Increase"
       )
     )
 
@@ -620,7 +620,7 @@ followup_df <- purrr::map_dfr(
       levels = c(
         "Reliable Decline",
         "Stable",
-        "Reliable Improvement"
+        "Reliable Increase"
       )
     )
 

@@ -467,6 +467,15 @@ proximity-weighted membership. Boundary flags are confidence diagnostics
 only: they do not remove, relabel, or suppress a participant during
 training, stability scoring, or projection.
 
+Changing \code{assignment} does not change SOM training or the fitted node mixture.
+With the same seeds and selected model, node posteriors and likelihood-based
+fit indices are identical. Both modes return a single participant class;
+soft mode takes the largest \verb{SoftProb_*}. Hard and soft classes can therefore
+agree even when their probability vectors differ, especially when nearby
+nodes belong to the same phenotype. Exact soft-probability ties select the
+first class deterministically. \code{Flag_NodeDisagreement} compares the canonical
+participant class with the best-matching node's class; unmapped rows are \code{NA}.
+
 Each new fit uses one deterministic, seeded full-cohort batch SOM. Its
 initialization codebook, preprocessing, grid, topology, neighbourhood,
 epochs, codebooks, and node-level mixture are retained so projection is

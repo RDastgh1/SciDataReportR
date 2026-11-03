@@ -32,7 +32,7 @@
   margin <- ordered[, 1] - ordered[, 2]
   reason <- ifelse(margin < margin_threshold & entropy > entropy_threshold, "both",
     ifelse(margin < margin_threshold, "low_margin", ifelse(entropy > entropy_threshold, "high_entropy", NA_character_)))
-  list(cluster = max.col(probability), probability = probability, entropy = entropy,
+  list(cluster = max.col(probability, ties.method = "first"), probability = probability, entropy = entropy,
     margin = margin, boundary = !is.na(reason), reason = reason)
 }
 
@@ -525,7 +525,6 @@ ProjectCluster.Pipeline_SOM_MClust <- function(
     dplyr::left_join(.SOMNodeAssignments(node_df), by = c("SOM_Node" = "NodeID"))
 
   individual_tbl$NodeCluster <- individual_tbl$Cluster
-  individual_tbl$Flag_NodeDisagreement <- FALSE
 
   soft_projection <- .SOMSoftProjection(zmat_new, object$ModelInfo_SOM$som_codes, node_df,
     n_nodes = object$Specification$projection$soft_n_nodes %||% 3L,
@@ -550,6 +549,7 @@ ProjectCluster.Pipeline_SOM_MClust <- function(
   }
   projection_assignment <- object$Specification$projection$assignment %||% "hard"
   individual_tbl$Cluster <- if (projection_assignment == "soft") individual_tbl$Cluster_Soft else individual_tbl$Cluster_Hard
+  individual_tbl$Flag_NodeDisagreement <- individual_tbl$Cluster != individual_tbl$NodeCluster
 
   individual_tbl <- individual_tbl %>%
     dplyr::mutate(

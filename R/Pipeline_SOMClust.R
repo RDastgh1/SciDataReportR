@@ -293,6 +293,15 @@
 #' only: they do not remove, relabel, or suppress a participant during
 #' training, stability scoring, or projection.
 #'
+#' Changing `assignment` does not change SOM training or the fitted node mixture.
+#' With the same seeds and selected model, node posteriors and likelihood-based
+#' fit indices are identical. Both modes return a single participant class;
+#' soft mode takes the largest `SoftProb_*`. Hard and soft classes can therefore
+#' agree even when their probability vectors differ, especially when nearby
+#' nodes belong to the same phenotype. Exact soft-probability ties select the
+#' first class deterministically. `Flag_NodeDisagreement` compares the canonical
+#' participant class with the best-matching node's class; unmapped rows are `NA`.
+#'
 #' Each new fit uses one deterministic, seeded full-cohort batch SOM. Its
 #' initialization codebook, preprocessing, grid, topology, neighbourhood,
 #' epochs, codebooks, and node-level mixture are retained so projection is
@@ -2630,7 +2639,6 @@ CreateClusterModel_SOM_MClust <- function(data,
     dplyr::left_join(.SOMNodeAssignments(node_df), by = c("SOM_Node" = "NodeID"))
 
   individual_tbl$NodeCluster <- individual_tbl$Cluster
-  individual_tbl$Flag_NodeDisagreement <- FALSE
 
   soft_projection <- .SOMSoftProjection(zmat, som_codes, node_df,
     n_nodes = soft_n_nodes, margin_threshold = boundary_margin_threshold,
@@ -2653,6 +2661,7 @@ CreateClusterModel_SOM_MClust <- function(data,
     }
   }
   individual_tbl$Cluster <- if (assignment == "soft") individual_tbl$Cluster_Soft else individual_tbl$Cluster_Hard
+  individual_tbl$Flag_NodeDisagreement <- individual_tbl$Cluster != individual_tbl$NodeCluster
 
   individual_tbl <- individual_tbl %>%
     dplyr::left_join(som_residuals$top, by = ".row_id")
