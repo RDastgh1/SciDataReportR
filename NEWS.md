@@ -1,3 +1,5 @@
+# SciDataReportR 21.18.0
+
 # SciDataReportR 21.17.0
 
 * `MakeComparisonTable()` now reports Cohen's f on pooled average ranks for
