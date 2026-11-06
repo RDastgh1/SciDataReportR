@@ -2,3 +2,16 @@ url: https://rdastgh1.github.io/SciDataReportR/
 template:
   bootstrap: 5
 
+
+home:
+  title: Reproducible scientific data reporting in R
+  description: >-
+    Workflow infrastructure for labelled life science data, exploratory analyses,
+    statistical comparisons, scientific visualizations, and reproducible reports.
+  links:
+    - text: Software DOI (all versions)
+      href: https://doi.org/10.5281/zenodo.19617868
+
+authors:
+  Raha Dastgheyb:
+    href: https://orcid.org/0000-0002-4992-711X

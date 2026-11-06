@@ -124,7 +124,9 @@ footnote remain focused on the summaries and hypothesis tests used.
 
 ## Nonparametric analyses
 
-Nonparametric testing uses rank-based methods that are more robust to non-normal distributions. For two-group Wilcoxon rank-sum comparisons, the table reports absolute rank-biserial correlation. For Kruskal-Wallis comparisons involving more than two groups, it reports epsilon-squared.
+Nonparametric testing uses rank-based methods that are more robust to non-normal distributions. For two-group Wilcoxon rank-sum comparisons, the table reports absolute rank-biserial correlation. For Kruskal-Wallis comparisons involving more than two groups, it reports **Cohen's f on ranks**, calculated with `effectsize::rank_epsilon_squared(..., ci = NULL)` followed by `effectsize::eta2_to_f()`: $f_{rank} = \sqrt{\epsilon_R^2 / (1 - \epsilon_R^2)}$, where $\epsilon_R^2 = H / (n - 1)$. This equals Cohen's f from one-way ANOVA on pooled average ranks, including ties. Perfect rank separation yields `Inf`; undefined estimates yield `NA`.
+
+This replaces the earlier effect size labeled epsilon-squared, which actually used the rank eta-squared formula. Ordinary Cohen's f describes differences on the analyzed measurement scale; f on ranks describes rank separation. Rank-biserial correlation and Cramer's V also have their own scales and should not be interpreted using Cohen's d thresholds. A larger number after conversion does not represent a larger biological effect.
 
 ```{r}
 tbl_nonparametric <- MakeComparisonTable(

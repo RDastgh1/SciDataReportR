@@ -5,6 +5,7 @@
 
 <!-- badges: start -->
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.19617868.svg)](https://doi.org/10.5281/zenodo.19617868)
 [![R-CMD-check](https://github.com/RDastgh1/SciDataReportR/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/RDastgh1/SciDataReportR/actions/workflows/R-CMD-check.yaml)
 [![pkgdown](https://github.com/RDastgh1/SciDataReportR/actions/workflows/pkgdown.yaml/badge.svg)](https://github.com/RDastgh1/SciDataReportR/actions/workflows/pkgdown.yaml)
 [![Lifecycle:
@@ -118,8 +119,9 @@ and should be checked when composing analyses.
 
 SciDataReportR now uses workflow-oriented canonical names for new code,
 while older public names remain available as compatibility aliases. For
-example, [`CreatePCATable()`](reference/CreatePCAObject.html) still works, but `CreatePCAObject()` better
-describes the reusable PCA object returned by that workflow.
+example, [`CreatePCATable()`](reference/CreatePCAObject.html) still
+works, but `CreatePCAObject()` better describes the reusable PCA object
+returned by that workflow.
 
 | Function | Primary input | Upstream SciDataReportR function | Output | Common downstream use |
 |----|----|----|----|----|
@@ -217,9 +219,24 @@ Future directions:
 
 ## Citation, License, and Contributing
 
-SciDataReportR is released under the MIT license. Please cite the
-package and link to the project website when using it in scientific
-reports, presentations, or manuscripts.
+SciDataReportR is released under the [MIT license](LICENSE.md). Please
+cite the package when using it in scientific reports, presentations, or
+manuscripts:
+
+> Dastgheyb R. *SciDataReportR: Workflow Infrastructure for Reproducible
+> Scientific Data Reporting*. <https://doi.org/10.5281/zenodo.19617868>.
+
+This DOI identifies the package across releases. For reproducibility,
+also report the version used. To obtain a formatted citation and BibTeX
+for your installed version, run:
+
+``` r
+citation("SciDataReportR")
+```
+
+For example, the archive DOI for version 19.2.0 is
+[10.5281/zenodo.20512885](https://doi.org/10.5281/zenodo.20512885). Use
+a version-specific DOI only when citing that release.
 
 Contributions, bug reports, and workflow ideas are welcome through
 [GitHub issues](https://github.com/RDastgh1/SciDataReportR/issues).

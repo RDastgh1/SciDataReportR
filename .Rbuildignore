@@ -33,3 +33,5 @@ conflicted copy
 ^tools$
 ^CLAUDE\.md$
 ^talks$
+^CITATION\.cff$
+^\.zenodo\.json$

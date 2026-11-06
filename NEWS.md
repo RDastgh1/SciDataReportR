@@ -1,5 +1,17 @@
 # SciDataReportR 21.17.0
 
+* `MakeComparisonTable()` now reports Cohen's f on pooled average ranks for
+  unadjusted nonparametric comparisons with more than two groups, using
+  `effectsize::rank_epsilon_squared()` followed by `effectsize::eta2_to_f()`.
+  This replaces the mislabeled rank eta-squared estimate. Perfect separation
+  returns `Inf`; undefined estimates return `NA`. Other effect-size estimators
+  are unchanged, and documentation distinguishes their measurement scales.
+
+* Added DOI-backed citations for R, GitHub, and the package website, with
+  separate guidance for all-version and version-specific archive DOIs.
+* Added Zenodo metadata for future releases with the package description,
+  author ORCID, contributor credit, and MIT license.
+
 # SciDataReportR 21.16.0
 
 * SOM + Mclust now reports actual participant/node disagreement in

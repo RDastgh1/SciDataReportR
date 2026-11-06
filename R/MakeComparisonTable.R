@@ -22,7 +22,17 @@
 #'
 #' For unadjusted nonparametric continuous outcomes, two-group Wilcoxon
 #' rank-sum comparisons report absolute rank-biserial correlation, while
-#' Kruskal-Wallis comparisons with more than two groups report epsilon-squared.
+#' Kruskal-Wallis comparisons with more than two groups report Cohen's f on
+#' pooled average ranks: sqrt(epsilon_R^2 / (1 - epsilon_R^2)), where
+#' epsilon_R^2 = H / (n - 1). This is computed using
+#' `effectsize::rank_epsilon_squared()` and `effectsize::eta2_to_f()`.
+#' It describes separation on ranks, whereas ordinary Cohen's f describes
+#' separation on the analyzed measurement scale. Perfect rank separation
+#' returns Inf; undefined estimates return NA.
+#'
+#' Rank-biserial correlation and Cramer's V retain their own scales; neither
+#' should be interpreted using Cohen's d magnitude thresholds. Effect sizes
+#' reported using different methods are not directly comparable numerically.
 #'
 #' Binary categorical outcomes with covariates are tested using logistic
 #' regression likelihood-ratio tests. Multicategory categorical outcomes with
@@ -1263,7 +1273,7 @@ MakeComparisonTable <- function(data,
             return(tibble::tibble(
               variable = var,
               effect_size = NA_real_,
-              es_method = "partial eta-squared"
+              es_method = "Adjusted effect unavailable"
             ))
           }
 
@@ -1365,20 +1375,28 @@ MakeComparisonTable <- function(data,
           ))
         }
 
-        n <- nrow(df_vg)
-
-        H <- tryCatch(
-          stats::kruskal.test(fmla(var, CompVariable), data = df_vg)$statistic,
-          error = function(e) NA_real_
-        )
-
-        eps2 <- suppressWarnings(as.numeric((H - k + 1) / (n - k)))
-        eps2 <- if (is.finite(eps2)) max(eps2, 0) else NA_real_
+        rank_f <- tryCatch({
+          # Constant outcomes have no defined rank association.
+          if (length(unique(df_vg[[var]])) < 2) {
+            NA_real_
+          } else {
+            epsilon <- effectsize::rank_epsilon_squared(
+              fmla(var, CompVariable), data = df_vg, ci = NULL
+            )$rank_epsilon_squared[1]
+            if (is.finite(epsilon) && epsilon >= 0 &&
+                epsilon <= 1 + sqrt(.Machine$double.eps)) {
+              # Tie correction can put perfect separation just above one.
+              effectsize::eta2_to_f(min(epsilon, 1))
+            } else {
+              NA_real_
+            }
+          }
+        }, error = function(e) NA_real_)
 
         return(tibble::tibble(
           variable = var,
-          effect_size = eps2,
-          es_method = "epsilon-squared"
+          effect_size = rank_f,
+          es_method = "Cohen's f on ranks"
         ))
       }
 

@@ -149,7 +149,17 @@ ANCOVA group effect. These effect-size scales are not numerically equivalent.
 
 For unadjusted nonparametric continuous outcomes, two-group Wilcoxon
 rank-sum comparisons report absolute rank-biserial correlation, while
-Kruskal-Wallis comparisons with more than two groups report epsilon-squared.
+Kruskal-Wallis comparisons with more than two groups report Cohen's f on
+pooled average ranks: sqrt(epsilon_R^2 / (1 - epsilon_R^2)), where
+epsilon_R^2 = H / (n - 1). This is computed using
+\code{effectsize::rank_epsilon_squared()} and \code{effectsize::eta2_to_f()}.
+It describes separation on ranks, whereas ordinary Cohen's f describes
+separation on the analyzed measurement scale. Perfect rank separation
+returns Inf; undefined estimates return NA.
+
+Rank-biserial correlation and Cramer's V retain their own scales; neither
+should be interpreted using Cohen's d magnitude thresholds. Effect sizes
+reported using different methods are not directly comparable numerically.
 
 Binary categorical outcomes with covariates are tested using logistic
 regression likelihood-ratio tests. Multicategory categorical outcomes with

@@ -179,7 +179,7 @@ test_that("two-group Wilcoxon reports absolute rank-biserial correlation", {
   expect_equal(got_reordered$effect_size, expected, tolerance = 1e-10)
 })
 
-test_that("multi-group nonparametric and categorical effect sizes are preserved", {
+test_that("multi-group nonparametric reports rank f and retains categorical effect sizes", {
   set.seed(105)
   df_Test <- data.frame(
     group = factor(rep(c("A", "B", "C"), each = 18)),
@@ -197,18 +197,26 @@ test_that("multi-group nonparametric and categorical effect sizes are preserved"
 
   got_outcome <- GetMainEffectRow(tbl, "outcome")
   got_category <- GetMainEffectRow(tbl, "category")
-  H <- as.numeric(stats::kruskal.test(outcome ~ group, data = df_Test)$statistic)
-  expected_epsilon <- max((H - 3 + 1) / (nrow(df_Test) - 3), 0)
+  df_Test$ranks <- rank(df_Test$outcome, ties.method = "average")
+  expected_f <- effectsize::cohens_f(stats::aov(ranks ~ group, data = df_Test))$Cohens_f[1]
 
-  expect_equal(got_outcome$effect_size, expected_epsilon, tolerance = 1e-10)
-  expect_identical(got_outcome$ES_Method, "epsilon-squared")
+  expect_equal(got_outcome$effect_size, expected_f, tolerance = 1e-10)
+  expect_identical(got_outcome$ES_Method, "Cohen's f on ranks")
   expect_identical(got_category$ES_Method, "Cramer's V")
+  tab <- table(df_Test$category, df_Test$group)
+  expected_v <- if (requireNamespace("DescTools", quietly = TRUE)) {
+    as.numeric(DescTools::CramerV(tab, method = "bias.corrected"))
+  } else {
+    sqrt(as.numeric(stats::chisq.test(tab, correct = FALSE)$statistic) /
+      (sum(tab) * (min(dim(tab)) - 1)))
+  }
+  expect_equal(got_category$effect_size, expected_v)
 })
 
-test_that("negative epsilon-squared estimates are clamped to zero", {
+test_that("identical group rank distributions give zero rank f", {
   df_Test <- data.frame(
     group = factor(rep(c("A", "B", "C"), each = 3)),
-    outcome = c(1, 4, 7, 2, 5, 8, 3, 6, 9)
+    outcome = rep(c(1, 2, 3), 3)
   )
 
   got <- GetMainEffectRow(
@@ -223,7 +231,7 @@ test_that("negative epsilon-squared estimates are clamped to zero", {
   )
 
   expect_equal(got$effect_size, 0)
-  expect_identical(got$ES_Method, "epsilon-squared")
+  expect_identical(got$ES_Method, "Cohen's f on ranks")
 })
 
 test_that("captions stay focused when effect sizes are included", {
@@ -328,4 +336,58 @@ test_that("insufficient adjusted data returns a missing effect size", {
   got <- GetMainEffectRow(tbl, "outcome")
 
   expect_true(is.na(got$effect_size))
+  expect_identical(got$ES_Method, "Adjusted effect unavailable")
+})
+
+
+test_that("rank f uses complete cases, ties, and observed group levels", {
+  df_Test <- data.frame(
+    group = factor(c(rep("A", 4), rep("B", 5), rep("C", 6), "D", NA),
+      levels = c("A", "B", "C", "D", "Unused")),
+    outcome = c(1, 1, 2, 3, 2, 3, 3, 4, 4, 4, 5, 5, 6, 6, 7, NA, 8)
+  )
+  df_CC <- droplevels(df_Test[stats::complete.cases(df_Test), ])
+  df_CC$ranks <- rank(df_CC$outcome, ties.method = "average")
+  expected <- effectsize::cohens_f(stats::aov(ranks ~ group, data = df_CC))$Cohens_f[1]
+  tbl <- suppressWarnings(MakeComparisonTable(
+    df_Test, "group", "outcome", Parametric = FALSE, AddEffectSize = TRUE,
+    AddPairwise = TRUE
+  ))
+  tbl_without_es <- suppressWarnings(MakeComparisonTable(
+    df_Test, "group", "outcome", Parametric = FALSE, AddPairwise = TRUE
+  ))
+  got <- GetMainEffectRow(tbl, "outcome")
+  expect_equal(got$effect_size, expected, tolerance = 1e-10)
+  expect_identical(got$ES_Method, "Cohen's f on ranks")
+  expect_equal(got$p.value, stats::kruskal.test(outcome ~ group, data = df_CC)$p.value)
+  vars_Unchanged <- intersect(names(tbl_without_es$table_body), names(tbl$table_body))
+  expect_equal(tbl$table_body[, vars_Unchanged], tbl_without_es$table_body[, vars_Unchanged])
+  expect_match(gt::as_raw_html(gtsummary::as_gt(tbl)), "Cohen&#39;s f on ranks|Cohen's f on ranks")
+})
+
+test_that("rank f preserves infinite perfect separation", {
+  df_Test <- data.frame(
+    group = factor(rep(c("A", "B", "C"), each = 4)),
+    outcome = rep(c(1, 2, 3), each = 4)
+  )
+  got <- GetMainEffectRow(suppressWarnings(MakeComparisonTable(
+    df_Test, "group", "outcome", Parametric = FALSE, AddEffectSize = TRUE
+  )), "outcome")
+  expect_identical(got$effect_size, Inf)
+  expect_identical(got$ES_Method, "Cohen's f on ranks")
+})
+
+test_that("undefined rank effects are missing for constant or insufficient data", {
+  df_Test <- data.frame(
+    group = factor(c(rep(c("A", "B", "C"), each = 4), NA, NA)),
+    constant = c(rep(1, 12), 2, 3),
+    single_group = c(1:4, rep(NA_real_, 10))
+  )
+  tbl <- suppressWarnings(MakeComparisonTable(
+    df_Test, "group", c("constant", "single_group"),
+    Parametric = FALSE, AddEffectSize = TRUE
+  ))
+  expect_true(is.na(GetMainEffectRow(tbl, "constant")$effect_size))
+  expect_true(is.na(GetMainEffectRow(tbl, "single_group")$effect_size))
+  expect_identical(GetMainEffectRow(tbl, "single_group")$ES_Method, "Insufficient groups")
 })

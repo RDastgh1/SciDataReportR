@@ -1,0 +1,10 @@
+# The concept DOI covers all releases; 10.5281/zenodo.20512885 is v19.2.0 only.
+bibentry(
+  bibtype = "Manual",
+  title = paste0(meta$Package, ": ", meta$Title),
+  author = person("Raha", "Dastgheyb"),
+  year = format(Sys.Date(), "%Y"),
+  note = paste("R package version", meta$Version),
+  doi = "10.5281/zenodo.19617868",
+  url = "https://rdastgh1.github.io/SciDataReportR/"
+)

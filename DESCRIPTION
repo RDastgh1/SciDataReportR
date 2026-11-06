@@ -12,7 +12,9 @@ Description: Workflow infrastructure for turning labelled, researcher-native lif
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-URL: https://github.com/RDastgh1/SciDataReportR, https://rdastgh1.github.io/SciDataReportR/
+URL: https://rdastgh1.github.io/SciDataReportR/,
+    https://github.com/RDastgh1/SciDataReportR,
+    https://doi.org/10.5281/zenodo.19617868
 BugReports: https://github.com/RDastgh1/SciDataReportR/issues
 Imports:
     dplyr,
