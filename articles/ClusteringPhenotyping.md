@@ -1018,7 +1018,7 @@ Session information
 
     loaded via a namespace (and not attached):
       [1] RColorBrewer_1.1-3     rstudioapi_0.19.0      jsonlite_2.0.0
-      [4] datawizard_1.4.1       magrittr_2.0.5         estimability_2.0.0
+      [4] datawizard_1.5.0       magrittr_2.0.5         estimability_2.0.0
       [7] farver_2.1.2           rmarkdown_2.32         vctrs_0.7.3
      [10] paletteer_1.7.0        CompQuadForm_1.4.4     base64enc_0.1-6
      [13] rstatix_1.1.0          htmltools_0.5.9        forcats_1.0.1

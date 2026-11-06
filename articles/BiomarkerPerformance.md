@@ -216,7 +216,7 @@ still not external validation in a new population.
      [4] htmlwidgets_1.6.4      insight_1.7.0          rstatix_1.1.0
      [7] lattice_0.23-1         paletteer_1.7.0        crosstalk_1.2.2
     [10] vctrs_0.7.3            tools_4.6.2            generics_0.1.4
-    [13] datawizard_1.4.1       tibble_3.3.1           pkgconfig_2.0.3
+    [13] datawizard_1.5.0       tibble_3.3.1           pkgconfig_2.0.3
     [16] Matrix_1.7-6           data.table_1.18.6.1    RColorBrewer_1.1-3
     [19] S7_0.2.2               RcppParallel_6.2.1     lifecycle_1.0.5
     [22] compiler_4.6.2         farver_2.1.2           carData_3.0-6

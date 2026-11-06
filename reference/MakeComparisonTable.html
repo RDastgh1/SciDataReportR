@@ -49,7 +49,7 @@ pairwise comparisons."><meta property="og:image" content="https://rdastgh1.githu
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Make comparison table with covariate adjustment, effect sizes, and pairwise contrasts</h1>
-      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/v21.17.0/R/MakeComparisonTable.R" class="external-link"><code>R/MakeComparisonTable.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/master/R/MakeComparisonTable.R" class="external-link"><code>R/MakeComparisonTable.R</code></a></small>
       <div class="d-none name"><code>MakeComparisonTable.Rd</code></div>
     </div>
 
@@ -272,7 +272,16 @@ standard deviation, and multi-group Cohen's f is calculated from the Type II
 ANCOVA group effect. These effect-size scales are not numerically equivalent.</p>
 <p>For unadjusted nonparametric continuous outcomes, two-group Wilcoxon
 rank-sum comparisons report absolute rank-biserial correlation, while
-Kruskal-Wallis comparisons with more than two groups report epsilon-squared.</p>
+Kruskal-Wallis comparisons with more than two groups report Cohen's f on
+pooled average ranks: sqrt(epsilon_R^2 / (1 - epsilon_R^2)), where
+epsilon_R^2 = H / (n - 1). This is computed using
+<code><a href="https://easystats.github.io/effectsize/reference/rank_epsilon_squared.html" class="external-link">effectsize::rank_epsilon_squared()</a></code> and <code><a href="https://easystats.github.io/effectsize/reference/eta2_to_f2.html" class="external-link">effectsize::eta2_to_f()</a></code>.
+It describes separation on ranks, whereas ordinary Cohen's f describes
+separation on the analyzed measurement scale. Perfect rank separation
+returns Inf; undefined estimates return NA.</p>
+<p>Rank-biserial correlation and Cramer's V retain their own scales; neither
+should be interpreted using Cohen's d magnitude thresholds. Effect sizes
+reported using different methods are not directly comparable numerically.</p>
 <p>Binary categorical outcomes with covariates are tested using logistic
 regression likelihood-ratio tests. Multicategory categorical outcomes with
 covariates are tested using multinomial likelihood-ratio tests.</p>
@@ -976,7 +985,7 @@ N = 91</span><span class="gt_footnote_marks" style="font-size: 75%; vertical-ali
 
 
     <footer><div class="pkgdown-footer-left">
-  <p>Developed by Raha Dastgheyb.</p>
+  <p>Developed by <a href="https://orcid.org/0000-0002-4992-711X" class="external-link">Raha Dastgheyb</a>.</p>
 </div>
 
 <div class="pkgdown-footer-right">

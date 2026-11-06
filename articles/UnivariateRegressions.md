@@ -304,7 +304,7 @@ sessionInfo()
     [22] purrr_1.2.2            scales_1.4.0           abind_1.4-8
     [25] cli_3.6.6              labelled_2.16.1        rlang_1.3.0
     [28] withr_3.0.3            yaml_2.3.12            otel_0.2.0
-    [31] statsExpressions_2.2.1 tools_4.6.2            datawizard_1.4.1
+    [31] statsExpressions_2.2.1 tools_4.6.2            datawizard_1.5.0
     [34] rstantools_2.7.1       ggstatsplot_1.1.4      coda_0.19-4.1
     [37] ggplot2_4.0.3          sjlabelled_1.2.0       bayestestR_0.20.0
     [40] forcats_1.0.1          broom_1.0.13           paletteer_1.7.0

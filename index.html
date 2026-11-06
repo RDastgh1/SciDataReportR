@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<title>Workflow Infrastructure for Reproducible Scientific Data Reporting • SciDataReportR</title>
+<title>Reproducible scientific data reporting in R • SciDataReportR</title>
 <!-- favicons --><link rel="icon" type="image/png" sizes="96x96" href="favicon-96x96.png">
 <link rel="icon" type="”image/svg+xml”" href="favicon.svg">
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
@@ -14,9 +14,9 @@
 <link href="deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
 <script src="deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
-<script src="deps/headroom-0.11.0/headroom.min.js"></script><script src="deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="deps/search-1.0.0/fuse.min.js"></script><script src="deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="pkgdown.js"></script><meta property="og:title" content="Workflow Infrastructure for Reproducible Scientific Data Reporting">
-<meta name="description" content="Workflow infrastructure for turning labelled, researcher-native life science data frames into reproducible exploratory analyses, metadata-aware reports, statistical comparisons, dimensionality reduction workflows, clustering/projection pipelines, scientific visualizations, and report-ready outputs.">
-<meta property="og:description" content="Workflow infrastructure for turning labelled, researcher-native life science data frames into reproducible exploratory analyses, metadata-aware reports, statistical comparisons, dimensionality reduction workflows, clustering/projection pipelines, scientific visualizations, and report-ready outputs.">
+<script src="deps/headroom-0.11.0/headroom.min.js"></script><script src="deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="deps/search-1.0.0/fuse.min.js"></script><script src="deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="pkgdown.js"></script><meta property="og:title" content="Reproducible scientific data reporting in R">
+<meta name="description" content="Workflow infrastructure for labelled life science data, exploratory analyses, statistical comparisons, scientific visualizations, and reproducible reports.">
+<meta property="og:description" content="Workflow infrastructure for labelled life science data, exploratory analyses, statistical comparisons, scientific visualizations, and reproducible reports.">
 <meta property="og:image" content="https://rdastgh1.github.io/SciDataReportR/logo.png">
 </head>
 <body>
@@ -339,7 +339,7 @@
 <h2 id="flagship-workflow-examples">Flagship Workflow Examples<a class="anchor" aria-label="anchor" href="#flagship-workflow-examples"></a>
 </h2>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/RDastgh1/SciDataReportR" class="external-link">SciDataReportR</a></span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://rdastgh1.github.io/SciDataReportR/">SciDataReportR</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Metadata-aware setup</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"SampleData"</span><span class="op">)</span></span>
@@ -416,7 +416,14 @@
 <div class="section level2">
 <h2 id="citation-license-and-contributing">Citation, License, and Contributing<a class="anchor" aria-label="anchor" href="#citation-license-and-contributing"></a>
 </h2>
-<p>SciDataReportR is released under the MIT license. Please cite the package and link to the project website when using it in scientific reports, presentations, or manuscripts.</p>
+<p>SciDataReportR is released under the <a href="LICENSE.html">MIT license</a>. Please cite the package when using it in scientific reports, presentations, or manuscripts:</p>
+<blockquote>
+<p>Dastgheyb R. <em>SciDataReportR: Workflow Infrastructure for Reproducible Scientific Data Reporting</em>. <a href="https://doi.org/10.5281/zenodo.19617868" class="external-link uri">https://doi.org/10.5281/zenodo.19617868</a>.</p>
+</blockquote>
+<p>This DOI identifies the package across releases. For reproducibility, also report the version used. To obtain a formatted citation and BibTeX for your installed version, run:</p>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/citation.html" class="external-link">citation</a></span><span class="op">(</span><span class="st">"SciDataReportR"</span><span class="op">)</span></span></code></pre></div>
+<p>For example, the archive DOI for version 19.2.0 is <a href="https://doi.org/10.5281/zenodo.20512885" class="external-link">10.5281/zenodo.20512885</a>. Use a version-specific DOI only when citing that release.</p>
 <p>Contributions, bug reports, and workflow ideas are welcome through <a href="https://github.com/RDastgh1/SciDataReportR/issues" class="external-link">GitHub issues</a>.</p>
 </div>
 </div>
@@ -425,6 +432,7 @@
 <ul class="list-unstyled">
 <li><a href="https://github.com/RDastgh1/SciDataReportR/" class="external-link">Browse source code</a></li>
 <li><a href="https://github.com/RDastgh1/SciDataReportR/issues" class="external-link">Report a bug</a></li>
+<li><a href="https://doi.org/10.5281/zenodo.19617868" class="external-link">Software DOI (all versions)</a></li>
 </ul>
 </div>
 
@@ -453,7 +461,8 @@
 <div class="developers">
 <h2 data-toc-skip>Developers</h2>
 <ul class="list-unstyled">
-<li>Raha Dastgheyb <br><small class="roles"> Author, maintainer </small> <a href="https://orcid.org/0000-0002-4992-711X" target="orcid.widget" aria-label="ORCID" class="external-link"><span class="fab fa-orcid orcid" aria-hidden="true"></span></a>  </li>
+<li>
+<a href="https://orcid.org/0000-0002-4992-711X" class="external-link">Raha Dastgheyb</a> <br><small class="roles"> Author, maintainer </small> <a href="https://orcid.org/0000-0002-4992-711X" target="orcid.widget" aria-label="ORCID" class="external-link"><span class="fab fa-orcid orcid" aria-hidden="true"></span></a>  </li>
 <li><a href="authors.html">More about authors...</a></li>
 </ul>
 </div>
@@ -461,6 +470,7 @@
 <div class="dev-status">
 <h2 data-toc-skip>Dev status</h2>
 <ul class="list-unstyled">
+<li><a href="https://doi.org/10.5281/zenodo.19617868" class="external-link"><img src="https://zenodo.org/badge/DOI/10.5281/zenodo.19617868.svg" alt="DOI"></a></li>
 <li><a href="https://github.com/RDastgh1/SciDataReportR/actions/workflows/R-CMD-check.yaml" class="external-link"><img src="https://github.com/RDastgh1/SciDataReportR/actions/workflows/R-CMD-check.yaml/badge.svg" alt="R-CMD-check"></a></li>
 <li><a href="https://github.com/RDastgh1/SciDataReportR/actions/workflows/pkgdown.yaml" class="external-link"><img src="https://github.com/RDastgh1/SciDataReportR/actions/workflows/pkgdown.yaml/badge.svg" alt="pkgdown"></a></li>
 <li><a href="https://lifecycle.r-lib.org/articles/stages.html" class="external-link"><img src="https://img.shields.io/badge/lifecycle-maturing-blue.svg" alt="Lifecycle: maturing"></a></li>
@@ -475,7 +485,7 @@
 
 
     <footer><div class="pkgdown-footer-left">
-  <p>Developed by Raha Dastgheyb.</p>
+  <p>Developed by <a href="https://orcid.org/0000-0002-4992-711X" class="external-link">Raha Dastgheyb</a>.</p>
 </div>
 
 <div class="pkgdown-footer-right">

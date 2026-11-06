@@ -45,12 +45,15 @@
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Changelog</h1>
-      <small>Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/v21.17.0/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
+      <small>Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/master/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="21.17.0" id="scidatareportr-21170">SciDataReportR 21.17.0<a class="anchor" aria-label="anchor" href="#scidatareportr-21170"></a></h2>
-</div>
+<ul><li><p><code><a href="../reference/MakeComparisonTable.html">MakeComparisonTable()</a></code> now reports Cohen’s f on pooled average ranks for unadjusted nonparametric comparisons with more than two groups, using <code><a href="https://easystats.github.io/effectsize/reference/rank_epsilon_squared.html" class="external-link">effectsize::rank_epsilon_squared()</a></code> followed by <code><a href="https://easystats.github.io/effectsize/reference/eta2_to_f2.html" class="external-link">effectsize::eta2_to_f()</a></code>. This replaces the mislabeled rank eta-squared estimate. Perfect separation returns <code>Inf</code>; undefined estimates return <code>NA</code>. Other effect-size estimators are unchanged, and documentation distinguishes their measurement scales.</p></li>
+<li><p>Added DOI-backed citations for R, GitHub, and the package website, with separate guidance for all-version and version-specific archive DOIs.</p></li>
+<li><p>Added Zenodo metadata for future releases with the package description, author ORCID, contributor credit, and MIT license.</p></li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="21.16.0" id="scidatareportr-21160">SciDataReportR 21.16.0<a class="anchor" aria-label="anchor" href="#scidatareportr-21160"></a></h2>
 <ul><li><p>SOM + Mclust now reports actual participant/node disagreement in <code>Flag_NodeDisagreement</code> during training and projection, and resolves tied soft probabilities deterministically. Documentation clarifies why hard and soft assignment share model-fit indices and can yield the same participant classes.</p></li>
@@ -872,7 +875,7 @@
 
 
     <footer><div class="pkgdown-footer-left">
-  <p>Developed by Raha Dastgheyb.</p>
+  <p>Developed by <a href="https://orcid.org/0000-0002-4992-711X" class="external-link">Raha Dastgheyb</a>.</p>
 </div>
 
 <div class="pkgdown-footer-right">

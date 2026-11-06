@@ -131,7 +131,22 @@ hypothesis tests used.
 Nonparametric testing uses rank-based methods that are more robust to
 non-normal distributions. For two-group Wilcoxon rank-sum comparisons,
 the table reports absolute rank-biserial correlation. For Kruskal-Wallis
-comparisons involving more than two groups, it reports epsilon-squared.
+comparisons involving more than two groups, it reports **Cohen’s f on
+ranks**, calculated with
+`effectsize::rank_epsilon_squared(..., ci = NULL)` followed by
+[`effectsize::eta2_to_f()`](https://easystats.github.io/effectsize/reference/eta2_to_f2.html):
+$`f_{rank} = \sqrt{\epsilon_R^2 / (1 - \epsilon_R^2)}`$, where
+$`\epsilon_R^2 = H / (n - 1)`$. This equals Cohen’s f from one-way ANOVA
+on pooled average ranks, including ties. Perfect rank separation yields
+`Inf`; undefined estimates yield `NA`.
+
+This replaces the earlier effect size labeled epsilon-squared, which
+actually used the rank eta-squared formula. Ordinary Cohen’s f describes
+differences on the analyzed measurement scale; f on ranks describes rank
+separation. Rank-biserial correlation and Cramer’s V also have their own
+scales and should not be interpreted using Cohen’s d thresholds. A
+larger number after conversion does not represent a larger biological
+effect.
 
 ``` r
 
@@ -319,7 +334,7 @@ sessionInfo()
     [22] gt_1.4.0               data.table_1.18.6.1    knitr_1.52
     [25] xml2_1.6.0             RColorBrewer_1.1-3     abind_1.4-8
     [28] expm_1.0-1             withr_3.0.3            purrr_1.2.2
-    [31] nnet_7.3-21            grid_4.6.2             datawizard_1.4.1
+    [31] nnet_7.3-21            grid_4.6.2             datawizard_1.5.0
     [34] xtable_1.8-8           e1071_1.7-17           gtsummary_2.6.1
     [37] paletteer_1.7.0        ggplot2_4.0.3          emmeans_2.0.4
     [40] scales_1.4.0           MASS_7.3-66            dichromat_2.0-1
