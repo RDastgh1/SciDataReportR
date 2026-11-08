@@ -82,11 +82,15 @@
 }
 
 .ResolveMclustModels <- function(models, argument = "models") {
+  if (is.character(models)) {
+    models <- match(toupper(models), unname(.MclustModelNames)) %>%
+      {as.integer(names(.MclustModelNames))[.]}
+  }
   if (!is.numeric(models) || !length(models) || anyNA(models) ||
       any(models != as.integer(models)) ||
       any(!as.integer(models) %in% as.integer(names(.MclustModelNames)))) {
     stop(
-      argument, " must contain tidyLPA mclust model IDs 1, 2, 3, and/or 6. ",
+      argument, " must contain Mclust names EEI, VVI, EEE, VVV or IDs 1, 2, 3, 6. ",
       "Models 4 and 5 require OpenMx and are intentionally unsupported."
     )
   }
@@ -236,13 +240,13 @@
   out
 }
 
-.ProjectClusterNumeric <- function(object, new_df) {
+.ProjectClusterNumeric <- function(object, data) {
   vars <- object$vars_used
-  if (!is.data.frame(new_df)) stop("new_df must be a data frame.")
-  if (length(setdiff(vars, names(new_df)))) {
-    stop("new_df is missing required clustering variable(s): ", paste(setdiff(vars, names(new_df)), collapse = ", "))
+  if (!is.data.frame(data)) stop("data must be a data frame.")
+  if (length(setdiff(vars, names(data)))) {
+    stop("data is missing required clustering variable(s): ", paste(setdiff(vars, names(data)), collapse = ", "))
   }
-  df_scidr <- .AddClusterRowID(new_df, "new_df")
+  df_scidr <- .AddClusterRowID(data, "data")
   Scaling <- object$Preprocessing$Scaling
   if (Scaling == "None" || Scaling == "PreZScored") {
     X <- as.matrix(df_scidr[vars])
@@ -501,19 +505,23 @@
 .ClusterMethod <- function(method) {
   if (length(method) > 1L) method <- method[[1]]
   method <- match.arg(method, c("exploratory", "explore", "finalize"))
-  if (identical(method, "explore")) "exploratory" else method
+  if (identical(method, "explore")) {
+    lifecycle::deprecate_warn("21.18.0", "CreateClusterModel_SOM_MClust(method = 'explore')",
+      "CreateClusterModel_SOM_MClust(method = 'exploratory')")
+    "exploratory"
+  } else method
 }
 
-.ValidateClusterStability <- function(stability_resamples, stability_seed,
+.ValidateClusterStability <- function(stability_resamples, seed_stability,
     stability_progress, stability_cores = NULL) {
   if (!is.numeric(stability_resamples) || length(stability_resamples) != 1L ||
       is.na(stability_resamples) || stability_resamples < 0 ||
       stability_resamples != as.integer(stability_resamples)) {
     stop("stability_resamples must be a single non-negative integer.")
   }
-  if (!is.numeric(stability_seed) || length(stability_seed) != 1L ||
-      is.na(stability_seed) || !is.finite(stability_seed)) {
-    stop("stability_seed must be a single finite number.")
+  if (!is.numeric(seed_stability) || length(seed_stability) != 1L ||
+      is.na(seed_stability) || !is.finite(seed_stability)) {
+    stop("seed_stability must be a single finite number.")
   }
   if (!is.logical(stability_progress) || length(stability_progress) != 1L ||
       is.na(stability_progress)) {
@@ -708,6 +716,7 @@
 .ClusterSpecification <- function(method, variables, seeds = list(),
     preprocessing = list(), candidate_grid = NULL, selected = list(),
     complete_rows = NULL, support = list()) {
+  seeds <- .ClusterMetadataAliases(seeds)
   versions <- vapply(c("SciDataReportR", "mclust", "cluster", "dbscan", "poLCA",
                        "kohonen", "aweSOM"), function(package) {
     if (requireNamespace(package, quietly = TRUE))
@@ -1187,7 +1196,7 @@
 #' @param stability_resamples Number of 90% participant subsample refits used
 #'   to estimate candidate reproducibility. Subsamples are drawn without
 #'   replacement. Use `0` to disable stability analysis.
-#' @param stability_seed Seed controlling participant subsampling.
+#' @param seed_stability Seed controlling participant subsampling.
 #' @param stability_progress Whether to print subsample progress messages.
 #' @param stability_cores Number of workers for stability refits. `NULL` uses
 #'   a conservative CPU/memory cap: the smaller of 50% physical RAM and 75% of
@@ -1232,20 +1241,27 @@
 #' projected <- ProjectCluster(model, df_Projection)
 #' projected$ProjectionFit$plots$projection_fit_class_bar
 #' }
+#' @param stability_seed Deprecated alias for `seed_stability`.
 #' @export
 CreateClusterModel_MClust <- function(data, variables = NULL,
     method = c("exploratory", "finalize"), k_range = 2:10,
     models = c(1L, 2L, 3L, 6L), final_k = NULL, final_model = NULL,
     ZScoreType = NULL, Scaling = NULL,
     ClusterVariableName = "Cluster", seed = 93421L, stability_resamples = 0L,
-    stability_seed = seed + 1L, stability_progress = FALSE,
-    stability_cores = NULL) {
+    seed_stability = seed + 1L, stability_progress = FALSE,
+    stability_cores = NULL,
+    stability_seed = lifecycle::deprecated()) {
+  if (lifecycle::is_present(stability_seed)) {
+    lifecycle::deprecate_warn("21.18.0", "CreateClusterModel_MClust(stability_seed)", "CreateClusterModel_MClust(seed_stability)")
+    seed_stability <- stability_seed
+  }
+
   supplied <- list(k_range = !missing(k_range), models = !missing(models),
     final_k = !missing(final_k), final_model = !missing(final_model))
   if (!requireNamespace("mclust", quietly = TRUE)) stop("Package 'mclust' is required.")
   if (!requireNamespace("tidyLPA", quietly = TRUE)) stop("Package 'tidyLPA' is required.")
   stability_resamples <- .ValidateClusterStability(
-    stability_resamples, stability_seed, stability_progress, stability_cores)
+    stability_resamples, seed_stability, stability_progress, stability_cores)
   method <- .ClusterMethod(method)
   .ValidateClusterLifecycle(method, supplied[c("k_range", "models")],
     supplied[c("final_k", "final_model")])
@@ -1275,13 +1291,13 @@ CreateClusterModel_MClust <- function(data, variables = NULL,
           stability_resamples = 0L)
         dplyr::select(
           fitted$ProbFit$individual, dplyr::all_of(c(".row_id", "Cluster")))
-      }, stability_resamples, stability_seed + i, list(Model = model, Classes = k),
+      }, stability_resamples, seed_stability + i, list(Model = model, Classes = k),
       progress = stability_progress, stability_cores = stability_cores,
       memory_method = "mclust", memory_variables = prep$variables)
     })
     stability_summary <- dplyr::bind_rows(lapply(stabilities, `[[`, "summary"))
     fit_table <- dplyr::left_join(fit_table, stability_summary, by = c("Model", "Classes"))
-    Stability <- .CombineClusterStabilities(stabilities, stability_resamples, stability_seed)
+    Stability <- .CombineClusterStabilities(stabilities, stability_resamples, seed_stability)
   }
   review <- .ClusterAHP(fit_table, higher = c("BIC", "ICL", "Entropy", "MinClusterN", "SizeBalance", "ReproducibilityScore"), lower = "MaxUncertainty", setting = "Gaussian-mixture model")
   fit_table <- review$fit_table
@@ -1346,7 +1362,7 @@ CreateClusterModel_MClust <- function(data, variables = NULL,
   out$Stability <- Stability
   out$ModelInfo_MClust <- out$ModelInfo
   out$Specification <- .ClusterSpecification(
-    "Mclust", prep$variables, list(seed = seed, stability_seed = stability_seed),
+    "Mclust", prep$variables, list(seed = seed, seed_stability = seed_stability),
     out$Preprocessing, dplyr::select(fit_table, dplyr::any_of(c("Model", "Classes"))),
     list(k = best$G, model = ModelInfo$final_model,
       model_name = ModelInfo$final_model_name), prep$complete_rows,
@@ -1413,7 +1429,7 @@ CreateClusterModel_MClust <- function(data, variables = NULL,
 
 #' Project data onto a Mclust cluster model
 #' @param object A `CreateClusterModel_MClust()` result.
-#' @param new_df New observations.
+#' @param data New observations.
 #' @param ClusterVariableName Optional output cluster column name.
 #' @return A full-length projection object. `ProbFit$individual` holds posterior
 #'   membership, uncertainty, and distance to the assigned component;
@@ -1440,8 +1456,13 @@ CreateClusterModel_MClust <- function(data, variables = NULL,
 #' }
 #' @noRd
 #' @export
-ProjectCluster.Pipeline_MClust <- function(object, new_df, ClusterVariableName = object$ClusterVariableName, ...) {
-  prep <- .ProjectClusterNumeric(object, new_df)
+ProjectCluster.Pipeline_MClust <- function(object, data, ClusterVariableName = object$ClusterVariableName, new_df = lifecycle::deprecated(), ...) {
+  if (lifecycle::is_present(new_df)) {
+    lifecycle::deprecate_warn("21.18.0", "ProjectCluster(new_df)", "ProjectCluster(data)")
+    data <- new_df
+  }
+
+  prep <- .ProjectClusterNumeric(object, data)
   ind <- dplyr::tibble(
     PosteriorMax = rep(NA_real_, nrow(prep$data)),
     Uncertainty = rep(NA_real_, nrow(prep$data)),
@@ -1529,16 +1550,23 @@ ProjectCluster.Pipeline_MClust <- function(object, new_df, ClusterVariableName =
 #' projected <- ProjectCluster(model, df_Projection)
 #' projected$ProjectionFit$plots$projection_fit_class_bar
 #' }
+#' @param stability_seed Deprecated alias for `seed_stability`.
 #' @export
 CreateClusterModel_KMeans <- function(data, variables = NULL,
     method = c("exploratory", "finalize"), k_range = 2:10, final_k = NULL,
     ZScoreType = NULL, Scaling = NULL,
     ClusterVariableName = "Cluster", seed = 93421L, nstart = 50L,
-    stability_resamples = 0L, stability_seed = seed + 1L,
-    stability_progress = FALSE, stability_cores = NULL) {
+    stability_resamples = 0L, seed_stability = seed + 1L,
+    stability_progress = FALSE, stability_cores = NULL,
+    stability_seed = lifecycle::deprecated()) {
+  if (lifecycle::is_present(stability_seed)) {
+    lifecycle::deprecate_warn("21.18.0", "CreateClusterModel_KMeans(stability_seed)", "CreateClusterModel_KMeans(seed_stability)")
+    seed_stability <- stability_seed
+  }
+
   supplied <- list(k_range = !missing(k_range), final_k = !missing(final_k))
   stability_resamples <- .ValidateClusterStability(
-    stability_resamples, stability_seed, stability_progress, stability_cores)
+    stability_resamples, seed_stability, stability_progress, stability_cores)
   method <- .ClusterMethod(method)
   .ValidateClusterLifecycle(method, supplied["k_range"], supplied["final_k"])
   Scaling <- .ResolveNumericClusterScaling(ZScoreType, Scaling)
@@ -1567,13 +1595,13 @@ CreateClusterModel_KMeans <- function(data, variables = NULL,
           stability_resamples = 0L)
         dplyr::select(
           fitted$ProbFit$individual, dplyr::all_of(c(".row_id", "Cluster")))
-      }, stability_resamples, stability_seed + k, list(Classes = k),
+      }, stability_resamples, seed_stability + k, list(Classes = k),
       progress = stability_progress, stability_cores = stability_cores,
       memory_method = "kmeans", memory_variables = prep$variables)
     })
     stability_summary <- dplyr::bind_rows(lapply(stabilities, `[[`, "summary"))
     rows <- dplyr::left_join(rows, stability_summary, by = "Classes")
-    Stability <- .CombineClusterStabilities(stabilities, stability_resamples, stability_seed)
+    Stability <- .CombineClusterStabilities(stabilities, stability_resamples, seed_stability)
   }
   review <- .ClusterAHP(rows, higher = c("Silhouette", "CalinskiHarabasz", "MinClusterN", "SizeBalance", "ReproducibilityScore"), lower = "WSS", setting = "K-means k")
   rows <- review$fit_table
@@ -1631,7 +1659,7 @@ CreateClusterModel_KMeans <- function(data, variables = NULL,
   out$Stability <- Stability
   out$ModelInfo_KMeans <- out$ModelInfo
   out$Specification <- .ClusterSpecification(
-    "KMeans", prep$variables, list(seed = seed, stability_seed = stability_seed),
+    "KMeans", prep$variables, list(seed = seed, seed_stability = seed_stability),
     out$Preprocessing, dplyr::select(rows, dplyr::any_of("Classes")),
     list(k = nrow(best$centers)), prep$complete_rows,
     list(distance_metric = "Euclidean distance to frozen centroid"))
@@ -1663,8 +1691,13 @@ CreateClusterModel_KMeans <- function(data, variables = NULL,
 #' }
 #' @noRd
 #' @export
-ProjectCluster.Pipeline_KMeans <- function(object, new_df, ClusterVariableName = object$ClusterVariableName, ...) {
-  prep <- .ProjectClusterNumeric(object, new_df); cl <- rep(NA_integer_, nrow(prep$data)); ind <- dplyr::tibble(DistanceToCentroid = rep(NA_real_, nrow(prep$data)), AssignmentMargin = rep(NA_real_, nrow(prep$data)))
+ProjectCluster.Pipeline_KMeans <- function(object, data, ClusterVariableName = object$ClusterVariableName, new_df = lifecycle::deprecated(), ...) {
+  if (lifecycle::is_present(new_df)) {
+    lifecycle::deprecate_warn("21.18.0", "ProjectCluster(new_df)", "ProjectCluster(data)")
+    data <- new_df
+  }
+
+  prep <- .ProjectClusterNumeric(object, data); cl <- rep(NA_integer_, nrow(prep$data)); ind <- dplyr::tibble(DistanceToCentroid = rep(NA_real_, nrow(prep$data)), AssignmentMargin = rep(NA_real_, nrow(prep$data)))
   X <- prep$X[prep$complete_rows, , drop = FALSE]
   centers <- object$ModelInfo$kmeans_model$centers
   if (any(prep$complete_rows)) {
@@ -1699,10 +1732,10 @@ ProjectCluster.Pipeline_KMeans <- function(object, new_df, ClusterVariableName =
 .CreatePCACluster <- function(data, variables, algorithm, method, k_range,
     final_k, final_model, Scaling, ClusterVariableName, seed, pca_variance_threshold,
     nstart = NULL, models = c(1L, 2L, 3L, 6L),
-    stability_resamples = 0L, stability_seed = seed + 1L,
+    stability_resamples = 0L, seed_stability = seed + 1L,
     stability_progress = FALSE, stability_cores = NULL) {
   stability_resamples <- .ValidateClusterStability(
-    stability_resamples, stability_seed, stability_progress, stability_cores)
+    stability_resamples, seed_stability, stability_progress, stability_cores)
   prep <- .PrepareClusterNumeric(data, variables, Scaling)
   if (!any(prep$complete_rows)) stop("No complete rows available for PCA clustering.")
   df_PCA <- as.data.frame(prep$X[prep$complete_rows, , drop = FALSE])
@@ -1755,17 +1788,17 @@ ProjectCluster.Pipeline_KMeans <- function(object, new_df, ClusterVariableName =
       reference_fit <- .CreatePCACluster(
         data, prep$variables, algorithm, "finalize", candidate_k,
         candidate_k, candidate_model, Scaling, ClusterVariableName, seed,
-        pca_variance_threshold, nstart, models, 0L, stability_seed, FALSE)
+        pca_variance_threshold, nstart, models, 0L, seed_stability, FALSE)
       reference <- reference_fit$ProbFit$individual$Cluster
       .ClusterSubsampleStability(data, reference, function(boot, model_seed) {
         fitted <- .CreatePCACluster(
           boot, prep$variables, algorithm, "finalize", candidate_k,
           candidate_k, candidate_model, Scaling, ClusterVariableName, model_seed,
           pca_variance_threshold, nstart, models, 0L,
-          stability_seed, FALSE)
+          seed_stability, FALSE)
         dplyr::select(
           fitted$ProbFit$individual, dplyr::all_of(c(".row_id", "Cluster")))
-      }, stability_resamples, stability_seed + i,
+      }, stability_resamples, seed_stability + i,
       candidate = if (algorithm == "mclust") {
         list(Model = candidate_model, Classes = candidate_k)
       } else list(Classes = candidate_k), progress = stability_progress,
@@ -1774,7 +1807,7 @@ ProjectCluster.Pipeline_KMeans <- function(object, new_df, ClusterVariableName =
       memory_variables = prep$variables)
     })
     Stability <- .CombineClusterStabilities(
-      stabilities, stability_resamples, stability_seed)
+      stabilities, stability_resamples, seed_stability)
     join_by <- if (algorithm == "mclust") c("Model", "Classes") else "Classes"
     fit_table <- dplyr::left_join(fit_table, Stability$summary, by = join_by)
   }
@@ -1847,7 +1880,7 @@ ProjectCluster.Pipeline_KMeans <- function(object, new_df, ClusterVariableName =
     ZScoreObject = prep$ZScoreObject, PCVariables = score_vars)
   out$Specification <- .ClusterSpecification(
     if (algorithm == "mclust") "PCA + Mclust" else "PCA + KMeans",
-    prep$variables, list(seed = seed, stability_seed = stability_seed),
+    prep$variables, list(seed = seed, seed_stability = seed_stability),
     out$Preprocessing, review$fit_table, list(), prep$complete_rows)
   out$Specification$stability <- if (is.null(Stability)) NULL else Stability$settings
   class(out) <- c(
@@ -1873,8 +1906,8 @@ ProjectCluster.Pipeline_KMeans <- function(object, new_df, ClusterVariableName =
   dplyr::as_tibble(padded)
 }
 
-.ProjectPCACluster <- function(object, new_df, algorithm, ClusterVariableName) {
-  prep <- .ProjectClusterNumeric(object, new_df)
+.ProjectPCACluster <- function(object, data, algorithm, ClusterVariableName) {
+  prep <- .ProjectClusterNumeric(object, data)
   complete <- prep$complete_rows
   if (!any(complete)) {
     individual <- dplyr::tibble(Distance = rep(NA_real_, nrow(prep$data)))
@@ -1945,13 +1978,20 @@ ProjectCluster.Pipeline_KMeans <- function(object, new_df, ClusterVariableName =
 #' review$ModelInfo$plots$loadings
 #' review$ModelInfo$plots$profiles
 #' }
+#' @param stability_seed Deprecated alias for `seed_stability`.
 #' @export
 CreateClusterModel_PCA_MClust <- function(data, variables = NULL, method = c("exploratory", "finalize"),
     k_range = 2:10, models = c(1L, 2L, 3L, 6L), final_k = NULL, final_model = NULL,
     ZScoreType = NULL, Scaling = NULL,
     ClusterVariableName = "Cluster", seed = 93421L, pca_variance_threshold = 0.85,
-    stability_resamples = 0L, stability_seed = seed + 1L,
-    stability_progress = FALSE, stability_cores = NULL) {
+    stability_resamples = 0L, seed_stability = seed + 1L,
+    stability_progress = FALSE, stability_cores = NULL,
+    stability_seed = lifecycle::deprecated()) {
+  if (lifecycle::is_present(stability_seed)) {
+    lifecycle::deprecate_warn("21.18.0", "CreateClusterModel_PCA_MClust(stability_seed)", "CreateClusterModel_PCA_MClust(seed_stability)")
+    seed_stability <- stability_seed
+  }
+
   supplied <- list(k_range = !missing(k_range), models = !missing(models),
     final_k = !missing(final_k), final_model = !missing(final_model))
   method <- .ClusterMethod(method)
@@ -1960,7 +2000,7 @@ CreateClusterModel_PCA_MClust <- function(data, variables = NULL, method = c("ex
   resolved_scaling <- .ResolveNumericClusterScaling(ZScoreType, Scaling)
   .CreatePCACluster(data, variables, "mclust", method, k_range, final_k, final_model,
                     resolved_scaling, ClusterVariableName, seed, pca_variance_threshold, models = .ResolveMclustModels(models),
-                    stability_resamples = stability_resamples, stability_seed = stability_seed,
+                    stability_resamples = stability_resamples, seed_stability = seed_stability,
                     stability_progress = stability_progress,
                     stability_cores = stability_cores)
 }
@@ -1986,8 +2026,13 @@ CreateClusterModel_PCA_MClust <- function(data, variables = NULL, method = c("ex
 #' }
 #' @noRd
 #' @export
-ProjectCluster.Pipeline_PCA_MClust <- function(object, new_df, ClusterVariableName = object$ClusterVariableName, ...) {
-  .ProjectPCACluster(object, new_df, "mclust", ClusterVariableName)
+ProjectCluster.Pipeline_PCA_MClust <- function(object, data, ClusterVariableName = object$ClusterVariableName, new_df = lifecycle::deprecated(), ...) {
+  if (lifecycle::is_present(new_df)) {
+    lifecycle::deprecate_warn("21.18.0", "ProjectCluster(new_df)", "ProjectCluster(data)")
+    data <- new_df
+  }
+
+  .ProjectPCACluster(object, data, "mclust", ClusterVariableName)
 }
 
 #' Fit PCA followed by K-means
@@ -2026,20 +2071,27 @@ ProjectCluster.Pipeline_PCA_MClust <- function(object, new_df, ClusterVariableNa
 #' # Then the clustering in that score space.
 #' review$ModelInfo$plots$silhouette
 #' }
+#' @param stability_seed Deprecated alias for `seed_stability`.
 #' @export
 CreateClusterModel_PCA_KMeans <- function(data, variables = NULL, method = c("exploratory", "finalize"),
     k_range = 2:10, final_k = NULL,
     ZScoreType = NULL, Scaling = NULL,
     ClusterVariableName = "Cluster", seed = 93421L, nstart = 50L, pca_variance_threshold = 0.85,
-    stability_resamples = 0L, stability_seed = seed + 1L,
-    stability_progress = FALSE, stability_cores = NULL) {
+    stability_resamples = 0L, seed_stability = seed + 1L,
+    stability_progress = FALSE, stability_cores = NULL,
+    stability_seed = lifecycle::deprecated()) {
+  if (lifecycle::is_present(stability_seed)) {
+    lifecycle::deprecate_warn("21.18.0", "CreateClusterModel_PCA_KMeans(stability_seed)", "CreateClusterModel_PCA_KMeans(seed_stability)")
+    seed_stability <- stability_seed
+  }
+
   supplied <- list(k_range = !missing(k_range), final_k = !missing(final_k))
   method <- .ClusterMethod(method)
   .ValidateClusterLifecycle(method, supplied["k_range"], supplied["final_k"])
   resolved_scaling <- .ResolveNumericClusterScaling(ZScoreType, Scaling)
   .CreatePCACluster(data, variables, "kmeans", method, k_range, final_k, NULL,
                     resolved_scaling, ClusterVariableName, seed, pca_variance_threshold, nstart,
-                    stability_resamples = stability_resamples, stability_seed = stability_seed,
+                    stability_resamples = stability_resamples, seed_stability = seed_stability,
                     stability_progress = stability_progress,
                     stability_cores = stability_cores)
 }
@@ -2064,8 +2116,13 @@ CreateClusterModel_PCA_KMeans <- function(data, variables = NULL, method = c("ex
 #' }
 #' @noRd
 #' @export
-ProjectCluster.Pipeline_PCA_KMeans <- function(object, new_df, ClusterVariableName = object$ClusterVariableName, ...) {
-  .ProjectPCACluster(object, new_df, "kmeans", ClusterVariableName)
+ProjectCluster.Pipeline_PCA_KMeans <- function(object, data, ClusterVariableName = object$ClusterVariableName, new_df = lifecycle::deprecated(), ...) {
+  if (lifecycle::is_present(new_df)) {
+    lifecycle::deprecate_warn("21.18.0", "ProjectCluster(new_df)", "ProjectCluster(data)")
+    data <- new_df
+  }
+
+  .ProjectPCACluster(object, data, "kmeans", ClusterVariableName)
 }
 
 # Distance from every training case to the nearest core point other than
@@ -2138,6 +2195,7 @@ ProjectCluster.Pipeline_PCA_KMeans <- function(object, new_df, ClusterVariableNa
 #' projected <- ProjectCluster(model, df_Projection)
 #' projected$ProjectionFit$plots$nearest_core_support
 #' }
+#' @param stability_seed Deprecated alias for `seed_stability`.
 #' @export
 CreateClusterModel_HDBSCAN <- function(data, variables = NULL,
     method = c("exploratory", "finalize"), minPts_range = 2:10,
@@ -2145,15 +2203,21 @@ CreateClusterModel_HDBSCAN <- function(data, variables = NULL,
     final_cluster_selection_epsilon = NULL,
     ZScoreType = NULL, Scaling = NULL,
     ClusterVariableName = "Cluster", seed = 93421L, stability_resamples = 0L,
-    stability_seed = seed + 1L, stability_progress = FALSE,
-    stability_cores = NULL) {
+    seed_stability = seed + 1L, stability_progress = FALSE,
+    stability_cores = NULL,
+    stability_seed = lifecycle::deprecated()) {
+  if (lifecycle::is_present(stability_seed)) {
+    lifecycle::deprecate_warn("21.18.0", "CreateClusterModel_HDBSCAN(stability_seed)", "CreateClusterModel_HDBSCAN(seed_stability)")
+    seed_stability <- stability_seed
+  }
+
   supplied <- list(minPts_range = !missing(minPts_range),
     cluster_selection_epsilon_range = !missing(cluster_selection_epsilon_range),
     final_minPts = !missing(final_minPts),
     final_cluster_selection_epsilon = !missing(final_cluster_selection_epsilon))
   if (!requireNamespace("dbscan", quietly = TRUE)) stop("Package 'dbscan' is required.")
   stability_resamples <- .ValidateClusterStability(
-    stability_resamples, stability_seed, stability_progress, stability_cores)
+    stability_resamples, seed_stability, stability_progress, stability_cores)
   method <- .ClusterMethod(method)
   .ValidateClusterLifecycle(method,
     supplied[c("minPts_range", "cluster_selection_epsilon_range")],
@@ -2187,14 +2251,14 @@ CreateClusterModel_HDBSCAN <- function(data, variables = NULL,
           ZScoreType = Scaling, seed = model_seed, stability_resamples = 0L)
         dplyr::select(
           fitted$ProbFit$individual, dplyr::all_of(c(".row_id", "Cluster")))
-      }, stability_resamples, stability_seed + i,
+      }, stability_resamples, seed_stability + i,
       list(MinPts = grid$MinPts[[i]], Epsilon = grid$Epsilon[[i]]), noise_label = 0L,
       progress = stability_progress, stability_cores = stability_cores,
       memory_method = "hdbscan", memory_variables = prep$variables)
     })
     stability_summary <- dplyr::bind_rows(lapply(stabilities, `[[`, "summary"))
     rows <- dplyr::left_join(rows, stability_summary, by = c("MinPts", "Epsilon"))
-    Stability <- .CombineClusterStabilities(stabilities, stability_resamples, stability_seed)
+    Stability <- .CombineClusterStabilities(stabilities, stability_resamples, seed_stability)
   }
   review <- .ClusterAHP(rows, higher = c("Persistence", "MeanMembershipProbability", "MinClusterN", "SizeBalance", "ReproducibilityScore", "NoiseSensitivity", "NoiseSpecificity"), lower = "NoiseProportion", setting = "HDBSCAN density setting")
   rows <- review$fit_table; best_i <- if (any(rows$Recommended)) which(rows$Recommended)[1] else 1L
@@ -2280,7 +2344,7 @@ CreateClusterModel_HDBSCAN <- function(data, variables = NULL,
   out$Stability <- Stability
   out$ModelInfo_HDBSCAN <- out$ModelInfo
   out$Specification <- .ClusterSpecification(
-    "HDBSCAN", prep$variables, list(seed = seed, stability_seed = stability_seed),
+    "HDBSCAN", prep$variables, list(seed = seed, seed_stability = seed_stability),
     out$Preprocessing, grid, list(minPts = minPts,
       epsilon = grid$Epsilon[[best_i]]), prep$complete_rows,
     list(projection = "conservative nearest-training-support assignment"))
@@ -2312,8 +2376,13 @@ CreateClusterModel_HDBSCAN <- function(data, variables = NULL,
 #' }
 #' @noRd
 #' @export
-ProjectCluster.Pipeline_HDBSCAN <- function(object, new_df, ClusterVariableName = object$ClusterVariableName, ...) {
-  prep <- .ProjectClusterNumeric(object, new_df); cl <- rep(NA_integer_, nrow(prep$data)); ind <- dplyr::tibble(NearestCoreDistance = rep(NA_real_, nrow(prep$data)), InTrainingSupport = rep(NA, nrow(prep$data)))
+ProjectCluster.Pipeline_HDBSCAN <- function(object, data, ClusterVariableName = object$ClusterVariableName, new_df = lifecycle::deprecated(), ...) {
+  if (lifecycle::is_present(new_df)) {
+    lifecycle::deprecate_warn("21.18.0", "ProjectCluster(new_df)", "ProjectCluster(data)")
+    data <- new_df
+  }
+
+  prep <- .ProjectClusterNumeric(object, data); cl <- rep(NA_integer_, nrow(prep$data)); ind <- dplyr::tibble(NearestCoreDistance = rep(NA_real_, nrow(prep$data)), InTrainingSupport = rep(NA, nrow(prep$data)))
   if (any(prep$complete_rows)) {
     core_rows <- which(object$ModelInfo$core_clusters > 0)
     if (!length(core_rows)) {
@@ -2445,7 +2514,7 @@ ProjectCluster.Pipeline_HDBSCAN <- function(object, new_df, ClusterVariableName 
 #' @param final_k Final medoid count in finalized mode.
 #' @param seed Random seed.
 #' @param stability_resamples Number of 90% participant subsample refits.
-#' @param stability_seed Seed controlling participant subsampling.
+#' @param seed_stability Seed controlling participant subsampling.
 #' @param stability_progress Whether to print subsample progress messages.
 #' @param stability_cores Number of workers for stability refits. `NULL` uses
 #'   a conservative CPU/memory cap: the smaller of 50% physical RAM and 75% of
@@ -2490,16 +2559,23 @@ ProjectCluster.Pipeline_HDBSCAN <- function(object, new_df, ClusterVariableName 
 #' projected <- ProjectCluster(model, df_Projection)
 #' projected$ProjectionFit$plots$projection_fit_class_bar
 #' }
+#' @param stability_seed Deprecated alias for `seed_stability`.
 #' @export
 CreateClusterModel_Gower_PAM <- function(data, variables = NULL,
     method = c("exploratory", "finalize"), k_range = 2:10, final_k = NULL,
     ClusterVariableName = "Cluster", seed = 93421L, stability_resamples = 0L,
-    stability_seed = seed + 1L, stability_progress = FALSE,
-    stability_cores = NULL) {
+    seed_stability = seed + 1L, stability_progress = FALSE,
+    stability_cores = NULL,
+    stability_seed = lifecycle::deprecated()) {
+  if (lifecycle::is_present(stability_seed)) {
+    lifecycle::deprecate_warn("21.18.0", "CreateClusterModel_Gower_PAM(stability_seed)", "CreateClusterModel_Gower_PAM(seed_stability)")
+    seed_stability <- stability_seed
+  }
+
   supplied <- list(k_range = !missing(k_range), final_k = !missing(final_k))
   if (!requireNamespace("cluster", quietly = TRUE)) stop("Package 'cluster' is required.")
   stability_resamples <- .ValidateClusterStability(
-    stability_resamples, stability_seed, stability_progress, stability_cores)
+    stability_resamples, seed_stability, stability_progress, stability_cores)
   if (!is.data.frame(data)) stop("data must be a data frame.")
   if (is.null(variables)) variables <- names(data)
   if (length(setdiff(variables, names(data)))) stop("data is missing required clustering variables.")
@@ -2530,14 +2606,14 @@ CreateClusterModel_Gower_PAM <- function(data, variables = NULL,
           final_k = ks[[i]], seed = model_seed, stability_resamples = 0L)
         dplyr::select(
           fitted$ProbFit$individual, dplyr::all_of(c(".row_id", "Cluster")))
-      }, stability_resamples, stability_seed + i, list(Classes = ks[[i]]),
+      }, stability_resamples, seed_stability + i, list(Classes = ks[[i]]),
       progress = stability_progress, preserve_levels = variables,
       stability_cores = stability_cores, memory_method = "gower_pam",
       memory_variables = variables)
     })
     stability_summary <- dplyr::bind_rows(lapply(stabilities, `[[`, "summary"))
     rows <- dplyr::left_join(rows, stability_summary, by = "Classes")
-    Stability <- .CombineClusterStabilities(stabilities, stability_resamples, stability_seed)
+    Stability <- .CombineClusterStabilities(stabilities, stability_resamples, seed_stability)
   }
   review <- .ClusterAHP(rows, higher = c("Silhouette", "MinClusterN", "SizeBalance", "ReproducibilityScore"), lower = "MeanMedoidDistance", setting = "Gower/PAM k")
   rows <- review$fit_table; best_i <- if (any(rows$Recommended)) which(rows$Recommended)[1] else 1L
@@ -2603,7 +2679,7 @@ CreateClusterModel_Gower_PAM <- function(data, variables = NULL,
   out$Stability <- Stability
   out$ModelInfo_GowerPAM <- out$ModelInfo
   out$Specification <- .ClusterSpecification(
-    "GowerPAM", variables, list(seed = seed, stability_seed = stability_seed),
+    "GowerPAM", variables, list(seed = seed, seed_stability = seed_stability),
     out$Preprocessing, dplyr::select(rows, dplyr::any_of("Classes")),
     list(k = k), complete,
     list(distance_metric = "Gower distance to frozen medoid", levels = ModelInfo$levels))
@@ -2636,9 +2712,14 @@ CreateClusterModel_Gower_PAM <- function(data, variables = NULL,
 #' }
 #' @noRd
 #' @export
-ProjectCluster.Pipeline_Gower_PAM <- function(object, new_df, ClusterVariableName = object$ClusterVariableName, ...) {
-  if (length(setdiff(object$vars_used, names(new_df)))) stop("new_df is missing required clustering variables.")
-  new_df <- .AddClusterRowID(new_df, "new_df")
+ProjectCluster.Pipeline_Gower_PAM <- function(object, data, ClusterVariableName = object$ClusterVariableName, new_df = lifecycle::deprecated(), ...) {
+  if (lifecycle::is_present(new_df)) {
+    lifecycle::deprecate_warn("21.18.0", "ProjectCluster(new_df)", "ProjectCluster(data)")
+    data <- new_df
+  }
+
+  if (length(setdiff(object$vars_used, names(data)))) stop("data is missing required clustering variables.")
+  data <- .AddClusterRowID(data, "data")
   specification <- object$ModelInfo$GowerSpecification
   out_of_support <- dplyr::bind_rows(lapply(object$vars_used, function(variable) {
     # Only the categorical scales carry a closed set of admissible values, so
@@ -2647,13 +2728,13 @@ ProjectCluster.Pipeline_Gower_PAM <- function(object, new_df, ClusterVariableNam
     if (!this_spec$type %in% c("nominal", "ordinal")) return(dplyr::tibble())
     known <- this_spec$levels
     if (is.null(known)) return(dplyr::tibble())
-    observed <- as.character(new_df[[variable]])
+    observed <- as.character(data[[variable]])
     bad <- !is.na(observed) & !observed %in% known
     if (!any(bad)) return(dplyr::tibble())
-    dplyr::tibble(.row_id = new_df$.row_id[bad], Variable = variable,
+    dplyr::tibble(.row_id = data$.row_id[bad], Variable = variable,
       Value = observed[bad], Issue = "category absent from training")
   }))
-  new_df_supported <- new_df
+  new_df_supported <- data
   if (nrow(out_of_support)) {
     for (variable in unique(out_of_support$Variable)) {
       rows <- match(
@@ -2706,4 +2787,20 @@ ProjectCluster.Pipeline_Gower_PAM <- function(object, new_df, ClusterVariableNam
   out$DataWithClusters$Projection_Fit_Class <- ProjectionFit$fit_class
   out$ProbFit$individual$Projection_Fit_Class <- ProjectionFit$fit_class
   class(out) <- c("Project_GowerPAM", class(out)); out
+}
+
+# Retain pre-21.18.0 metadata keys while the public arguments migrate.
+.ClusterMetadataAliases <- function(metadata) {
+  aliases <- c(seed_lpa = "seed_mixture", stability_seed = "seed_stability",
+    lpa_em_itmax = "mixture_em_itmax", lpa_em_tol = "mixture_em_tol",
+    lpa_timeout_seconds = "mixture_timeout_seconds", lpa_progress = "mixture_progress",
+    lpa_bootstrap_n = "mixture_bootstrap_n", lpa_drop_zero_sd = "mixture_drop_zero_sd",
+    lpa_zero_sd_tol = "mixture_zero_sd_tol", lpa_min_node_n = "mixture_min_node_people",
+    min_nodes_per_cluster = "candidate_min_nodes_per_cluster",
+    high_dist_quantile = "far_distance_quantile", low_prob_threshold = "clear_membership_threshold")
+  for (old in names(aliases)) {
+    new <- aliases[[old]]
+    if (new %in% names(metadata)) metadata[old] <- metadata[new]
+  }
+  metadata
 }

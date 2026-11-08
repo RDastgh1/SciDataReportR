@@ -16,11 +16,12 @@ ScreenSOMGridStability(
   screen_scope = c("map", "joint"),
   screen_resamples = 3L,
   seed_som = 934521L,
-  stability_seed = 934522L,
+  seed_stability = 934522L,
   stability_cores = NULL,
   pair_sample = 10000L,
   neighborhood_sample = 500L,
   neighborhood_k = 10L,
+  stability_seed = lifecycle::deprecated(),
   ...
 )
 }
@@ -60,7 +61,7 @@ the explicit joint workflow retains its prior default of 10.}
 \item{seed_som}{Fixed SOM initialization seed used for every refit of a
 candidate design.}
 
-\item{stability_seed}{Seed for participant subsampling and metric sampling.}
+\item{seed_stability}{Seed for participant subsampling and metric sampling.}
 
 \item{stability_cores}{Optional parallel workers for joint-screen refits;
 map-screen refits are intentionally lightweight and serial.}
@@ -69,9 +70,11 @@ map-screen refits are intentionally lightweight and serial.}
 orientation-invariant grid-distance preservation.}
 
 \item{neighborhood_sample}{Number of participants used for local-neighbor
-overlap; sampling is deterministic from \code{stability_seed}.}
+overlap; sampling is deterministic from \code{seed_stability}.}
 
 \item{neighborhood_k}{Number of local grid neighbors per sampled participant.}
+
+\item{stability_seed}{Deprecated alias for \code{seed_stability}.}
 
 \item{...}{Additional arguments passed to \code{\link[=CreateClusterModel_SOM_MClust]{CreateClusterModel_SOM_MClust()}}.}
 }
@@ -86,4 +89,8 @@ preprocessing and map training. It selects a representation for later,
 fixed-map Mclust comparisons without fitting a mixture or varying \code{k}.
 The legacy joint SOM + Mclust screen remains available with
 \code{screen_scope = "joint"}.
+
+The \code{"map"} scope is superseded by \code{\link[=ScreenSOMGrid]{ScreenSOMGrid()}}, which keeps every
+participant (seed and jitter refits instead of 90\% subsamples), does not
+use k or Mclust parameter counts, and selects a grid automatically.
 }

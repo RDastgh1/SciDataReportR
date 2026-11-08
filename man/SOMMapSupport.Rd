@@ -35,10 +35,18 @@ diagnostics. \code{SupportStatus} is \code{"supported"}, \code{"under-supported"
 \code{"over-parameterized"} at the recommended automatic map size.
 }
 \description{
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#superseded}{\figure{lifecycle-superseded.svg}{options: alt='[Superseded]'}}}{\strong{[Superseded]}}
+
 Calculates the competing codebook-node support and participant
 occupancy constraints for a planned SOM + Mclust search. Mclust is fit to
 SOM codebook vectors, so its effective sample size is the number of nodes;
 participant count instead limits how sparse a map should become.
+
+This k- and model-informed sizing is no longer used by
+\code{\link[=CreateClusterModel_SOM_MClust]{CreateClusterModel_SOM_MClust()}}, which now chooses the grid from the map
+alone with \code{\link[=ScreenSOMGrid]{ScreenSOMGrid()}}. Parameter support is still reported in the
+fit table, where candidates with fewer nodes than parameters are marked
+ineligible.
 }
 \examples{
 SOMMapSupport(n = 4330, p = 11, k_range = 2:8, models = 1:3)

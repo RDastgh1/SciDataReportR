@@ -48,7 +48,7 @@
 #' model <- CreateClusterModel_SOM_MClust(
 #'   df_Labelled, c("age", "AXL", "Adiponectin", "Alpha_1_Antitrypsin"),
 #'   method = "exploratory", k_range = 2:4, models = 1,
-#'   som_xdim = 5, som_ydim = 5, min_nodes_per_cluster = NULL,
+#'   som_xdim = 5, som_ydim = 5, candidate_min_nodes_per_cluster = NULL,
 #'   Relabel = FALSE)
 #' splits <- PlotClusterSplits(model)
 #' splits$plot

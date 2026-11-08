@@ -27,7 +27,7 @@
 #' @param seed Random seed controlling latent-class random starts.
 #' @param method Either `"exploratory"`/`"explore"` or `"finalize"`.
 #' @param stability_resamples Number of 90% participant subsample refits.
-#' @param stability_seed Seed controlling participant subsampling.
+#' @param seed_stability Seed controlling participant subsampling.
 #' @param stability_progress Whether to print subsample progress messages.
 #' @param stability_cores Number of workers for stability refits. `NULL` uses
 #'   a conservative CPU/memory cap: the smaller of 50% physical RAM and 75% of
@@ -66,16 +66,23 @@
 #' projected <- ProjectCluster(model, df_Projection)
 #' projected$ProjectionFit$plots$projection_fit_class_bar
 #' }
+#' @param stability_seed Deprecated alias for `seed_stability`.
 #' @export
 CreateClusterModel_LatentClass <- function(data, variables = NULL,
     method = c("exploratory", "finalize"), k_range = 2:10,
     final_k = NULL, ClusterVariableName = "Cluster", nrep = 20L, seed = 93421L,
-    stability_resamples = 0L, stability_seed = seed + 1L,
-    stability_progress = FALSE, stability_cores = NULL) {
+    stability_resamples = 0L, seed_stability = seed + 1L,
+    stability_progress = FALSE, stability_cores = NULL,
+    stability_seed = lifecycle::deprecated()) {
+  if (lifecycle::is_present(stability_seed)) {
+    lifecycle::deprecate_warn("21.18.0", "CreateClusterModel_LatentClass(stability_seed)", "CreateClusterModel_LatentClass(seed_stability)")
+    seed_stability <- stability_seed
+  }
+
   supplied <- list(k_range = !missing(k_range), final_k = !missing(final_k))
   if (!requireNamespace("poLCA", quietly = TRUE)) stop("Package 'poLCA' is required.")
   stability_resamples <- .ValidateClusterStability(
-    stability_resamples, stability_seed, stability_progress, stability_cores)
+    stability_resamples, seed_stability, stability_progress, stability_cores)
   if (!is.data.frame(data)) stop("data must be a data frame.")
   if (is.null(variables)) variables <- names(data)[vapply(data, function(x) is.factor(x) || is.character(x) || is.logical(x) || is.ordered(x), logical(1))]
   if (!length(variables) || length(setdiff(variables, names(data)))) stop("variables must be present categorical columns.")
@@ -126,14 +133,14 @@ CreateClusterModel_LatentClass <- function(data, variables = NULL,
           final_k = ks[[i]], nrep = nrep, seed = model_seed, stability_resamples = 0L)
         dplyr::select(
           fitted$ProbFit$individual, dplyr::all_of(c(".row_id", "Cluster")))
-      }, stability_resamples, stability_seed + i, list(Classes = ks[[i]]),
+      }, stability_resamples, seed_stability + i, list(Classes = ks[[i]]),
       progress = stability_progress, preserve_levels = variables,
       stability_cores = stability_cores, memory_method = "latent_class",
       memory_variables = variables)
     })
     stability_summary <- dplyr::bind_rows(lapply(stabilities, `[[`, "summary"))
     rows <- dplyr::left_join(rows, stability_summary, by = "Classes")
-    Stability <- .CombineClusterStabilities(stabilities, stability_resamples, stability_seed)
+    Stability <- .CombineClusterStabilities(stabilities, stability_resamples, seed_stability)
   }
   review <- .ClusterAHP(rows, higher = c("Entropy", "MinClassN", "SizeBalance", "ReproducibilityScore"), lower = c("BIC", "AIC"), setting = "latent class count")
   rows <- review$fit_table
@@ -219,7 +226,7 @@ CreateClusterModel_LatentClass <- function(data, variables = NULL,
   out$Stability <- Stability
   out$ModelInfo_LatentClass <- out$ModelInfo
   out$Specification <- .ClusterSpecification(
-    "LatentClass", variables, list(seed = seed, stability_seed = stability_seed),
+    "LatentClass", variables, list(seed = seed, seed_stability = seed_stability),
     out$Preprocessing, dplyr::select(rows, dplyr::any_of("Classes")),
     list(k = ncol(best$posterior)), complete,
     list(projection = "frozen class prevalence and item-response probabilities"))
@@ -250,17 +257,22 @@ CreateClusterModel_LatentClass <- function(data, variables = NULL,
 #' }
 #' @noRd
 #' @export
-ProjectCluster.Pipeline_LatentClass <- function(object, new_df, ClusterVariableName = object$ClusterVariableName, ...) {
-  vars <- object$vars_used; if (length(setdiff(vars, names(new_df)))) stop("new_df is missing required clustering variables.")
-  new_df <- .AddClusterRowID(new_df, "new_df")
+ProjectCluster.Pipeline_LatentClass <- function(object, data, ClusterVariableName = object$ClusterVariableName, new_df = lifecycle::deprecated(), ...) {
+  if (lifecycle::is_present(new_df)) {
+    lifecycle::deprecate_warn("21.18.0", "ProjectCluster(new_df)", "ProjectCluster(data)")
+    data <- new_df
+  }
+
+  vars <- object$vars_used; if (length(setdiff(vars, names(data)))) stop("data is missing required clustering variables.")
+  data <- .AddClusterRowID(data, "data")
   out_of_support <- dplyr::bind_rows(lapply(vars, function(variable) {
-    values <- as.character(new_df[[variable]])
+    values <- as.character(data[[variable]])
     bad <- !is.na(values) & !values %in% object$Preprocessing$levels[[variable]]
     if (!any(bad)) return(dplyr::tibble())
-    dplyr::tibble(.row_id = new_df$.row_id[bad], Variable = variable, Value = values[bad],
+    dplyr::tibble(.row_id = data$.row_id[bad], Variable = variable, Value = values[bad],
       Issue = "category absent from training")
   }))
-  prep <- list(data = new_df, complete_rows = stats::complete.cases(new_df[vars]), variables = vars)
+  prep <- list(data = data, complete_rows = stats::complete.cases(data[vars]), variables = vars)
   coded <- prep$data[vars]; coded[] <- Map(function(x, lev) as.integer(factor(x, levels = lev)), coded, object$Preprocessing$levels)
   valid <- prep$complete_rows & stats::complete.cases(coded); fit <- object$ModelInfo$lca_model; posterior <- matrix(NA_real_, nrow(coded), length(fit$P))
   if (any(valid)) for (row_i in which(valid)) {
@@ -344,19 +356,26 @@ ProjectCluster.Pipeline_LatentClass <- function(object, new_df, ClusterVariableN
 #' projected <- ProjectCluster(model, df_Projection)
 #' projected$ProjectionFit$plots$projection_fit_class_bar
 #' }
+#' @param stability_seed Deprecated alias for `seed_stability`.
 #' @export
 CreateClusterModel_MCA_MClust <- function(data, variables,
     method = c("exploratory", "finalize"), k_range = 2:10,
     models = c(1L, 2L, 3L, 6L), final_k = NULL,
     final_model = NULL, ClusterVariableName = "Cluster", seed = 93421L,
     mca_variance_threshold = 75, stability_resamples = 0L,
-    stability_seed = seed + 1L, stability_progress = FALSE,
-    stability_cores = NULL) {
+    seed_stability = seed + 1L, stability_progress = FALSE,
+    stability_cores = NULL,
+    stability_seed = lifecycle::deprecated()) {
+  if (lifecycle::is_present(stability_seed)) {
+    lifecycle::deprecate_warn("21.18.0", "CreateClusterModel_MCA_MClust(stability_seed)", "CreateClusterModel_MCA_MClust(seed_stability)")
+    seed_stability <- stability_seed
+  }
+
   supplied <- list(k_range = !missing(k_range), models = !missing(models),
     final_k = !missing(final_k), final_model = !missing(final_model))
   if (!requireNamespace("FactoMineR", quietly = TRUE)) stop("Package 'FactoMineR' is required.")
   stability_resamples <- .ValidateClusterStability(
-    stability_resamples, stability_seed, stability_progress, stability_cores)
+    stability_resamples, seed_stability, stability_progress, stability_cores)
   method <- .ClusterMethod(method)
   .ValidateClusterLifecycle(method, supplied[c("k_range", "models")],
     supplied[c("final_k", "final_model")])
@@ -405,14 +424,14 @@ CreateClusterModel_MCA_MClust <- function(data, variables,
           stability_resamples = 0L)
         dplyr::select(
           fitted$ProbFit$individual, dplyr::all_of(c(".row_id", "Cluster")))
-      }, stability_resamples, stability_seed + i,
+      }, stability_resamples, seed_stability + i,
       list(Model = candidate_model, Classes = candidate_k),
       progress = stability_progress, preserve_levels = variables,
       stability_cores = stability_cores, memory_method = "mca_mclust",
       memory_variables = variables)
     })
     Stability <- .CombineClusterStabilities(
-      stabilities, stability_resamples, stability_seed)
+      stabilities, stability_resamples, seed_stability)
     fit_table <- dplyr::left_join(
       fit_table, Stability$summary, by = c("Model", "Classes"))
   }
@@ -462,7 +481,7 @@ CreateClusterModel_MCA_MClust <- function(data, variables,
   model$ModelInfo_MCA <- list(MCAObject = mca, MCAVariables = score_vars)
   model$ModelInfo_MClust <- model$ModelInfo
   model$Specification <- .ClusterSpecification(
-    "MCA + Mclust", variables, list(seed = seed, stability_seed = stability_seed),
+    "MCA + Mclust", variables, list(seed = seed, seed_stability = seed_stability),
     model$Preprocessing, model$ModelInfo$fit_table, list(),
     stats::complete.cases(data[variables]))
   model$Specification$stability <- if (is.null(Stability)) NULL else Stability$settings
@@ -492,12 +511,17 @@ CreateClusterModel_MCA_MClust <- function(data, variables,
 #' }
 #' @noRd
 #' @export
-ProjectCluster.Pipeline_MCA_MClust <- function(object, new_df, ClusterVariableName = object$ClusterVariableName, ...) {
-  vars <- object$vars_used
-  if (length(setdiff(vars, names(new_df)))) {
-    stop("new_df is missing required clustering variables.")
+ProjectCluster.Pipeline_MCA_MClust <- function(object, data, ClusterVariableName = object$ClusterVariableName, new_df = lifecycle::deprecated(), ...) {
+  if (lifecycle::is_present(new_df)) {
+    lifecycle::deprecate_warn("21.18.0", "ProjectCluster(new_df)", "ProjectCluster(data)")
+    data <- new_df
   }
-  df_scidr <- .AddClusterRowID(new_df, "new_df")
+
+  vars <- object$vars_used
+  if (length(setdiff(vars, names(data)))) {
+    stop("data is missing required clustering variables.")
+  }
+  df_scidr <- .AddClusterRowID(data, "data")
   reference_levels <- lapply(
     object$Preprocessing$MCAObject$mcaresults$call$X[vars], levels)
   for (variable in vars) {

@@ -23,7 +23,7 @@
 #'   candidate set. See `DefaultClusterBenchmarkCandidates()`.
 #' @param stability_resamples Number of common 90% subsample refits. Defaults to
 #'   10 for screening.
-#' @param stability_seed Seed used to generate the shared participant draws.
+#' @param seed_stability Seed used to generate the shared participant draws.
 #' @param stability_cores Optional number of parallel workers.
 #' @param subsample_fraction Proportion of complete reference participants
 #'   retained in each refit.
@@ -34,10 +34,17 @@
 #' @return A `ClusterMethodStabilityBenchmark` object with `decision_table`,
 #'   `replicates`, shared `subsamples`, `participant_inclusion`, and full-data
 #'   `models`. With `keep_models = FALSE`, `models` is an empty list.
+#' @param stability_seed Deprecated alias for `seed_stability`.
 #' @export
 CompareClusterMethodStability <- function(data, variables,
-    candidates = NULL, stability_resamples = 10L, stability_seed = 934522L,
-    stability_cores = NULL, subsample_fraction = .90, keep_models = FALSE) {
+    candidates = NULL, stability_resamples = 10L, seed_stability = 934522L,
+    stability_cores = NULL, subsample_fraction = .90, keep_models = FALSE,
+    stability_seed = lifecycle::deprecated()) {
+  if (lifecycle::is_present(stability_seed)) {
+    lifecycle::deprecate_warn("21.18.0", "CompareClusterMethodStability(stability_seed)", "CompareClusterMethodStability(seed_stability)")
+    seed_stability <- stability_seed
+  }
+
   if (!is.data.frame(data)) stop("data must be a data frame.")
   if (!is.character(variables) || !length(variables) ||
       length(setdiff(variables, names(data)))) {
@@ -60,7 +67,7 @@ CompareClusterMethodStability <- function(data, variables,
   if (length(complete_rows) < 3L) stop("At least three complete participants are required.")
   candidates <- .ValidateClusterBenchmarkCandidates(candidates)
 
-  set.seed(stability_seed)
+  set.seed(seed_stability)
   subsamples <- lapply(seq_len(stability_resamples), function(replicate) {
     sampled <- sort(sample(complete_rows,
       max(2L, floor(length(complete_rows) * subsample_fraction)), replace = FALSE))
@@ -74,7 +81,7 @@ CompareClusterMethodStability <- function(data, variables,
   for (i in seq_len(nrow(candidates))) {
     candidate <- candidates[i, , drop = FALSE]
     fitted <- tryCatch(.FitBenchmarkCandidate(df_scidr, variables, candidate,
-      seed = stability_seed + i), error = function(e) e)
+      seed = seed_stability + i), error = function(e) e)
     candidate_id <- candidate$CandidateID[[1]]
     if (inherits(fitted, "error")) {
       rows[[i]] <- .BenchmarkFailureRow(candidate, conditionMessage(fitted))
@@ -117,7 +124,7 @@ CompareClusterMethodStability <- function(data, variables,
       sampled_ids <- subsamples[[replicate]]$.row_id
       sampled_rows <- match(sampled_ids, df_scidr$.row_id)
       fitted <- tryCatch(.FitBenchmarkCandidate(df_scidr[sampled_rows, , drop = FALSE],
-        variables, candidate, seed = stability_seed + candidate_index * 10000L + replicate),
+        variables, candidate, seed = seed_stability + candidate_index * 10000L + replicate),
         error = function(e) e)
       if (inherits(fitted, "error")) {
         return(list(replicate = dplyr::tibble(CandidateID = candidate_id,
@@ -202,7 +209,7 @@ CompareClusterMethodStability <- function(data, variables,
     settings = list(scoring_cohort = "all_reference_participants",
       perturbation = "90% subsample without replacement",
       refits_requested = as.integer(stability_resamples),
-      subsample_fraction = subsample_fraction, stability_seed = stability_seed,
+      subsample_fraction = subsample_fraction, seed_stability = seed_stability,
       stability_cores = if (is.null(stability_cores)) "automatic" else as.integer(stability_cores),
       stability_cores_resolved = max(vapply(benchmark_results, function(result) {
         if (is.null(result)) 1L else result$worker_settings$resolved
@@ -249,7 +256,7 @@ ConfirmClusterMethodStability <- function(benchmark, candidates = NULL,
   confirmed <- CompareClusterMethodStability(benchmark$data, benchmark$variables,
     candidates = dplyr::select(table, dplyr::all_of(names(benchmark$candidates))),
     stability_resamples = confirm_resamples,
-    stability_seed = benchmark$settings$stability_seed,
+    seed_stability = benchmark$settings$seed_stability,
     stability_cores = if (identical(benchmark$settings$stability_cores, "automatic")) NULL else benchmark$settings$stability_cores,
     subsample_fraction = benchmark$settings$subsample_fraction,
     keep_models = TRUE)
@@ -333,7 +340,7 @@ DefaultClusterBenchmarkCandidates <- function() {
     method = "finalize", final_k = candidate$Classes[[1]], final_model = candidate$Model[[1]],
     som_xdim = candidate$SOM_XDim[[1]], som_ydim = candidate$SOM_YDim[[1]],
     som_topo = candidate$SOM_Topology[[1]], node_weighting = candidate$NodeWeighting[[1]],
-    assignment = assignment, soft_n_nodes = soft_n_nodes, lpa_min_node_n = 1L,
+    assignment = assignment, soft_n_nodes = soft_n_nodes, mixture_min_node_people = 1L,
     seed_som = seed, Relabel = FALSE, stability_resamples = 0L))
   }
   if (method == "mclust") return(CreateClusterModel_MClust(data, variables,

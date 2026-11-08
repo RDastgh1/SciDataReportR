@@ -19,7 +19,7 @@
 #' @param stability_resamples Number of 90% participant subsample refits used
 #'   for final-model stability. Subsamples are drawn without replacement and
 #'   reuse the reference model's resolved SOM grid dimensions.
-#' @param stability_seed Seed controlling participant subsampling.
+#' @param seed_stability Seed controlling participant subsampling.
 #' @param stability_progress Whether to print subsample progress messages.
 #' @param stability_cores Number of workers for stability refits. `NULL` uses
 #'   a conservative CPU/memory cap: the smaller of 50% physical RAM and 75% of
@@ -31,6 +31,7 @@
 #'   node models, assignments, diagnostics, and a projection specification.
 #'   Persistence and minimum node-cluster size are higher-is-better, noise
 #'   proportion is lower-is-better, and extracted class count is data-derived.
+#' @param stability_seed Deprecated alias for `seed_stability`.
 #' @export
 CreateClusterModel_SOM_HDBSCAN <- function(data, variables = NULL,
     method = c("exploratory", "finalize"),
@@ -38,9 +39,15 @@ CreateClusterModel_SOM_HDBSCAN <- function(data, variables = NULL,
     cluster_selection_epsilon_range = c(0, 0.05, 0.10),
     final_minPts = NULL, final_cluster_selection_epsilon = NULL,
     ClusterVariableName = "Cluster", seed_som = 934521L, seed_hdbscan = 93421L,
-    stability_resamples = 0L, stability_seed = seed_hdbscan + 1L,
+    stability_resamples = 0L, seed_stability = seed_hdbscan + 1L,
     stability_progress = FALSE, stability_cores = NULL,
+    stability_seed = lifecycle::deprecated(),
     ...) {
+  if (lifecycle::is_present(stability_seed)) {
+    lifecycle::deprecate_warn("21.18.0", "CreateClusterModel_SOM_HDBSCAN(stability_seed)", "CreateClusterModel_SOM_HDBSCAN(seed_stability)")
+    seed_stability <- stability_seed
+  }
+
   supplied <- list(minPts_range = !missing(minPts_range),
     cluster_selection_epsilon_range = !missing(cluster_selection_epsilon_range),
     final_minPts = !missing(final_minPts),
@@ -49,7 +56,7 @@ CreateClusterModel_SOM_HDBSCAN <- function(data, variables = NULL,
     stop("Package 'dbscan' is required.")
   }
   stability_resamples <- .ValidateClusterStability(
-    stability_resamples, stability_seed, stability_progress, stability_cores)
+    stability_resamples, seed_stability, stability_progress, stability_cores)
   method <- .ClusterMethod(method)
   .ValidateClusterLifecycle(method,
     supplied[c("minPts_range", "cluster_selection_epsilon_range")],
@@ -112,7 +119,7 @@ CreateClusterModel_SOM_HDBSCAN <- function(data, variables = NULL,
   som <- CreateClusterModel_SOM_MClust(
     data = data, variables = variables, method = "exploratory", ...,
     ClusterVariableName = ClusterVariableName, seed_som = seed_som,
-    seed_lpa = seed_hdbscan, stability_resamples = 0L,
+    seed_mixture = seed_hdbscan, stability_resamples = 0L,
     .NodeClusterFn = ClusterSOMNodes)
   som$ModelInfo_HDBSCAN <- ModelInfo_HDBSCAN
   som$ModelInfo <- ModelInfo_HDBSCAN
@@ -151,7 +158,7 @@ CreateClusterModel_SOM_HDBSCAN <- function(data, variables = NULL,
         stability_resamples = 0L), stability_args))
       dplyr::select(
         fitted$ProbFit$individual, dplyr::all_of(c(".row_id", "Cluster")))
-    }, resamples = stability_resamples, seed = stability_seed,
+    }, resamples = stability_resamples, seed = seed_stability,
     candidate = list(MinPts = selected_minPts, Epsilon = selected_epsilon),
     noise_label = 0L, progress = stability_progress,
     stability_cores = stability_cores, memory_method = "som_hdbscan",
@@ -180,7 +187,7 @@ CreateClusterModel_SOM_HDBSCAN <- function(data, variables = NULL,
 #' of each best-matching node. This is not a refitted or native HDBSCAN
 #' prediction; its distance diagnostic is distance to the frozen SOM BMU.
 #' @param object A `CreateClusterModel_SOM_HDBSCAN()` result.
-#' @param new_df New cases to map to the frozen SOM nodes.
+#' @param data New cases to map to the frozen SOM nodes.
 #' @param ClusterVariableName Name of the projected cluster column.
 #' @param ... Additional arguments passed to [ProjectCluster()].
 #' @return A `Project_SOMHDBSCAN` result. Assignment is inherited from the
@@ -188,17 +195,27 @@ CreateClusterModel_SOM_HDBSCAN <- function(data, variables = NULL,
 #'   HDBSCAN prediction.
 #' @noRd
 #' @export
-ProjectCluster.Pipeline_SOM_HDBSCAN_Exploratory <- function(object, new_df, ...) {
+ProjectCluster.Pipeline_SOM_HDBSCAN_Exploratory <- function(object, data, new_df = lifecycle::deprecated(), ...) {
+  if (lifecycle::is_present(new_df)) {
+    lifecycle::deprecate_warn("21.18.0", "ProjectCluster(new_df)", "ProjectCluster(data)")
+    data <- new_df
+  }
+
   stop("ProjectCluster() requires a finalized SOM + HDBSCAN model.", call. = FALSE)
 }
 
 #' @noRd
 #' @export
-ProjectCluster.Pipeline_SOM_HDBSCAN <- function(object, new_df,
-    ClusterVariableName = object$ClusterVariableName, ...) {
+ProjectCluster.Pipeline_SOM_HDBSCAN <- function(object, data,
+    ClusterVariableName = object$ClusterVariableName, new_df = lifecycle::deprecated(), ...) {
+  if (lifecycle::is_present(new_df)) {
+    lifecycle::deprecate_warn("21.18.0", "ProjectCluster(new_df)", "ProjectCluster(data)")
+    data <- new_df
+  }
+
   # The canonical SOM + Mclust projector accepts the inherited class.
   projected <- ProjectCluster.Pipeline_SOM_MClust(
-    object, new_df, ClusterVariableName = ClusterVariableName, ...
+    object, data, ClusterVariableName = ClusterVariableName, ...
   )
   node_cluster <- object$ModelInfo_HDBSCAN$node_cluster
   projected$ProjectionFit$individual$Cluster <- node_cluster[

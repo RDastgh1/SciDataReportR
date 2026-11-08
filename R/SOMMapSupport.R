@@ -1,9 +1,17 @@
 #' Review SOM map support before fitting a SOM + Mclust model
 #'
-#' @description Calculates the competing codebook-node support and participant
+#' @description `r lifecycle::badge("superseded")`
+#'
+#'   Calculates the competing codebook-node support and participant
 #'   occupancy constraints for a planned SOM + Mclust search. Mclust is fit to
 #'   SOM codebook vectors, so its effective sample size is the number of nodes;
 #'   participant count instead limits how sparse a map should become.
+#'
+#'   This k- and model-informed sizing is no longer used by
+#'   [CreateClusterModel_SOM_MClust()], which now chooses the grid from the map
+#'   alone with [ScreenSOMGrid()]. Parameter support is still reported in the
+#'   fit table, where candidates with fewer nodes than parameters are marked
+#'   ineligible.
 #'
 #' @param n Number of complete training participants.
 #' @param p Number of post-preprocessing clustering variables entering Mclust.

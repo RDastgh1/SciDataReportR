@@ -2,38 +2,166 @@
 % Please edit documentation in R/ProjectCluster.R, R/Project_SOMClust.R
 \name{ProjectCluster}
 \alias{ProjectCluster}
+\alias{ProjectCluster.Pipeline_SOM_MClust}
 \alias{Project_SOMClust}
 \alias{ProjectSOMCluster}
 \title{Project cases through a fitted clustering model}
 \usage{
-ProjectCluster(object, new_df, ...)
+ProjectCluster(object, data, ...)
+
+\method{ProjectCluster}{Pipeline_SOM_MClust}(
+  object,
+  data,
+  ClusterVariableName = NULL,
+  far_distance_quantile = 0.95,
+  clear_membership_threshold = 0.7,
+  high_dist_quantile = lifecycle::deprecated(),
+  low_prob_threshold = lifecycle::deprecated(),
+  distance_reference = c("loo", "training"),
+  novel_group_min_n = 3L,
+  new_df = lifecycle::deprecated(),
+  ...
+)
 
 Project_SOMClust(...)
 
 ProjectSOMCluster(...)
 }
 \arguments{
-\item{object}{A finalized object returned by \verb{CreateClusterModel_*()}.}
+\item{object}{A fitted SOM cluster model.}
 
-\item{new_df}{New data to project into the frozen cluster structure.}
+\item{data}{Data frame of new cases to project.}
 
 \item{...}{Arguments passed to \code{\link[=ProjectCluster]{ProjectCluster()}}.}
+
+\item{ClusterVariableName}{Optional name for the cluster column; defaults to
+\code{object$ClusterVariableName}. If that column already exists in \code{data}
+it is overwritten (with a message).}
+
+\item{far_distance_quantile}{Numeric value between 0 and 1 used to define
+high SOM-distance flags from the training distance distribution. Default
+is \code{0.95}.}
+
+\item{clear_membership_threshold}{Numeric posterior probability threshold used to
+flag uncertain phenotype membership. Default is \code{0.70}.}
+
+\item{high_dist_quantile}{Deprecated alias for \code{far_distance_quantile}.}
+
+\item{low_prob_threshold}{Deprecated alias for \code{clear_membership_threshold}.}
+
+\item{distance_reference}{Distance cutoff reference, LOO by default or training.
+One shared q_star calibrates the overall OR cluster rule on training LOO
+distances to the requested tail rate, within the attainable empirical step.
+The attained training rate is the chance benchmark for novelty tests and
+chance_flag_rate. Report the held-out flag rate: remaining excess comes
+from the map moving without the person and requires refits to remove.
+No further correction factor is applied. Older models recover training
+scores or message a fallback. Explicit training references are uncalibrated.}
+
+\item{novel_group_min_n}{Minimum far-from-map people in a significant
+concentration group to call it a candidate new phenotype (default 3).
+NoveltyGroups returns groups (including row IDs in Members), neighbourhood
+tests, overall_excess (N, FarN, ExpectedN, P, Excess) and a one-line verdict.
+Each neighbourhood uses its training LOO far rate; fewer than ten training
+people are supplemented to ten with pseudo-people at the calibrated training rate. One-sided
+binomial neighbourhood tests use Holm adjustment; overall excess tests
+the total far count against the calibrated training rate. This test is
+separate from groups. Group labels always include their size.
+FitClass is per person; FitClass_Legacy is deprecated for one release.
+The rough expected rate of unfamiliar profiles is the training share on
+one-person nodes, descriptive only. No inference uses this baseline.}
+
+\item{new_df}{Deprecated alias for data, accepted by every method.}
 }
 \value{
 A method-specific projection result with the common \code{ProjectionFit}
 contract and \code{ProbFit} assignment table.
+
+A list of class \code{"Project_SOMClust"} with components:
+\itemize{
+\item \code{vars_used}, \code{ClusterVariableName}
+\item \code{DataWithClusters}: \code{data} with only the requested
+cluster and projection-fit columns appended.
+\item \code{ProbFit}: list with \code{node} (training node-level
+posterior info), \code{individual} (projected cluster assignments
+and posterior-probability diagnostics), and probability plots.
+\item \code{ProjectionFit}: full-length map-fit diagnostics, cohort and
+cluster summaries, training-support violations, policy, and plots.
+\item \code{ModelInfo_SOM}, \code{ModelInfo_MClust}: references to the
+original model objects for convenience.
+}
 }
 \description{
-Projects \code{new_df} through the frozen preprocessing, reduction,
+Projects \code{data} through the frozen preprocessing, reduction,
 and clustering layers stored in \code{object}. Dispatch is determined by the
 fitted model's \verb{Pipeline_*} class; callers do not select a method-specific
 projector.
+
+Train once, project many: a reusable unsupervised clinical phenotyping
+framework that learns phenotype structure in a training cohort and projects
+new participants into the fixed phenotype space while quantifying membership
+uncertainty and projection fit. Given a fitted
+\code{CreateClusterModel_SOM_MClust()}
+object, project a new data frame onto:
+\itemize{
+\item The same Z-score scaling (via SciDataReportR::ProjectZScore()) when
+the training object used computed or projected Z-scores.
+\item The same SOM (kohonen), using \code{kohonen::map()}.
+\item The same node-level latent profiles and posterior probabilities.
+}
+
+If the training object used \code{ZScoreType = "PreZScored"}, this function
+expects the new data already contains the same Z-score columns (by name)
+stored in \code{object$ZScoreVars}. No re-zscoring is performed.
+
+For each projected case, the function:
+\itemize{
+\item Assigns a SOM node and distance to BMU.
+\item Maps node-level cluster/posterior probabilities to the individual.
+\item Computes an overall SOM-distance z-score and flags:
+\itemize{
+\item \code{Flag_SOMDist_overallHigh} - distance > overall training p95.
+\item \code{Flag_SOMDist_clusterHigh} - distance > cluster-specific
+training p95 for that cluster.
+}
+}
+
+Row alignment is preserved without adding internal identifier columns to
+either the projected data or public diagnostics.
+
+Missing data:
+\itemize{
+\item Only rows with complete Z-scores are mapped to the SOM.
+\item Rows with missing Z-scores receive NA for SOM_Node, SOM_Distance,
+and the cluster label.
+}
 
 Compatibility wrapper for \code{\link[=ProjectCluster]{ProjectCluster()}}.
 
 Deprecated alias for \code{\link[=ProjectCluster]{ProjectCluster()}}.
 }
 \section{SOM + Mclust projection results}{
+
+\code{NoveltyGroups} contains \code{groups} (Group, Nodes, N, Members row IDs,
+ShareOfFar, Clusters, NearestCluster, MeanZ, TrainingClusterMeanZ, DifferenceZ,
+Candidate, Label), \code{neighbourhood_tests} (NodeID, ProjectedN, TrainingN, TrainingFarN,
+TrainingFarRate, FarN, ExpectedN, P, HolmP), \code{overall_excess} (N, FarN,
+ExpectedN, P, Excess) and \code{verdict}. Candidate groups meet novel_group_min_n;
+neighbourhood groups below that size remain descriptive. Group evidence and
+overall far-from-map excess are separate from each person's Flag_FarFromMap.
+Per-person \code{FitClass} has levels Good fit, Uncertain membership, Far from map,
+clear membership, and Far from map, unclear membership. Projection_Fit_Class
+mirrors FitClass. FitClass_Legacy is deprecated and retained for one release.
+Soft models judge clarity using max(SoftProb_*); hard models use max_prob.
+NodeN and Flag_OnePersonNode appear in individual outputs and DataWithClusters.
+Specification$projection records distance_reference, far_distance_quantile,
+cutoff_quantile (the shared q_star), chance_flag_rate (the attained rate),
+clear_membership_threshold, novel_group_min_n and membership_probability.
+MembershipProbability in ProjectionFit$individual contains the chosen
+per-person clarity probability.
+Summary metrics add one_person_node_share, rough_expected_rate_unfamiliar_profiles
+(training share on one-person nodes; descriptive only, no inference),
+chance_flag_rate and far_from_map_share.
 
 SOM + Mclust projections keep assignment certainty and training-space fit
 separate. \code{ProbFit$individual} is full length and contains the assigned
@@ -90,5 +218,27 @@ model <- CreateClusterModel_KMeans(
 )
 projected <- ProjectCluster(model, df_New)
 projected$ProjectionFit$summary
+}
+\donttest{
+data("SimulatedPhenotypeData")
+df_Training <- dplyr::filter(SimulatedPhenotypeData, .data$Cohort == "Training")
+df_Projection <- dplyr::filter(SimulatedPhenotypeData, .data$Cohort == "Projection")
+model <- CreateClusterModel_SOM_MClust(
+  data = df_Training,
+  variables = paste0("Var", 1:12),
+  method = "finalize",
+  final_k = 4,
+  final_model = 1,
+  som_xdim = 5,
+  som_ydim = 5,
+  stability_resamples = 2,
+  Relabel = FALSE,
+  candidate_min_nodes_per_cluster = NULL
+)
+projected <- ProjectCluster(object = model, data = df_Projection)
+head(projected$ProbFit$individual)
+projected$ProjectionFit$plots$projection_fit_class_bar
+projected$ProjectionFit$plots$som_grid_map
+projected$ProbFit$plots$individual_ProbAssignedDensity
 }
 }

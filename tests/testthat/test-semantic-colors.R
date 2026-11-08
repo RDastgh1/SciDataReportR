@@ -88,8 +88,8 @@ test_that("signed-significance ladders keep their diverging colors", {
   # A 7-step diverging ladder centred on grey "ns". Replacing this with a
   # qualitative palette would destroy the direction and strength encoding.
   ladder <- rev(c(
-    "red4", "firebrick3", "pink2", "grey93",
-    "lightblue2", "steelblue3", "blue"
+    "#841B37", "#C2185B", "#F2B29A", "#FFFFFF",
+    "#B8D8E8", "#1769D2", "#0B1F5E"
   ))
 
   source_files <- c(

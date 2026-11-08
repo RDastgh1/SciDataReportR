@@ -65,7 +65,7 @@ test_that("skill generator preserves current calls and exposes deprecation guida
 
   usage_Comparison <- GetCanonicalUsage(entry_Comparison)
   expect_match(paste(usage_Comparison, collapse = "\n"), "group_var = NULL", fixed = TRUE)
-  expect_match(paste(usage_Comparison, collapse = "\n"), "TreatOrdinalAs = \"Categorical\"\n)", fixed = TRUE)
+  expect_match(paste(usage_Comparison, collapse = "\n"), "TreatOrdinalAs = \"Categorical\"", fixed = TRUE)
   expect_false(any(grepl("DataFrame = lifecycle::deprecated", usage_Comparison, fixed = TRUE)))
   expect_match(paste(entry_Correlations, collapse = "\n"), "predictor_vars = NULL", fixed = TRUE)
   expect_match(compatibility, "`DataFrame`, `CompVariable`", fixed = TRUE)

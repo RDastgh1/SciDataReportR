@@ -16,9 +16,10 @@ CreateClusterModel_KMeans(
   seed = 93421L,
   nstart = 50L,
   stability_resamples = 0L,
-  stability_seed = seed + 1L,
+  seed_stability = seed + 1L,
   stability_progress = FALSE,
-  stability_cores = NULL
+  stability_cores = NULL,
+  stability_seed = lifecycle::deprecated()
 )
 }
 \arguments{
@@ -46,7 +47,7 @@ CreateClusterModel_KMeans(
 to estimate candidate reproducibility. Subsamples are drawn without
 replacement. Use \code{0} to disable stability analysis.}
 
-\item{stability_seed}{Seed controlling participant subsampling.}
+\item{seed_stability}{Seed controlling participant subsampling.}
 
 \item{stability_progress}{Whether to print subsample progress messages.}
 
@@ -54,6 +55,8 @@ replacement. Use \code{0} to disable stability analysis.}
 a conservative CPU/memory cap: the smaller of 50\% physical RAM and 75\% of
 available RAM. Explicit values warn when their estimated memory exceeds
 this budget.}
+
+\item{stability_seed}{Deprecated alias for \code{seed_stability}.}
 }
 \value{
 A fitted model with \code{ModelInfo$fit_table} (WSS, between-cluster

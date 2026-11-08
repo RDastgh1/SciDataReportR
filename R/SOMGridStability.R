@@ -6,6 +6,10 @@
 #'   The legacy joint SOM + Mclust screen remains available with
 #'   `screen_scope = "joint"`.
 #'
+#'   The `"map"` scope is superseded by [ScreenSOMGrid()], which keeps every
+#'   participant (seed and jitter refits instead of 90% subsamples), does not
+#'   use k or Mclust parameter counts, and selects a grid automatically.
+#'
 #' @param screen_scope `"map"` (default) for k-informed, Mclust-free SOM screening or
 #'   `"joint"` for the earlier grid-by-k Mclust workflow.
 #' @param data A data frame supplied to [CreateClusterModel_SOM_MClust()].
@@ -30,19 +34,20 @@
 #'   the explicit joint workflow retains its prior default of 10.
 #' @param seed_som Fixed SOM initialization seed used for every refit of a
 #'   candidate design.
-#' @param stability_seed Seed for participant subsampling and metric sampling.
+#' @param seed_stability Seed for participant subsampling and metric sampling.
 #' @param stability_cores Optional parallel workers for joint-screen refits;
 #'   map-screen refits are intentionally lightweight and serial.
 #' @param pair_sample Number of complete-cohort participant pairs used for
 #'   orientation-invariant grid-distance preservation.
 #' @param neighborhood_sample Number of participants used for local-neighbor
-#'   overlap; sampling is deterministic from `stability_seed`.
+#'   overlap; sampling is deterministic from `seed_stability`.
 #' @param neighborhood_k Number of local grid neighbors per sampled participant.
 #' @param ... Additional arguments passed to [CreateClusterModel_SOM_MClust()].
 #'
 #' @return A `SOMGridStabilityScreen` object. Map scope returns a decision
 #'   table and per-refit `map_replicates`; joint scope returns the prior
 #'   grid-by-k Mclust decision table for [ConfirmSOMGridStability()].
+#' @param stability_seed Deprecated alias for `seed_stability`.
 #' @export
 ScreenSOMGridStability <- function(data,
     variables = NULL,
@@ -55,12 +60,18 @@ ScreenSOMGridStability <- function(data,
     screen_scope = c("map", "joint"),
     screen_resamples = 3L,
     seed_som = 934521L,
-    stability_seed = 934522L,
+    seed_stability = 934522L,
     stability_cores = NULL,
     pair_sample = 10000L,
     neighborhood_sample = 500L,
     neighborhood_k = 10L,
+    stability_seed = lifecycle::deprecated(),
     ...) {
+  if (lifecycle::is_present(stability_seed)) {
+    lifecycle::deprecate_warn("21.18.0", "ScreenSOMGridStability(stability_seed)", "ScreenSOMGridStability(seed_stability)")
+    seed_stability <- stability_seed
+  }
+
   resamples_was_missing <- missing(screen_resamples)
   screen_scope <- match.arg(screen_scope)
   if (!is.numeric(min_participants_per_node) ||
@@ -74,7 +85,7 @@ ScreenSOMGridStability <- function(data,
       data = data, variables = variables, k_range = k_range, models = models,
       grid_candidates = grid_candidates, topologies = topologies,
       node_weighting = node_weighting, screen_resamples = screen_resamples,
-      seed_som = seed_som, stability_seed = stability_seed,
+      seed_som = seed_som, seed_stability = seed_stability,
       stability_cores = stability_cores,
       min_participants_per_node = min_participants_per_node, ...))
   }
@@ -83,7 +94,7 @@ ScreenSOMGridStability <- function(data,
     models = models,
     grid_candidates = grid_candidates,
     topologies = topologies, screen_resamples = screen_resamples,
-    seed_som = seed_som, stability_seed = stability_seed,
+    seed_som = seed_som, seed_stability = seed_stability,
     pair_sample = pair_sample, neighborhood_sample = neighborhood_sample,
     neighborhood_k = neighborhood_k,
     min_participants_per_node = min_participants_per_node, ...)
@@ -117,7 +128,7 @@ ScreenSOMGridStability <- function(data,
 #' @param screen_resamples Number of 90% subsample refits per map design.
 #' @param seed_som Fixed SOM initialization seed used for every refit of a
 #'   design.
-#' @param stability_seed Seed for participant subsampling.
+#' @param seed_stability Seed for participant subsampling.
 #' @param stability_cores Optional parallel workers for refits.
 #' @param ... Additional arguments passed to [CreateClusterModel_SOM_MClust()].
 #'
@@ -134,7 +145,7 @@ ScreenSOMGridStability <- function(data,
     node_weighting = c("uniform", "occupancy"),
     screen_resamples = 10L,
     seed_som = 934521L,
-    stability_seed = 934522L,
+    seed_stability = 934522L,
     stability_cores = NULL,
     min_participants_per_node = 10,
     ...) {
@@ -175,7 +186,7 @@ ScreenSOMGridStability <- function(data,
   prohibited <- intersect(names(dots), c(
     "data", "variables", "method", "k_range", "models", "som_xdim",
     "som_ydim", "som_topo", "seed_som", "stability_resamples",
-    "stability_candidates", "stability_seed", "stability_cores", "node_weighting"))
+    "stability_candidates", "seed_stability", "stability_cores", "node_weighting"))
   if (length(prohibited)) {
     stop("Do not supply these arguments through ...: ",
       paste(prohibited, collapse = ", "), ".")
@@ -195,7 +206,7 @@ ScreenSOMGridStability <- function(data,
         seed_som = seed_som, Relabel = FALSE,
         stability_resamples = as.integer(screen_resamples),
         stability_candidates = "best_per_k",
-        stability_seed = stability_seed, stability_cores = stability_cores,
+        seed_stability = seed_stability, stability_cores = stability_cores,
         min_participants_per_node = min_participants_per_node), dots)
       fitted <- tryCatch(do.call(CreateClusterModel_SOM_MClust, fit_args),
         error = function(e) e)
@@ -222,7 +233,7 @@ ScreenSOMGridStability <- function(data,
             (grids$som_xdim[[grid_index]] * grids$som_ydim[[grid_index]]) / requested_parameter_count < 3 ~ "under-supported",
             TRUE ~ "supported"),
           Model = NA_integer_, Classes = NA_integer_, Eligible = FALSE,
-          StabilityARI_Mean = NA_real_, StabilityARI_P05 = NA_real_,
+          StabilityARI_Mean = NA_real_,
           StabilityJaccard_Mean = NA_real_, StabilitySuccessRate = NA_real_,
           FitError = conditionMessage(fitted))
         next
@@ -278,12 +289,11 @@ ScreenSOMGridStability <- function(data,
     decision_table <- decision_table %>%
       dplyr::mutate(
         StabilityRank = dplyr::dense_rank(dplyr::desc(.data$StabilityARI_Mean))) %>%
-      dplyr::arrange(.data$StabilityRank, dplyr::desc(.data$StabilityARI_P05),
+      dplyr::arrange(.data$StabilityRank, dplyr::desc(.data$StabilityARI_Mean),
         .data$Topology, .data$NodeWeighting, .data$NodeCount, .data$Classes) %>%
       dplyr::group_by(.data$Topology, .data$NodeWeighting, .data$Classes) %>%
       dplyr::mutate(
-        StabilityPlateau = .data$StabilityARI_Mean >= max(.data$StabilityARI_Mean, na.rm = TRUE) - 0.02 &
-          .data$StabilityARI_P05 >= max(.data$StabilityARI_P05, na.rm = TRUE) - 0.05) %>%
+        StabilityPlateau = .data$StabilityARI_Mean >= max(.data$StabilityARI_Mean, na.rm = TRUE) - 0.02) %>%
       dplyr::ungroup()
   }
   out <- list(
@@ -295,10 +305,10 @@ ScreenSOMGridStability <- function(data,
       fixed_grid_policy = "candidate dimensions and topology fixed within refits",
       fixed_initialization_seed_policy = "fixed_to_reference_fit",
       projection_comparison = "refit projected to full reference cohort",
-      ranking = "StabilityARI_Mean, then StabilityARI_P05",
+      ranking = "mean ARI",
       screen_scope = "joint",
       min_participants_per_node = min_participants_per_node,
-      stability_plateau = "within 0.02 mean ARI and 0.05 ARI P05 within topology, weighting, and k",
+      stability_plateau = "within 0.02 mean ARI within topology, weighting, and k",
       automatic_selection = FALSE),
     data = data,
     variables = variables,
@@ -307,7 +317,7 @@ ScreenSOMGridStability <- function(data,
     models = models,
     node_weighting = node_weighting,
     seed_som = seed_som,
-    stability_seed = stability_seed,
+    seed_stability = seed_stability,
     stability_cores = stability_cores
   )
   class(out) <- "SOMGridStabilityScreen"
@@ -414,7 +424,7 @@ ScreenSOMGridStability <- function(data,
 .ScreenSOMMapStability <- function(data, variables = NULL, k_range = 2:10,
     models = c(1, 2, 3),
     grid_candidates = NULL, topologies = c("hexagonal", "rectangular"),
-    screen_resamples = 3L, seed_som = 934521L, stability_seed = 934522L,
+    screen_resamples = 3L, seed_som = 934521L, seed_stability = 934522L,
     pair_sample = 10000L, neighborhood_sample = 500L, neighborhood_k = 10L,
     min_participants_per_node = 10,
     ...) {
@@ -434,10 +444,10 @@ ScreenSOMGridStability <- function(data,
   dots <- list(...)
   prohibited <- intersect(names(dots), c("data", "variables", "method", "k_range", "models",
     "som_xdim", "som_ydim", "som_topo", "seed_som", "stability_resamples",
-    "stability_candidates", "stability_seed", "stability_cores", "node_weighting", ".NodeClusterFn"))
+    "stability_candidates", "seed_stability", "stability_cores", "node_weighting", ".NodeClusterFn"))
   if (length(prohibited)) stop("Do not supply these arguments through ...: ", paste(prohibited, collapse = ", "), ".")
-  pairs <- .SOMMapPairIndices(length(reference_rows), pair_sample, stability_seed)
-  set.seed(stability_seed + 1L)
+  pairs <- .SOMMapPairIndices(length(reference_rows), pair_sample, seed_stability)
+  set.seed(seed_stability + 1L)
   neighborhood_rows <- sort(sample(reference_rows,
     min(as.integer(neighborhood_sample), length(reference_rows)), replace = FALSE))
   rows <- list()
@@ -466,7 +476,7 @@ ScreenSOMGridStability <- function(data,
       }
       reference_projection <- .SOMMapProjection(reference_model, data)[reference_rows, , drop = FALSE]
       refits <- lapply(seq_len(screen_resamples), function(replicate) {
-        set.seed(stability_seed + 100000L + replicate)
+        set.seed(seed_stability + 100000L + replicate)
         sampled_rows <- sort(sample(reference_rows, max(2L, floor(length(reference_rows) * .90)), replace = FALSE))
         refit_args <- fit_args
         refit_args$data <- df_scidr[sampled_rows, , drop = FALSE]
@@ -551,7 +561,7 @@ ScreenSOMGridStability <- function(data,
     map_stability_plateau = "within 0.02 topology preservation, 5% projected distance, and 5% singleton nodes",
     automatic_selection = FALSE), map_replicates = dplyr::bind_rows(replicate_rows),
     data = data, variables = variables, fit_arguments = dots,
-    seed_som = seed_som, stability_seed = stability_seed)
+    seed_som = seed_som, seed_stability = seed_stability)
   class(out) <- "SOMGridStabilityScreen"
   out
 }
@@ -691,7 +701,7 @@ ConfirmSOMGridStability <- function(screen,
       som_topo = candidate$Topology[[1]], seed_som = screen$seed_som,
       node_weighting = candidate$NodeWeighting[[1]],
       Relabel = FALSE, stability_resamples = as.integer(confirm_resamples),
-      stability_candidates = "best_per_k", stability_seed = screen$stability_seed,
+      stability_candidates = "best_per_k", seed_stability = screen$seed_stability,
       stability_cores = screen$stability_cores), screen$fit_arguments)
     fitted <- do.call(CreateClusterModel_SOM_MClust, fit_args)
     fitted$Influence <- .SOMInfluenceReport(fitted, distance_percentile,
@@ -797,7 +807,7 @@ RefitSOMSensitivity <- function(object,
     boundary_margin_threshold = object$Specification$projection$boundary_margin_threshold %||% 0.20,
     boundary_entropy_threshold = object$Specification$projection$boundary_entropy_threshold %||% 0.60,
     seed_som = object$Specification$seeds$seed_som,
-    seed_lpa = object$Specification$seeds$seed_lpa,
+    seed_mixture = object$Specification$seeds$seed_mixture,
     Relabel = FALSE, stability_resamples = stability_resamples, ...)
   fitted$Sensitivity <- list(
     source_model = "user-specified SOM sensitivity refit",

@@ -57,8 +57,8 @@ test_that("numeric Mclust model IDs and preprocessing aliases are standardized",
   skip_if_not_installed("mclust")
   suppressPackageStartupMessages(skip_if_not_installed("tidyLPA"))
   set.seed(112)
-  df_Test <- data.frame(x = c(rnorm(20), rnorm(20, 4)),
-    y = c(rnorm(20), rnorm(20, 4)))
+  df_Test <- EmbeddedTestData(variables = c("Var1", "Var2"))
+  names(df_Test) <- c("x", "y")
   model <- CreateClusterModel_MClust(
     df_Test, c("x", "y"), method = "finalize", final_k = 2,
     final_model = 1, ZScoreType = "None")
@@ -82,8 +82,8 @@ test_that("numeric Mclust model IDs and preprocessing aliases are standardized",
   expect_identical(model$Preprocessing$ZScoreType, "None")
   expect_error(
     CreateClusterModel_MClust(df_Test, c("x", "y"), method = "finalize",
-      final_k = 2, final_model = "EEI"),
-    "model IDs"
+      final_k = 2, final_model = "not_a_model"),
+    "Mclust names"
   )
   expect_error(
     CreateClusterModel_KMeans(df_Test, c("x", "y"), method = "finalize",
@@ -99,10 +99,8 @@ test_that("tidyLPA mclust models fit and model 6 remains projectable", {
   skip_if_not_installed("mclust")
   suppressPackageStartupMessages(skip_if_not_installed("tidyLPA"))
   set.seed(113)
-  df_Test <- data.frame(
-    x = c(rnorm(40, -2), rnorm(40, 2)),
-    y = c(rnorm(40, -2), rnorm(40, 2))
-  )
+  df_Test <- EmbeddedTestData(variables = c("Var1", "Var2"))
+  names(df_Test) <- c("x", "y")
 
   fits <- lapply(c(1L, 2L, 3L, 6L), function(model) {
     CreateClusterModel_MClust(
@@ -139,7 +137,7 @@ test_that("tidyLPA mclust models fit and model 6 remains projectable", {
   ))
   expect_identical(mca_fit$ModelInfo$final_model, 6L)
 
-  for (bad_model in list(4, 5, 7, NA_real_, "VVV")) {
+  for (bad_model in list(4, 5, 7, NA_real_, "unknown")) {
     expect_error(
       CreateClusterModel_MClust(
         df_Test, c("x", "y"), method = "finalize", final_k = 2,
@@ -549,7 +547,7 @@ test_that("SOM projection separates assignment certainty from frozen-map fit", {
     lpa_timeout_seconds = NULL, min_nodes_per_cluster = NULL)
   warning_messages <- character()
   projected <- withCallingHandlers(
-    ProjectCluster(model, df_Projection),
+    ProjectCluster(model, df_Projection, distance_reference = "training"),
     warning = function(warning) {
       warning_messages <<- c(warning_messages, conditionMessage(warning))
       invokeRestart("muffleWarning")

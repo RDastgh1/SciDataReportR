@@ -13,8 +13,9 @@ Workflow infrastructure for turning labelled, researcher-native life science dat
 \seealso{
 Useful links:
 \itemize{
-  \item \url{https://github.com/RDastgh1/SciDataReportR}
   \item \url{https://rdastgh1.github.io/SciDataReportR/}
+  \item \url{https://github.com/RDastgh1/SciDataReportR}
+  \item \doi{10.5281/zenodo.19617868}
   \item Report bugs at \url{https://github.com/RDastgh1/SciDataReportR/issues}
 }
 

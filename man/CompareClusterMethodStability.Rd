@@ -9,10 +9,11 @@ CompareClusterMethodStability(
   variables,
   candidates = NULL,
   stability_resamples = 10L,
-  stability_seed = 934522L,
+  seed_stability = 934522L,
   stability_cores = NULL,
   subsample_fraction = 0.9,
-  keep_models = FALSE
+  keep_models = FALSE,
+  stability_seed = lifecycle::deprecated()
 )
 }
 \arguments{
@@ -27,7 +28,7 @@ candidate set. See \code{DefaultClusterBenchmarkCandidates()}.}
 \item{stability_resamples}{Number of common 90\% subsample refits. Defaults to
 10 for screening.}
 
-\item{stability_seed}{Seed used to generate the shared participant draws.}
+\item{seed_stability}{Seed used to generate the shared participant draws.}
 
 \item{stability_cores}{Optional number of parallel workers.}
 
@@ -37,6 +38,8 @@ retained in each refit.}
 \item{keep_models}{Logical; retain full-data reference models in the screen
 result. Defaults to \code{FALSE} to avoid holding one large model per candidate.
 Confirmation always retains its selected projectable models.}
+
+\item{stability_seed}{Deprecated alias for \code{seed_stability}.}
 }
 \value{
 A \code{ClusterMethodStabilityBenchmark} object with \code{decision_table},

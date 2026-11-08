@@ -16,9 +16,10 @@ CreateClusterModel_SOM_HDBSCAN(
   seed_som = 934521L,
   seed_hdbscan = 93421L,
   stability_resamples = 0L,
-  stability_seed = seed_hdbscan + 1L,
+  seed_stability = seed_hdbscan + 1L,
   stability_progress = FALSE,
   stability_cores = NULL,
+  stability_seed = lifecycle::deprecated(),
   ...
 )
 }
@@ -47,7 +48,7 @@ CreateClusterModel_SOM_HDBSCAN(
 for final-model stability. Subsamples are drawn without replacement and
 reuse the reference model's resolved SOM grid dimensions.}
 
-\item{stability_seed}{Seed controlling participant subsampling.}
+\item{seed_stability}{Seed controlling participant subsampling.}
 
 \item{stability_progress}{Whether to print subsample progress messages.}
 
@@ -55,6 +56,8 @@ reuse the reference model's resolved SOM grid dimensions.}
 a conservative CPU/memory cap: the smaller of 50\% physical RAM and 75\% of
 available RAM. Explicit values warn when their estimated memory exceeds
 this budget.}
+
+\item{stability_seed}{Deprecated alias for \code{seed_stability}.}
 
 \item{...}{Additional arguments passed to \code{\link[=CreateClusterModel_SOM_MClust]{CreateClusterModel_SOM_MClust()}}.}
 }

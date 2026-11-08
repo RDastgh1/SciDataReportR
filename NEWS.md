@@ -1,5 +1,101 @@
 # SciDataReportR 21.18.0
 
+* Optional Gaussian soft assignment stores its resolved training bandwidth for
+  projection. The inverse kernel is unchanged. Grid-screen refits can use
+  `cores` (or pipeline `stability_cores`); failures are recorded with success
+  rates. Screen plot labels use portable ASCII text for PDF rendering.
+
+* `stability_type = "seed"` varies SOM and mixture seeds on all participants
+  with the grid held fixed. Supplying both stability types averages their
+  two mean ARIs for AHP reproducibility. Tables identify `StabilityType` and
+  report per-cluster mean Jaccard and refit success rates.
+
+## Breaking changes
+
+* LOO projection now calibrates one shared quantile for the overall OR cluster
+  far rule. Models store the shared quantile, attained training rate and cutoffs;
+  novelty baselines, overall excess and chance_flag_rate use that attained rate.
+  Explicit training-distance projection retains the uncalibrated behaviour.
+* The minimum candidate group size is now three. Every group label includes
+  its size; Holm adjustment and neighbourhood definitions are unchanged.
+* New clustering/projection tests use embedded data only. The binary regression
+  fixture is removed; expected values are written directly in the regression test.
+
+* SOM projection uses per-person soft certainty for soft models and node
+  certainty for hard models. New per-person FitClass labels describe distance
+  and membership; FitClass_Legacy retains the deprecated node-based classes.
+  NoveltyGroups separates group-level neighbourhood concentration tests from
+  per-person far-from-map flags. Neighbourhoods use training LOO far rates,
+  smoothed toward 1-q below ten training people, with Holm adjustment and a
+  minimum group size. A separate overall binomial test reports far-from-map
+  excess against 1-q. No inference uses the one-person-node baseline.
+  NodeN, Flag_OnePersonNode and descriptive unfamiliar-profile/chance baselines
+  are added. ProjectCluster now names its data argument `data`; `new_df`
+  remains accepted with a lifecycle warning.
+
+* SOM projection defaults to leave-one-out distance cutoffs. Set
+  `distance_reference = "training"` for the previous cutoffs. Training
+  outputs retain SOM_Distance and add SOM_Distance_LOO without refits.
+
+* SOM stability summaries and fit plots report mean ARI only; ARI quantile
+  columns are removed; the legacy joint grid screen also uses mean ARI only.
+  Default clusters, AHP weights and automatic map-only grid selection
+  are unchanged. Legacy argument names also remain as metadata aliases.
+
+## Changes
+
+* SOM mixture arguments now use `seed_mixture`, `seed_stability`, `mixture_*`,
+  `candidate_min_nodes_per_cluster`, `far_distance_quantile` and
+  `clear_membership_threshold`. Old names warn and remain accepted; shared
+  pipelines and projection use the same names. Model names EEI/VVI/EEE/VVV
+  are accepted alongside IDs. `explore` and the two retired grid-sizing
+  arguments now give deprecation warnings.
+
+* `ProbFit` adds boundary reason counts/shares and a boundary threshold grid.
+  The default 0.20 margin / 0.60 entropy thresholds are review conventions.
+
+* `som_epochs` exposes the existing 100-epoch default throughout fitting and
+  refits. `ModelInfo_SOM$diagnostics` adds map quality, node U values and a
+  seeded border-alignment permutation diagnostic.
+
+* Training individual outputs now carry `NodeN` and `Flag_OnePersonNode`.
+  A message explains node certainty when more than 5% of complete participants
+  are on one-person nodes.
+
+* SOM mixture candidate tables and plots now include `BoundaryPct` (a share).
+  Optional `Boundary` AHP weights favour fewer boundary participants; default
+  weights are unchanged. `ahp_sensitivity` compares weight schemes without refits.
+
+* New `ScreenSOMGrid()` chooses the SOM grid size from the map alone, before any
+  mixture is fitted, so no value of k and no Mclust covariance model affects
+  the map. It trains every candidate side with several seeds, and with seeds
+  plus jitter (every participant kept), and reports variance captured,
+  quantization and topographic error, trustworthiness and continuity, empty,
+  one-person and low-density nodes, and neighbour stability. `plot()` draws the
+  screening figure and `SOMGridDecisionTable()` gives a formatted table.
+* New `SelectSOMGrid()` applies the selection rule to a screen without
+  refitting: a floor of 10 nodes per clustering variable; a ceiling from the
+  smoothed share of one-person (10%) and empty (5%) nodes, from measurement
+  noise (the first map whose quantization error is below
+  `sqrt(sum(jitter_sd^2))`), and a cap of 30 nodes per variable (or
+  `max_nodes`); and the 5 * sqrt(n) target moved into that range. It warns
+  when the floor is above the ceiling, when the chosen map looks folded, or
+  when its trustworthiness is below 0.80.
+* `CreateClusterModel_SOM_MClust()` now runs this screen when no grid size or
+  `map_from` is supplied, trains the chosen map, prints the choice, and returns
+  the screen in `ModelInfo_SOM$grid_screen` for review. Settings can be passed
+  with the new `grid_screen_args`. Exploratory and finalized fits on the same
+  data and seed now get the same automatic grid.
+* The previous k- and parameter-based automatic sizing (20 nodes per planned
+  profile, 3 nodes per mixture parameter, capped at 10 participants per node)
+  is retired. `min_nodes_per_parameter` and `min_participants_per_node` now
+  only label the fit table; candidates with fewer nodes than parameters are
+  still marked ineligible. `SOMMapSupport()` and the `"map"` scope of
+  `ScreenSOMGridStability()` are superseded by `ScreenSOMGrid()`.
+* `min_nodes_per_cluster` now defaults to 10 and gives a single warning listing
+  every candidate k with fewer nodes per cluster on the chosen map. Explicit
+  grids below 10 nodes per clustering variable give a warning.
+
 # SciDataReportR 21.17.0
 
 * `MakeComparisonTable()` now reports Cohen's f on pooled average ranks for

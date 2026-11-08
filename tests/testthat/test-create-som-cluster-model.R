@@ -261,7 +261,7 @@ test_that("CreateClusterModel_SOM_MClust adds deterministic subsample stability 
   expect_true(all(stability$cluster_recovery$Jaccard <= 1))
   expect_equal(fit_table$ReproducibilityScore, fit_table$StabilityARI_Mean)
   expect_true(all(c(
-    "StabilitySuccessRate", "StabilityARI_Mean", "StabilityARI_P05",
+    "StabilitySuccessRate", "StabilityARI_Mean",
     "StabilityJaccard_Mean", "StabilityJaccard_Min",
     "ReproducibilityScore", "Reproducibility_scaled"
   ) %in% names(fit_table)))
@@ -387,7 +387,8 @@ test_that("SOM Mclust reports Euclidean distances with per-variable residuals", 
   summary <- projected$ProjectionFit$summary
   expect_equal(summary$value[summary$metric == "cluster_occupancy_js_divergence"], 0)
   expect_equal(summary$value[summary$metric == "excess_high_distance"],
-    summary$value[summary$metric == "high_distance_burden"] - 0.05)
+    summary$value[summary$metric == "high_distance_burden"] -
+      summary$value[summary$metric == "chance_flag_rate"])
   expect_s3_class(projected$ProjectionFit$plots$variable_drift, "ggplot")
 })
 
@@ -587,7 +588,7 @@ test_that("SOM Mclust skips tidyLPA bootstraps by default", {
   expect_true(all(is.na(fit_table$BLRTPValue)))
   expect_false(any(grepl("likelihood-ratio", as.character(model$fit_plot$data$name))))
   expect_error(CreateClusterModel_SOM_MClust(df_Labelled, "age", lpa_bootstrap_n = -1),
-    "lpa_bootstrap_n")
+    "mixture_bootstrap_n")
 })
 
 test_that("SOM hard and soft projection retain participant confidence outputs", {
@@ -695,7 +696,7 @@ test_that("standard batch-SOM provenance and boundary stability use a fixed refe
   expect_true(all(stability$replicates$ParticipantsCompared == nrow(df_Training)))
   expect_true(all(c("ARI_NonBoundary", "NonBoundaryProportion") %in%
     names(stability$replicates)))
-  expect_true(all(c("StabilityARI_NonBoundary", "StabilityARI_NonBoundary_P05",
+  expect_true(all(c("StabilityARI_NonBoundary",
     "StabilityJaccard_NonBoundaryMean") %in% names(stability$summary)))
   expect_true(all(c("overall", "reference_cluster") %in%
     stability$boundary_summary$Scope))
@@ -720,31 +721,33 @@ test_that("standard batch-SOM provenance and boundary stability use a fixed refe
   expect_identical(stability$replicates$ARI_NonBoundary,
     parallel_model$Stability$replicates$ARI_NonBoundary)
 
-  adaptive <- suppressWarnings(CreateClusterModel_SOM_MClust(
+  # Automatic grids come from the map-only screen: no k and no model enter the choice, so a
+  # finalized fit (k = 3) and an exploratory fit (k = 3:5) on the same data get the same grid.
+  adaptive <- suppressMessages(suppressWarnings(CreateClusterModel_SOM_MClust(
     df_Training, paste0("Var", 1:6), method = "finalize",
     final_k = 3, final_model = 1,
     stability_resamples = 0L, Relabel = FALSE,
     min_nodes_per_cluster = NULL, lpa_timeout_seconds = 30
-  ))
-  expected_side <- SOMMapSupport(nrow(df_Training), 6, 3, 1)$RecommendedSide[[1]]
+  )))
+  screen <- adaptive$ModelInfo_SOM$grid_screen
+  expect_s3_class(screen, "SOMGridScreen")
+  expected_side <- screen$selection$side
   expect_equal(adaptive$ModelInfo_SOM$som_grid_info$som_xdim_used, expected_side)
   expect_equal(adaptive$ModelInfo_SOM$som_grid_info$som_ydim_used, expected_side)
+  expect_gte(expected_side, ceiling(sqrt(10 * 6)))
+  expect_lte(expected_side, floor(sqrt(30 * 6)))
   expect_identical(adaptive$ModelInfo_SOM$som_grid_info$GridDesignK, 3L)
-  expect_identical(adaptive$ModelInfo_SOM$som_grid_info$TargetNodesPerProfile, 20L)
-  expect_identical(adaptive$ModelInfo_SOM$som_grid_info$GridDesignPolicy,
-    "k_informed_parameter_and_occupancy_aware")
+  expect_identical(adaptive$ModelInfo_SOM$som_grid_info$GridDesignPolicy, "map_only_screen")
+  expect_match(adaptive$ModelInfo_SOM$som_grid_info$BindingConstraint, "^screen_")
 
-  exploratory <- suppressWarnings(CreateClusterModel_SOM_MClust(
+  exploratory <- suppressMessages(suppressWarnings(CreateClusterModel_SOM_MClust(
     df_Training, paste0("Var", 1:6), method = "exploratory",
     k_range = 3:5, models = 1, stability_resamples = 0L,
     Relabel = FALSE, min_nodes_per_cluster = NULL, lpa_timeout_seconds = 30
-  ))
+  )))
   expect_identical(exploratory$ModelInfo_SOM$som_grid_info$GridDesignK, 5L)
-  expected_exploratory_side <- SOMMapSupport(nrow(df_Training), 6, 3:5, 1)$RecommendedSide[[1]]
-  expect_equal(exploratory$ModelInfo_SOM$som_grid_info$som_xdim_used,
-    expected_exploratory_side)
-  expect_equal(exploratory$ModelInfo_SOM$som_grid_info$som_ydim_used,
-    expected_exploratory_side)
+  expect_equal(exploratory$ModelInfo_SOM$som_grid_info$som_xdim_used, expected_side)
+  expect_equal(exploratory$ModelInfo_SOM$som_codes, adaptive$ModelInfo_SOM$som_codes)
   expect_true(all(exploratory$ModelInfo_MClust$fit_table$Classes %in% 3:5))
 })
 
