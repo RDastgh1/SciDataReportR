@@ -59,8 +59,8 @@ PlotInteractionEffectsMatrix(
 - TreatOrdinalAs:
 
   How ordinal variables are handled. This interaction matrix accepts
-  `"Exclude"`, `"Continuous"`, or `"Categorical"`. Categorical ordinal
-  outcomes are not supported by the linear models.
+  \`"Exclude"\`, \`"Continuous"\`, or \`"Categorical"\`. Categorical
+  ordinal outcomes are not supported by the linear models.
 
 - Data:
 
@@ -76,11 +76,10 @@ PlotInteractionEffectsMatrix(
 
 - fdr_scope:
 
-  Either `"matrix"` (default) or `"per_outcome"`, passed to
-  [`ApplyFDRCorrection()`](https://rdastgh1.github.io/SciDataReportR/reference/ApplyFDRCorrection.md).
-  `"matrix"` corrects across all interaction p-values at once
-  (historical behavior). `"per_outcome"` corrects separately within each
-  outcome variable (`outcome_vars`).
+  Either \`"matrix"\` (default) or \`"per_outcome"\`, passed to
+  \[ApplyFDRCorrection()\]. \`"matrix"\` corrects across all interaction
+  p-values at once (historical behavior). \`"per_outcome"\` corrects
+  separately within each outcome variable (\`outcome_vars\`).
 
 - covars:
 
@@ -146,24 +145,20 @@ The function then determines whether the interaction causes a slope
 reversal (opposite signs) or maintains the same direction (same signs)
 for the predictor-outcome relationship.
 
-Color coding:
-
-- Blue gradient: Significant interaction with slopes in the same
-  direction
-
-- Red gradient: Significant interaction with slope reversal
-
-- White: Non-significant interaction (p \> 0.05)
-
-- Grey: Missing data or model could not be fit
-
-Darker colors indicate higher significance:
-
-- \*\*\*: p \<= 0.001 (darkest)
-
-- \*\*: p \<= 0.01 (medium)
-
-- \*: p \<= 0.05 (light)
+Color shows the ending slope sign (blue positive, red negative). Within
+each hue, lighter shades indicate weakening and darker shades
+strengthening. Strength change is \`abs(Slope2Std) - abs(Slope1Std)\`,
+where standardized slopes multiply the original slopes by
+SD(predictor)/SD(outcome), calculated on the fitted model's complete
+cases. Both plots share symmetric strength limits, returned as
+\`StrengthLimits\`. Shades are relative to these limits. Hatching marks
+strict sign reversals; exactly zero slopes are not reversals. White
+cells are nonsignificant (or have an exactly zero ending slope); grey
+cells have unavailable estimates. Stars indicate interaction p-values
+(raw or FDR-adjusted), not significance of either individual slope. The
+\`raw_data\` result also includes \`Slope1Std\`, \`Slope2Std\`,
+\`SlopeDeltaStd\`, \`StrengthChange\`, \`EndingDirection\`, and
+\`DirectionReversal\`.
 
 ## Examples
 

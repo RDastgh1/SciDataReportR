@@ -110,7 +110,7 @@ showing whether interactions result in slope reversals or maintain the same dire
 
 <dt id="arg-treatordinalas">TreatOrdinalAs<a class="anchor" aria-label="anchor" href="#arg-treatordinalas"></a></dt>
 <dd><p>How ordinal variables are handled. This interaction
-matrix accepts <code>"Exclude"</code>, <code>"Continuous"</code>, or <code>"Categorical"</code>.
+matrix accepts `"Exclude"`, `"Continuous"`, or `"Categorical"`.
 Categorical ordinal outcomes are not supported by the linear models.</p></dd>
 
 
@@ -127,10 +127,10 @@ Categorical ordinal outcomes are not supported by the linear models.</p></dd>
 
 
 <dt id="arg-fdr-scope">fdr_scope<a class="anchor" aria-label="anchor" href="#arg-fdr-scope"></a></dt>
-<dd><p>Either <code>"matrix"</code> (default) or <code>"per_outcome"</code>, passed to
-<code><a href="ApplyFDRCorrection.html">ApplyFDRCorrection()</a></code>. <code>"matrix"</code> corrects across all interaction
-p-values at once (historical behavior). <code>"per_outcome"</code> corrects
-separately within each outcome variable (<code>outcome_vars</code>).</p></dd>
+<dd><p>Either `"matrix"` (default) or `"per_outcome"`, passed to
+[ApplyFDRCorrection()]. `"matrix"` corrects across all interaction
+p-values at once (historical behavior). `"per_outcome"` corrects
+separately within each outcome variable (`outcome_vars`).</p></dd>
 
 
 <dt id="arg-covars">covars<a class="anchor" aria-label="anchor" href="#arg-covars"></a></dt>
@@ -148,21 +148,21 @@ separately within each outcome variable (<code>outcome_vars</code>).</p></dd>
 <li><p>Slope2: Matrix of slopes at high values of interVar (mean + 1SD for continuous, comparison group for categorical)</p></li>
 <li><p>plot: ggplot object of the heatmap</p></li>
 <li><p>pvaltable: P-value table in wide format</p></li>
-</ul></dd>
+</ul><p></p></dd>
 
-<dt>FDRCorrected</dt>
+  <dt>FDRCorrected</dt>
 <dd><p>List with FDR-corrected results (same structure as Unadjusted)</p></dd>
 
-<dt>Relabel</dt>
+  <dt>Relabel</dt>
 <dd><p>Logical indicating whether relabeling was applied</p></dd>
 
-<dt>Covariates</dt>
+  <dt>Covariates</dt>
 <dd><p>Character vector of covariates used</p></dd>
 
-<dt>interVar</dt>
+  <dt>interVar</dt>
 <dd><p>The interaction variable name</p></dd>
 
-<dt>raw_data</dt>
+  <dt>raw_data</dt>
 <dd><p>Processed data frame with all calculated values</p></dd>
 
 
@@ -175,14 +175,19 @@ for each combination of outcome and predictor variables.</p>
 For categorical interaction variables, slopes are calculated for each category.</p>
 <p>The function then determines whether the interaction causes a slope reversal (opposite signs)
 or maintains the same direction (same signs) for the predictor-outcome relationship.</p>
-<p>Color coding:</p><ul><li><p>Blue gradient: Significant interaction with slopes in the same direction</p></li>
-<li><p>Red gradient: Significant interaction with slope reversal</p></li>
-<li><p>White: Non-significant interaction (p &gt; 0.05)</p></li>
-<li><p>Grey: Missing data or model could not be fit</p></li>
-</ul><p>Darker colors indicate higher significance:</p><ul><li><p>***: p &lt;= 0.001 (darkest)</p></li>
-<li><p>**: p &lt;= 0.01 (medium)</p></li>
-<li><p>*: p &lt;= 0.05 (light)</p></li>
-</ul></div>
+<p>Color shows the ending slope sign (blue positive, red negative). Within each
+hue, lighter shades indicate weakening and darker shades strengthening.
+Strength change is `abs(Slope2Std) - abs(Slope1Std)`, where standardized
+slopes multiply the original slopes by SD(predictor)/SD(outcome), calculated
+on the fitted model's complete cases. Both plots share symmetric strength
+limits, returned as `StrengthLimits`. Shades are relative to these limits.
+Hatching marks strict sign reversals; exactly zero slopes are not reversals.
+White cells are nonsignificant (or have an exactly zero ending slope);
+grey cells have unavailable estimates. Stars indicate interaction p-values
+(raw or FDR-adjusted), not significance of either individual slope.
+The `raw_data` result also includes `Slope1Std`, `Slope2Std`,
+`SlopeDeltaStd`, `StrengthChange`, `EndingDirection`, and `DirectionReversal`.</p>
+    </div>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
