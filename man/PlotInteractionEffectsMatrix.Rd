@@ -37,7 +37,7 @@ PlotInteractionEffectsMatrix(
 \code{TreatOrdinalAs} instead.}
 
 \item{TreatOrdinalAs}{How ordinal variables are handled. This interaction
-matrix accepts \code{"Exclude"}, \code{"Continuous"}, or \code{"Categorical"}.
+matrix accepts `"Exclude"`, `"Continuous"`, or `"Categorical"`.
 Categorical ordinal outcomes are not supported by the linear models.}
 
 \item{Data}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
@@ -46,33 +46,33 @@ Categorical ordinal outcomes are not supported by the linear models.}
 
 \item{predictorVars}{\strong{Deprecated} (since 19.15.0). Use \code{predictor_vars} instead.}
 
-\item{fdr_scope}{Either \code{"matrix"} (default) or \code{"per_outcome"}, passed to
-\code{\link[=ApplyFDRCorrection]{ApplyFDRCorrection()}}. \code{"matrix"} corrects across all interaction
-p-values at once (historical behavior). \code{"per_outcome"} corrects
-separately within each outcome variable (\code{outcome_vars}).}
+\item{fdr_scope}{Either `"matrix"` (default) or `"per_outcome"`, passed to
+[ApplyFDRCorrection()]. `"matrix"` corrects across all interaction
+p-values at once (historical behavior). `"per_outcome"` corrects
+separately within each outcome variable (`outcome_vars`).}
 
 \item{covars}{\strong{Deprecated} (since 19.15.0). Use \code{covariates} instead.}
 }
 \value{
 A list containing:
 \describe{
-\item{Unadjusted}{List with unadjusted results including:
-\itemize{
-\item C: Matrix of interaction coefficients
-\item S: Matrix of slope direction indicators (1 = same, -1 = reversed)
-\item P: Matrix of p-values
-\item D: Matrix of interaction coefficient signs
-\item Slope1: Matrix of slopes at low values of interVar (mean - 1SD for continuous, reference group for categorical)
-\item Slope2: Matrix of slopes at high values of interVar (mean + 1SD for continuous, comparison group for categorical)
-\item plot: ggplot object of the heatmap
-\item pvaltable: P-value table in wide format
-}
-}
-\item{FDRCorrected}{List with FDR-corrected results (same structure as Unadjusted)}
-\item{Relabel}{Logical indicating whether relabeling was applied}
-\item{Covariates}{Character vector of covariates used}
-\item{interVar}{The interaction variable name}
-\item{raw_data}{Processed data frame with all calculated values}
+  \item{Unadjusted}{List with unadjusted results including:
+    \itemize{
+      \item C: Matrix of interaction coefficients
+      \item S: Matrix of slope direction indicators (1 = same, -1 = reversed)
+      \item P: Matrix of p-values
+      \item D: Matrix of interaction coefficient signs
+      \item Slope1: Matrix of slopes at low values of interVar (mean - 1SD for continuous, reference group for categorical)
+      \item Slope2: Matrix of slopes at high values of interVar (mean + 1SD for continuous, comparison group for categorical)
+      \item plot: ggplot object of the heatmap
+      \item pvaltable: P-value table in wide format
+    }
+  }
+  \item{FDRCorrected}{List with FDR-corrected results (same structure as Unadjusted)}
+  \item{Relabel}{Logical indicating whether relabeling was applied}
+  \item{Covariates}{Character vector of covariates used}
+  \item{interVar}{The interaction variable name}
+  \item{raw_data}{Processed data frame with all calculated values}
 }
 }
 \description{
@@ -89,20 +89,18 @@ For categorical interaction variables, slopes are calculated for each category.
 The function then determines whether the interaction causes a slope reversal (opposite signs)
 or maintains the same direction (same signs) for the predictor-outcome relationship.
 
-Color coding:
-\itemize{
-\item Blue gradient: Significant interaction with slopes in the same direction
-\item Red gradient: Significant interaction with slope reversal
-\item White: Non-significant interaction (p > 0.05)
-\item Grey: Missing data or model could not be fit
-}
-
-Darker colors indicate higher significance:
-\itemize{
-\item ***: p <= 0.001 (darkest)
-\item **: p <= 0.01 (medium)
-\item *: p <= 0.05 (light)
-}
+Color shows the ending slope sign (blue positive, red negative). Within each
+hue, lighter shades indicate weakening and darker shades strengthening.
+Strength change is `abs(Slope2Std) - abs(Slope1Std)`, where standardized
+slopes multiply the original slopes by SD(predictor)/SD(outcome), calculated
+on the fitted model's complete cases. Both plots share symmetric strength
+limits, returned as `StrengthLimits`. Shades are relative to these limits.
+Hatching marks strict sign reversals; exactly zero slopes are not reversals.
+White cells are nonsignificant (or have an exactly zero ending slope);
+grey cells have unavailable estimates. Stars indicate interaction p-values
+(raw or FDR-adjusted), not significance of either individual slope.
+The `raw_data` result also includes `Slope1Std`, `Slope2Std`,
+`SlopeDeltaStd`, `StrengthChange`, `EndingDirection`, and `DirectionReversal`.
 }
 \examples{
 \donttest{

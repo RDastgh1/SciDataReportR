@@ -46,20 +46,18 @@
 #' The function then determines whether the interaction causes a slope reversal (opposite signs)
 #' or maintains the same direction (same signs) for the predictor-outcome relationship.
 #'
-#' Color coding:
-#' \itemize{
-#'   \item Blue gradient: Significant interaction with slopes in the same direction
-#'   \item Red gradient: Significant interaction with slope reversal
-#'   \item White: Non-significant interaction (p > 0.05)
-#'   \item Grey: Missing data or model could not be fit
-#' }
-#'
-#' Darker colors indicate higher significance:
-#' \itemize{
-#'   \item ***: p <= 0.001 (darkest)
-#'   \item **: p <= 0.01 (medium)
-#'   \item *: p <= 0.05 (light)
-#' }
+#' Color shows the ending slope sign (blue positive, red negative). Within each
+#' hue, lighter shades indicate weakening and darker shades strengthening.
+#' Strength change is `abs(Slope2Std) - abs(Slope1Std)`, where standardized
+#' slopes multiply the original slopes by SD(predictor)/SD(outcome), calculated
+#' on the fitted model's complete cases. Both plots share symmetric strength
+#' limits, returned as `StrengthLimits`. Shades are relative to these limits.
+#' Hatching marks strict sign reversals; exactly zero slopes are not reversals.
+#' White cells are nonsignificant (or have an exactly zero ending slope);
+#' grey cells have unavailable estimates. Stars indicate interaction p-values
+#' (raw or FDR-adjusted), not significance of either individual slope.
+#' The `raw_data` result also includes `Slope1Std`, `Slope2Std`,
+#' `SlopeDeltaStd`, `StrengthChange`, `EndingDirection`, and `DirectionReversal`.
 #'
 #' @examples
 #' \donttest{
@@ -259,6 +257,8 @@ PlotInteractionEffectsMatrix <- function(data,
   r_P <- r_C <- r_S <- r_D <- matrix(NA, nrow = length(outcomeVars), ncol = length(predictorVars))
   r_Slope1 <- r_Slope2 <- matrix(NA, nrow = length(outcomeVars), ncol = length(predictorVars))
 
+  r_Scale <- r_Slope1
+
   # Loop through each combination of outcome and predictor variables
   for (i in seq_len(length(outcomeVars))) {
     for (j in seq_len(length(predictorVars))) {
@@ -345,6 +345,11 @@ PlotInteractionEffectsMatrix <- function(data,
             slope1 <- main_effect  # Reference group
             slope2 <- main_effect + interC  # Other group
           }
+
+          # Use the same complete cases as the fitted model for both SDs.
+          df_Model <- stats::model.frame(m)
+          r_Scale[i, j] <- stats::sd(df_Model[[predictorVar]]) /
+            stats::sd(df_Model[[outcomeVar]])
 
           # Store slopes
           r_Slope1[i, j] <- slope1
@@ -562,81 +567,82 @@ PlotInteractionEffectsMatrix <- function(data,
                         "\nP-Value:", round(m_G$P, 4), m_G$sig,
                         "\nFDR-corrected P:", round(m_G$P_FDR, 4), m_G$sig_FDR)
 
-  # Define color gradients
-  # Non-significant cells are deliberately white; unavailable model cells are
-  # grey so absence of an estimate remains distinct from a null result.
-  colors <- c("same ***" = "#08519c",      # Darkest blue
-              "same **" = "#3182bd",       # Medium blue
-              "same *" = "#6baed6",        # Light blue
-              "ns" = "#FFFFFF",             # White: non-significant
-              "reversed *" = "#fc9272",     # Light red
-              "reversed **" = "#de2d26",    # Medium red
-              "reversed ***" = "#a50f15",   # Darkest red
-              "na" = "#BDBDBD")             # Darker grey for NA
+  # Standardization uses one pooled model-sample SD ratio for both slopes.
+  m_G$Slope1Std <- m_G$Slope1 * as.vector(t(r_Scale))
+  m_G$Slope2Std <- m_G$Slope2 * as.vector(t(r_Scale))
+  m_G$SlopeDeltaStd <- m_G$Slope2Std - m_G$Slope1Std
+  m_G$StrengthChange <- abs(m_G$Slope2Std) - abs(m_G$Slope1Std)
+  # Remove floating-point noise for equal-magnitude slopes.
+  unchanged <- is.finite(m_G$StrengthChange) &
+    abs(m_G$StrengthChange) <= 1e-12 * pmax(1, abs(m_G$Slope1Std), abs(m_G$Slope2Std))
+  m_G$StrengthChange[unchanged] <- 0
+  m_G$DirectionReversal <- m_G$Slope1 * m_G$Slope2 < 0
+  m_G$EndingDirection <- ifelse(m_G$Slope2 > 0, "Positive",
+                                ifelse(m_G$Slope2 < 0, "Negative", "Zero"))
+  m_G$PlotText <- paste0(m_G$PlotText,
+    "\nStandardized slopes: ", round(m_G$Slope1Std, 3), " -> ",
+    round(m_G$Slope2Std, 3), "\nChange in strength: ", round(m_G$StrengthChange, 3))
 
-  # Create ggplot objects with gradient color scheme
-  p <- m_G %>%
-    ggplot(aes(x = PredictorLabel, y = OutcomeLabel, fill = sign)) +
-    geom_tile(show.legend = TRUE,
-              colour = "white", linewidth = 0.4) +
-    geom_text(aes(label = sig), size = 4) +
-    scale_fill_manual(values = colors,
-                      drop = FALSE,
-                      name = "Interaction\nEffect",
-                      labels = c("same ***" = "+ ***",
-                                 "same **" = "+ **",
-                                 "same *" = "+ *",
-                                 "ns" = "ns",
-                                 "reversed *" = "- *",
-                                 "reversed **" = "- **",
-                                 "reversed ***" = "- ***",
-                                 "na" = "NA"),
-                      breaks = c("same ***", "same **", "same *",
-                                 "ns", "na",
-                                 "reversed *", "reversed **", "reversed ***")) +
-    theme_minimal() +
-    theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1),
-          axis.text.y = element_text(hjust = 1),
-          panel.grid = element_blank(),
-          plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
-          plot.caption = element_text(hjust = 0.5, size = 10, face = "italic")) +
-    labs(title = paste("Interaction Effects with", interVar),
-         caption = paste("No multiple comparison correction.",
-                         ifelse(!is.null(covars),
-                                paste("Covariates:", paste(covars, collapse = ", ")),
-                                "No covariates included.")),
-         x = "", y = "")
+  strength_limit <- max(abs(m_G$StrengthChange[is.finite(m_G$StrengthChange)]), 0)
+  if (strength_limit == 0) strength_limit <- 1
 
-  p_FDR <- m_G %>%
-    ggplot(aes(x = PredictorLabel, y = OutcomeLabel, fill = sign_FDR)) +
-    geom_tile(show.legend = TRUE, colour = "white", linewidth = 0.4) +
-    geom_text(aes(label = sig_FDR), size = 4) +
-    scale_fill_manual(values = colors,
-                      drop = FALSE,
-                      name = "Interaction\nEffect",
-                      labels = c("same ***" = "+ ***",
-                                 "same **" = "+ **",
-                                 "same *" = "+ *",
-                                 "ns" = "ns",
-                                 "reversed *" = "- *",
-                                 "reversed **" = "- **",
-                                 "reversed ***" = "- ***",
-                                 "na" = "NA"),
-                      breaks = c("same ***", "same **", "same *",
-                                 "ns", "na",
-                                 "reversed *", "reversed **", "reversed ***")) +
-    theme_minimal() +
-    theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1),
-          axis.text.y = element_text(hjust = 1),
-          panel.grid = element_blank(),
-          plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
-          plot.caption = element_text(hjust = 0.5, size = 10, face = "italic")) +
-    labs(title = paste("Interaction Effects with", interVar),
-         caption = paste("FDR corrected for multiple comparisons.",
-                         ifelse(!is.null(covars),
-                                paste("Covariates:", paste(covars, collapse = ", ")),
-                                "No covariates included.")),
-         x = "", y = "")
+  # Two continuous hue ramps share the same strength-change limits. Zero is
+  # reserved for nonsignificant cells; +/-2 are unchanged-strength midpoints.
+  colors <- c("#99000D", "#EF6548", "#FEE5D9", "white",
+              "#DEEBF7", "#4292C6", "#084594")
+  BuildStrengthPlot <- function(p_column, star_column) {
+    df_Plot <- m_G
+    significant <- !is.na(df_Plot[[p_column]]) & df_Plot[[p_column]] <= 0.05
+    available <- is.finite(df_Plot$StrengthChange) & !is.na(df_Plot[[p_column]])
+    df_Plot$FillValue <- NA_real_
+    df_Plot$FillValue[available] <- 0
+    display <- significant & available
+    df_Plot$FillValue[display] <- ifelse(df_Plot$Slope2[display] < 0, -1, 1) *
+      (2 + df_Plot$StrengthChange[display] / strength_limit)
+    df_Plot$FillValue[display & df_Plot$Slope2 == 0] <- 0
+    df_Plot$Stars <- df_Plot[[star_column]]
+    df_Plot$Stars[!available] <- ""
+
+    plot <- ggplot2::ggplot(df_Plot,
+      ggplot2::aes(x = PredictorLabel, y = OutcomeLabel, fill = FillValue)) +
+      ggplot2::geom_tile(colour = "white", linewidth = 0.4) +
+      ggplot2::scale_fill_gradientn(
+        colours = colors, values = c(0, 1/6, 2/6, 0.5, 4/6, 5/6, 1),
+        limits = c(-3, 3), breaks = c(-3, -2, -1, 0, 1, 2, 3),
+        labels = c(paste0("Negative: +", signif(strength_limit, 3)), "Negative: 0",
+                   paste0("Negative: ", signif(-strength_limit, 3)),
+                   "Not significant / zero slope",
+                   paste0("Positive: ", signif(-strength_limit, 3)), "Positive: 0",
+                   paste0("Positive: +", signif(strength_limit, 3))),
+        na.value = "#BDBDBD", name = "Ending slope / strength change")
+
+    # Draw clipped diagonal segments directly: hatching needs no extra package.
+    df_Reversals <- df_Plot[display & !is.na(df_Plot$DirectionReversal) &
+                              df_Plot$DirectionReversal, , drop = FALSE]
+    if (nrow(df_Reversals) > 0) {
+      df_Hatching <- df_Reversals[rep(seq_len(nrow(df_Reversals)), each = 5), ]
+      offsets <- rep(seq(-0.64, 0.64, length.out = 5), nrow(df_Reversals))
+      cell_x <- as.numeric(df_Hatching$PredictorLabel)
+      cell_y <- as.numeric(df_Hatching$OutcomeLabel)
+      df_Hatching$XStart <- cell_x + pmax(-0.46, -0.46 - offsets)
+      df_Hatching$XEnd <- cell_x + pmin(0.46, 0.46 - offsets)
+      df_Hatching$YStart <- cell_y + pmax(-0.46, -0.46 + offsets)
+      df_Hatching$YEnd <- cell_y + pmin(0.46, 0.46 + offsets)
+      plot <- plot + ggplot2::geom_segment(data = df_Hatching,
+        ggplot2::aes(x = XStart, xend = XEnd, y = YStart, yend = YEnd,
+                     linetype = "Sign reversal"),
+        inherit.aes = FALSE, colour = "black", linewidth = 0.25, alpha = 0.6) +
+        ggplot2::scale_linetype_manual(values = c("Sign reversal" = "solid"),
+                                      name = "Hatching")
+    }
+    plot + ggplot2::geom_text(ggplot2::aes(label = Stars), size = 4) +
+      ggplot2::theme_minimal() +
+      ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, hjust = 1),
+                     panel.grid = ggplot2::element_blank()) +
+      ggplot2::labs(x = NULL, y = NULL)
+  }
+  p <- BuildStrengthPlot("P", "sig")
+  p_FDR <- BuildStrengthPlot("P_FDR", "sig_FDR")
 
   # Create p-value tables
   pvaltable <- m_G %>%
@@ -681,6 +687,7 @@ PlotInteractionEffectsMatrix <- function(data,
     Covariates = covars,
     interVar = interVar,
     interVar_type = ifelse(interVar_is_continuous, "continuous", "categorical"),
+    StrengthLimits = c(-strength_limit, strength_limit),
     raw_data = m_G
   )
   # Standardized p-value element aliases (old names kept)
