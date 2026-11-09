@@ -1,5 +1,20 @@
 # Changelog
 
+## SciDataReportR 21.20.0
+
+- Statistical inference functions now expose a tidy `Results` tibble and
+  model provenance through `Metadata`, preserving existing return
+  elements. Raw p-values control default significance; select
+  `PVar = "PValueFDR"` for FDR-based decisions. Failed requested
+  relationships remain visible and warn.
+
+- [`PlotMiningMatrix()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotMiningMatrix.md)
+  tests mixed pairs in both orientations, includes logical categories,
+  retains missing effect sizes, and reports failed/missing pairs.
+  Kruskal-Wallis tables now include H-based eta-squared. All three FDR
+  scopes are documented; existing defaults and covariate exclusion are
+  preserved.
+
 ## SciDataReportR 21.19.0
 
 ## SciDataReportR 21.18.0

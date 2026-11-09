@@ -121,42 +121,21 @@ p-value, and the labels used in the tables.
 Reg_Obj_Un$Results
 ```
 
-        Outcome               OutcomeLabel OutcomeFamily EffectType Predictor
-    1 Calbindin                  Calbindin        linear   Estimate Diagnosis
-    2 Calbindin                  Calbindin        linear   Estimate       age
-    3  Ferritin                   Ferritin        linear   Estimate Diagnosis
-    4  Ferritin                   Ferritin        linear   Estimate       age
-    5      MMP7 Matrix metalloproteinase 7        linear   Estimate Diagnosis
-    6      MMP7 Matrix metalloproteinase 7        linear   Estimate       age
-    7  Sortilin                   Sortilin        linear   Estimate Diagnosis
-    8  Sortilin                   Sortilin        linear   Estimate       age
-      PredictorLabel              Term    Level            TermLabel   N
-    1      Diagnosis DiagnosisImpaired Impaired Diagnosis : Impaired 333
-    2            Age               age     <NA>                  Age 322
-    3      Diagnosis DiagnosisImpaired Impaired Diagnosis : Impaired 333
-    4            Age               age     <NA>                  Age 322
-    5      Diagnosis DiagnosisImpaired Impaired Diagnosis : Impaired 333
-    6            Age               age     <NA>                  Age 322
-    7      Diagnosis DiagnosisImpaired Impaired Diagnosis : Impaired 333
-    8            Age               age     <NA>                  Age 322
-         Estimate   StdError     ConfLow   ConfHigh       PValue Significant
-    1  0.22318256 0.12254159 -0.01787596 0.46424108 6.946687e-02       FALSE
-    2  0.05166760 0.05580595 -0.05812530 0.16146050 3.552248e-01       FALSE
-    3  0.25934156 0.12232632  0.01870650 0.49997662 3.474297e-02        TRUE
-    4  0.03027304 0.05597431 -0.07985109 0.14039718 5.889954e-01       FALSE
-    5  0.55090515 0.11937344  0.31607888 0.78573143 5.630656e-06        TRUE
-    6 -0.04643922 0.05571349 -0.15605022 0.06317177 4.051640e-01       FALSE
-    7  0.41966369 0.12097458  0.18168773 0.65763966 5.914370e-04        TRUE
-    8  0.06679376 0.05597311 -0.04332801 0.17691553 2.336285e-01       FALSE
-      ReferenceValue
-    1              0
-    2              0
-    3              0
-    4              0
-    5              0
-    6              0
-    7              0
-    8              0
+    # A tibble: 8 × 21
+      Outcome   OutcomeLabel OutcomeFamily EffectType Predictor PredictorLabel Term
+      <chr>     <chr>        <chr>         <chr>      <chr>     <chr>          <chr>
+    1 Calbindin Calbindin    linear        Estimate   Diagnosis Diagnosis      Diag…
+    2 Calbindin Calbindin    linear        Estimate   age       Age            age
+    3 Ferritin  Ferritin     linear        Estimate   Diagnosis Diagnosis      Diag…
+    4 Ferritin  Ferritin     linear        Estimate   age       Age            age
+    5 MMP7      Matrix meta… linear        Estimate   Diagnosis Diagnosis      Diag…
+    6 MMP7      Matrix meta… linear        Estimate   age       Age            age
+    7 Sortilin  Sortilin     linear        Estimate   Diagnosis Diagnosis      Diag…
+    8 Sortilin  Sortilin     linear        Estimate   age       Age            age
+    # ℹ 14 more variables: Level <chr>, TermLabel <chr>, N <int>, Estimate <dbl>,
+    #   StdError <dbl>, ConfLow <dbl>, ConfHigh <dbl>, PValue <dbl>,
+    #   Significant <lgl>, ReferenceValue <dbl>, PValueFDR <dbl>, Group <chr>,
+    #   Status <chr>, Reason <chr>
 
 Because it is an ordinary dataframe, you can filter, sort, or export it
 directly, and pass it (or a subset of it) straight to
@@ -169,18 +148,16 @@ Reg_Obj_Un$Results %>%
   arrange(PValue)
 ```
 
-       Outcome               OutcomeLabel OutcomeFamily EffectType Predictor
-    1     MMP7 Matrix metalloproteinase 7        linear   Estimate Diagnosis
-    2 Sortilin                   Sortilin        linear   Estimate Diagnosis
-    3 Ferritin                   Ferritin        linear   Estimate Diagnosis
-      PredictorLabel              Term    Level            TermLabel   N  Estimate
-    1      Diagnosis DiagnosisImpaired Impaired Diagnosis : Impaired 333 0.5509052
-    2      Diagnosis DiagnosisImpaired Impaired Diagnosis : Impaired 333 0.4196637
-    3      Diagnosis DiagnosisImpaired Impaired Diagnosis : Impaired 333 0.2593416
-       StdError   ConfLow  ConfHigh       PValue Significant ReferenceValue
-    1 0.1193734 0.3160789 0.7857314 5.630656e-06        TRUE              0
-    2 0.1209746 0.1816877 0.6576397 5.914370e-04        TRUE              0
-    3 0.1223263 0.0187065 0.4999766 3.474297e-02        TRUE              0
+    # A tibble: 3 × 21
+      Outcome  OutcomeLabel  OutcomeFamily EffectType Predictor PredictorLabel Term
+      <chr>    <chr>         <chr>         <chr>      <chr>     <chr>          <chr>
+    1 MMP7     Matrix metal… linear        Estimate   Diagnosis Diagnosis      Diag…
+    2 Sortilin Sortilin      linear        Estimate   Diagnosis Diagnosis      Diag…
+    3 Ferritin Ferritin      linear        Estimate   Diagnosis Diagnosis      Diag…
+    # ℹ 14 more variables: Level <chr>, TermLabel <chr>, N <int>, Estimate <dbl>,
+    #   StdError <dbl>, ConfLow <dbl>, ConfHigh <dbl>, PValue <dbl>,
+    #   Significant <lgl>, ReferenceValue <dbl>, PValueFDR <dbl>, Group <chr>,
+    #   Status <chr>, Reason <chr>
 
 ## 7 Covariate adjustment
 
@@ -305,29 +282,30 @@ print(sessionInfo())
     [1] stats     graphics  grDevices utils     datasets  methods   base
 
     other attached packages:
-    [1] dplyr_1.2.1            SciDataReportR_21.19.0
+    [1] dplyr_1.2.1            SciDataReportR_21.20.0
 
     loaded via a namespace (and not attached):
-     [1] gt_1.4.0               sass_0.4.10            generics_0.1.4
-     [4] tidyr_1.3.2            xml2_1.6.0             rstatix_1.1.0
-     [7] gtsummary_2.6.1        lattice_0.23-1         hms_1.1.4
-    [10] digest_0.6.39          magrittr_2.0.5         evaluate_1.0.5
-    [13] grid_4.6.2             estimability_2.0.0     RColorBrewer_1.1-3
-    [16] mvtnorm_1.4-2          fastmap_1.2.0          jsonlite_2.0.0
-    [19] backports_1.5.1        Formula_1.2-6          rematch2_2.1.2
-    [22] purrr_1.2.2            scales_1.4.0           abind_1.4-8
-    [25] cli_3.6.6              labelled_2.16.1        rlang_1.3.0
-    [28] withr_3.0.3            yaml_2.3.12            otel_0.3.0
-    [31] statsExpressions_2.2.1 tools_4.6.2            datawizard_1.5.0
-    [34] rstantools_2.7.1       ggstatsplot_1.1.4      coda_0.19-4.1
-    [37] ggplot2_4.0.3          sjlabelled_1.2.0       bayestestR_0.20.0
-    [40] forcats_1.0.1          broom_1.0.13           paletteer_1.7.0
-    [43] vctrs_0.7.3            R6_2.6.1               lifecycle_1.0.5
-    [46] emmeans_2.0.4          snakecase_0.11.1       fs_2.1.0
-    [49] car_3.1-5              insight_1.7.0          pkgconfig_2.0.3
-    [52] RcppParallel_6.2.1     pillar_1.11.1          gtable_0.3.6
-    [55] glue_1.8.1             haven_2.5.5            xfun_0.62
-    [58] tibble_3.3.1           tidyselect_1.2.1       parameters_0.30.0
-    [61] knitr_1.52             dichromat_2.0-1        farver_2.1.2
-    [64] xtable_1.8-8           htmltools_0.5.9        carData_3.0-6
-    [67] rmarkdown_2.32         compiler_4.6.2         S7_0.2.2              
+     [1] gt_1.4.0               utf8_1.2.6             sass_0.4.10
+     [4] generics_0.1.4         tidyr_1.3.2            xml2_1.6.0
+     [7] rstatix_1.1.0          gtsummary_2.6.1        lattice_0.23-1
+    [10] hms_1.1.4              digest_0.6.39          magrittr_2.0.5
+    [13] evaluate_1.0.5         grid_4.6.2             estimability_2.0.0
+    [16] RColorBrewer_1.1-3     mvtnorm_1.4-2          fastmap_1.2.0
+    [19] jsonlite_2.0.0         backports_1.5.1        Formula_1.2-6
+    [22] rematch2_2.1.2         purrr_1.2.2            scales_1.4.0
+    [25] abind_1.4-8            cli_3.6.6              labelled_2.16.1
+    [28] rlang_1.3.0            withr_3.0.3            yaml_2.3.12
+    [31] otel_0.3.0             statsExpressions_2.2.1 tools_4.6.2
+    [34] datawizard_1.5.0       rstantools_2.7.1       ggstatsplot_1.1.4
+    [37] coda_0.19-4.1          ggplot2_4.0.3          sjlabelled_1.2.0
+    [40] bayestestR_0.20.0      forcats_1.0.1          broom_1.0.13
+    [43] paletteer_1.7.0        vctrs_0.7.3            R6_2.6.1
+    [46] lifecycle_1.0.5        emmeans_2.0.4          snakecase_0.11.1
+    [49] fs_2.1.0               car_3.1-5              insight_1.7.0
+    [52] pkgconfig_2.0.3        RcppParallel_6.2.1     pillar_1.11.1
+    [55] gtable_0.3.6           glue_1.8.1             haven_2.5.5
+    [58] xfun_0.62              tibble_3.3.1           tidyselect_1.2.1
+    [61] parameters_0.30.0      knitr_1.52             dichromat_2.0-1
+    [64] farver_2.1.2           xtable_1.8-8           htmltools_0.5.9
+    [67] carData_3.0-6          rmarkdown_2.32         compiler_4.6.2
+    [70] S7_0.2.2              

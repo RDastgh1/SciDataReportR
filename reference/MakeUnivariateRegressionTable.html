@@ -15,7 +15,7 @@ backwards-compatible synonym."><meta property="og:image" content="https://rdastg
 
     <a class="navbar-brand me-2" href="../index.html">SciDataReportR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">21.19.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">21.20.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -53,7 +53,7 @@ backwards-compatible synonym."><meta property="og:image" content="https://rdastg
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Univariate Regression Table</h1>
-      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/v21.19.0/R/MakeUnivariateRegressionTable.R" class="external-link"><code>R/MakeUnivariateRegressionTable.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/master/R/MakeUnivariateRegressionTable.R" class="external-link"><code>R/MakeUnivariateRegressionTable.R</code></a></small>
       <div class="d-none name"><code>MakeUnivariateRegressionTable.Rd</code></div>
     </div>
 
@@ -82,7 +82,9 @@ backwards-compatible synonym.</p>
 <span>  Data <span class="op">=</span> <span class="fu">lifecycle</span><span class="fu">::</span><span class="fu"><a href="https://lifecycle.r-lib.org/reference/deprecated.html" class="external-link">deprecated</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  OutcomeVars <span class="op">=</span> <span class="fu">lifecycle</span><span class="fu">::</span><span class="fu"><a href="https://lifecycle.r-lib.org/reference/deprecated.html" class="external-link">deprecated</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  PredictorVars <span class="op">=</span> <span class="fu">lifecycle</span><span class="fu">::</span><span class="fu"><a href="https://lifecycle.r-lib.org/reference/deprecated.html" class="external-link">deprecated</a></span><span class="op">(</span><span class="op">)</span>,</span>
-<span>  Covars <span class="op">=</span> <span class="fu">lifecycle</span><span class="fu">::</span><span class="fu"><a href="https://lifecycle.r-lib.org/reference/deprecated.html" class="external-link">deprecated</a></span><span class="op">(</span><span class="op">)</span></span>
+<span>  Covars <span class="op">=</span> <span class="fu">lifecycle</span><span class="fu">::</span><span class="fu"><a href="https://lifecycle.r-lib.org/reference/deprecated.html" class="external-link">deprecated</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  Pthresh <span class="op">=</span> <span class="fl">0.05</span>,</span>
+<span>  PVar <span class="op">=</span> <span class="st">"PValue"</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu">UnivariateRegressionTable</span><span class="op">(</span></span>
@@ -168,6 +170,23 @@ are exponentiated and reported as odds ratios.</p></dd>
 <dt id="arg-covars">Covars<a class="anchor" aria-label="anchor" href="#arg-covars"></a></dt>
 <dd><p><strong>Deprecated</strong> (since 19.15.0). Use <code>covariates</code> instead.</p></dd>
 
+
+<dt id="arg-pthresh">Pthresh<a class="anchor" aria-label="anchor" href="#arg-pthresh"></a></dt>
+<dd><p>Significance threshold, default <code>0.05</code>. An explicitly supplied
+value takes precedence over a legacy significance threshold argument.</p></dd>
+
+
+<dt id="arg-pvar">PVar<a class="anchor" aria-label="anchor" href="#arg-pvar"></a></dt>
+<dd><p>P-value column used for significance decisions. Defaults to raw
+<code>"PValue"</code>; select <code>"PValueFDR"</code> to use Benjamini-Hochberg adjusted values.
+Explicit legacy p-column names remain accepted. Existing, explicitly named
+FDR plots and adjusted-value columns are retained.</p>
+<p>Explicit <code>Pthresh</code> takes precedence over <code>Alpha</code>, <code>FDRAlpha</code>, <code>label_q</code>, or
+<code>adjusted_significance_threshold</code>. Pairwise <code>star_p = "adjusted"</code> retains
+its legacy adjustment method unless <code>PVar</code> is supplied; <code>PVar = "PValueFDR"</code>
+always selects BH. <code>star_p = "none"</code> suppresses legacy pairwise stars.
+Stars retain conventional p-value tiers within the requested cutoff.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
@@ -234,6 +253,12 @@ hold hundreds of models in memory.</p>
 <p>Running many models at once means many p-values. Nothing here corrects for
 that automatically - the family is yours to define - so pass <code>Results$PValue</code>
 through <code><a href="ApplyFDRCorrection.html">ApplyFDRCorrection()</a></code> once you have decided what the family is.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="statistical-results-and-provenance">Statistical results and provenance<a class="anchor" aria-label="anchor" href="#statistical-results-and-provenance"></a></h2>
+
+
+<p>See <a href="inference-results.html">inference-results</a> for the shared <code>Results</code> and <code>Metadata</code> contract.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
@@ -706,6 +731,177 @@ through <code><a href="ApplyFDRCorrection.html">ApplyFDRCorrection()</a></code> 
 <span class="r-out co"><span class="r-pr">#&gt;</span> $AnalysisSettings$ReturnModels</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] FALSE</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $Function</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "MakeUnivariateRegressionTable"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $PackageVersion</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "21.20.0"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $Call</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> MakeUnivariateRegressionTable(data = Labelled, outcome_vars = "Diagnosis", </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     predictor_vars = c("age", "sex", "AXL", "tau", "p_tau"))</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $Arguments</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $Arguments$data</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Labelled"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $Arguments$outcome_vars</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Diagnosis"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $Arguments$predictor_vars</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "age"   "sex"   "AXL"   "tau"   "p_tau"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $Arguments$interVar</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> NULL</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $Arguments$group_var</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> NULL</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $Arguments$covariates</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> NULL</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $Arguments$TreatOrdinalAs</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Categorical"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $Arguments$standardize</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] FALSE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $Arguments$fdr_scope</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "matrix"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $Arguments$covariate_interactions</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "not supported"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $Arguments$PVar</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "PValue"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $Arguments$Pthresh</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0.05</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $Arguments$Options</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $Arguments$Options$Standardize</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] FALSE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $Arguments$Options$Method</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "auto"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $Arguments$Options$LogisticExponentiate</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] TRUE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $Arguments$Options$ReturnModels</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] FALSE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $Arguments$Options$Relabel</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] TRUE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $Arguments$Options$IncludeTrendSymbol</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] FALSE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $Arguments$Options$OutcomeVars</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Diagnosis"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $Arguments$Options$PredictorVars</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "age"   "sex"   "AXL"   "tau"   "p_tau"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $Arguments$Options$Covars</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> NULL</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $FormulaTemplate</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "outcome ~ predictor + covariates"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $Models</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 5 × 9</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Outcome   Predictor Group  Status Reason Partial ModelID Formula        Engine</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;lgl&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> Diagnosis age       Pooled ok     <span style="color: #BB0000;">NA</span>     FALSE   model_1 Diagnosis ~ a… stats…</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span> Diagnosis sex       Pooled ok     <span style="color: #BB0000;">NA</span>     FALSE   model_2 Diagnosis ~ s… stats…</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">3</span> Diagnosis AXL       Pooled ok     <span style="color: #BB0000;">NA</span>     FALSE   model_3 Diagnosis ~ A… stats…</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">4</span> Diagnosis tau       Pooled ok     <span style="color: #BB0000;">NA</span>     FALSE   model_4 Diagnosis ~ t… stats…</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">5</span> Diagnosis p_tau     Pooled ok     <span style="color: #BB0000;">NA</span>     FALSE   model_5 Diagnosis ~ p… stats…</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $ReferenceLevels</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $ReferenceLevels$Models</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $ReferenceLevels$Models[[1]]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> named list()</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $ReferenceLevels$Models[[2]]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $ReferenceLevels$Models[[2]]$sex</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Female" "Male"  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $ReferenceLevels$Models[[3]]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> named list()</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $ReferenceLevels$Models[[4]]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> named list()</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $ReferenceLevels$Models[[5]]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> named list()</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $ReferenceLevels$Outcomes</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     Outcome OutcomeLabel OutcomeFamily ReferenceLevel EventLevel</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1 Diagnosis    Diagnosis      logistic        Control   Impaired</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $ReferenceLevels$Predictors</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> NULL</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $ReferenceLevels$BinaryPredictors</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> NULL</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $ReferenceLevels$Comparisons</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 5 × 4</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Outcome   Predictor Group  Level</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> Diagnosis age       Pooled <span style="color: #BB0000;">NA</span>   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span> Diagnosis sex       Pooled Male </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">3</span> Diagnosis AXL       Pooled <span style="color: #BB0000;">NA</span>   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">4</span> Diagnosis tau       Pooled <span style="color: #BB0000;">NA</span>   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">5</span> Diagnosis p_tau     Pooled <span style="color: #BB0000;">NA</span>   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $ReferenceLevels$Referent</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> NULL</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $Standardization</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 0 × 6</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># ℹ 6 variables: ModelID &lt;chr&gt;, Variable &lt;chr&gt;, SD &lt;dbl&gt;, Center &lt;dbl&gt;,</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;">#   N &lt;dbl&gt;, Scope &lt;chr&gt;</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $FDRFamily</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Benjamini-Hochberg adjustment; scope = matrix. Finite raw p-values only; unavailable requests are excluded. The returned analysis family is adjusted together."</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $ModelCounts</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $ModelCounts$Attempted</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 5</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $ModelCounts$Fit</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 5</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $ModelCounts$Failed</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $ModelCounts$AuxiliaryFailed</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $Failed</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 0 × 7</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># ℹ 7 variables: Outcome &lt;chr&gt;, Predictor &lt;chr&gt;, Group &lt;chr&gt;, Term &lt;chr&gt;,</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;">#   N &lt;int&gt;, Reason &lt;chr&gt;, Stage &lt;chr&gt;</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $AuxiliaryModels</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 5 × 7</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   ModelID Outcome   Predictor Formula           Engine     Status Reason</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>             <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> model_1 Diagnosis age       Diagnosis ~ age   stats::glm ok     <span style="color: #BB0000;">NA</span>    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span> model_2 Diagnosis sex       Diagnosis ~ sex   stats::glm ok     <span style="color: #BB0000;">NA</span>    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">3</span> model_3 Diagnosis AXL       Diagnosis ~ AXL   stats::glm ok     <span style="color: #BB0000;">NA</span>    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">4</span> model_4 Diagnosis tau       Diagnosis ~ tau   stats::glm ok     <span style="color: #BB0000;">NA</span>    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">5</span> model_5 Diagnosis p_tau     Diagnosis ~ p_tau stats::glm ok     <span style="color: #BB0000;">NA</span>    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-in"><span><span class="va">urt_Logistic</span><span class="op">$</span><span class="va">FormattedTable</span></span></span>
 <div class="gt-table"><div id="kzbsypkgvx" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">

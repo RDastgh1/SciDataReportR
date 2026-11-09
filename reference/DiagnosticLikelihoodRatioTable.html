@@ -13,7 +13,7 @@ participants; this is a diagnostic accuracy measure, not a nested-model test."><
 
     <a class="navbar-brand me-2" href="../index.html">SciDataReportR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">21.19.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">21.20.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -51,7 +51,7 @@ participants; this is a diagnostic accuracy measure, not a nested-model test."><
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Calculate diagnostic likelihood ratios</h1>
-      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/v21.19.0/R/DiagnosticLikelihoodRatioTable.R" class="external-link"><code>R/DiagnosticLikelihoodRatioTable.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/master/R/DiagnosticLikelihoodRatioTable.R" class="external-link"><code>R/DiagnosticLikelihoodRatioTable.R</code></a></small>
       <div class="d-none name"><code>DiagnosticLikelihoodRatioTable.Rd</code></div>
     </div>
 
@@ -73,7 +73,9 @@ participants; this is a diagnostic accuracy measure, not a nested-model test.</p
 <span>  stratify_by <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  confidence_level <span class="op">=</span> <span class="fl">0.95</span>,</span>
 <span>  continuity_correction <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  Relabel <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span>  Relabel <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  Pthresh <span class="op">=</span> <span class="fl">0.05</span>,</span>
+<span>  PVar <span class="op">=</span> <span class="st">"PValue"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -119,6 +121,23 @@ cells only if a zero cell occurs. <code>NULL</code> preserves zero and infinite 
 <dt id="arg-relabel">Relabel<a class="anchor" aria-label="anchor" href="#arg-relabel"></a></dt>
 <dd><p>Logical; use attached variable labels when available.</p></dd>
 
+
+<dt id="arg-pthresh">Pthresh<a class="anchor" aria-label="anchor" href="#arg-pthresh"></a></dt>
+<dd><p>Significance threshold, default <code>0.05</code>. An explicitly supplied
+value takes precedence over a legacy significance threshold argument.</p></dd>
+
+
+<dt id="arg-pvar">PVar<a class="anchor" aria-label="anchor" href="#arg-pvar"></a></dt>
+<dd><p>P-value column used for significance decisions. Defaults to raw
+<code>"PValue"</code>; select <code>"PValueFDR"</code> to use Benjamini-Hochberg adjusted values.
+Explicit legacy p-column names remain accepted. Existing, explicitly named
+FDR plots and adjusted-value columns are retained.</p>
+<p>Explicit <code>Pthresh</code> takes precedence over <code>Alpha</code>, <code>FDRAlpha</code>, <code>label_q</code>, or
+<code>adjusted_significance_threshold</code>. Pairwise <code>star_p = "adjusted"</code> retains
+its legacy adjustment method unless <code>PVar</code> is supplied; <code>PVar = "PValueFDR"</code>
+always selects BH. <code>star_p = "none"</code> suppresses legacy pairwise stars.
+Stars retain conventional p-value tiers within the requested cutoff.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
@@ -139,8 +158,14 @@ the column to a factor first if categorical treatment is intended (for
 example, <code>df_All$cohort &lt;- factor(df_All$cohort)</code>). Few unique values alone
 do not establish categorical meaning. Factors, character columns, and logical
 columns are accepted; more than 10 observed categories warn and continue.
-Entirely missing or unsupported columns error. Caller data are unchanged,
+Entirely missing columns produce unavailable statistical requests; unsupported types error. Caller data are unchanged,
 and existing restrictions on the required number of groups still apply.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="statistical-results-and-provenance">Statistical results and provenance<a class="anchor" aria-label="anchor" href="#statistical-results-and-provenance"></a></h2>
+
+
+<p>See <a href="inference-results.html">inference-results</a> for the shared <code>Results</code> and <code>Metadata</code> contract.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
@@ -225,7 +250,7 @@ and existing restrictions on the required number of groups still apply.</p>
 <span class="r-plt img"><img src="DiagnosticLikelihoodRatioTable-2.png" alt="" width="700" height="433"></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $DiagnosticLRData</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 8 × 30</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 8 × 43</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   Outcome         OutcomeLabel    OutcomePositiveLevel Predictor PredictorLabel</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>           <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>           <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> DiagnosisBinary DiagnosisBinary Impaired             sex       Sex           </span>
@@ -236,13 +261,13 @@ and existing restrictions on the required number of groups still apply.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">6</span> DiagnosisBinary DiagnosisBinary Impaired             Genotype  Genotype      </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">7</span> DiagnosisBinary DiagnosisBinary Impaired             Genotype  Genotype      </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">8</span> DiagnosisBinary DiagnosisBinary Impaired             Genotype  Genotype      </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># ℹ 25 more variables: PredictorLevels &lt;int&gt;, ResultLevel &lt;chr&gt;, Stratum &lt;chr&gt;,</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># ℹ 38 more variables: PredictorLevels &lt;int&gt;, ResultLevel &lt;chr&gt;, Stratum &lt;chr&gt;,</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;">#   N &lt;int&gt;, NCase &lt;int&gt;, NControl &lt;int&gt;, CaseWithResult &lt;int&gt;,</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;">#   ControlWithResult &lt;int&gt;, CaseWithoutResult &lt;int&gt;,</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;">#   ControlWithoutResult &lt;int&gt;, CaseProbability &lt;dbl&gt;,</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;">#   ControlProbability &lt;dbl&gt;, LikelihoodRatio &lt;dbl&gt;, LRLowerCI &lt;dbl&gt;,</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;">#   LRUpperCI &lt;dbl&gt;, Log2LR &lt;dbl&gt;, ZeroCell &lt;lgl&gt;, Corrected &lt;lgl&gt;,</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;">#   RowId &lt;chr&gt;, RowLabel &lt;chr&gt;, .OriginalOrder &lt;int&gt;, CIExcludesOne &lt;lgl&gt;, …</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;">#   Group &lt;chr&gt;, Term &lt;chr&gt;, Estimate &lt;dbl&gt;, ConfLow &lt;dbl&gt;, ConfHigh &lt;dbl&gt;, …</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $DiagnosticMatrixData</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 16 × 14</span></span>

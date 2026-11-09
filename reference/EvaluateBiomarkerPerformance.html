@@ -11,7 +11,7 @@ non-convergence, or aliased coefficients return stable unavailable metrics."><me
 
     <a class="navbar-brand me-2" href="../index.html">SciDataReportR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">21.19.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">21.20.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -49,7 +49,7 @@ non-convergence, or aliased coefficients return stable unavailable metrics."><me
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Evaluate biomarker performance</h1>
-      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/v21.19.0/R/EvaluateBiomarkerPerformance.R" class="external-link"><code>R/EvaluateBiomarkerPerformance.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/master/R/EvaluateBiomarkerPerformance.R" class="external-link"><code>R/EvaluateBiomarkerPerformance.R</code></a></small>
       <div class="d-none name"><code>EvaluateBiomarkerPerformance.Rd</code></div>
     </div>
 
@@ -81,7 +81,9 @@ non-convergence, or aliased coefficients return stable unavailable metrics.</p>
 <span>  Seed <span class="op">=</span> <span class="fl">123</span>,</span>
 <span>  Relabel <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  codebook <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  Verbose <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span>  Verbose <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  Pthresh <span class="op">=</span> <span class="fl">0.05</span>,</span>
+<span>  PVar <span class="op">=</span> <span class="st">"PValue"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -168,11 +170,34 @@ non-convergence, or aliased coefficients return stable unavailable metrics.</p>
 <dt id="arg-verbose">Verbose<a class="anchor" aria-label="anchor" href="#arg-verbose"></a></dt>
 <dd><p>Print positive-level information.</p></dd>
 
+
+<dt id="arg-pthresh">Pthresh<a class="anchor" aria-label="anchor" href="#arg-pthresh"></a></dt>
+<dd><p>Significance threshold, default <code>0.05</code>. An explicitly supplied
+value takes precedence over a legacy significance threshold argument.</p></dd>
+
+
+<dt id="arg-pvar">PVar<a class="anchor" aria-label="anchor" href="#arg-pvar"></a></dt>
+<dd><p>P-value column used for significance decisions. Defaults to raw
+<code>"PValue"</code>; select <code>"PValueFDR"</code> to use Benjamini-Hochberg adjusted values.
+Explicit legacy p-column names remain accepted. Existing, explicitly named
+FDR plots and adjusted-value columns are retained.</p>
+<p>Explicit <code>Pthresh</code> takes precedence over <code>Alpha</code>, <code>FDRAlpha</code>, <code>label_q</code>, or
+<code>adjusted_significance_threshold</code>. Pairwise <code>star_p = "adjusted"</code> retains
+its legacy adjustment method unless <code>PVar</code> is supplied; <code>PVar = "PValueFDR"</code>
+always selects BH. <code>star_p = "none"</code> suppresses legacy pairwise stars.
+Stars retain conventional p-value tiers within the requested cutoff.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A stable named list containing models, performance, thresholds, predictions,
 calibration, validation, plots, and metadata.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="statistical-results-and-provenance">Statistical results and provenance<a class="anchor" aria-label="anchor" href="#statistical-results-and-provenance"></a></h2>
+
+
+<p>See <a href="inference-results.html">inference-results</a> for the shared <code>Results</code> and <code>Metadata</code> contract.</p>
     </div>
 
     <div class="section level2">

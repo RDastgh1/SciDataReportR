@@ -17,7 +17,7 @@ categorical dimensions such as Race, Sex, or HIV status."><meta property="og:ima
 
     <a class="navbar-brand me-2" href="../index.html">SciDataReportR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">21.19.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">21.20.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -55,7 +55,7 @@ categorical dimensions such as Race, Sex, or HIV status."><meta property="og:ima
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Create a merged gtsummary table by faceting comparisons across multiple categorical variables</h1>
-      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/v21.19.0/R/MakeFacetCatComparisonTable.R" class="external-link"><code>R/MakeFacetCatComparisonTable.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/master/R/MakeFacetCatComparisonTable.R" class="external-link"><code>R/MakeFacetCatComparisonTable.R</code></a></small>
       <div class="d-none name"><code>MakeFacetCatComparisonTable.Rd</code></div>
     </div>
 
@@ -98,7 +98,9 @@ categorical dimensions such as Race, Sex, or HIV status.</p>
 <span>  Covariates <span class="op">=</span> <span class="fu">lifecycle</span><span class="fu">::</span><span class="fu"><a href="https://lifecycle.r-lib.org/reference/deprecated.html" class="external-link">deprecated</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  ValueDigits <span class="op">=</span> <span class="fu">lifecycle</span><span class="fu">::</span><span class="fu"><a href="https://lifecycle.r-lib.org/reference/deprecated.html" class="external-link">deprecated</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  pDigits <span class="op">=</span> <span class="fu">lifecycle</span><span class="fu">::</span><span class="fu"><a href="https://lifecycle.r-lib.org/reference/deprecated.html" class="external-link">deprecated</a></span><span class="op">(</span><span class="op">)</span>,</span>
-<span>  EffectSizeDigits <span class="op">=</span> <span class="fu">lifecycle</span><span class="fu">::</span><span class="fu"><a href="https://lifecycle.r-lib.org/reference/deprecated.html" class="external-link">deprecated</a></span><span class="op">(</span><span class="op">)</span></span>
+<span>  EffectSizeDigits <span class="op">=</span> <span class="fu">lifecycle</span><span class="fu">::</span><span class="fu"><a href="https://lifecycle.r-lib.org/reference/deprecated.html" class="external-link">deprecated</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  Pthresh <span class="op">=</span> <span class="fl">0.05</span>,</span>
+<span>  PVar <span class="op">=</span> <span class="st">"PValue"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -220,6 +222,23 @@ separately within each facet's table; pairwise p-values are unchanged.</p></dd>
 <dt id="arg-effectsizedigits">EffectSizeDigits<a class="anchor" aria-label="anchor" href="#arg-effectsizedigits"></a></dt>
 <dd><p><strong>Deprecated</strong> (since 19.15.0). Use <code>effect_size_digits</code> instead.</p></dd>
 
+
+<dt id="arg-pthresh">Pthresh<a class="anchor" aria-label="anchor" href="#arg-pthresh"></a></dt>
+<dd><p>Significance threshold, default <code>0.05</code>. An explicitly supplied
+value takes precedence over a legacy significance threshold argument.</p></dd>
+
+
+<dt id="arg-pvar">PVar<a class="anchor" aria-label="anchor" href="#arg-pvar"></a></dt>
+<dd><p>P-value column used for significance decisions. Defaults to raw
+<code>"PValue"</code>; select <code>"PValueFDR"</code> to use Benjamini-Hochberg adjusted values.
+Explicit legacy p-column names remain accepted. Existing, explicitly named
+FDR plots and adjusted-value columns are retained.</p>
+<p>Explicit <code>Pthresh</code> takes precedence over <code>Alpha</code>, <code>FDRAlpha</code>, <code>label_q</code>, or
+<code>adjusted_significance_threshold</code>. Pairwise <code>star_p = "adjusted"</code> retains
+its legacy adjustment method unless <code>PVar</code> is supplied; <code>PVar = "PValueFDR"</code>
+always selects BH. <code>star_p = "none"</code> suppresses legacy pairwise stars.
+Stars retain conventional p-value tiers within the requested cutoff.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
@@ -252,8 +271,14 @@ the column to a factor first if categorical treatment is intended (for
 example, <code>df_All$cohort &lt;- factor(df_All$cohort)</code>). Few unique values alone
 do not establish categorical meaning. Factors, character columns, and logical
 columns are accepted; more than 10 observed categories warn and continue.
-Entirely missing or unsupported columns error. Caller data are unchanged,
+Entirely missing columns produce unavailable statistical requests; unsupported types error. Caller data are unchanged,
 and existing restrictions on the required number of groups still apply.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="statistical-results-and-provenance">Statistical results and provenance<a class="anchor" aria-label="anchor" href="#statistical-results-and-provenance"></a></h2>
+
+
+<p>See <a href="inference-results.html">inference-results</a> for the shared <code>Results</code> and <code>Metadata</code> contract.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
@@ -618,7 +643,7 @@ N = 127</span><span class="gt_footnote_marks" style="font-size: 75%; vertical-al
 <td headers="p.value_fmt_2" class="gt_row gt_center" style="border-style: none; padding-top: 8px; padding-bottom: 8px; padding-left: 5px; padding-right: 5px; margin: 10px; border-top-style: solid; border-top-width: 1px; border-top-color: #D3D3D3; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; vertical-align: middle; overflow-x: hidden; text-align: center; font-weight: bold;" valign="middle" align="center">0.0121</td>
 <td headers="Test_2" class="gt_row gt_center" style="border-style: none; padding-top: 8px; padding-bottom: 8px; padding-left: 5px; padding-right: 5px; margin: 10px; border-top-style: solid; border-top-width: 1px; border-top-color: #D3D3D3; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; vertical-align: middle; overflow-x: hidden; text-align: center;" valign="middle" align="center">ANOVA</td>
 <td headers="pw_1_2" class="gt_row gt_center" style="border-style: none; padding-top: 8px; padding-bottom: 8px; padding-left: 5px; padding-right: 5px; margin: 10px; border-top-style: solid; border-top-width: 1px; border-top-color: #D3D3D3; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; vertical-align: middle; overflow-x: hidden; text-align: center;" valign="middle" align="center">1</td>
-<td headers="pw_2_2" class="gt_row gt_center" style="border-style: none; padding-top: 8px; padding-bottom: 8px; padding-left: 5px; padding-right: 5px; margin: 10px; border-top-style: solid; border-top-width: 1px; border-top-color: #D3D3D3; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; vertical-align: middle; overflow-x: hidden; text-align: center;" valign="middle" align="center">0.0643</td>
+<td headers="pw_2_2" class="gt_row gt_center" style="border-style: none; padding-top: 8px; padding-bottom: 8px; padding-left: 5px; padding-right: 5px; margin: 10px; border-top-style: solid; border-top-width: 1px; border-top-color: #D3D3D3; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; vertical-align: middle; overflow-x: hidden; text-align: center; font-weight: bold;" valign="middle" align="center">0.0643</td>
 <td headers="pw_3_2" class="gt_row gt_center" style="border-style: none; padding-top: 8px; padding-bottom: 8px; padding-left: 5px; padding-right: 5px; margin: 10px; border-top-style: solid; border-top-width: 1px; border-top-color: #D3D3D3; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; vertical-align: middle; overflow-x: hidden; text-align: center; font-weight: bold;" valign="middle" align="center">0.0218</td></tr><tr style="border-style: none;"><td headers="label" class="gt_row gt_left" style="border-style: none; padding-top: 8px; padding-bottom: 8px; padding-left: 5px; padding-right: 5px; margin: 10px; border-top-style: solid; border-top-width: 1px; border-top-color: #D3D3D3; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; vertical-align: middle; overflow-x: hidden; text-align: left;" valign="middle" align="left">Phosphorylated tau protein</td>
 <td headers="stat_1_1" class="gt_row gt_center" style="border-style: none; padding-top: 8px; padding-bottom: 8px; padding-left: 5px; padding-right: 5px; margin: 10px; border-top-style: solid; border-top-width: 1px; border-top-color: #D3D3D3; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; vertical-align: middle; overflow-x: hidden; text-align: center;" valign="middle" align="center">3.94 (0.42)</td>
 <td headers="stat_2_1" class="gt_row gt_center" style="border-style: none; padding-top: 8px; padding-bottom: 8px; padding-left: 5px; padding-right: 5px; margin: 10px; border-top-style: solid; border-top-width: 1px; border-top-color: #D3D3D3; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; vertical-align: middle; overflow-x: hidden; text-align: center;" valign="middle" align="center">4.30 (0.48)</td>

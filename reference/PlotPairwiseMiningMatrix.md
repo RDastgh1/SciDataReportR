@@ -18,7 +18,7 @@ PlotPairwiseMiningMatrix(
   adjust_scope = c("per_group", "per_variable", "matrix", "none"),
   p_adjust_method = c("fdr", "bonferroni", "holm", "none"),
   star_p = c("raw", "adjusted", "none"),
-  adjusted_outline = TRUE,
+  adjusted_outline = FALSE,
   adjusted_significance_threshold = 0.05,
   adjusted_outline_color = "black",
   adjusted_outline_linewidth = 1,
@@ -28,7 +28,9 @@ PlotPairwiseMiningMatrix(
   categorical_fill_limits = NULL,
   x_axis_text_angle = 0,
   row_label_width = 58,
-  IncludeTrendSymbol = FALSE
+  IncludeTrendSymbol = FALSE,
+  Pthresh = 0.05,
+  PVar = "PValue"
 )
 ```
 
@@ -107,6 +109,25 @@ PlotPairwiseMiningMatrix(
 
   Logical; add a plus sign for `0.05 < p <= 0.10`.
 
+- Pthresh:
+
+  Significance threshold, default `0.05`. An explicitly supplied value
+  takes precedence over a legacy significance threshold argument.
+
+- PVar:
+
+  P-value column used for significance decisions. Defaults to raw
+  `"PValue"`; select `"PValueFDR"` to use Benjamini-Hochberg adjusted
+  values. Explicit legacy p-column names remain accepted. Existing,
+  explicitly named FDR plots and adjusted-value columns are retained.
+
+  Explicit `Pthresh` takes precedence over `Alpha`, `FDRAlpha`,
+  `label_q`, or `adjusted_significance_threshold`. Pairwise
+  `star_p = "adjusted"` retains its legacy adjustment method unless
+  `PVar` is supplied; `PVar = "PValueFDR"` always selects BH.
+  `star_p = "none"` suppresses legacy pairwise stars. Stars retain
+  conventional p-value tiers within the requested cutoff.
+
 ## Value
 
 An object of class `"SciDataReportRPairwiseMiningMatrix"` with `Plots`,
@@ -132,6 +153,12 @@ column to a factor first if categorical treatment is intended (for
 example, `df_All$cohort <- factor(df_All$cohort)`). Few unique values
 alone do not establish categorical meaning. Factors, character columns,
 and logical columns are accepted; more than 10 observed categories warn
-and continue. Entirely missing or unsupported columns error. Caller data
-are unchanged, and existing restrictions on the required number of
-groups still apply.
+and continue. Entirely missing columns produce unavailable statistical
+requests; unsupported types error. Caller data are unchanged, and
+existing restrictions on the required number of groups still apply.
+
+## Statistical results and provenance
+
+See
+[inference-results](https://rdastgh1.github.io/SciDataReportR/reference/inference-results.md)
+for the shared `Results` and `Metadata` contract.

@@ -9,7 +9,7 @@ generated correlation heatmap.
 plotSigCorrelations(
   data,
   CorrelationHeatmapObject,
-  PVar = "P",
+  PVar = "PValue",
   Pthresh = 0.05,
   DataFrame = lifecycle::deprecated()
 )
@@ -27,8 +27,8 @@ plotSigCorrelations(
 
 - PVar:
 
-  The name of the column used to filter for significance (default is
-  "P").
+  P-value column used to filter significance. Defaults to raw
+  `"PValue"`; use `"PValueFDR"` for BH-adjusted selection.
 
 - Pthresh:
 
@@ -41,6 +41,12 @@ plotSigCorrelations(
 ## Value
 
 A list of scatterplot objects for significant correlations.
+
+## Statistical results and provenance
+
+See
+[inference-results](https://rdastgh1.github.io/SciDataReportR/reference/inference-results.md)
+for the shared `Results` and `Metadata` contract.
 
 ## Examples
 

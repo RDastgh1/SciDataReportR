@@ -326,6 +326,8 @@
   : Get Categorical Variables
 - [`getNumVars()`](https://rdastgh1.github.io/SciDataReportR/reference/getNumVars.md)
   : Get Numeric Variables
+- [`inference-results`](https://rdastgh1.github.io/SciDataReportR/reference/inference-results.md)
+  : Statistical results and model provenance
 - [`merge_detail()`](https://rdastgh1.github.io/SciDataReportR/reference/merge_detail.md)
   : Print a plain-text detail report for one safe_merge result
 - [`merge_summary_table()`](https://rdastgh1.github.io/SciDataReportR/reference/merge_summary_table.md)

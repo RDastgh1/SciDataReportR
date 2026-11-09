@@ -23,7 +23,9 @@ MakeCoxRegressionTable(
   CheckPH = TRUE,
   ReturnModels = FALSE,
   Relabel = TRUE,
-  TreatOrdinalAs = "Categorical"
+  TreatOrdinalAs = "Categorical",
+  Pthresh = 0.05,
+  PVar = "PValue"
 )
 ```
 
@@ -77,7 +79,9 @@ MakeCoxRegressionTable(
 
 - FDRAlpha:
 
-  Numeric threshold used for FDR-adjusted significance.
+  Legacy significance-threshold alias, retained in metadata. An
+  explicitly supplied `Pthresh` takes precedence; `PVar` selects the
+  p-value source.
 
 - IncludeTrendSymbol:
 
@@ -100,6 +104,25 @@ MakeCoxRegressionTable(
 - TreatOrdinalAs:
 
   How ordered predictors and covariates are handled.
+
+- Pthresh:
+
+  Significance threshold, default `0.05`. An explicitly supplied value
+  takes precedence over a legacy significance threshold argument.
+
+- PVar:
+
+  P-value column used for significance decisions. Defaults to raw
+  `"PValue"`; select `"PValueFDR"` to use Benjamini-Hochberg adjusted
+  values. Explicit legacy p-column names remain accepted. Existing,
+  explicitly named FDR plots and adjusted-value columns are retained.
+
+  Explicit `Pthresh` takes precedence over `Alpha`, `FDRAlpha`,
+  `label_q`, or `adjusted_significance_threshold`. Pairwise
+  `star_p = "adjusted"` retains its legacy adjustment method unless
+  `PVar` is supplied; `PVar = "PValueFDR"` always selects BH.
+  `star_p = "none"` suppresses legacy pairwise stars. Stars retain
+  conventional p-value tiers within the requested cutoff.
 
 ## Value
 
@@ -134,6 +157,12 @@ Numeric events must be coded 0/1. Logical events use `TRUE` as the
 event. For two-level factors, the second factor level is the event.
 Character event variables are deliberately rejected so the event
 ordering is never implicit.
+
+## Statistical results and provenance
+
+See
+[inference-results](https://rdastgh1.github.io/SciDataReportR/reference/inference-results.md)
+for the shared `Results` and `Metadata` contract.
 
 ## See also
 

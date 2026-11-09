@@ -9,7 +9,7 @@ showing whether interactions result in slope reversals or maintain the same dire
 
     <a class="navbar-brand me-2" href="../index.html">SciDataReportR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">21.19.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">21.20.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -47,7 +47,7 @@ showing whether interactions result in slope reversals or maintain the same dire
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Plot Interaction Effects Matrix</h1>
-      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/v21.19.0/R/PlotInteractionEffectMatrix.R" class="external-link"><code>R/PlotInteractionEffectMatrix.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/master/R/PlotInteractionEffectMatrix.R" class="external-link"><code>R/PlotInteractionEffectMatrix.R</code></a></small>
       <div class="d-none name"><code>PlotInteractionEffectsMatrix.Rd</code></div>
     </div>
 
@@ -71,7 +71,9 @@ showing whether interactions result in slope reversals or maintain the same dire
 <span>  outcomeVars <span class="op">=</span> <span class="fu">lifecycle</span><span class="fu">::</span><span class="fu"><a href="https://lifecycle.r-lib.org/reference/deprecated.html" class="external-link">deprecated</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  predictorVars <span class="op">=</span> <span class="fu">lifecycle</span><span class="fu">::</span><span class="fu"><a href="https://lifecycle.r-lib.org/reference/deprecated.html" class="external-link">deprecated</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  fdr_scope <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"matrix"</span>, <span class="st">"per_outcome"</span>, <span class="st">"per_predictor"</span><span class="op">)</span>,</span>
-<span>  covars <span class="op">=</span> <span class="fu">lifecycle</span><span class="fu">::</span><span class="fu"><a href="https://lifecycle.r-lib.org/reference/deprecated.html" class="external-link">deprecated</a></span><span class="op">(</span><span class="op">)</span></span>
+<span>  covars <span class="op">=</span> <span class="fu">lifecycle</span><span class="fu">::</span><span class="fu"><a href="https://lifecycle.r-lib.org/reference/deprecated.html" class="external-link">deprecated</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  Pthresh <span class="op">=</span> <span class="fl">0.05</span>,</span>
+<span>  PVar <span class="op">=</span> <span class="st">"PValue"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -110,7 +112,7 @@ showing whether interactions result in slope reversals or maintain the same dire
 
 <dt id="arg-treatordinalas">TreatOrdinalAs<a class="anchor" aria-label="anchor" href="#arg-treatordinalas"></a></dt>
 <dd><p>How ordinal variables are handled. This interaction
-matrix accepts `"Exclude"`, `"Continuous"`, or `"Categorical"`.
+matrix accepts <code>"Exclude"</code>, <code>"Continuous"</code>, or <code>"Categorical"</code>.
 Categorical ordinal outcomes are not supported by the linear models.</p></dd>
 
 
@@ -127,14 +129,31 @@ Categorical ordinal outcomes are not supported by the linear models.</p></dd>
 
 
 <dt id="arg-fdr-scope">fdr_scope<a class="anchor" aria-label="anchor" href="#arg-fdr-scope"></a></dt>
-<dd><p>Either `"matrix"` (default) or `"per_outcome"`, passed to
-[ApplyFDRCorrection()]. `"matrix"` corrects across all interaction
-p-values at once (historical behavior). `"per_outcome"` corrects
-separately within each outcome variable (`outcome_vars`).</p></dd>
+<dd><p>Either <code>"matrix"</code> (default) or <code>"per_outcome"</code>, passed to
+<code><a href="ApplyFDRCorrection.html">ApplyFDRCorrection()</a></code>. <code>"matrix"</code> corrects across all interaction
+p-values at once (historical behavior). <code>"per_outcome"</code> corrects
+separately within each outcome variable (<code>outcome_vars</code>).</p></dd>
 
 
 <dt id="arg-covars">covars<a class="anchor" aria-label="anchor" href="#arg-covars"></a></dt>
 <dd><p><strong>Deprecated</strong> (since 19.15.0). Use <code>covariates</code> instead.</p></dd>
+
+
+<dt id="arg-pthresh">Pthresh<a class="anchor" aria-label="anchor" href="#arg-pthresh"></a></dt>
+<dd><p>Significance threshold, default <code>0.05</code>. An explicitly supplied
+value takes precedence over a legacy significance threshold argument.</p></dd>
+
+
+<dt id="arg-pvar">PVar<a class="anchor" aria-label="anchor" href="#arg-pvar"></a></dt>
+<dd><p>P-value column used for significance decisions. Defaults to raw
+<code>"PValue"</code>; select <code>"PValueFDR"</code> to use Benjamini-Hochberg adjusted values.
+Explicit legacy p-column names remain accepted. Existing, explicitly named
+FDR plots and adjusted-value columns are retained.</p>
+<p>Explicit <code>Pthresh</code> takes precedence over <code>Alpha</code>, <code>FDRAlpha</code>, <code>label_q</code>, or
+<code>adjusted_significance_threshold</code>. Pairwise <code>star_p = "adjusted"</code> retains
+its legacy adjustment method unless <code>PVar</code> is supplied; <code>PVar = "PValueFDR"</code>
+always selects BH. <code>star_p = "none"</code> suppresses legacy pairwise stars.
+Stars retain conventional p-value tiers within the requested cutoff.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -148,21 +167,21 @@ separately within each outcome variable (`outcome_vars`).</p></dd>
 <li><p>Slope2: Matrix of slopes at high values of interVar (mean + 1SD for continuous, comparison group for categorical)</p></li>
 <li><p>plot: ggplot object of the heatmap</p></li>
 <li><p>pvaltable: P-value table in wide format</p></li>
-</ul><p></p></dd>
+</ul></dd>
 
-  <dt>FDRCorrected</dt>
+<dt>FDRCorrected</dt>
 <dd><p>List with FDR-corrected results (same structure as Unadjusted)</p></dd>
 
-  <dt>Relabel</dt>
+<dt>Relabel</dt>
 <dd><p>Logical indicating whether relabeling was applied</p></dd>
 
-  <dt>Covariates</dt>
+<dt>Covariates</dt>
 <dd><p>Character vector of covariates used</p></dd>
 
-  <dt>interVar</dt>
+<dt>interVar</dt>
 <dd><p>The interaction variable name</p></dd>
 
-  <dt>raw_data</dt>
+<dt>raw_data</dt>
 <dd><p>Processed data frame with all calculated values</p></dd>
 
 
@@ -177,16 +196,22 @@ For categorical interaction variables, slopes are calculated for each category.<
 or maintains the same direction (same signs) for the predictor-outcome relationship.</p>
 <p>Color shows the ending slope sign (blue positive, red negative). Within each
 hue, lighter shades indicate weakening and darker shades strengthening.
-Strength change is `abs(Slope2Std) - abs(Slope1Std)`, where standardized
+Strength change is <code>abs(Slope2Std) - abs(Slope1Std)</code>, where standardized
 slopes multiply the original slopes by SD(predictor)/SD(outcome), calculated
 on the fitted model's complete cases. Both plots share symmetric strength
-limits, returned as `StrengthLimits`. Shades are relative to these limits.
+limits, returned as <code>StrengthLimits</code>. Shades are relative to these limits.
 Hatching marks strict sign reversals; exactly zero slopes are not reversals.
 White cells are nonsignificant (or have an exactly zero ending slope);
 grey cells have unavailable estimates. Stars indicate interaction p-values
 (raw or FDR-adjusted), not significance of either individual slope.
-The `raw_data` result also includes `Slope1Std`, `Slope2Std`,
-`SlopeDeltaStd`, `StrengthChange`, `EndingDirection`, and `DirectionReversal`.</p>
+The <code>raw_data</code> result also includes <code>Slope1Std</code>, <code>Slope2Std</code>,
+<code>SlopeDeltaStd</code>, <code>StrengthChange</code>, <code>EndingDirection</code>, and <code>DirectionReversal</code>.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="statistical-results-and-provenance">Statistical results and provenance<a class="anchor" aria-label="anchor" href="#statistical-results-and-provenance"></a></h2>
+
+
+<p>See <a href="inference-results.html">inference-results</a> for the shared <code>Results</code> and <code>Metadata</code> contract.</p>
     </div>
 
     <div class="section level2">

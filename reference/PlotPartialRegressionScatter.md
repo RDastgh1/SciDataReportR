@@ -16,7 +16,9 @@ PlotPartialRegressionScatter(
   covariates = NULL,
   Relabel = TRUE,
   DataFrame = lifecycle::deprecated(),
-  Covariates = lifecycle::deprecated()
+  Covariates = lifecycle::deprecated(),
+  Pthresh = 0.05,
+  PVar = "PValue"
 )
 ```
 
@@ -51,6 +53,25 @@ PlotPartialRegressionScatter(
 - Covariates:
 
   **Deprecated** (since 19.15.0). Use `covariates` instead.
+
+- Pthresh:
+
+  Significance threshold, default `0.05`. An explicitly supplied value
+  takes precedence over a legacy significance threshold argument.
+
+- PVar:
+
+  P-value column used for significance decisions. Defaults to raw
+  `"PValue"`; select `"PValueFDR"` to use Benjamini-Hochberg adjusted
+  values. Explicit legacy p-column names remain accepted. Existing,
+  explicitly named FDR plots and adjusted-value columns are retained.
+
+  Explicit `Pthresh` takes precedence over `Alpha`, `FDRAlpha`,
+  `label_q`, or `adjusted_significance_threshold`. Pairwise
+  `star_p = "adjusted"` retains its legacy adjustment method unless
+  `PVar` is supplied; `PVar = "PValueFDR"` always selects BH.
+  `star_p = "none"` suppresses legacy pairwise stars. Stars retain
+  conventional p-value tiers within the requested cutoff.
 
 ## Value
 
@@ -87,6 +108,12 @@ A list containing:
 - equation:
 
   The regression equation string.
+
+## Statistical results and provenance
+
+See
+[inference-results](https://rdastgh1.github.io/SciDataReportR/reference/inference-results.md)
+for the shared `Results` and `Metadata` contract.
 
 ## Examples
 

@@ -24,7 +24,9 @@ PlotAnovaRelationshipsMatrix(
   Data = lifecycle::deprecated(),
   fdr_scope = c("matrix", "per_outcome", "per_predictor"),
   IncludeTrendSymbol = FALSE,
-  Covariates = lifecycle::deprecated()
+  Covariates = lifecycle::deprecated(),
+  Pthresh = 0.05,
+  PVar = "PValue"
 )
 ```
 
@@ -89,6 +91,25 @@ PlotAnovaRelationshipsMatrix(
 
   **Deprecated** (since 19.15.0). Use `covariates` instead.
 
+- Pthresh:
+
+  Significance threshold, default `0.05`. An explicitly supplied value
+  takes precedence over a legacy significance threshold argument.
+
+- PVar:
+
+  P-value column used for significance decisions. Defaults to raw
+  `"PValue"`; select `"PValueFDR"` to use Benjamini-Hochberg adjusted
+  values. Explicit legacy p-column names remain accepted. Existing,
+  explicitly named FDR plots and adjusted-value columns are retained.
+
+  Explicit `Pthresh` takes precedence over `Alpha`, `FDRAlpha`,
+  `label_q`, or `adjusted_significance_threshold`. Pairwise
+  `star_p = "adjusted"` retains its legacy adjustment method unless
+  `PVar` is supplied; `PVar = "PValueFDR"` always selects BH.
+  `star_p = "none"` suppresses legacy pairwise stars. Stars retain
+  conventional p-value tiers within the requested cutoff.
+
 ## Value
 
 A list containing three ggplot objects: p (scatter plot without multiple
@@ -105,9 +126,9 @@ column to a factor first if categorical treatment is intended (for
 example, `df_All$cohort <- factor(df_All$cohort)`). Few unique values
 alone do not establish categorical meaning. Factors, character columns,
 and logical columns are accepted; more than 10 observed categories warn
-and continue. Entirely missing or unsupported columns error. Caller data
-are unchanged, and existing restrictions on the required number of
-groups still apply.
+and continue. Entirely missing columns produce unavailable statistical
+requests; unsupported types error. Caller data are unchanged, and
+existing restrictions on the required number of groups still apply.
 
 ## Parametric and non-parametric tests
 
@@ -117,7 +138,9 @@ are often uneven, both of which make the F-test unreliable.
 
 `Parametric = FALSE` switches to Kruskal-Wallis, which compares ranks
 rather than means and assumes neither normality nor equal variance. The
-matrix is built and read exactly the same way.
+matrix is built and read exactly the same way. Its p-value table
+includes `eta2_H`, calculated as (H - k + 1) / (n - k) on pairwise
+complete observations.
 
 Comparing the two p-value tables shows which conclusions depended on the
 choice of test. Relationships that hold under both are the ones to
@@ -129,6 +152,12 @@ from the mean-based test.
 
 Kruskal-Wallis is a rank test and has no ANCOVA form, so `covariates`
 requires `Parametric = TRUE`.
+
+## Statistical results and provenance
+
+See
+[inference-results](https://rdastgh1.github.io/SciDataReportR/reference/inference-results.md)
+for the shared `Results` and `Metadata` contract.
 
 ## Examples
 

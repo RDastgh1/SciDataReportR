@@ -22,6 +22,8 @@ PlotDirectionalHeatmaps(
   cluster_columns = FALSE,
   triangle = c("full", "upper", "lower"),
   IncludeTrendSymbol = FALSE,
+  Pthresh = 0.05,
+  PVar = "PValue",
   Data = lifecycle::deprecated(),
   xVars = lifecycle::deprecated(),
   yVars = lifecycle::deprecated()
@@ -78,6 +80,25 @@ PlotDirectionalHeatmaps(
 
   Logical; add a plus sign for `0.05 < p <= 0.10`.
 
+- Pthresh:
+
+  Significance threshold, default `0.05`. An explicitly supplied value
+  takes precedence over a legacy significance threshold argument.
+
+- PVar:
+
+  P-value column used for significance decisions. Defaults to raw
+  `"PValue"`; select `"PValueFDR"` to use Benjamini-Hochberg adjusted
+  values. Explicit legacy p-column names remain accepted. Existing,
+  explicitly named FDR plots and adjusted-value columns are retained.
+
+  Explicit `Pthresh` takes precedence over `Alpha`, `FDRAlpha`,
+  `label_q`, or `adjusted_significance_threshold`. Pairwise
+  `star_p = "adjusted"` retains its legacy adjustment method unless
+  `PVar` is supplied; `PVar = "PValueFDR"` always selects BH.
+  `star_p = "none"` suppresses legacy pairwise stars. Stars retain
+  conventional p-value tiers within the requested cutoff.
+
 - Data:
 
   **Deprecated** (since 19.15.0). Use `data` instead.
@@ -106,6 +127,12 @@ The analysis covers continuous and binary variables. Multi-level
 categorical variables (more than two levels) are not placed on the
 heatmap. `Ordinal` affects only the binary~continuous block, which is
 the one sub-analysis that accepts it.
+
+## Statistical results and provenance
+
+See
+[inference-results](https://rdastgh1.github.io/SciDataReportR/reference/inference-results.md)
+for the shared `Results` and `Metadata` contract.
 
 ## Examples
 

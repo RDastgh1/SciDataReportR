@@ -11,7 +11,7 @@ PlotForestFromTable()."><meta property="og:image" content="https://rdastgh1.gith
 
     <a class="navbar-brand me-2" href="../index.html">SciDataReportR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">21.19.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">21.20.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -49,7 +49,7 @@ PlotForestFromTable()."><meta property="og:image" content="https://rdastgh1.gith
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Cox Proportional Hazards Regression Table</h1>
-      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/v21.19.0/R/MakeCoxRegressionTable.R" class="external-link"><code>R/MakeCoxRegressionTable.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/master/R/MakeCoxRegressionTable.R" class="external-link"><code>R/MakeCoxRegressionTable.R</code></a></small>
       <div class="d-none name"><code>MakeCoxRegressionTable.Rd</code></div>
     </div>
 
@@ -76,7 +76,9 @@ report-ready tables plus a tidy results dataframe compatible with
 <span>  CheckPH <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  ReturnModels <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  Relabel <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  TreatOrdinalAs <span class="op">=</span> <span class="st">"Categorical"</span></span>
+<span>  TreatOrdinalAs <span class="op">=</span> <span class="st">"Categorical"</span>,</span>
+<span>  Pthresh <span class="op">=</span> <span class="fl">0.05</span>,</span>
+<span>  PVar <span class="op">=</span> <span class="st">"PValue"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -128,7 +130,8 @@ using <code><a href="ApplyFDRCorrection.html">ApplyFDRCorrection()</a></code>.</
 
 
 <dt id="arg-fdralpha">FDRAlpha<a class="anchor" aria-label="anchor" href="#arg-fdralpha"></a></dt>
-<dd><p>Numeric threshold used for FDR-adjusted significance.</p></dd>
+<dd><p>Legacy significance-threshold alias, retained in metadata.
+An explicitly supplied <code>Pthresh</code> takes precedence; <code>PVar</code> selects the p-value source.</p></dd>
 
 
 <dt id="arg-includetrendsymbol">IncludeTrendSymbol<a class="anchor" aria-label="anchor" href="#arg-includetrendsymbol"></a></dt>
@@ -152,6 +155,23 @@ p-value for ordinary Cox models. Survey models return <code>NA</code>.</p></dd>
 <dt id="arg-treatordinalas">TreatOrdinalAs<a class="anchor" aria-label="anchor" href="#arg-treatordinalas"></a></dt>
 <dd><p>How ordered predictors and covariates are handled.</p></dd>
 
+
+<dt id="arg-pthresh">Pthresh<a class="anchor" aria-label="anchor" href="#arg-pthresh"></a></dt>
+<dd><p>Significance threshold, default <code>0.05</code>. An explicitly supplied
+value takes precedence over a legacy significance threshold argument.</p></dd>
+
+
+<dt id="arg-pvar">PVar<a class="anchor" aria-label="anchor" href="#arg-pvar"></a></dt>
+<dd><p>P-value column used for significance decisions. Defaults to raw
+<code>"PValue"</code>; select <code>"PValueFDR"</code> to use Benjamini-Hochberg adjusted values.
+Explicit legacy p-column names remain accepted. Existing, explicitly named
+FDR plots and adjusted-value columns are retained.</p>
+<p>Explicit <code>Pthresh</code> takes precedence over <code>Alpha</code>, <code>FDRAlpha</code>, <code>label_q</code>, or
+<code>adjusted_significance_threshold</code>. Pairwise <code>star_p = "adjusted"</code> retains
+its legacy adjustment method unless <code>PVar</code> is supplied; <code>PVar = "PValueFDR"</code>
+always selects BH. <code>star_p = "none"</code> suppresses legacy pairwise stars.
+Stars retain conventional p-value tiers within the requested cutoff.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
@@ -174,6 +194,12 @@ row counts in both cases.</p>
 <p>Numeric events must be coded 0/1. Logical events use <code>TRUE</code> as the event.
 For two-level factors, the second factor level is the event. Character event
 variables are deliberately rejected so the event ordering is never implicit.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="statistical-results-and-provenance">Statistical results and provenance<a class="anchor" aria-label="anchor" href="#statistical-results-and-provenance"></a></h2>
+
+
+<p>See <a href="inference-results.html">inference-results</a> for the shared <code>Results</code> and <code>Metadata</code> contract.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

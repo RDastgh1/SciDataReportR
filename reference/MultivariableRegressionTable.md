@@ -33,7 +33,9 @@ MultivariableRegressionTable(
   Data = lifecycle::deprecated(),
   OutcomeVars = lifecycle::deprecated(),
   PredictorVars = lifecycle::deprecated(),
-  Covars = lifecycle::deprecated()
+  Covars = lifecycle::deprecated(),
+  Pthresh = 0.05,
+  PVar = "PValue"
 )
 ```
 
@@ -81,7 +83,9 @@ MultivariableRegressionTable(
 
 - FDRAlpha:
 
-  Numeric FDR threshold retained in metadata.
+  Legacy significance-threshold alias, retained in metadata. An
+  explicitly supplied `Pthresh` takes precedence; `PVar` selects the
+  p-value source.
 
 - IncludeTrendSymbol:
 
@@ -162,6 +166,25 @@ MultivariableRegressionTable(
 
   **Deprecated** (since 19.15.0). Use `covariates` instead.
 
+- Pthresh:
+
+  Significance threshold, default `0.05`. An explicitly supplied value
+  takes precedence over a legacy significance threshold argument.
+
+- PVar:
+
+  P-value column used for significance decisions. Defaults to raw
+  `"PValue"`; select `"PValueFDR"` to use Benjamini-Hochberg adjusted
+  values. Explicit legacy p-column names remain accepted. Existing,
+  explicitly named FDR plots and adjusted-value columns are retained.
+
+  Explicit `Pthresh` takes precedence over `Alpha`, `FDRAlpha`,
+  `label_q`, or `adjusted_significance_threshold`. Pairwise
+  `star_p = "adjusted"` retains its legacy adjustment method unless
+  `PVar` is supplied; `PVar = "PValueFDR"` always selects BH.
+  `star_p = "none"` suppresses legacy pairwise stars. Stars retain
+  conventional p-value tiers within the requested cutoff.
+
 ## Value
 
 A named list with stable components: `Models`, `FormattedTable`,
@@ -202,6 +225,12 @@ comparisons should be interpreted with multiplicity in mind. Binary
 subsets change both the analysis population and estimand. The resolved
 strategy, reference, engine, class counts, and concise scientific advice
 are recorded under `Metadata$Outcomes` and `Metadata$ModelingAdvice`.
+
+## Statistical results and provenance
+
+See
+[inference-results](https://rdastgh1.github.io/SciDataReportR/reference/inference-results.md)
+for the shared `Results` and `Metadata` contract.
 
 ## Examples
 

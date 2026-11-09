@@ -20,7 +20,9 @@ PlotInteractionEffectsMatrix(
   outcomeVars = lifecycle::deprecated(),
   predictorVars = lifecycle::deprecated(),
   fdr_scope = c("matrix", "per_outcome", "per_predictor"),
-  covars = lifecycle::deprecated()
+  covars = lifecycle::deprecated(),
+  Pthresh = 0.05,
+  PVar = "PValue"
 )
 ```
 
@@ -59,8 +61,8 @@ PlotInteractionEffectsMatrix(
 - TreatOrdinalAs:
 
   How ordinal variables are handled. This interaction matrix accepts
-  \`"Exclude"\`, \`"Continuous"\`, or \`"Categorical"\`. Categorical
-  ordinal outcomes are not supported by the linear models.
+  `"Exclude"`, `"Continuous"`, or `"Categorical"`. Categorical ordinal
+  outcomes are not supported by the linear models.
 
 - Data:
 
@@ -76,14 +78,34 @@ PlotInteractionEffectsMatrix(
 
 - fdr_scope:
 
-  Either \`"matrix"\` (default) or \`"per_outcome"\`, passed to
-  \[ApplyFDRCorrection()\]. \`"matrix"\` corrects across all interaction
-  p-values at once (historical behavior). \`"per_outcome"\` corrects
-  separately within each outcome variable (\`outcome_vars\`).
+  Either `"matrix"` (default) or `"per_outcome"`, passed to
+  [`ApplyFDRCorrection()`](https://rdastgh1.github.io/SciDataReportR/reference/ApplyFDRCorrection.md).
+  `"matrix"` corrects across all interaction p-values at once
+  (historical behavior). `"per_outcome"` corrects separately within each
+  outcome variable (`outcome_vars`).
 
 - covars:
 
   **Deprecated** (since 19.15.0). Use `covariates` instead.
+
+- Pthresh:
+
+  Significance threshold, default `0.05`. An explicitly supplied value
+  takes precedence over a legacy significance threshold argument.
+
+- PVar:
+
+  P-value column used for significance decisions. Defaults to raw
+  `"PValue"`; select `"PValueFDR"` to use Benjamini-Hochberg adjusted
+  values. Explicit legacy p-column names remain accepted. Existing,
+  explicitly named FDR plots and adjusted-value columns are retained.
+
+  Explicit `Pthresh` takes precedence over `Alpha`, `FDRAlpha`,
+  `label_q`, or `adjusted_significance_threshold`. Pairwise
+  `star_p = "adjusted"` retains its legacy adjustment method unless
+  `PVar` is supplied; `PVar = "PValueFDR"` always selects BH.
+  `star_p = "none"` suppresses legacy pairwise stars. Stars retain
+  conventional p-value tiers within the requested cutoff.
 
 ## Value
 
@@ -147,18 +169,24 @@ for the predictor-outcome relationship.
 
 Color shows the ending slope sign (blue positive, red negative). Within
 each hue, lighter shades indicate weakening and darker shades
-strengthening. Strength change is \`abs(Slope2Std) - abs(Slope1Std)\`,
+strengthening. Strength change is `abs(Slope2Std) - abs(Slope1Std)`,
 where standardized slopes multiply the original slopes by
 SD(predictor)/SD(outcome), calculated on the fitted model's complete
 cases. Both plots share symmetric strength limits, returned as
-\`StrengthLimits\`. Shades are relative to these limits. Hatching marks
+`StrengthLimits`. Shades are relative to these limits. Hatching marks
 strict sign reversals; exactly zero slopes are not reversals. White
 cells are nonsignificant (or have an exactly zero ending slope); grey
 cells have unavailable estimates. Stars indicate interaction p-values
 (raw or FDR-adjusted), not significance of either individual slope. The
-\`raw_data\` result also includes \`Slope1Std\`, \`Slope2Std\`,
-\`SlopeDeltaStd\`, \`StrengthChange\`, \`EndingDirection\`, and
-\`DirectionReversal\`.
+`raw_data` result also includes `Slope1Std`, `Slope2Std`,
+`SlopeDeltaStd`, `StrengthChange`, `EndingDirection`, and
+`DirectionReversal`.
+
+## Statistical results and provenance
+
+See
+[inference-results](https://rdastgh1.github.io/SciDataReportR/reference/inference-results.md)
+for the shared `Results` and `Metadata` contract.
 
 ## Examples
 
