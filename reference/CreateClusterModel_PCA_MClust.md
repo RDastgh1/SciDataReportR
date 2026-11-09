@@ -21,9 +21,10 @@ CreateClusterModel_PCA_MClust(
   seed = 93421L,
   pca_variance_threshold = 0.85,
   stability_resamples = 0L,
-  stability_seed = seed + 1L,
+  seed_stability = seed + 1L,
   stability_progress = FALSE,
-  stability_cores = NULL
+  stability_cores = NULL,
+  stability_seed = lifecycle::deprecated()
 )
 ```
 
@@ -86,7 +87,7 @@ CreateClusterModel_PCA_MClust(
   reproducibility. Subsamples are drawn without replacement. Use `0` to
   disable stability analysis.
 
-- stability_seed:
+- seed_stability:
 
   Seed controlling participant subsampling.
 
@@ -100,6 +101,10 @@ CreateClusterModel_PCA_MClust(
   CPU/memory cap: the smaller of 50% physical RAM and 75% of available
   RAM. Explicit values warn when their estimated memory exceeds this
   budget.
+
+- stability_seed:
+
+  Deprecated alias for `seed_stability`.
 
 ## Value
 

@@ -84,47 +84,65 @@ CreateClusterModel_SOM_MClust(
   som_xdim = NULL,
   som_ydim = NULL,
   map_from = NULL,
+  grid_screen_args = list(),
   som_topo = "hexagonal",
   som_neigh = "gaussian",
+  som_epochs = 100L,
   node_weighting = c("uniform", "occupancy"),
   assignment = c("soft", "hard"),
   soft_n_nodes = 3L,
+  soft_kernel = c("inverse", "gaussian"),
+  soft_bandwidth = NULL,
   boundary_margin_threshold = 0.2,
   boundary_entropy_threshold = 0.6,
   seed_som = 934521L,
-  seed_lpa = 93421L,
+  seed_mixture = 93421L,
   Relabel = TRUE,
   ZScorePrefix = "Z_",
   ZScoreVars = NULL,
   id_var = NULL,
-  lpa_progress = FALSE,
-  lpa_em_itmax = 100L,
-  lpa_em_tol = 1e-05,
-  lpa_bootstrap_n = 0L,
-  lpa_timeout_seconds = 120,
-  lpa_drop_zero_sd = TRUE,
-  lpa_zero_sd_tol = 1e-08,
+  mixture_progress = FALSE,
+  mixture_em_itmax = 100L,
+  mixture_em_tol = 1e-05,
+  mixture_bootstrap_n = 0L,
+  mixture_timeout_seconds = 120,
+  mixture_drop_zero_sd = TRUE,
+  mixture_zero_sd_tol = 1e-08,
   skip_model_after_n_failures = 2L,
   slow_fit_seconds = 120,
-  min_nodes_per_cluster = 5,
+  candidate_min_nodes_per_cluster = 10,
   min_nodes_per_parameter = 3,
   min_participants_per_node = 10,
-  lpa_min_node_n = 0L,
+  mixture_min_node_people = 0L,
   min_cluster_prop = NULL,
   criteria_weights = NULL,
-  high_dist_quantile = 0.95,
-  low_prob_threshold = 0.7,
+  far_distance_quantile = 0.95,
+  clear_membership_threshold = 0.7,
   stability_resamples = 0L,
+  stability_type = c("subsample", "seed"),
   stability_candidates = c("all", "best_per_k"),
   stability_top_n = NULL,
-  stability_seed = 934522L,
+  seed_stability = 934522L,
   stability_fractions = 0.9,
   stability_progress = FALSE,
   stability_cores = NULL,
   df = lifecycle::deprecated(),
   id_col = lifecycle::deprecated(),
   .NodeClusterFn = NULL,
-  .CandidatePairs = NULL
+  .CandidatePairs = NULL,
+  seed_lpa = lifecycle::deprecated(),
+  stability_seed = lifecycle::deprecated(),
+  lpa_em_itmax = lifecycle::deprecated(),
+  lpa_em_tol = lifecycle::deprecated(),
+  lpa_timeout_seconds = lifecycle::deprecated(),
+  lpa_progress = lifecycle::deprecated(),
+  lpa_bootstrap_n = lifecycle::deprecated(),
+  lpa_drop_zero_sd = lifecycle::deprecated(),
+  lpa_zero_sd_tol = lifecycle::deprecated(),
+  lpa_min_node_n = lifecycle::deprecated(),
+  min_nodes_per_cluster = lifecycle::deprecated(),
+  high_dist_quantile = lifecycle::deprecated(),
+  low_prob_threshold = lifecycle::deprecated()
 )
 
 Pipeline_SOM_MClust(...)
@@ -161,10 +179,11 @@ CreateSOMClusterModel(...)
 
 - models:
 
-  Integer vector of model specifications for tidyLPA's mclust backend.
-  Model 1 uses equal variance and zero covariance; model 2 uses varying
-  variance and zero covariance; model 3 uses equal variance and equal
-  covariance; and model 6 uses varying variance and varying covariance.
+  Case-insensitive Mclust names (EEI, VVI, EEE, VVV) or IDs. Integer
+  vector of model specifications for tidyLPA's mclust backend. Model 1
+  uses equal variance and zero covariance; model 2 uses varying variance
+  and zero covariance; model 3 uses equal variance and equal covariance;
+  and model 6 uses varying variance and varying covariance.
   Zero-covariance models assume conditional independence between
   variables within each cluster. Equal parameters are shared across
   clusters; varying parameters are cluster-specific. Supported values
@@ -177,8 +196,8 @@ CreateSOMClusterModel(...)
 
 - final_model:
 
-  Integer; model specification for `method = "finalize"` (should be one
-  of `models`).
+  Case-insensitive Mclust name or integer ID. Integer; model
+  specification for `method = "finalize"` (should be one of `models`).
 
 - ClusterVariableName:
 
@@ -210,18 +229,18 @@ CreateSOMClusterModel(...)
 
 - som_xdim, som_ydim:
 
-  Optional integers for SOM grid dimensions. If NULL, a square grid is
-  derived from the planned maximum number of profiles: in exploratory
-  fits this is `max(k_range)` and in finalized fits it is `final_k`. The
-  engineering default is approximately 20 SOM nodes per planned profile.
-  It retains several local prototypes for each candidate phenotype
-  without letting a larger sample automatically create an increasingly
-  sparse map. The automatic side is also enlarged when needed to provide
-  `min_nodes_per_parameter` codebook observations per estimated Mclust
-  parameter, but is capped so that it targets at least
-  `min_participants_per_node` complete participants per map node. Sample
-  size therefore informs map health rather than indefinitely increasing
-  map resolution. Explicit dimensions always override this policy.
+  Optional integers for SOM grid dimensions. If NULL (and no
+  `map_from`), the grid is chosen from the map alone by
+  [`ScreenSOMGrid()`](https://rdastgh1.github.io/SciDataReportR/reference/ScreenSOMGrid.md)
+  before any mixture is fitted, so no value of k and no covariance model
+  influences it: a floor of 10 nodes per clustering variable, a ceiling
+  from sparse nodes, measurement noise and a cap of 30 nodes per
+  variable, and the 5 \* sqrt(n) target moved into that range. The
+  screen is returned in `ModelInfo_SOM$grid_screen`; review it with
+  [`plot()`](https://rdrr.io/r/graphics/plot.default.html) and override
+  the choice by supplying both dimensions. Explicit dimensions are never
+  resized; a warning is given when they fall below the
+  10-nodes-per-variable floor.
 
 - map_from:
 
@@ -230,6 +249,16 @@ CreateSOMClusterModel(...)
   seed. Clustering-variable names and order must match. Training
   preprocessing is deliberately recomputed on `data`; pass
   `ZScoreType = "ZScoreObj"` to reuse scaling explicitly.
+
+- grid_screen_args:
+
+  Optional named list of settings passed to the automatic grid screen
+  (see
+  [`ScreenSOMGrid()`](https://rdastgh1.github.io/SciDataReportR/reference/ScreenSOMGrid.md)
+  and
+  [`SelectSOMGrid()`](https://rdastgh1.github.io/SciDataReportR/reference/SelectSOMGrid.md)),
+  e.g. `list(jitter_sd = 0.3, max_nodes = 400, refits = 3)`. Ignored
+  when dimensions or `map_from` are supplied.
 
 - som_topo:
 
@@ -240,6 +269,11 @@ CreateSOMClusterModel(...)
 - som_neigh:
 
   SOM neighbourhood function, default `"gaussian"`.
+
+- som_epochs:
+
+  Positive integer batch SOM training epochs, also used for grid
+  screening and stability refits. Default 100.
 
 - node_weighting:
 
@@ -261,6 +295,19 @@ CreateSOMClusterModel(...)
   inverse-squared standardized-feature distances are normalized to
   proximity weights. Default `3`.
 
+- soft_kernel:
+
+  Soft assignment kernel: inverse squared distance (default) or
+  Gaussian. Inverse is fuzzy k-nearest neighbours over prototypes with
+  fuzzifier 2 (Keller, Gray and Givens, 1985).
+
+- soft_bandwidth:
+
+  Positive Gaussian bandwidth. NULL uses the median training distance to
+  the closest node, with 1 used for a zero median. The resolved
+  bandwidth is stored in Specification\$projection and reused by
+  projection; refits resolve their own bandwidth.
+
 - boundary_margin_threshold:
 
   Minimum difference between the largest and second-largest soft class
@@ -273,7 +320,7 @@ CreateSOMClusterModel(...)
   flagged as a boundary participant. Default `0.60`. A flag is set if
   either boundary criterion is met.
 
-- seed_som, seed_lpa:
+- seed_som, seed_mixture:
 
   Integer seeds for SOM and LPA steps (defaults 934521 and 93421).
 
@@ -300,24 +347,24 @@ CreateSOMClusterModel(...)
   Optional character scalar. If provided and present in `df`, this
   column is carried into `ProbFit$individual` for convenience.
 
-- lpa_progress:
+- mixture_progress:
 
   Logical; if TRUE, print short progress messages while fitting
   model/profile combinations.
 
-- lpa_em_itmax:
+- mixture_em_itmax:
 
   Integer; maximum number of EM iterations passed to
   [`mclust::emControl()`](https://mclust-org.github.io/mclust/reference/emControl.html).
   Use NULL to leave mclust defaults unchanged.
 
-- lpa_em_tol:
+- mixture_em_tol:
 
   Numeric; EM convergence tolerance passed to
   [`mclust::emControl()`](https://mclust-org.github.io/mclust/reference/emControl.html).
   Use NULL to leave mclust defaults unchanged.
 
-- lpa_bootstrap_n:
+- mixture_bootstrap_n:
 
   Bootstrap resamples tidyLPA runs for each candidate fit: a bootstrap
   likelihood-ratio test (BLRT) against k - 1 profiles and
@@ -325,19 +372,19 @@ CreateSOMClusterModel(...)
   fitting time; `BLRTStatistic` and `BLRTPValue` are then `NA`. Set to,
   e.g., `100` to report the BLRT. Stability refits never run them.
 
-- lpa_timeout_seconds:
+- mixture_timeout_seconds:
 
   Optional timeout in seconds for individual LPA fits. Use NULL to
   disable timeouts.
 
-- lpa_drop_zero_sd:
+- mixture_drop_zero_sd:
 
   Logical; if TRUE, remove SOM code dimensions with near-zero standard
   deviation before LPA.
 
-- lpa_zero_sd_tol:
+- mixture_zero_sd_tol:
 
-  Numeric tolerance used when `lpa_drop_zero_sd = TRUE`.
+  Numeric tolerance used when `mixture_drop_zero_sd = TRUE`.
 
 - skip_model_after_n_failures:
 
@@ -347,28 +394,29 @@ CreateSOMClusterModel(...)
 
   Optional runtime threshold used to flag slow LPA fits in diagnostics.
 
-- min_nodes_per_cluster:
+- candidate_min_nodes_per_cluster:
 
-  Optional minimum average SOM nodes per cluster considered before
-  attempting a candidate profile count.
+  Optional minimum average SOM nodes per cluster. Default `10`. The grid
+  is fixed before k is considered, so candidate profile counts with
+  fewer nodes per cluster than this on the chosen map are still fitted
+  but trigger one warning listing them. Use NULL to turn the warning
+  off.
 
 - min_nodes_per_parameter:
 
-  Positive target number of codebook nodes per estimated free
-  Gaussian-mixture parameter for automatic maps. Default `3`. Mclust is
-  fit to SOM codebooks, so codebook nodes—not cohort rows—are its
-  effective observations. This conservative support floor supplements
-  the 20-nodes-per-planned-profile representation target. Explicit map
-  dimensions are reported but never resized.
+  Deprecated; only labels fit-table support. Positive number of codebook
+  nodes per estimated free Gaussian-mixture parameter used to label
+  candidates in the fit table (`SupportStatus`). Default `3`. It no
+  longer sizes the map; candidates with fewer nodes than parameters are
+  marked ineligible.
 
 - min_participants_per_node:
 
-  Positive target number of complete training participants per SOM node
-  for automatically sized maps. Default `10` is an engineering occupancy
-  target, not a universal statistical threshold. It prevents the
-  codebook-support floor from silently producing sparse maps.
+  Number of complete participants per node used only for the
+  `OccupancyCompliant` column of the fit table. Default `10`. It no
+  longer sizes the map; sparse nodes are handled by the grid screen.
 
-- lpa_min_node_n:
+- mixture_min_node_people:
 
   Minimum number of training participants a SOM node must hold to enter
   the node-level mixture fit. Default `0` fits every node. Use `1` to
@@ -386,20 +434,22 @@ CreateSOMClusterModel(...)
 
 - criteria_weights:
 
-  Weights for the composite rank index. `NULL` (default) weights the
-  criteria equally. A named non-negative vector over `"AIC"`, `"BIC"`,
-  `"Entropy"`, and `"Reproducibility"` sets weights directly. A square
-  reciprocal pairwise-comparison matrix with those row and column names
-  derives Analytic Hierarchy Process weights from its principal
-  eigenvector and reports Saaty's consistency ratio (warning above
-  0.10). `"Reproducibility"` requires `stability_resamples > 0`.
+  Optional `Boundary` weights favour fewer boundary participants;
+  Boundary is excluded from default weights. Weights for the composite
+  rank index. `NULL` (default) weights the criteria equally. A named
+  non-negative vector over `"AIC"`, `"BIC"`, `"Entropy"`, and
+  `"Reproducibility"` sets weights directly. A square reciprocal
+  pairwise-comparison matrix with those row and column names derives
+  Analytic Hierarchy Process weights from its principal eigenvector and
+  reports Saaty's consistency ratio (warning above 0.10).
+  `"Reproducibility"` requires `stability_resamples > 0`.
 
-- high_dist_quantile:
+- far_distance_quantile:
 
   Numeric value between 0 and 1 used to define high SOM-distance flags
   from the training distance distribution. Default is `0.95`.
 
-- low_prob_threshold:
+- clear_membership_threshold:
 
   Numeric posterior probability threshold used to flag uncertain
   phenotype membership. Default is `0.70`.
@@ -413,6 +463,15 @@ CreateSOMClusterModel(...)
   complete reference cohort before scoring participant assignments.
   Defaults to `0` (disabled); use `30` for an exploratory stability
   screen.
+
+- stability_type:
+
+  `subsample` (default), `seed`, or both. Seed refits retain every
+  participant, vary SOM and mixture seeds from seed_stability, and keep
+  the grid fixed. With both types, AHP reproducibility is the mean of
+  their two mean ARIs (subsampling uses the primary retained fraction).
+  Stability tables include StabilityType; cluster_recovery_summary holds
+  per-cluster MeanJaccard by type. Only mean ARI is summarized.
 
 - stability_candidates:
 
@@ -431,7 +490,7 @@ CreateSOMClusterModel(...)
   stability and are not recommended. Use it to screen a large candidate
   grid, e.g. `stability_top_n = 5`.
 
-- stability_seed:
+- seed_stability:
 
   Integer seed for participant subsampling.
 
@@ -480,6 +539,58 @@ CreateSOMClusterModel(...)
   exploratory grid; used by stability refits so each resample fits only
   the shortlisted candidates.
 
+- seed_lpa:
+
+  Deprecated alias for `seed_mixture`.
+
+- stability_seed:
+
+  Deprecated alias for `seed_stability`.
+
+- lpa_em_itmax:
+
+  Deprecated alias for `mixture_em_itmax`.
+
+- lpa_em_tol:
+
+  Deprecated alias for `mixture_em_tol`.
+
+- lpa_timeout_seconds:
+
+  Deprecated alias for `mixture_timeout_seconds`.
+
+- lpa_progress:
+
+  Deprecated alias for `mixture_progress`.
+
+- lpa_bootstrap_n:
+
+  Deprecated alias for `mixture_bootstrap_n`.
+
+- lpa_drop_zero_sd:
+
+  Deprecated alias for `mixture_drop_zero_sd`.
+
+- lpa_zero_sd_tol:
+
+  Deprecated alias for `mixture_zero_sd_tol`.
+
+- lpa_min_node_n:
+
+  Deprecated alias for `mixture_min_node_people`.
+
+- min_nodes_per_cluster:
+
+  Deprecated alias for `candidate_min_nodes_per_cluster`.
+
+- high_dist_quantile:
+
+  Deprecated alias for `far_distance_quantile`.
+
+- low_prob_threshold:
+
+  Deprecated alias for `clear_membership_threshold`.
+
 - ...:
 
   Arguments passed to `CreateClusterModel_SOM_MClust()`.
@@ -494,10 +605,40 @@ A list of class `"Pipeline_SOM_MClust"` with components:
 - `DataWithClusters`: original `df` with canonical cluster, hard/soft
   assignment, soft membership, and boundary diagnostic columns appended
 
+- `ProbFit$individual$SOM_Distance_LOO`: distance after removing each
+  complete person from their own node mean, allowing the nearest other
+  node instead. No map refit. ProjectionReference\$loo_distances stores
+  these distances with SOM_Node and Cluster for arbitrary quantiles.
+  ProjectionReference\$calibration stores q_star, training_rate,
+  training_n, far_n, target_quantile, overall_cutoff and cluster_cutoffs
+  for the combined overall OR cluster LOO rule.
+  ProjectionReference\$cluster_profiles stores mean training z-score
+  vectors by assigned cluster for group profile comparisons.
+
+- `ProbFit$boundary_summary`: BoundaryReason, N and Share among complete
+  participants. `ProbFit$boundary_threshold_grid` gives margin, entropy
+  and BoundaryPct for 15 threshold combinations. Defaults 0.20 / 0.60
+  are review conventions, not estimates.
+
+- `ModelInfo_SOM$diagnostics`: map_quality (one-row tibble of
+  quantization error, variance captured, topographic error and sparse
+  node counts/shares), u_matrix (NodeID and U), and border_alignment
+  (border/interior mean U, difference and one-sided 999-permutation
+  p-value, conditional on permutations with both border and interior
+  nodes; ValidPermutations reports that count).
+
+- `ModelInfo_MClust$ahp_sensitivity`: weight schemes, normalized
+  weights, top candidate and rank of the current recommendation.
+  `BoundaryPct` in the fit table is the share of complete boundary
+  participants (0–1).
+
 - `fit_plot`: ggplot of AIC/BIC/Entropy/BLRT p-value vs k and model
   (plus reproducibility when subsample stability is enabled)
 
 - `ModelInfo_SOM`: list with `som_model`, `som_codes`, `som_grid`,
+  `som_grid_info`, `grid_screen` (the
+  [`ScreenSOMGrid()`](https://rdastgh1.github.io/SciDataReportR/reference/ScreenSOMGrid.md)
+  result when the grid was chosen automatically, otherwise NULL),
   `training_variable_summary`, `SOMFit` (distance diagnostics,
   baselines, and per-cluster flags), `plots` (aweSOM plots)
 
@@ -597,12 +738,17 @@ training, stability scoring, or projection.
 Changing `assignment` does not change SOM training or the fitted node
 mixture. With the same seeds and selected model, node posteriors and
 likelihood-based fit indices are identical. Both modes return a single
-participant class; soft mode takes the largest `SoftProb_*`. Hard and
-soft classes can therefore agree even when their probability vectors
-differ, especially when nearby nodes belong to the same phenotype. Exact
-soft-probability ties select the first class deterministically.
-`Flag_NodeDisagreement` compares the canonical participant class with
-the best-matching node's class; unmapped rows are `NA`.
+participant class; NodeN counts complete training participants on the
+closest node, and Flag_OnePersonNode is NodeN == 1 (missing for
+incomplete rows). Both are returned in ProbFit\$individual and
+DataWithClusters. Probabilities measure ambiguity between clusters;
+distance to node measures fit to the map. soft mode takes the largest
+`SoftProb_*`. Hard and soft classes can therefore agree even when their
+probability vectors differ, especially when nearby nodes belong to the
+same phenotype. Exact soft-probability ties select the first class
+deterministically. `Flag_NodeDisagreement` compares the canonical
+participant class with the best-matching node's class; unmapped rows are
+`NA`.
 
 Each new fit uses one deterministic, seeded full-cohort batch SOM. Its
 initialization codebook, preprocessing, grid, topology, neighbourhood,
@@ -872,11 +1018,11 @@ review <- CreateClusterModel_SOM_MClust(
   som_xdim = 5,
   som_ydim = 5,
   stability_resamples = 2,
-  stability_seed = 20260805,
+  seed_stability = 20260805,
   Relabel = FALSE,
-  min_nodes_per_cluster = NULL
+  candidate_min_nodes_per_cluster = NULL
 )
-#> Warning: Explicit SOM dimensions do not meet one or more requested mixture-support or participant-occupancy targets; diagnostics are retained for review.
+#> Warning: Explicit SOM dimensions (5 x 5 = 25 nodes) are below the floor of 10 nodes per clustering variable (120 nodes for 12 variables); diagnostics are retained for review.
 #> Warning: future::availableCores() is deprecated. Please use the identical parallelly::availableCores() instead [pkgdown::build_site_github_pages() -> pkgdown::build_site() -> pkgdown::build_site_local() -> pkgdown::build_reference() -> pkgdown::unwrap_purrr_error() -> base::withCallingHandlers() -> purrr::map() -> purrr::map_() -> purrr::with_indexed_errors() -> base::withCallingHandlers() -> purrr::call_with_cleanup() -> pkgdown::.f() -> base::withCallingHandlers() -> pkgdown::data_reference_topic() -> pkgdown::run_examples() -> pkgdown::highlight_examples() -> downlit::evaluate_and_highlight() -> evaluate::evaluate() -> base::withRestarts() -> withRestartList() -> withOneRestart() -> doWithOneRestart() -> withRestartList() -> withOneRestart() -> doWithOneRestart() -> evaluate::with_handlers() -> base::eval() -> eval() -> base::withCallingHandlers() -> base::withVisible() -> base::eval() -> eval() -> SciDataReportR::CreateClusterModel_SOM_MClust() -> SciDataReportR::.ResolveClusterStabilityCores() -> future::availableCores()]
 #> Warning: The following SOM mixture candidates have fewer mixture nodes than free parameters and are ineligible for recommendation: Model 1, k = 2; Model 3, k = 2; Model 1, k = 3; Model 3, k = 3; Model 1, k = 4; Model 3, k = 4; Model 1, k = 5; Model 3, k = 5
 #> Warning: No candidate is eligible for the composite recommendation; an internal fallback is retained only to construct the review object.

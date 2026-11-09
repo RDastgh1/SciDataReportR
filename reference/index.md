@@ -272,8 +272,11 @@
   : Replace Missing Labels in Dataframe Columns
 - [`RevalueData()`](https://rdastgh1.github.io/SciDataReportR/reference/RevalueData.md)
   : Revalue Data
+- [`SOMGridDecisionTable()`](https://rdastgh1.github.io/SciDataReportR/reference/SOMGridDecisionTable.md)
+  : Formatted decision table for a SOM grid screen
 - [`SOMMapSupport()`](https://rdastgh1.github.io/SciDataReportR/reference/SOMMapSupport.md)
-  : Review SOM map support before fitting a SOM + Mclust model
+  **\[superseded\]** : Review SOM map support before fitting a SOM +
+  Mclust model
 - [`SampleData`](https://rdastgh1.github.io/SciDataReportR/reference/SampleData.md)
   : SampleData for practicing SciDataReportR functions
 - [`SampleVariableTypes`](https://rdastgh1.github.io/SciDataReportR/reference/SampleVariableTypes.md)
@@ -282,8 +285,12 @@
   : SciDataReportR qualitative color palette
 - [`ScreenBiomarkerPerformance()`](https://rdastgh1.github.io/SciDataReportR/reference/ScreenBiomarkerPerformance.md)
   : Screen biomarker performance across outcomes
+- [`ScreenSOMGrid()`](https://rdastgh1.github.io/SciDataReportR/reference/ScreenSOMGrid.md)
+  : Screen SOM grid sizes from the map alone
 - [`ScreenSOMGridStability()`](https://rdastgh1.github.io/SciDataReportR/reference/ScreenSOMGridStability.md)
   : Screen fixed SOM map designs before selecting cluster count
+- [`SelectSOMGrid()`](https://rdastgh1.github.io/SciDataReportR/reference/SelectSOMGrid.md)
+  : Choose a SOM grid size from a grid screen
 - [`SimulatedPhenotypeData`](https://rdastgh1.github.io/SciDataReportR/reference/SimulatedPhenotypeData.md)
   : Neutral simulated clustering and phenotyping benchmark
 - [`SummarizeTransitions()`](https://rdastgh1.github.io/SciDataReportR/reference/SummarizeTransitions.md)

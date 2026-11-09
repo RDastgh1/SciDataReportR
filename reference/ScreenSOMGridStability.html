@@ -3,11 +3,17 @@
 preprocessing and map training. It selects a representation for later,
 fixed-map Mclust comparisons without fitting a mixture or varying k.
 The legacy joint SOM + Mclust screen remains available with
-screen_scope = &quot;joint&quot;."><meta property="og:description" content="In its default &quot;map&quot; scope, this function refits only SOM
+screen_scope = &quot;joint&quot;.
+The &quot;map&quot; scope is superseded by ScreenSOMGrid(), which keeps every
+participant (seed and jitter refits instead of 90% subsamples), does not
+use k or Mclust parameter counts, and selects a grid automatically."><meta property="og:description" content="In its default &quot;map&quot; scope, this function refits only SOM
 preprocessing and map training. It selects a representation for later,
 fixed-map Mclust comparisons without fitting a mixture or varying k.
 The legacy joint SOM + Mclust screen remains available with
-screen_scope = &quot;joint&quot;."><meta property="og:image" content="https://rdastgh1.github.io/SciDataReportR/logo.png"></head><body>
+screen_scope = &quot;joint&quot;.
+The &quot;map&quot; scope is superseded by ScreenSOMGrid(), which keeps every
+participant (seed and jitter refits instead of 90% subsamples), does not
+use k or Mclust parameter counts, and selects a grid automatically."><meta property="og:image" content="https://rdastgh1.github.io/SciDataReportR/logo.png"></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -53,7 +59,7 @@ screen_scope = &quot;joint&quot;."><meta property="og:image" content="https://rd
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Screen fixed SOM map designs before selecting cluster count</h1>
-      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/v21.18.0/R/SOMGridStability.R" class="external-link"><code>R/SOMGridStability.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/master/R/SOMGridStability.R" class="external-link"><code>R/SOMGridStability.R</code></a></small>
       <div class="d-none name"><code>ScreenSOMGridStability.Rd</code></div>
     </div>
 
@@ -63,6 +69,9 @@ preprocessing and map training. It selects a representation for later,
 fixed-map Mclust comparisons without fitting a mixture or varying <code>k</code>.
 The legacy joint SOM + Mclust screen remains available with
 <code>screen_scope = "joint"</code>.</p>
+<p>The <code>"map"</code> scope is superseded by <code><a href="ScreenSOMGrid.html">ScreenSOMGrid()</a></code>, which keeps every
+participant (seed and jitter refits instead of 90% subsamples), does not
+use k or Mclust parameter counts, and selects a grid automatically.</p>
     </div>
 
     <div class="section level2">
@@ -79,11 +88,12 @@ The legacy joint SOM + Mclust screen remains available with
 <span>  screen_scope <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"map"</span>, <span class="st">"joint"</span><span class="op">)</span>,</span>
 <span>  screen_resamples <span class="op">=</span> <span class="fl">3L</span>,</span>
 <span>  seed_som <span class="op">=</span> <span class="fl">934521L</span>,</span>
-<span>  stability_seed <span class="op">=</span> <span class="fl">934522L</span>,</span>
+<span>  seed_stability <span class="op">=</span> <span class="fl">934522L</span>,</span>
 <span>  stability_cores <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  pair_sample <span class="op">=</span> <span class="fl">10000L</span>,</span>
 <span>  neighborhood_sample <span class="op">=</span> <span class="fl">500L</span>,</span>
 <span>  neighborhood_k <span class="op">=</span> <span class="fl">10L</span>,</span>
+<span>  stability_seed <span class="op">=</span> <span class="fu">lifecycle</span><span class="fu">::</span><span class="fu"><a href="https://lifecycle.r-lib.org/reference/deprecated.html" class="external-link">deprecated</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -149,7 +159,7 @@ the explicit joint workflow retains its prior default of 10.</p></dd>
 candidate design.</p></dd>
 
 
-<dt id="arg-stability-seed">stability_seed<a class="anchor" aria-label="anchor" href="#arg-stability-seed"></a></dt>
+<dt id="arg-seed-stability">seed_stability<a class="anchor" aria-label="anchor" href="#arg-seed-stability"></a></dt>
 <dd><p>Seed for participant subsampling and metric sampling.</p></dd>
 
 
@@ -165,11 +175,15 @@ orientation-invariant grid-distance preservation.</p></dd>
 
 <dt id="arg-neighborhood-sample">neighborhood_sample<a class="anchor" aria-label="anchor" href="#arg-neighborhood-sample"></a></dt>
 <dd><p>Number of participants used for local-neighbor
-overlap; sampling is deterministic from <code>stability_seed</code>.</p></dd>
+overlap; sampling is deterministic from <code>seed_stability</code>.</p></dd>
 
 
 <dt id="arg-neighborhood-k">neighborhood_k<a class="anchor" aria-label="anchor" href="#arg-neighborhood-k"></a></dt>
 <dd><p>Number of local grid neighbors per sampled participant.</p></dd>
+
+
+<dt id="arg-stability-seed">stability_seed<a class="anchor" aria-label="anchor" href="#arg-stability-seed"></a></dt>
+<dd><p>Deprecated alias for <code>seed_stability</code>.</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>

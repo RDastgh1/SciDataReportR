@@ -14,10 +14,11 @@ CompareClusterMethodStability(
   variables,
   candidates = NULL,
   stability_resamples = 10L,
-  stability_seed = 934522L,
+  seed_stability = 934522L,
   stability_cores = NULL,
   subsample_fraction = 0.9,
-  keep_models = FALSE
+  keep_models = FALSE,
+  stability_seed = lifecycle::deprecated()
 )
 ```
 
@@ -42,7 +43,7 @@ CompareClusterMethodStability(
 
   Number of common 90% subsample refits. Defaults to 10 for screening.
 
-- stability_seed:
+- seed_stability:
 
   Seed used to generate the shared participant draws.
 
@@ -59,6 +60,10 @@ CompareClusterMethodStability(
   Logical; retain full-data reference models in the screen result.
   Defaults to `FALSE` to avoid holding one large model per candidate.
   Confirmation always retains its selected projectable models.
+
+- stability_seed:
+
+  Deprecated alias for `seed_stability`.
 
 ## Value
 

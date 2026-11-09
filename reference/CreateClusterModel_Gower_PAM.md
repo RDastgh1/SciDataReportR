@@ -15,9 +15,10 @@ CreateClusterModel_Gower_PAM(
   ClusterVariableName = "Cluster",
   seed = 93421L,
   stability_resamples = 0L,
-  stability_seed = seed + 1L,
+  seed_stability = seed + 1L,
   stability_progress = FALSE,
-  stability_cores = NULL
+  stability_cores = NULL,
+  stability_seed = lifecycle::deprecated()
 )
 ```
 
@@ -55,7 +56,7 @@ CreateClusterModel_Gower_PAM(
 
   Number of 90% participant subsample refits.
 
-- stability_seed:
+- seed_stability:
 
   Seed controlling participant subsampling.
 
@@ -69,6 +70,10 @@ CreateClusterModel_Gower_PAM(
   CPU/memory cap: the smaller of 50% physical RAM and 75% of available
   RAM. Explicit values warn when their estimated memory exceeds this
   budget.
+
+- stability_seed:
+
+  Deprecated alias for `seed_stability`.
 
 ## Value
 

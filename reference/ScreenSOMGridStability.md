@@ -6,6 +6,12 @@ fixed-map Mclust comparisons without fitting a mixture or varying `k`.
 The legacy joint SOM + Mclust screen remains available with
 `screen_scope = "joint"`.
 
+The `"map"` scope is superseded by
+[`ScreenSOMGrid()`](https://rdastgh1.github.io/SciDataReportR/reference/ScreenSOMGrid.md),
+which keeps every participant (seed and jitter refits instead of 90%
+subsamples), does not use k or Mclust parameter counts, and selects a
+grid automatically.
+
 ## Usage
 
 ``` r
@@ -21,11 +27,12 @@ ScreenSOMGridStability(
   screen_scope = c("map", "joint"),
   screen_resamples = 3L,
   seed_som = 934521L,
-  stability_seed = 934522L,
+  seed_stability = 934522L,
   stability_cores = NULL,
   pair_sample = 10000L,
   neighborhood_sample = 500L,
   neighborhood_k = 10L,
+  stability_seed = lifecycle::deprecated(),
   ...
 )
 ```
@@ -90,7 +97,7 @@ ScreenSOMGridStability(
   Fixed SOM initialization seed used for every refit of a candidate
   design.
 
-- stability_seed:
+- seed_stability:
 
   Seed for participant subsampling and metric sampling.
 
@@ -107,11 +114,15 @@ ScreenSOMGridStability(
 - neighborhood_sample:
 
   Number of participants used for local-neighbor overlap; sampling is
-  deterministic from `stability_seed`.
+  deterministic from `seed_stability`.
 
 - neighborhood_k:
 
   Number of local grid neighbors per sampled participant.
+
+- stability_seed:
+
+  Deprecated alias for `seed_stability`.
 
 - ...:
 

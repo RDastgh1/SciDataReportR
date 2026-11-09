@@ -80,9 +80,9 @@ df_Labelled <- RevalueData(SampleData, SampleVariableTypes)$RevaluedData
 model <- CreateClusterModel_SOM_MClust(
   df_Labelled, c("age", "AXL", "Adiponectin", "Alpha_1_Antitrypsin"),
   method = "exploratory", k_range = 2:4, models = 1,
-  som_xdim = 5, som_ydim = 5, min_nodes_per_cluster = NULL,
+  som_xdim = 5, som_ydim = 5, candidate_min_nodes_per_cluster = NULL,
   Relabel = FALSE)
-#> Warning: Explicit SOM dimensions do not meet one or more requested mixture-support or participant-occupancy targets; diagnostics are retained for review.
+#> Warning: Explicit SOM dimensions (5 x 5 = 25 nodes) are below the floor of 10 nodes per clustering variable (40 nodes for 4 variables); diagnostics are retained for review.
 splits <- PlotClusterSplits(model)
 splits$plot
 

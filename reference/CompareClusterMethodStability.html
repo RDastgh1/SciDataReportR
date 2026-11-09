@@ -53,7 +53,7 @@ comparing only participants retained by a particular refit."><meta property="og:
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Compare projectable clustering methods with common participant subsamples</h1>
-      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/v21.18.0/R/ClusterMethodBenchmark.R" class="external-link"><code>R/ClusterMethodBenchmark.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/master/R/ClusterMethodBenchmark.R" class="external-link"><code>R/ClusterMethodBenchmark.R</code></a></small>
       <div class="d-none name"><code>CompareClusterMethodStability.Rd</code></div>
     </div>
 
@@ -72,10 +72,11 @@ comparing only participants retained by a particular refit.</p>
 <span>  <span class="va">variables</span>,</span>
 <span>  candidates <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  stability_resamples <span class="op">=</span> <span class="fl">10L</span>,</span>
-<span>  stability_seed <span class="op">=</span> <span class="fl">934522L</span>,</span>
+<span>  seed_stability <span class="op">=</span> <span class="fl">934522L</span>,</span>
 <span>  stability_cores <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  subsample_fraction <span class="op">=</span> <span class="fl">0.9</span>,</span>
-<span>  keep_models <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span>  keep_models <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  stability_seed <span class="op">=</span> <span class="fu">lifecycle</span><span class="fu">::</span><span class="fu"><a href="https://lifecycle.r-lib.org/reference/deprecated.html" class="external-link">deprecated</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -102,7 +103,7 @@ candidate set. See <code><a href="DefaultClusterBenchmarkCandidates.html">Defaul
 10 for screening.</p></dd>
 
 
-<dt id="arg-stability-seed">stability_seed<a class="anchor" aria-label="anchor" href="#arg-stability-seed"></a></dt>
+<dt id="arg-seed-stability">seed_stability<a class="anchor" aria-label="anchor" href="#arg-seed-stability"></a></dt>
 <dd><p>Seed used to generate the shared participant draws.</p></dd>
 
 
@@ -119,6 +120,10 @@ retained in each refit.</p></dd>
 <dd><p>Logical; retain full-data reference models in the screen
 result. Defaults to <code>FALSE</code> to avoid holding one large model per candidate.
 Confirmation always retains its selected projectable models.</p></dd>
+
+
+<dt id="arg-stability-seed">stability_seed<a class="anchor" aria-label="anchor" href="#arg-stability-seed"></a></dt>
+<dd><p>Deprecated alias for <code>seed_stability</code>.</p></dd>
 
 </dl></div>
     <div class="section level2">

@@ -47,7 +47,7 @@ lower-dimensional, frozen PCA representation is preferable to raw features."><me
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Fit PCA followed by Mclust</h1>
-      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/v21.18.0/R/ClusteringPipelines.R" class="external-link"><code>R/ClusteringPipelines.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/master/R/ClusteringPipelines.R" class="external-link"><code>R/ClusteringPipelines.R</code></a></small>
       <div class="d-none name"><code>CreateClusterModel_PCA_MClust.Rd</code></div>
     </div>
 
@@ -72,9 +72,10 @@ lower-dimensional, frozen PCA representation is preferable to raw features.</p>
 <span>  seed <span class="op">=</span> <span class="fl">93421L</span>,</span>
 <span>  pca_variance_threshold <span class="op">=</span> <span class="fl">0.85</span>,</span>
 <span>  stability_resamples <span class="op">=</span> <span class="fl">0L</span>,</span>
-<span>  stability_seed <span class="op">=</span> <span class="va">seed</span> <span class="op">+</span> <span class="fl">1L</span>,</span>
+<span>  seed_stability <span class="op">=</span> <span class="va">seed</span> <span class="op">+</span> <span class="fl">1L</span>,</span>
 <span>  stability_progress <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  stability_cores <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  stability_cores <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  stability_seed <span class="op">=</span> <span class="fu">lifecycle</span><span class="fu">::</span><span class="fu"><a href="https://lifecycle.r-lib.org/reference/deprecated.html" class="external-link">deprecated</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -139,7 +140,7 @@ to estimate candidate reproducibility. Subsamples are drawn without
 replacement. Use <code>0</code> to disable stability analysis.</p></dd>
 
 
-<dt id="arg-stability-seed">stability_seed<a class="anchor" aria-label="anchor" href="#arg-stability-seed"></a></dt>
+<dt id="arg-seed-stability">seed_stability<a class="anchor" aria-label="anchor" href="#arg-seed-stability"></a></dt>
 <dd><p>Seed controlling participant subsampling.</p></dd>
 
 
@@ -152,6 +153,10 @@ replacement. Use <code>0</code> to disable stability analysis.</p></dd>
 a conservative CPU/memory cap: the smaller of 50% physical RAM and 75% of
 available RAM. Explicit values warn when their estimated memory exceeds
 this budget.</p></dd>
+
+
+<dt id="arg-stability-seed">stability_seed<a class="anchor" aria-label="anchor" href="#arg-stability-seed"></a></dt>
+<dd><p>Deprecated alias for <code>seed_stability</code>.</p></dd>
 
 </dl></div>
     <div class="section level2">

@@ -448,7 +448,7 @@ sessionInfo()
     [19] httr_1.4.9             purrr_1.2.2            viridisLite_0.4.3
     [22] scales_1.4.0           abind_1.4-8            cli_3.6.6
     [25] labelled_2.16.1        rlang_1.3.0            withr_3.0.3
-    [28] yaml_2.3.12            otel_0.2.0             statsExpressions_2.2.1
+    [28] yaml_2.3.12            otel_0.3.0             statsExpressions_2.2.1
     [31] tools_4.6.2            datawizard_1.5.0       rstantools_2.7.1
     [34] ggstatsplot_1.1.4      coda_0.19-4.1          sjlabelled_1.2.0
     [37] bayestestR_0.20.0      forcats_1.0.1          broom_1.0.13

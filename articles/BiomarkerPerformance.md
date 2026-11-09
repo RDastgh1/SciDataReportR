@@ -232,7 +232,7 @@ still not external validation in a new population.
     [52] dichromat_2.0-1        broom_1.0.13           withr_3.0.3
     [55] scales_1.4.0           backports_1.5.1        estimability_2.0.0
     [58] rmarkdown_2.32         httr_1.4.9             emmeans_2.0.4
-    [61] otel_0.2.0             hms_1.1.4              coda_0.19-4.1
+    [61] otel_0.3.0             hms_1.1.4              coda_0.19-4.1
     [64] evaluate_1.0.5         knitr_1.52             haven_2.5.5
     [67] parameters_0.30.0      viridisLite_0.4.3      mgcv_1.9-4
     [70] rstantools_2.7.1       rlang_1.3.0            Rcpp_1.1.2

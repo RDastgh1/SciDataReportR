@@ -11,7 +11,7 @@
 ## Citation
 
 Source:
-[`inst/CITATION`](https://github.com/RDastgh1/SciDataReportR/blob/v21.18.0/inst/CITATION)
+[`inst/CITATION`](https://github.com/RDastgh1/SciDataReportR/blob/master/inst/CITATION)
 
 Dastgheyb R (2026). *SciDataReportR: Workflow Infrastructure for
 Reproducible Scientific Data Reporting*.

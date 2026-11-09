@@ -10,9 +10,11 @@ visualizations, and report-ready outputs.
 
 Useful links:
 
+- <https://rdastgh1.github.io/SciDataReportR/>
+
 - <https://github.com/RDastgh1/SciDataReportR>
 
-- <https://rdastgh1.github.io/SciDataReportR/>
+- [doi:10.5281/zenodo.19617868](https://doi.org/10.5281/zenodo.19617868)
 
 - Report bugs at <https://github.com/RDastgh1/SciDataReportR/issues>
 

@@ -339,7 +339,7 @@ sessionInfo()
     [37] paletteer_1.7.0        ggplot2_4.0.3          emmeans_2.0.4
     [40] scales_1.4.0           MASS_7.3-66            dichromat_2.0-1
     [43] insight_1.7.0          cli_3.6.6              mvtnorm_1.4-2
-    [46] rmarkdown_2.32         generics_0.1.4         otel_0.2.0
+    [46] rmarkdown_2.32         generics_0.1.4         otel_0.3.0
     [49] RcppParallel_6.2.1     rstudioapi_0.19.0      httr_1.4.9
     [52] tzdb_0.5.0             parameters_0.30.0      readxl_1.6.0
     [55] gld_2.6.8              proxy_0.4-29           effectsize_1.0.3

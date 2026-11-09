@@ -1,9 +1,18 @@
 # Review SOM map support before fitting a SOM + Mclust model
 
+**\[superseded\]**
+
 Calculates the competing codebook-node support and participant occupancy
 constraints for a planned SOM + Mclust search. Mclust is fit to SOM
 codebook vectors, so its effective sample size is the number of nodes;
 participant count instead limits how sparse a map should become.
+
+This k- and model-informed sizing is no longer used by
+[`CreateClusterModel_SOM_MClust()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateClusterModel_SOM_MClust.md),
+which now chooses the grid from the map alone with
+[`ScreenSOMGrid()`](https://rdastgh1.github.io/SciDataReportR/reference/ScreenSOMGrid.md).
+Parameter support is still reported in the fit table, where candidates
+with fewer nodes than parameters are marked ineligible.
 
 ## Usage
 
