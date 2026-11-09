@@ -848,8 +848,9 @@ PlotClusterFitReview <- function(fit_table, x = "Classes", metrics = NULL,
       df_Curve, ggplot2::aes(x = .data$RetainedFraction,
         y = .data$StabilityARI_Mean, colour = .data$Candidate)) +
       ggplot2::geom_line() + ggplot2::geom_point() +
-      ggplot2::geom_errorbar(ggplot2::aes(
-        ymin = .data$StabilityARI_P05, ymax = .data$StabilityARI_Mean), width = .005) +
+      # SOM + Mclust summaries report the mean ARI only, so the lower-tail bar is drawn only when present
+      (if ("StabilityARI_P05" %in% names(df_Curve)) ggplot2::geom_errorbar(ggplot2::aes(
+        ymin = .data$StabilityARI_P05, ymax = .data$StabilityARI_Mean), width = .005)) +
       ggplot2::scale_x_continuous(labels = scales::percent_format()) +
       ggplot2::coord_cartesian(ylim = c(-1, 1)) + ggplot2::theme_bw() +
       ggplot2::labs(title = "Deletion-stability curve", x = "Participants retained",

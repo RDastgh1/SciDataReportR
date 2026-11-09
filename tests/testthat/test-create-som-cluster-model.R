@@ -93,6 +93,11 @@ test_that("SOM stability fractions retain full-cohort scoring and expose partiti
   expect_true(nrow(stability$co_membership_by_cluster) > 0)
   expect_true(nrow(stability$split_merge_reference) > 0)
   expect_true(nrow(stability$profile_recovery) > 0)
+  # Every stability plot must build with the mean-ARI-only summaries
+  expect_false("StabilityARI_P05" %in% names(stability$deletion_curve))
+  for (plot_name in names(stability$plots)) {
+    expect_no_error(ggplot2::ggplot_build(stability$plots[[plot_name]]))
+  }
   expect_error(CreateClusterModel_SOM_MClust(
     df_Training, paste0("Var", 1:6), method = "finalize",
     final_k = 3, final_model = 1, stability_fractions = c(.90, 1)),
