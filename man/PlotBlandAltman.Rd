@@ -8,7 +8,9 @@ PlotBlandAltman(
   data,
   Variable1,
   Variable2,
-  DataFrame = lifecycle::deprecated()
+  DataFrame = lifecycle::deprecated(),
+  Pthresh = 0.05,
+  PVar = "PValue"
 )
 }
 \arguments{
@@ -19,6 +21,20 @@ PlotBlandAltman(
 \item{Variable2}{The name of the second variable (as a string) to compare.}
 
 \item{DataFrame}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
+
+\item{Pthresh}{Significance threshold, default \code{0.05}. An explicitly supplied
+value takes precedence over a legacy significance threshold argument.}
+
+\item{PVar}{P-value column used for significance decisions. Defaults to raw
+\code{"PValue"}; select \code{"PValueFDR"} to use Benjamini-Hochberg adjusted values.
+Explicit legacy p-column names remain accepted. Existing, explicitly named
+FDR plots and adjusted-value columns are retained.
+
+Explicit \code{Pthresh} takes precedence over \code{Alpha}, \code{FDRAlpha}, \code{label_q}, or
+\code{adjusted_significance_threshold}. Pairwise \code{star_p = "adjusted"} retains
+its legacy adjustment method unless \code{PVar} is supplied; \code{PVar = "PValueFDR"}
+always selects BH. \code{star_p = "none"} suppresses legacy pairwise stars.
+Stars retain conventional p-value tiers within the requested cutoff.}
 }
 \value{
 A list containing:
@@ -97,6 +113,11 @@ measured, so a single bias figure does not describe the methods.
 Both measurements must be on the same scale for any of this to be
 meaningful. Two different quantities, or the same quantity in different
 units, produce a plot that renders but means nothing.
+}
+
+\section{Statistical results and provenance}{
+
+See \link{inference-results} for the shared \code{Results} and \code{Metadata} contract.
 }
 
 \examples{

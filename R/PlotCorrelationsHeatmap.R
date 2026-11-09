@@ -83,6 +83,9 @@
 #' @param IncludeTrendSymbol Logical; add a plus sign for `0.05 < p <= 0.10`.
 #' @export
 
+#' @inheritParams inference-results
+#' @section Statistical results and provenance:
+#' See [inference-results] for the shared `Results` and `Metadata` contract.
 PlotCorrelationsHeatmap <- function(data,
     predictor_vars = NULL,
     outcome_vars = NULL,
@@ -101,7 +104,16 @@ PlotCorrelationsHeatmap <- function(data,
     Data = lifecycle::deprecated(),
     xVars = lifecycle::deprecated(),
     yVars = lifecycle::deprecated(),
-    covars = lifecycle::deprecated()) {
+    covars = lifecycle::deprecated(),
+    Pthresh = 0.05,
+    PVar = "PValue") {
+  .scidr_inference <- ScidrStartInference("PlotCorrelationsHeatmap", match.call(), environment())
+  on.exit({
+    if (!is.null(returnValue())) {
+      return(ScidrFinishInference(returnValue(), .scidr_inference, environment()))
+    }
+  }, add = TRUE)
+
   # Deprecated argument shims (SciDataReportR 19.15.0)
   if (lifecycle::is_present(Data)) {
     lifecycle::deprecate_warn("19.15.0", "PlotCorrelationsHeatmap(Data)", "PlotCorrelationsHeatmap(data)")
@@ -416,7 +428,10 @@ PlotCorrelationsHeatmap <- function(data,
             data = cov_df
           ),
 
-          error = function(e) NULL
+          error = function(e) {
+            ScidrRecordInferenceFailure(yname, xname, paste0("Covariate model matrix failed; unadjusted correlation used: ", conditionMessage(e)), n_complete, stage = "adjustment")
+            NULL
+          }
         )
 
         # fallback if model matrix fails
@@ -425,11 +440,11 @@ PlotCorrelationsHeatmap <- function(data,
           tmp <- tryCatch(
 
             suppressWarnings(
-              stats::cor.test(
+              ScidrObserveInference(stats::cor.test(
                 df_tmp$x,
                 df_tmp$y,
                 method = method
-              )
+              ))
             ),
 
             error = function(e) NULL
@@ -472,15 +487,16 @@ PlotCorrelationsHeatmap <- function(data,
           # -----------------------------------
 
           if (ncol(mm) == 0) {
+            ScidrRecordInferenceFailure(yname, xname, "All requested covariate columns collapsed; unadjusted correlation used.", n_complete, stage = "adjustment")
 
             tmp <- tryCatch(
 
               suppressWarnings(
-                stats::cor.test(
+                ScidrObserveInference(stats::cor.test(
                   df_tmp$x,
                   df_tmp$y,
                   method = method
-                )
+                ))
               ),
 
               error = function(e) NULL
@@ -502,15 +518,16 @@ PlotCorrelationsHeatmap <- function(data,
               n_complete <= (ncol(mm) + 2)
             ) {
 
+              ScidrRecordInferenceFailure(yname, xname, "Insufficient observations for covariate adjustment; unadjusted correlation used.", n_complete, stage = "adjustment")
               # fallback to standard correlation
               tmp <- tryCatch(
 
                 suppressWarnings(
-                  stats::cor.test(
+                  ScidrObserveInference(stats::cor.test(
                     df_tmp$x,
                     df_tmp$y,
                     method = method
-                  )
+                  ))
                 ),
 
                 error = function(e) NULL
@@ -530,20 +547,20 @@ PlotCorrelationsHeatmap <- function(data,
 
               fitx <- tryCatch(
 
-                stats::lm.fit(
+                ScidrObserveInference(stats::lm.fit(
                   x = cbind(1, mm),
                   y = df_tmp$x
-                ),
+                )),
 
                 error = function(e) NULL
               )
 
               fity <- tryCatch(
 
-                stats::lm.fit(
+                ScidrObserveInference(stats::lm.fit(
                   x = cbind(1, mm),
                   y = df_tmp$y
-                ),
+                )),
 
                 error = function(e) NULL
               )
@@ -559,11 +576,11 @@ PlotCorrelationsHeatmap <- function(data,
                 tmp <- tryCatch(
 
                   suppressWarnings(
-                    stats::cor.test(
+                    ScidrObserveInference(stats::cor.test(
                       rx,
                       ry,
                       method = method
-                    )
+                    ))
                   ),
 
                   error = function(e) NULL
@@ -588,11 +605,11 @@ PlotCorrelationsHeatmap <- function(data,
         tmp <- tryCatch(
 
           suppressWarnings(
-            stats::cor.test(
+            ScidrObserveInference(stats::cor.test(
               df_tmp$x,
               df_tmp$y,
               method = method
-            )
+            ))
           ),
 
           error = function(e) NULL
@@ -651,7 +668,7 @@ PlotCorrelationsHeatmap <- function(data,
   plot.data$nPairs <- as.vector(MN)
 
   plot.data$stars <- .FormatPValueStars(
-    plot.data$P,
+    ScidrInferenceP(plot.data$P, plot.data$P_adj),
     IncludeTrendSymbol = IncludeTrendSymbol
   )
   plot.data$stars_FDR <- .FormatPValueStars(

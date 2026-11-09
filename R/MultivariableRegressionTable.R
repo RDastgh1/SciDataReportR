@@ -19,7 +19,8 @@
 #' @param TreatOrdinalAs How ordinal outcomes and predictors are handled.
 #' @param FDR Logical. If `TRUE`, calculate FDR-adjusted p-values for ordinary
 #'   regression terms.
-#' @param FDRAlpha Numeric FDR threshold retained in metadata.
+#' @param FDRAlpha Legacy significance-threshold alias, retained in metadata.
+#'   An explicitly supplied `Pthresh` takes precedence; `PVar` selects the p-value source.
 #' @param Method Regression method. One of `"lm"`, `"ridge"`, `"lasso"`, or
 #'   `"elasticnet"`.
 #' @param CVFolds Number of cross-validation folds for penalized models.
@@ -133,6 +134,9 @@
 #' }
 #' @param IncludeTrendSymbol Logical; add a plus sign for `0.05 < p <= 0.10`.
 #' @export
+#' @inheritParams inference-results
+#' @section Statistical results and provenance:
+#' See [inference-results] for the shared `Results` and `Metadata` contract.
 MultivariableRegressionTable <- function(data,
     outcome_vars,
     predictor_vars,
@@ -157,7 +161,16 @@ MultivariableRegressionTable <- function(data,
     Data = lifecycle::deprecated(),
     OutcomeVars = lifecycle::deprecated(),
     PredictorVars = lifecycle::deprecated(),
-    Covars = lifecycle::deprecated()) {
+    Covars = lifecycle::deprecated(),
+    Pthresh = 0.05,
+    PVar = "PValue") {
+  .scidr_inference <- ScidrStartInference("MultivariableRegressionTable", match.call(), environment())
+  on.exit({
+    if (!is.null(returnValue())) {
+      return(ScidrFinishInference(returnValue(), .scidr_inference, environment()))
+    }
+  }, add = TRUE)
+
   # Deprecated argument shims (SciDataReportR 19.15.0)
   if (lifecycle::is_present(Data)) {
     lifecycle::deprecate_warn("19.15.0", "MultivariableRegressionTable(Data)", "MultivariableRegressionTable(data)")
@@ -273,6 +286,10 @@ MultivariableRegressionTable <- function(data,
   if (length(unknown_reference_outcomes) > 0) stop("reference_levels names not found in outcome_vars: ", paste(unknown_reference_outcomes, collapse = ", "))
   if (length(unknown_subset_outcomes) > 0) stop("binary_subsets names not found in outcome_vars: ", paste(unknown_subset_outcomes, collapse = ", "))
 
+  OutcomeVars <- ScidrDropUnavailableOutcomes(Data, OutcomeVars, PredictorVars, Covars,
+    excluded_outcomes = names(outcome_modes)[outcome_modes == "skip"])
+  if (!length(OutcomeVars)) return(ScidrEmptyLegacyInference("MultivariableRegressionTable"))
+
   multicategory_outcomes <- OutcomeVars[vapply(OutcomeVars, function(outcome) {
     x <- Data[[outcome]]
     is.factor(x) && nlevels(droplevels(x[!is.na(x)])) > 2
@@ -330,15 +347,14 @@ MultivariableRegressionTable <- function(data,
   retained_model_terms <- setdiff(model_terms, globally_dropped_terms)
 
   if (length(intersect(PredictorVars, retained_model_terms)) == 0) {
-    stop(
-      "All PredictorVars were dropped for missingness. ",
-      "MaxMissingPredictor = ", MaxMissingPredictor, ". ",
-      "Dropped predictors: ", paste(intersect(PredictorVars, globally_dropped_terms), collapse = ", "), ". ",
-      "Increase MaxMissingPredictor, use MissingDataStrategy = 'impute', or reduce PredictorVars."
-    )
+    for (outcome in OutcomeVars) for (predictor in PredictorVars) {
+      ScidrRecordInferenceFailure(outcome, predictor, "Predictor was dropped for excessive missingness.")
+    }
+    return(ScidrEmptyLegacyInference("MultivariableRegressionTable"))
   }
 
-  multicollinearity <- ScidrRegressionMulticollinearity(Data, retained_model_terms)
+  multicollinearity <- tryCatch(ScidrRegressionMulticollinearity(Data, retained_model_terms),
+    error = function(e) list(MaximumVIF = NA_real_, MaximumCorrelation = NA_real_, Error = conditionMessage(e)))
 
   model_list <- list()
   large_tables <- list()
@@ -349,6 +365,7 @@ MultivariableRegressionTable <- function(data,
 
   for (outcome_index in seq_along(OutcomeVars)) {
     outcome <- OutcomeVars[[outcome_index]]
+    tryCatch({
     outcome_family <- outcome_families[[outcome]]
     missing_info <- ScidrPrepareRegressionModelData(
       Data = Data,
@@ -476,8 +493,12 @@ MultivariableRegressionTable <- function(data,
       stringsAsFactors = FALSE
     )
     tuning_list[[outcome]] <- fit_result$Tuning
+    }, error = function(e) {
+      for (predictor in PredictorVars) ScidrRecordInferenceFailure(outcome, predictor, conditionMessage(e), nrow(df_model))
+    })
   }
 
+  if (!length(large_tables)) return(ScidrEmptyLegacyInference("MultivariableRegressionTable"))
   large_table <- dplyr::bind_rows(large_tables)
   large_table <- ScidrAnnotateTableDefaults(large_table)
   if (Method == "lm" && FDR) {
@@ -488,7 +509,7 @@ MultivariableRegressionTable <- function(data,
     large_table$FDR <- NA_real_
   }
 
-  star_source <- if (FDR) large_table$FDR else large_table$PValue
+  star_source <- if (PVar == "PValueFDR") large_table$FDR else large_table$PValue
   large_table$Stars <- ScidrPValueStars(
     star_source,
     IncludeTrendSymbol = IncludeTrendSymbol
@@ -1052,7 +1073,7 @@ ScidrFitOrdinaryMultinomial <- function(df_model, outcome, model_terms, predicto
   std_data <- ScidrScaleContinuousColumns(df_model, outcome = outcome)
   warnings_vec <- character(0)
   fit_model <- function(data) withCallingHandlers(
-    nnet::multinom(formula, data = data, trace = FALSE, Hess = TRUE),
+    ScidrObserveInference(nnet::multinom(formula, data = data, trace = FALSE, Hess = TRUE)),
     warning = function(w) { warnings_vec <<- c(warnings_vec, conditionMessage(w)); invokeRestart("muffleWarning") }
   )
   model <- fit_model(fit_data)
@@ -1062,6 +1083,7 @@ ScidrFitOrdinaryMultinomial <- function(df_model, outcome, model_terms, predicto
   coefs <- model_summary$coefficients
   ses <- model_summary$standard.errors
   std_coefs <- std_summary$coefficients
+  ScidrRecordInferenceIntervals(model, NULL, std_coefs)
   classes <- rownames(coefs)
   rows <- list()
   for (class in classes) {
@@ -1079,7 +1101,7 @@ ScidrFitOrdinaryMultinomial <- function(df_model, outcome, model_terms, predicto
     }
   }
   probabilities <- stats::predict(model, type = "probs")
-  null_model <- nnet::multinom(ScidrRegressionFormula(character(0), outcome), data = fit_data, trace = FALSE)
+  null_model <- ScidrObserveInference(nnet::multinom(ScidrRegressionFormula(character(0), outcome), data = fit_data, trace = FALSE))
   lr <- 2 * (as.numeric(stats::logLik(model)) - as.numeric(stats::logLik(null_model)))
   lr_df <- attr(stats::logLik(model), "df") - attr(stats::logLik(null_model), "df")
   list(
@@ -1098,13 +1120,14 @@ ScidrFitOrdinaryOrdinal <- function(df_model, outcome, model_terms, predictor_va
   std_data <- ScidrScaleContinuousColumns(df_model, outcome = outcome)
   warnings_vec <- character(0)
   fit_model <- function(data) withCallingHandlers(
-    MASS::polr(formula, data = data, Hess = TRUE, method = "logistic"),
+    ScidrObserveInference(MASS::polr(formula, data = data, Hess = TRUE, method = "logistic")),
     warning = function(w) { warnings_vec <<- c(warnings_vec, conditionMessage(w)); invokeRestart("muffleWarning") }
   )
   model <- fit_model(fit_data)
   std_model <- fit_model(std_data)
   coef_table <- coef(summary(model))
   std_coefs <- stats::coef(std_model)
+  ScidrRecordInferenceIntervals(model, NULL, std_coefs)
   rows <- lapply(model_terms, function(term) {
     coef_name <- ScidrMatchingCoefficientName(rownames(coef_table), term)
     estimate <- if (!is.na(coef_name)) coef_table[coef_name, "Value"] else NA_real_
@@ -1118,7 +1141,7 @@ ScidrFitOrdinaryOrdinal <- function(df_model, outcome, model_terms, predictor_va
     )
   })
   probabilities <- stats::predict(model, type = "probs")
-  null_model <- MASS::polr(ScidrRegressionFormula(character(0), outcome), data = fit_data, Hess = TRUE)
+  null_model <- ScidrObserveInference(MASS::polr(ScidrRegressionFormula(character(0), outcome), data = fit_data, Hess = TRUE))
   lr <- 2 * (as.numeric(stats::logLik(model)) - as.numeric(stats::logLik(null_model)))
   lr_df <- attr(stats::logLik(model), "df") - attr(stats::logLik(null_model), "df")
   list(
@@ -1136,7 +1159,7 @@ ScidrFitPenalizedMultinomial <- function(df_model, outcome, model_terms, predict
   if (!requireNamespace("glmnet", quietly = TRUE)) stop("Package 'glmnet' is required for penalized multinomial regression.")
   mm <- ScidrModelMatrixInfo(df_model, model_terms)
   x <- mm$X
-  x_std <- scale(x)
+  x_std <- ScidrObserveInference(scale(x))
   x_std[, attr(x_std, "scaled:scale") == 0] <- 0
   covariates <- setdiff(model_terms, predictor_vars)
   penalty_factor <- ifelse(mm$ColumnTerms %in% covariates, 0, 1)
@@ -1148,12 +1171,12 @@ ScidrFitPenalizedMultinomial <- function(df_model, outcome, model_terms, predict
   std_fits <- list()
   errors <- data.frame(Alpha = numeric(), LambdaMin = numeric(), Lambda1SE = numeric(), CVMMin = numeric())
   for (alpha in alpha_grid) {
-    fit <- glmnet::cv.glmnet(x, df_model[[outcome]], family = "multinomial",
+    fit <- ScidrObserveInference(glmnet::cv.glmnet(x, df_model[[outcome]], family = "multinomial",
       type.multinomial = "grouped", alpha = alpha, foldid = foldid,
-      standardize = TRUE, penalty.factor = penalty_factor)
-    std_fit <- glmnet::cv.glmnet(x_std, df_model[[outcome]], family = "multinomial",
+      standardize = TRUE, penalty.factor = penalty_factor))
+    std_fit <- ScidrObserveInference(glmnet::cv.glmnet(x_std, df_model[[outcome]], family = "multinomial",
       type.multinomial = "grouped", alpha = alpha, foldid = foldid,
-      lambda = fit$lambda, standardize = FALSE, penalty.factor = penalty_factor)
+      lambda = fit$lambda, standardize = FALSE, penalty.factor = penalty_factor))
     fits[[as.character(alpha)]] <- fit
     std_fits[[as.character(alpha)]] <- std_fit
     errors <- rbind(errors, data.frame(
@@ -1211,7 +1234,7 @@ ScidrFitPenalizedOrdinal <- function(df_model, outcome, model_terms, predictor_v
   }
   mm <- ScidrModelMatrixInfo(df_model, model_terms)
   x <- mm$X
-  x_std <- scale(x)
+  x_std <- ScidrObserveInference(scale(x))
   x_std[, attr(x_std, "scaled:scale") == 0] <- 0
   covariates <- setdiff(model_terms, predictor_vars)
   penalty_factor <- ifelse(mm$ColumnTerms %in% covariates, 0, 1)
@@ -1270,6 +1293,7 @@ ScidrFitPenalizedOrdinal <- function(df_model, outcome, model_terms, predictor_v
   )
   coef_values <- stats::coef(model, whichLambda = selected_index)
   std_values <- stats::coef(std_model, whichLambda = selected_index)
+  ScidrRecordInferenceIntervals(model, NULL, std_values)
   rows <- lapply(model_terms, function(term) {
     coef_name <- ScidrMatchingCoefficientName(names(coef_values), term)
     estimate <- if (!is.na(coef_name)) unname(coef_values[[coef_name]]) else 0
@@ -1399,6 +1423,7 @@ ScidrAnnotateRegressionPiece <- function(piece, outcome, mode, outcome_level, re
     tbl
   }
   piece$LargeTable <- annotate(piece$LargeTable)
+  if (is.data.frame(piece$Results)) piece$Results <- annotate(piece$Results)
   piece$RegressionMatrix <- annotate(piece$RegressionMatrix)
   piece$VariableImportanceMatrix <- annotate(piece$VariableImportanceMatrix)
   piece$Predictions <- annotate(piece$Predictions)
@@ -1408,6 +1433,17 @@ ScidrAnnotateRegressionPiece <- function(piece, outcome, mode, outcome_level, re
 }
 
 ScidrCombineRegressionPieces <- function(pieces, FDR, FDRAlpha) {
+  context <- ScidrCurrentInference()
+  pieces <- lapply(pieces, function(piece) {
+    if (!is.data.frame(piece$Results)) {
+      df_Terms <- ScidrFullRegressionRows(piece, context, context$Frame)
+      if (is.null(df_Terms)) df_Terms <- piece$LargeTable
+      piece$Results <- ScidrNormalizeInference(df_Terms, context, context$Frame)
+    }
+    piece
+  })
+  df_Results <- dplyr::bind_rows(lapply(pieces, `[[`, "Results"))
+  df_Results$PValueFDR <- rep(NA_real_, nrow(df_Results))
   large_table <- dplyr::bind_rows(lapply(pieces, `[[`, "LargeTable"))
   if (!"ComparisonLabel" %in% names(large_table)) {
     large_table <- ScidrAnnotateTableDefaults(large_table)
@@ -1423,7 +1459,7 @@ ScidrCombineRegressionPieces <- function(pieces, FDR, FDRAlpha) {
   } else {
     large_table$FDR <- NA_real_
   }
-  large_table$Stars <- ScidrPValueStars(if (FDR) large_table$FDR else large_table$PValue)
+  large_table$Stars <- ScidrPValueStars(ScidrInferenceP(large_table$PValue, large_table$FDR))
   large_table$HoverText <- ScidrRegressionHoverText(large_table)
   reporting_rows <- large_table$Predictor %in% unique(unlist(lapply(pieces, function(x) x$Metadata$AnalysisSettings$PredictorVars)))
   regression_cols <- c(
@@ -1464,7 +1500,8 @@ ScidrCombineRegressionPieces <- function(pieces, FDR, FDRAlpha) {
     ModelSummary = as.data.frame(model_summary),
     Multicollinearity = pieces[[1]]$Multicollinearity,
     Plots = plots,
-    Metadata = metadata_first
+    Metadata = metadata_first,
+    Results = df_Results
   )
 }
 
@@ -1490,13 +1527,14 @@ ScidrMultivariableGtTable <- function(reporting, formatted = TRUE) {
     return(gt::gt(reporting))
   }
 
-  # Significance follows the same source as the plotted stars: FDR when it was
-  # calculated (ordinary models with FDR = TRUE), otherwise the raw p-value.
-  sig_source <- ifelse(!is.na(reporting$FDR), reporting$FDR, reporting$PValue)
+  # Reporting uses the same explicit p-value selection as the results and plots.
+  sig_source <- ScidrInferenceP(reporting$PValue, reporting$FDR)
+  context <- ScidrCurrentInference()
+  p_threshold <- if (is.null(context)) 0.05 else context$Pthresh
 
   table_data <- reporting %>%
     dplyr::mutate(
-      Significant = !is.na(sig_source) & sig_source < 0.05,
+      Significant = !is.na(sig_source) & sig_source < p_threshold,
       Estimate_CI = dplyr::case_when(
         is.na(.data$Effect) ~ NA_character_,
         is.na(.data$LowerCI) | is.na(.data$UpperCI) ~
@@ -1739,7 +1777,7 @@ ScidrScaleContinuousColumns <- function(df, outcome = NULL, standardize_outcome 
       next
     }
     if (is.numeric(df[[nm]]) && length(unique(df[[nm]][!is.na(df[[nm]])])) > 2) {
-      df[[nm]] <- as.numeric(scale(df[[nm]]))
+      df[[nm]] <- as.numeric(ScidrObserveInference(scale(df[[nm]])))
     }
   }
   df
@@ -1761,9 +1799,9 @@ ScidrFitOrdinaryRegression <- function(df_model,
   warnings_vec <- character(0)
   model <- withCallingHandlers(
     if (outcome_family == "linear") {
-      stats::lm(formula, data = fit_data)
+      ScidrObserveInference(stats::lm(formula, data = fit_data))
     } else {
-      stats::glm(formula, data = fit_data, family = stats::binomial())
+      ScidrObserveInference(stats::glm(formula, data = fit_data, family = stats::binomial()))
     },
     warning = function(w) {
       warnings_vec <<- c(warnings_vec, conditionMessage(w))
@@ -1778,9 +1816,9 @@ ScidrFitOrdinaryRegression <- function(df_model,
   )
   standardized_model <- withCallingHandlers(
     if (outcome_family == "linear") {
-      stats::lm(formula, data = standardized_data)
+      ScidrObserveInference(stats::lm(formula, data = standardized_data))
     } else {
-      stats::glm(formula, data = standardized_data, family = stats::binomial())
+      ScidrObserveInference(stats::glm(formula, data = standardized_data, family = stats::binomial()))
     },
     warning = function(w) {
       warnings_vec <<- c(warnings_vec, conditionMessage(w))
@@ -1794,10 +1832,11 @@ ScidrFitOrdinaryRegression <- function(df_model,
 
   std_coef <- stats::coef(standardized_model)
   ci <- tryCatch(stats::confint(model), error = function(e) NULL)
+  ScidrRecordInferenceIntervals(model, ci, std_coef)
   base_model <- if (outcome_family == "linear") {
-    stats::lm(ScidrRegressionFormula(character(0), outcome), data = fit_data)
+    ScidrObserveInference(stats::lm(ScidrRegressionFormula(character(0), outcome), data = fit_data))
   } else {
-    stats::glm(ScidrRegressionFormula(character(0), outcome), data = fit_data, family = stats::binomial())
+    ScidrObserveInference(stats::glm(ScidrRegressionFormula(character(0), outcome), data = fit_data, family = stats::binomial()))
   }
 
   # Rank deficiency: lm()/glm() set aliased (perfectly collinear) coefficients
@@ -1927,7 +1966,7 @@ ScidrFitPenalizedRegression <- function(df_model,
   x_full <- stats::model.matrix(model_formula, data = df_model)
   column_terms <- attr(x_full, "assign")[-1]
   x_raw <- x_full[, -1, drop = FALSE]
-  x_std <- scale(x_raw)
+  x_std <- ScidrObserveInference(scale(x_raw))
   x_std[, attr(x_std, "scaled:scale") == 0] <- 0
   x_std <- as.matrix(x_std)
   y <- df_model[[outcome]]
@@ -1951,7 +1990,7 @@ ScidrFitPenalizedRegression <- function(df_model,
   cv_errors <- data.frame(Alpha = numeric(0), LambdaMin = numeric(0), Lambda1SE = numeric(0), CVMMin = numeric(0))
   for (alpha in alpha_grid) {
     fit <- withCallingHandlers(
-      glmnet::cv.glmnet(
+      ScidrObserveInference(glmnet::cv.glmnet(
         x = x_raw,
         y = y,
         family = family,
@@ -1959,14 +1998,14 @@ ScidrFitPenalizedRegression <- function(df_model,
         foldid = foldid,
         standardize = TRUE,
         penalty.factor = penalty_factor
-      ),
+      )),
       warning = function(w) {
         warnings_vec <<- c(warnings_vec, conditionMessage(w))
         invokeRestart("muffleWarning")
       }
     )
     std_fit <- withCallingHandlers(
-      glmnet::cv.glmnet(
+      ScidrObserveInference(glmnet::cv.glmnet(
         x = x_std,
         y = y,
         family = family,
@@ -1975,7 +2014,7 @@ ScidrFitPenalizedRegression <- function(df_model,
         lambda = fit$lambda,
         standardize = FALSE,
         penalty.factor = penalty_factor
-      ),
+      )),
       warning = function(w) {
         warnings_vec <<- c(warnings_vec, conditionMessage(w))
         invokeRestart("muffleWarning")
@@ -2003,6 +2042,7 @@ ScidrFitPenalizedRegression <- function(df_model,
   coef_values <- coef_mat[, 1]
   std_coef_mat <- as.matrix(stats::coef(cv_std_fit, s = selected_lambda))
   std_coef_values <- std_coef_mat[, 1]
+  ScidrRecordInferenceIntervals(cv_fit, NULL, std_coef_values)
   linear_predictor <- as.numeric(stats::predict(cv_fit, newx = x_raw, s = selected_lambda, type = "link"))
   predicted_response <- as.numeric(stats::predict(cv_fit, newx = x_raw, s = selected_lambda, type = "response"))
   retained <- names(coef_values)[names(coef_values) != "(Intercept)" & abs(coef_values) > 0]
@@ -2087,7 +2127,7 @@ ScidrOrdinaryVariableImportance <- function(model, base_model, term, outcome_fam
     paste(". ~ . -", ScidrQuoteFormulaNames(term))
   )
   reduced_model <- tryCatch(
-    if (outcome_family == "linear") stats::lm(reduced_formula, data = model$model) else stats::glm(reduced_formula, data = model$model, family = stats::binomial()),
+    if (outcome_family == "linear") ScidrObserveInference(stats::lm(reduced_formula, data = model$model)) else ScidrObserveInference(stats::glm(reduced_formula, data = model$model, family = stats::binomial())),
     error = function(e) NULL
   )
   if (is.null(reduced_model)) {
@@ -2128,7 +2168,7 @@ ScidrRegressionPredictions <- function(fit_result,
     if (outcome_family == "linear") {
       out$Predicted[complete_rows] <- pred_response
       out$Residual[complete_rows] <- df_model[[outcome]] - pred_response
-      out$StandardizedResidual[complete_rows] <- as.numeric(scale(out$Residual[complete_rows]))
+      out$StandardizedResidual[complete_rows] <- as.numeric(ScidrObserveInference(scale(out$Residual[complete_rows])))
     } else {
       threshold <- ScidrOptimalThreshold(df_model[[outcome]], pred_response)$Threshold
       out$PredictedProbability[complete_rows] <- pred_response
@@ -2225,7 +2265,7 @@ ScidrRegressionDiagnostics <- function(fit_result,
     threshold <- threshold_info$Threshold
     pred_class <- as.integer(probs >= threshold)
     metrics <- ScidrConfusionMetrics(observed, pred_class)
-    null_model <- stats::glm(ScidrRegressionFormula(character(0), outcome), data = df_model, family = stats::binomial())
+    null_model <- ScidrObserveInference(stats::glm(ScidrRegressionFormula(character(0), outcome), data = df_model, family = stats::binomial()))
     base$AUC <- threshold_info$AUC
     base$AUCLowerCI <- threshold_info$AUCLowerCI
     base$AUCUpperCI <- threshold_info$AUCUpperCI
@@ -2339,7 +2379,7 @@ ScidrRegressionMulticollinearity <- function(Data, model_terms) {
     if (ncol(other) == 0) {
       return(1)
     }
-    r2 <- summary(stats::lm(x[, i] ~ other))$r.squared
+    r2 <- summary(ScidrObserveInference(stats::lm(x[, i] ~ other)))$r.squared
     1 / (1 - r2)
   }, numeric(1))
   names(vif_values) <- colnames(x)

@@ -108,7 +108,19 @@ BuildFeatureWGCNA <- function(
 #'
 #' @return A `feature_module_trait_obj` with association results and join audit.
 #' @export
-AnalyzeFeatureModuleTraits <- function(wgcna_obj, trait_data, sample_id, trait_sample_id = sample_id, outcome = NULL, covariates = NULL) {
+#' @inheritParams inference-results
+#' @section Statistical results and provenance:
+#' See [inference-results] for the shared `Results` and `Metadata` contract.
+AnalyzeFeatureModuleTraits <- function(wgcna_obj, trait_data, sample_id, trait_sample_id = sample_id, outcome = NULL, covariates = NULL,
+    Pthresh = 0.05,
+    PVar = "PValue") {
+  .scidr_inference <- ScidrStartInference("AnalyzeFeatureModuleTraits", match.call(), environment())
+  on.exit({
+    if (!is.null(returnValue())) {
+      return(ScidrFinishInference(returnValue(), .scidr_inference, environment()))
+    }
+  }, add = TRUE)
+
   if (!inherits(wgcna_obj, "feature_wgcna_obj") || !is.data.frame(trait_data)) stop("Supply a `feature_wgcna_obj` and data-frame `trait_data`.", call. = FALSE)
   sample_ids <- attr(wgcna_obj$datExpr, "sample_ids")
   if (is.null(sample_ids)) stop("This WGCNA object has no sample IDs. Rebuild it with `sample_id` support.", call. = FALSE)
@@ -126,9 +138,9 @@ AnalyzeFeatureModuleTraits <- function(wgcna_obj, trait_data, sample_id, trait_s
     observed <- unique(df_model$Trait)
     family <- if (length(observed) == 2) "binary" else if (is.numeric(df_model$Trait)) "continuous" else if (length(observed) > 2) "multicategory" else "unsupported"
     result <- tibble::tibble(Module = module_name, Trait = trait_name, OutcomeFamily = family, Effect = NA_real_, EffectType = NA_character_, PValue = NA_real_, N = nrow(df_model), Note = NA_character_)
-    if (family == "continuous" && nrow(df_model) > 2) { fit <- stats::lm(stats::reformulate(c("Trait", covariates), response = "Eigengene"), data = df_model); result$Effect <- stats::coef(fit)["Trait"]; result$EffectType <- "linear beta"; result$PValue <- summary(fit)$coefficients["Trait", "Pr(>|t|)"] }
-    if (family == "binary" && nrow(df_model) > 3) { df_model$Trait <- factor(df_model$Trait); fit <- stats::glm(stats::reformulate(c("Eigengene", covariates), response = "Trait"), data = df_model, family = stats::binomial()); term <- grep("Eigengene", rownames(summary(fit)$coefficients), value = TRUE)[1]; result$Effect <- stats::coef(fit)[term]; result$EffectType <- "log odds ratio"; result$PValue <- summary(fit)$coefficients[term, "Pr(>|z|)"] }
-    if (family == "multicategory" && nrow(df_model) > 3) { fit <- stats::lm(stats::reformulate(c("Trait", covariates), response = "Eigengene"), data = df_model); result$EffectType <- "omnibus F"; result$PValue <- stats::anova(fit)["Trait", "Pr(>F)"]; result$Effect <- stats::anova(fit)["Trait", "F value"] }
+    if (family == "continuous" && nrow(df_model) > 2) { fit <- ScidrObserveInference(stats::lm(stats::reformulate(c("Trait", covariates), response = "Eigengene"), data = df_model)); result$Effect <- stats::coef(fit)["Trait"]; result$EffectType <- "linear beta"; result$PValue <- summary(fit)$coefficients["Trait", "Pr(>|t|)"] }
+    if (family == "binary" && nrow(df_model) > 3) { df_model$Trait <- factor(df_model$Trait); fit <- ScidrObserveInference(stats::glm(stats::reformulate(c("Eigengene", covariates), response = "Trait"), data = df_model, family = stats::binomial())); term <- grep("Eigengene", rownames(summary(fit)$coefficients), value = TRUE)[1]; result$Effect <- stats::coef(fit)[term]; result$EffectType <- "log odds ratio"; result$PValue <- summary(fit)$coefficients[term, "Pr(>|z|)"] }
+    if (family == "multicategory" && nrow(df_model) > 3) { fit <- ScidrObserveInference(stats::lm(stats::reformulate(c("Trait", covariates), response = "Eigengene"), data = df_model)); result$EffectType <- "omnibus F"; result$PValue <- stats::anova(fit)["Trait", "Pr(>F)"]; result$Effect <- stats::anova(fit)["Trait", "F value"] }
     if (family == "unsupported") result$Note <- "Trait has fewer than two observed values."
     rows[[index]] <- result; index <- index + 1L
   }

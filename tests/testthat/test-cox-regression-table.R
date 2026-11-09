@@ -224,7 +224,7 @@ test_that("MakeCoxRegressionTable applies FDR and standardization", {
   )
 
   expect_equal(result$Results$FDR, ApplyFDRCorrection(result$Results$PValue))
-  expect_equal(result$Results$Significant, result$Results$FDR < 0.2)
+  expect_equal(result$Results$Significant, result$Results$PValue < 0.2)
   model_frame <- result$ModelSummaries$event$x1$model
   expect_equal(as.numeric(scale(model_frame$x1)), model_frame$x1, tolerance = 1e-10)
   expect_equal(as.numeric(scale(model_frame$age)), model_frame$age, tolerance = 1e-10)

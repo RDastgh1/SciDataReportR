@@ -67,9 +67,12 @@
 #' example, `df_All$cohort <- factor(df_All$cohort)`). Few unique values alone
 #' do not establish categorical meaning. Factors, character columns, and logical
 #' columns are accepted; more than 10 observed categories warn and continue.
-#' Entirely missing or unsupported columns error. Caller data are unchanged,
+#' Entirely missing columns produce unavailable statistical requests; unsupported types error. Caller data are unchanged,
 #' and existing restrictions on the required number of groups still apply.
 #' @export
+#' @inheritParams inference-results
+#' @section Statistical results and provenance:
+#' See [inference-results] for the shared `Results` and `Metadata` contract.
 PlotChiSqCovar <- function(data,
     predictor_vars,
     outcome_vars,
@@ -82,7 +85,16 @@ PlotChiSqCovar <- function(data,
     yVars = lifecycle::deprecated(),
     fdr_scope = c("matrix", "per_outcome", "per_predictor"),
     IncludeTrendSymbol = FALSE,
-    covars = lifecycle::deprecated()) {
+    covars = lifecycle::deprecated(),
+    Pthresh = 0.05,
+    PVar = "PValue") {
+  .scidr_inference <- ScidrStartInference("PlotChiSqCovar", match.call(), environment())
+  on.exit({
+    if (!is.null(returnValue())) {
+      return(ScidrFinishInference(returnValue(), .scidr_inference, environment()))
+    }
+  }, add = TRUE)
+
   # Deprecated argument shims (SciDataReportR 19.15.0)
   if (lifecycle::is_present(Data)) {
     lifecycle::deprecate_warn("19.15.0", "PlotChiSqCovar(Data)", "PlotChiSqCovar(data)")
@@ -191,7 +203,7 @@ PlotChiSqCovar <- function(data,
   stat.test <- mData %>%
     dplyr::group_by(XVar, YVar) %>%
     dplyr::summarise(
-      test = list(tryCatch(stats::chisq.test(XVal, YVal), error = function(e) NULL)),
+      test = list(tryCatch(ScidrObserveInference(stats::chisq.test(XVal, YVal)), error = function(e) NULL)),
       .groups = "drop"
     ) %>%
     dplyr::rowwise() %>%
@@ -218,7 +230,7 @@ PlotChiSqCovar <- function(data,
       outcome_ids = .data$YVar, predictor_ids = .data$XVar
     )) %>%
     dplyr::mutate(
-      pval.signif = ScidrPValueStars(.data$pval, IncludeTrendSymbol = IncludeTrendSymbol),
+      pval.signif = ScidrPValueStars(ScidrInferenceP(.data$pval, .data$pval.adj), IncludeTrendSymbol = IncludeTrendSymbol),
       pval.adj.signif = ScidrPValueStars(.data$pval.adj, IncludeTrendSymbol = IncludeTrendSymbol),
       Test = "Chi Squared",
       logp = -log10(pval),

@@ -38,7 +38,7 @@ test_that("PlotVolcanoEffects default coloring remains unchanged", {
     ColorBy = NULL
   )
 
-  expect_named(omitted, c("RawPPlot", "FDRPlot", "ResultsTable"))
+  expect_named(omitted, c("RawPPlot", "FDRPlot", "ResultsTable", "Results", "Metadata"))
   expect_identical(omitted$ResultsTable, explicit_null$ResultsTable)
   expect_false("ColorCategory" %in% names(omitted$ResultsTable))
   expect_true(all(is.na(omitted$ResultsTable$PlotLabel)))

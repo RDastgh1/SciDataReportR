@@ -42,13 +42,25 @@
 #' @export
 #'
 #'
+#' @inheritParams inference-results
+#' @section Statistical results and provenance:
+#' See [inference-results] for the shared `Results` and `Metadata` contract.
 PlotPartialRegressionScatter <- function(data,
     IndepVar,
     DepVar,
     covariates = NULL,
     Relabel = TRUE,
     DataFrame = lifecycle::deprecated(),
-    Covariates = lifecycle::deprecated()) {
+    Covariates = lifecycle::deprecated(),
+    Pthresh = 0.05,
+    PVar = "PValue") {
+  .scidr_inference <- ScidrStartInference("PlotPartialRegressionScatter", match.call(), environment())
+  on.exit({
+    if (!is.null(returnValue())) {
+      return(ScidrFinishInference(returnValue(), .scidr_inference, environment()))
+    }
+  }, add = TRUE)
+
   # Deprecated argument shims (SciDataReportR 19.15.0)
   if (lifecycle::is_present(DataFrame)) {
     lifecycle::deprecate_warn("19.15.0", "PlotPartialRegressionScatter(DataFrame)", "PlotPartialRegressionScatter(data)")
@@ -66,16 +78,23 @@ PlotPartialRegressionScatter <- function(data,
   allVars <- c(IndepVar, DepVar, Covariates)
   DataSub <- DataFrame[complete.cases(DataFrame[, allVars]), ]
 
+  if (nrow(DataSub) < length(Covariates) + 3L) {
+    ScidrRecordInferenceFailure(DepVar, IndepVar, "Too few complete observations for partial regression.", nrow(DataSub))
+    return(ScidrEmptyLegacyInference("PlotPartialRegressionScatter"))
+  }
+
   # If covariates are provided, residualize the independent and dependent variables.
   if (!is.null(Covariates)) {
     # Residualize the independent variable.
     f_indep <- as.formula(paste(IndepVar, "~", paste(Covariates, collapse = " + ")))
-    model_indep <- lm(f_indep, data = DataSub)
+    model_indep <- ScidrTryInference(ScidrObserveInference(lm(f_indep, data = DataSub)))
+    if (is.null(model_indep)) return(ScidrEmptyLegacyInference("PlotPartialRegressionScatter"))
     DataSub[[paste0(IndepVar, "_resid")]] <- resid(model_indep)
 
     # Residualize the dependent variable.
     f_dep <- as.formula(paste(DepVar, "~", paste(Covariates, collapse = " + ")))
-    model_dep <- lm(f_dep, data = DataSub)
+    model_dep <- ScidrTryInference(ScidrObserveInference(lm(f_dep, data = DataSub)))
+    if (is.null(model_dep)) return(ScidrEmptyLegacyInference("PlotPartialRegressionScatter"))
     DataSub[[paste0(DepVar, "_resid")]] <- resid(model_dep)
   } else {
     DataSub[[paste0(IndepVar, "_resid")]] <- DataSub[[IndepVar]]
@@ -83,8 +102,9 @@ PlotPartialRegressionScatter <- function(data,
   }
 
   # Fit the partial regression model: regress the dependent residuals on the independent residuals.
-  partial_model <- lm(as.formula(paste0(paste0(DepVar, "_resid"), " ~ ", paste0(IndepVar, "_resid"))),
-                      data = DataSub)
+  partial_model <- ScidrTryInference(ScidrObserveInference(lm(as.formula(paste0(paste0(DepVar, "_resid"), " ~ ", paste0(IndepVar, "_resid"))),
+                      data = DataSub)))
+  if (is.null(partial_model)) return(ScidrEmptyLegacyInference("PlotPartialRegressionScatter"))
   summary_model <- summary(partial_model)
   coef_model <- coef(partial_model)
   r2 <- summary_model$r.squared

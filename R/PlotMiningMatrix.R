@@ -5,18 +5,24 @@
 #' @param data A data frame.
 #' @param outcome_vars Outcome variables.
 #' @param predictor_vars Predictor variables. If NULL, uses OutcomeVars.
-#' @param covariates Optional covariates (reserved for future use).
+#' @param covariates Optional variables to exclude from the tested axes.
 #' @param Relabel Use labels instead of names.
 #' @param TreatOrdinalAs How ordinal variables are handled: `"Categorical"`,
 #' `"Continuous"`, `"Both"`, or `"Exclude"`.
 #' @param Parametric Use parametric tests.
 #'
 #' @return List with tables and plots.
-#' @param fdr_scope Either `"matrix"` (default) or `"per_outcome"`, passed to
-#'   [ApplyFDRCorrection()]. `"matrix"` corrects across all pairwise p-values
-#'   at once (historical behavior, computed on the symmetrized pair table).
-#'   `"per_outcome"` corrects separately within each x-axis variable (`XVar`,
-#'   ordered by `outcome_vars`).
+#' @details Numeric pairs use Pearson correlation when `Parametric = TRUE`,
+#' and Spearman otherwise. Categorical/numeric pairs use ANOVA or Kruskal-Wallis
+#' in either orientation; categorical pairs use chi-squared tests. Logical
+#' columns are converted locally to FALSE/TRUE factors, preserving labels.
+#' Missing effect sizes retain their p-values and plot in neutral grey.
+#' `Unadjusted$Missing` lists requested non-self pairs without a finite p-value.
+#' @param fdr_scope One of `"matrix"`, `"per_outcome"`, or `"per_predictor"`.
+#' Correction uses the symmetrized table before selecting the displayed grid.
+#' `"matrix"` corrects all p-values together (historical behavior).
+#' `"per_outcome"` groups by x-axis outcome (`XVar`), correcting over predictors;
+#' `"per_predictor"` groups by y-axis predictor (`YVar`), correcting over outcomes.
 #' @param Data \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
 #' @param OutcomeVars \strong{Deprecated} (since 19.15.0). Use \code{outcome_vars} instead.
 #' @param PredictorVars \strong{Deprecated} (since 19.15.0). Use \code{predictor_vars} instead.
@@ -60,6 +66,9 @@
 #' }
 #' @param IncludeTrendSymbol Logical; add a plus sign for `0.05 < p <= 0.10`.
 #' @export
+#' @inheritParams inference-results
+#' @section Statistical results and provenance:
+#' See [inference-results] for the shared `Results` and `Metadata` contract.
 PlotMiningMatrix <- function(data,
     outcome_vars,
     predictor_vars = NULL,
@@ -72,7 +81,16 @@ PlotMiningMatrix <- function(data,
     PredictorVars = lifecycle::deprecated(),
     fdr_scope = c("matrix", "per_outcome", "per_predictor"),
     IncludeTrendSymbol = FALSE,
-    Covariates = lifecycle::deprecated()) {
+    Covariates = lifecycle::deprecated(),
+    Pthresh = 0.05,
+    PVar = "PValue") {
+  .scidr_inference <- ScidrStartInference("PlotMiningMatrix", match.call(), environment())
+  on.exit({
+    if (!is.null(returnValue())) {
+      return(ScidrFinishInference(returnValue(), .scidr_inference, environment()))
+    }
+  }, add = TRUE)
+
   # Deprecated argument shims (SciDataReportR 19.15.0)
   if (lifecycle::is_present(Data)) {
     lifecycle::deprecate_warn("19.15.0", "PlotMiningMatrix(Data)", "PlotMiningMatrix(data)")
@@ -114,8 +132,15 @@ PlotMiningMatrix <- function(data,
     empty <- data.frame()
     p0 <- ggplot2::ggplot() + ggplot2::theme_void()
     return(list(
-      Unadjusted = list(PvalTable = empty, plot = p0)
+      Unadjusted = list(PvalTable = empty, plot = p0,
+                        Missing = data.frame(XVar = character(), YVar = character()))
     ))
+  }
+
+  for (variable in names(Data)[vapply(Data, is.logical, logical(1))]) {
+    label <- attr(Data[[variable]], "label", exact = TRUE)
+    Data[[variable]] <- factor(Data[[variable]], levels = c(FALSE, TRUE))
+    attr(Data[[variable]], "label") <- label
   }
 
   ordinal <- ConvertOrdinalToNumeric(
@@ -138,7 +163,7 @@ PlotMiningMatrix <- function(data,
 
   coalesce_effect <- function(df) {
     out <- rep(NA_real_, nrow(df))
-    for (nm in c("r", "R", "estimate", "cor", "correlation", "ges", "cramers_v")) {
+    for (nm in c("r", "R", "estimate", "cor", "correlation", "ges", "eta2_H", "cramers_v")) {
       if (nm %in% names(df)) {
         out <- dplyr::coalesce(out, suppressWarnings(as.numeric(df[[nm]])))
       }
@@ -171,6 +196,34 @@ PlotMiningMatrix <- function(data,
     cat_Predictors <- setdiff(cat_Predictors, Covariates)
   }
 
+  WarnBranch <- function(branch, variables, e) {
+    warning(branch, " branch failed for ", paste(variables, collapse = ", "),
+            ": ", conditionMessage(e), call. = FALSE)
+    NULL
+  }
+  df_Requested <- expand.grid(
+    XVar = setdiff(OutcomeVars, Covariates),
+    YVar = setdiff(PredictorVars, Covariates), stringsAsFactors = FALSE,
+    KEEP.OUT.ATTRS = FALSE
+  ) %>% dplyr::filter(XVar != YVar)
+
+  MiningPairTable <- function(object, type) {
+    if (is.data.frame(object$Results)) {
+      return(dplyr::transmute(object$Results, XVar = .data$Outcome, YVar = .data$Predictor,
+        p = .data$PValue, EffectSize = .data$Estimate, Test = type))
+    }
+    # Compatibility for older dependency outputs. Current functions expose Results.
+    df_Table <- if (type == "ANOVA") object$Unadjusted$PvalTable else if (type == "Correlation") object$Unadjusted$plot$data else object$p$data
+    if (!is.data.frame(df_Table) || !nrow(df_Table)) return(data.frame(
+      XVar = character(), YVar = character(), p = numeric(), EffectSize = numeric(), Test = character()))
+    if (type == "ANOVA") {
+      df_Table$XVar <- as.character(df_Table$ContinuousVariable)
+      df_Table$YVar <- as.character(df_Table$CategoricalVariable)
+    }
+    df_Table %>% dplyr::mutate(p = coalesce_p(.), EffectSize = coalesce_effect(.), Test = type) %>%
+      dplyr::select(XVar, YVar, p, EffectSize, Test)
+  }
+
   results_list <- list()
 
   # Correlations
@@ -181,21 +234,15 @@ PlotMiningMatrix <- function(data,
         Data,
         predictor_vars = num_Predictors,
         outcome_vars = num_Outcomes,
-        covariates = Covariates,
         method = method,
         Relabel = FALSE
       ),
-      error = function(e) NULL
+      error = function(e) WarnBranch("correlation", c(num_Outcomes, num_Predictors), e)
     )
 
-    if (!is.null(cor_res) && !is.null(cor_res$Unadjusted$plot$data)) {
+    if (!is.null(cor_res)) {
 
-      df_cor <- cor_res$Unadjusted$plot$data %>%
-        dplyr::mutate(
-          p = coalesce_p(.),
-          EffectSize = coalesce_effect(.),
-          Test = "Correlation"
-        ) %>%
+      df_cor <- MiningPairTable(cor_res, "Correlation") %>%
         dplyr::select(XVar, YVar, p, EffectSize, Test) %>%
         dplyr::filter(XVar != YVar)
 
@@ -203,31 +250,26 @@ PlotMiningMatrix <- function(data,
     }
   }
 
-  # ANOVA
-  if (length(cat_Predictors) > 0 && length(num_Outcomes) > 0) {
+  # Test mixed pairs in both requested orientations.
+  for (direction in c("forward", "reverse")) {
+    vars_Categorical <- if (direction == "forward") cat_Predictors else cat_Outcomes
+    vars_Continuous <- if (direction == "forward") num_Outcomes else num_Predictors
+    if (length(vars_Categorical) == 0 || length(vars_Continuous) == 0) next
 
     anova_res <- tryCatch(
       SciDataReportR::PlotAnovaRelationshipsMatrix(
         Data,
-        CatVars = cat_Predictors,
-        ContVars = num_Outcomes,
-        covariates = Covariates,
+        CatVars = vars_Categorical,
+        ContVars = vars_Continuous,
         Relabel = FALSE,
         Parametric = Parametric
       ),
-      error = function(e) NULL
+      error = function(e) WarnBranch("ANOVA", c(vars_Categorical, vars_Continuous), e)
     )
 
-    if (!is.null(anova_res) && !is.null(anova_res$Unadjusted$PvalTable)) {
+    if (!is.null(anova_res)) {
 
-      df_anova <- anova_res$Unadjusted$PvalTable %>%
-        dplyr::mutate(
-          XVar = ContinuousVariable,
-          YVar = CategoricalVariable,
-          p = coalesce_p(.),
-          EffectSize = coalesce_effect(.),
-          Test = "ANOVA"
-        ) %>%
+      df_anova <- MiningPairTable(anova_res, "ANOVA") %>%
         dplyr::select(XVar, YVar, p, EffectSize, Test) %>%
         dplyr::filter(XVar != YVar)
 
@@ -243,20 +285,14 @@ PlotMiningMatrix <- function(data,
         Data,
         predictor_vars = cat_Predictors,
         outcome_vars = cat_Outcomes,
-        covariates = Covariates,
         Relabel = FALSE
       ),
-      error = function(e) NULL
+      error = function(e) WarnBranch("ChiSq", c(cat_Outcomes, cat_Predictors), e)
     )
 
-    if (!is.null(chi_res) && !is.null(chi_res$p$data)) {
+    if (!is.null(chi_res)) {
 
-      df_chi <- chi_res$p$data %>%
-        dplyr::mutate(
-          p = coalesce_p(.),
-          EffectSize = coalesce_effect(.),
-          Test = "ChiSq"
-        ) %>%
+      df_chi <- MiningPairTable(chi_res, "ChiSq") %>%
         dplyr::select(XVar, YVar, p, EffectSize, Test) %>%
         dplyr::filter(XVar != YVar)
 
@@ -264,18 +300,12 @@ PlotMiningMatrix <- function(data,
     }
   }
 
-  if (length(results_list) == 0) {
-    return(list(
-      Unadjusted = list(PvalTable = data.frame(), plot = ggplot2::ggplot() + ggplot2::theme_void())
-    ))
-  }
-
   # Symmetry fix
-  results <- dplyr::bind_rows(results_list) %>%
+  results <- dplyr::bind_rows(c(list(data.frame(
+      XVar = character(), YVar = character(), p = numeric(),
+      EffectSize = numeric(), Test = character())), results_list)) %>%
     dplyr::filter(
-      !is.na(p),
-      !is.na(EffectSize),
-      is.finite(EffectSize)
+      is.finite(p)
     ) %>%
     dplyr::mutate(
       VarA = pmin(XVar, YVar),
@@ -284,7 +314,7 @@ PlotMiningMatrix <- function(data,
     dplyr::group_by(VarA, VarB) %>%
     dplyr::summarise(
       p = min(p, na.rm = TRUE),
-      EffectSize = max(abs(EffectSize), na.rm = TRUE),
+      EffectSize = if (any(is.finite(EffectSize))) max(abs(EffectSize[is.finite(EffectSize)])) else NA_real_,
       Test = dplyr::first(Test),
       .groups = "drop"
     )
@@ -293,6 +323,14 @@ PlotMiningMatrix <- function(data,
     results %>% dplyr::transmute(XVar = VarA, YVar = VarB, p, EffectSize, Test),
     results %>% dplyr::transmute(XVar = VarB, YVar = VarA, p, EffectSize, Test)
   )
+
+  df_Missing <- dplyr::anti_join(df_Requested, results, by = c("XVar", "YVar"))
+  if (nrow(df_Missing) > 0) {
+    pairs <- paste(df_Missing$XVar, df_Missing$YVar, sep = " vs ")
+    warning("Missing requested pairs: ", paste(utils::head(pairs, 10), collapse = ", "),
+            if (length(pairs) > 10) paste0(" and ", length(pairs) - 10, " more") else "",
+            call. = FALSE)
+  }
 
   # The pair table is symmetrized (each pair appears in both orientations)
   # before correction; "matrix" scope reproduces the historical behavior on
@@ -306,7 +344,7 @@ PlotMiningMatrix <- function(data,
   )
 
   results$stars <- ScidrPValueStars(
-    results$p, IncludeTrendSymbol = IncludeTrendSymbol
+    ScidrInferenceP(results$p, results$p_adj), IncludeTrendSymbol = IncludeTrendSymbol
   )
 
   # Safe label application
@@ -370,7 +408,7 @@ PlotMiningMatrix <- function(data,
     )
 
   out <- list(
-    Unadjusted = list(PvalTable = results, plot = p),
+    Unadjusted = list(PvalTable = results, plot = p, Missing = df_Missing),
     Metadata = list(
       TreatOrdinalAs = TreatOrdinalAs,
       DisplayLabels = labels[unique(c(OutcomeVars, PredictorVars))]

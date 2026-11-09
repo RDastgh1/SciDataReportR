@@ -33,12 +33,24 @@
 #' PlotAssociations(Labelled, "Diagnosis", "AXL")
 #' @param IncludeTrendSymbol Logical; append a plus sign to a nominal-trend subtitle.
 #' @export
+#' @inheritParams inference-results
+#' @section Statistical results and provenance:
+#' See [inference-results] for the shared `Results` and `Metadata` contract.
 PlotAssociations <- function(data,
     Var1,
     Var2,
     Ordinal = FALSE,
     IncludeTrendSymbol = FALSE,
-    DataFrame = lifecycle::deprecated()) {
+    DataFrame = lifecycle::deprecated(),
+    Pthresh = 0.05,
+    PVar = "PValue") {
+  .scidr_inference <- ScidrStartInference("PlotAssociations", match.call(), environment())
+  on.exit({
+    if (!is.null(returnValue())) {
+      return(ScidrFinishInference(returnValue(), .scidr_inference, environment()))
+    }
+  }, add = TRUE)
+
   # Deprecated argument shims (SciDataReportR 19.15.0)
   if (lifecycle::is_present(DataFrame)) {
     lifecycle::deprecate_warn("19.15.0", "PlotAssociations(DataFrame)", "PlotAssociations(data)")
@@ -82,24 +94,25 @@ PlotAssociations <- function(data,
     }
   }
   if (type == "NumNum") {
-    p <- ggscatterstats(data = DataFrame, x = !!Var1, y = !!Var2,
-                        bf.message = FALSE, ggtheme = ggplot2::theme_bw())
+    p <- ScidrTryInference(ggscatterstats(data = DataFrame, x = !!Var1, y = !!Var2,
+                        bf.message = FALSE, ggtheme = ggplot2::theme_bw()))
   }
   else if (type == "CatCat") {
     DataFrame[[Var1]] <- DataFrame[[Var1]] %>% addNA()
     DataFrame[[Var2]] <- DataFrame[[Var2]] %>% addNA()
-    p <- ggbarstats(data = DataFrame, x = !!Var1, y = !!Var2,
+    p <- ScidrTryInference(ggbarstats(data = DataFrame, x = !!Var1, y = !!Var2,
                     bf.message = FALSE, label = "both",
-                    ggtheme = ggplot2::theme_bw())
+                    ggtheme = ggplot2::theme_bw()))
   }
   else if (type == "NumCat") {
     DataFrame <- DataFrame[!is.na(DataFrame[[NumVar]]), ]
     DataFrame[[CatVar]] <- DataFrame[[CatVar]] %>% as.factor()
-    p <- ggstatsplot::ggbetweenstats(data = DataFrame, x = !!CatVar, y = !!NumVar,
+    p <- ScidrTryInference(ggstatsplot::ggbetweenstats(data = DataFrame, x = !!CatVar, y = !!NumVar,
                                      plot.type = "box", bf.message = FALSE,
                                      pairwise.comparisons = FALSE,
-                                     ggtheme = ggplot2::theme_bw())
+                                     ggtheme = ggplot2::theme_bw()))
   }
+  if (is.null(p)) p <- ggplot2::ggplot() + ggplot2::theme_void()
   p <- ApplySciDataPalette(p) + theme(text = element_text(size = 10))
   if (isTRUE(IncludeTrendSymbol)) {
     trend_p <- tryCatch(

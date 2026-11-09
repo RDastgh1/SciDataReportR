@@ -106,9 +106,12 @@
 #' example, `df_All$cohort <- factor(df_All$cohort)`). Few unique values alone
 #' do not establish categorical meaning. Factors, character columns, and logical
 #' columns are accepted; more than 10 observed categories warn and continue.
-#' Entirely missing or unsupported columns error. Caller data are unchanged,
+#' Entirely missing columns produce unavailable statistical requests; unsupported types error. Caller data are unchanged,
 #' and existing restrictions on the required number of groups still apply.
 #' @export
+#' @inheritParams inference-results
+#' @section Statistical results and provenance:
+#' See [inference-results] for the shared `Results` and `Metadata` contract.
 PlotCorrelationComparisons <- function(
     data,
     predictor_vars = NULL,
@@ -132,7 +135,16 @@ PlotCorrelationComparisons <- function(
     cluster_rows = FALSE,
     cluster_columns = FALSE,
     triangle = c("full", "upper", "lower"),
-    IncludeTrendSymbol = FALSE) {
+    IncludeTrendSymbol = FALSE,
+    Pthresh = 0.05,
+    PVar = "PValue") {
+  .scidr_inference <- ScidrStartInference("PlotCorrelationComparisons", match.call(), environment())
+  on.exit({
+    if (!is.null(returnValue())) {
+      return(ScidrFinishInference(returnValue(), .scidr_inference, environment()))
+    }
+  }, add = TRUE)
+
 
   # Validate inputs
 
@@ -231,6 +243,8 @@ PlotCorrelationComparisons <- function(
     )
   }
 
+  if (!length(available_groups)) return(ScidrFailRequestedInference("PlotCorrelationComparisons",
+    "Grouping variable has no observed non-missing levels.", group_var))
   if (length(available_groups) < 2) {
     stop(
       sprintf(
@@ -878,7 +892,7 @@ PlotCorrelationComparisons <- function(
           "Unavailable: insufficient pairwise observations after covariate adjustment"
       ),
       InferenceApproximate = method == "spearman" || length(covariates) > 0,
-      stars = .FormatPValueStars(PValue, IncludeTrendSymbol = IncludeTrendSymbol),
+      stars = .FormatPValueStars(ScidrInferenceP(PValue, PAdjusted), IncludeTrendSymbol = IncludeTrendSymbol),
       stars_FDR = .FormatPValueStars(PAdjusted, IncludeTrendSymbol = IncludeTrendSymbol),
       ReversalPattern = dplyr::if_else(
         DirectionReversal,

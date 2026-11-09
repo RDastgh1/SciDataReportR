@@ -93,6 +93,12 @@ ScidrPrepareCategorical <- function(data, variables, arg_name) {
     observed <- unique(x[!is.na(x)])
     n_groups <- length(observed)
     if (!n_groups) {
+      if (!is.null(ScidrCurrentInference())) {
+        label <- attr(x, "label", exact = TRUE)
+        data[[variable]] <- if (is.factor(x)) x else factor(x)
+        if (!is.null(label)) attr(data[[variable]], "label") <- label
+        next
+      }
       stop(context, " has no observed non-missing values for categorical grouping.", call. = FALSE)
     }
     examples <- paste(utils::head(as.character(observed), 5L), collapse = ", ")

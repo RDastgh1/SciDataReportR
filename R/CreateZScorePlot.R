@@ -63,9 +63,12 @@
 #' example, `df_All$cohort <- factor(df_All$cohort)`). Few unique values alone
 #' do not establish categorical meaning. Factors, character columns, and logical
 #' columns are accepted; more than 10 observed categories warn and continue.
-#' Entirely missing or unsupported columns error. Caller data are unchanged,
+#' Entirely missing columns produce unavailable statistical requests; unsupported types error. Caller data are unchanged,
 #' and existing restrictions on the required number of groups still apply.
 #' @export
+#' @inheritParams inference-results
+#' @section Statistical results and provenance:
+#' See [inference-results] for the shared `Results` and `Metadata` contract.
 PlotZScore <- function(data,
     TargetVar,
     variables,
@@ -80,7 +83,16 @@ PlotZScore <- function(data,
     SigP_YCoord = 1.5,
     SigFDR_YCoord = 1.6,
     Data = lifecycle::deprecated(),
-    Variables = lifecycle::deprecated()) {
+    Variables = lifecycle::deprecated(),
+    Pthresh = 0.05,
+    PVar = "PValue") {
+  .scidr_inference <- ScidrStartInference("PlotZScore", match.call(), environment())
+  on.exit({
+    if (!is.null(returnValue())) {
+      return(ScidrFinishInference(returnValue(), .scidr_inference, environment()))
+    }
+  }, add = TRUE)
+
   # Deprecated argument shims (SciDataReportR 19.15.0)
   if (lifecycle::is_present(Data)) {
     lifecycle::deprecate_warn("19.15.0", "PlotZScore(Data)", "PlotZScore(data)")
@@ -111,9 +123,9 @@ PlotZScore <- function(data,
 
   Data <- ScidrPrepareCategorical(Data, TargetVar, "TargetVar")
   scaledData <- Data[c(TargetVar, Variables)]
-  scaledData[Variables] <- scale(scaledData[Variables])
+  scaledData[Variables] <- ScidrObserveInference(scale(scaledData[Variables]))
   colnames(scaledData)[1] <- "Group"
-  n_groups <- length(unique(scaledData$Group))
+  n_groups <- length(unique(stats::na.omit(scaledData$Group)))
   test_alternative <- if (identical(alternative, "greater")) "less" else if (identical(alternative, "less")) "greater" else "two.sided"
   if (!identical(alternative, "two.sided") && n_groups != 2) {
     warning("`alternative` is only available for two-group comparisons; retaining existing two-sided/global tests.", call. = FALSE)
@@ -130,38 +142,31 @@ PlotZScore <- function(data,
     dplyr::filter(n_distinct(Group) > 1) %>% dplyr::filter(n() > 2) %>%# filter out variables with few observations
     ungroup()
 
-  # Perform statistical tests based on the number of groups and Parametric flag
-  if (Parametric) {
-    if (n_groups == 2) {
-      stat.test <- melted %>%
-        dplyr::group_by(variable) %>%
-        rstatix::t_test(value ~ Group, var.equal = TRUE, alternative = test_alternative) %>%
-        rstatix::adjust_pvalue(method = "BH") %>%
-        rstatix::add_significance()
-    } else {
-      stat.test <- melted %>%
-        dplyr::group_by(variable) %>%
-        rstatix::anova_test(value ~ Group) %>%
-        rstatix::adjust_pvalue(method = "BH") %>%
-        rstatix::add_significance()
-    }
-  } else {
-    # Non-parametric tests
-    if (n_groups == 2) {
-      stat.test <- melted %>%
-        dplyr::group_by(variable) %>%
-        rstatix::wilcox_test(value ~ Group, alternative = test_alternative) %>%
-        rstatix::adjust_pvalue(method = "BH") %>%
-        rstatix::add_significance()
-    } else {
-      stat.test <- melted %>%
-        dplyr::group_by(variable) %>%
-        rstatix::kruskal_test(value ~ Group) %>%
-        rstatix::adjust_pvalue(method = "BH") %>%
-        rstatix::add_significance()
-    }
-  }
+  if (!nrow(melted)) return(ggplot2::ggplot() + ggplot2::theme_void())
 
+  PerformZScoreTest <- function(df_Test, variable) {
+    tryCatch({
+      result <- if (Parametric && n_groups == 2L) {
+        ScidrObserveInference(rstatix::t_test(df_Test, value ~ Group, var.equal = TRUE, alternative = test_alternative))
+      } else if (Parametric) {
+        ScidrObserveInference(rstatix::anova_test(df_Test, value ~ Group))
+      } else if (n_groups == 2L) {
+        ScidrObserveInference(rstatix::wilcox_test(df_Test, value ~ Group, alternative = test_alternative))
+      } else {
+        ScidrObserveInference(rstatix::kruskal_test(df_Test, value ~ Group))
+      }
+      tibble::as_tibble(result)
+    }, error = function(e) {
+      ScidrRecordInferenceFailure(as.character(variable), TargetVar, conditionMessage(e), nrow(df_Test))
+      tibble::tibble(p = NA_real_)
+    })
+  }
+  stat.test <- melted %>%
+    dplyr::group_by(variable) %>%
+    dplyr::group_modify(~ PerformZScoreTest(.x, .y$variable)) %>%
+    dplyr::ungroup() %>%
+    rstatix::adjust_pvalue(method = "BH") %>%
+    rstatix::add_significance()
 
   GroupMeans <- melted %>% dplyr::group_by(variable, Group) %>%
     dplyr::summarize(mean = mean(value, na.rm = TRUE), stderror = plotrix::std.error(value),
@@ -196,7 +201,7 @@ PlotZScore <- function(data,
   pvaldata <- data.frame(variable = levels(GroupMeans$variable),
                          Label <- levels(GroupMeans$Label))
   pvaldata <- dplyr::right_join(pvaldata, stat.test, by = "variable")
-  pvaldata$pvalline <- ifelse(pvaldata$p < 0.05, SigP_YCoord, NaN)
+  pvaldata$pvalline <- ifelse(ScidrInferenceP(pvaldata$p, pvaldata$p.adj) < Pthresh, SigP_YCoord, NaN)
   pvaldata$FDRline <- ifelse(pvaldata$p.adj < 0.05, SigFDR_YCoord, NaN)
   pvaldata$variable <- factor(pvaldata$variable, levels = levels(GroupMeans$variable))
   pvaldata$Category <- ifelse(is.null(VariableCategories),
@@ -215,7 +220,6 @@ PlotZScore <- function(data,
     geom_errorbar(aes(ymin = mean - stderror, ymax = mean +
                         stderror, color = Category), alpha = 0.5) + theme_minimal() +
     geom_point(data = pvaldata, aes(y = pvalline), color = "blue") +
-    geom_point(data = pvaldata, aes(y = FDRline), color = "green") +
     guides(shape = "none", linetype = "none") + scale_y_continuous(limits = c(-2,
                                                                             2)) + ylab("Z-Score") + .SciDataColourScale()
   if (RemoveXAxisLabels) {

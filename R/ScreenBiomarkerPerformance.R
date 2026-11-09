@@ -49,6 +49,9 @@
 #' screen$Plots$Heatmap %>% add_biomarker_values()
 #' }
 #' @export
+#' @inheritParams inference-results
+#' @section Statistical results and provenance:
+#' See [inference-results] for the shared `Results` and `Metadata` contract.
 ScreenBiomarkerPerformance <- function(
     data,
     outcome_vars,
@@ -66,7 +69,16 @@ ScreenBiomarkerPerformance <- function(
     Relabel = TRUE,
     codebook = NULL,
     cluster_rows = FALSE,
-    cluster_columns = FALSE) {
+    cluster_columns = FALSE,
+    Pthresh = 0.05,
+    PVar = "PValue") {
+  .scidr_inference <- ScidrStartInference("ScreenBiomarkerPerformance", match.call(), environment())
+  on.exit({
+    if (!is.null(returnValue())) {
+      return(ScidrFinishInference(returnValue(), .scidr_inference, environment()))
+    }
+  }, add = TRUE)
+
 
   OutcomeType <- match.arg(OutcomeType)
   Validation <- match.arg(Validation)
@@ -178,6 +190,12 @@ ScreenBiomarkerPerformance <- function(
       )
 
       if (is.null(evaluation)) next
+      if (!nrow(evaluation$PerformanceTable)) {
+        evaluation_list[[key]] <- evaluation
+        failure_rows[[length(failure_rows) + 1L]] <- tibble::tibble(Outcome = outcome, Biomarker = biomarker,
+          Status = "failed", Note = paste(evaluation$Metadata$Failed$Reason, collapse = "; "))
+        next
+      }
       evaluation_list[[key]] <- evaluation
 
       metadata <- evaluation$Metadata
@@ -274,7 +292,10 @@ ScreenBiomarkerPerformance <- function(
   }
 
   if (length(performance_rows) == 0) {
-    stop("No biomarker-outcome analyses completed successfully.", call. = FALSE)
+    out <- ScidrEmptyLegacyInference("ScreenBiomarkerPerformance")
+    out$FailureTable <- dplyr::bind_rows(failure_rows)
+    out$Evaluations <- evaluation_list
+    return(out)
   }
 
   PerformanceTable <- dplyr::bind_rows(performance_rows)

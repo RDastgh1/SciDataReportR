@@ -33,7 +33,8 @@
 #'
 #' `Parametric = FALSE` switches to Kruskal-Wallis, which compares ranks rather
 #' than means and assumes neither normality nor equal variance. The matrix is
-#' built and read exactly the same way.
+#' built and read exactly the same way. Its p-value table includes `eta2_H`,
+#' calculated as (H - k + 1) / (n - k) on pairwise complete observations.
 #'
 #' Comparing the two p-value tables shows which conclusions depended on the
 #' choice of test. Relationships that hold under both are the ones to trust.
@@ -124,9 +125,12 @@
 #' example, `df_All$cohort <- factor(df_All$cohort)`). Few unique values alone
 #' do not establish categorical meaning. Factors, character columns, and logical
 #' columns are accepted; more than 10 observed categories warn and continue.
-#' Entirely missing or unsupported columns error. Caller data are unchanged,
+#' Entirely missing columns produce unavailable statistical requests; unsupported types error. Caller data are unchanged,
 #' and existing restrictions on the required number of groups still apply.
 #' @export
+#' @inheritParams inference-results
+#' @section Statistical results and provenance:
+#' See [inference-results] for the shared `Results` and `Metadata` contract.
 PlotAnovaRelationshipsMatrix <- function(data,
     CatVars,
     ContVars,
@@ -139,7 +143,16 @@ PlotAnovaRelationshipsMatrix <- function(data,
     Data = lifecycle::deprecated(),
     fdr_scope = c("matrix", "per_outcome", "per_predictor"),
     IncludeTrendSymbol = FALSE,
-    Covariates = lifecycle::deprecated()) {
+    Covariates = lifecycle::deprecated(),
+    Pthresh = 0.05,
+    PVar = "PValue") {
+  .scidr_inference <- ScidrStartInference("PlotAnovaRelationshipsMatrix", match.call(), environment())
+  on.exit({
+    if (!is.null(returnValue())) {
+      return(ScidrFinishInference(returnValue(), .scidr_inference, environment()))
+    }
+  }, add = TRUE)
+
   # Deprecated argument shims (SciDataReportR 19.15.0)
   if (lifecycle::is_present(Data)) {
     lifecycle::deprecate_warn("19.15.0", "PlotAnovaRelationshipsMatrix(Data)", "PlotAnovaRelationshipsMatrix(data)")
@@ -265,7 +278,7 @@ PlotAnovaRelationshipsMatrix <- function(data,
     dplyr::filter(
       dplyr::n() >= min_n,
       dplyr::n_distinct(CategoricalValue) > 1,
-      dplyr::n_distinct(ContinuousValue) > 2,
+      dplyr::n_distinct(ContinuousValue) > 1,
       stats::sd(ContinuousValue, na.rm = TRUE) > eps
     ) %>%
     dplyr::ungroup()
@@ -276,24 +289,35 @@ PlotAnovaRelationshipsMatrix <- function(data,
   if (length(Covariates) > 0) rhs <- paste(rhs, paste(Covariates, collapse = " + "), sep = " + ")
   fml <- stats::as.formula(paste("ContinuousValue ~", rhs))
 
-  safe_test_df <- function(df) {
-    fit <- tryCatch(stats::lm(fml, data = df), error = function(e) NULL)
-    if (is.null(fit)) return(NULL)
-    rss <- sum(stats::resid(fit)^2)
-    if (!is.finite(rss) || rss <= eps) return(NULL)
+  safe_test_df <- function(df, keys) {
+    WarnTest <- function(e) {
+      warning("ANOVA branch failed for ", paste(unlist(keys), collapse = " vs "),
+              ": ", conditionMessage(e), call. = FALSE)
+      NULL
+    }
+    if (isTRUE(Parametric)) {
+      fit <- tryCatch(ScidrObserveInference(stats::lm(fml, data = df)), error = WarnTest)
+      if (is.null(fit)) return(NULL)
+      rss <- sum(stats::resid(fit)^2)
+      if (!is.finite(rss) || rss <= eps) return(NULL)
+    }
 
     out <- tryCatch({
-      if (isTRUE(Parametric)) rstatix::anova_test(df, fml) else rstatix::kruskal_test(df, fml)
-    }, error = function(e) NULL)
+      if (isTRUE(Parametric)) ScidrObserveInference(rstatix::anova_test(df, fml)) else ScidrObserveInference(rstatix::kruskal_test(df, fml))
+    }, error = WarnTest)
 
     if (is.null(out)) return(NULL)
+    if (!isTRUE(Parametric)) {
+      k <- dplyr::n_distinct(df$CategoricalValue)
+      out$eta2_H <- (out$statistic - k + 1) / (nrow(df) - k)
+    }
     as.data.frame(out)  # strip classes
   }
 
   stat.test <- mData %>%
     dplyr::group_by(ContinuousVariable, CategoricalVariable) %>%
     dplyr::group_modify(~{
-      res <- safe_test_df(.x)
+      res <- safe_test_df(.x, .y)
       if (is.null(res)) return(tibble::tibble())
       tibble::as_tibble(res)
     }) %>%
@@ -319,7 +343,9 @@ PlotAnovaRelationshipsMatrix <- function(data,
     stat.test$p.adj, ns_label = "ns", IncludeTrendSymbol = IncludeTrendSymbol
   )
 
-  stat.test$logp <- -log10(stat.test$p)
+  stat.test$p.signif <- ScidrPValueStars(ScidrInferenceP(stat.test$p, stat.test$p.adj),
+    ns_label = "ns", IncludeTrendSymbol = IncludeTrendSymbol)
+  stat.test$logp <- -log10(ScidrInferenceP(stat.test$p, stat.test$p.adj))
   stat.test$logp_FDR <- -log10(stat.test$p.adj)
   significance_levels <- if (IncludeTrendSymbol) {
     c("ns", "+", "*", "**", "***", "****")

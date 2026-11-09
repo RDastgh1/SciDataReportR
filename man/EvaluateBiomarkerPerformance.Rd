@@ -24,7 +24,9 @@ EvaluateBiomarkerPerformance(
   Seed = 123,
   Relabel = TRUE,
   codebook = NULL,
-  Verbose = TRUE
+  Verbose = TRUE,
+  Pthresh = 0.05,
+  PVar = "PValue"
 )
 }
 \arguments{
@@ -67,6 +69,20 @@ EvaluateBiomarkerPerformance(
 \item{codebook}{Optional data frame with \code{Variable} and \code{Label}.}
 
 \item{Verbose}{Print positive-level information.}
+
+\item{Pthresh}{Significance threshold, default \code{0.05}. An explicitly supplied
+value takes precedence over a legacy significance threshold argument.}
+
+\item{PVar}{P-value column used for significance decisions. Defaults to raw
+\code{"PValue"}; select \code{"PValueFDR"} to use Benjamini-Hochberg adjusted values.
+Explicit legacy p-column names remain accepted. Existing, explicitly named
+FDR plots and adjusted-value columns are retained.
+
+Explicit \code{Pthresh} takes precedence over \code{Alpha}, \code{FDRAlpha}, \code{label_q}, or
+\code{adjusted_significance_threshold}. Pairwise \code{star_p = "adjusted"} retains
+its legacy adjustment method unless \code{PVar} is supplied; \code{PVar = "PValueFDR"}
+always selects BH. \code{star_p = "none"} suppresses legacy pairwise stars.
+Stars retain conventional p-value tiers within the requested cutoff.}
 }
 \value{
 A stable named list containing models, performance, thresholds, predictions,
@@ -77,6 +93,11 @@ Evaluates a continuous or categorical biomarker against a binary or continuous o
 Binary analyses use ordinary logistic regression. Models with separation,
 non-convergence, or aliased coefficients return stable unavailable metrics.
 }
+\section{Statistical results and provenance}{
+
+See \link{inference-results} for the shared \code{Results} and \code{Metadata} contract.
+}
+
 \examples{
 \dontrun{EvaluateBiomarkerPerformance(df, "DiseaseCohort", "NfL", c("Age", "Sex"))}
 }

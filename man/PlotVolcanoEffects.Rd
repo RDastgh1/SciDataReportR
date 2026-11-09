@@ -27,7 +27,9 @@ PlotVolcanoEffects(
   xVars = lifecycle::deprecated(),
   yVar = lifecycle::deprecated(),
   Covariates = lifecycle::deprecated(),
-  Codebook = lifecycle::deprecated()
+  Codebook = lifecycle::deprecated(),
+  Pthresh = 0.05,
+  PVar = "PValue"
 )
 }
 \arguments{
@@ -98,6 +100,20 @@ point tooltips. Defaults to every supplied annotation column.}
 \item{Covariates}{\strong{Deprecated} (since 19.15.0). Use \code{covariates} instead.}
 
 \item{Codebook}{\strong{Deprecated} (since 19.15.0). Use \code{codebook} instead.}
+
+\item{Pthresh}{Significance threshold, default \code{0.05}. An explicitly supplied
+value takes precedence over a legacy significance threshold argument.}
+
+\item{PVar}{P-value column used for significance decisions. Defaults to raw
+\code{"PValue"}; select \code{"PValueFDR"} to use Benjamini-Hochberg adjusted values.
+Explicit legacy p-column names remain accepted. Existing, explicitly named
+FDR plots and adjusted-value columns are retained.
+
+Explicit \code{Pthresh} takes precedence over \code{Alpha}, \code{FDRAlpha}, \code{label_q}, or
+\code{adjusted_significance_threshold}. Pairwise \code{star_p = "adjusted"} retains
+its legacy adjustment method unless \code{PVar} is supplied; \code{PVar = "PValueFDR"}
+always selects BH. \code{star_p = "none"} suppresses legacy pairwise stars.
+Stars retain conventional p-value tiers within the requested cutoff.}
 }
 \value{
 A named list with \code{RawPPlot}, \code{FDRPlot}, and \code{ResultsTable}.
@@ -123,6 +139,11 @@ Missingness is handled pairwise by model, so each predictor is analyzed using
 all complete observations available for that predictor, the outcome, and any
 covariates. Invalid predictor variables are removed with a warning.
 }
+\section{Statistical results and provenance}{
+
+See \link{inference-results} for the shared \code{Results} and \code{Metadata} contract.
+}
+
 \examples{
 data(SampleData)
 data(SampleVariableTypes)

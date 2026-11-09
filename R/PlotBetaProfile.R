@@ -81,6 +81,9 @@
 #' )
 #' categorized$Plot
 #' @export
+#' @inheritParams inference-results
+#' @section Statistical results and provenance:
+#' See [inference-results] for the shared `Results` and `Metadata` contract.
 PlotBetaProfile <- function(data,
     predictor_vars,
     outcome_var,
@@ -99,7 +102,18 @@ PlotBetaProfile <- function(data,
     Relabel = TRUE,
     codebook = NULL,
     RemoveXAxisLabels = TRUE,
-    InteractiveLabels = TRUE) {
+    InteractiveLabels = TRUE,
+    Pthresh = 0.05,
+    PVar = "PValue") {
+  .scidr_inference <- ScidrStartInference("PlotBetaProfile", match.call(), environment())
+  on.exit({
+    if (!is.null(returnValue())) {
+      return(ScidrFinishInference(returnValue(), .scidr_inference, environment()))
+    }
+  }, add = TRUE)
+
+  if (!missing(Pthresh)) Alpha <- Pthresh
+
   # Validate inputs
 
   Sort <- match.arg(Sort)
@@ -323,7 +337,8 @@ PlotBetaProfile <- function(data,
   results <- results %>%
     dplyr::filter(is.na(.data$Note))
   if (nrow(results) == 0) {
-    stop("No predictors could be modeled successfully.", call. = FALSE)
+    return(list(Plot = ggplot2::ggplot() + ggplot2::theme_void(),
+      ResultsTable = results, Metadata = list(Outcome = outcome_var)))
   }
 
   results <- results %>%

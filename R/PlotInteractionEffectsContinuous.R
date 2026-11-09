@@ -56,6 +56,9 @@
 #' @importFrom stats lm coef sd quantile
 #' @importFrom paletteer paletteer_d paletteer_c
 
+#' @inheritParams inference-results
+#' @section Statistical results and provenance:
+#' See [inference-results] for the shared `Results` and `Metadata` contract.
 PlotInteractionEffectsContinuous <- function(data,
     interVar = NULL,
     outcome_var = NULL,
@@ -67,7 +70,16 @@ PlotInteractionEffectsContinuous <- function(data,
     Data = lifecycle::deprecated(),
     outcomeVar = lifecycle::deprecated(),
     predictorVar = lifecycle::deprecated(),
-    covars = lifecycle::deprecated()) {
+    covars = lifecycle::deprecated(),
+    Pthresh = 0.05,
+    PVar = "PValue") {
+  .scidr_inference <- ScidrStartInference("PlotInteractionEffectsContinuous", match.call(), environment())
+  on.exit({
+    if (!is.null(returnValue())) {
+      return(ScidrFinishInference(returnValue(), .scidr_inference, environment()))
+    }
+  }, add = TRUE)
+
   # Deprecated argument shims (SciDataReportR 19.15.0)
   if (lifecycle::is_present(Data)) {
     lifecycle::deprecate_warn("19.15.0", "PlotInteractionEffectsContinuous(Data)", "PlotInteractionEffectsContinuous(data)")
@@ -140,7 +152,8 @@ PlotInteractionEffectsContinuous <- function(data,
   }
 
   # Fit the model
-  model <- lm(as.formula(formula_str), data = Data)
+  model <- ScidrTryInference(ScidrObserveInference(lm(as.formula(formula_str), data = Data)))
+  if (is.null(model)) return(ggplot2::ggplot() + ggplot2::theme_void())
   model_summary <- summary(model)
 
   # Find the interaction term p-value

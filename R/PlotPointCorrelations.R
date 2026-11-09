@@ -42,6 +42,9 @@
 #' result$FDRCorrected$plot
 #' @param IncludeTrendSymbol Logical; add a plus sign for `0.05 < p <= 0.10`.
 #' @export
+#' @inheritParams inference-results
+#' @section Statistical results and provenance:
+#' See [inference-results] for the shared `Results` and `Metadata` contract.
 PlotPointCorrelationsHeatmap <- function(data,
     CatVars,
     ContVars,
@@ -54,7 +57,16 @@ PlotPointCorrelationsHeatmap <- function(data,
     cluster_columns = FALSE,
     IncludeTrendSymbol = FALSE,
     Data = lifecycle::deprecated(),
-    Covariates = lifecycle::deprecated()) {
+    Covariates = lifecycle::deprecated(),
+    Pthresh = 0.05,
+    PVar = "PValue") {
+  .scidr_inference <- ScidrStartInference("PlotPointCorrelationsHeatmap", match.call(), environment())
+  on.exit({
+    if (!is.null(returnValue())) {
+      return(ScidrFinishInference(returnValue(), .scidr_inference, environment()))
+    }
+  }, add = TRUE)
+
   # Deprecated argument shims (SciDataReportR 19.15.0)
   if (lifecycle::is_present(Data)) {
     lifecycle::deprecate_warn("19.15.0", "PlotPointCorrelationsHeatmap(Data)", "PlotPointCorrelationsHeatmap(data)")
@@ -99,6 +111,11 @@ PlotPointCorrelationsHeatmap <- function(data,
   DataSubset <- Data[c(CatVars, ContVars, Covariates)]
   DataSubset <- ReplaceMissingLabels(DataSubset)
 
+  vars_Degenerate <- CatVars[vapply(DataSubset[CatVars], function(x) length(unique(stats::na.omit(x))) < 2L, logical(1))]
+  CatVars <- setdiff(CatVars, vars_Degenerate)
+  if (!length(CatVars)) return(ScidrEmptyLegacyInference("PlotPointCorrelationsHeatmap"))
+  DataSubset <- DataSubset[unique(c(CatVars, ContVars, Covariates))]
+
   # sanity: binaries truly binary
   nb_chk <- vapply(DataSubset[CatVars], .is_binary, logical(1))
   if (!all(nb_chk)) {
@@ -140,6 +157,8 @@ PlotPointCorrelationsHeatmap <- function(data,
     dplyr::inner_join(keep_pairs %>% dplyr::filter(has_two_levels, var_ok),
                       by = c("ContinuousVariable","CategoricalVariable"))
 
+  if (!nrow(mData)) return(ScidrEmptyLegacyInference("PlotPointCorrelationsHeatmap"))
+
   # ---- stats: r_pb & p ----
   stat.test <- mData %>%
     dplyr::group_by(ContinuousVariable, CategoricalVariable) %>%
@@ -148,7 +167,7 @@ PlotPointCorrelationsHeatmap <- function(data,
       cat_var <- as.character(.y$CategoricalVariable)
       x01 <- .to01(df$CategoricalValue, cat_var, binary_map)
       r <- suppressWarnings(stats::cor(df$ContinuousValue, x01, use = "complete.obs"))
-      p <- suppressWarnings(stats::cor.test(df$ContinuousValue, x01)$p.value)
+      p <- suppressWarnings(ScidrObserveInference(stats::cor.test(df$ContinuousValue, x01))$p.value)
       tibble::tibble(
         nPairs = sum(stats::complete.cases(df$CategoricalValue, df$ContinuousValue)),
         correlation = r,
@@ -167,7 +186,7 @@ PlotPointCorrelationsHeatmap <- function(data,
     predictor_ids = stat.test$CategoricalVariable
   )
   stat.test$`p<.05` <- .FormatPValueStars(
-    stat.test$p_value,
+    ScidrInferenceP(stat.test$p_value, stat.test$p.adj),
     IncludeTrendSymbol = IncludeTrendSymbol
   )
   stat.test$p.adj.signif <- .FormatPValueStars(

@@ -4,7 +4,8 @@
 #'
 #' @param data The dataset used to generate the scatterplots.
 #' @param CorrelationHeatmapObject The output of the PlotCorrelationsHeatmap function.
-#' @param PVar The name of the column used to filter for significance (default is "P").
+#' @param PVar P-value column used to filter significance. Defaults to raw
+#'   `"PValue"`; use `"PValueFDR"` for BH-adjusted selection.
 #' @param Pthresh The significance threshold (default is 0.05).
 #' @return A list of scatterplot objects for significant correlations.
 #' @importFrom ggstatsplot ggscatterstats
@@ -28,11 +29,20 @@
 #' plots[[1]]
 #' }
 #' @export
+#' @section Statistical results and provenance:
+#' See [inference-results] for the shared `Results` and `Metadata` contract.
 plotSigCorrelations <- function(data,
     CorrelationHeatmapObject,
-    PVar = "P",
+    PVar = "PValue",
     Pthresh = 0.05,
     DataFrame = lifecycle::deprecated()) {
+  .scidr_inference <- ScidrStartInference("plotSigCorrelations", match.call(), environment())
+  on.exit({
+    if (!is.null(returnValue())) {
+      return(ScidrFinishInference(returnValue(), .scidr_inference, environment()))
+    }
+  }, add = TRUE)
+
   # Deprecated argument shims (SciDataReportR 19.15.0)
   if (lifecycle::is_present(DataFrame)) {
     lifecycle::deprecate_warn("19.15.0", "plotSigCorrelations(DataFrame)", "plotSigCorrelations(data)")
@@ -45,20 +55,21 @@ plotSigCorrelations <- function(data,
 
   # Extract relevant data from the Plot object
   Relabeled <- Plot$Relabel
-  SigVarCombos <- Plot$Unadjusted$plot$data %>% dplyr::filter(!!rlang::sym(PVar) < Pthresh)
+  SigVarCombos <- ScidrSignificantPairs(Plot, PVar, Pthresh, .scidr_inference, environment())
 
   # Initialize list to store scatterplot objects
   plist <- list()
 
   # Generate scatterplots for each significant correlation
-  for (i in seq(1, nrow(SigVarCombos))) {
-    p <- ggscatterstats(DataFrame, x = !!SigVarCombos$XVar[i], y = !!SigVarCombos$YVar[i],
+  for (i in seq_len(nrow(SigVarCombos))) {
+    p <- ScidrTryInference(ggscatterstats(DataFrame, x = !!SigVarCombos$XVar[i], y = !!SigVarCombos$YVar[i],
                         xsidehistogram.args = list(fill = "#6C568CFF", color = "black", na.rm = TRUE),
                         ysidehistogram.args = list(fill = "#607345FF", color = "black", na.rm = TRUE)
-    )
+    ))
+    if (is.null(p)) next
 
     # Customize subtitle with correlation information
-    p$labels$subtitle = bquote(paste(widehat(italic("r")) == .(SigVarCombos$R[i] %>% round(5)), ", ",
+    p$labels$subtitle <- bquote(paste(widehat(italic("r")) == .(SigVarCombos$R[i] %>% round(5)), ", ",
                                      italic("p") == .(SigVarCombos$P[i] %>% round(5)), ", " ,
                                      italic("p_FDR") == .(SigVarCombos$P_adj[i] %>% round(5)), ", ",
                                      italic("n_pairs") == .(SigVarCombos$nPairs[i])))
@@ -66,7 +77,7 @@ plotSigCorrelations <- function(data,
     # Check if adjusted for covariates and customize caption accordingly
     covars <- Plot$Covariates
     if (is.null(covars)) {
-      p$labels$caption = "Not adjusted for any covariates"
+      p$labels$caption <- "Not adjusted for any covariates"
     } else {
       if (!Relabeled) {
         p$labels$caption <- paste("Adjusted for", paste(covars, collapse = ", "))

@@ -76,6 +76,9 @@
 #' @param IncludeTrendSymbol Logical; add a plus sign for `0.05 < p <= 0.10`.
 #' @param cluster_rows,cluster_columns Logical; cluster heatmap rows and columns.
 #' @export
+#' @inheritParams inference-results
+#' @section Statistical results and provenance:
+#' See [inference-results] for the shared `Results` and `Metadata` contract.
 PlotDirectionalHeatmaps <- function(data,
     variables = NULL,
     Relabel = TRUE,
@@ -85,9 +88,18 @@ PlotDirectionalHeatmaps <- function(data,
     cluster_columns = FALSE,
     triangle = c("full", "upper", "lower"),
     IncludeTrendSymbol = FALSE,
+    Pthresh = 0.05,
+    PVar = "PValue",
     Data = lifecycle::deprecated(),
     xVars = lifecycle::deprecated(),
     yVars = lifecycle::deprecated()) {
+  .scidr_inference <- ScidrStartInference("PlotDirectionalHeatmaps", match.call(), environment())
+  on.exit({
+    if (!is.null(returnValue())) {
+      return(ScidrFinishInference(returnValue(), .scidr_inference, environment()))
+    }
+  }, add = TRUE)
+
   # Deprecated argument shims (SciDataReportR 19.15.0)
   if (lifecycle::is_present(Data)) {
     lifecycle::deprecate_warn("19.15.0", "PlotDirectionalHeatmaps(Data)", "PlotDirectionalHeatmaps(data)")

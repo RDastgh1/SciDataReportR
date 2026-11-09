@@ -75,9 +75,12 @@
 #' example, `df_All$cohort <- factor(df_All$cohort)`). Few unique values alone
 #' do not establish categorical meaning. Factors, character columns, and logical
 #' columns are accepted; more than 10 observed categories warn and continue.
-#' Entirely missing or unsupported columns error. Caller data are unchanged,
+#' Entirely missing columns produce unavailable statistical requests; unsupported types error. Caller data are unchanged,
 #' and existing restrictions on the required number of groups still apply.
 #' @export
+#' @inheritParams inference-results
+#' @section Statistical results and provenance:
+#' See [inference-results] for the shared `Results` and `Metadata` contract.
 PlotSplitCorrelationHeatmap <- function(
     data,
     predictor_vars = NULL,
@@ -92,7 +95,16 @@ PlotSplitCorrelationHeatmap <- function(
     eps = 1e-12,
     fdr_scope = c("matrix", "per_outcome", "per_predictor"),
     IncludeTrendSymbol = FALSE,
-    interactive = c("none", "plotly")) {
+    interactive = c("none", "plotly"),
+    Pthresh = 0.05,
+    PVar = "PValue") {
+  .scidr_inference <- ScidrStartInference("PlotSplitCorrelationHeatmap", match.call(), environment())
+  on.exit({
+    if (!is.null(returnValue())) {
+      return(ScidrFinishInference(returnValue(), .scidr_inference, environment()))
+    }
+  }, add = TRUE)
+
   if (!is.data.frame(data)) {
     stop("`data` must be a data frame.", call. = FALSE)
   }
@@ -116,6 +128,8 @@ PlotSplitCorrelationHeatmap <- function(
   if (is.factor(data[[split_var]])) {
     observed <- levels(data[[split_var]])[levels(data[[split_var]]) %in% observed]
   }
+  if (!length(observed)) return(ScidrFailRequestedInference("PlotSplitCorrelationHeatmap",
+    "Split variable has no observed non-missing levels.", split_var))
   if (is.null(split_levels)) {
     if (length(observed) != 2L) {
       stop("Specify `split_levels` when `split_var` does not have exactly two observed levels.",
@@ -193,7 +207,7 @@ PlotSplitCorrelationHeatmap <- function(
     df_Cells$P_adj <- result$FDRCorrected$p[matrix_index]
     df_Cells$nPairs <- result$Unadjusted$npairs[matrix_index]
     df_Cells$Status <- ifelse(is.finite(df_Cells$R), "available", "unavailable")
-    df_Cells$stars <- .FormatPValueStars(df_Cells$P, IncludeTrendSymbol = IncludeTrendSymbol)
+    df_Cells$stars <- .FormatPValueStars(ScidrInferenceP(df_Cells$P, df_Cells$P_adj), IncludeTrendSymbol = IncludeTrendSymbol)
     df_Cells$stars_FDR <- .FormatPValueStars(df_Cells$P_adj, IncludeTrendSymbol = IncludeTrendSymbol)
     df_Cells$CellId <- match(df_Cells$XVar, vars_Rows) +
       (match(df_Cells$YVar, vars_Columns) - 1L) * length(vars_Rows)

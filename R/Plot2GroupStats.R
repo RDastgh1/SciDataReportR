@@ -69,10 +69,13 @@
 #' example, `df_All$cohort <- factor(df_All$cohort)`). Few unique values alone
 #' do not establish categorical meaning. Factors, character columns, and logical
 #' columns are accepted; more than 10 observed categories warn and continue.
-#' Entirely missing or unsupported columns error. Caller data are unchanged,
+#' Entirely missing columns produce unavailable statistical requests; unsupported types error. Caller data are unchanged,
 #' and existing restrictions on the required number of groups still apply.
 #' @export
 #' @import dplyr ggplot2 gtsummary
+#' @inheritParams inference-results
+#' @section Statistical results and provenance:
+#' See [inference-results] for the shared `Results` and `Metadata` contract.
 Plot2GroupStats <- function(data,
     variables,
     VariableCategories = NULL,
@@ -89,7 +92,16 @@ Plot2GroupStats <- function(data,
     point_size = 3.5,
     Data = lifecycle::deprecated(),
     Variables = lifecycle::deprecated(),
-    GroupVar = lifecycle::deprecated()) {
+    GroupVar = lifecycle::deprecated(),
+    Pthresh = 0.05,
+    PVar = "PValue") {
+  .scidr_inference <- ScidrStartInference("Plot2GroupStats", match.call(), environment())
+  on.exit({
+    if (!is.null(returnValue())) {
+      return(ScidrFinishInference(returnValue(), .scidr_inference, environment()))
+    }
+  }, add = TRUE)
+
   # Deprecated argument shims (SciDataReportR 19.15.0)
   if (lifecycle::is_present(Data)) {
     lifecycle::deprecate_warn("19.15.0", "Plot2GroupStats(Data)", "Plot2GroupStats(data)")
@@ -161,6 +173,8 @@ Plot2GroupStats <- function(data,
 
   # ---- working data ---------------------------------------------------------
   Data <- ScidrPrepareCategorical(Data, GroupVar, "group_var")
+  if (!length(stats::na.omit(Data[[GroupVar]]))) return(ScidrFailRequestedInference("Plot2GroupStats",
+    "Grouping variable has no observed non-missing levels.", GroupVar))
   tData <- Data
   tData$GroupVar <- Data[[GroupVar]]
   tData <- tData %>%
@@ -190,7 +204,7 @@ Plot2GroupStats <- function(data,
   tData <- dplyr::select(tData, -dplyr::all_of(setdiff(drop_nzv, "GroupVar")))
 
   vars_in <- setdiff(names(tData), "GroupVar")
-  if (length(vars_in) == 0) stop("No analyzable variables remain after filtering/missingness checks.")
+  if (length(vars_in) == 0) return(ScidrEmptyLegacyInference("Plot2GroupStats"))
 
   # ---- MakeComparisonTable --------------------------------------------------
   mct_defaults <- list(
@@ -317,7 +331,8 @@ Plot2GroupStats <- function(data,
   )
   pvaltable$xvar <- pvaltable[[x_map$var]]
 
-  label_df <- pvaltable[!is.na(pvaltable$q.value) & pvaltable$q.value < label_q, , drop = FALSE]
+  label_p <- ScidrInferenceP(pvaltable$p.value, pvaltable$q.value)
+  label_df <- pvaltable[!is.na(label_p) & label_p < Pthresh, , drop = FALSE]
 
   # ---- plot (stable point size; silent) ------------------------------------
   use_categories <- any(!is.na(pvaltable$Category))

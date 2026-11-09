@@ -31,7 +31,8 @@
 #'   covariates within each model's complete-case analysis set.
 #' @param FDR Logical. If `TRUE`, add `FDR`, adjusted across all returned rows
 #'   using [ApplyFDRCorrection()].
-#' @param FDRAlpha Numeric threshold used for FDR-adjusted significance.
+#' @param FDRAlpha Legacy significance-threshold alias, retained in metadata.
+#'   An explicitly supplied `Pthresh` takes precedence; `PVar` selects the p-value source.
 #' @param IncludeTrendSymbol Logical; add a plus sign for `0.05 < p <= 0.10`.
 #' @param CheckPH Logical. If `TRUE`, calculate the global [survival::cox.zph()]
 #'   p-value for ordinary Cox models. Survey models return `NA`.
@@ -67,6 +68,9 @@
 #' @seealso [MakeUnivariateRegressionTable()], [PlotForestFromTable()],
 #'   [ApplyFDRCorrection()]
 #' @export
+#' @inheritParams inference-results
+#' @section Statistical results and provenance:
+#' See [inference-results] for the shared `Results` and `Metadata` contract.
 MakeCoxRegressionTable <- function(data,
     time_var,
     event_vars,
@@ -81,7 +85,16 @@ MakeCoxRegressionTable <- function(data,
     CheckPH = TRUE,
     ReturnModels = FALSE,
     Relabel = TRUE,
-    TreatOrdinalAs = "Categorical") {
+    TreatOrdinalAs = "Categorical",
+    Pthresh = 0.05,
+    PVar = "PValue") {
+  .scidr_inference <- ScidrStartInference("MakeCoxRegressionTable", match.call(), environment())
+  on.exit({
+    if (!is.null(returnValue())) {
+      return(ScidrFinishInference(returnValue(), .scidr_inference, environment()))
+    }
+  }, add = TRUE)
+
   if (!is.data.frame(data)) {
     stop("data must be a data frame.", call. = FALSE)
   }
@@ -241,12 +254,12 @@ MakeCoxRegressionTable <- function(data,
           events_model <- sum(df_Model[[event_var]])
           ScidrCoxValidateAnalysisSet(n_model, events_model)
           formula <- ScidrCoxFormula(time_var, event_var, c(predictor, covariates))
-          model <- survival::coxph(
+          model <- ScidrObserveInference(survival::coxph(
             formula = formula,
             data = df_Model,
             model = ReturnModels,
             x = ReturnModels
-          )
+          ))
         } else {
           complete_rows <- stats::complete.cases(design$variables[, model_vars, drop = FALSE])
           design_model <- design[complete_rows, ]
@@ -259,7 +272,7 @@ MakeCoxRegressionTable <- function(data,
           events_model <- sum(design_model$variables[[event_var]])
           ScidrCoxValidateAnalysisSet(n_model, events_model)
           formula <- ScidrCoxFormula(time_var, event_var, c(predictor, covariates))
-          model <- survey::svycoxph(formula = formula, design = design_model)
+          model <- ScidrObserveInference(survey::svycoxph(formula = formula, design = design_model))
         }
 
         coefficient_table <- as.data.frame(summary(model)$coefficients)
@@ -331,7 +344,7 @@ MakeCoxRegressionTable <- function(data,
           event_models[[predictor]] <- model
         }
       }, error = function(e) {
-        stop(
+        warning(
           "Error processing event '", event_var, "' and predictor '", predictor,
           "': ", conditionMessage(e),
           call. = FALSE
@@ -344,10 +357,14 @@ MakeCoxRegressionTable <- function(data,
   }
 
   results <- dplyr::bind_rows(results_list)
+  if (!nrow(results)) results <- ScidrEmptyInferenceResults()
   if (FDR) {
     results$FDR <- ApplyFDRCorrection(results$PValue)
-    results$Significant <- !is.na(results$FDR) & results$FDR < FDRAlpha
+    results$Significant <- !is.na(results$PValue) & results$PValue < Pthresh
   }
+
+  results$PValueFDR <- if ("FDR" %in% names(results)) results$FDR else stats::p.adjust(results$PValue, method = "BH")
+  results$Significant <- results[[PVar]] < Pthresh
 
   outcomes_metadata <- dplyr::bind_rows(lapply(event_vars, function(event_var) {
     data.frame(
@@ -475,7 +492,7 @@ ScidrCoxStandardizeData <- function(data, variables, Standardize) {
     if (!is.finite(variable_sd) || variable_sd == 0) {
       stop("numeric model variable '", variable, "' cannot be standardized because it has zero variance")
     }
-    data[[variable]] <- as.numeric(scale(data[[variable]]))
+    data[[variable]] <- as.numeric(ScidrObserveInference(scale(data[[variable]])))
   }
   data
 }
@@ -523,7 +540,7 @@ ScidrCoxGtTable <- function(results, formatted = TRUE, IncludeTrendSymbol = FALS
           " (", formatC(outcome_results$ConfLow, digits = 3, format = "fg"),
           ", ", formatC(outcome_results$ConfHigh, digits = 3, format = "fg"), ")",
           ScidrPValueStars(
-            if ("FDR" %in% names(outcome_results)) outcome_results$FDR else outcome_results$PValue,
+            ScidrInferenceP(outcome_results$PValue, outcome_results$PValueFDR),
             ns_label = "",
             IncludeTrendSymbol = IncludeTrendSymbol
           )

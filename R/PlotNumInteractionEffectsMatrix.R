@@ -47,6 +47,9 @@
 #' # FDR-adjusted interaction matrix
 #' result$p_FDR
 #' @export
+#' @inheritParams inference-results
+#' @section Statistical results and provenance:
+#' See [inference-results] for the shared `Results` and `Metadata` contract.
 PlotNumInteractionEffectsMatrix <- function(data,
     predictor_vars,
     outcome_vars = NULL,
@@ -58,7 +61,16 @@ PlotNumInteractionEffectsMatrix <- function(data,
     xVars = lifecycle::deprecated(),
     yVars = lifecycle::deprecated(),
     fdr_scope = c("matrix", "per_outcome", "per_predictor"),
-    covars = lifecycle::deprecated()) {
+    covars = lifecycle::deprecated(),
+    Pthresh = 0.05,
+    PVar = "PValue") {
+  .scidr_inference <- ScidrStartInference("PlotNumInteractionEffectsMatrix", match.call(), environment())
+  on.exit({
+    if (!is.null(returnValue())) {
+      return(ScidrFinishInference(returnValue(), .scidr_inference, environment()))
+    }
+  }, add = TRUE)
+
   # Deprecated argument shims (SciDataReportR 19.15.0)
   if (lifecycle::is_present(Data)) {
     lifecycle::deprecate_warn("19.15.0", "PlotNumInteractionEffectsMatrix(Data)", "PlotNumInteractionEffectsMatrix(data)")
@@ -135,7 +147,7 @@ PlotNumInteractionEffectsMatrix <- function(data,
         collapse = " + "
       )
       fml <- stats::as.formula(paste0("`", yVar, "` ~ ", rhs))
-      m <- tryCatch(lm(fml, data = Data), error = function(err) NULL)
+      m <- tryCatch(ScidrObserveInference(lm(fml, data = Data)), error = function(err) NULL)
 
       if (is.null(m)){
         interC <- NA
@@ -177,9 +189,11 @@ PlotNumInteractionEffectsMatrix <- function(data,
   m_r_S <- r_S %>% as.data.frame %>% rownames_to_column(var = "X") %>% tidyr::pivot_longer(cols = dplyr::all_of(yVarLabels), names_to = "Y", values_to = "S")
 
   m_G <- left_join(m_r_C, m_r_P) %>% left_join(m_r_S)
+  m_G$P_Selected <- ScidrInferenceP(m_G$P, ApplyFDRCorrection(m_G$P,
+    fdr_scope = fdr_scope, outcome_ids = m_G$Y, predictor_ids = m_G$X))
   m_G$sign <- factor(m_G$S, levels = c(-1, 0, 1), labels = c("-", "ns", "+")) # Switched
-  m_G$sign[m_G$P > 0.05] <- "ns"
-  m_G$sig <- gtools::stars.pval(m_G$P)
+  m_G$sign[m_G$P_Selected > Pthresh] <- "ns"
+  m_G$sig <- ScidrPValueStars(m_G$P_Selected, tiers = ScidrStarTiersThree, ns_label = "")
   m_G$sig[m_G$sig == "." | m_G$sig == "+"  | m_G$sig == " "] <- ""
   m_G$sig <- paste(m_G$sign, m_G$sig)
   m_G$sig[is.na(m_G$P) | is.na(m_G$C)] <- "na"

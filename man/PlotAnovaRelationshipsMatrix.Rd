@@ -17,7 +17,9 @@ PlotAnovaRelationshipsMatrix(
   Data = lifecycle::deprecated(),
   fdr_scope = c("matrix", "per_outcome", "per_predictor"),
   IncludeTrendSymbol = FALSE,
-  Covariates = lifecycle::deprecated()
+  Covariates = lifecycle::deprecated(),
+  Pthresh = 0.05,
+  PVar = "PValue"
 )
 }
 \arguments{
@@ -49,6 +51,20 @@ outcome: outcomes are the continuous variables (\code{ContVars}).}
 \item{IncludeTrendSymbol}{Logical; add a plus sign for \verb{0.05 < p <= 0.10}.}
 
 \item{Covariates}{\strong{Deprecated} (since 19.15.0). Use \code{covariates} instead.}
+
+\item{Pthresh}{Significance threshold, default \code{0.05}. An explicitly supplied
+value takes precedence over a legacy significance threshold argument.}
+
+\item{PVar}{P-value column used for significance decisions. Defaults to raw
+\code{"PValue"}; select \code{"PValueFDR"} to use Benjamini-Hochberg adjusted values.
+Explicit legacy p-column names remain accepted. Existing, explicitly named
+FDR plots and adjusted-value columns are retained.
+
+Explicit \code{Pthresh} takes precedence over \code{Alpha}, \code{FDRAlpha}, \code{label_q}, or
+\code{adjusted_significance_threshold}. Pairwise \code{star_p = "adjusted"} retains
+its legacy adjustment method unless \code{PVar} is supplied; \code{PVar = "PValueFDR"}
+always selects BH. \code{star_p = "none"} suppresses legacy pairwise stars.
+Stars retain conventional p-value tiers within the requested cutoff.}
 }
 \value{
 A list containing three ggplot objects: p (scatter plot without multiple comparison correction), p_FDR (scatter plot with FDR correction), and pvaltable (data frame of p-values and significance).
@@ -69,7 +85,7 @@ the column to a factor first if categorical treatment is intended (for
 example, \code{df_All$cohort <- factor(df_All$cohort)}). Few unique values alone
 do not establish categorical meaning. Factors, character columns, and logical
 columns are accepted; more than 10 observed categories warn and continue.
-Entirely missing or unsupported columns error. Caller data are unchanged,
+Entirely missing columns produce unavailable statistical requests; unsupported types error. Caller data are unchanged,
 and existing restrictions on the required number of groups still apply.
 }
 \section{Parametric and non-parametric tests}{
@@ -80,7 +96,8 @@ uneven, both of which make the F-test unreliable.
 
 \code{Parametric = FALSE} switches to Kruskal-Wallis, which compares ranks rather
 than means and assumes neither normality nor equal variance. The matrix is
-built and read exactly the same way.
+built and read exactly the same way. Its p-value table includes \code{eta2_H},
+calculated as (H - k + 1) / (n - k) on pairwise complete observations.
 
 Comparing the two p-value tables shows which conclusions depended on the
 choice of test. Relationships that hold under both are the ones to trust.
@@ -92,6 +109,11 @@ test.
 
 Kruskal-Wallis is a rank test and has no ANCOVA form, so \code{covariates}
 requires \code{Parametric = TRUE}.
+}
+
+\section{Statistical results and provenance}{
+
+See \link{inference-results} for the shared \code{Results} and \code{Metadata} contract.
 }
 
 \examples{

@@ -26,6 +26,7 @@ CalculateContinuousScreeningEffects <- function(data,
     final_n <- nrow(model_data)
 
     EmptyResult <- function(note) {
+      ScidrRecordInferenceFailure(outcome_var, this_var, note, final_n)
       tibble::tibble(
         Variable = this_var,
         Label = unname(label_lookup[[this_var]]),
@@ -52,8 +53,8 @@ CalculateContinuousScreeningEffects <- function(data,
       return(EmptyResult("Zero variance in predictor or outcome"))
     }
 
-    model_data$.scidr_y_scaled <- as.numeric(scale(model_data[[outcome_var]]))
-    model_data$.scidr_x_scaled <- as.numeric(scale(model_data[[this_var]]))
+    model_data$.scidr_y_scaled <- as.numeric(ScidrObserveInference(scale(model_data[[outcome_var]])))
+    model_data$.scidr_x_scaled <- as.numeric(ScidrObserveInference(scale(model_data[[this_var]])))
     model_formula <- stats::reformulate(
       c(".scidr_x_scaled", covariates),
       response = ".scidr_y_scaled"
@@ -61,7 +62,7 @@ CalculateContinuousScreeningEffects <- function(data,
 
     model_error <- NULL
     model_fit <- tryCatch(
-      stats::lm(model_formula, data = model_data),
+      ScidrObserveInference(stats::lm(model_formula, data = model_data)),
       error = function(e) {
         model_error <<- conditionMessage(e)
         NULL

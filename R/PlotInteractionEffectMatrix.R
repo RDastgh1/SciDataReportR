@@ -114,6 +114,9 @@
 #' @importFrom tibble rownames_to_column column_to_rownames
 #' @importFrom stats lm coef p.adjust as.formula sd
 
+#' @inheritParams inference-results
+#' @section Statistical results and provenance:
+#' See [inference-results] for the shared `Results` and `Metadata` contract.
 PlotInteractionEffectsMatrix <- function(data,
     interVar = NULL,
     outcome_vars = NULL,
@@ -126,7 +129,16 @@ PlotInteractionEffectsMatrix <- function(data,
     outcomeVars = lifecycle::deprecated(),
     predictorVars = lifecycle::deprecated(),
     fdr_scope = c("matrix", "per_outcome", "per_predictor"),
-    covars = lifecycle::deprecated()) {
+    covars = lifecycle::deprecated(),
+    Pthresh = 0.05,
+    PVar = "PValue") {
+  .scidr_inference <- ScidrStartInference("PlotInteractionEffectsMatrix", match.call(), environment())
+  on.exit({
+    if (!is.null(returnValue())) {
+      return(ScidrFinishInference(returnValue(), .scidr_inference, environment()))
+    }
+  }, add = TRUE)
+
   # Deprecated argument shims (SciDataReportR 19.15.0)
   if (lifecycle::is_present(Data)) {
     lifecycle::deprecate_warn("19.15.0", "PlotInteractionEffectsMatrix(Data)", "PlotInteractionEffectsMatrix(data)")
@@ -290,7 +302,7 @@ PlotInteractionEffectsMatrix <- function(data,
         }
 
         formula <- as.formula(formula_str)
-        m <- lm(formula, data = Data)
+        m <- ScidrObserveInference(lm(formula, data = Data))
 
         # Get coefficient names and summary
         coef_names <- names(coef(m))
@@ -443,15 +455,18 @@ PlotInteractionEffectsMatrix <- function(data,
     left_join(m_r_Slope1, by = c("Outcome", "Predictor")) %>%
     left_join(m_r_Slope2, by = c("Outcome", "Predictor"))
 
+  m_G$P_Selected <- ScidrInferenceP(m_G$P, ApplyFDRCorrection(m_G$P,
+    fdr_scope = fdr_scope, outcome_ids = m_G$Outcome, predictor_ids = m_G$Predictor))
+
   # Create significance and direction categories
   m_G$sign <- "ns"  # Default to non-significant
   m_G$sign[is.na(m_G$P)] <- "na"  # Set NA values
 
   # Use custom function for significance stars
-  m_G$sig <- get_significance_stars(m_G$P)
+  m_G$sig <- get_significance_stars(m_G$P_Selected)
 
   # For significant interactions, determine direction and create gradient categories
-  sig_mask <- !is.na(m_G$P) & m_G$P <= 0.05
+  sig_mask <- !is.na(m_G$P_Selected) & m_G$P_Selected <= Pthresh
 
   # Same direction (blue gradient)
   same_sign_mask <- sig_mask & m_G$S == 1
@@ -592,7 +607,7 @@ PlotInteractionEffectsMatrix <- function(data,
               "#DEEBF7", "#4292C6", "#084594")
   BuildStrengthPlot <- function(p_column, star_column) {
     df_Plot <- m_G
-    significant <- !is.na(df_Plot[[p_column]]) & df_Plot[[p_column]] <= 0.05
+    significant <- !is.na(df_Plot[[p_column]]) & df_Plot[[p_column]] <= Pthresh
     available <- is.finite(df_Plot$StrengthChange) & !is.na(df_Plot[[p_column]])
     df_Plot$FillValue <- NA_real_
     df_Plot$FillValue[available] <- 0
@@ -604,7 +619,7 @@ PlotInteractionEffectsMatrix <- function(data,
     df_Plot$Stars[!available] <- ""
 
     plot <- ggplot2::ggplot(df_Plot,
-      ggplot2::aes(x = PredictorLabel, y = OutcomeLabel, fill = FillValue)) +
+      ggplot2::aes(x = PredictorLabel, y = OutcomeLabel, fill = .data$FillValue)) +
       ggplot2::geom_tile(colour = "white", linewidth = 0.4) +
       ggplot2::scale_fill_gradientn(
         colours = colors, values = c(0, 1/6, 2/6, 0.5, 4/6, 5/6, 1),
@@ -629,19 +644,19 @@ PlotInteractionEffectsMatrix <- function(data,
       df_Hatching$YStart <- cell_y + pmax(-0.46, -0.46 + offsets)
       df_Hatching$YEnd <- cell_y + pmin(0.46, 0.46 + offsets)
       plot <- plot + ggplot2::geom_segment(data = df_Hatching,
-        ggplot2::aes(x = XStart, xend = XEnd, y = YStart, yend = YEnd,
+        ggplot2::aes(x = .data$XStart, xend = .data$XEnd, y = .data$YStart, yend = .data$YEnd,
                      linetype = "Sign reversal"),
         inherit.aes = FALSE, colour = "black", linewidth = 0.25, alpha = 0.6) +
         ggplot2::scale_linetype_manual(values = c("Sign reversal" = "solid"),
                                       name = "Hatching")
     }
-    plot + ggplot2::geom_text(ggplot2::aes(label = Stars), size = 4) +
+    plot + ggplot2::geom_text(ggplot2::aes(label = .data$Stars), size = 4) +
       ggplot2::theme_minimal() +
       ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, hjust = 1),
                      panel.grid = ggplot2::element_blank()) +
       ggplot2::labs(x = NULL, y = NULL)
   }
-  p <- BuildStrengthPlot("P", "sig")
+  p <- BuildStrengthPlot("P_Selected", "sig")
   p_FDR <- BuildStrengthPlot("P_FDR", "sig_FDR")
 
   # Create p-value tables

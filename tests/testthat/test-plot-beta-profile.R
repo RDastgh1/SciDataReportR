@@ -21,7 +21,7 @@ test_that("PlotBetaProfile returns direct standardized model statistics", {
     InteractiveLabels = FALSE
   )
 
-  expect_named(result, c("Plot", "ResultsTable", "Metadata"))
+  expect_named(result, c("Plot", "ResultsTable", "Metadata", "Results"))
   expect_named(
     result$ResultsTable,
     c(
@@ -174,10 +174,9 @@ test_that("invalid predictors are removed with informative warnings", {
       InteractiveLabels = FALSE
     ))
   expect_identical(result$ResultsTable$Variable, "x1")
-  expect_error(
-    suppressWarnings(PlotBetaProfile(df_test, c("constant", "missing"), "y")),
-    "No predictors"
-  )
+  failed <- suppressWarnings(PlotBetaProfile(df_test, c("constant", "missing"), "y"))
+  expect_true(all(failed$Results$Status == "failed"))
+  expect_setequal(failed$Metadata$Failed$Predictor, c("constant", "missing"))
 })
 
 test_that("PlotBetaProfile validates public inputs", {
@@ -207,7 +206,7 @@ test_that("PlotVolcanoEffects continuous public structure remains unchanged", {
     InteractiveLabels = FALSE
   )
 
-  expect_named(result, c("RawPPlot", "FDRPlot", "ResultsTable"))
+  expect_named(result, c("RawPPlot", "FDRPlot", "ResultsTable", "Results", "Metadata"))
   expect_false(any(c("Beta", "SE", "CILow", "CIHigh") %in% names(result$ResultsTable)))
   profile <- PlotBetaProfile(
     df_test,

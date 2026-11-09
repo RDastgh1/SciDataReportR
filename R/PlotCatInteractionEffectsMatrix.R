@@ -50,6 +50,9 @@
 #' # FDR-adjusted interaction matrix
 #' result$p_FDR
 #' @export
+#' @inheritParams inference-results
+#' @section Statistical results and provenance:
+#' See [inference-results] for the shared `Results` and `Metadata` contract.
 PlotCatInteractionEffectsMatrix <- function(data,
     predictor_vars,
     outcome_vars = NULL,
@@ -59,7 +62,16 @@ PlotCatInteractionEffectsMatrix <- function(data,
     Data = lifecycle::deprecated(),
     xVars = lifecycle::deprecated(),
     fdr_scope = c("matrix", "per_outcome", "per_predictor"),
-    yVars = lifecycle::deprecated()) {
+    yVars = lifecycle::deprecated(),
+    Pthresh = 0.05,
+    PVar = "PValue") {
+  .scidr_inference <- ScidrStartInference("PlotCatInteractionEffectsMatrix", match.call(), environment())
+  on.exit({
+    if (!is.null(returnValue())) {
+      return(ScidrFinishInference(returnValue(), .scidr_inference, environment()))
+    }
+  }, add = TRUE)
+
   # Deprecated argument shims (SciDataReportR 19.15.0)
   if (lifecycle::is_present(Data)) {
     lifecycle::deprecate_warn("19.15.0", "PlotCatInteractionEffectsMatrix(Data)", "PlotCatInteractionEffectsMatrix(data)")
@@ -112,7 +124,8 @@ PlotCatInteractionEffectsMatrix <- function(data,
       hadError <- FALSE
 
       tryCatch({
-        m <- lm(get(yVar) ~ get(xVar)*get(interVar), data = Data)
+        fml <- stats::as.formula(paste0("`", yVar, "` ~ `", xVar, "` * `", interVar, "`"))
+        m <- ScidrObserveInference(lm(fml, data = Data))
       }, error = function(err){
         hadError <<- TRUE
       }, interrupt = function(){
@@ -124,7 +137,6 @@ PlotCatInteractionEffectsMatrix <- function(data,
         interP <- NA
         interS <- NA
       } else {
-        m <- lm(get(yVar) ~ get(xVar)*get(interVar), data = Data)
         d <- summary(m)
         dd <- as.data.frame(d$coefficients)
         interC <- dd$Estimate %>% tail(1)
@@ -151,9 +163,11 @@ PlotCatInteractionEffectsMatrix <- function(data,
 
   m_G <- left_join(m_r_C, m_r_P) %>% left_join(m_r_S)
 
+  m_G$P_Selected <- ScidrInferenceP(m_G$P, ApplyFDRCorrection(m_G$P,
+    fdr_scope = fdr_scope, outcome_ids = m_G$Y, predictor_ids = m_G$X))
   m_G$sign <- sign(m_G$S) %>% factor(levels = c(-1, 0, 1), labels = c("-", "ns", "+"))
-  m_G$sign[m_G$P > 0.05] <- "ns"
-  m_G$sig <- gtools::stars.pval(m_G$P)
+  m_G$sign[m_G$P_Selected > Pthresh] <- "ns"
+  m_G$sig <- ScidrPValueStars(m_G$P_Selected, tiers = ScidrStarTiersThree, ns_label = "")
   m_G$sig[m_G$sig %in% c(".", "+", " ")] <- ""
   m_G$sig <- paste(m_G$sign, m_G$sig)
   m_G$sig[is.na(m_G$P) | is.na(m_G$C)] <- "na"

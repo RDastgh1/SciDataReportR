@@ -48,9 +48,12 @@
 #' example, `df_All$cohort <- factor(df_All$cohort)`). Few unique values alone
 #' do not establish categorical meaning. Factors, character columns, and logical
 #' columns are accepted; more than 10 observed categories warn and continue.
-#' Entirely missing or unsupported columns error. Caller data are unchanged,
+#' Entirely missing columns produce unavailable statistical requests; unsupported types error. Caller data are unchanged,
 #' and existing restrictions on the required number of groups still apply.
 #' @export
+#' @inheritParams inference-results
+#' @section Statistical results and provenance:
+#' See [inference-results] for the shared `Results` and `Metadata` contract.
 PlotPValueComparisons <- function(data,
     group_var,
     variables = NULL,
@@ -60,7 +63,16 @@ PlotPValueComparisons <- function(data,
     IncludeTrendSymbol = FALSE,
     Data = lifecycle::deprecated(),
     GroupVariable = lifecycle::deprecated(),
-    Variables = lifecycle::deprecated()) {
+    Variables = lifecycle::deprecated(),
+    Pthresh = 0.05,
+    PVar = "PValue") {
+  .scidr_inference <- ScidrStartInference("PlotPValueComparisons", match.call(), environment())
+  on.exit({
+    if (!is.null(returnValue())) {
+      return(ScidrFinishInference(returnValue(), .scidr_inference, environment()))
+    }
+  }, add = TRUE)
+
   # Deprecated argument shims (SciDataReportR 19.15.0)
   if (lifecycle::is_present(Data)) {
     lifecycle::deprecate_warn("19.15.0", "PlotPValueComparisons(Data)", "PlotPValueComparisons(data)")
@@ -96,6 +108,9 @@ PlotPValueComparisons <- function(data,
   # Select relevant variables
   tData <- Data %>% dplyr::select(GroupVariablex, dplyr::all_of(Variables))
 
+  if (!length(stats::na.omit(tData$GroupVariablex))) return(ScidrFailRequestedInference("PlotPValueComparisons",
+    "Grouping variable has no observed non-missing levels.", GroupVariable))
+
   # Remove factor variables with zero levels
   l <- tData %>% summarise_if(is.factor, ~ nlevels(factor(.))) %>% as.list()
   tData <- tData %>% dplyr::select(-dplyr::all_of(names(l[l < 2])))
@@ -103,6 +118,8 @@ PlotPValueComparisons <- function(data,
   # Remove numeric variables with zero or missing standard deviation
   l <- tData %>% summarise_if(is.numeric, ~ sd(., na.rm = TRUE)) %>% as.list()
   tData <- tData %>% dplyr::select(-dplyr::all_of(names(l[is.na(l) | l == 0])))
+
+  if (ncol(tData) < 2L) return(ggplot2::ggplot() + ggplot2::theme_void())
 
   comparison_table <- MakeComparisonTable(
     data = tData,
@@ -150,7 +167,7 @@ PlotPValueComparisons <- function(data,
   # Add points, text labels for significant variables, and customize scales
   p <- p +
     geom_point() +
-    ggrepel::geom_text_repel(data = subset(pvaltable, p.adj < 0.1),
+    ggrepel::geom_text_repel(data = subset(pvaltable, ScidrInferenceP(p.value, p.adj) < Pthresh),
                              aes(label = Variable)) +
     scale_y_discrete(limits = rev(pvaltable$Variable)) +
     xlab("-log10(p-value)") +

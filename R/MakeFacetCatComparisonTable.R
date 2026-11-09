@@ -135,9 +135,12 @@
 #' example, `df_All$cohort <- factor(df_All$cohort)`). Few unique values alone
 #' do not establish categorical meaning. Factors, character columns, and logical
 #' columns are accepted; more than 10 observed categories warn and continue.
-#' Entirely missing or unsupported columns error. Caller data are unchanged,
+#' Entirely missing columns produce unavailable statistical requests; unsupported types error. Caller data are unchanged,
 #' and existing restrictions on the required number of groups still apply.
 #' @export
+#' @inheritParams inference-results
+#' @section Statistical results and provenance:
+#' See [inference-results] for the shared `Results` and `Metadata` contract.
 MakeFacetCatComparisonTable <- function(data,
     FacetVariables,
     variables,
@@ -165,7 +168,16 @@ MakeFacetCatComparisonTable <- function(data,
     Covariates = lifecycle::deprecated(),
     ValueDigits = lifecycle::deprecated(),
     pDigits = lifecycle::deprecated(),
-    EffectSizeDigits = lifecycle::deprecated()) {
+    EffectSizeDigits = lifecycle::deprecated(),
+    Pthresh = 0.05,
+    PVar = "PValue") {
+  .scidr_inference <- ScidrStartInference("MakeFacetCatComparisonTable", match.call(), environment())
+  on.exit({
+    if (!is.null(returnValue())) {
+      return(ScidrFinishInference(returnValue(), .scidr_inference, environment()))
+    }
+  }, add = TRUE)
+
   # Deprecated argument shims (SciDataReportR 19.15.0)
   if (lifecycle::is_present(DataFrame)) {
     lifecycle::deprecate_warn("19.15.0", "MakeFacetCatComparisonTable(DataFrame)", "MakeFacetCatComparisonTable(data)")

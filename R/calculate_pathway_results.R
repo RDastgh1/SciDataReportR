@@ -21,13 +21,25 @@
 #'   comparison_type = "binary"
 #' )
 #' }
+#' @inheritParams inference-results
+#' @section Statistical results and provenance:
+#' See [inference-results] for the shared `Results` and `Metadata` contract.
 calculate_pathway_results <- function(data,
     comparison_var,
     covariates = NULL,
     metabolites,
     comparison_type = "auto",
     use_point_correlation = FALSE,
-    df = lifecycle::deprecated()) {
+    df = lifecycle::deprecated(),
+    Pthresh = 0.05,
+    PVar = "PValue") {
+  .scidr_inference <- ScidrStartInference("calculate_pathway_results", match.call(), environment())
+  on.exit({
+    if (!is.null(returnValue())) {
+      return(ScidrFinishInference(returnValue(), .scidr_inference, environment()))
+    }
+  }, add = TRUE)
+
   # Deprecated argument shims (SciDataReportR 19.15.0)
   if (lifecycle::is_present(df)) {
     lifecycle::deprecate_warn("19.15.0", "calculate_pathway_results(df)", "calculate_pathway_results(data)")
@@ -112,7 +124,7 @@ calculate_pathway_results <- function(data,
 
       tryCatch({
         formula <- as.formula(formula_str)
-        model <- stats::lm(formula, data = df_filtered)
+        model <- ScidrObserveInference(stats::lm(formula, data = df_filtered))
 
         # Get coefficient name
         coef_names <- names(stats::coef(model))
@@ -155,16 +167,16 @@ calculate_pathway_results <- function(data,
           metab_formula <- as.formula(paste0("`", metab, "` ~", paste(covariates, collapse = " + ")))
           comp_formula <- as.formula(paste("comparison_numeric ~", paste(covariates, collapse = " + ")))
 
-          metab_resid <- stats::residuals(stats::lm(metab_formula, data = df_filtered))
-          comp_resid <- stats::residuals(stats::lm(comp_formula, data = df_filtered))
+          metab_resid <- stats::residuals(ScidrObserveInference(stats::lm(metab_formula, data = df_filtered)))
+          comp_resid <- stats::residuals(ScidrObserveInference(stats::lm(comp_formula, data = df_filtered)))
 
-          cor_result <- stats::cor.test(metab_resid, comp_resid, method = "pearson")
+          cor_result <- ScidrObserveInference(stats::cor.test(metab_resid, comp_resid, method = "pearson"))
           correlation <- cor_result$estimate
           p_value <- cor_result$p.value
 
         } else {
           # Simple point-biserial correlation
-          cor_result <- stats::cor.test(df_filtered[[metab]], df_filtered$comparison_numeric, method = "pearson")
+          cor_result <- ScidrObserveInference(stats::cor.test(df_filtered[[metab]], df_filtered$comparison_numeric, method = "pearson"))
           correlation <- cor_result$estimate
           p_value <- cor_result$p.value
         }
@@ -202,16 +214,16 @@ calculate_pathway_results <- function(data,
           metab_formula <- as.formula(paste0("`", metab, "` ~", paste(covariates, collapse = " + ")))
           comp_formula <- as.formula(paste0("`", comparison_var, "` ~", paste(covariates, collapse = " + ")))
 
-          metab_resid <- stats::residuals(stats::lm(metab_formula, data = df_filtered))
-          comp_resid <- stats::residuals(stats::lm(comp_formula, data = df_filtered))
+          metab_resid <- stats::residuals(ScidrObserveInference(stats::lm(metab_formula, data = df_filtered)))
+          comp_resid <- stats::residuals(ScidrObserveInference(stats::lm(comp_formula, data = df_filtered)))
 
-          cor_result <- stats::cor.test(metab_resid, comp_resid, method = "pearson")
+          cor_result <- ScidrObserveInference(stats::cor.test(metab_resid, comp_resid, method = "pearson"))
           correlation <- cor_result$estimate
           p_value <- cor_result$p.value
 
         } else {
           # Simple correlation
-          cor_result <- stats::cor.test(df_filtered[[metab]], df_filtered[[comparison_var]], method = "pearson")
+          cor_result <- ScidrObserveInference(stats::cor.test(df_filtered[[metab]], df_filtered[[comparison_var]], method = "pearson"))
           correlation <- cor_result$estimate
           p_value <- cor_result$p.value
         }

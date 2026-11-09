@@ -11,7 +11,9 @@ calculate_pathway_results(
   metabolites,
   comparison_type = "auto",
   use_point_correlation = FALSE,
-  df = lifecycle::deprecated()
+  df = lifecycle::deprecated(),
+  Pthresh = 0.05,
+  PVar = "PValue"
 )
 }
 \arguments{
@@ -28,6 +30,20 @@ calculate_pathway_results(
 \item{use_point_correlation}{Logical, if TRUE uses point correlation for binary comparisons}
 
 \item{df}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
+
+\item{Pthresh}{Significance threshold, default \code{0.05}. An explicitly supplied
+value takes precedence over a legacy significance threshold argument.}
+
+\item{PVar}{P-value column used for significance decisions. Defaults to raw
+\code{"PValue"}; select \code{"PValueFDR"} to use Benjamini-Hochberg adjusted values.
+Explicit legacy p-column names remain accepted. Existing, explicitly named
+FDR plots and adjusted-value columns are retained.
+
+Explicit \code{Pthresh} takes precedence over \code{Alpha}, \code{FDRAlpha}, \code{label_q}, or
+\code{adjusted_significance_threshold}. Pairwise \code{star_p = "adjusted"} retains
+its legacy adjustment method unless \code{PVar} is supplied; \code{PVar = "PValueFDR"}
+always selects BH. \code{star_p = "none"} suppresses legacy pairwise stars.
+Stars retain conventional p-value tiers within the requested cutoff.}
 }
 \value{
 Data frame with metabolite results including fold change or correlation values
@@ -35,6 +51,11 @@ Data frame with metabolite results including fold change or correlation values
 \description{
 Calculate Pathway Results for Metabolite Comparisons
 }
+\section{Statistical results and provenance}{
+
+See \link{inference-results} for the shared \code{Results} and \code{Metadata} contract.
+}
+
 \examples{
 \dontrun{
 results <- calculate_pathway_results(

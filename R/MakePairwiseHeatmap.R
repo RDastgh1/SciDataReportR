@@ -165,9 +165,12 @@
 #' example, `df_All$cohort <- factor(df_All$cohort)`). Few unique values alone
 #' do not establish categorical meaning. Factors, character columns, and logical
 #' columns are accepted; more than 10 observed categories warn and continue.
-#' Entirely missing or unsupported columns error. Caller data are unchanged,
+#' Entirely missing columns produce unavailable statistical requests; unsupported types error. Caller data are unchanged,
 #' and existing restrictions on the required number of groups still apply.
 #' @export
+#' @inheritParams inference-results
+#' @section Statistical results and provenance:
+#' See [inference-results] for the shared `Results` and `Metadata` contract.
 MakePairwiseHeatmap <- function(data,
                                 group_var,
                                 variables,
@@ -178,7 +181,7 @@ MakePairwiseHeatmap <- function(data,
                                 adjust_scope = c("per_group", "per_variable", "matrix", "none"),
                                 p_adjust_method = c("fdr", "bonferroni", "holm", "none"),
                                 star_p = c("raw", "adjusted", "none"),
-                                adjusted_outline = TRUE,
+                                adjusted_outline = FALSE,
                                 adjusted_significance_threshold = 0.05,
                                 adjusted_outline_color = "black",
                                 adjusted_outline_linewidth = 1.0,
@@ -195,10 +198,21 @@ MakePairwiseHeatmap <- function(data,
                                 return_models = FALSE,
                                 star_color = "black",
                                 star_size = 4,
-                                IncludeTrendSymbol = FALSE) {
+                                IncludeTrendSymbol = FALSE,
+    Pthresh = 0.05,
+    PVar = "PValue") {
+  .scidr_inference <- ScidrStartInference("MakePairwiseHeatmap", match.call(), environment())
+  on.exit({
+    if (!is.null(returnValue())) {
+      return(ScidrFinishInference(returnValue(), .scidr_inference, environment()))
+    }
+  }, add = TRUE)
+
   adjust_scope <- match.arg(adjust_scope)
   p_adjust_method <- match.arg(p_adjust_method)
   star_p <- match.arg(star_p)
+  if ("PVar" %in% names(.scidr_inference$Call) || !is.null(.scidr_inference$Parent)) star_p <- if (PVar == "PValue") "raw" else "adjusted"
+  if (!"PVar" %in% names(.scidr_inference$Call) && is.null(.scidr_inference$Parent) && star_p == "adjusted") .scidr_inference$PVar <- "AdjustedPValue"
   alternative <- match.arg(alternative)
 
   if (!is.data.frame(data)) {
@@ -273,6 +287,8 @@ MakePairwiseHeatmap <- function(data,
     factor(data[[group_var]])
   }
 
+  if (!length(stats::na.omit(group_for_scaling))) return(ScidrFailRequestedInference("MakePairwiseHeatmap",
+    "Grouping variable has no observed non-missing levels.", group_var))
   if (!Referent %in% levels(group_for_scaling)) {
     stop("Referent level not found: ", Referent)
   }
@@ -286,7 +302,8 @@ MakePairwiseHeatmap <- function(data,
 
   referent_data <- data[group_for_scaling == Referent & !is.na(group_for_scaling), , drop = FALSE]
   if (nrow(referent_data) < 2) {
-    stop("At least two referent rows are required to estimate scaling parameters.")
+    return(ScidrFailRequestedInference("MakePairwiseHeatmap",
+      "At least two referent rows are required to estimate scaling parameters.", group_var))
   }
 
   scale_obj <- if (isTRUE(Parametric)) {
@@ -350,7 +367,7 @@ MakePairwiseHeatmap <- function(data,
     return_models = return_models
   )
 
-  results <- contrast_res$Results
+  results <- ScidrPairwiseDisplay(contrast_res$Results, adjust_scope, star_p, IncludeTrendSymbol)
 
   if (!nrow(results)) {
     empty_plot <- ggplot2::ggplot() +

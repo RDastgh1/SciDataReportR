@@ -634,7 +634,7 @@
     }
 
     fit <- tryCatch(
-      stats::lm(model_formula, data = df_cc),
+      ScidrObserveInference(stats::lm(model_formula, data = df_cc)),
       error = function(e) e
     )
 
@@ -700,7 +700,7 @@
       return(template)
     }
 
-    ctr <- tryCatch(emmeans::contrast(emm, method = contrast_list), error = function(e) e)
+    ctr <- tryCatch(ScidrObserveInference(emmeans::contrast(emm, method = contrast_list)), error = function(e) e)
     if (inherits(ctr, "error")) {
       warnings <<- c(warnings, paste0(variable, ": contrast failed - ", ctr$message))
       template$ModelStatus <- "contrast failed"

@@ -184,6 +184,9 @@
 #' @param IncludeTrendSymbol Logical; add a plus sign for `0.05 < p <= 0.10`.
 #' @export
 #'
+#' @inheritParams inference-results
+#' @section Statistical results and provenance:
+#' See [inference-results] for the shared `Results` and `Metadata` contract.
 MakeUnivariateRegressionTable <- function(data,
     outcome_vars,
     predictor_vars,
@@ -198,7 +201,16 @@ MakeUnivariateRegressionTable <- function(data,
     Data = lifecycle::deprecated(),
     OutcomeVars = lifecycle::deprecated(),
     PredictorVars = lifecycle::deprecated(),
-    Covars = lifecycle::deprecated()) {
+    Covars = lifecycle::deprecated(),
+    Pthresh = 0.05,
+    PVar = "PValue") {
+  .scidr_inference <- ScidrStartInference("MakeUnivariateRegressionTable", match.call(), environment())
+  on.exit({
+    if (!is.null(returnValue())) {
+      return(ScidrFinishInference(returnValue(), .scidr_inference, environment()))
+    }
+  }, add = TRUE)
+
   # Deprecated argument shims (SciDataReportR 19.15.0)
   if (lifecycle::is_present(Data)) {
     lifecycle::deprecate_warn("19.15.0", "MakeUnivariateRegressionTable(Data)", "MakeUnivariateRegressionTable(data)")
@@ -273,6 +285,8 @@ MakeUnivariateRegressionTable <- function(data,
   Data <- prep$data
   display_labels <- ScidrDisplayLabels(Data, all_model_vars, Relabel)
 
+  OutcomeVars <- ScidrDropUnavailableOutcomes(Data, OutcomeVars, PredictorVars, Covars)
+
   Wide_mod_list <- list()
   results_list <- list()
   outcome_metadata <- list()
@@ -296,15 +310,15 @@ MakeUnivariateRegressionTable <- function(data,
             numeric_cols[YVar] <- FALSE
           }
           if (any(numeric_cols)) {
-            ModelData[, numeric_cols] <- scale(ModelData[, numeric_cols, drop = FALSE])
+            ModelData[, numeric_cols] <- ScidrObserveInference(scale(ModelData[, numeric_cols, drop = FALSE]))
           }
         }else {
           ModelData <- model_data_full
         }
         mod <- if (outcome_family == "logistic") {
-          stats::glm(formula = f, data = ModelData, family = stats::binomial())
+          ScidrObserveInference(stats::glm(formula = f, data = ModelData, family = stats::binomial()))
         } else {
-          stats::lm(formula = f, data = ModelData)
+          ScidrObserveInference(stats::lm(formula = f, data = ModelData))
         }
         if (ReturnModels) {
           mod_list[[xVar]] <- mod
@@ -346,7 +360,7 @@ MakeUnivariateRegressionTable <- function(data,
         coefficient_table <- coefficient_table[keep_rows, , drop = FALSE]
 
         if (nrow(coefficient_table) == 0) {
-          return(NULL)
+          next
         }
 
         raw_estimate <- coefficient_table[[estimate_col]]
@@ -400,8 +414,8 @@ MakeUnivariateRegressionTable <- function(data,
           row.names = NULL
         )
       }, error = function(e) {
-        stop(paste("Error processing", YVar, "and", xVar,
-                   ": ", conditionMessage(e)))
+        warning(paste("Error processing", YVar, "and", xVar,
+                   ": ", conditionMessage(e)), call. = FALSE)
       })
     }
     if (ReturnModels) {
@@ -419,6 +433,9 @@ MakeUnivariateRegressionTable <- function(data,
   }
 
   results <- dplyr::bind_rows(results_list)
+  if (!nrow(results)) results <- ScidrEmptyInferenceResults()
+  results$PValueFDR <- stats::p.adjust(results$PValue, method = "BH")
+  results$Significant <- ScidrInferenceP(results$PValue, results$PValueFDR) < Pthresh
   FinalTable <- ScidrUnivariateGtTable(results, formatted = FALSE)
   FinalFormattedTable <- ScidrUnivariateGtTable(
     results, formatted = TRUE, IncludeTrendSymbol = IncludeTrendSymbol
@@ -508,7 +525,7 @@ ScidrUnivariateGtTable <- function(results, formatted = TRUE, IncludeTrendSymbol
       stars <- ifelse(
         outcome_results$Significant,
         ScidrPValueStars(
-          outcome_results$PValue,
+          ScidrInferenceP(outcome_results$PValue, outcome_results$PValueFDR),
           ns_label = "",
           IncludeTrendSymbol = IncludeTrendSymbol
         ),

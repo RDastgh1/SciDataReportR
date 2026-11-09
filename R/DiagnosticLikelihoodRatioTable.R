@@ -48,12 +48,24 @@
 #' example, `df_All$cohort <- factor(df_All$cohort)`). Few unique values alone
 #' do not establish categorical meaning. Factors, character columns, and logical
 #' columns are accepted; more than 10 observed categories warn and continue.
-#' Entirely missing or unsupported columns error. Caller data are unchanged,
+#' Entirely missing columns produce unavailable statistical requests; unsupported types error. Caller data are unchanged,
 #' and existing restrictions on the required number of groups still apply.
 #' @export
+#' @inheritParams inference-results
+#' @section Statistical results and provenance:
+#' See [inference-results] for the shared `Results` and `Metadata` contract.
 DiagnosticLikelihoodRatioTable <- function(data, outcome_vars, predictor_vars,
     positive_level = NULL, predictor_positive_level = NULL, stratify_by = NULL,
-    confidence_level = 0.95, continuity_correction = NULL, Relabel = TRUE) {
+    confidence_level = 0.95, continuity_correction = NULL, Relabel = TRUE,
+    Pthresh = 0.05,
+    PVar = "PValue") {
+  .scidr_inference <- ScidrStartInference("DiagnosticLikelihoodRatioTable", match.call(), environment())
+  on.exit({
+    if (!is.null(returnValue())) {
+      return(ScidrFinishInference(returnValue(), .scidr_inference, environment()))
+    }
+  }, add = TRUE)
+
 
   # Validate inputs
 
@@ -74,7 +86,13 @@ DiagnosticLikelihoodRatioTable <- function(data, outcome_vars, predictor_vars,
   # Prepare data
 
   display_labels <- ScidrDisplayLabels(data, all_vars, Relabel)
-  outcome_levels <- lapply(outcome_vars, function(variable) ScidrDiagnosticResolveLevels(data[[variable]], variable, positive_level, "Outcome"))
+  outcome_levels <- lapply(outcome_vars, function(variable) {
+    if (length(ScidrDiagnosticObservedLevels(data[[variable]])) < 2L) {
+      for (predictor in predictor_vars) ScidrRecordInferenceFailure(variable, predictor, "Outcome has fewer than two usable levels.")
+      return(NULL)
+    }
+    ScidrDiagnosticResolveLevels(data[[variable]], variable, positive_level, "Outcome")
+  })
   names(outcome_levels) <- outcome_vars
   predictor_levels <- lapply(predictor_vars, function(variable) ScidrDiagnosticObservedLevels(data[[variable]]))
   names(predictor_levels) <- predictor_vars
@@ -83,7 +101,7 @@ DiagnosticLikelihoodRatioTable <- function(data, outcome_vars, predictor_vars,
     ScidrDiagnosticResolveLevels(data[[variable]], variable, predictor_positive_level, "Predictor")
   })
   names(binary_levels) <- predictor_vars
-  for (outcome in outcome_vars) message(display_labels[[outcome]], ": '", outcome_levels[[outcome]]$positive, "' treated as outcome-positive.")
+  for (outcome in outcome_vars) if (!is.null(outcome_levels[[outcome]])) message(display_labels[[outcome]], ": '", outcome_levels[[outcome]]$positive, "' treated as outcome-positive.")
   if (is.null(stratify_by)) {
     strata <- tibble::tibble(Stratum = "All participants")
   } else {
@@ -100,6 +118,7 @@ DiagnosticLikelihoodRatioTable <- function(data, outcome_vars, predictor_vars,
   z_value <- stats::qnorm(1 - (1 - confidence_level) / 2)
   for (outcome in outcome_vars) for (predictor in predictor_vars) for (stratum_index in seq_len(nrow(strata))) {
     outcome_info <- outcome_levels[[outcome]]
+    if (is.null(outcome_info)) next
     required_vars <- unique(c(outcome, predictor, stratify_by))
     df_Analysis <- data %>% dplyr::select(dplyr::all_of(required_vars))
     stratum_row <- strata[stratum_index, , drop = FALSE]
@@ -141,7 +160,7 @@ DiagnosticLikelihoodRatioTable <- function(data, outcome_vars, predictor_vars,
     }
   }
   if (length(warning_messages)) warning(paste(unique(warning_messages), collapse = "\n"), call. = FALSE)
-  if (!length(results)) stop("No diagnostic likelihood ratios could be calculated from the supplied data.", call. = FALSE)
+  if (!length(results)) return(ScidrEmptyLegacyInference("DiagnosticLikelihoodRatioTable"))
   Results <- purrr::list_rbind(results)
   BinarySummary <- if (length(binary_summary)) purrr::list_rbind(binary_summary) else tibble::tibble()
 

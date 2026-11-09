@@ -10,7 +10,9 @@ PlotAssociations(
   Var2,
   Ordinal = FALSE,
   IncludeTrendSymbol = FALSE,
-  DataFrame = lifecycle::deprecated()
+  DataFrame = lifecycle::deprecated(),
+  Pthresh = 0.05,
+  PVar = "PValue"
 )
 }
 \arguments{
@@ -25,6 +27,20 @@ PlotAssociations(
 \item{IncludeTrendSymbol}{Logical; append a plus sign to a nominal-trend subtitle.}
 
 \item{DataFrame}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
+
+\item{Pthresh}{Significance threshold, default \code{0.05}. An explicitly supplied
+value takes precedence over a legacy significance threshold argument.}
+
+\item{PVar}{P-value column used for significance decisions. Defaults to raw
+\code{"PValue"}; select \code{"PValueFDR"} to use Benjamini-Hochberg adjusted values.
+Explicit legacy p-column names remain accepted. Existing, explicitly named
+FDR plots and adjusted-value columns are retained.
+
+Explicit \code{Pthresh} takes precedence over \code{Alpha}, \code{FDRAlpha}, \code{label_q}, or
+\code{adjusted_significance_threshold}. Pairwise \code{star_p = "adjusted"} retains
+its legacy adjustment method unless \code{PVar} is supplied; \code{PVar = "PValueFDR"}
+always selects BH. \code{star_p = "none"} suppresses legacy pairwise stars.
+Stars retain conventional p-value tiers within the requested cutoff.}
 }
 \value{
 A ggplot object representing the relationship between the variables.
@@ -32,6 +48,11 @@ A ggplot object representing the relationship between the variables.
 \description{
 This function generates scatter plots or box plots to visualize the relationship between two variables.
 }
+\section{Statistical results and provenance}{
+
+See \link{inference-results} for the shared \code{Results} and \code{Metadata} contract.
+}
+
 \examples{
 data(SampleData)
 data(SampleVariableTypes)

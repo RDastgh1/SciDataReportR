@@ -19,7 +19,9 @@ MakeCoxRegressionTable(
   CheckPH = TRUE,
   ReturnModels = FALSE,
   Relabel = TRUE,
-  TreatOrdinalAs = "Categorical"
+  TreatOrdinalAs = "Categorical",
+  Pthresh = 0.05,
+  PVar = "PValue"
 )
 }
 \arguments{
@@ -48,7 +50,8 @@ covariates within each model's complete-case analysis set.}
 \item{FDR}{Logical. If \code{TRUE}, add \code{FDR}, adjusted across all returned rows
 using \code{\link[=ApplyFDRCorrection]{ApplyFDRCorrection()}}.}
 
-\item{FDRAlpha}{Numeric threshold used for FDR-adjusted significance.}
+\item{FDRAlpha}{Legacy significance-threshold alias, retained in metadata.
+An explicitly supplied \code{Pthresh} takes precedence; \code{PVar} selects the p-value source.}
 
 \item{IncludeTrendSymbol}{Logical; add a plus sign for \verb{0.05 < p <= 0.10}.}
 
@@ -61,6 +64,20 @@ p-value for ordinary Cox models. Survey models return \code{NA}.}
 \item{Relabel}{Logical. If \code{TRUE}, use attached variable labels.}
 
 \item{TreatOrdinalAs}{How ordered predictors and covariates are handled.}
+
+\item{Pthresh}{Significance threshold, default \code{0.05}. An explicitly supplied
+value takes precedence over a legacy significance threshold argument.}
+
+\item{PVar}{P-value column used for significance decisions. Defaults to raw
+\code{"PValue"}; select \code{"PValueFDR"} to use Benjamini-Hochberg adjusted values.
+Explicit legacy p-column names remain accepted. Existing, explicitly named
+FDR plots and adjusted-value columns are retained.
+
+Explicit \code{Pthresh} takes precedence over \code{Alpha}, \code{FDRAlpha}, \code{label_q}, or
+\code{adjusted_significance_threshold}. Pairwise \code{star_p = "adjusted"} retains
+its legacy adjustment method unless \code{PVar} is supplied; \code{PVar = "PValueFDR"}
+always selects BH. \code{star_p = "none"} suppresses legacy pairwise stars.
+Stars retain conventional p-value tiers within the requested cutoff.}
 }
 \value{
 A list containing:
@@ -91,6 +108,11 @@ Numeric events must be coded 0/1. Logical events use \code{TRUE} as the event.
 For two-level factors, the second factor level is the event. Character event
 variables are deliberately rejected so the event ordering is never implicit.
 }
+\section{Statistical results and provenance}{
+
+See \link{inference-results} for the shared \code{Results} and \code{Metadata} contract.
+}
+
 \examples{
 lung <- survival::lung
 lung$event <- lung$status == 2

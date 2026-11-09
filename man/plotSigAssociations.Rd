@@ -7,7 +7,7 @@
 plotSigAssociations(
   data,
   AnovaMatrixObject,
-  PVar = "p",
+  PVar = "PValue",
   Pthresh = 0.05,
   DataFrame = lifecycle::deprecated()
 )
@@ -17,7 +17,8 @@ plotSigAssociations(
 
 \item{AnovaMatrixObject}{The output of the PlotAnovaRelationshipsMatrix function.}
 
-\item{PVar}{The name of the column used to filter for significance (default is "P").}
+\item{PVar}{P-value column used to filter significance. Defaults to raw
+\code{"PValue"}; use \code{"PValueFDR"} for BH-adjusted selection.}
 
 \item{Pthresh}{The significance threshold (default is 0.05).}
 
@@ -29,6 +30,11 @@ A list of scatterplot objects for significant correlations.
 \description{
 Generate ggbetweenstats for significant correlations based on a previously generated anova matrix
 }
+\section{Statistical results and provenance}{
+
+See \link{inference-results} for the shared \code{Results} and \code{Metadata} contract.
+}
+
 \examples{
 \donttest{
 # Build an ANOVA relationships matrix, then plot the significant pairs

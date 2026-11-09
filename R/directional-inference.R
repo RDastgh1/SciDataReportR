@@ -25,9 +25,9 @@
 
   tryCatch(
     if (isTRUE(Parametric)) {
-      stats::t.test(x_second, x_first, alternative = alternative, var.equal = FALSE)$p.value
+      ScidrObserveInference(stats::t.test(x_second, x_first, alternative = alternative, var.equal = FALSE))$p.value
     } else {
-      stats::wilcox.test(x_second, x_first, alternative = alternative, exact = FALSE)$p.value
+      ScidrObserveInference(stats::wilcox.test(x_second, x_first, alternative = alternative, exact = FALSE))$p.value
     },
     error = function(e) NA_real_
   )
@@ -61,11 +61,11 @@
     dimnames = list(c(event, "Other"), levels_group)
   )
 
-  chi <- tryCatch(suppressWarnings(stats::chisq.test(tab, correct = FALSE)), error = function(e) NULL)
+  chi <- tryCatch(suppressWarnings(ScidrObserveInference(stats::chisq.test(tab, correct = FALSE))), error = function(e) NULL)
   use_fisher <- identical(method, "fisher") || is.null(chi) || any(chi$expected < 5)
 
   if (use_fisher) {
-    p <- tryCatch(stats::fisher.test(tab, alternative = base_alternative)$p.value, error = function(e) NA_real_)
+    p <- tryCatch(ScidrObserveInference(stats::fisher.test(tab, alternative = base_alternative))$p.value, error = function(e) NA_real_)
     return(list(p = p, label = "One-sided Fisher exact"))
   }
 

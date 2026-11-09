@@ -52,9 +52,12 @@
 #' example, `df_All$cohort <- factor(df_All$cohort)`). Few unique values alone
 #' do not establish categorical meaning. Factors, character columns, and logical
 #' columns are accepted; more than 10 observed categories warn and continue.
-#' Entirely missing or unsupported columns error. Caller data are unchanged,
+#' Entirely missing columns produce unavailable statistical requests; unsupported types error. Caller data are unchanged,
 #' and existing restrictions on the required number of groups still apply.
 #' @export
+#' @inheritParams inference-results
+#' @section Statistical results and provenance:
+#' See [inference-results] for the shared `Results` and `Metadata` contract.
 PlotPairwiseMiningMatrix <- function(data,
                                      group_var,
                                      variables,
@@ -63,7 +66,7 @@ PlotPairwiseMiningMatrix <- function(data,
                                      adjust_scope = c("per_group", "per_variable", "matrix", "none"),
                                      p_adjust_method = c("fdr", "bonferroni", "holm", "none"),
                                      star_p = c("raw", "adjusted", "none"),
-                                     adjusted_outline = TRUE,
+                                     adjusted_outline = FALSE,
                                      adjusted_significance_threshold = 0.05,
                                      adjusted_outline_color = "black",
                                      adjusted_outline_linewidth = 1.0,
@@ -73,10 +76,21 @@ PlotPairwiseMiningMatrix <- function(data,
                                      categorical_fill_limits = NULL,
                                      x_axis_text_angle = 0,
                                      row_label_width = 58,
-                                     IncludeTrendSymbol = FALSE) {
+                                     IncludeTrendSymbol = FALSE,
+    Pthresh = 0.05,
+    PVar = "PValue") {
+  .scidr_inference <- ScidrStartInference("PlotPairwiseMiningMatrix", match.call(), environment())
+  on.exit({
+    if (!is.null(returnValue())) {
+      return(ScidrFinishInference(returnValue(), .scidr_inference, environment()))
+    }
+  }, add = TRUE)
+
   adjust_scope <- match.arg(adjust_scope)
   p_adjust_method <- match.arg(p_adjust_method)
   star_p <- match.arg(star_p)
+  if ("PVar" %in% names(.scidr_inference$Call) || !is.null(.scidr_inference$Parent)) star_p <- if (PVar == "PValue") "raw" else "adjusted"
+  if (!"PVar" %in% names(.scidr_inference$Call) && is.null(.scidr_inference$Parent) && star_p == "adjusted") .scidr_inference$PVar <- "AdjustedPValue"
   if (!is.logical(adjusted_outline) || length(adjusted_outline) != 1 || is.na(adjusted_outline)) stop("adjusted_outline must be TRUE or FALSE.")
   if (!is.numeric(adjusted_significance_threshold) || length(adjusted_significance_threshold) != 1 || is.na(adjusted_significance_threshold) || adjusted_significance_threshold <= 0 || adjusted_significance_threshold >= 1) stop("adjusted_significance_threshold must be a single number between 0 and 1.")
   if (!is.numeric(adjusted_outline_linewidth) || length(adjusted_outline_linewidth) != 1 || is.na(adjusted_outline_linewidth) || adjusted_outline_linewidth <= 0) stop("adjusted_outline_linewidth must be a positive number.")
@@ -91,6 +105,8 @@ PlotPairwiseMiningMatrix <- function(data,
   variables <- unique(variables)
   df_Data <- data
   df_Data$.PMM_Group <- if (is.factor(df_Data[[group_var]])) droplevels(df_Data[[group_var]]) else factor(df_Data[[group_var]])
+  if (!length(stats::na.omit(df_Data$.PMM_Group))) return(ScidrFailRequestedInference("PlotPairwiseMiningMatrix",
+    "Grouping variable has no observed non-missing levels.", group_var))
   if (!Referent %in% levels(df_Data$.PMM_Group)) stop("Referent level not found: ", Referent)
   group_levels <- setdiff(levels(df_Data$.PMM_Group), Referent)
   if (!length(group_levels)) stop("At least one non-referent group is required.")
@@ -177,14 +193,14 @@ PlotPairwiseMiningMatrix <- function(data,
       scaled_name <- paste0(".PMM_", v)
       df_Model <- df_Data %>% dplyr::mutate("{scaled_name}" := (.data[[v]] - ref_mean) / ref_sd)
       formula <- stats::reformulate(c(".PMM_Group", covariates), response = scaled_name)
-      fit <- tryCatch(stats::lm(formula, data = df_Model), error = function(e) e)
+      fit <- tryCatch(ScidrObserveInference(stats::lm(formula, data = df_Model)), error = function(e) e)
       if (inherits(fit, "error")) {
         warnings <- c(warnings, paste0(v, ": ", conditionMessage(fit)))
         next
       }
       models[[v]] <- fit
       emm <- emmeans::emmeans(fit, specs = ".PMM_Group")
-      contrast_df <- as.data.frame(summary(emmeans::contrast(emm, method = unlist(lapply(group_levels, MakeContrast), recursive = FALSE), adjust = "none"), infer = c(TRUE, TRUE)))
+      contrast_df <- as.data.frame(summary(ScidrObserveInference(emmeans::contrast(emm, method = unlist(lapply(group_levels, MakeContrast), recursive = FALSE), adjust = "none")), infer = c(TRUE, TRUE)))
       df_ContinuousResults <- dplyr::bind_rows(df_ContinuousResults, tibble::tibble(
         Variable = v, VariableLabel = label, Level = NA_character_, RowLabel = label, Type = "Continuous", Group = contrast_df$contrast, Referent = Referent,
         N = stats::nobs(fit), NGroup = vapply(contrast_df$contrast, function(g) sum(df_Model$.PMM_Group == g & !is.na(df_Model[[scaled_name]])), numeric(1)), NReferent = sum(df_Model$.PMM_Group == Referent & !is.na(df_Model[[scaled_name]])), Missing = sum(is.na(values)),
@@ -204,7 +220,7 @@ PlotPairwiseMiningMatrix <- function(data,
         pair_groups <- droplevels(factor(df_Data$.PMM_Group[include], levels = c(Referent, g)))
         pair_values <- droplevels(factor(factor_values[include]))
         table_values <- table(pair_groups, pair_values)
-        chi <- suppressWarnings(tryCatch(stats::chisq.test(table_values), error = function(e) NULL))
+        chi <- suppressWarnings(tryCatch(ScidrObserveInference(stats::chisq.test(table_values)), error = function(e) NULL))
         denominator <- sum(table_values) * min(nrow(table_values) - 1, ncol(table_values) - 1)
         if (is.null(chi) || denominator <= 0) {
           warnings <- c(warnings, paste0(v, " / ", g, ": pairwise Cramer's V unavailable."))
@@ -228,10 +244,11 @@ PlotPairwiseMiningMatrix <- function(data,
   }
 
   results <- dplyr::bind_rows(df_ContinuousResults, df_CategoricalResults) %>% AdjustP() %>% AddMetadata()
-  if (nrow(results)) results$SignificanceLabel <- AddStars(if (star_p == "adjusted") results$AdjustedPValue else if (star_p == "raw") results$PValue else NA_real_)
+  results <- ScidrPairwiseDisplay(results, adjust_scope, star_p, IncludeTrendSymbol)
   if (nrow(results)) results$IsAdjustedSignificant <- is.finite(results$AdjustedPValue) & results$AdjustedPValue <= adjusted_significance_threshold
   df_CategoryLevelResults <- df_CategoryLevelResults %>% AdjustP() %>% AddMetadata()
-  if (nrow(df_CategoryLevelResults)) df_CategoryLevelResults$SignificanceLabel <- AddStars(if (star_p == "adjusted") df_CategoryLevelResults$AdjustedPValue else if (star_p == "raw") df_CategoryLevelResults$PValue else NA_real_)
+  df_CategoryLevelResults <- ScidrPairwiseDisplay(df_CategoryLevelResults, adjust_scope, star_p, IncludeTrendSymbol)
+  if (!"Type" %in% names(results)) results$Type <- character(nrow(results))
   continuous_results <- dplyr::filter(results, .data$Type == "Continuous")
   categorical_results <- dplyr::filter(results, .data$Type == "Categorical")
 

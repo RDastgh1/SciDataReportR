@@ -24,7 +24,7 @@ test_that("MultivariableRegressionTable returns a stable ordinary regression obj
     c(
       "Models", "FormattedTable", "LargeTable", "RegressionMatrix",
       "VariableImportanceMatrix", "Predictions", "Diagnostics",
-      "ModelSummary", "Multicollinearity", "Plots", "Metadata"
+      "ModelSummary", "Multicollinearity", "Plots", "Metadata", "Results"
     )
   )
   expect_s3_class(res$FormattedTable, "gt_tbl")
@@ -372,8 +372,8 @@ test_that("MultivariableRegressionTable validates missingness", {
     x1 = c(rnorm(10), rep(NA_real_, 10))
   )
 
-  expect_error(
-    MultivariableRegressionTable(
+  expect_warning(
+    failed_one_level <- MultivariableRegressionTable(
       df_one_level,
       "cohort",
       "x1",
@@ -387,10 +387,11 @@ test_that("MultivariableRegressionTable validates missingness", {
     x1 = c(rnorm(5), rep(NA_real_, 25))
   )
 
-  expect_error(
-    MultivariableRegressionTable(df_all_dropped, "cohort", "x1"),
-    "All PredictorVars were dropped for missingness"
+  expect_warning(
+    failed_sparse <- MultivariableRegressionTable(df_all_dropped, "cohort", "x1"),
+    "dropped for excessive missingness"
   )
+  expect_true(all(failed_sparse$Results$Status == "failed"))
 
   df_too_small <- data.frame(
     y = rnorm(10),
@@ -398,8 +399,8 @@ test_that("MultivariableRegressionTable validates missingness", {
     x2 = c(rnorm(3), rep(NA_real_, 7))
   )
 
-  expect_error(
-    MultivariableRegressionTable(
+  expect_warning(
+    failed_small <- MultivariableRegressionTable(
       df_too_small,
       "y",
       c("x1", "x2"),

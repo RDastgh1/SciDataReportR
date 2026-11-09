@@ -60,9 +60,12 @@
 #' example, `df_All$cohort <- factor(df_All$cohort)`). Few unique values alone
 #' do not establish categorical meaning. Factors, character columns, and logical
 #' columns are accepted; more than 10 observed categories warn and continue.
-#' Entirely missing or unsupported columns error. Caller data are unchanged,
+#' Entirely missing columns produce unavailable statistical requests; unsupported types error. Caller data are unchanged,
 #' and existing restrictions on the required number of groups still apply.
 #' @export
+#' @inheritParams inference-results
+#' @section Statistical results and provenance:
+#' See [inference-results] for the shared `Results` and `Metadata` contract.
 PlotSplitViolin <- function(data,
     Var,
     group_var,
@@ -88,7 +91,16 @@ PlotSplitViolin <- function(data,
     IncludeTrendSymbol = FALSE,
     ...,
     Group = lifecycle::deprecated(),
-    covars = lifecycle::deprecated()) {
+    covars = lifecycle::deprecated(),
+    Pthresh = 0.05,
+    PVar = "PValue") {
+  .scidr_inference <- ScidrStartInference("PlotSplitViolin", match.call(), environment())
+  on.exit({
+    if (!is.null(returnValue())) {
+      return(ScidrFinishInference(returnValue(), .scidr_inference, environment()))
+    }
+  }, add = TRUE)
+
   # Deprecated argument shims (SciDataReportR 19.15.0)
   # `group_var` (and the deprecated `Group`) accept bare column names (NSE),
   # so the deprecated argument is detected with missing() and captured with
@@ -196,7 +208,7 @@ PlotSplitViolin <- function(data,
 
         if (length(covars) > 0) {
           covariate_formula <- stats::reformulate(covars, response = var_nm)
-          covariate_fit <- stats::lm(covariate_formula, data = df)
+          covariate_fit <- ScidrObserveInference(stats::lm(covariate_formula, data = df))
           test_values <- stats::residuals(covariate_fit)
           method <- "Wilcoxon rank-sum test of covariate-adjusted residuals"
         }
@@ -206,7 +218,7 @@ PlotSplitViolin <- function(data,
           Group = df$.Group
         )
         p_value <- if (identical(alternative, "two.sided")) {
-          stats::wilcox.test(TestValue ~ Group, data = df_Test, exact = FALSE)$p.value
+          ScidrObserveInference(stats::wilcox.test(TestValue ~ Group, data = df_Test, exact = FALSE))$p.value
         } else {
           .ScidrDirectedContinuousP(df_Test$TestValue, df_Test$Group, FALSE, alternative)
         }
@@ -215,13 +227,13 @@ PlotSplitViolin <- function(data,
           c(".Group", covars),
           response = var_nm
         )
-        fit <- stats::lm(model_formula, data = df)
+        fit <- ScidrObserveInference(stats::lm(model_formula, data = df))
         p_value <- if (identical(alternative, "two.sided")) {
           as.data.frame(
-            emmeans::contrast(
+            ScidrObserveInference(emmeans::contrast(
               emmeans::emmeans(fit, ".Group"),
               method = "revpairwise"
-            )
+            ))
           )$p.value[1]
         } else if (length(covars) == 0) {
           .ScidrDirectedContinuousP(df[[var_nm]], df$.Group, TRUE, alternative)

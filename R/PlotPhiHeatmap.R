@@ -62,6 +62,9 @@
 #' upper$FDRCorrected$plot
 #' @param IncludeTrendSymbol Logical; add a plus sign for `0.05 < p <= 0.10`.
 #' @export
+#' @inheritParams inference-results
+#' @section Statistical results and provenance:
+#' See [inference-results] for the shared `Results` and `Metadata` contract.
 PlotPhiHeatmap <- function(data,
     CatVars,
     Relabel = TRUE,
@@ -71,7 +74,16 @@ PlotPhiHeatmap <- function(data,
     cluster_columns = FALSE,
     triangle = c("full", "upper", "lower"),
     IncludeTrendSymbol = FALSE,
-    Data = lifecycle::deprecated()) {
+    Data = lifecycle::deprecated(),
+    Pthresh = 0.05,
+    PVar = "PValue") {
+  .scidr_inference <- ScidrStartInference("PlotPhiHeatmap", match.call(), environment())
+  on.exit({
+    if (!is.null(returnValue())) {
+      return(ScidrFinishInference(returnValue(), .scidr_inference, environment()))
+    }
+  }, add = TRUE)
+
   # Deprecated argument shims (SciDataReportR 19.15.0)
   if (lifecycle::is_present(Data)) {
     lifecycle::deprecate_warn("19.15.0", "PlotPhiHeatmap(Data)", "PlotPhiHeatmap(data)")
@@ -111,7 +123,7 @@ PlotPhiHeatmap <- function(data,
     tbl <- table(x, y)
     if (all(dim(tbl) == c(2, 2))) {
       # chisq test without continuity correction to match correlation-style tests
-      suppressWarnings(stats::chisq.test(tbl, correct = FALSE)$p.value)
+      suppressWarnings(ScidrObserveInference(stats::chisq.test(tbl, correct = FALSE))$p.value)
     } else {
       # degenerate (one level missing) -> NA
       NA_real_
@@ -130,6 +142,11 @@ PlotPhiHeatmap <- function(data,
   # keep only requested vars, preserve labels
   DataSubset <- Data[CatVars]
   DataSubset <- ReplaceMissingLabels(DataSubset)
+
+  vars_Degenerate <- CatVars[vapply(DataSubset[CatVars], function(x) length(unique(stats::na.omit(x))) < 2L, logical(1))]
+  CatVars <- setdiff(CatVars, vars_Degenerate)
+  DataSubset <- DataSubset[CatVars]
+  if (length(CatVars) < 2L) return(ScidrEmptyLegacyInference("PlotPhiHeatmap"))
 
   # check all are binary
   non_binary <- vapply(DataSubset, .is_binary, logical(1))
@@ -175,7 +192,7 @@ PlotPhiHeatmap <- function(data,
       # Use chi-squared-based p-value; fallback if necessary
       p <- .pval_binbin(x, y)
       if (is.na(p)) {
-        p <- suppressWarnings(stats::cor.test(x, y)$p.value)
+        p <- suppressWarnings(ScidrObserveInference(stats::cor.test(x, y))$p.value)
       }
     }
 
@@ -201,7 +218,7 @@ PlotPhiHeatmap <- function(data,
   )
 
   stat.test$`p<.05` <- .FormatPValueStars(
-    stat.test$p_value,
+    ScidrInferenceP(stat.test$p_value, stat.test$p.adj),
     IncludeTrendSymbol = IncludeTrendSymbol
   )
   stat.test$p.adj.signif <- .FormatPValueStars(

@@ -37,14 +37,26 @@
 #' example, `df_All$cohort <- factor(df_All$cohort)`). Few unique values alone
 #' do not establish categorical meaning. Factors, character columns, and logical
 #' columns are accepted; more than 10 observed categories warn and continue.
-#' Entirely missing or unsupported columns error. Caller data are unchanged,
+#' Entirely missing columns produce unavailable statistical requests; unsupported types error. Caller data are unchanged,
 #' and existing restrictions on the required number of groups still apply.
 #' @export
 
+#' @inheritParams inference-results
+#' @section Statistical results and provenance:
+#' See [inference-results] for the shared `Results` and `Metadata` contract.
 CreateStatisticsTable <- function(data,
     TargetVar,
     alternative = c("two.sided", "greater", "less"),
-    Data = lifecycle::deprecated()) {
+    Data = lifecycle::deprecated(),
+    Pthresh = 0.05,
+    PVar = "PValue") {
+  .scidr_inference <- ScidrStartInference("CreateStatisticsTable", match.call(), environment())
+  on.exit({
+    if (!is.null(returnValue())) {
+      return(ScidrFinishInference(returnValue(), .scidr_inference, environment()))
+    }
+  }, add = TRUE)
+
   # Deprecated argument shims (SciDataReportR 19.15.0)
   if (lifecycle::is_present(Data)) {
     lifecycle::deprecate_warn("19.15.0", "CreateStatisticsTable(Data)", "CreateStatisticsTable(data)")
@@ -62,6 +74,12 @@ CreateStatisticsTable <- function(data,
         "Install it with install.packages('", pkg, "')."
       )
     }
+  }
+
+  vars_Statistics <- setdiff(names(Data), TargetVar)
+  if (!length(unique(stats::na.omit(Data[[TargetVar]]))) ||
+      !any(vapply(Data[vars_Statistics], function(x) length(unique(stats::na.omit(x))) > 1L, logical(1)))) {
+    return(kableExtra::kbl(data.frame(Variable = character(), p_value = double()), format = "html"))
   }
 
   tab1 <- arsenal::tableby(as.formula(paste(TargetVar, "~ .")), data = Data, digits.pct = 1, digits.count = 1, numeric.stats = c("Nmiss2", "meansd"), cat.test = "chisq")

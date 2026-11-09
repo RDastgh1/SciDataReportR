@@ -116,10 +116,22 @@
 #' @export
 #'
 #' @note This function is adapted from code written by Eran Shorer.
+#' @inheritParams inference-results
+#' @section Statistical results and provenance:
+#' See [inference-results] for the shared `Results` and `Metadata` contract.
 PlotBlandAltman <- function(data,
     Variable1,
     Variable2,
-    DataFrame = lifecycle::deprecated()) {
+    DataFrame = lifecycle::deprecated(),
+    Pthresh = 0.05,
+    PVar = "PValue") {
+  .scidr_inference <- ScidrStartInference("PlotBlandAltman", match.call(), environment())
+  on.exit({
+    if (!is.null(returnValue())) {
+      return(ScidrFinishInference(returnValue(), .scidr_inference, environment()))
+    }
+  }, add = TRUE)
+
   # Deprecated argument shims (SciDataReportR 19.15.0)
   if (lifecycle::is_present(DataFrame)) {
     lifecycle::deprecate_warn("19.15.0", "PlotBlandAltman(DataFrame)", "PlotBlandAltman(data)")
@@ -135,6 +147,11 @@ PlotBlandAltman <- function(data,
 
   # Remove rows with missing values
   DataFrame <- na.omit(DataFrame)
+
+  if (nrow(DataFrame) < 3L) {
+    ScidrRecordInferenceFailure(Variable2, Variable1, "Too few complete paired observations for agreement intervals.", nrow(DataFrame))
+    return(ScidrEmptyLegacyInference("PlotBlandAltman"))
+  }
 
   # Calculate Bland-Altman statistics
   BAstats <- BlandAltmanLeh::bland.altman.stats(DataFrame[[Variable1]], DataFrame[[Variable2]])

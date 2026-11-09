@@ -17,7 +17,9 @@ PlotMiningMatrix(
   PredictorVars = lifecycle::deprecated(),
   fdr_scope = c("matrix", "per_outcome", "per_predictor"),
   IncludeTrendSymbol = FALSE,
-  Covariates = lifecycle::deprecated()
+  Covariates = lifecycle::deprecated(),
+  Pthresh = 0.05,
+  PVar = "PValue"
 )
 }
 \arguments{
@@ -27,7 +29,7 @@ PlotMiningMatrix(
 
 \item{predictor_vars}{Predictor variables. If NULL, uses OutcomeVars.}
 
-\item{covariates}{Optional covariates (reserved for future use).}
+\item{covariates}{Optional variables to exclude from the tested axes.}
 
 \item{Relabel}{Use labels instead of names.}
 
@@ -42,15 +44,29 @@ PlotMiningMatrix(
 
 \item{PredictorVars}{\strong{Deprecated} (since 19.15.0). Use \code{predictor_vars} instead.}
 
-\item{fdr_scope}{Either \code{"matrix"} (default) or \code{"per_outcome"}, passed to
-\code{\link[=ApplyFDRCorrection]{ApplyFDRCorrection()}}. \code{"matrix"} corrects across all pairwise p-values
-at once (historical behavior, computed on the symmetrized pair table).
-\code{"per_outcome"} corrects separately within each x-axis variable (\code{XVar},
-ordered by \code{outcome_vars}).}
+\item{fdr_scope}{One of \code{"matrix"}, \code{"per_outcome"}, or \code{"per_predictor"}.
+Correction uses the symmetrized table before selecting the displayed grid.
+\code{"matrix"} corrects all p-values together (historical behavior).
+\code{"per_outcome"} groups by x-axis outcome (\code{XVar}), correcting over predictors;
+\code{"per_predictor"} groups by y-axis predictor (\code{YVar}), correcting over outcomes.}
 
 \item{IncludeTrendSymbol}{Logical; add a plus sign for \verb{0.05 < p <= 0.10}.}
 
 \item{Covariates}{\strong{Deprecated} (since 19.15.0). Use \code{covariates} instead.}
+
+\item{Pthresh}{Significance threshold, default \code{0.05}. An explicitly supplied
+value takes precedence over a legacy significance threshold argument.}
+
+\item{PVar}{P-value column used for significance decisions. Defaults to raw
+\code{"PValue"}; select \code{"PValueFDR"} to use Benjamini-Hochberg adjusted values.
+Explicit legacy p-column names remain accepted. Existing, explicitly named
+FDR plots and adjusted-value columns are retained.
+
+Explicit \code{Pthresh} takes precedence over \code{Alpha}, \code{FDRAlpha}, \code{label_q}, or
+\code{adjusted_significance_threshold}. Pairwise \code{star_p = "adjusted"} retains
+its legacy adjustment method unless \code{PVar} is supplied; \code{PVar = "PValueFDR"}
+always selects BH. \code{star_p = "none"} suppresses legacy pairwise stars.
+Stars retain conventional p-value tiers within the requested cutoff.}
 }
 \value{
 List with tables and plots.
@@ -58,6 +74,19 @@ List with tables and plots.
 \description{
 Generate a matrix of statistical relationships between variables.
 }
+\details{
+Numeric pairs use Pearson correlation when \code{Parametric = TRUE},
+and Spearman otherwise. Categorical/numeric pairs use ANOVA or Kruskal-Wallis
+in either orientation; categorical pairs use chi-squared tests. Logical
+columns are converted locally to FALSE/TRUE factors, preserving labels.
+Missing effect sizes retain their p-values and plot in neutral grey.
+\code{Unadjusted$Missing} lists requested non-self pairs without a finite p-value.
+}
+\section{Statistical results and provenance}{
+
+See \link{inference-results} for the shared \code{Results} and \code{Metadata} contract.
+}
+
 \examples{
 data(SampleData)
 data(SampleVariableTypes)

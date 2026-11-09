@@ -40,7 +40,7 @@ test_that("split results agree with independent stratum calls and FDR scopes", {
       }
       expect_identical(out$p, out$Unadjusted)
       expect_identical(out$p_fdr, out$FDRCorrected)
-      expect_identical(out$Metadata$FDRFamily, "within_stratum")
+      expect_identical(out$Metadata$FDRFamilyLegacy, "within_stratum")
     }
   }
 })

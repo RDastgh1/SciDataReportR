@@ -249,9 +249,12 @@
 #' example, `df_All$cohort <- factor(df_All$cohort)`). Few unique values alone
 #' do not establish categorical meaning. Factors, character columns, and logical
 #' columns are accepted; more than 10 observed categories warn and continue.
-#' Entirely missing or unsupported columns error. Caller data are unchanged,
+#' Entirely missing columns produce unavailable statistical requests; unsupported types error. Caller data are unchanged,
 #' and existing restrictions on the required number of groups still apply.
 #' @export
+#' @inheritParams inference-results
+#' @section Statistical results and provenance:
+#' See [inference-results] for the shared `Results` and `Metadata` contract.
 MakeComparisonTable <- function(data,
     group_var = NULL,
     variables,
@@ -285,7 +288,16 @@ MakeComparisonTable <- function(data,
     ValueDigits = lifecycle::deprecated(),
     pDigits = lifecycle::deprecated(),
     EffectSizeDigits = lifecycle::deprecated(),
-    addQ = FALSE) {
+    addQ = FALSE,
+    Pthresh = 0.05,
+    PVar = "PValue") {
+  .scidr_inference <- ScidrStartInference("MakeComparisonTable", match.call(), environment())
+  on.exit({
+    if (!is.null(returnValue())) {
+      return(ScidrFinishInference(returnValue(), .scidr_inference, environment()))
+    }
+  }, add = TRUE)
+
   if (!is.logical(addQ) || length(addQ) != 1L || is.na(addQ)) {
     stop("addQ must be a single nonmissing logical value.")
   }
@@ -467,6 +479,19 @@ MakeComparisonTable <- function(data,
     paste(sort(c(norm(a), norm(b))), collapse = "||")
   }
 
+  RecordPairwiseP <- function(df_Pairs, variable) {
+    if (!nrow(df_Pairs)) return(invisible(NULL))
+    pairs <- lapply(df_Pairs$contrast_label, function(label) {
+      index <- which(vapply(combos_all, function(cp) identical(pair_label(cp[1], cp[2]), label), logical(1)))
+      if (length(index)) combos_all[[index[1]]] else character()
+    })
+    n <- vapply(pairs, function(cp) sum(stats::complete.cases(df[, unique(c(variable, CompVariable, Covariates)), drop = FALSE]) & df[[CompVariable]] %in% cp), numeric(1))
+    .scidr_inference$PairwisePValues[[length(.scidr_inference$PairwisePValues) + 1L]] <- tibble::tibble(
+      Outcome = variable, Predictor = CompVariable, Term = df_Pairs$contrast_label,
+      PValue = df_Pairs$p_val, N = n, TestRole = "Pairwise")
+    invisible(NULL)
+  }
+
   fmt_p <- function(p, digits = 3) {
     if (is.na(p)) return(NA_character_)
     p <- max(p, .Machine$double.xmin)
@@ -488,7 +513,7 @@ MakeComparisonTable <- function(data,
     }
 
     chi <- tryCatch(
-      suppressWarnings(stats::chisq.test(tab, correct = FALSE)),
+      suppressWarnings(ScidrObserveInference(stats::chisq.test(tab, correct = FALSE))),
       error = function(e) NULL
     )
 
@@ -506,9 +531,9 @@ MakeComparisonTable <- function(data,
     if (use_fisher) {
       fish <- tryCatch(
         if (nrow(tab) == 2 && ncol(tab) == 2) {
-          stats::fisher.test(tab)
+          ScidrObserveInference(stats::fisher.test(tab))
         } else {
-          stats::fisher.test(tab, simulate.p.value = TRUE, B = 10000)
+          ScidrObserveInference(stats::fisher.test(tab, simulate.p.value = TRUE, B = 10000))
         },
         error = function(e) NULL
       )
@@ -538,7 +563,7 @@ MakeComparisonTable <- function(data,
     }
 
     chi <- tryCatch(
-      suppressWarnings(stats::chisq.test(tab, correct = FALSE)$statistic),
+      suppressWarnings(ScidrObserveInference(stats::chisq.test(tab, correct = FALSE))$statistic),
       error = function(e) NA_real_
     )
 
@@ -602,8 +627,8 @@ MakeComparisonTable <- function(data,
     f_full <- fmla(y, c(group, covs))
     f_red <- if (length(covs)) fmla(y, covs) else stats::as.formula(paste(btick(y), "~ 1"))
 
-    m_full <- tryCatch(nnet::multinom(f_full, data = df_cc, trace = FALSE), error = function(e) NULL)
-    m_red <- tryCatch(nnet::multinom(f_red, data = df_cc, trace = FALSE), error = function(e) NULL)
+    m_full <- tryCatch(ScidrObserveInference(nnet::multinom(f_full, data = df_cc, trace = FALSE)), error = function(e) NULL)
+    m_red <- tryCatch(ScidrObserveInference(nnet::multinom(f_red, data = df_cc, trace = FALSE)), error = function(e) NULL)
 
     if (is.null(m_full) || is.null(m_red)) {
       return(list(p = NA_real_, label = "Multinomial LR (failed)"))
@@ -653,8 +678,8 @@ MakeComparisonTable <- function(data,
       f_red <- if (length(covs)) fmla(y, covs) else stats::as.formula(paste(btick(y), "~ 1"))
 
       if (k == 2) {
-        m_full <- tryCatch(stats::glm(f_full, data = sub, family = stats::binomial()), error = function(e) NULL)
-        m_red <- tryCatch(stats::glm(f_red, data = sub, family = stats::binomial()), error = function(e) NULL)
+        m_full <- tryCatch(ScidrObserveInference(stats::glm(f_full, data = sub, family = stats::binomial())), error = function(e) NULL)
+        m_red <- tryCatch(ScidrObserveInference(stats::glm(f_red, data = sub, family = stats::binomial())), error = function(e) NULL)
 
         if (is.null(m_full) || is.null(m_red)) {
           return(tibble::tibble(
@@ -682,8 +707,8 @@ MakeComparisonTable <- function(data,
         ))
       }
 
-      m_full <- tryCatch(nnet::multinom(f_full, data = sub, trace = FALSE), error = function(e) NULL)
-      m_red <- tryCatch(nnet::multinom(f_red, data = sub, trace = FALSE), error = function(e) NULL)
+      m_full <- tryCatch(ScidrObserveInference(nnet::multinom(f_full, data = sub, trace = FALSE)), error = function(e) NULL)
+      m_red <- tryCatch(ScidrObserveInference(nnet::multinom(f_red, data = sub, trace = FALSE)), error = function(e) NULL)
 
       if (is.null(m_full) || is.null(m_red)) {
         return(tibble::tibble(
@@ -709,6 +734,7 @@ MakeComparisonTable <- function(data,
       )
     })
 
+    RecordPairwiseP(out, y)
     if (!identical(PairwiseMethod, "none")) {
       out$p_val <- stats::p.adjust(out$p_val, method = PairwiseMethod)
     }
@@ -718,7 +744,7 @@ MakeComparisonTable <- function(data,
 
   pairwise_cont_emmeans <- function(df_cc, var, group, covs, combos, PairwiseMethod, robust = FALSE) {
     fit <- tryCatch(
-      stats::lm(fmla(var, c(group, covs)), data = df_cc),
+      ScidrObserveInference(stats::lm(fmla(var, c(group, covs)), data = df_cc)),
       error = function(e) NULL
     )
 
@@ -780,7 +806,7 @@ MakeComparisonTable <- function(data,
     }
 
     ctr <- tryCatch(
-      emmeans::contrast(emm, method = contrast_list),
+      ScidrObserveInference(emmeans::contrast(emm, method = contrast_list)),
       error = function(e) NULL
     )
 
@@ -788,6 +814,8 @@ MakeComparisonTable <- function(data,
       return(dplyr::select(out_template, "variable", "contrast_label", "p_val"))
     }
 
+    raw <- as.data.frame(summary(ctr, adjust = "none"))
+    RecordPairwiseP(tibble::tibble(contrast_label = out_template$contrast_label, p_val = raw$p.value[match(out_template$key, as.character(raw$contrast))]), var)
     adj_method <- if (identical(PairwiseMethod, "none")) "none" else PairwiseMethod
 
     res <- tryCatch(
@@ -818,6 +846,10 @@ MakeComparisonTable <- function(data,
     df[[CompVariable]] <- as_factor_drop(df[[CompVariable]])
   }
 
+  if (!overall_mode && !length(unique(stats::na.omit(df[[CompVariable]])))) {
+    return(gtsummary::tbl_summary(df[Variables]))
+  }
+
   keep <- Variables[vapply(Variables, function(v) {
     x <- df[[v]]
     length(unique(x[!is.na(x)])) >= 2
@@ -831,7 +863,7 @@ MakeComparisonTable <- function(data,
   Variables <- keep
 
   if (!length(Variables)) {
-    stop("No variables left to summarise after dropping constants.")
+    return(gtsummary::tbl_summary(data.frame(Unavailable = NA_real_)))
   }
 
   n_unique <- vapply(Variables, function(v) length(unique(df[[v]][!is.na(df[[v]])])), integer(1))
@@ -1015,7 +1047,7 @@ MakeComparisonTable <- function(data,
           ))
         }
 
-        fit <- tryCatch(stats::lm(fmla(var, c(CompVariable, Covariates)), data = df_cc), error = function(e) NULL)
+        fit <- tryCatch(ScidrObserveInference(stats::lm(fmla(var, c(CompVariable, Covariates)), data = df_cc)), error = function(e) NULL)
 
         if (is.null(fit)) {
           return(tibble::tibble(
@@ -1084,7 +1116,7 @@ MakeComparisonTable <- function(data,
             .ScidrDirectedContinuousP(df_vg[[var]], df_vg[[CompVariable]], TRUE, alternative)
           } else {
             tryCatch(
-              stats::t.test(fmla(var, CompVariable), data = df_vg, var.equal = FALSE)$p.value,
+              ScidrObserveInference(stats::t.test(fmla(var, CompVariable), data = df_vg, var.equal = FALSE))$p.value,
               error = function(e) NA_real_
             )
           }
@@ -1116,9 +1148,9 @@ MakeComparisonTable <- function(data,
         if (k == 2 && directional) {
           .ScidrDirectedContinuousP(df_vg[[var]], df_vg[[CompVariable]], FALSE, alternative)
         } else if (k == 2) {
-          stats::wilcox.test(fmla(var, CompVariable), data = df_vg)$p.value
+          ScidrObserveInference(stats::wilcox.test(fmla(var, CompVariable), data = df_vg))$p.value
         } else {
-          stats::kruskal.test(fmla(var, CompVariable), data = df_vg)$p.value
+          ScidrObserveInference(stats::kruskal.test(fmla(var, CompVariable), data = df_vg))$p.value
         },
         error = function(e) NA_real_
       )
@@ -1175,15 +1207,15 @@ MakeComparisonTable <- function(data,
           nlevels(df_cc[[CompVariable]]) >= 2 &&
           nrow(df_cc) >= 5) {
         gm_full <- tryCatch(
-          stats::glm(fmla(var, c(CompVariable, Covariates)), data = df_cc, family = stats::binomial()),
+          ScidrObserveInference(stats::glm(fmla(var, c(CompVariable, Covariates)), data = df_cc, family = stats::binomial())),
           error = function(e) NULL
         )
 
         gm_red <- tryCatch(
           if (length(Covariates)) {
-            stats::glm(fmla(var, Covariates), data = df_cc, family = stats::binomial())
+            ScidrObserveInference(stats::glm(fmla(var, Covariates), data = df_cc, family = stats::binomial()))
           } else {
-            stats::glm(stats::as.formula(paste(btick(var), "~ 1")), data = df_cc, family = stats::binomial())
+            ScidrObserveInference(stats::glm(stats::as.formula(paste(btick(var), "~ 1")), data = df_cc, family = stats::binomial()))
           },
           error = function(e) NULL
         )
@@ -1277,7 +1309,7 @@ MakeComparisonTable <- function(data,
             ))
           }
 
-          fit <- tryCatch(stats::lm(fmla(var, c(CompVariable, Covariates)), data = df_cc), error = function(e) NULL)
+          fit <- tryCatch(ScidrObserveInference(stats::lm(fmla(var, c(CompVariable, Covariates)), data = df_cc)), error = function(e) NULL)
           a2 <- tryCatch(car::Anova(fit, type = 2), error = function(e) NULL)
           val <- NA_real_
           k_cc <- nlevels(df_cc[[CompVariable]])
@@ -1288,7 +1320,7 @@ MakeComparisonTable <- function(data,
                 fit,
                 specs = stats::as.formula(paste0("~", btick(CompVariable)))
               )
-              emm_pair <- summary(emmeans::contrast(emm, method = "pairwise"))
+              emm_pair <- summary(ScidrObserveInference(emmeans::contrast(emm, method = "pairwise")))
               abs(as.numeric(emm_pair$estimate[1]) / stats::sigma(fit))
             }, error = function(e) NA_real_)
 
@@ -1500,9 +1532,9 @@ MakeComparisonTable <- function(data,
 
           p <- tryCatch(
             if (Parametric) {
-              stats::t.test(fmla(var, CompVariable), data = sub, var.equal = FALSE)$p.value
+              ScidrObserveInference(stats::t.test(fmla(var, CompVariable), data = sub, var.equal = FALSE))$p.value
             } else {
-              stats::wilcox.test(fmla(var, CompVariable), data = sub)$p.value
+              ScidrObserveInference(stats::wilcox.test(fmla(var, CompVariable), data = sub))$p.value
             },
             error = function(e) NA_real_
           )
@@ -1514,6 +1546,7 @@ MakeComparisonTable <- function(data,
           )
         })
 
+        RecordPairwiseP(out, var)
         if (!identical(PairwiseMethod, "none")) {
           out$p_val <- stats::p.adjust(out$p_val, method = PairwiseMethod)
         }
@@ -1546,6 +1579,7 @@ MakeComparisonTable <- function(data,
         )
       })
 
+      RecordPairwiseP(out, var)
       if (!identical(PairwiseMethod, "none")) {
         out$p_val <- stats::p.adjust(out$p_val, method = PairwiseMethod)
       }
@@ -1572,7 +1606,7 @@ MakeComparisonTable <- function(data,
                     df_test[[var]], df_test[[CompVariable]], Parametric, alternative
                   )
                 } else if (is_cont) {
-                  fit <- tryCatch(stats::lm(fmla(var, c(CompVariable, Covariates)), data = df_test), error = function(e) NULL)
+                  fit <- tryCatch(ScidrObserveInference(stats::lm(fmla(var, c(CompVariable, Covariates)), data = df_test)), error = function(e) NULL)
                   if (!is.null(fit)) {
                     p_directional <- .ScidrDirectedCoefficientP(
                       fit, CompVariable, alternative, robust = !Parametric
@@ -1586,7 +1620,7 @@ MakeComparisonTable <- function(data,
                     )$p
                   } else if (nlevels(df_test[[var]]) == 2) {
                     fit <- tryCatch(
-                      stats::glm(fmla(var, c(CompVariable, Covariates)), data = df_test, family = stats::binomial()),
+                      ScidrObserveInference(stats::glm(fmla(var, c(CompVariable, Covariates)), data = df_test, family = stats::binomial())),
                       error = function(e) NULL
                     )
                     if (!is.null(fit)) p_directional <- .ScidrDirectedCoefficientP(fit, CompVariable, alternative)
@@ -1599,6 +1633,17 @@ MakeComparisonTable <- function(data,
           dplyr::ungroup()
       }
 
+      if (!identical(alternative, "two.sided") && length(lvls_all) == 2) {
+        for (variable in unique(pw_long$variable)) RecordPairwiseP(pw_long[pw_long$variable == variable, , drop = FALSE], variable)
+      }
+      # Unavailable contrasts also remain requested rows in the tidy result.
+      recorded <- dplyr::bind_rows(.scidr_inference$PairwisePValues)
+      for (variable in unique(pw_long$variable)) {
+        missing_pairs <- pw_long[pw_long$variable == variable, , drop = FALSE]
+        if (nrow(recorded)) missing_pairs <- missing_pairs[!missing_pairs$contrast_label %in% recorded$Term[recorded$Outcome == variable], , drop = FALSE]
+        missing_pairs$p_val <- rep(NA_real_, nrow(missing_pairs))
+        RecordPairwiseP(missing_pairs, variable)
+      }
       contrast_levels <- unique(pw_long$contrast_label)
       # Sequential internal column names. The user-facing label is applied later
       # via modify_header(), so these names only need to be unique and safe.
@@ -1654,7 +1699,7 @@ MakeComparisonTable <- function(data,
             !!rlang::sym(col) ~ function(x) vapply(x, fmt_p, character(1), digits = pDigits)
           ) %>%
           gtsummary::modify_table_styling(
-            columns = col,
+            columns = tidyselect::all_of(col),
             rows = !!rows_significant,
             text_format = "bold"
           ) %>%

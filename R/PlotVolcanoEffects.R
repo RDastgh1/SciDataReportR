@@ -130,6 +130,9 @@
 #' @param Covariates \strong{Deprecated} (since 19.15.0). Use \code{covariates} instead.
 #' @param Codebook \strong{Deprecated} (since 19.15.0). Use \code{codebook} instead.
 #' @export
+#' @inheritParams inference-results
+#' @section Statistical results and provenance:
+#' See [inference-results] for the shared `Results` and `Metadata` contract.
 PlotVolcanoEffects <- function(data,
     predictor_vars,
     outcome_var,
@@ -151,7 +154,16 @@ PlotVolcanoEffects <- function(data,
     xVars = lifecycle::deprecated(),
     yVar = lifecycle::deprecated(),
     Covariates = lifecycle::deprecated(),
-    Codebook = lifecycle::deprecated()) {
+    Codebook = lifecycle::deprecated(),
+    Pthresh = 0.05,
+    PVar = "PValue") {
+  .scidr_inference <- ScidrStartInference("PlotVolcanoEffects", match.call(), environment())
+  on.exit({
+    if (!is.null(returnValue())) {
+      return(ScidrFinishInference(returnValue(), .scidr_inference, environment()))
+    }
+  }, add = TRUE)
+
   # Deprecated argument shims (SciDataReportR 19.15.0)
   if (lifecycle::is_present(Data)) {
     lifecycle::deprecate_warn("19.15.0", "PlotVolcanoEffects(Data)", "PlotVolcanoEffects(data)")
@@ -184,6 +196,8 @@ PlotVolcanoEffects <- function(data,
   EffectMetric <- match.arg(EffectMetric)
   Format <- match.arg(Format)
   LabelMode <- match.arg(LabelMode)
+
+  if (!missing(Pthresh)) Alpha <- Pthresh
 
   # Validate inputs
 
@@ -525,7 +539,7 @@ PlotVolcanoEffects <- function(data,
         dplyr::mutate(.volcano_x_effect = log2(.data[[this_var]]))
     } else {
       model_data <- model_data %>%
-        dplyr::mutate(.volcano_x_effect = as.numeric(scale(.data[[this_var]])))
+        dplyr::mutate(.volcano_x_effect = as.numeric(ScidrObserveInference(scale(.data[[this_var]]))))
     }
 
     if (
@@ -563,7 +577,7 @@ PlotVolcanoEffects <- function(data,
     )
 
     model_fit <- tryCatch(
-      stats::lm(model_formula, data = model_data),
+      ScidrObserveInference(stats::lm(model_formula, data = model_data)),
       error = function(e) NULL
     )
 
@@ -791,6 +805,12 @@ PlotVolcanoEffects <- function(data,
 
   make_plot <- function(plot_data, y_col, y_label, plot_title) {
 
+    if (y_col == "NegLog10P") {
+      plot_data$Significant <- ScidrInferenceP(plot_data$PValue, plot_data$FDR) < Pthresh
+      plot_data$FDRSignificant <- if (PVar == "PValueFDR") plot_data$Significant else FALSE
+      plot_data$SignificanceTier <- ifelse(plot_data$Significant,
+        if (PVar == "PValueFDR") "FDR significant" else "Raw p significant", "Not significant")
+    }
     plot_data <- plot_data %>%
       dplyr::mutate(
         PlotY = .data[[y_col]],

@@ -13,7 +13,7 @@ PlotPairwiseMiningMatrix(
   adjust_scope = c("per_group", "per_variable", "matrix", "none"),
   p_adjust_method = c("fdr", "bonferroni", "holm", "none"),
   star_p = c("raw", "adjusted", "none"),
-  adjusted_outline = TRUE,
+  adjusted_outline = FALSE,
   adjusted_significance_threshold = 0.05,
   adjusted_outline_color = "black",
   adjusted_outline_linewidth = 1,
@@ -23,7 +23,9 @@ PlotPairwiseMiningMatrix(
   categorical_fill_limits = NULL,
   x_axis_text_angle = 0,
   row_label_width = 58,
-  IncludeTrendSymbol = FALSE
+  IncludeTrendSymbol = FALSE,
+  Pthresh = 0.05,
+  PVar = "PValue"
 )
 }
 \arguments{
@@ -67,6 +69,20 @@ plotting limits for the continuous and categorical magnitude matrices.}
 \item{row_label_width}{Approximate character width used to wrap row labels.}
 
 \item{IncludeTrendSymbol}{Logical; add a plus sign for \verb{0.05 < p <= 0.10}.}
+
+\item{Pthresh}{Significance threshold, default \code{0.05}. An explicitly supplied
+value takes precedence over a legacy significance threshold argument.}
+
+\item{PVar}{P-value column used for significance decisions. Defaults to raw
+\code{"PValue"}; select \code{"PValueFDR"} to use Benjamini-Hochberg adjusted values.
+Explicit legacy p-column names remain accepted. Existing, explicitly named
+FDR plots and adjusted-value columns are retained.
+
+Explicit \code{Pthresh} takes precedence over \code{Alpha}, \code{FDRAlpha}, \code{label_q}, or
+\code{adjusted_significance_threshold}. Pairwise \code{star_p = "adjusted"} retains
+its legacy adjustment method unless \code{PVar} is supplied; \code{PVar = "PValueFDR"}
+always selects BH. \code{star_p = "none"} suppresses legacy pairwise stars.
+Stars retain conventional p-value tiers within the requested cutoff.}
 }
 \value{
 An object of class \code{"SciDataReportRPairwiseMiningMatrix"} with
@@ -96,6 +112,10 @@ the column to a factor first if categorical treatment is intended (for
 example, \code{df_All$cohort <- factor(df_All$cohort)}). Few unique values alone
 do not establish categorical meaning. Factors, character columns, and logical
 columns are accepted; more than 10 observed categories warn and continue.
-Entirely missing or unsupported columns error. Caller data are unchanged,
+Entirely missing columns produce unavailable statistical requests; unsupported types error. Caller data are unchanged,
 and existing restrictions on the required number of groups still apply.
+}
+\section{Statistical results and provenance}{
+
+See \link{inference-results} for the shared \code{Results} and \code{Metadata} contract.
 }

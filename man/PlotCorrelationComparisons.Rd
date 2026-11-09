@@ -27,7 +27,9 @@ PlotCorrelationComparisons(
   cluster_rows = FALSE,
   cluster_columns = FALSE,
   triangle = c("full", "upper", "lower"),
-  IncludeTrendSymbol = FALSE
+  IncludeTrendSymbol = FALSE,
+  Pthresh = 0.05,
+  PVar = "PValue"
 )
 }
 \arguments{
@@ -91,6 +93,20 @@ symmetric comparison matrix. This affects plots only; returned matrices
 and Results remain complete.}
 
 \item{IncludeTrendSymbol}{Logical; add a plus sign for \verb{0.05 < p <= 0.10}.}
+
+\item{Pthresh}{Significance threshold, default \code{0.05}. An explicitly supplied
+value takes precedence over a legacy significance threshold argument.}
+
+\item{PVar}{P-value column used for significance decisions. Defaults to raw
+\code{"PValue"}; select \code{"PValueFDR"} to use Benjamini-Hochberg adjusted values.
+Explicit legacy p-column names remain accepted. Existing, explicitly named
+FDR plots and adjusted-value columns are retained.
+
+Explicit \code{Pthresh} takes precedence over \code{Alpha}, \code{FDRAlpha}, \code{label_q}, or
+\code{adjusted_significance_threshold}. Pairwise \code{star_p = "adjusted"} retains
+its legacy adjustment method unless \code{PVar} is supplied; \code{PVar = "PValueFDR"}
+always selects BH. \code{star_p = "none"} suppresses legacy pairwise stars.
+Stars retain conventional p-value tiers within the requested cutoff.}
 }
 \value{
 A list containing:
@@ -141,9 +157,14 @@ the column to a factor first if categorical treatment is intended (for
 example, \code{df_All$cohort <- factor(df_All$cohort)}). Few unique values alone
 do not establish categorical meaning. Factors, character columns, and logical
 columns are accepted; more than 10 observed categories warn and continue.
-Entirely missing or unsupported columns error. Caller data are unchanged,
+Entirely missing columns produce unavailable statistical requests; unsupported types error. Caller data are unchanged,
 and existing restrictions on the required number of groups still apply.
 }
+\section{Statistical results and provenance}{
+
+See \link{inference-results} for the shared \code{Results} and \code{Metadata} contract.
+}
+
 \examples{
 data(SampleData)
 
