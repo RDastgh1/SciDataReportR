@@ -1,3 +1,5 @@
+# SciDataReportR 21.19.0
+
 # SciDataReportR 21.18.0
 
 * Optional Gaussian soft assignment stores its resolved training bandwidth for
