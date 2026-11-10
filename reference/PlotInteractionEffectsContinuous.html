@@ -72,7 +72,13 @@ and outcome variable, moderated by either a continuous or categorical variable.<
 <span>  predictorVar <span class="op">=</span> <span class="fu">lifecycle</span><span class="fu">::</span><span class="fu"><a href="https://lifecycle.r-lib.org/reference/deprecated.html" class="external-link">deprecated</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  covars <span class="op">=</span> <span class="fu">lifecycle</span><span class="fu">::</span><span class="fu"><a href="https://lifecycle.r-lib.org/reference/deprecated.html" class="external-link">deprecated</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  Pthresh <span class="op">=</span> <span class="fl">0.05</span>,</span>
-<span>  PVar <span class="op">=</span> <span class="st">"PValue"</span></span>
+<span>  PVar <span class="op">=</span> <span class="st">"PValue"</span>,</span>
+<span>  adjust <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  standardize <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  covariate_interactions <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  TreatOrdinalAs <span class="op">=</span> <span class="st">"Exclude"</span>,</span>
+<span>  interaction_results <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  source_formula <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -144,6 +150,32 @@ its legacy adjustment method unless <code>PVar</code> is supplied; <code>PVar = 
 always selects BH. <code>star_p = "none"</code> suppresses legacy pairwise stars.
 Stars retain conventional p-value tiers within the requested cutoff.</p></dd>
 
+
+<dt id="arg-adjust">adjust<a class="anchor" aria-label="anchor" href="#arg-adjust"></a></dt>
+<dd><p>Display model-based covariate-adjusted partial residuals.</p></dd>
+
+
+<dt id="arg-standardize">standardize<a class="anchor" aria-label="anchor" href="#arg-standardize"></a></dt>
+<dd><p>Use pooled model-sample SD units for both axes.</p></dd>
+
+
+<dt id="arg-covariate-interactions">covariate_interactions<a class="anchor" aria-label="anchor" href="#arg-covariate-interactions"></a></dt>
+<dd><p>Allow moderator-specific covariate effects.</p></dd>
+
+
+<dt id="arg-treatordinalas">TreatOrdinalAs<a class="anchor" aria-label="anchor" href="#arg-treatordinalas"></a></dt>
+<dd><p>Ordinal treatment passed to PlotInteractionEffectsMatrix.</p></dd>
+
+
+<dt id="arg-interaction-results">interaction_results<a class="anchor" aria-label="anchor" href="#arg-interaction-results"></a></dt>
+<dd><p>Optional source interaction row, retaining its
+original multiple-testing q-value in the annotation.</p></dd>
+
+
+<dt id="arg-source-formula">source_formula<a class="anchor" aria-label="anchor" href="#arg-source-formula"></a></dt>
+<dd><p>Optional stored matrix formula; validated against the
+supplied model specification and used for adjusted displays.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
@@ -153,8 +185,8 @@ Stars retain conventional p-value tiers within the requested cutoff.</p></dd>
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>For categorical moderators, separate regression lines are plotted for each category.
 For continuous moderators, regression lines are plotted at the mean and +/- 1 SD.</p>
-<p>The subtitle shows the p-value for the interaction term.
-The caption lists any covariates included in the model.</p>
+<p>Model-based partial residuals preserve the fitted interaction slopes.
+Ribbons show 95% confidence intervals for the displayed model component.</p>
 <p>Variable labels are used if available in the data frame.</p>
     </div>
     <div class="section level2">
@@ -179,7 +211,6 @@ The caption lists any covariates included in the model.</p>
 <span class="r-in"><span>  outcome_var <span class="op">=</span> <span class="st">"AXL"</span>,</span></span>
 <span class="r-in"><span>  predictor_var <span class="op">=</span> <span class="st">"age"</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> `geom_smooth()` using formula = 'y ~ x'</span>
 <span class="r-plt img"><img src="PlotInteractionEffectsContinuous-1.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Continuous moderator: lines at mean and +/- 1 SD of the moderator</span></span></span>
@@ -189,7 +220,6 @@ The caption lists any covariates included in the model.</p>
 <span class="r-in"><span>  outcome_var <span class="op">=</span> <span class="st">"AXL"</span>,</span></span>
 <span class="r-in"><span>  predictor_var <span class="op">=</span> <span class="st">"age"</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> `geom_smooth()` using formula = 'y ~ x'</span>
 <span class="r-plt img"><img src="PlotInteractionEffectsContinuous-2.png" alt="" width="700" height="433"></span>
 </code></pre></div>
     </div>

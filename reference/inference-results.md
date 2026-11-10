@@ -86,7 +86,7 @@ analysis$Results
 #> #   Status <chr>, Reason <chr>
 analysis$Metadata$Models
 #> # A tibble: 1 × 9
-#>   Outcome Predictor Group  Status Reason Partial ModelID Formula          Engine
-#>   <chr>   <chr>     <chr>  <chr>  <chr>  <lgl>   <chr>   <chr>            <chr> 
-#> 1 outcome predictor Pooled ok     NA     FALSE   model_1 outcome ~ predi… stats…
+#>   Outcome Predictor Group Status Reason Partial ModelID Formula           Engine
+#>   <chr>   <chr>     <chr> <chr>  <chr>  <lgl>   <chr>   <chr>             <chr> 
+#> 1 outcome predictor NA    ok     NA     FALSE   model_1 outcome ~ predic… stats…
 ```

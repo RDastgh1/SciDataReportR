@@ -2,6 +2,21 @@
 
 ## SciDataReportR 21.20.0
 
+- [`plotSigInteractions()`](https://rdastgh1.github.io/SciDataReportR/reference/plotSigInteractions.md)
+  selects interaction pairs from matrix Results and Metadata and reuses
+  [`PlotInteractionEffectsContinuous()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotInteractionEffectsContinuous.md)
+  for model-based partial-residual displays, pooled SD axes, confidence
+  ribbons, and slope annotations. Optional patchwork layouts are
+  returned as attributes.
+
+- [`MakeUnivariateRegressionTable()`](https://rdastgh1.github.io/SciDataReportR/reference/MakeUnivariateRegressionTable.md)
+  supports categorical stratification, optional group-adjusted pooled
+  models, pooled-SD scaling, and optional within-group BH families.
+  [`PlotForestFromTable()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotForestFromTable.md)
+  dodges group estimates, accepts named lists, wraps facet labels,
+  shares requested x ranges, and can annotate interaction p-values
+  without a separate interaction plot function.
+
 - [`PlotInteractionEffectsMatrix()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotInteractionEffectsMatrix.md)
   adds pooled-sample standardized slope matrices, simple-slope tests and
   intervals, sample counts, and optional moderator-specific covariate

@@ -28,7 +28,10 @@ MakeUnivariateRegressionTable(
   PredictorVars = lifecycle::deprecated(),
   Covars = lifecycle::deprecated(),
   Pthresh = 0.05,
-  PVar = "PValue"
+  PVar = "PValue",
+  group_var = NULL,
+  include_pooled = TRUE,
+  fdr_scope = c("none", "per_predictor", "per_outcome", "matrix")
 )
 
 UnivariateRegressionTable(
@@ -134,6 +137,22 @@ UnivariateRegressionTable(
   `star_p = "none"` suppresses legacy pairwise stars. Stars retain
   conventional p-value tiers within the requested cutoff.
 
+- group_var:
+
+  Optional categorical stratification variable. Fits each observed level
+  separately, excluding missing group values. Group is NA without
+  stratification. The name "Pooled" is reserved.
+
+- include_pooled:
+
+  Include a pooled model adjusted for group_var (TRUE).
+
+- fdr_scope:
+
+  BH correction family: "none" (default, no adjustment), "per_predictor"
+  (across outcomes), "per_outcome" (across predictors), or "matrix" (all
+  tests). Each Group is corrected separately.
+
 ## Value
 
 A list containing:
@@ -214,11 +233,16 @@ rather than 0. `ReturnModels = TRUE` keeps the fitted model objects for
 residual checks; it is off by default because a large screen would
 otherwise hold hundreds of models in memory.
 
-Running many models at once means many p-values. Nothing here corrects
-for that automatically - the family is yours to define - so pass
-`Results$PValue` through
-[`ApplyFDRCorrection()`](https://rdastgh1.github.io/SciDataReportR/reference/ApplyFDRCorrection.md)
-once you have decided what the family is.
+Running many models at once means many p-values. The default fdr_scope =
+"none" leaves PValueFDR unavailable. Select a correction scope to
+compute BH-adjusted p-values within each Group.
+
+## Stratified scaling
+
+With group_var and Standardize = TRUE, numeric model variables use the
+same pooled complete-case means and SDs in every group. Logistic
+outcomes are not scaled. Metadata records pooled scaling, model
+formulas, and group N.
 
 ## Statistical results and provenance
 

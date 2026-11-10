@@ -10,7 +10,16 @@ It remains available as a backwards-compatible synonym.
 ## Usage
 
 ``` r
-PlotForestFromTable(UnivariateRegressionTables, pSize = 2, Flip = FALSE)
+PlotForestFromTable(
+  UnivariateRegressionTables,
+  pSize = 2,
+  Flip = FALSE,
+  PVar = "PValue",
+  Pthresh = 0.05,
+  show_interaction_p = FALSE,
+  facet_scales = c("fixed", "free", "free_x", "free_y"),
+  xlim = NULL
+)
 
 plotForestFromTable(UnivariateRegressionTables, pSize = 2, Flip = FALSE)
 ```
@@ -38,9 +47,37 @@ plotForestFromTable(UnivariateRegressionTables, pSize = 2, Flip = FALSE)
   Logical. If `FALSE`, outcomes are facets and predictors/terms are
   rows. If `TRUE`, predictors/terms are facets and outcomes are rows.
 
+- PVar:
+
+  Significance column: "PValue" (default) or "PValueFDR".
+
+- Pthresh:
+
+  Significance cutoff, default 0.05, applied per estimate.
+
+- show_interaction_p:
+
+  Annotate interaction p-values when Interaction rows are present;
+  simple slopes are displayed side by side by level.
+
+- facet_scales:
+
+  Facet scales: "fixed", "free", "free_x", or "free_y".
+
+- xlim:
+
+  Optional two-element x-axis display range; estimates are retained.
+
 ## Value
 
 A ggplot object representing the forest plot.
+
+## Grouped inputs
+
+Group levels are dodged within rows and coloured with SciDataPalette;
+nonsignificant estimates have reduced opacity. A named list of Results
+tables or regression outputs is bound using list names as Group labels.
+Facet labels wrap at 25 characters.
 
 ## Reading the plot
 

@@ -84,7 +84,10 @@ backwards-compatible synonym.</p>
 <span>  PredictorVars <span class="op">=</span> <span class="fu">lifecycle</span><span class="fu">::</span><span class="fu"><a href="https://lifecycle.r-lib.org/reference/deprecated.html" class="external-link">deprecated</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  Covars <span class="op">=</span> <span class="fu">lifecycle</span><span class="fu">::</span><span class="fu"><a href="https://lifecycle.r-lib.org/reference/deprecated.html" class="external-link">deprecated</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  Pthresh <span class="op">=</span> <span class="fl">0.05</span>,</span>
-<span>  PVar <span class="op">=</span> <span class="st">"PValue"</span></span>
+<span>  PVar <span class="op">=</span> <span class="st">"PValue"</span>,</span>
+<span>  group_var <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  include_pooled <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  fdr_scope <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"none"</span>, <span class="st">"per_predictor"</span>, <span class="st">"per_outcome"</span>, <span class="st">"matrix"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu">UnivariateRegressionTable</span><span class="op">(</span></span>
@@ -187,6 +190,22 @@ its legacy adjustment method unless <code>PVar</code> is supplied; <code>PVar = 
 always selects BH. <code>star_p = "none"</code> suppresses legacy pairwise stars.
 Stars retain conventional p-value tiers within the requested cutoff.</p></dd>
 
+
+<dt id="arg-group-var">group_var<a class="anchor" aria-label="anchor" href="#arg-group-var"></a></dt>
+<dd><p>Optional categorical stratification variable. Fits each
+observed level separately, excluding missing group values. Group is NA
+without stratification. The name "Pooled" is reserved.</p></dd>
+
+
+<dt id="arg-include-pooled">include_pooled<a class="anchor" aria-label="anchor" href="#arg-include-pooled"></a></dt>
+<dd><p>Include a pooled model adjusted for group_var (TRUE).</p></dd>
+
+
+<dt id="arg-fdr-scope">fdr_scope<a class="anchor" aria-label="anchor" href="#arg-fdr-scope"></a></dt>
+<dd><p>BH correction family: "none" (default, no adjustment),
+"per_predictor" (across outcomes), "per_outcome" (across predictors), or
+"matrix" (all tests). Each Group is corrected separately.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
@@ -250,9 +269,17 @@ ratios rather than log-odds, so the null value in the table is 1 rather
 than 0. <code>ReturnModels = TRUE</code> keeps the fitted model objects for
 residual checks; it is off by default because a large screen would otherwise
 hold hundreds of models in memory.</p>
-<p>Running many models at once means many p-values. Nothing here corrects for
-that automatically - the family is yours to define - so pass <code>Results$PValue</code>
-through <code><a href="ApplyFDRCorrection.html">ApplyFDRCorrection()</a></code> once you have decided what the family is.</p>
+<p>Running many models at once means many p-values. The default fdr_scope =
+"none" leaves PValueFDR unavailable. Select a correction scope to compute
+BH-adjusted p-values within each Group.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="stratified-scaling">Stratified scaling<a class="anchor" aria-label="anchor" href="#stratified-scaling"></a></h2>
+
+
+<p>With group_var and Standardize = TRUE, numeric model variables use the same
+pooled complete-case means and SDs in every group. Logistic outcomes are
+not scaled. Metadata records pooled scaling, model formulas, and group N.</p>
     </div>
     <div class="section level2">
     <h2 id="statistical-results-and-provenance">Statistical results and provenance<a class="anchor" aria-label="anchor" href="#statistical-results-and-provenance"></a></h2>
@@ -705,6 +732,35 @@ through <code><a href="ApplyFDRCorrection.html">ApplyFDRCorrection()</a></code> 
 <span class="r-in"><span>  predictor_vars <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"age"</span>, <span class="st">"sex"</span>, <span class="st">"AXL"</span>, <span class="st">"tau"</span>, <span class="st">"p_tau"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">urt_Logistic</span><span class="op">$</span><span class="va">Metadata</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $GroupLevels</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> NULL</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $GroupN</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 5 × 4</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Outcome   Predictor Group     N</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;int&gt;</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> Diagnosis age       <span style="color: #BB0000;">NA</span>      322</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span> Diagnosis sex       <span style="color: #BB0000;">NA</span>      333</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">3</span> Diagnosis AXL       <span style="color: #BB0000;">NA</span>      333</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">4</span> Diagnosis tau       <span style="color: #BB0000;">NA</span>      233</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">5</span> Diagnosis p_tau     <span style="color: #BB0000;">NA</span>      333</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $GroupModels</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 5 × 5</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Outcome   Predictor Group Formula               N</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>             <span style="color: #949494; font-style: italic;">&lt;int&gt;</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> Diagnosis age       <span style="color: #BB0000;">NA</span>    Diagnosis ~ age     322</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span> Diagnosis sex       <span style="color: #BB0000;">NA</span>    Diagnosis ~ sex     333</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">3</span> Diagnosis AXL       <span style="color: #BB0000;">NA</span>    Diagnosis ~ AXL     333</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">4</span> Diagnosis tau       <span style="color: #BB0000;">NA</span>    Diagnosis ~ tau     233</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">5</span> Diagnosis p_tau     <span style="color: #BB0000;">NA</span>    Diagnosis ~ p_tau   333</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $PooledScaling</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 0 × 0</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $ScalingScope</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Existing ungrouped scaling"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $Outcomes</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     Outcome OutcomeLabel OutcomeFamily ReferenceLevel EventLevel</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 1 Diagnosis    Diagnosis      logistic        Control   Impaired</span>
@@ -768,7 +824,7 @@ through <code><a href="ApplyFDRCorrection.html">ApplyFDRCorrection()</a></code> 
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] FALSE</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $Arguments$fdr_scope</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "matrix"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "none"</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $Arguments$covariate_interactions</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] "not supported"</span>
@@ -807,6 +863,9 @@ through <code><a href="ApplyFDRCorrection.html">ApplyFDRCorrection()</a></code> 
 <span class="r-out co"><span class="r-pr">#&gt;</span> $Arguments$Options$Covars</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> NULL</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $Arguments$Options$include_pooled</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] TRUE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $FormulaTemplate</span>
@@ -814,13 +873,13 @@ through <code><a href="ApplyFDRCorrection.html">ApplyFDRCorrection()</a></code> 
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $Models</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 5 × 9</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   Outcome   Predictor Group  Status Reason Partial ModelID Formula        Engine</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;lgl&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> Diagnosis age       Pooled ok     <span style="color: #BB0000;">NA</span>     FALSE   model_1 Diagnosis ~ a… stats…</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span> Diagnosis sex       Pooled ok     <span style="color: #BB0000;">NA</span>     FALSE   model_2 Diagnosis ~ s… stats…</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">3</span> Diagnosis AXL       Pooled ok     <span style="color: #BB0000;">NA</span>     FALSE   model_3 Diagnosis ~ A… stats…</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">4</span> Diagnosis tau       Pooled ok     <span style="color: #BB0000;">NA</span>     FALSE   model_4 Diagnosis ~ t… stats…</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">5</span> Diagnosis p_tau     Pooled ok     <span style="color: #BB0000;">NA</span>     FALSE   model_5 Diagnosis ~ p… stats…</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Outcome   Predictor Group Status Reason Partial ModelID Formula         Engine</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;lgl&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>           <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> Diagnosis age       <span style="color: #BB0000;">NA</span>    ok     <span style="color: #BB0000;">NA</span>     FALSE   model_1 Diagnosis ~ age stats…</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span> Diagnosis sex       <span style="color: #BB0000;">NA</span>    ok     <span style="color: #BB0000;">NA</span>     FALSE   model_2 Diagnosis ~ sex stats…</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">3</span> Diagnosis AXL       <span style="color: #BB0000;">NA</span>    ok     <span style="color: #BB0000;">NA</span>     FALSE   model_3 Diagnosis ~ AXL stats…</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">4</span> Diagnosis tau       <span style="color: #BB0000;">NA</span>    ok     <span style="color: #BB0000;">NA</span>     FALSE   model_4 Diagnosis ~ tau stats…</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">5</span> Diagnosis p_tau     <span style="color: #BB0000;">NA</span>    ok     <span style="color: #BB0000;">NA</span>     FALSE   model_5 Diagnosis ~ p_… stats…</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $ReferenceLevels</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $ReferenceLevels$Models</span>
@@ -854,13 +913,13 @@ through <code><a href="ApplyFDRCorrection.html">ApplyFDRCorrection()</a></code> 
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $ReferenceLevels$Comparisons</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 5 × 4</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   Outcome   Predictor Group  Level</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> Diagnosis age       Pooled <span style="color: #BB0000;">NA</span>   </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span> Diagnosis sex       Pooled Male </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">3</span> Diagnosis AXL       Pooled <span style="color: #BB0000;">NA</span>   </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">4</span> Diagnosis tau       Pooled <span style="color: #BB0000;">NA</span>   </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">5</span> Diagnosis p_tau     Pooled <span style="color: #BB0000;">NA</span>   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Outcome   Predictor Group Level</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> Diagnosis age       <span style="color: #BB0000;">NA</span>    <span style="color: #BB0000;">NA</span>   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span> Diagnosis sex       <span style="color: #BB0000;">NA</span>    Male </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">3</span> Diagnosis AXL       <span style="color: #BB0000;">NA</span>    <span style="color: #BB0000;">NA</span>   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">4</span> Diagnosis tau       <span style="color: #BB0000;">NA</span>    <span style="color: #BB0000;">NA</span>   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">5</span> Diagnosis p_tau     <span style="color: #BB0000;">NA</span>    <span style="color: #BB0000;">NA</span>   </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $ReferenceLevels$Referent</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> NULL</span>
@@ -872,7 +931,7 @@ through <code><a href="ApplyFDRCorrection.html">ApplyFDRCorrection()</a></code> 
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;">#   N &lt;dbl&gt;, Scope &lt;chr&gt;</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $FDRFamily</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Benjamini-Hochberg adjustment; scope = matrix. Finite raw p-values only; unavailable requests are excluded. The returned analysis family is adjusted together."</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "No multiple-comparison adjustment; PValueFDR is unavailable."</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $ModelCounts</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $ModelCounts$Attempted</span>

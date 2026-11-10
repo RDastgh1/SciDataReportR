@@ -341,6 +341,8 @@
   : Plot Significant Associations
 - [`plotSigCorrelations()`](https://rdastgh1.github.io/SciDataReportR/reference/plotSigCorrelations.md)
   : Plot Significant Correlations
+- [`plotSigInteractions()`](https://rdastgh1.github.io/SciDataReportR/reference/plotSigInteractions.md)
+  : Plot significant interaction pairs
 - [`removeString()`](https://rdastgh1.github.io/SciDataReportR/reference/removeString.md)
   : Remove Strings from a Vector
 - [`reverseFactorLevels()`](https://rdastgh1.github.io/SciDataReportR/reference/reverseFactorLevels.md)

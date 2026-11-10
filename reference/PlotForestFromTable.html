@@ -67,7 +67,16 @@ convention. It remains available as a backwards-compatible synonym.</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">PlotForestFromTable</span><span class="op">(</span><span class="va">UnivariateRegressionTables</span>, pSize <span class="op">=</span> <span class="fl">2</span>, Flip <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">PlotForestFromTable</span><span class="op">(</span></span>
+<span>  <span class="va">UnivariateRegressionTables</span>,</span>
+<span>  pSize <span class="op">=</span> <span class="fl">2</span>,</span>
+<span>  Flip <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  PVar <span class="op">=</span> <span class="st">"PValue"</span>,</span>
+<span>  Pthresh <span class="op">=</span> <span class="fl">0.05</span>,</span>
+<span>  show_interaction_p <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  facet_scales <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"fixed"</span>, <span class="st">"free"</span>, <span class="st">"free_x"</span>, <span class="st">"free_y"</span><span class="op">)</span>,</span>
+<span>  xlim <span class="op">=</span> <span class="cn">NULL</span></span>
+<span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu">plotForestFromTable</span><span class="op">(</span><span class="va">UnivariateRegressionTables</span>, pSize <span class="op">=</span> <span class="fl">2</span>, Flip <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -95,10 +104,40 @@ recomputed if absent). Lists created by older package versions (without a
 <dd><p>Logical. If <code>FALSE</code>, outcomes are facets and predictors/terms
 are rows. If <code>TRUE</code>, predictors/terms are facets and outcomes are rows.</p></dd>
 
+
+<dt id="arg-pvar">PVar<a class="anchor" aria-label="anchor" href="#arg-pvar"></a></dt>
+<dd><p>Significance column: "PValue" (default) or "PValueFDR".</p></dd>
+
+
+<dt id="arg-pthresh">Pthresh<a class="anchor" aria-label="anchor" href="#arg-pthresh"></a></dt>
+<dd><p>Significance cutoff, default 0.05, applied per estimate.</p></dd>
+
+
+<dt id="arg-show-interaction-p">show_interaction_p<a class="anchor" aria-label="anchor" href="#arg-show-interaction-p"></a></dt>
+<dd><p>Annotate interaction p-values when Interaction
+rows are present; simple slopes are displayed side by side by level.</p></dd>
+
+
+<dt id="arg-facet-scales">facet_scales<a class="anchor" aria-label="anchor" href="#arg-facet-scales"></a></dt>
+<dd><p>Facet scales: "fixed", "free", "free_x", or "free_y".</p></dd>
+
+
+<dt id="arg-xlim">xlim<a class="anchor" aria-label="anchor" href="#arg-xlim"></a></dt>
+<dd><p>Optional two-element x-axis display range; estimates are retained.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A ggplot object representing the forest plot.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="grouped-inputs">Grouped inputs<a class="anchor" aria-label="anchor" href="#grouped-inputs"></a></h2>
+
+
+<p>Group levels are dodged within rows and coloured with SciDataPalette;
+nonsignificant estimates have reduced opacity. A named list of Results
+tables or regression outputs is bound using list names as Group labels.
+Facet labels wrap at 25 characters.</p>
     </div>
     <div class="section level2">
     <h2 id="reading-the-plot">Reading the plot<a class="anchor" aria-label="anchor" href="#reading-the-plot"></a></h2>

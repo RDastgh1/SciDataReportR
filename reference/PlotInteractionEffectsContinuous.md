@@ -21,7 +21,13 @@ PlotInteractionEffectsContinuous(
   predictorVar = lifecycle::deprecated(),
   covars = lifecycle::deprecated(),
   Pthresh = 0.05,
-  PVar = "PValue"
+  PVar = "PValue",
+  adjust = TRUE,
+  standardize = FALSE,
+  covariate_interactions = FALSE,
+  TreatOrdinalAs = "Exclude",
+  interaction_results = NULL,
+  source_formula = NULL
 )
 ```
 
@@ -95,6 +101,32 @@ PlotInteractionEffectsContinuous(
   `star_p = "none"` suppresses legacy pairwise stars. Stars retain
   conventional p-value tiers within the requested cutoff.
 
+- adjust:
+
+  Display model-based covariate-adjusted partial residuals.
+
+- standardize:
+
+  Use pooled model-sample SD units for both axes.
+
+- covariate_interactions:
+
+  Allow moderator-specific covariate effects.
+
+- TreatOrdinalAs:
+
+  Ordinal treatment passed to PlotInteractionEffectsMatrix.
+
+- interaction_results:
+
+  Optional source interaction row, retaining its original
+  multiple-testing q-value in the annotation.
+
+- source_formula:
+
+  Optional stored matrix formula; validated against the supplied model
+  specification and used for adjusted displays.
+
 ## Value
 
 A ggplot object showing the interaction effect
@@ -105,8 +137,8 @@ For categorical moderators, separate regression lines are plotted for
 each category. For continuous moderators, regression lines are plotted
 at the mean and +/- 1 SD.
 
-The subtitle shows the p-value for the interaction term. The caption
-lists any covariates included in the model.
+Model-based partial residuals preserve the fitted interaction slopes.
+Ribbons show 95% confidence intervals for the displayed model component.
 
 Variable labels are used if available in the data frame.
 
@@ -132,7 +164,6 @@ PlotInteractionEffectsContinuous(
   outcome_var = "AXL",
   predictor_var = "age"
 )
-#> `geom_smooth()` using formula = 'y ~ x'
 
 
 # Continuous moderator: lines at mean and +/- 1 SD of the moderator
@@ -142,5 +173,4 @@ PlotInteractionEffectsContinuous(
   outcome_var = "AXL",
   predictor_var = "age"
 )
-#> `geom_smooth()` using formula = 'y ~ x'
 ```
