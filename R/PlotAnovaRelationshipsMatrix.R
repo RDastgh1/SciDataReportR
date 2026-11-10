@@ -422,7 +422,7 @@ PlotAnovaRelationshipsMatrix <- function(data,
     ) +
     ggplot2::scale_shape_manual(values = c(7, 16, 17, 15, 18), drop = FALSE) +
     ggplot2::guides(size = "none") +
-    ggplot2::labs(subtitle = "No Multiple Comparison Correction") +
+    ggplot2::labs(subtitle = "Significance: raw p-values (no multiple-comparison correction)") +
     ggplot2::xlab("") +
     ggplot2::ylab("")
 
@@ -455,7 +455,7 @@ PlotAnovaRelationshipsMatrix <- function(data,
     ) +
     ggplot2::scale_shape_manual(values = c(7, 16, 17, 15, 18), drop = FALSE) +
     ggplot2::guides(size = "none") +
-    ggplot2::labs(subtitle = "FDR Correction") +
+    ggplot2::labs(subtitle = ScidrAdjustedSignificanceSubtitle(fdr_scope)) +
     ggplot2::xlab("") +
     ggplot2::ylab("")
 

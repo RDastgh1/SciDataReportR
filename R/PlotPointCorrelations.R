@@ -286,6 +286,9 @@ PlotPointCorrelationsHeatmap <- function(data,
     ggplot2::labs(fill = expression(r[pb]))
 
   # ---- return ----
+  p <- p + ggplot2::labs(subtitle = "Significance: raw p-values (no multiple-comparison correction)")
+  p_FDR <- p_FDR + ggplot2::labs(subtitle = ScidrAdjustedSignificanceSubtitle(fdr_scope))
+
   M     <- list(PvalTable = stat.test, plot = p)
   M_FDR <- list(PvalTable = stat.test, plot = p_FDR)
 

@@ -785,6 +785,7 @@ PlotCorrelationsHeatmap <- function(data,
 
       ggplot2::scale_y_discrete(labels = x_axis_labels) +
 
+      ggplot2::labs(subtitle = if (starvar == "stars") "Significance: raw p-values (no multiple-comparison correction)" else ScidrAdjustedSignificanceSubtitle(fdr_scope)) +
       ggplot2::theme_bw() +
 
       ggplot2::theme(

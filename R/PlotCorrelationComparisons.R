@@ -1013,7 +1013,8 @@ PlotCorrelationComparisons <- function(
       ) +
       ggplot2::scale_x_discrete(labels = outcome_axis_labels) +
       ggplot2::scale_y_discrete(labels = predictor_axis_labels) +
-      ggplot2::labs(x = NULL, y = NULL) +
+      ggplot2::labs(x = NULL, y = NULL,
+        subtitle = if (star_column == "stars") "Significance: raw p-values (no multiple-comparison correction)" else ScidrAdjustedSignificanceSubtitle(fdr_scope)) +
       ggplot2::coord_fixed() +
       ggplot2::theme_bw() +
       ggplot2::theme(

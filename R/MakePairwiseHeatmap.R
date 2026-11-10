@@ -460,7 +460,13 @@ MakePairwiseHeatmap <- function(data,
       ),
       panel.grid = ggplot2::element_blank()
     ) +
-    ggplot2::labs(caption = caption)
+    ggplot2::labs(caption = caption, subtitle = switch(star_p,
+        none = "Significance stars hidden",
+        raw = "Significance: raw p-values (no multiple-comparison correction)",
+        adjusted = if (.scidr_inference$PVar != "AdjustedPValue") ScidrAdjustedSignificanceSubtitle(if (adjust_scope == "none") "matrix" else adjust_scope) else
+          if (adjust_scope == "none" || p_adjust_method == "none") "Significance: raw p-values (no multiple-comparison correction)" else
+          if (p_adjust_method == "fdr") ScidrAdjustedSignificanceSubtitle(adjust_scope) else
+          ScidrAdjustedSignificanceSubtitle(adjust_scope, method = p_adjust_method)))
 
   plot <- .AddHeatmapSignificanceLayers(
     plot = plot,

@@ -294,7 +294,8 @@ PlotSplitCorrelationHeatmap <- function(
         limits = c(0.5, length(vars_Rows) + 0.5), expand = c(0, 0)
       ) +
       ggplot2::coord_fixed() +
-      ggplot2::labs(x = NULL, y = NULL) +
+      ggplot2::labs(x = NULL, y = NULL,
+        subtitle = if (star_column == "stars") "Significance: raw p-values (no multiple-comparison correction)" else ScidrAdjustedSignificanceSubtitle(fdr_scope, family = "separately within each stratum")) +
       ggplot2::theme_bw(base_size = 11) +
       ggplot2::theme(
         panel.grid = ggplot2::element_blank(),

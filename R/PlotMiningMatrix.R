@@ -401,6 +401,8 @@ PlotMiningMatrix <- function(data,
       values = shape_map, labels = shape_labels, name = "Significance",
       drop = FALSE) +
     ggplot2::scale_size_continuous(range = c(2, 6), guide = "none") +
+    ggplot2::labs(subtitle = if (PVar == "PValue")
+      "Significance: raw p-values (no multiple-comparison correction)" else ScidrAdjustedSignificanceSubtitle(fdr_scope)) +
     ggplot2::theme_bw() +
     ggplot2::theme(
       axis.text.x = ggplot2::element_text(angle = 45, hjust = 1),

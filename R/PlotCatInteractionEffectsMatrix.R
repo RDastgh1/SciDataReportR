@@ -201,7 +201,7 @@ PlotCatInteractionEffectsMatrix <- function(data,
     theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
           axis.title.x = element_blank(),
           axis.title.y = element_blank()) +
-    labs(title = interVar, subtitle = "No Multiple Comparison Correction")
+    labs(title = interVar, subtitle = "Significance: raw p-values (no multiple-comparison correction)")
 
   p_FDR <-  m_G %>%
     ggplot(aes(x = X, y = Y, fill = sig_FDR)) +
@@ -210,7 +210,7 @@ PlotCatInteractionEffectsMatrix <- function(data,
     theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
           axis.title.x = element_blank(),
           axis.title.y = element_blank()) +
-    labs(title = interVar, subtitle = "FDR Correction")
+    labs(title = interVar, subtitle = ScidrAdjustedSignificanceSubtitle(fdr_scope))
 
   pvaltable_FDR <- m_G %>%
     data.frame() %>%

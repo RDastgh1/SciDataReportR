@@ -606,7 +606,8 @@ PlotInteractionEffectsMatrix <- function(data,
     plot + ggplot2::geom_text(ggplot2::aes(label = Stars), size = 4) +
       ggplot2::theme_minimal() + ggplot2::theme(
         axis.text.x = ggplot2::element_text(angle = 45, hjust = 1),
-        panel.grid = ggplot2::element_blank()) + ggplot2::labs(x = NULL, y = NULL)
+        panel.grid = ggplot2::element_blank()) + ggplot2::labs(x = NULL, y = NULL,
+          subtitle = if (p_column == "P") "Significance: raw p-values (no multiple-comparison correction)" else ScidrAdjustedSignificanceSubtitle(fdr_scope))
   }
   MakeMatrix <- function(column) {
     matrix(m_G[[column]], nrow = length(outcomeVars), byrow = TRUE,

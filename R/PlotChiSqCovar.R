@@ -300,7 +300,7 @@ PlotChiSqCovar <- function(data,
     ) +
     ggplot2::scale_shape_manual(values = c(7, 16, 17, 15, 18), drop = TRUE) +
     significance_guide +
-    ggplot2::labs(subtitle = "No multiple comparison correction",
+    ggplot2::labs(subtitle = "Significance: raw p-values (no multiple-comparison correction)",
                   shape = "Significance", colour = "Cramer's V")
 
   p_g_FDR <- ggplot2::ggplot(stat.test, ggplot2::aes(y = YLabel, x = XLabel, shape = pval.adj.signif, text = PlotText)) +
@@ -313,7 +313,7 @@ PlotChiSqCovar <- function(data,
     ) +
     ggplot2::scale_shape_manual(values = c(7, 16, 17, 15, 18), drop = TRUE) +
     significance_guide +
-    ggplot2::labs(subtitle = "FDR correction",
+    ggplot2::labs(subtitle = ScidrAdjustedSignificanceSubtitle(fdr_scope),
                   shape = "Significance", colour = "Cramer's V")
 
   pvaltable <- stat.test %>%

@@ -226,14 +226,14 @@ PlotNumInteractionEffectsMatrix <- function(data,
     theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
           axis.title.x = element_blank(),
           axis.title.y = element_blank()) +
-    labs(title = interVar, subtitle = "No Multiple Comparison Correction")
+    labs(title = interVar, subtitle = "Significance: raw p-values (no multiple-comparison correction)")
 
   p_FDR <-  m_G %>% ggplot(aes(x = X, y = Y, fill = sig_FDR)) + geom_tile(colour = "white", linewidth = 0.4) +
     scale_fill_manual(values = effect_colors, drop = FALSE) +
     theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
           axis.title.x = element_blank(),
           axis.title.y = element_blank()) +
-    labs(title = interVar, subtitle = "FDR Correction")
+    labs(title = interVar, subtitle = ScidrAdjustedSignificanceSubtitle(fdr_scope))
 
   pvaltable_FDR <- m_G %>% data.frame() %>% dplyr::select(X, Y, P_FDR) %>% tidyr::pivot_wider(names_from = X, values_from = P_FDR)
 

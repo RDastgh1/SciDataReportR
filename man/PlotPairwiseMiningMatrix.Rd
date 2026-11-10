@@ -119,3 +119,4 @@ and existing restrictions on the required number of groups still apply.
 
 See \link{inference-results} for the shared \code{Results} and \code{Metadata} contract.
 }
+

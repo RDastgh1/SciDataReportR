@@ -52,3 +52,4 @@ Analyze feature module relationships with sample traits
 
 See \link{inference-results} for the shared \code{Results} and \code{Metadata} contract.
 }
+

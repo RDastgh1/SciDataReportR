@@ -156,6 +156,13 @@ PlotPairwiseMiningMatrix <- function(data,
     plot <- ggplot2::ggplot(df_Results, ggplot2::aes(x = .data$ColumnLabel, y = .data$DisplayRowLabel, fill = .data$EffectMagnitude)) +
       ggplot2::geom_tile(color = "white", linewidth = 0.25) +
       ggplot2::scale_fill_gradient(low = "#F1F5F9", high = "#2166AC", limits = limits, oob = scales::squish, name = scale_name) +
+      ggplot2::labs(subtitle = switch(star_p,
+        none = "Significance stars hidden",
+        raw = "Significance: raw p-values (no multiple-comparison correction)",
+        adjusted = if (.scidr_inference$PVar != "AdjustedPValue") ScidrAdjustedSignificanceSubtitle(if (adjust_scope == "none") "matrix" else adjust_scope) else
+          if (adjust_scope == "none" || p_adjust_method == "none") "Significance: raw p-values (no multiple-comparison correction)" else
+          if (p_adjust_method == "fdr") ScidrAdjustedSignificanceSubtitle(adjust_scope) else
+          ScidrAdjustedSignificanceSubtitle(adjust_scope, method = p_adjust_method))) +
       ggplot2::theme_bw() +
       ggplot2::theme(axis.title = ggplot2::element_blank(), panel.grid = ggplot2::element_blank(), axis.text.x = ggplot2::element_text(angle = x_axis_text_angle, hjust = if (x_axis_text_angle == 0) 0.5 else 1))
     .AddHeatmapSignificanceLayers(

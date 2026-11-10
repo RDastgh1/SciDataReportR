@@ -468,6 +468,9 @@ PlotDirectionalHeatmaps <- function(data,
     )
 
   # ---- 6) Return ----------------------------------------------------------
+  p_raw <- p_raw + ggplot2::labs(subtitle = "Significance: raw p-values (no multiple-comparison correction)")
+  p_FDR <- p_FDR + ggplot2::labs(subtitle = ScidrAdjustedSignificanceSubtitle(fdr_scope, family = "separately within each test type"))
+
   Unadjusted   <- list(Relabel = Relabel, data = df_Combined_plot, plot = p_raw)
   FDRCorrected <- list(Relabel = Relabel, data = df_Combined_plot, plot = p_FDR)
 
