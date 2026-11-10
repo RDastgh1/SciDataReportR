@@ -2,6 +2,11 @@
 
 ## SciDataReportR 21.20.0
 
+- Inferential matrix plots and heatmaps identify raw versus FDR-adjusted
+  significance in their subtitles. Pairwise matrices identify the
+  selected star adjustment method. Adjusted subtitles also state the
+  correction scope (matrix, outcome, predictor, or pairwise family).
+
 - [`plotSigInteractions()`](https://rdastgh1.github.io/SciDataReportR/reference/plotSigInteractions.md)
   selects interaction pairs from matrix Results and Metadata and reuses
   [`PlotInteractionEffectsContinuous()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotInteractionEffectsContinuous.md)
