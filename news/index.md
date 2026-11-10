@@ -1,5 +1,7 @@
 # Changelog
 
+## SciDataReportR 21.22.0
+
 ## SciDataReportR 21.21.0
 
 - [`CreateClusterModel_SOM_KMeans()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateClusterModel_SOM_KMeans.md)
