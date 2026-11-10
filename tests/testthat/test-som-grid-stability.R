@@ -160,7 +160,7 @@ test_that("occupancy-weighted stability is deterministic in serial and parallel"
   skip_if_not_installed("kohonen")
   skip_if_not_installed("mclust")
   suppressPackageStartupMessages(skip_if_not_installed("tidyLPA"))
-  skip_if(future::availableCores() < 2L,
+  skip_if(parallelly::availableCores() < 2L,
     "This test environment permits only one parallel worker.")
   skip_if(isTRUE(pkgload::is_dev_package("SciDataReportR")),
     "Multisession workers load the installed package; this assertion runs after package installation.")

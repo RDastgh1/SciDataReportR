@@ -128,7 +128,7 @@ test_that("benchmark screen drops full models but retains worker audit", {
 test_that("benchmark stability is deterministic in serial and parallel", {
   skip_if_not_installed("mclust")
   skip_if_not_installed("tidyLPA")
-  skip_if(future::availableCores() < 2L,
+  skip_if(parallelly::availableCores() < 2L,
     "This test environment permits only one parallel worker.")
   skip_if(isTRUE(pkgload::is_dev_package("SciDataReportR")),
     "Multisession workers load the installed package; this assertion runs after package installation.")

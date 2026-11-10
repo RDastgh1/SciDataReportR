@@ -2,21 +2,28 @@
 % Please edit documentation in R/ClusterPlots.R
 \name{PlotClusterSilhouette}
 \alias{PlotClusterSilhouette}
-\title{Plot a per-participant silhouette profile}
+\title{Plot a silhouette profile}
 \usage{
-PlotClusterSilhouette(silhouette, title = "Silhouette profile")
+PlotClusterSilhouette(
+  silhouette,
+  title = "Silhouette profile",
+  observation_unit = "Participant"
+)
 }
 \arguments{
 \item{silhouette}{A \code{cluster::silhouette()} object or a matrix with
 \code{cluster}, \code{neighbor}, and \code{sil_width} columns.}
 
 \item{title}{Plot title.}
+
+\item{observation_unit}{Label for the observations represented by bars;
+defaults to \code{"Participant"}. Use \code{"SOM node"} for node clustering.}
 }
 \value{
 A \code{ggplot} object, or \code{NULL} when silhouette widths are unavailable.
 }
 \description{
-The classic silhouette profile: one bar per participant, sorted
+The classic silhouette profile: one bar per observation, sorted
 within cluster, with the average silhouette width marked. Bars near zero or
 below sit closer to a neighbouring cluster than their own.
 }

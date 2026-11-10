@@ -10,6 +10,80 @@ MiningTestData <- function() {
   )
 }
 
+test_that("effect colors use fixed square-root limits and squish only the display", {
+  effects <- c(0, 0.25, 0.5, 0.75, 1, 1.5, NA_real_)
+  testthat::local_mocked_bindings(
+    PlotAnovaRelationshipsMatrix = function(...) list(Results = data.frame(
+      Outcome = "age", Predictor = paste0("group", seq_along(effects)),
+      PValue = 0.01, Estimate = effects)),
+    .package = "SciDataReportR"
+  )
+  df_Test <- MiningTestData()
+  for (variable in paste0("group", seq_along(effects))) {
+    df_Test[[variable]] <- df_Test$sex
+  }
+  res <- PlotMiningMatrix(df_Test, "age", paste0("group", seq_along(effects)))
+  p <- res$Unadjusted$plot
+  scale <- ggplot2::ggplot_build(p)$plot$scales$get_scales("colour")
+  expect_equal(scale$get_limits(), c(0, 1))
+  expect_equal(scale$transform(0.25), 0.5)
+  expect_equal(scale$get_breaks(), sqrt(c(0, 0.25, 0.5, 0.75, 1)))
+  expect_equal(as.numeric(scale$get_labels()), c(0, 0.25, 0.5, 0.75, 1))
+  expect_equal(scale$map(scale$transform(0.25)), scale$palette(0.5))
+  expect_equal(scale$map(scale$transform(1.5)), scale$map(scale$transform(1)))
+  expect_equal(scale$map(NA_real_), "grey70")
+  expect_equal(res$Unadjusted$PvalTable$EffectSize, effects)
+
+  # Train another plot on a smaller observed range, retaining the same scale.
+  p_Small <- p
+  p_Small$data <- p$data[1:2, ]
+  scale_small <- ggplot2::ggplot_build(p_Small)$plot$scales$get_scales("colour")
+  expect_equal(scale_small$get_limits(), c(0, 1))
+  expect_equal(scale_small$map(scale_small$transform(0.25)),
+               scale$map(scale$transform(0.25)))
+})
+
+test_that("significance boundaries, fixed sizes and legends agree", {
+  probs <- c(0.00001, 0.001, 0.001001, 0.01, 0.010001, 0.05, 0.050001, 0.10, 0.100001)
+  testthat::local_mocked_bindings(
+    PlotAnovaRelationshipsMatrix = function(...) list(Results = data.frame(
+      Outcome = "age", Predictor = paste0("group", seq_along(probs)),
+      PValue = probs, Estimate = 0.25)),
+    .package = "SciDataReportR"
+  )
+  df_Test <- MiningTestData()
+  vars_Groups <- paste0("group", seq_along(probs))
+  for (variable in vars_Groups) df_Test[[variable]] <- df_Test$sex
+  for (trend in c(FALSE, TRUE)) {
+    for (p_var in c("PValue", "PValueFDR")) {
+      res <- PlotMiningMatrix(df_Test, "age", vars_Groups,
+                              IncludeTrendSymbol = trend, PVar = p_var)
+      df_Table <- res$Unadjusted$PvalTable
+      selected <- if (p_var == "PValue") df_Table$p else df_Table$p_adj
+      bands <- ifelse(selected <= 0.001, "***", ifelse(selected <= 0.01, "**",
+        ifelse(selected <= 0.05, "*", ifelse(trend & selected <= 0.10, "+", "ns"))))
+      expect_equal(as.character(df_Table$stars), bands)
+      sizes <- c("ns" = 2, "+" = 2.7, "*" = 3.5, "**" = 4, "***" = 6)
+      shapes <- c("ns" = 16, "+" = 3, "*" = 17, "**" = 15, "***" = 18)
+      built <- ggplot2::ggplot_build(res$Unadjusted$plot)
+      expect_equal(built$data[[1]]$size, unname(sizes[bands]))
+      expect_equal(built$data[[1]]$shape, unname(shapes[bands]))
+      expect_true(all(built$data[[1]]$stroke == 1))
+      scale <- built$plot$scales$get_scales("shape")
+      enabled <- if (trend) names(shapes) else setdiff(names(shapes), "+")
+      expect_equal(scale$get_limits(), enabled)
+      expect_equal(unname(scale$guide$params$override.aes$size), unname(sizes[enabled]))
+      expect_equal(unname(scale$get_labels())[1],
+                   if (trend) "ns (p > 0.10)" else "ns (p > 0.05)")
+      p_Single <- res$Unadjusted$plot
+      p_Single$data <- p_Single$data[7, ]
+      single <- ggplot2::ggplot_build(p_Single)
+      expect_equal(single$data[[1]]$size, unname(sizes[bands[7]]))
+      expect_equal(single$plot$scales$get_scales("shape")$get_limits(), enabled)
+    }
+  }
+})
+
 test_that("all mixed-type requested pairs are tested under both settings", {
   df_Test <- MiningTestData()
   attr(df_Test$emp, "label") <- "Employed"

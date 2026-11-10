@@ -565,7 +565,7 @@
   fit_bytes <- 64 * mib
   method <- match.arg(method, c("generic", "som_mclust", "mclust", "kmeans",
     "pca", "mca_mclust", "latent_class", "hdbscan", "ward_rf",
-    "gower_pam", "som_hdbscan"))
+    "gower_pam", "som_hdbscan", "hierarchical", "som_hierarchical", "som_kmeans"))
   method_bytes <- switch(method,
     som_mclust = {
       nodes <- if (is.null(som_nodes) || !is.finite(som_nodes)) 100 else som_nodes
@@ -574,6 +574,15 @@
     som_hdbscan = {
       nodes <- if (is.null(som_nodes) || !is.finite(som_nodes)) 100 else som_nodes
       64 * mib + 4 * nodes * p * 8
+    },
+    som_hierarchical = {
+      nodes <- if (is.null(som_nodes) || !is.finite(som_nodes)) 100 else som_nodes
+      64 * mib + 4 * nodes * p * 8 + 3 * 8 * nodes^2
+    },
+    hierarchical = 3 * 8 * n_refit^2,
+    som_kmeans = {
+      nodes <- if (is.null(som_nodes) || !is.finite(som_nodes)) 100 else som_nodes
+      64 * mib + 4 * nodes * p * 8 + 3 * p^2 * 8 + 1.5 * nodes^2 * 8
     },
     mclust = 64 * mib + n_refit * p * 8,
     pca = 64 * mib + p * p * 8,
@@ -592,7 +601,7 @@
     base_bytes = base_bytes, dense_work_bytes = dense_work_bytes,
     method_bytes = method_bytes,
     bytes_per_worker = as.numeric(base_bytes + dense_work_bytes + fit_bytes + method_bytes),
-    pairwise_memory = method %in% c("hdbscan", "ward_rf", "gower_pam"))
+    pairwise_memory = method %in% c("hdbscan", "ward_rf", "gower_pam", "hierarchical", "som_hierarchical"))
 }
 
 .ResolveClusterStabilityCores <- function(stability_cores, resamples,
@@ -603,9 +612,7 @@
     as.character(as.integer(stability_cores))
   detected_cores <- suppressWarnings(parallel::detectCores(logical = FALSE))
   if (is.na(detected_cores) || detected_cores < 1L) detected_cores <- 1L
-  available_cores <- if (requireNamespace("future", quietly = TRUE)) {
-    future::availableCores()
-  } else detected_cores
+  available_cores <- parallelly::availableCores()
   if (is.na(available_cores) || available_cores < 1L) available_cores <- 1L
   cpu_cap <- min(max(1L, as.integer(detected_cores) - 1L),
     as.integer(available_cores), max(1L, as.integer(resamples)))

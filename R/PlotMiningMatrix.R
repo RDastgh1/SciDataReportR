@@ -17,6 +17,16 @@
 #' in either orientation; categorical pairs use chi-squared tests. Logical
 #' columns are converted locally to FALSE/TRUE factors, preserving labels.
 #' Missing effect sizes retain their p-values and plot in neutral grey.
+#' Colors represent absolute effect sizes on a fixed 0--1 scale with a
+#' square-root transformation to emphasize smaller effects. Values outside
+#' these limits are squished to the endpoints for color mapping only;
+#' legend labels and returned estimates remain in original effect-size units.
+#' Significance uses the p-values selected by `PVar`: circles for p > 0.05,
+#' triangles for 0.01 < p <= 0.05, squares for 0.001 < p <= 0.01, and
+#' diamonds for p <= 0.001. With `IncludeTrendSymbol = TRUE`, plus signs
+#' represent 0.05 < p <= 0.10 and circles represent p > 0.10.
+#' Marker sizes are fixed across plots: circle 2, plus 2.7, triangle 3.5,
+#' square 4, and diamond 6. The legend includes all enabled bands at these sizes.
 #' `Unadjusted$Missing` lists requested non-self pairs without a finite p-value.
 #' @param fdr_scope One of `"matrix"`, `"per_outcome"`, or `"per_predictor"`.
 #' Correction uses the symmetrized table before selecting the displayed grid.
@@ -65,6 +75,7 @@
 #'   plotly::ggplotly(result$Unadjusted$plot)
 #' }
 #' @param IncludeTrendSymbol Logical; add a plus sign for `0.05 < p <= 0.10`.
+#' Defaults to FALSE; the trend legend entry is omitted when disabled.
 #' @export
 #' @inheritParams inference-results
 #' @section Statistical results and provenance:
@@ -383,24 +394,31 @@ PlotMiningMatrix <- function(data,
   results$size_val <- size_map[as.character(results$stars)]
 
   shape_labels <- c(
-    "ns" = "ns (p >= 0.05)",
+    "ns" = if (IncludeTrendSymbol) "ns (p > 0.10)" else "ns (p > 0.05)",
     "+" = "+ (0.05 < p <= 0.10)",
-    "*"  = "* (p <= 0.05)",
-    "**" = "** (p <= 0.01)",
+    "*"  = "* (0.01 < p <= 0.05)",
+    "**" = "** (0.001 < p <= 0.01)",
     "***"= "*** (p <= 0.001)"
   )
+  significance_bands <- if (IncludeTrendSymbol) names(shape_map) else setdiff(names(shape_map), "+")
 
   p <- ggplot2::ggplot(results, ggplot2::aes(x = XLabel, y = YLabel)) +
     ggplot2::geom_point(
-      ggplot2::aes(colour = EffectSizeAbs, size = size_val, shape = stars)
+      ggplot2::aes(colour = EffectSizeAbs, size = stars, shape = stars),
+      stroke = 1, show.legend = TRUE
     ) +
     ggplot2::scale_colour_gradient(
-      low = "grey85", high = "#841B37", limits = c(0, NA),
+      low = "grey85", high = "#841B37", limits = c(0, 1),
+      trans = "sqrt", oob = scales::squish,
+      breaks = c(0, 0.25, 0.5, 0.75, 1),
       name = "Effect size", na.value = "grey70") +
     ggplot2::scale_shape_manual(
-      values = shape_map, labels = shape_labels, name = "Significance",
-      drop = FALSE) +
-    ggplot2::scale_size_continuous(range = c(2, 6), guide = "none") +
+      values = shape_map, labels = shape_labels[significance_bands], name = "Significance",
+      limits = significance_bands, breaks = significance_bands, drop = FALSE,
+      guide = ggplot2::guide_legend(override.aes = list(
+        size = unname(size_map[significance_bands]), colour = "black", stroke = 1))) +
+    ggplot2::scale_size_manual(values = size_map, limits = significance_bands,
+                              drop = FALSE, guide = "none") +
     ggplot2::labs(subtitle = if (PVar == "PValue")
       "Significance: raw p-values (no multiple-comparison correction)" else ScidrAdjustedSignificanceSubtitle(fdr_scope)) +
     ggplot2::theme_bw() +

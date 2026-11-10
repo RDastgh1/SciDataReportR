@@ -350,9 +350,9 @@ PlotClusterAssignment <- function(data, x, y, ClusterVar = "Cluster") {
 
 .ClusterReviewAxisLabels <- function(review_space) {
   if (is.null(review_space$variance_explained)) {
-    return(c("Review dimension 1", "Review dimension 2"))
+    return(c("Training PC1", "Training PC2"))
   }
-  paste0("Review dimension ", 1:2, " (",
+  paste0("Training PC", 1:2, " (",
          sprintf("%.0f%%", 100 * review_space$variance_explained), " variance)")
 }
 
@@ -375,14 +375,16 @@ PlotClusterAssignment <- function(data, x, y, ClusterVar = "Cluster") {
     noise_label = noise_label)
 }
 
-#' Plot a per-participant silhouette profile
+#' Plot a silhouette profile
 #'
-#' @description The classic silhouette profile: one bar per participant, sorted
+#' @description The classic silhouette profile: one bar per observation, sorted
 #' within cluster, with the average silhouette width marked. Bars near zero or
 #' below sit closer to a neighbouring cluster than their own.
 #' @param silhouette A `cluster::silhouette()` object or a matrix with
 #'   `cluster`, `neighbor`, and `sil_width` columns.
 #' @param title Plot title.
+#' @param observation_unit Label for the observations represented by bars;
+#'   defaults to `"Participant"`. Use `"SOM node"` for node clustering.
 #' @return A `ggplot` object, or `NULL` when silhouette widths are unavailable.
 #' @examples
 #' \donttest{
@@ -394,7 +396,8 @@ PlotClusterAssignment <- function(data, x, y, ClusterVar = "Cluster") {
 #' model$ModelInfo$plots$silhouette
 #' }
 #' @export
-PlotClusterSilhouette <- function(silhouette, title = "Silhouette profile") {
+PlotClusterSilhouette <- function(silhouette, title = "Silhouette profile",
+    observation_unit = "Participant") {
   if (is.null(silhouette)) return(NULL)
   df_Silhouette <- as.data.frame(unclass(silhouette))
   if (!all(c("cluster", "sil_width") %in% names(df_Silhouette))) return(NULL)
@@ -430,7 +433,7 @@ PlotClusterSilhouette <- function(silhouette, title = "Silhouette profile") {
         " (dashed); per cluster ",
         paste(sprintf("%s: %.2f", cluster_means$Cluster, cluster_means$MeanWidth),
               collapse = ", ")),
-      x = "Participant", y = "Silhouette width", fill = "Cluster")
+      x = observation_unit, y = "Silhouette width", fill = "Cluster")
 }
 
 .ClusterCenterTable <- function(centers, variable_labels = NULL) {

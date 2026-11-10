@@ -640,7 +640,7 @@ test_that("stability validation and failed resamples are explicit", {
 })
 
 test_that("parallel stability refits preserve serial seeded results", {
-  skip_if(future::availableCores() < 2L,
+  skip_if(parallelly::availableCores() < 2L,
     "This test environment permits only one parallel worker.")
   df_Test <- data.frame(
     x = c(stats::rnorm(20, -2), stats::rnorm(20, 2)),

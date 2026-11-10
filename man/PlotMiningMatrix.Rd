@@ -50,7 +50,8 @@ Correction uses the symmetrized table before selecting the displayed grid.
 \code{"per_outcome"} groups by x-axis outcome (\code{XVar}), correcting over predictors;
 \code{"per_predictor"} groups by y-axis predictor (\code{YVar}), correcting over outcomes.}
 
-\item{IncludeTrendSymbol}{Logical; add a plus sign for \verb{0.05 < p <= 0.10}.}
+\item{IncludeTrendSymbol}{Logical; add a plus sign for \verb{0.05 < p <= 0.10}.
+Defaults to FALSE; the trend legend entry is omitted when disabled.}
 
 \item{Covariates}{\strong{Deprecated} (since 19.15.0). Use \code{covariates} instead.}
 
@@ -80,6 +81,16 @@ and Spearman otherwise. Categorical/numeric pairs use ANOVA or Kruskal-Wallis
 in either orientation; categorical pairs use chi-squared tests. Logical
 columns are converted locally to FALSE/TRUE factors, preserving labels.
 Missing effect sizes retain their p-values and plot in neutral grey.
+Colors represent absolute effect sizes on a fixed 0--1 scale with a
+square-root transformation to emphasize smaller effects. Values outside
+these limits are squished to the endpoints for color mapping only;
+legend labels and returned estimates remain in original effect-size units.
+Significance uses the p-values selected by \code{PVar}: circles for p > 0.05,
+triangles for 0.01 < p <= 0.05, squares for 0.001 < p <= 0.01, and
+diamonds for p <= 0.001. With \code{IncludeTrendSymbol = TRUE}, plus signs
+represent 0.05 < p <= 0.10 and circles represent p > 0.10.
+Marker sizes are fixed across plots: circle 2, plus 2.7, triangle 3.5,
+square 4, and diamond 6. The legend includes all enabled bands at these sizes.
 \code{Unadjusted$Missing} lists requested non-self pairs without a finite p-value.
 }
 \section{Statistical results and provenance}{
