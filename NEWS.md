@@ -1,3 +1,5 @@
+# SciDataReportR 21.22.0
+
 # SciDataReportR 21.21.0
 
 * `CreateClusterModel_SOM_KMeans()` clusters equally weighted SOM nodes using
