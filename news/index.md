@@ -2,6 +2,14 @@
 
 ## SciDataReportR 21.20.0
 
+- [`PlotInteractionEffectsMatrix()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotInteractionEffectsMatrix.md)
+  adds pooled-sample standardized slope matrices, simple-slope tests and
+  intervals, sample counts, and optional moderator-specific covariate
+  effects. Multilevel moderators use a joint interaction F-test. Matrix
+  fills now show standardized slope differences only for significant
+  interactions, retaining reversal hatching and stars; existing result
+  branches and aliases remain available.
+
 - Statistical inference functions now expose a tidy `Results` tibble and
   model provenance through `Metadata`, preserving existing return
   elements. Raw p-values control default significance; select

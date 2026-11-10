@@ -22,7 +22,8 @@ PlotInteractionEffectsMatrix(
   fdr_scope = c("matrix", "per_outcome", "per_predictor"),
   covars = lifecycle::deprecated(),
   Pthresh = 0.05,
-  PVar = "PValue"
+  PVar = "PValue",
+  covariate_interactions = FALSE
 )
 ```
 
@@ -78,11 +79,13 @@ PlotInteractionEffectsMatrix(
 
 - fdr_scope:
 
-  Either `"matrix"` (default) or `"per_outcome"`, passed to
+  One of `"matrix"` (default), `"per_outcome"`, or `"per_predictor"`,
+  passed to
   [`ApplyFDRCorrection()`](https://rdastgh1.github.io/SciDataReportR/reference/ApplyFDRCorrection.md).
-  `"matrix"` corrects across all interaction p-values at once
-  (historical behavior). `"per_outcome"` corrects separately within each
-  outcome variable (`outcome_vars`).
+  `"matrix"` adjusts all interaction p-values together. `"per_outcome"`
+  adjusts across predictor columns separately within each outcome row.
+  `"per_predictor"` adjusts across outcome rows separately within each
+  predictor column.
 
 - covars:
 
@@ -90,22 +93,20 @@ PlotInteractionEffectsMatrix(
 
 - Pthresh:
 
-  Significance threshold, default `0.05`. An explicitly supplied value
-  takes precedence over a legacy significance threshold argument.
+  Interaction significance cutoff, default 0.05. Cells are displayed
+  when their raw (unadjusted plot) or BH-adjusted (FDR plot) interaction
+  p-value is less than or equal to this cutoff.
 
 - PVar:
 
-  P-value column used for significance decisions. Defaults to raw
-  `"PValue"`; select `"PValueFDR"` to use Benjamini-Hochberg adjusted
-  values. Explicit legacy p-column names remain accepted. Existing,
-  explicitly named FDR plots and adjusted-value columns are retained.
+  P-value column used for `Results$Significant`, default `"PValue"`.
+  `"PValueFDR"` uses BH-adjusted values. The named raw and FDR matrix
+  plots always use their respective p-value columns.
 
-  Explicit `Pthresh` takes precedence over `Alpha`, `FDRAlpha`,
-  `label_q`, or `adjusted_significance_threshold`. Pairwise
-  `star_p = "adjusted"` retains its legacy adjustment method unless
-  `PVar` is supplied; `PVar = "PValueFDR"` always selects BH.
-  `star_p = "none"` suppresses legacy pairwise stars. Stars retain
-  conventional p-value tiers within the requested cutoff.
+- covariate_interactions:
+
+  Logical, default FALSE. Interact every covariate with the moderator,
+  allowing moderator-specific covariate effects.
 
 ## Value
 
@@ -128,6 +129,9 @@ A list containing:
 
   - Slope2: Matrix of slopes at high values of interVar (mean + 1SD for
     continuous, comparison group for categorical)
+
+  - Slope1Std, Slope2Std, SlopeDeltaStd: Common-scale standardized slope
+    matrices
 
   - plot: ggplot object of the heatmap
 
@@ -153,34 +157,78 @@ A list containing:
 
   Processed data frame with all calculated values
 
+- Results:
+
+  Long-form interaction and simple-slope inference
+
+- Metadata:
+
+  Model provenance, failures, scaling, and analysis choices
+
+- SlopeDifferenceLimits:
+
+  Shared symmetric plot limits
+
 ## Details
 
-The function fits linear models of the form: outcome ~ predictor \*
-interVar + covariates for each combination of outcome and predictor
-variables.
+Models use `outcome ~ predictor * interVar + covariates` by default.
+With `covariate_interactions = TRUE`, every covariate also interacts
+with the moderator. For categorical moderators, point estimates of group
+slopes then equal separate within-group linear fits on the same complete
+cases. Their standard errors use the pooled model residual variance,
+rather than separate group residual variances. The interaction test
+differs from the common-covariate-effects model.
 
-For continuous interaction variables, slopes are calculated at mean -
-1SD and mean + 1SD. For categorical interaction variables, slopes are
-calculated for each category.
+Standardized slopes multiply raw slopes by SD(predictor)/SD(outcome).
+Both SDs come from all complete cases of the fitted model, pooled across
+groups. For continuous moderators, simple slopes are evaluated at the
+fitted-sample moderator mean minus/plus one SD. Standardization of the
+interaction coefficient uses the same predictor/outcome SD ratio; it
+does not multiply by the moderator SD. `SlopeDeltaStd` instead describes
+the difference between the two evaluated standardized slopes.
 
-The function then determines whether the interaction causes a slope
-reversal (opposite signs) or maintains the same direction (same signs)
-for the predictor-outcome relationship.
+`Results` contains one `Interaction` row and one `Slope: <level>` row
+per evaluated slope. `Estimate`, `StdError`, `ConfLow`, `ConfHigh`, and
+`PValue` describe raw-unit inference; `EstimateStd`, `StdErrorStd`,
+`ConfLowStd`, and `ConfHighStd` use the common standardization.
+Intervals are 95% t intervals from linear combinations of coefficients
+and `vcov(model)`. `N` is model N; `NGroup`, `NReference`, and
+`NComparison` report categorical group counts. `ModeratorValue` records
+continuous moderator evaluation points.
 
-Color shows the ending slope sign (blue positive, red negative). Within
-each hue, lighter shades indicate weakening and darker shades
-strengthening. Strength change is `abs(Slope2Std) - abs(Slope1Std)`,
-where standardized slopes multiply the original slopes by
-SD(predictor)/SD(outcome), calculated on the fitted model's complete
-cases. Both plots share symmetric strength limits, returned as
-`StrengthLimits`. Shades are relative to these limits. Hatching marks
-strict sign reversals; exactly zero slopes are not reversals. White
-cells are nonsignificant (or have an exactly zero ending slope); grey
-cells have unavailable estimates. Stars indicate interaction p-values
-(raw or FDR-adjusted), not significance of either individual slope. The
-`raw_data` result also includes `Slope1Std`, `Slope2Std`,
-`SlopeDeltaStd`, `StrengthChange`, `EndingDirection`, and
-`DirectionReversal`.
+Categorical moderators with more than two levels use a nested-model
+joint F-test for all predictor-by-moderator terms. All level slopes are
+returned. The plotted pair is the pair with the largest absolute slope
+difference; factor-level order sets reference then comparison, with ties
+resolved by the first pair. `ReferenceLevel`, `ComparisonLevel`, and
+`LargestLevelDifference` identify this contrast. The interaction row's
+estimate and CI describe that selected contrast, while `PValue` is the
+joint F-test; `ContrastPValue` reports the contrast's t-test separately.
+These contrast intervals are unadjusted for selecting the largest pair.
+For two levels, the contrast is comparison minus reference. Factor
+coding does not change the simple slopes or these contrasts.
+
+The matrix fill is `SlopeDeltaStd`: comparison minus reference (high
+minus low for continuous moderators), with a single diverging scale.
+Positive values are blue, negative red, and zero white. Shared symmetric
+limits are returned in `SlopeDifferenceLimits`. Only interaction
+p-values \<= `Pthresh` are displayed: raw p-values in `Unadjusted`,
+BH-adjusted p-values in `FDRCorrected`, regardless of `PVar`.
+Nonsignificant cells are blank; failed models are grey and recorded with
+warnings in `Metadata$Failed`. A no-interactions note is displayed when
+no cell passes the threshold. Hatching marks strict sign reversals (zero
+is not a reversal); stars describe interaction significance, not
+significance of either slope.
+
+Existing raw-unit matrices, p-value tables, aliases, and `raw_data`
+columns are retained. `Slope1Std`, `Slope2Std`, and `SlopeDeltaStd`
+matrices are added to both result branches. For multilevel moderators
+these matrices describe the selected pair. `raw_data` retains
+`StrengthChange` as a descriptive magnitude change; it no longer
+controls fill. `StrengthLimits` is retained for compatibility and is
+distinct from the new plotted limits. Simple-slope BH corrections form a
+separate family from interaction tests, using the same `fdr_scope`.
+`Metadata$PooledScaling` records each model's SDs.
 
 ## Statistical results and provenance
 
