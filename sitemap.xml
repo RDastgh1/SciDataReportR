@@ -39,6 +39,7 @@
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/ConvertOrdinalToNumeric.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/CreateClusterModel_Gower_PAM.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/CreateClusterModel_HDBSCAN.html</loc></url>
+<url><loc>https://rdastgh1.github.io/SciDataReportR/reference/CreateClusterModel_Hierarchical.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/CreateClusterModel_KMeans.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/CreateClusterModel_LatentClass.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/CreateClusterModel_MCA_MClust.html</loc></url>
@@ -46,6 +47,8 @@
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/CreateClusterModel_PCA_KMeans.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/CreateClusterModel_PCA_MClust.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/CreateClusterModel_SOM_HDBSCAN.html</loc></url>
+<url><loc>https://rdastgh1.github.io/SciDataReportR/reference/CreateClusterModel_SOM_Hierarchical.html</loc></url>
+<url><loc>https://rdastgh1.github.io/SciDataReportR/reference/CreateClusterModel_SOM_KMeans.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/CreateClusterModel_SOM_MClust.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/CreateMCAObject.html</loc></url>
 <url><loc>https://rdastgh1.github.io/SciDataReportR/reference/CreateMScoreObject.html</loc></url>

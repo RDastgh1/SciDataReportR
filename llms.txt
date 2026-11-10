@@ -266,6 +266,8 @@ Contributions, bug reports, and workflow ideas are welcome through
   : Fit a projectable Gower-distance PAM model for mixed clinical data
 - [`CreateClusterModel_HDBSCAN()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateClusterModel_HDBSCAN.md)
   : Fit a projectable HDBSCAN model
+- [`CreateClusterModel_Hierarchical()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateClusterModel_Hierarchical.md)
+  : Fit a hierarchical clustering model with frozen medoid projection
 - [`CreateClusterModel_KMeans()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateClusterModel_KMeans.md)
   : Fit a projectable K-means clustering model
 - [`CreateClusterModel_LatentClass()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateClusterModel_LatentClass.md)
@@ -280,6 +282,10 @@ Contributions, bug reports, and workflow ideas are welcome through
   : Fit PCA followed by Mclust
 - [`CreateClusterModel_SOM_HDBSCAN()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateClusterModel_SOM_HDBSCAN.md)
   : Fit HDBSCAN clusters on a frozen self-organizing map
+- [`CreateClusterModel_SOM_Hierarchical()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateClusterModel_SOM_Hierarchical.md)
+  : Fit hierarchical clusters on a frozen self-organizing map
+- [`CreateClusterModel_SOM_KMeans()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateClusterModel_SOM_KMeans.md)
+  : Fit covariance-aware K-means clusters on a frozen SOM
 - [`CreateClusterModel_SOM_MClust()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateClusterModel_SOM_MClust.md)
   [`Pipeline_SOM_MClust()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateClusterModel_SOM_MClust.md)
   [`Pipeline_SOMClust()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateClusterModel_SOM_MClust.md)
@@ -405,7 +411,7 @@ Contributions, bug reports, and workflow ideas are welcome through
 - [`PlotClusterProfiles()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotClusterProfiles.md)
   : Plot labelled numeric profiles by cluster
 - [`PlotClusterSilhouette()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotClusterSilhouette.md)
-  : Plot a per-participant silhouette profile
+  : Plot a silhouette profile
 - [`PlotClusterSplits()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotClusterSplits.md)
   : Show how participants move between clusters as k increases
 - [`PlotContinuousDistributions()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotContinuousDistributions.md)

@@ -2,6 +2,30 @@
 
 ## SciDataReportR 21.21.0
 
+- [`CreateClusterModel_SOM_KMeans()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateClusterModel_SOM_KMeans.md)
+  clusters equally weighted SOM nodes using a frozen, regularized
+  Mahalanobis metric. Full-pipeline stability refits the node covariance
+  transform. Projection preserves SOM node-inherited labels and reports
+  map fit, centroid distances, signed margins, and disagreement.
+  Silhouettes identify nodes versus participants; shared PCA review axes
+  now read Training PC1/PC2 with explained variance.
+
+- [`CreateClusterModel_Hierarchical()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateClusterModel_Hierarchical.md)
+  and
+  [`CreateClusterModel_SOM_Hierarchical()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateClusterModel_SOM_Hierarchical.md)
+  add dendrogram-based numeric and SOM-node workflows with the shared
+  model review, profile plots, subsample stability, and
+  [`ProjectCluster()`](https://rdastgh1.github.io/SciDataReportR/reference/ProjectCluster.md)
+  structure. Direct projection uses frozen medoids and reports training
+  agreement, distances, margins, distance percentiles, and range checks.
+  SOM projection retains frozen-map diagnostics without inventing
+  membership probabilities.
+
+- Clustering worker detection calls
+  [`parallelly::availableCores()`](https://parallelly.futureverse.org/reference/availableCores.html)
+  directly, avoiding the deprecated `future` re-export that can fail
+  during CI checks.
+
 ## SciDataReportR 21.20.0
 
 - Inferential matrix plots and heatmaps identify raw versus FDR-adjusted

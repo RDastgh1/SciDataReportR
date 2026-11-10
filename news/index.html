@@ -45,12 +45,15 @@
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Changelog</h1>
-      <small>Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/v21.21.0/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
+      <small>Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/master/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="21.21.0" id="scidatareportr-21210">SciDataReportR 21.21.0<a class="anchor" aria-label="anchor" href="#scidatareportr-21210"></a></h2>
-</div>
+<ul><li><p><code><a href="../reference/CreateClusterModel_SOM_KMeans.html">CreateClusterModel_SOM_KMeans()</a></code> clusters equally weighted SOM nodes using a frozen, regularized Mahalanobis metric. Full-pipeline stability refits the node covariance transform. Projection preserves SOM node-inherited labels and reports map fit, centroid distances, signed margins, and disagreement. Silhouettes identify nodes versus participants; shared PCA review axes now read Training PC1/PC2 with explained variance.</p></li>
+<li><p><code><a href="../reference/CreateClusterModel_Hierarchical.html">CreateClusterModel_Hierarchical()</a></code> and <code><a href="../reference/CreateClusterModel_SOM_Hierarchical.html">CreateClusterModel_SOM_Hierarchical()</a></code> add dendrogram-based numeric and SOM-node workflows with the shared model review, profile plots, subsample stability, and <code><a href="../reference/ProjectCluster.html">ProjectCluster()</a></code> structure. Direct projection uses frozen medoids and reports training agreement, distances, margins, distance percentiles, and range checks. SOM projection retains frozen-map diagnostics without inventing membership probabilities.</p></li>
+<li><p>Clustering worker detection calls <code><a href="https://parallelly.futureverse.org/reference/availableCores.html" class="external-link">parallelly::availableCores()</a></code> directly, avoiding the deprecated <code>future</code> re-export that can fail during CI checks.</p></li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="21.20.0" id="scidatareportr-21200">SciDataReportR 21.20.0<a class="anchor" aria-label="anchor" href="#scidatareportr-21200"></a></h2>
 <ul><li><p>Inferential matrix plots and heatmaps identify raw versus FDR-adjusted significance in their subtitles. Pairwise matrices identify the selected star adjustment method. Adjusted subtitles also state the correction scope (matrix, outcome, predictor, or pairwise family).</p></li>

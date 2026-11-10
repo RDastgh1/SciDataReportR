@@ -279,7 +279,6 @@ review <- CreateClusterModel_KMeans(
   df_Training, vars_Numeric, k_range = 2:5, nstart = 10,
   stability_resamples = 2
 )
-#> Warning: future::availableCores() is deprecated. Please use the identical parallelly::availableCores() instead [pkgdown::build_site_github_pages() -> pkgdown::build_site() -> pkgdown::build_site_local() -> pkgdown::build_reference() -> pkgdown::unwrap_purrr_error() -> base::withCallingHandlers() -> purrr::map() -> purrr::map_() -> purrr::with_indexed_errors() -> base::withCallingHandlers() -> purrr::call_with_cleanup() -> pkgdown::.f() -> base::withCallingHandlers() -> pkgdown::data_reference_topic() -> pkgdown::run_examples() -> pkgdown::highlight_examples() -> downlit::evaluate_and_highlight() -> evaluate::evaluate() -> base::withRestarts() -> withRestartList() -> withOneRestart() -> doWithOneRestart() -> withRestartList() -> withOneRestart() -> doWithOneRestart() -> evaluate::with_handlers() -> base::eval() -> eval() -> base::withCallingHandlers() -> base::withVisible() -> base::eval() -> eval() -> SciDataReportR::CreateClusterModel_KMeans() -> base::lapply() -> FUN() -> SciDataReportR::.ClusterSubsampleStability() -> SciDataReportR::.ResolveClusterStabilityCores() -> future::availableCores()]
 review$ModelInfo$fit_table
 #> # A tibble: 4 × 23
 #>   Classes   WSS BetweenSS CalinskiHarabasz Silhouette MinClusterN SizeBalance

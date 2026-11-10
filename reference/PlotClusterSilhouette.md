@@ -1,13 +1,17 @@
-# Plot a per-participant silhouette profile
+# Plot a silhouette profile
 
-The classic silhouette profile: one bar per participant, sorted within
+The classic silhouette profile: one bar per observation, sorted within
 cluster, with the average silhouette width marked. Bars near zero or
 below sit closer to a neighbouring cluster than their own.
 
 ## Usage
 
 ``` r
-PlotClusterSilhouette(silhouette, title = "Silhouette profile")
+PlotClusterSilhouette(
+  silhouette,
+  title = "Silhouette profile",
+  observation_unit = "Participant"
+)
 ```
 
 ## Arguments
@@ -22,6 +26,11 @@ PlotClusterSilhouette(silhouette, title = "Silhouette profile")
 - title:
 
   Plot title.
+
+- observation_unit:
+
+  Label for the observations represented by bars; defaults to
+  `"Participant"`. Use `"SOM node"` for node clustering.
 
 ## Value
 

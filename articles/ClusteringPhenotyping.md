@@ -71,6 +71,7 @@ including the interactive `aweSOM` maps in `ModelInfo_SOM$plots`.
 | Method | Data and geometry | Primary diagnostics | Projection rule | Ideal situation | Main caveat |
 |----|----|----|----|----|----|
 | SOM + Mclust | Continuous; topology and gradients matter | map fit, posterior, SOM distance, stability | scaling → SOM node → mixture class | phenotype maps and nonlinear gradients | most complex workflow |
+| SOM + K-means | Continuous; covariance-adjusted node geometry | node silhouette, WSS, CH, map fit, centroid margins, stability | frozen SOM node → K-means label | hard phenotypes on a shared map | covariance adjustment applies to node clustering, not SOM training |
 | Mclust | Continuous; Gaussian mixtures | BIC/ICL, entropy, posterior, stability | exact mixture posterior | probabilistic groups with different covariance | sensitive to distributional mismatch |
 | PCA + Mclust | Correlated continuous measures | scree, mixture fit, posterior, stability | frozen PCA → mixture posterior | clustering a lower-dimensional signal space | PCs can obscure individual variables |
 | K-means | Numeric; compact centroid geometry | WSS, silhouette, CH, margin, stability | nearest frozen centroid | simple, interpretable baseline | no probability model |
@@ -162,6 +163,71 @@ K-means is a useful scaled baseline for compact groups ([MacQueen
 > similarly shaped groups. **Inspect before naming:** WSS, silhouette,
 > Calinski–Harabasz index, centroid distance, assignment margin, and
 > subsample stability.
+
+### SOM followed by covariance-aware K-means
+
+[`CreateClusterModel_SOM_KMeans()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateClusterModel_SOM_KMeans.md)
+keeps the established SOM preprocessing, training, and
+best-matching-node projection. It estimates one covariance matrix from
+all node profiles, shrinks it toward a spherical matrix with the same
+average variance (default 5%), and freezes a whitening transform.
+K-means, silhouette, WSS, and Calinski–Harabasz use whitened node
+coordinates. Euclidean distance in those coordinates equals the frozen
+regularized Mahalanobis distance in the original SOM feature space.
+Every node has equal weight, including empty nodes. Profile figures
+retain the original SOM feature units.
+
+Each silhouette bar represents a **SOM node**. `MinClusterN` counts
+nodes; `MinParticipantN` and `cluster_sizes$ParticipantN` count people.
+Stability refits preprocessing, the SOM, whitening, and K-means on
+participant subsamples with reference grid dimensions. Supplied external
+preprocessing stays fixed. Stability accompanies the initial candidate
+recommendation without changing the selected labels after map assembly.
+
+Projected participants inherit the K-means label of their frozen
+best-matching node. `DistanceToCentroid` uses the frozen
+covariance-adjusted metric and the inherited cluster centroid.
+`AssignmentMargin` is the distance to the closest alternative centroid
+minus distance to the inherited centroid. Negative values and
+`Flag_ProjectionDisagreement` flag a different nearest-centroid
+assignment; they do not change the phenotype label. `Node*` diagnostics
+refer to the node profile instead of the participant. These are
+distances and margins, not posterior probabilities. SOM fit and centroid
+fit are reported separately.
+
+For models with a PCA review map, **Training PC1/PC2** are visualization
+axes fitted on the preprocessed training features and frozen for
+projection. They do not replace the model’s clustering or assignment
+geometry.
+
+### Hierarchical clustering
+
+Use
+[`CreateClusterModel_Hierarchical()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateClusterModel_Hierarchical.md)
+for a participant dendrogram or
+[`CreateClusterModel_SOM_Hierarchical()`](https://rdastgh1.github.io/SciDataReportR/reference/CreateClusterModel_SOM_Hierarchical.md)
+to cluster SOM node profiles. Both default to Euclidean distance and
+Ward linkage (`ward.D2`). Average, complete, and single linkage also
+support Manhattan distance. Explore candidate cuts, then finalize an
+explicit cluster count.
+
+Training labels come from the dendrogram cut. Projection assigns the
+nearest frozen training medoid, so it can disagree with those labels
+even for training participants. Review `projection_agreement` before
+relying on this extension. `DistanceToMedoid`, `AssignmentMargin`,
+`DistancePercentileTrain`, and `Flag_HighDistance` describe projected
+fit; margins are not probabilities. Direct hierarchical clustering
+requires quadratic memory in participant count.
+
+SOM dendrograms give every node equal weight, including empty nodes.
+Inspect both node counts and participant counts. SOM stability refits
+preprocessing, the map, and the dendrogram with grid dimensions held
+fixed. Stability results accompany the initial candidate recommendation;
+they do not change the selected node labels after map assembly.
+Projected participants inherit their frozen best-matching node’s label.
+Evaluate SOM distance percentiles, high-distance flags, range checks,
+and residuals. `NodeAssignmentMargin` describes the node profile’s
+separation from other cluster medoids, not a participant probability.
 
 ### PCA followed by clustering
 

@@ -76,7 +76,7 @@
       <p class="author">Raha Dastgheyb</p>
       <p class="date">2026-11-10</p>
 
-      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/v21.21.0/vignettes/ClusteringPhenotyping.qmd" class="external-link"><code>vignettes/ClusteringPhenotyping.qmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/master/vignettes/ClusteringPhenotyping.qmd" class="external-link"><code>vignettes/ClusteringPhenotyping.qmd</code></a></small>
       <div class="d-none name"><code></code></div>
     </div>
 
@@ -181,6 +181,14 @@ table th, table td {
 <td>most complex workflow</td>
 </tr>
 <tr class="even">
+<td>SOM + K-means</td>
+<td>Continuous; covariance-adjusted node geometry</td>
+<td>node silhouette, WSS, CH, map fit, centroid margins, stability</td>
+<td>frozen SOM node → K-means label</td>
+<td>hard phenotypes on a shared map</td>
+<td>covariance adjustment applies to node clustering, not SOM training</td>
+</tr>
+<tr class="odd">
 <td>Mclust</td>
 <td>Continuous; Gaussian mixtures</td>
 <td>BIC/ICL, entropy, posterior, stability</td>
@@ -188,7 +196,7 @@ table th, table td {
 <td>probabilistic groups with different covariance</td>
 <td>sensitive to distributional mismatch</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>PCA + Mclust</td>
 <td>Correlated continuous measures</td>
 <td>scree, mixture fit, posterior, stability</td>
@@ -196,7 +204,7 @@ table th, table td {
 <td>clustering a lower-dimensional signal space</td>
 <td>PCs can obscure individual variables</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>K-means</td>
 <td>Numeric; compact centroid geometry</td>
 <td>WSS, silhouette, CH, margin, stability</td>
@@ -204,7 +212,7 @@ table th, table td {
 <td>simple, interpretable baseline</td>
 <td>no probability model</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>PCA + K-means</td>
 <td>Correlated numeric measures</td>
 <td>scree, silhouette, distance, stability</td>
@@ -212,7 +220,7 @@ table th, table td {
 <td>fast reduced-space baseline</td>
 <td>inherits PCA and K-means assumptions</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>HDBSCAN</td>
 <td>Numeric; irregular or unequal-density groups</td>
 <td>persistence, membership, noise, support</td>
@@ -220,7 +228,7 @@ table th, table td {
 <td>clusters plus meaningful noise</td>
 <td>conservative projection may label many cases noise</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>Gower + PAM</td>
 <td>Mixed numeric/categorical/ordinal</td>
 <td>silhouette, medoids, distance, stability</td>
@@ -228,7 +236,7 @@ table th, table td {
 <td>mixed clinical measures and exemplar participants</td>
 <td>coding and variable selection define distance</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>LCA</td>
 <td>Categorical response patterns</td>
 <td>BIC, entropy, response probabilities, stability</td>
@@ -236,7 +244,7 @@ table th, table td {
 <td>symptom or questionnaire response phenotypes</td>
 <td>local-independence assumption</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>MCA + Mclust</td>
 <td>Nominal categorical measures</td>
 <td>inertia, mixture fit, posterior, stability</td>
@@ -360,6 +368,17 @@ table th, table td {
 <p><strong>When to use it:</strong> continuous features with roughly compact, similarly shaped groups. <strong>Inspect before naming:</strong> WSS, silhouette, Calinski–Harabasz index, centroid distance, assignment margin, and subsample stability.</p>
 </blockquote>
 </div>
+</section><section class="level2"><h3 id="som-followed-by-covariance-aware-k-means">SOM followed by covariance-aware K-means<a class="anchor" aria-label="anchor" href="#som-followed-by-covariance-aware-k-means"></a>
+</h3>
+<p><code><a href="../reference/CreateClusterModel_SOM_KMeans.html">CreateClusterModel_SOM_KMeans()</a></code> keeps the established SOM preprocessing, training, and best-matching-node projection. It estimates one covariance matrix from all node profiles, shrinks it toward a spherical matrix with the same average variance (default 5%), and freezes a whitening transform. K-means, silhouette, WSS, and Calinski–Harabasz use whitened node coordinates. Euclidean distance in those coordinates equals the frozen regularized Mahalanobis distance in the original SOM feature space. Every node has equal weight, including empty nodes. Profile figures retain the original SOM feature units.</p>
+<p>Each silhouette bar represents a <strong>SOM node</strong>. <code>MinClusterN</code> counts nodes; <code>MinParticipantN</code> and <code>cluster_sizes$ParticipantN</code> count people. Stability refits preprocessing, the SOM, whitening, and K-means on participant subsamples with reference grid dimensions. Supplied external preprocessing stays fixed. Stability accompanies the initial candidate recommendation without changing the selected labels after map assembly.</p>
+<p>Projected participants inherit the K-means label of their frozen best-matching node. <code>DistanceToCentroid</code> uses the frozen covariance-adjusted metric and the inherited cluster centroid. <code>AssignmentMargin</code> is the distance to the closest alternative centroid minus distance to the inherited centroid. Negative values and <code>Flag_ProjectionDisagreement</code> flag a different nearest-centroid assignment; they do not change the phenotype label. <code>Node*</code> diagnostics refer to the node profile instead of the participant. These are distances and margins, not posterior probabilities. SOM fit and centroid fit are reported separately.</p>
+<p>For models with a PCA review map, <strong>Training PC1/PC2</strong> are visualization axes fitted on the preprocessed training features and frozen for projection. They do not replace the model’s clustering or assignment geometry.</p>
+</section><section class="level2"><h3 id="hierarchical-clustering">Hierarchical clustering<a class="anchor" aria-label="anchor" href="#hierarchical-clustering"></a>
+</h3>
+<p>Use <code><a href="../reference/CreateClusterModel_Hierarchical.html">CreateClusterModel_Hierarchical()</a></code> for a participant dendrogram or <code><a href="../reference/CreateClusterModel_SOM_Hierarchical.html">CreateClusterModel_SOM_Hierarchical()</a></code> to cluster SOM node profiles. Both default to Euclidean distance and Ward linkage (<code>ward.D2</code>). Average, complete, and single linkage also support Manhattan distance. Explore candidate cuts, then finalize an explicit cluster count.</p>
+<p>Training labels come from the dendrogram cut. Projection assigns the nearest frozen training medoid, so it can disagree with those labels even for training participants. Review <code>projection_agreement</code> before relying on this extension. <code>DistanceToMedoid</code>, <code>AssignmentMargin</code>, <code>DistancePercentileTrain</code>, and <code>Flag_HighDistance</code> describe projected fit; margins are not probabilities. Direct hierarchical clustering requires quadratic memory in participant count.</p>
+<p>SOM dendrograms give every node equal weight, including empty nodes. Inspect both node counts and participant counts. SOM stability refits preprocessing, the map, and the dendrogram with grid dimensions held fixed. Stability results accompany the initial candidate recommendation; they do not change the selected node labels after map assembly. Projected participants inherit their frozen best-matching node’s label. Evaluate SOM distance percentiles, high-distance flags, range checks, and residuals. <code>NodeAssignmentMargin</code> describes the node profile’s separation from other cluster medoids, not a participant probability.</p>
 </section><section class="level2"><h3 id="pca-followed-by-clustering">PCA followed by clustering<a class="anchor" aria-label="anchor" href="#pca-followed-by-clustering"></a>
 </h3>
 <p>PCA concentrates correlated variation into orthogonal dimensions <span class="citation" data-cites="jolliffe2016">(<a href="#ref-jolliffe2016" role="doc-biblioref">Jolliffe and Cadima 2016</a>)</span>. These pipelines refit scaling and PCA inside every stability 90% subsampling, then use the frozen training transformation for projection.</p>
