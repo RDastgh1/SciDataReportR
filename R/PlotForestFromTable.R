@@ -11,6 +11,17 @@
 #'   `ConfHigh`, and `PValue` (`Significant` and `ReferenceValue` are
 #'   recomputed if absent). Lists created by older package versions (without a
 #'   `Results` element) are still supported.
+#' @param PVar Significance column: "PValue" (default) or "PValueFDR".
+#' @param Pthresh Significance cutoff, default 0.05, applied per estimate.
+#' @param show_interaction_p Annotate interaction p-values when Interaction
+#'   rows are present; simple slopes are displayed side by side by level.
+#' @param facet_scales Facet scales: "fixed", "free", "free_x", or "free_y".
+#' @param xlim Optional two-element x-axis display range; estimates are retained.
+#' @section Grouped inputs:
+#' Group levels are dodged within rows and coloured with SciDataPalette;
+#' nonsignificant estimates have reduced opacity. A named list of Results
+#' tables or regression outputs is bound using list names as Group labels.
+#' Facet labels wrap at 25 characters.
 #' @param pSize Numeric. Size of the points in the plot. Default is 2.
 #' @param Flip Logical. If `FALSE`, outcomes are facets and predictors/terms
 #'   are rows. If `TRUE`, predictors/terms are facets and outcomes are rows.
@@ -73,19 +84,35 @@
 #' PlotForestFromTable(urt_Logistic)
 #' }
 #' @export
-PlotForestFromTable <- function(UnivariateRegressionTables, pSize = 2, Flip = FALSE) {
+PlotForestFromTable <- function(UnivariateRegressionTables, pSize = 2, Flip = FALSE,
+    PVar = "PValue", Pthresh = 0.05, show_interaction_p = FALSE,
+    facet_scales = c("fixed", "free", "free_x", "free_y"), xlim = NULL) {
 
   if (!is.logical(Flip) || length(Flip) != 1 || is.na(Flip)) {
     stop("Flip must be TRUE or FALSE.")
   }
 
+  facet_scales <- match.arg(facet_scales)
+  if (!PVar %in% c("PValue", "PValueFDR")) stop("PVar must be PValue or PValueFDR.")
+  if (length(Pthresh) != 1L || !is.finite(Pthresh) || Pthresh <= 0 || Pthresh >= 1) stop("Invalid Pthresh.")
+  if (!is.null(xlim) && (length(xlim) != 2L || any(!is.finite(xlim)) || xlim[1] >= xlim[2])) stop("xlim must be two increasing finite values.")
   df_Combined <- ScidrForestPlotResolveResults(UnivariateRegressionTables)
-  df_Combined <- df_Combined %>% dplyr::filter(!is.na(Estimate))
-  if (nrow(df_Combined) == 0) {
-    stop("No estimates available to plot.")
+  interaction_rows <- if ("Term" %in% names(df_Combined)) df_Combined$Term == "Interaction" else rep(FALSE, nrow(df_Combined))
+  df_Interactions <- df_Combined[which(interaction_rows), , drop = FALSE]
+  if (show_interaction_p && nrow(df_Interactions)) {
+    df_Combined <- df_Combined[which(!interaction_rows), , drop = FALSE]
+    if (all(c("Predictor", "Level") %in% names(df_Combined))) {
+      df_Combined$TermLabel <- if ("PredictorLabel" %in% names(df_Combined)) df_Combined$PredictorLabel else df_Combined$Predictor
+      df_Combined$Group <- df_Combined$Level
+    }
   }
-  if (!"Significant" %in% names(df_Combined)) {
-    df_Combined$Significant <- df_Combined$PValue < 0.05
+  df_Combined <- df_Combined %>% dplyr::filter(!is.na(Estimate))
+  if (!nrow(df_Combined)) stop("No estimates available to plot.")
+  if (!PVar %in% names(df_Combined)) stop("Requested p-value column is unavailable: ", PVar)
+  df_Combined$Significant <- !is.na(df_Combined[[PVar]]) & df_Combined[[PVar]] <= Pthresh
+  grouped <- "Group" %in% names(df_Combined) && length(unique(stats::na.omit(df_Combined$Group))) > 1L
+  if (grouped) {
+    df_Combined$Group <- factor(df_Combined$Group, levels = unique(df_Combined$Group))
   }
   if (!"ReferenceValue" %in% names(df_Combined)) {
     df_Combined$ReferenceValue <- if ("EffectType" %in% names(df_Combined)) {
@@ -136,7 +163,7 @@ PlotForestFromTable <- function(UnivariateRegressionTables, pSize = 2, Flip = FA
     ggplot(aes(x = Estimate, y = PlotRow, color = Significant)) +
     geom_point(size = pSize) +  # Plot the point for the estimate
     geom_errorbar(aes(xmin = ConfLow, xmax = ConfHigh), orientation = "y", width = 0.2) +  # Add the error bars
-    facet_wrap(~PlotFacet, nrow = 1) +  # Facet by outcome or term
+    facet_wrap(~PlotFacet, nrow = 1, scales = facet_scales, labeller = ggplot2::label_wrap_gen(width = 25)) +  # Facet by outcome or term
     geom_vline(
       data = df_ReferenceLines,
       aes(xintercept = ReferenceValue),
@@ -155,6 +182,27 @@ PlotForestFromTable <- function(UnivariateRegressionTables, pSize = 2, Flip = FA
     scale_color_manual(values = c("FALSE" = "darkgrey", "TRUE" = "black")) +
     theme(legend.position = "none")
 
+  if (grouped) {
+    dodge <- ggplot2::position_dodge(width = 0.65, orientation = "y")
+    p$mapping <- ggplot2::aes(x = Estimate, y = PlotRow, colour = Group, group = Group, alpha = Significant)
+    p$layers[[1]]$position <- dodge
+    p$layers[[2]]$position <- dodge
+    p <- suppressMessages(p + ggplot2::scale_colour_manual(values = stats::setNames(
+      SciDataPalette(nlevels(df_Combined$Group)), levels(df_Combined$Group)))) +
+      ggplot2::scale_alpha_manual(values = c("FALSE" = 0.35, "TRUE" = 1), name = "Significant") +
+      ggplot2::theme(legend.position = "right")
+  }
+  if (show_interaction_p && nrow(df_Interactions)) {
+    if (!PVar %in% names(df_Interactions)) stop("Interaction p-value column is unavailable.")
+    key <- function(df_Input) paste(df_Input$Outcome, df_Input$Predictor, sep = "\r")
+    df_Notes <- df_Combined[!duplicated(paste(df_Combined$PlotRow, df_Combined$PlotFacet)), , drop = FALSE]
+    selected <- match(key(df_Notes), key(df_Interactions))
+    df_Notes$Note <- paste0("Interaction p = ", format.pval(df_Interactions[[PVar]][selected], digits = 2))
+    p <- p + ggplot2::geom_text(data = df_Notes,
+      ggplot2::aes(x = Inf, y = PlotRow, label = Note), inherit.aes = FALSE,
+      hjust = 1.02, vjust = -1, size = 3)
+  }
+  if (!is.null(xlim)) p <- p + ggplot2::coord_cartesian(xlim = xlim)
   return(p)
 }
 
@@ -186,6 +234,14 @@ ScidrForestPlotResolveResults <- function(x) {
   if (is.list(x)) {
     if (is.data.frame(x$Results)) {
       return(x$Results)
+    }
+    if (length(x) && !is.null(names(x)) && all(nzchar(names(x))) &&
+        all(vapply(x, function(item) is.data.frame(item) || (is.list(item) && is.data.frame(item$Results)), logical(1)))) {
+      return(dplyr::bind_rows(lapply(names(x), function(group) {
+        df_Group <- ScidrForestPlotResolveResults(x[[group]])
+        df_Group$Group <- group
+        df_Group
+      })))
     }
     if (!is.null(x$FormattedTable)) {
       # Objects saved by versions before 20.5.0 have no Results element;

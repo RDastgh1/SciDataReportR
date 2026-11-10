@@ -50,9 +50,9 @@
 #' residual checks; it is off by default because a large screen would otherwise
 #' hold hundreds of models in memory.
 #'
-#' Running many models at once means many p-values. Nothing here corrects for
-#' that automatically - the family is yours to define - so pass `Results$PValue`
-#' through [ApplyFDRCorrection()] once you have decided what the family is.
+#' Running many models at once means many p-values. The default fdr_scope =
+#' "none" leaves PValueFDR unavailable. Select a correction scope to compute
+#' BH-adjusted p-values within each Group.
 #'
 #' @seealso [PlotForestFromTable()] to visualize `Results`,
 #'   [MultivariableRegressionTable()] for mutually adjusted models, and
@@ -181,6 +181,17 @@
 #' summary(urt_Models$ModelSummaries[[1]])
 #' }
 #'
+#' @param group_var Optional categorical stratification variable. Fits each
+#'   observed level separately, excluding missing group values. Group is NA
+#'   without stratification. The name "Pooled" is reserved.
+#' @param include_pooled Include a pooled model adjusted for group_var (TRUE).
+#' @param fdr_scope BH correction family: "none" (default, no adjustment),
+#'   "per_predictor" (across outcomes), "per_outcome" (across predictors), or
+#'   "matrix" (all tests). Each Group is corrected separately.
+#' @section Stratified scaling:
+#' With group_var and Standardize = TRUE, numeric model variables use the same
+#' pooled complete-case means and SDs in every group. Logistic outcomes are
+#' not scaled. Metadata records pooled scaling, model formulas, and group N.
 #' @param IncludeTrendSymbol Logical; add a plus sign for `0.05 < p <= 0.10`.
 #' @export
 #'
@@ -203,7 +214,10 @@ MakeUnivariateRegressionTable <- function(data,
     PredictorVars = lifecycle::deprecated(),
     Covars = lifecycle::deprecated(),
     Pthresh = 0.05,
-    PVar = "PValue") {
+    PVar = "PValue",
+    group_var = NULL,
+    include_pooled = TRUE,
+    fdr_scope = c("none", "per_predictor", "per_outcome", "matrix")) {
   .scidr_inference <- ScidrStartInference("MakeUnivariateRegressionTable", match.call(), environment())
   on.exit({
     if (!is.null(returnValue())) {
@@ -234,6 +248,22 @@ MakeUnivariateRegressionTable <- function(data,
   Covars <- covariates
 
   Method <- match.arg(Method)
+  fdr_scope <- match.arg(fdr_scope)
+  if (!is.logical(include_pooled) || length(include_pooled) != 1L || is.na(include_pooled)) stop("include_pooled must be TRUE or FALSE.")
+  group_levels <- NA_character_
+  if (!is.null(group_var)) {
+    ScidrValidateVariable(Data, group_var, "group_var")
+    if (is.numeric(Data[[group_var]])) stop("group_var must be categorical.")
+    if (group_var %in% c(OutcomeVars, PredictorVars)) stop("group_var cannot be a tested outcome or predictor.")
+    Data[[group_var]] <- factor(Data[[group_var]])
+    group_levels <- levels(droplevels(Data[[group_var]]))
+    if (!length(group_levels) || "Pooled" %in% group_levels) stop("group_var needs observed levels other than the reserved name 'Pooled'.")
+    Covars <- setdiff(Covars, group_var)
+  }
+  model_groups <- if (is.null(group_var)) NA_character_ else c(group_levels, if (include_pooled) "Pooled")
+  scaling_records <- list()
+  group_counts <- list()
+  model_records <- list()
 
   if (!is.data.frame(Data)) {
     stop("Data must be a data frame.")
@@ -301,27 +331,45 @@ MakeUnivariateRegressionTable <- function(data,
     mod_list <- list()
     for (xVarIndex in seq_along(PredictorVars)) {
       xVar <- PredictorVars[xVarIndex]
+      for (current_group in model_groups) {
+      base_covars <- Covars
+      Covars <- if (!is.null(group_var) && current_group == "Pooled") unique(c(base_covars, group_var)) else base_covars
       tryCatch(expr = {
         f <- ScidrRegressionFormula(c(xVar, Covars), outcome = YVar)
+        ModelData <- model_data_full
+        if (!is.null(group_var)) {
+          vars_Model <- unique(c(YVar, xVar, base_covars, group_var))
+          ModelData <- ModelData[stats::complete.cases(ModelData[, vars_Model, drop = FALSE]), , drop = FALSE]
+        }
         if (Standardize) {
-          ModelData <- model_data_full %>% dplyr::select(dplyr::all_of(c(YVar, xVar, Covars)))
-          numeric_cols <- sapply(ModelData, is.numeric)
-          if (outcome_family == "logistic") {
-            numeric_cols[YVar] <- FALSE
-          }
+          if (is.null(group_var)) ModelData <- ModelData %>% dplyr::select(dplyr::all_of(unique(c(YVar, xVar, Covars))))
+          numeric_cols <- vapply(ModelData, is.numeric, logical(1)) & names(ModelData) %in% c(YVar, xVar, Covars)
+          if (outcome_family == "logistic") numeric_cols[YVar] <- FALSE
           if (any(numeric_cols)) {
+            if (!is.null(group_var)) {
+              scaling_records[[paste(YVar, xVar, sep = "\r")]] <- tibble::tibble(
+                Outcome = YVar, Predictor = xVar, Variable = names(ModelData)[numeric_cols],
+                SD = unname(vapply(ModelData[, numeric_cols, drop = FALSE], stats::sd, numeric(1))),
+                Center = unname(vapply(ModelData[, numeric_cols, drop = FALSE], mean, numeric(1))), N = nrow(ModelData))
+            }
             ModelData[, numeric_cols] <- ScidrObserveInference(scale(ModelData[, numeric_cols, drop = FALSE]))
           }
-        }else {
-          ModelData <- model_data_full
         }
+        if (!is.null(group_var) && current_group != "Pooled") {
+          ModelData <- ModelData[ModelData[[group_var]] == current_group, , drop = FALSE]
+        }
+        group_counts[[length(group_counts) + 1L]] <- tibble::tibble(Outcome = YVar, Predictor = xVar,
+          Group = current_group, N = nrow(ModelData[stats::complete.cases(ModelData[, unique(c(YVar, xVar, Covars)), drop = FALSE]), ]))
         mod <- if (outcome_family == "logistic") {
           ScidrObserveInference(stats::glm(formula = f, data = ModelData, family = stats::binomial()))
         } else {
           ScidrObserveInference(stats::lm(formula = f, data = ModelData))
         }
+        model_records[[length(model_records) + 1L]] <- tibble::tibble(
+          Outcome = YVar, Predictor = xVar, Group = current_group,
+          Formula = paste(deparse(stats::formula(mod)), collapse = " "), N = stats::nobs(mod))
         if (ReturnModels) {
-          mod_list[[xVar]] <- mod
+          mod_list[[if (is.null(group_var)) xVar else paste(xVar, current_group, sep = ":")]] <- mod
         }
 
         model_summary <- summary(mod)
@@ -359,9 +407,7 @@ MakeUnivariateRegressionTable <- function(data,
         }
         coefficient_table <- coefficient_table[keep_rows, , drop = FALSE]
 
-        if (nrow(coefficient_table) == 0) {
-          next
-        }
+        if (nrow(coefficient_table) == 0) stop("No estimable predictor coefficients.")
 
         raw_estimate <- coefficient_table[[estimate_col]]
         std_error <- coefficient_table[[std_error_col]]
@@ -393,6 +439,7 @@ MakeUnivariateRegressionTable <- function(data,
         }
 
         results_list[[length(results_list) + 1]] <- data.frame(
+          Group = current_group,
           Outcome = YVar,
           OutcomeLabel = display_labels[[YVar]],
           OutcomeFamily = outcome_family,
@@ -417,6 +464,8 @@ MakeUnivariateRegressionTable <- function(data,
         warning(paste("Error processing", YVar, "and", xVar,
                    ": ", conditionMessage(e)), call. = FALSE)
       })
+      Covars <- base_covars
+      }
     }
     if (ReturnModels) {
       Wide_mod_list[[YVar]] <- mod_list
@@ -434,14 +483,25 @@ MakeUnivariateRegressionTable <- function(data,
 
   results <- dplyr::bind_rows(results_list)
   if (!nrow(results)) results <- ScidrEmptyInferenceResults()
-  results$PValueFDR <- stats::p.adjust(results$PValue, method = "BH")
-  results$Significant <- ScidrInferenceP(results$PValue, results$PValueFDR) < Pthresh
+  results$PValueFDR <- NA_real_
+  if (fdr_scope != "none") {
+    families <- if (fdr_scope == "per_predictor") results$Predictor else if (fdr_scope == "per_outcome") results$Outcome else rep("matrix", nrow(results))
+    families <- paste(results$Group, families, sep = "\r")
+    for (indices in split(seq_len(nrow(results)), families)) results$PValueFDR[indices] <- stats::p.adjust(results$PValue[indices], "BH")
+  }
+  if (is.null(group_var)) results <- results[, c(setdiff(names(results), "Group"), "Group")]
+  results$Significant <- (if (PVar == "PValue") results$PValue else results$PValueFDR) < Pthresh
   FinalTable <- ScidrUnivariateGtTable(results, formatted = FALSE)
   FinalFormattedTable <- ScidrUnivariateGtTable(
     results, formatted = TRUE, IncludeTrendSymbol = IncludeTrendSymbol
   )
 
   metadata <- list(
+    GroupLevels = if (is.null(group_var)) NULL else group_levels,
+    GroupN = dplyr::bind_rows(group_counts),
+    GroupModels = dplyr::bind_rows(model_records),
+    PooledScaling = dplyr::bind_rows(scaling_records),
+    ScalingScope = if (is.null(group_var)) "Existing ungrouped scaling" else "Pooled complete model sample, shared across groups",
     Outcomes = dplyr::bind_rows(outcome_metadata),
     AnalysisSettings = list(
       Method = Method,
@@ -489,9 +549,12 @@ ScidrUnivariateGtTable <- function(results, formatted = TRUE, IncludeTrendSymbol
   # reshape it for reporting, so users can always filter Results for plotting.
   results <- results %>%
     dplyr::mutate(
-      RowKey = paste(.data$Predictor, .data$Term, sep = "\r")
+      RowKey = paste(.data$Predictor, .data$Term, if ("Group" %in% names(results)) results$Group else "", sep = "\r")
     )
 
+  if ("Group" %in% names(results) && any(!is.na(results$Group))) {
+    results$TermLabel <- paste0(results$TermLabel, " (", results$Group, ")")
+  }
   row_data <- results %>%
     dplyr::distinct(.data$RowKey, .data$TermLabel) %>%
     dplyr::rename(Variable = "TermLabel")

@@ -729,7 +729,7 @@ ScidrFullRegressionRows <- function(output, context, frame) {
 ScidrInferenceSource <- function(output, context, frame) {
   # This matrix computes explicit linear-combination rows, including simple
   # slopes; generic model coefficient extraction would discard those rows.
-  if (context$Function == 'PlotInteractionEffectsMatrix' && is.data.frame(output$Results)) return(output$Results)
+  if (context$Function %in% c('PlotInteractionEffectsMatrix', 'PlotInteractionEffectsContinuous') && is.data.frame(output$Results)) return(output$Results)
   if (context$Function == 'MultivariableRegressionTable') {
     if (is.data.frame(output$Results) && nrow(output$Results)) return(output$Results)
     df_Coefficients <- ScidrFullRegressionRows(output, context, frame)
@@ -843,6 +843,7 @@ ScidrInferenceRequested <- function(context, frame) {
     skipped <- ScidrInferenceValue(frame, 'skipped', character())
     df_Requested <- df_Requested[!df_Requested$Outcome %in% skipped, , drop = FALSE]
   }
+  if (context$Function == 'MakeUnivariateRegressionTable' && length(ScidrInferenceValue(frame, 'group_var'))) df_Requested <- tidyr::crossing(df_Requested, Group = ScidrInferenceValue(frame, 'model_groups'))
   strata <- ScidrInferenceValue(frame, 'strata')
   if (is.data.frame(strata) && 'Stratum' %in% names(strata) && length(ScidrInferenceValue(frame, 'stratify_by'))) df_Requested <- tidyr::crossing(df_Requested, Group = strata$Stratum)
   if (context$Function == 'PlotSplitCorrelationHeatmap' && length(ScidrInferenceValue(frame, 'split_levels'))) df_Requested <- tidyr::crossing(df_Requested, Group = ScidrInferenceValue(frame, 'split_levels'))
@@ -855,6 +856,7 @@ ScidrInferenceRequested <- function(context, frame) {
 
 ScidrInferenceFDR <- function(results, frame) {
   if (!nrow(results)) return(results)
+  if (identical(ScidrInferenceValue(frame, 'fdr_scope'), 'none')) return(results)
   scope <- ScidrInferenceValue(frame, c('fdr_scope', 'adjust_scope'), 'matrix')[1]
   groups <- switch(scope, per_outcome = results$Outcome, per_predictor = results$Predictor,
     per_variable = results$Outcome, per_group = results$Group, rep('matrix', nrow(results)))
@@ -1082,6 +1084,7 @@ ScidrFinishInference <- function(output, context, frame) {
       df_Results$Reason[index] <- adjustment_issues$Reason[i]
     }
   }
+  if (context$Function == 'MakeUnivariateRegressionTable' && is.null(ScidrInferenceValue(frame, 'group_var'))) df_Results$Group <- NA_character_
   df_Results <- ScidrInferenceFDR(df_Results, frame)
   p_column <- if (context$PVar %in% c('P', 'p', 'p.value')) 'PValue' else if (context$PVar %in% c('FDR', 'P_adj', 'p_adj')) 'PValueFDR' else context$PVar
   if (!p_column %in% names(df_Results)) stop('Requested PVar is unavailable: ', context$PVar, call. = FALSE)
@@ -1174,6 +1177,13 @@ ScidrFinishInference <- function(output, context, frame) {
   }
   df_AuxiliaryModels <- df_Models
   df_Models <- ScidrInferenceRegistry(df_Results, context)
+  if (context$Function == 'MakeUnivariateRegressionTable' && is.data.frame(existing$GroupModels)) {
+    df_GroupModels <- existing$GroupModels
+    keys <- function(df_Input) paste(df_Input$Outcome, df_Input$Predictor, df_Input$Group, sep = '\r')
+    matches <- match(keys(df_Models), keys(df_GroupModels))
+    available <- !is.na(matches)
+    df_Models$Formula[available] <- df_GroupModels$Formula[matches[available]]
+  }
   if (nrow(standardization)) {
     has_scale_observation <- vapply(context$Observations, function(x) grepl('(^|::)scale$', x$Engine), logical(1))
     if (any(has_scale_observation)) standardization <- standardization[standardization$ObservationID %in% which(has_scale_observation), , drop = FALSE]
@@ -1255,6 +1265,7 @@ ScidrFinishInference <- function(output, context, frame) {
     if (context$Function == 'PlotMiningMatrix') ' Legacy adjustment includes the symmetrized table before display subsetting.' else '',
     if (any(c('Split', 'Stratum') %in% names(df_Results))) ' Separate families within each stratum.' else '')
   if (context$Function == 'PlotInteractionEffectsMatrix') family <- paste0(family, ' Interaction tests and simple-slope tests are adjusted as separate families using the same scope.')
+  if (context$Function == 'MakeUnivariateRegressionTable') family <- if (arguments$fdr_scope == 'none') 'No multiple-comparison adjustment; PValueFDR is unavailable.' else paste0(family, ' Separate families within each Group.')
   if (context$Function == 'PlotDirectionalHeatmaps') family <- paste0(family,
     ' Correlation, phi, and point-biserial blocks retain separate correction families. Mirrored point-biserial cells reuse their original adjusted values.')
   if ('TestRole' %in% names(df_Results)) family <- paste0(family,

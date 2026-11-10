@@ -18,7 +18,13 @@ PlotInteractionEffectsContinuous(
   predictorVar = lifecycle::deprecated(),
   covars = lifecycle::deprecated(),
   Pthresh = 0.05,
-  PVar = "PValue"
+  PVar = "PValue",
+  adjust = TRUE,
+  standardize = FALSE,
+  covariate_interactions = FALSE,
+  TreatOrdinalAs = "Exclude",
+  interaction_results = NULL,
+  source_formula = NULL
 )
 }
 \arguments{
@@ -59,6 +65,20 @@ Explicit \code{Pthresh} takes precedence over \code{Alpha}, \code{FDRAlpha}, \co
 its legacy adjustment method unless \code{PVar} is supplied; \code{PVar = "PValueFDR"}
 always selects BH. \code{star_p = "none"} suppresses legacy pairwise stars.
 Stars retain conventional p-value tiers within the requested cutoff.}
+
+\item{adjust}{Display model-based covariate-adjusted partial residuals.}
+
+\item{standardize}{Use pooled model-sample SD units for both axes.}
+
+\item{covariate_interactions}{Allow moderator-specific covariate effects.}
+
+\item{TreatOrdinalAs}{Ordinal treatment passed to PlotInteractionEffectsMatrix.}
+
+\item{interaction_results}{Optional source interaction row, retaining its
+original multiple-testing q-value in the annotation.}
+
+\item{source_formula}{Optional stored matrix formula; validated against the
+supplied model specification and used for adjusted displays.}
 }
 \value{
 A ggplot object showing the interaction effect
@@ -71,8 +91,8 @@ and outcome variable, moderated by either a continuous or categorical variable.
 For categorical moderators, separate regression lines are plotted for each category.
 For continuous moderators, regression lines are plotted at the mean and +/- 1 SD.
 
-The subtitle shows the p-value for the interaction term.
-The caption lists any covariates included in the model.
+Model-based partial residuals preserve the fitted interaction slopes.
+Ribbons show 95\% confidence intervals for the displayed model component.
 
 Variable labels are used if available in the data frame.
 }

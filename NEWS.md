@@ -1,5 +1,16 @@
 # SciDataReportR 21.20.0
 
+* `plotSigInteractions()` selects interaction pairs from matrix Results and
+  Metadata and reuses `PlotInteractionEffectsContinuous()` for model-based
+  partial-residual displays, pooled SD axes, confidence ribbons, and slope
+  annotations. Optional patchwork layouts are returned as attributes.
+
+* `MakeUnivariateRegressionTable()` supports categorical stratification,
+  optional group-adjusted pooled models, pooled-SD scaling, and optional
+  within-group BH families. `PlotForestFromTable()` dodges group estimates,
+  accepts named lists, wraps facet labels, shares requested x ranges, and can
+  annotate interaction p-values without a separate interaction plot function.
+
 * `PlotInteractionEffectsMatrix()` adds pooled-sample standardized slope
   matrices, simple-slope tests and intervals, sample counts, and optional
   moderator-specific covariate effects. Multilevel moderators use a joint

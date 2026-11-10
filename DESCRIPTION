@@ -44,6 +44,7 @@ Imports:
     tidyselect,
     viridisLite
 Suggests:
+    patchwork,
     ggalluvial,
     dynamicTreeCut,
     WGCNA,

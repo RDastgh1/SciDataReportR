@@ -5,7 +5,16 @@
 \alias{plotForestFromTable}
 \title{Create a Forest Plot from Univariate Regression Tables}
 \usage{
-PlotForestFromTable(UnivariateRegressionTables, pSize = 2, Flip = FALSE)
+PlotForestFromTable(
+  UnivariateRegressionTables,
+  pSize = 2,
+  Flip = FALSE,
+  PVar = "PValue",
+  Pthresh = 0.05,
+  show_interaction_p = FALSE,
+  facet_scales = c("fixed", "free", "free_x", "free_y"),
+  xlim = NULL
+)
 
 plotForestFromTable(UnivariateRegressionTables, pSize = 2, Flip = FALSE)
 }
@@ -23,6 +32,17 @@ recomputed if absent). Lists created by older package versions (without a
 
 \item{Flip}{Logical. If \code{FALSE}, outcomes are facets and predictors/terms
 are rows. If \code{TRUE}, predictors/terms are facets and outcomes are rows.}
+
+\item{PVar}{Significance column: "PValue" (default) or "PValueFDR".}
+
+\item{Pthresh}{Significance cutoff, default 0.05, applied per estimate.}
+
+\item{show_interaction_p}{Annotate interaction p-values when Interaction
+rows are present; simple slopes are displayed side by side by level.}
+
+\item{facet_scales}{Facet scales: "fixed", "free", "free_x", or "free_y".}
+
+\item{xlim}{Optional two-element x-axis display range; estimates are retained.}
 }
 \value{
 A ggplot object representing the forest plot.
@@ -35,6 +55,14 @@ This function generates a forest plot from the results of
 in SciDataReportR 20.5.0 to match the package's \verb{Plot*} naming
 convention. It remains available as a backwards-compatible synonym.
 }
+\section{Grouped inputs}{
+
+Group levels are dodged within rows and coloured with SciDataPalette;
+nonsignificant estimates have reduced opacity. A named list of Results
+tables or regression outputs is bound using list names as Group labels.
+Facet labels wrap at 25 characters.
+}
+
 \section{Reading the plot}{
 
 The forest plot earns its place when several predictors are screened against
