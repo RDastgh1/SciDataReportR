@@ -22,7 +22,7 @@ test_that("interaction shading separates strength, ending sign, and reversal", {
     expect_equal(df_Result$DirectionReversal, prod(slope_pair) < 0)
     if (abs(slope_pair[1]) == abs(slope_pair[2])) {
       expect_identical(df_Result$StrengthChange, 0)
-      expect_equal(result$Unadjusted$plot$data$FillValue, 2)
+      expect_equal(result$Unadjusted$plot$data$FillValue, df_Result$SlopeDeltaStd)
     }
     expect_lt(df_Result$P, 0.05)
     expect_equal(result$Unadjusted$plot$data$FillValue,

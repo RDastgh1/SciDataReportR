@@ -727,6 +727,9 @@ ScidrFullRegressionRows <- function(output, context, frame) {
 }
 
 ScidrInferenceSource <- function(output, context, frame) {
+  # This matrix computes explicit linear-combination rows, including simple
+  # slopes; generic model coefficient extraction would discard those rows.
+  if (context$Function == 'PlotInteractionEffectsMatrix' && is.data.frame(output$Results)) return(output$Results)
   if (context$Function == 'MultivariableRegressionTable') {
     if (is.data.frame(output$Results) && nrow(output$Results)) return(output$Results)
     df_Coefficients <- ScidrFullRegressionRows(output, context, frame)
@@ -1083,6 +1086,9 @@ ScidrFinishInference <- function(output, context, frame) {
   p_column <- if (context$PVar %in% c('P', 'p', 'p.value')) 'PValue' else if (context$PVar %in% c('FDR', 'P_adj', 'p_adj')) 'PValueFDR' else context$PVar
   if (!p_column %in% names(df_Results)) stop('Requested PVar is unavailable: ', context$PVar, call. = FALSE)
   df_Results$Significant <- !is.na(df_Results[[p_column]]) & df_Results[[p_column]] < context$Pthresh
+  if (context$Function == 'PlotInteractionEffectsMatrix') {
+    df_Results$Significant <- !is.na(df_Results[[p_column]]) & df_Results[[p_column]] <= context$Pthresh
+  }
   df_Failed <- df_Results[df_Results$Status == 'failed', c('Outcome', 'Predictor', 'Group', 'Term', 'N', 'Reason'), drop = FALSE]
   df_Failed$Stage <- rep('estimation', nrow(df_Failed))
   if (nrow(adjustment_issues)) {
@@ -1222,6 +1228,7 @@ ScidrFinishInference <- function(output, context, frame) {
   if (!ncol(standardization)) standardization <- tibble::tibble(ModelID = character(), Variable = character(),
     SD = double(), Center = double(), N = double(), Scope = character())
   formula_template <- if (length(arguments$interVar)) 'outcome ~ predictor * interVar + covariates' else 'outcome ~ predictor + covariates'
+  if (context$Function == 'PlotInteractionEffectsMatrix' && isTRUE(arguments$covariate_interactions)) formula_template <- 'outcome ~ predictor * interVar + covariates * interVar'
   if (context$Function == 'MakeCoxRegressionTable') formula_template <- 'survival::Surv(time_var, event_var) ~ predictor + covariates'
   if (context$Function %in% c('PlotCorrelationsHeatmap', 'PlotSplitCorrelationHeatmap', 'PlotCorrelationComparisons', 'calculate_pathway_results')) formula_template <- 'cor(outcome, predictor); residualize both variables on covariates when supplied'
   if (context$Function == 'PlotBlandAltman') formula_template <- 'difference = Variable1 - Variable2; bias and limits of agreement'
@@ -1247,6 +1254,7 @@ ScidrFinishInference <- function(output, context, frame) {
     if (arguments$fdr_scope == 'per_outcome') 'Separate family within each outcome.' else if (arguments$fdr_scope == 'per_predictor') 'Separate family within each predictor.' else 'The returned analysis family is adjusted together.',
     if (context$Function == 'PlotMiningMatrix') ' Legacy adjustment includes the symmetrized table before display subsetting.' else '',
     if (any(c('Split', 'Stratum') %in% names(df_Results))) ' Separate families within each stratum.' else '')
+  if (context$Function == 'PlotInteractionEffectsMatrix') family <- paste0(family, ' Interaction tests and simple-slope tests are adjusted as separate families using the same scope.')
   if (context$Function == 'PlotDirectionalHeatmaps') family <- paste0(family,
     ' Correlation, phi, and point-biserial blocks retain separate correction families. Mirrored point-biserial cells reuse their original adjusted values.')
   if ('TestRole' %in% names(df_Results)) family <- paste0(family,

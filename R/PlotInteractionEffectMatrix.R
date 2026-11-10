@@ -25,6 +25,7 @@
 #'       \item D: Matrix of interaction coefficient signs
 #'       \item Slope1: Matrix of slopes at low values of interVar (mean - 1SD for continuous, reference group for categorical)
 #'       \item Slope2: Matrix of slopes at high values of interVar (mean + 1SD for continuous, comparison group for categorical)
+#'       \item Slope1Std, Slope2Std, SlopeDeltaStd: Common-scale standardized slope matrices
 #'       \item plot: ggplot object of the heatmap
 #'       \item pvaltable: P-value table in wide format
 #'     }
@@ -34,30 +35,76 @@
 #'   \item{Covariates}{Character vector of covariates used}
 #'   \item{interVar}{The interaction variable name}
 #'   \item{raw_data}{Processed data frame with all calculated values}
+#'   \item{Results}{Long-form interaction and simple-slope inference}
+#'   \item{Metadata}{Model provenance, failures, scaling, and analysis choices}
+#'   \item{SlopeDifferenceLimits}{Shared symmetric plot limits}
 #' }
 #'
 #' @details
-#' The function fits linear models of the form: outcome ~ predictor * interVar + covariates
-#' for each combination of outcome and predictor variables.
+#' Models use `outcome ~ predictor * interVar + covariates` by default.
+#' With `covariate_interactions = TRUE`, every covariate also interacts with
+#' the moderator. For categorical moderators, point estimates of group slopes
+#' then equal separate within-group linear fits on the same complete cases.
+#' Their standard errors use the pooled model residual variance, rather than
+#' separate group residual variances. The interaction test differs from the
+#' common-covariate-effects model.
 #'
-#' For continuous interaction variables, slopes are calculated at mean - 1SD and mean + 1SD.
-#' For categorical interaction variables, slopes are calculated for each category.
+#' Standardized slopes multiply raw slopes by SD(predictor)/SD(outcome).
+#' Both SDs come from all complete cases of the fitted model, pooled across
+#' groups. For continuous moderators, simple slopes are evaluated at the
+#' fitted-sample moderator mean minus/plus one SD. Standardization of the
+#' interaction coefficient uses the same predictor/outcome SD ratio; it does
+#' not multiply by the moderator SD. `SlopeDeltaStd` instead describes the
+#' difference between the two evaluated standardized slopes.
 #'
-#' The function then determines whether the interaction causes a slope reversal (opposite signs)
-#' or maintains the same direction (same signs) for the predictor-outcome relationship.
+#' `Results` contains one `Interaction` row and one `Slope: <level>` row per
+#' evaluated slope. `Estimate`, `StdError`, `ConfLow`, `ConfHigh`, and `PValue`
+#' describe raw-unit inference; `EstimateStd`, `StdErrorStd`, `ConfLowStd`, and
+#' `ConfHighStd` use the common standardization. Intervals are 95% t intervals
+#' from linear combinations of coefficients and `vcov(model)`. `N` is model N;
+#' `NGroup`, `NReference`, and `NComparison` report categorical group counts.
+#' `ModeratorValue` records continuous moderator evaluation points.
 #'
-#' Color shows the ending slope sign (blue positive, red negative). Within each
-#' hue, lighter shades indicate weakening and darker shades strengthening.
-#' Strength change is `abs(Slope2Std) - abs(Slope1Std)`, where standardized
-#' slopes multiply the original slopes by SD(predictor)/SD(outcome), calculated
-#' on the fitted model's complete cases. Both plots share symmetric strength
-#' limits, returned as `StrengthLimits`. Shades are relative to these limits.
-#' Hatching marks strict sign reversals; exactly zero slopes are not reversals.
-#' White cells are nonsignificant (or have an exactly zero ending slope);
-#' grey cells have unavailable estimates. Stars indicate interaction p-values
-#' (raw or FDR-adjusted), not significance of either individual slope.
-#' The `raw_data` result also includes `Slope1Std`, `Slope2Std`,
-#' `SlopeDeltaStd`, `StrengthChange`, `EndingDirection`, and `DirectionReversal`.
+#' Categorical moderators with more than two levels use a nested-model joint
+#' F-test for all predictor-by-moderator terms. All level slopes are returned.
+#' The plotted pair is the pair with the largest absolute slope difference;
+#' factor-level order sets reference then comparison, with ties resolved by
+#' the first pair. `ReferenceLevel`, `ComparisonLevel`, and
+#' `LargestLevelDifference` identify this contrast. The interaction row's
+#' estimate and CI describe that selected contrast, while `PValue` is the
+#' joint F-test; `ContrastPValue` reports the contrast's t-test separately.
+#' These contrast intervals are unadjusted for selecting the largest pair.
+#' For two levels, the contrast is comparison minus reference. Factor coding
+#' does not change the simple slopes or these contrasts.
+#'
+#' The matrix fill is `SlopeDeltaStd`: comparison minus reference (high minus
+#' low for continuous moderators), with a single diverging scale. Positive
+#' values are blue, negative red, and zero white. Shared symmetric limits are
+#' returned in `SlopeDifferenceLimits`. Only interaction p-values <= `Pthresh`
+#' are displayed: raw p-values in `Unadjusted`, BH-adjusted p-values in
+#' `FDRCorrected`, regardless of `PVar`. Nonsignificant cells are blank;
+#' failed models are grey and recorded with warnings in `Metadata$Failed`.
+#' A no-interactions note is displayed when no cell passes the threshold.
+#' Hatching marks strict sign reversals (zero is not a reversal); stars
+#' describe interaction significance, not significance of either slope.
+#'
+#' Existing raw-unit matrices, p-value tables, aliases, and `raw_data` columns
+#' are retained. `Slope1Std`, `Slope2Std`, and `SlopeDeltaStd` matrices are added
+#' to both result branches. For multilevel moderators these matrices describe
+#' the selected pair. `raw_data` retains `StrengthChange` as a descriptive
+#' magnitude change; it no longer controls fill. `StrengthLimits` is retained
+#' for compatibility and is distinct from the new plotted limits.
+#' Simple-slope BH corrections form a separate family from interaction tests,
+#' using the same `fdr_scope`. `Metadata$PooledScaling` records each model's SDs.
+#'
+#' @param Pthresh Interaction significance cutoff, default 0.05. Cells are
+#'   displayed when their raw (unadjusted plot) or BH-adjusted (FDR plot)
+#'   interaction p-value is less than or equal to this cutoff.
+#' @param PVar P-value column used for `Results$Significant`, default
+#'   `"PValue"`. `"PValueFDR"` uses BH-adjusted values. The named raw and FDR
+#'   matrix plots always use their respective p-value columns.
+#' @param covariate_interactions Logical, default FALSE. Interact every
+#'   covariate with the moderator, allowing moderator-specific covariate effects.
 #'
 #' @examples
 #' \donttest{
@@ -99,10 +146,11 @@
 #' results$FDRCorrected$plot
 #' }
 #'
-#' @param fdr_scope Either `"matrix"` (default) or `"per_outcome"`, passed to
-#'   [ApplyFDRCorrection()]. `"matrix"` corrects across all interaction
-#'   p-values at once (historical behavior). `"per_outcome"` corrects
-#'   separately within each outcome variable (`outcome_vars`).
+#' @param fdr_scope One of `"matrix"` (default), `"per_outcome"`, or
+#'   `"per_predictor"`, passed to [ApplyFDRCorrection()]. `"matrix"` adjusts
+#'   all interaction p-values together. `"per_outcome"` adjusts across predictor
+#'   columns separately within each outcome row. `"per_predictor"` adjusts
+#'   across outcome rows separately within each predictor column.
 #' @param Data \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
 #' @param outcomeVars \strong{Deprecated} (since 19.15.0). Use \code{outcome_vars} instead.
 #' @param predictorVars \strong{Deprecated} (since 19.15.0). Use \code{predictor_vars} instead.
@@ -114,7 +162,6 @@
 #' @importFrom tibble rownames_to_column column_to_rownames
 #' @importFrom stats lm coef p.adjust as.formula sd
 
-#' @inheritParams inference-results
 #' @section Statistical results and provenance:
 #' See [inference-results] for the shared `Results` and `Metadata` contract.
 PlotInteractionEffectsMatrix <- function(data,
@@ -131,7 +178,8 @@ PlotInteractionEffectsMatrix <- function(data,
     fdr_scope = c("matrix", "per_outcome", "per_predictor"),
     covars = lifecycle::deprecated(),
     Pthresh = 0.05,
-    PVar = "PValue") {
+    PVar = "PValue",
+    covariate_interactions = FALSE) {
   .scidr_inference <- ScidrStartInference("PlotInteractionEffectsMatrix", match.call(), environment())
   on.exit({
     if (!is.null(returnValue())) {
@@ -222,7 +270,7 @@ PlotInteractionEffectsMatrix <- function(data,
   # Check for missing values and replace with appropriate labels
   removediag <- FALSE
   if(is.null(predictorVars)){
-    predictorVars = outcomeVars
+    predictorVars <- outcomeVars
     removediag <- TRUE
   }
 
@@ -237,11 +285,20 @@ PlotInteractionEffectsMatrix <- function(data,
     }
   }
 
+  if (is.null(predictorVars)) predictorVars <- outcomeVars
+  if (interVar %in% covars) {
+    warning("Dropping interVar from covariates: the moderator is already in the model.", call. = FALSE)
+    covars <- setdiff(covars, interVar)
+  }
   # Update outcomeVars and predictorVars to exclude covariates
   if (!is.null(covars)) {
     outcomeVars <- outcomeVars[!outcomeVars %in% covars]
     predictorVars <- predictorVars[!predictorVars %in% covars]
   }
+
+  ScidrValidateVariables(Data, outcomeVars, "outcome_vars")
+  ScidrValidateVariables(Data, predictorVars, "predictor_vars")
+  ScidrValidateVariables(Data, covars, "covariates")
 
   ordinal <- ConvertOrdinalToNumeric(
     Data, unique(c(interVar, outcomeVars, predictorVars, covars)),
@@ -262,379 +319,272 @@ PlotInteractionEffectsMatrix <- function(data,
     )
   }
 
-  # Check whether the interaction variable is continuous after ordinal treatment.
+  if (!is.logical(covariate_interactions) || length(covariate_interactions) != 1L ||
+      is.na(covariate_interactions)) {
+    stop("covariate_interactions must be TRUE or FALSE.", call. = FALSE)
+  }
+  covariates <- covars
+  if (!length(outcomeVars) || !length(predictorVars)) {
+    stop("At least one outcome and predictor are required.", call. = FALSE)
+  }
   interVar_is_continuous <- is.numeric(Data[[interVar]])
+  if (!interVar_is_continuous) Data[[interVar]] <- factor(Data[[interVar]])
 
-  # Initialize matrices to store results
-  r_P <- r_C <- r_S <- r_D <- matrix(NA, nrow = length(outcomeVars), ncol = length(predictorVars))
-  r_Slope1 <- r_Slope2 <- matrix(NA, nrow = length(outcomeVars), ncol = length(predictorVars))
-
-  r_Scale <- r_Slope1
-
-  # Loop through each combination of outcome and predictor variables
-  for (i in seq_len(length(outcomeVars))) {
-    for (j in seq_len(length(predictorVars))) {
-      outcomeVar <- outcomeVars[i]
-      predictorVar <- predictorVars[j]
-
-      # Skip if outcomeVar equals predictorVar and removediag is TRUE
-      if(removediag && outcomeVar == predictorVar){
-        next
-      }
-
-      # Convert character variables to factor
-      if(is.character(Data[[outcomeVar]])){
-        Data[[outcomeVar]] <- as.factor(Data[[outcomeVar]])
-      }
-
-      if(is.character(Data[[predictorVar]])){
-        Data[[predictorVar]] <- as.factor(Data[[predictorVar]])
-      }
-
-      # Try to fit linear model, catching errors
-      tryCatch({
-        # Build formula with outcomeVar as outcome and predictorVar as predictor
-        if(is.null(covars)){
-          formula_str <- paste0("`", outcomeVar, "` ~ `", predictorVar, "` * ", interVar)
-        } else {
-          covar_terms <- paste(covars, collapse = " + ")
-          formula_str <- paste0("`", outcomeVar, "` ~ ", covar_terms, " + `", predictorVar, "` * ", interVar)
-        }
-
-        formula <- as.formula(formula_str)
-        m <- ScidrObserveInference(lm(formula, data = Data))
-
-        # Get coefficient names and summary
-        coef_names <- names(coef(m))
-        model_summary <- summary(m)
-
-        # Find main effect term
-        main_effect_term <- NULL
-        possible_main_terms <- c(
-          paste0("`", predictorVar, "`"),
-          predictorVar
-        )
-        for (term in possible_main_terms) {
-          if (term %in% coef_names) {
-            main_effect_term <- term
-            break
+  # These helpers stay local: contrasts must use this fitted model's design and
+  # covariance matrix rather than independently fitted or rescaled groups.
+  QuoteVariable <- function(variable) if (length(variable)) paste0("`", variable, "`") else character()
+  ContrastSummary <- function(weights, model, scale_factor) {
+    estimate <- sum(weights * stats::coef(model))
+    se <- sqrt(max(0, as.numeric(t(weights) %*% stats::vcov(model) %*% weights)))
+    critical <- stats::qt(0.975, stats::df.residual(model))
+    p_value <- 2 * stats::pt(abs(estimate / se), stats::df.residual(model), lower.tail = FALSE)
+    tibble::tibble(Estimate = estimate, StdError = se,
+      ConfLow = estimate - critical * se, ConfHigh = estimate + critical * se,
+      EstimateStd = estimate * scale_factor, StdErrorStd = se * scale_factor,
+      ConfLowStd = (estimate - critical * se) * scale_factor,
+      ConfHighStd = (estimate + critical * se) * scale_factor, PValue = p_value)
+  }
+  cells <- list()
+  result_rows <- list()
+  scaling_rows <- list()
+  for (outcomeVar in outcomeVars) {
+    for (predictorVar in predictorVars) {
+      cell <- tibble::tibble(Outcome = outcomeVar, Predictor = predictorVar,
+        C = NA_real_, S = NA_real_, P = NA_real_, D = NA_real_,
+        Slope1 = NA_real_, Slope2 = NA_real_, Slope1Std = NA_real_,
+        Slope2Std = NA_real_, SlopeDeltaStd = NA_real_, N = NA_real_,
+        ReferenceLevel = NA_character_, ComparisonLevel = NA_character_,
+        NReference = NA_real_, NComparison = NA_real_,
+        Status = "failed", Reason = NA_character_)
+      model_n <- NA_real_
+      if (removediag && outcomeVar == predictorVar) {
+        cell$Status <- "skipped"
+        cell$Reason <- "Self-comparison was not fitted."
+      } else {
+        fit <- tryCatch({
+          if (outcomeVar == interVar || predictorVar == interVar) {
+            stop("The moderator must differ from the outcome and predictor.")
           }
-        }
-
-        # Find interaction term - be more flexible with pattern matching
-        interaction_term <- NULL
-
-        # Look for any coefficient that contains both the predictor and interVar
-        for (coef_name in coef_names) {
-          # Check if this coefficient contains both variable names
-          contains_predictor <- grepl(predictorVar, coef_name, fixed = TRUE)
-          contains_intervar <- grepl(interVar, coef_name, fixed = TRUE)
-          contains_colon <- grepl(":", coef_name, fixed = TRUE)
-
-          if (contains_predictor && contains_intervar && contains_colon) {
-            interaction_term <- coef_name
-            break
+          if (!is.numeric(Data[[outcomeVar]]) || !is.numeric(Data[[predictorVar]])) {
+            stop("Interaction slopes require numeric outcomes and predictors.")
           }
-        }
-
-        if (!is.null(interaction_term) && !is.null(main_effect_term)) {
-          # Get coefficients
-          main_effect <- coef(m)[main_effect_term]
-          interC <- coef(m)[interaction_term]
-          interP <- model_summary$coefficients[interaction_term, "Pr(>|t|)"]
-
-          # Calculate slopes based on whether interVar is continuous or categorical
-          if (interVar_is_continuous) {
-            # For continuous interVar, calculate simple slopes at mean +/- 1SD
-            interVar_mean <- mean(Data[[interVar]], na.rm = TRUE)
-            interVar_sd <- sd(Data[[interVar]], na.rm = TRUE)
-
-            # Simple slopes at -1SD and +1SD
-            slope1 <- main_effect + interC * (interVar_mean - interVar_sd)
-            slope2 <- main_effect + interC * (interVar_mean + interVar_sd)
-          } else {
-            # For categorical interVar, slopes for reference and comparison groups
-            slope1 <- main_effect  # Reference group
-            slope2 <- main_effect + interC  # Other group
+          vars_Model <- unique(c(outcomeVar, predictorVar, interVar, covars))
+          df_Complete <- Data[stats::complete.cases(Data[, vars_Model, drop = FALSE]),
+                              vars_Model, drop = FALSE]
+          model_n <- nrow(df_Complete)
+          if (model_n < 3L) stop("Insufficient complete observations.")
+          if (!interVar_is_continuous) {
+            df_Complete[[interVar]] <- droplevels(df_Complete[[interVar]])
+            if (nlevels(df_Complete[[interVar]]) < 2L) stop("Moderator has fewer than two observed levels.")
           }
-
-          # Use the same complete cases as the fitted model for both SDs.
+          covar_terms <- QuoteVariable(setdiff(covars, c(outcomeVar, predictorVar)))
+          if (covariate_interactions && length(covar_terms)) covar_terms <- paste(covar_terms, "*", QuoteVariable(interVar))
+          rhs <- c(paste(QuoteVariable(predictorVar), "*", QuoteVariable(interVar)), covar_terms)
+          formula <- stats::as.formula(paste(QuoteVariable(outcomeVar), "~", paste(rhs, collapse = " + ")))
+          m <- ScidrObserveInference(stats::lm(formula, data = df_Complete))
+          if (anyNA(stats::coef(m)) || stats::df.residual(m) <= 0L) {
+            stop("Model is rank deficient or has no residual degrees of freedom.")
+          }
           df_Model <- stats::model.frame(m)
-          r_Scale[i, j] <- stats::sd(df_Model[[predictorVar]]) /
-            stats::sd(df_Model[[outcomeVar]])
+          scale_factor <- stats::sd(df_Model[[predictorVar]]) / stats::sd(df_Model[[outcomeVar]])
+          if (!is.finite(scale_factor) || scale_factor <= 0) stop("Model-sample SDs must be finite and positive.")
 
-          # Store slopes
-          r_Slope1[i, j] <- slope1
-          r_Slope2[i, j] <- slope2
+          # Identify the exact predictor-by-moderator term through terms/assign.
+          model_terms <- stats::terms(m)
+          term_factors <- attr(model_terms, "factors")
+          term_variables <- lapply(rownames(term_factors), function(x) all.vars(str2lang(x)))
+          interaction_id <- which(vapply(seq_len(ncol(term_factors)), function(k) {
+            variables <- unlist(term_variables[term_factors[, k] > 0], use.names = FALSE)
+            setequal(variables, c(predictorVar, interVar))
+          }, logical(1)))
+          design <- stats::model.matrix(m)
+          interaction_columns <- which(attr(design, "assign") %in% interaction_id)
+          if (!length(interaction_columns)) stop("Predictor-by-moderator interaction is not estimable.")
 
-          # Determine if slopes have same or opposite signs
-          same_direction <- (sign(slope1) == sign(slope2))
-
-          # Direction based on interaction coefficient sign
-          interD <- sign(interC)
-
-          # Slope reversal indicator
-          if (same_direction) {
-            interS <- 1  # Same direction
+          if (interVar_is_continuous) {
+            mod_mean <- mean(df_Model[[interVar]])
+            mod_sd <- stats::sd(df_Model[[interVar]])
+            moderator_values <- c(mod_mean - mod_sd, mod_mean + mod_sd)
+            slope_labels <- c("Mean - 1 SD", "Mean + 1 SD")
+            group_n <- rep(NA_real_, 2)
           } else {
-            interS <- -1  # Reversed direction
+            moderator_values <- levels(df_Model[[interVar]])
+            slope_labels <- moderator_values
+            group_n <- as.numeric(table(df_Model[[interVar]]))
           }
-
+          slope_weights <- lapply(moderator_values, function(value) {
+            # A unit change in predictor yields its derivative for this linear
+            # model, independent of covariate values and factor contrast coding.
+            df_New <- df_Model[rep(1L, 2L), , drop = FALSE]
+            df_New[[predictorVar]] <- c(0, 1)
+            if (interVar_is_continuous) df_New[[interVar]] <- rep(value, 2) else {
+              df_New[[interVar]] <- factor(rep(value, 2), levels = m$xlevels[[interVar]])
+            }
+            new_design <- stats::model.matrix(stats::delete.response(model_terms),
+              df_New, contrasts.arg = m$contrasts, xlev = m$xlevels)
+            unname(new_design[2, ] - new_design[1, ])
+          })
+          df_Slopes <- dplyr::bind_rows(lapply(slope_weights, ContrastSummary,
+            model = m, scale_factor = scale_factor))
+          # Preserve factor-level order when orienting a selected pair.
+          pair_indices <- utils::combn(seq_along(slope_labels), 2)
+          pair_delta <- df_Slopes$Estimate[pair_indices[2, ]] - df_Slopes$Estimate[pair_indices[1, ]]
+          selected_pair <- if (length(slope_labels) == 2L) 1L else which.max(abs(pair_delta))
+          reference <- pair_indices[1, selected_pair]
+          comparison <- pair_indices[2, selected_pair]
+          delta_weights <- slope_weights[[comparison]] - slope_weights[[reference]]
+          if (interVar_is_continuous) {
+            interaction_weights <- numeric(ncol(design))
+            interaction_weights[interaction_columns] <- 1
+          } else interaction_weights <- delta_weights
+          df_Interaction <- ContrastSummary(interaction_weights, m, scale_factor)
+          contrast_p <- df_Interaction$PValue
+          joint_f <- joint_df <- NA_real_
+          if (!interVar_is_continuous && length(slope_labels) > 2L) {
+            reduced_terms <- stats::drop.terms(model_terms, interaction_id, keep.response = TRUE)
+            reduced <- stats::lm(stats::formula(reduced_terms), data = df_Complete)
+            joint <- stats::anova(reduced, m)
+            df_Interaction$PValue <- joint$`Pr(>F)`[2]
+            joint_f <- joint$F[2]
+            joint_df <- joint$Df[2]
+          }
+          if (!is.finite(df_Interaction$PValue)) stop("Interaction test returned no finite p-value.")
+          df_Interaction$Term <- "Interaction"
+          df_Interaction$Level <- NA_character_
+          df_Interaction$NGroup <- NA_real_
+          df_Interaction$ContrastPValue <- contrast_p
+          df_Interaction$JointF <- joint_f
+          df_Interaction$JointDF <- joint_df
+          df_Interaction$Test <- if (is.finite(joint_f)) "Joint interaction F-test" else "Interaction t-test"
+          df_Slopes$Term <- paste0("Slope: ", slope_labels)
+          df_Slopes$Level <- slope_labels
+          df_Slopes$NGroup <- group_n
+          df_Slopes$ModeratorValue <- if (interVar_is_continuous) moderator_values else NA_real_
+          df_Slopes$Test <- "Simple-slope t-test"
+          df_Rows <- dplyr::bind_rows(df_Interaction, df_Slopes)
+          df_Rows$Outcome <- outcomeVar
+          df_Rows$Predictor <- predictorVar
+          df_Rows$Group <- "Pooled"
+          df_Rows$N <- nrow(df_Model)
+          df_Rows$ReferenceLevel <- slope_labels[reference]
+          df_Rows$ComparisonLevel <- slope_labels[comparison]
+          df_Rows$NReference <- group_n[reference]
+          df_Rows$NComparison <- group_n[comparison]
+          df_Rows$LargestLevelDifference <- (df_Slopes$Estimate[comparison] - df_Slopes$Estimate[reference]) * scale_factor
+          df_Rows$Status <- "ok"
+          df_Rows$Reason <- NA_character_
+          df_Rows$EffectType <- ifelse(df_Rows$Term == "Interaction", "Interaction", "Simple slope")
+          df_Rows$TermLabel <- df_Rows$Term
+          cell$C <- df_Interaction$Estimate
+          cell$P <- df_Interaction$PValue
+          cell$Slope1 <- df_Slopes$Estimate[reference]
+          cell$Slope2 <- df_Slopes$Estimate[comparison]
+          cell$Slope1Std <- df_Slopes$EstimateStd[reference]
+          cell$Slope2Std <- df_Slopes$EstimateStd[comparison]
+          cell$SlopeDeltaStd <- cell$Slope2Std - cell$Slope1Std
+          cell$S <- ifelse(sign(cell$Slope1) == sign(cell$Slope2), 1, -1)
+          cell$D <- sign(cell$C)
+          cell$N <- nrow(df_Model)
+          cell$ReferenceLevel <- slope_labels[reference]
+          cell$ComparisonLevel <- slope_labels[comparison]
+          cell$NReference <- group_n[reference]
+          cell$NComparison <- group_n[comparison]
+          cell$Status <- "ok"
+          list(Rows = df_Rows, Scale = tibble::tibble(Outcome = outcomeVar,
+            Predictor = predictorVar, PredictorSD = stats::sd(df_Model[[predictorVar]]),
+            OutcomeSD = stats::sd(df_Model[[outcomeVar]]), N = nrow(df_Model)))
+        }, error = function(err) err)
+        if (inherits(fit, "error")) {
+          cell$Reason <- conditionMessage(fit)
+          cell$N <- model_n
+          ScidrRecordInferenceFailure(outcomeVar, predictorVar, cell$Reason, model_n)
         } else {
-          interC <- NA
-          interP <- NA
-          interS <- NA
-          interD <- NA
+          result_rows[[length(result_rows) + 1L]] <- fit$Rows
+          scaling_rows[[length(scaling_rows) + 1L]] <- fit$Scale
         }
-
-        # Store results in matrices
-        r_P[i, j] <- interP
-        r_C[i, j] <- interC
-        r_S[i, j] <- interS
-        r_D[i, j] <- interD
-
-      }, error = function(err) {
-        # If an error occurred, set results to NA
-        r_P[i, j] <- NA
-        r_C[i, j] <- NA
-        r_S[i, j] <- NA
-        r_D[i, j] <- NA
-        r_Slope1[i, j] <- NA
-        r_Slope2[i, j] <- NA
-      })
+      }
+      cells[[length(cells) + 1L]] <- cell
     }
   }
-
-  rownames(r_C) <- outcomeVars
-  colnames(r_C) <- predictorVars
-  rownames(r_P) <- outcomeVars
-  colnames(r_P) <- predictorVars
-  rownames(r_S) <- outcomeVars
-  colnames(r_S) <- predictorVars
-  rownames(r_D) <- outcomeVars
-  colnames(r_D) <- predictorVars
-  rownames(r_Slope1) <- outcomeVars
-  colnames(r_Slope1) <- predictorVars
-  rownames(r_Slope2) <- outcomeVars
-  colnames(r_Slope2) <- predictorVars
-
-  # Convert matrices to data frames and add variable names
-  m_r_C <- r_C %>%
-    as.data.frame() %>%
-    rownames_to_column(var = "Outcome") %>%
-    tidyr::pivot_longer(cols = dplyr::all_of(predictorVars), names_to = "Predictor", values_to = "C")
-
-  m_r_P <- r_P %>%
-    as.data.frame() %>%
-    rownames_to_column(var = "Outcome") %>%
-    tidyr::pivot_longer(cols = dplyr::all_of(predictorVars), names_to = "Predictor", values_to = "P")
-
-  m_r_S <- r_S %>% as.data.frame() %>%
-    rownames_to_column(var = "Outcome") %>%
-    tidyr::pivot_longer(cols = dplyr::all_of(predictorVars), names_to = "Predictor", values_to = "S")
-
-  m_r_D <- r_D %>%
-    as.data.frame() %>%
-    rownames_to_column(var = "Outcome") %>%
-    tidyr::pivot_longer(cols = dplyr::all_of(predictorVars), names_to = "Predictor", values_to = "D")
-
-  m_r_Slope1 <- r_Slope1 %>%
-    as.data.frame() %>%
-    rownames_to_column(var = "Outcome") %>%
-    tidyr::pivot_longer(cols = dplyr::all_of(predictorVars), names_to = "Predictor", values_to = "Slope1")
-
-  m_r_Slope2 <- r_Slope2 %>%
-    as.data.frame() %>%
-    rownames_to_column(var = "Outcome") %>%
-    tidyr::pivot_longer(cols = dplyr::all_of(predictorVars), names_to = "Predictor", values_to = "Slope2")
-
-  # Join all data frames
-  m_G <- left_join(m_r_C, m_r_P, by = c("Outcome", "Predictor")) %>%
-    left_join(m_r_S, by = c("Outcome", "Predictor")) %>%
-    left_join(m_r_D, by = c("Outcome", "Predictor")) %>%
-    left_join(m_r_Slope1, by = c("Outcome", "Predictor")) %>%
-    left_join(m_r_Slope2, by = c("Outcome", "Predictor"))
-
-  m_G$P_Selected <- ScidrInferenceP(m_G$P, ApplyFDRCorrection(m_G$P,
-    fdr_scope = fdr_scope, outcome_ids = m_G$Outcome, predictor_ids = m_G$Predictor))
-
-  # Create significance and direction categories
-  m_G$sign <- "ns"  # Default to non-significant
-  m_G$sign[is.na(m_G$P)] <- "na"  # Set NA values
-
-  # Use custom function for significance stars
-  m_G$sig <- get_significance_stars(m_G$P_Selected)
-
-  # For significant interactions, determine direction and create gradient categories
-  sig_mask <- !is.na(m_G$P_Selected) & m_G$P_Selected <= Pthresh
-
-  # Same direction (blue gradient)
-  same_sign_mask <- sig_mask & m_G$S == 1
-  m_G$sign[same_sign_mask & m_G$P <= 0.001] <- "same ***"
-  m_G$sign[same_sign_mask & m_G$P > 0.001 & m_G$P <= 0.01] <- "same **"
-  m_G$sign[same_sign_mask & m_G$P > 0.01 & m_G$P <= 0.05] <- "same *"
-
-  # Reversed direction (red gradient)
-  diff_sign_mask <- sig_mask & m_G$S == -1
-  m_G$sign[diff_sign_mask & m_G$P <= 0.001] <- "reversed ***"
-  m_G$sign[diff_sign_mask & m_G$P > 0.001 & m_G$P <= 0.01] <- "reversed **"
-  m_G$sign[diff_sign_mask & m_G$P > 0.01 & m_G$P <= 0.05] <- "reversed *"
-
-  # Factor with proper levels
-  m_G$sign <- factor(m_G$sign,
-                     levels = c("reversed ***", "reversed **", "reversed *",
-                                "ns",
-                                "same *", "same **", "same ***",
-                                "na"))
-
-  # Create combined sign and significance
-  m_G$sigsign <- paste(as.character(m_G$sign), as.character(m_G$sig))
-  m_G$sigsign <- trimws(m_G$sigsign)
-
-  ## FDR correction for r_P
-  # Outcomes are the outcome variables (Outcome column) for "per_outcome".
-  if (any(!is.na(m_G$P))) {
-    m_G$P_FDR <- ApplyFDRCorrection(
-      m_G$P,
-      fdr_scope = fdr_scope,
-      outcome_ids = m_G$Outcome,
-      predictor_ids = m_G$Predictor
-    )
-  } else {
-    m_G$P_FDR <- NA
-  }
-
-  # Repeat for FDR corrected values
-  m_G$sign_FDR <- "ns"
-  m_G$sign_FDR[is.na(m_G$P_FDR)] <- "na"
-
-  sig_mask_fdr <- !is.na(m_G$P_FDR) & m_G$P_FDR <= 0.05
-
-  # Same direction (blue gradient) - FDR
-  same_sign_mask_fdr <- sig_mask_fdr & m_G$S == 1
-  m_G$sign_FDR[same_sign_mask_fdr & m_G$P_FDR <= 0.001] <- "same ***"
-  m_G$sign_FDR[same_sign_mask_fdr & m_G$P_FDR > 0.001 & m_G$P_FDR <= 0.01] <- "same **"
-  m_G$sign_FDR[same_sign_mask_fdr & m_G$P_FDR > 0.01 & m_G$P_FDR <= 0.05] <- "same *"
-
-  # Reversed direction (red gradient) - FDR
-  diff_sign_mask_fdr <- sig_mask_fdr & m_G$S == -1
-  m_G$sign_FDR[diff_sign_mask_fdr & m_G$P_FDR <= 0.001] <- "reversed ***"
-  m_G$sign_FDR[diff_sign_mask_fdr & m_G$P_FDR > 0.001 & m_G$P_FDR <= 0.01] <- "reversed **"
-  m_G$sign_FDR[diff_sign_mask_fdr & m_G$P_FDR > 0.01 & m_G$P_FDR <= 0.05] <- "reversed *"
-
-  m_G$sign_FDR <- factor(m_G$sign_FDR,
-                         levels = c("reversed ***", "reversed **", "reversed *",
-                                    "ns",
-                                    "same *", "same **", "same ***",
-                                    "na"))
-
+  m_G <- dplyr::bind_rows(cells)
+  m_G$P_FDR <- ApplyFDRCorrection(m_G$P, fdr_scope = fdr_scope,
+    outcome_ids = m_G$Outcome, predictor_ids = m_G$Predictor)
+  m_G$P_Selected <- ScidrInferenceP(m_G$P, m_G$P_FDR)
+  m_G$sig <- get_significance_stars(m_G$P)
   m_G$sig_FDR <- get_significance_stars(m_G$P_FDR)
-
-  ## add labels
-  if (Relabel && requireNamespace("sjlabelled", quietly = TRUE)) {
-    Data <- ReplaceMissingLabels(Data)
-
-    outcomelabels <- data.frame(
-      Variable = unique(m_G$Outcome),
-      label = sjlabelled::get_label(Data[unique(m_G$Outcome)], def.value = unique(m_G$Outcome))
-    )
-
-    predictorlabels <- data.frame(
-      Variable = unique(m_G$Predictor),
-      label = sjlabelled::get_label(Data[unique(m_G$Predictor)], def.value = unique(m_G$Predictor))
-    )
-
-    m_G <- m_G %>%
-      left_join(outcomelabels, by = c("Outcome" = "Variable")) %>%
-      dplyr::rename(OutcomeLabel = label) %>%
-      left_join(predictorlabels, by = c("Predictor" = "Variable")) %>%
-      dplyr::rename(PredictorLabel = label)
-  } else {
-    m_G$OutcomeLabel <- m_G$Outcome
-    m_G$PredictorLabel <- m_G$Predictor
-  }
-
-  # Clean labels - remove suffixes
-  m_G$OutcomeLabel <- gsub("_hr_w|_mean_w|_w", "", m_G$OutcomeLabel)
-  m_G$PredictorLabel <- gsub("_log_w|_w", "", m_G$PredictorLabel)
-
-  m_G$OutcomeLabel <- factor(m_G$OutcomeLabel, ordered = FALSE,
-                             levels = rev(unique(m_G$OutcomeLabel)))
-  m_G$PredictorLabel <- factor(m_G$PredictorLabel, ordered = FALSE,
-                               levels = unique(m_G$PredictorLabel))
-
-  # Create plot text
-  if (interVar_is_continuous) {
-    interVar_mean <- mean(Data[[interVar]], na.rm = TRUE)
-    interVar_sd <- sd(Data[[interVar]], na.rm = TRUE)
-    slope_description <- paste0("Slope at ", interVar, " = ", round(interVar_mean - interVar_sd, 1),
-                                ": ", round(m_G$Slope1, 3),
-                                "\nSlope at ", interVar, " = ", round(interVar_mean + interVar_sd, 1),
-                                ": ", round(m_G$Slope2, 3))
-  } else {
-    slope_description <- paste0("Slope 1: ", round(m_G$Slope1, 3),
-                                "\nSlope 2: ", round(m_G$Slope2, 3))
-  }
-
-  m_G$PlotText <- paste("Outcome:", m_G$Outcome, "\nPredictor:", m_G$Predictor,
-                        "\n", slope_description,
-                        "\nInteraction Coef:", round(m_G$C, 4),
-                        "\nP-Value:", round(m_G$P, 4), m_G$sig,
-                        "\nFDR-corrected P:", round(m_G$P_FDR, 4), m_G$sig_FDR)
-
-  # Standardization uses one pooled model-sample SD ratio for both slopes.
-  m_G$Slope1Std <- m_G$Slope1 * as.vector(t(r_Scale))
-  m_G$Slope2Std <- m_G$Slope2 * as.vector(t(r_Scale))
-  m_G$SlopeDeltaStd <- m_G$Slope2Std - m_G$Slope1Std
+  # Retain the previous descriptive raw_data columns for downstream code.
+  m_G$sign <- ifelse(is.na(m_G$P), "na", ifelse(m_G$P > Pthresh, "ns",
+    paste(ifelse(m_G$S == 1, "same", "reversed"), m_G$sig)))
+  m_G$sign_FDR <- ifelse(is.na(m_G$P_FDR), "na", ifelse(m_G$P_FDR > Pthresh, "ns",
+    paste(ifelse(m_G$S == 1, "same", "reversed"), m_G$sig_FDR)))
+  m_G$sigsign <- trimws(paste(m_G$sign, m_G$sig))
   m_G$StrengthChange <- abs(m_G$Slope2Std) - abs(m_G$Slope1Std)
-  # Remove floating-point noise for equal-magnitude slopes.
-  unchanged <- is.finite(m_G$StrengthChange) &
-    abs(m_G$StrengthChange) <= 1e-12 * pmax(1, abs(m_G$Slope1Std), abs(m_G$Slope2Std))
+  unchanged <- is.finite(m_G$StrengthChange) & abs(m_G$StrengthChange) <=
+    1e-12 * pmax(1, abs(m_G$Slope1Std), abs(m_G$Slope2Std))
   m_G$StrengthChange[unchanged] <- 0
   m_G$DirectionReversal <- m_G$Slope1 * m_G$Slope2 < 0
-  m_G$EndingDirection <- ifelse(m_G$Slope2 > 0, "Positive",
-                                ifelse(m_G$Slope2 < 0, "Negative", "Zero"))
-  m_G$PlotText <- paste0(m_G$PlotText,
-    "\nStandardized slopes: ", round(m_G$Slope1Std, 3), " -> ",
-    round(m_G$Slope2Std, 3), "\nChange in strength: ", round(m_G$StrengthChange, 3))
+  m_G$EndingDirection <- ifelse(m_G$Slope2 > 0, "Positive", ifelse(m_G$Slope2 < 0, "Negative", "Zero"))
+  DisplayLabels <- function(variables) {
+    if (Relabel) unname(ScidrDisplayLabels(Data, variables)) else variables
+  }
+  m_G$OutcomeLabel <- factor(DisplayLabels(m_G$Outcome), levels = rev(unique(DisplayLabels(outcomeVars))))
+  m_G$PredictorLabel <- factor(DisplayLabels(m_G$Predictor), levels = unique(DisplayLabels(predictorVars)))
+  m_G$PlotText <- paste0("Outcome: ", m_G$OutcomeLabel, "\nPredictor: ", m_G$PredictorLabel,
+    "\n", m_G$ReferenceLevel, ": ", signif(m_G$Slope1Std, 3),
+    "\n", m_G$ComparisonLevel, ": ", signif(m_G$Slope2Std, 3),
+    "\nStandardized slope difference: ", signif(m_G$SlopeDeltaStd, 3),
+    "\nInteraction p: ", signif(m_G$P, 3), "\nFDR p: ", signif(m_G$P_FDR, 3))
 
+  df_Results <- dplyr::bind_rows(result_rows)
+  df_Failed <- m_G[m_G$Status != "ok", , drop = FALSE] %>%
+    dplyr::transmute(Outcome, Predictor, Term = "Interaction", Group = "Pooled",
+      Estimate = NA_real_, StdError = NA_real_, ConfLow = NA_real_, ConfHigh = NA_real_,
+      EstimateStd = NA_real_, StdErrorStd = NA_real_, ConfLowStd = NA_real_, ConfHighStd = NA_real_,
+      PValue = NA_real_, N, NGroup = NA_real_, ReferenceLevel, ComparisonLevel,
+      NReference, NComparison, Status, Reason)
+  df_Results <- dplyr::bind_rows(df_Results, df_Failed)
+  cell_keys <- paste(m_G$Outcome, m_G$Predictor, sep = "\r")
+  row_indices <- match(paste(df_Results$Outcome, df_Results$Predictor, sep = "\r"), cell_keys)
+  df_Results$OutcomeLabel <- as.character(m_G$OutcomeLabel[row_indices])
+  df_Results$PredictorLabel <- as.character(m_G$PredictorLabel[row_indices])
+  df_Results$PValueFDR <- NA_real_
+  interaction_rows <- df_Results$Term == "Interaction"
+  df_Results$PValueFDR[interaction_rows] <- m_G$P_FDR[row_indices[interaction_rows]]
+  # Simple-slope tests form a separate family, never inflating interaction FDR.
+  slope_rows <- which(!interaction_rows)
+  if (length(slope_rows)) df_Results$PValueFDR[slope_rows] <- ApplyFDRCorrection(
+    df_Results$PValue[slope_rows], fdr_scope = fdr_scope,
+    outcome_ids = df_Results$Outcome[slope_rows], predictor_ids = df_Results$Predictor[slope_rows])
+
+  slope_limit <- max(abs(m_G$SlopeDeltaStd[is.finite(m_G$SlopeDeltaStd)]), 0)
+  if (slope_limit == 0) slope_limit <- 1
   strength_limit <- max(abs(m_G$StrengthChange[is.finite(m_G$StrengthChange)]), 0)
   if (strength_limit == 0) strength_limit <- 1
+  if (interVar_is_continuous) {
+    direction_label <- "More positive at high moderator (+) / low moderator (-)"
+  } else if (nlevels(Data[[interVar]]) == 2L) {
+    group_labels <- levels(Data[[interVar]])
+    direction_label <- paste0("More positive in ", group_labels[2], " (+) / ", group_labels[1], " (-)")
+  } else direction_label <- "Largest level difference: comparison (+) / reference (-); see Results"
 
-  # Two continuous hue ramps share the same strength-change limits. Zero is
-  # reserved for nonsignificant cells; +/-2 are unchanged-strength midpoints.
-  colors <- c("#99000D", "#EF6548", "#FEE5D9", "white",
-              "#DEEBF7", "#4292C6", "#084594")
-  BuildStrengthPlot <- function(p_column, star_column) {
+  BuildDifferencePlot <- function(p_column, star_column) {
     df_Plot <- m_G
-    significant <- !is.na(df_Plot[[p_column]]) & df_Plot[[p_column]] <= Pthresh
-    available <- is.finite(df_Plot$StrengthChange) & !is.na(df_Plot[[p_column]])
+    available <- df_Plot$Status == "ok" & is.finite(df_Plot$SlopeDeltaStd) & is.finite(df_Plot[[p_column]])
+    display <- available & df_Plot[[p_column]] <= Pthresh
     df_Plot$FillValue <- NA_real_
-    df_Plot$FillValue[available] <- 0
-    display <- significant & available
-    df_Plot$FillValue[display] <- ifelse(df_Plot$Slope2[display] < 0, -1, 1) *
-      (2 + df_Plot$StrengthChange[display] / strength_limit)
-    df_Plot$FillValue[display & df_Plot$Slope2 == 0] <- 0
-    df_Plot$Stars <- df_Plot[[star_column]]
-    df_Plot$Stars[!available] <- ""
-
-    plot <- ggplot2::ggplot(df_Plot,
-      ggplot2::aes(x = PredictorLabel, y = OutcomeLabel, fill = .data$FillValue)) +
-      ggplot2::geom_tile(colour = "white", linewidth = 0.4) +
-      ggplot2::scale_fill_gradientn(
-        colours = colors, values = c(0, 1/6, 2/6, 0.5, 4/6, 5/6, 1),
-        limits = c(-3, 3), breaks = c(-3, -2, -1, 0, 1, 2, 3),
-        labels = c(paste0("Negative: +", signif(strength_limit, 3)), "Negative: 0",
-                   paste0("Negative: ", signif(-strength_limit, 3)),
-                   "Not significant / zero slope",
-                   paste0("Positive: ", signif(-strength_limit, 3)), "Positive: 0",
-                   paste0("Positive: +", signif(strength_limit, 3))),
-        na.value = "#BDBDBD", name = "Ending slope / strength change")
-
-    # Draw clipped diagonal segments directly: hatching needs no extra package.
-    df_Reversals <- df_Plot[display & !is.na(df_Plot$DirectionReversal) &
-                              df_Plot$DirectionReversal, , drop = FALSE]
-    if (nrow(df_Reversals) > 0) {
+    df_Plot$FillValue[display] <- df_Plot$SlopeDeltaStd[display]
+    df_Plot$Stars <- ifelse(display, df_Plot[[star_column]], "")
+    plot <- ggplot2::ggplot(df_Plot, ggplot2::aes(x = PredictorLabel, y = OutcomeLabel)) +
+      ggplot2::geom_tile(fill = "white", colour = "white", linewidth = 0.4) +
+      ggplot2::geom_tile(data = df_Plot[df_Plot$Status == "failed", , drop = FALSE],
+                        fill = "#BDBDBD", colour = "white", linewidth = 0.4) +
+      ggplot2::geom_tile(data = df_Plot[display, , drop = FALSE],
+        ggplot2::aes(fill = FillValue), colour = "white", linewidth = 0.4) +
+      ggplot2::scale_fill_gradient2(low = "#B2182B", mid = "white", high = "#2166AC",
+        midpoint = 0, limits = c(-slope_limit, slope_limit),
+        name = paste0("Slope difference (SD per SD)\n", direction_label))
+    df_Reversals <- df_Plot[display & !is.na(df_Plot$DirectionReversal) & df_Plot$DirectionReversal, , drop = FALSE]
+    if (nrow(df_Reversals)) {
       df_Hatching <- df_Reversals[rep(seq_len(nrow(df_Reversals)), each = 5), ]
       offsets <- rep(seq(-0.64, 0.64, length.out = 5), nrow(df_Reversals))
       cell_x <- as.numeric(df_Hatching$PredictorLabel)
@@ -644,68 +594,46 @@ PlotInteractionEffectsMatrix <- function(data,
       df_Hatching$YStart <- cell_y + pmax(-0.46, -0.46 + offsets)
       df_Hatching$YEnd <- cell_y + pmin(0.46, 0.46 + offsets)
       plot <- plot + ggplot2::geom_segment(data = df_Hatching,
-        ggplot2::aes(x = .data$XStart, xend = .data$XEnd, y = .data$YStart, yend = .data$YEnd,
-                     linetype = "Sign reversal"),
+        ggplot2::aes(x = XStart, xend = XEnd, y = YStart, yend = YEnd, linetype = "Sign reversal"),
         inherit.aes = FALSE, colour = "black", linewidth = 0.25, alpha = 0.6) +
-        ggplot2::scale_linetype_manual(values = c("Sign reversal" = "solid"),
-                                      name = "Hatching")
+        ggplot2::scale_linetype_manual(values = c("Sign reversal" = "solid"), name = "Hatching")
     }
-    plot + ggplot2::geom_text(ggplot2::aes(label = .data$Stars), size = 4) +
-      ggplot2::theme_minimal() +
-      ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, hjust = 1),
-                     panel.grid = ggplot2::element_blank()) +
-      ggplot2::labs(x = NULL, y = NULL)
+    if (!any(display)) {
+      note <- paste0("No interactions with ", if (p_column == "P_FDR") "FDR p" else "p", " <= ", Pthresh)
+      plot <- plot + ggplot2::annotate("label", x = (length(levels(df_Plot$PredictorLabel)) + 1)/2,
+        y = (length(levels(df_Plot$OutcomeLabel)) + 1)/2, label = note)
+    }
+    plot + ggplot2::geom_text(ggplot2::aes(label = Stars), size = 4) +
+      ggplot2::theme_minimal() + ggplot2::theme(
+        axis.text.x = ggplot2::element_text(angle = 45, hjust = 1),
+        panel.grid = ggplot2::element_blank()) + ggplot2::labs(x = NULL, y = NULL)
   }
-  p <- BuildStrengthPlot("P_Selected", "sig")
-  p_FDR <- BuildStrengthPlot("P_FDR", "sig_FDR")
-
-  # Create p-value tables
-  pvaltable <- m_G %>%
-    dplyr::select(Outcome, Predictor, P) %>%
+  MakeMatrix <- function(column) {
+    matrix(m_G[[column]], nrow = length(outcomeVars), byrow = TRUE,
+           dimnames = list(outcomeVars, predictorVars))
+  }
+  M <- lapply(c("C", "S", "P", "D", "Slope1", "Slope2", "Slope1Std", "Slope2Std", "SlopeDeltaStd"), MakeMatrix)
+  names(M) <- c("C", "S", "P", "D", "Slope1", "Slope2", "Slope1Std", "Slope2Std", "SlopeDeltaStd")
+  M$plot <- BuildDifferencePlot("P", "sig")
+  M$pvaltable <- m_G %>% dplyr::select(Outcome, Predictor, P) %>%
     tidyr::pivot_wider(names_from = Outcome, values_from = P)
-
-  pvaltable_FDR <- m_G %>%
-    dplyr::select(Outcome, Predictor, P_FDR) %>%
+  M_FDR <- M
+  M_FDR$P_adjusted <- MakeMatrix("P_FDR")
+  M_FDR$plot <- BuildDifferencePlot("P_FDR", "sig_FDR")
+  M_FDR$pvaltable <- m_G %>% dplyr::select(Outcome, Predictor, P_FDR) %>%
     tidyr::pivot_wider(names_from = Outcome, values_from = P_FDR)
-
-  # Create output list
-  M <- list()
-  M$C <- r_C
-  M$S <- r_S
-  M$P <- r_P
-  M$D <- r_D
-  M$Slope1 <- r_Slope1
-  M$Slope2 <- r_Slope2
-  M$plot <- p
-  M$pvaltable <- pvaltable
-
-  M_FDR <- list()
-  M_FDR$C <- r_C
-  M_FDR$S <- r_S
-  M_FDR$P <- r_P
-  M_FDR$D <- r_D
-  M_FDR$Slope1 <- r_Slope1
-  M_FDR$Slope2 <- r_Slope2
-  M_FDR$P_adjusted <- m_G %>%
-    dplyr::select(Outcome, Predictor, P_FDR) %>%
-    tidyr::pivot_wider(names_from = Predictor, values_from = P_FDR) %>%
-    column_to_rownames("Outcome") %>%
-    as.matrix()
-  M_FDR$plot <- p_FDR
-  M_FDR$pvaltable <- pvaltable_FDR
-
-  # Return output list
-  out <- list(
-    Unadjusted = M,
-    FDRCorrected = M_FDR,
-    Relabel = Relabel,
-    Covariates = covars,
-    interVar = interVar,
+  out <- list(Unadjusted = M, FDRCorrected = M_FDR, Relabel = Relabel,
+    Covariates = covars, interVar = interVar,
     interVar_type = ifelse(interVar_is_continuous, "continuous", "categorical"),
     StrengthLimits = c(-strength_limit, strength_limit),
-    raw_data = m_G
-  )
-  # Standardized p-value element aliases (old names kept)
+    SlopeDifferenceLimits = c(-slope_limit, slope_limit), raw_data = m_G,
+    Results = df_Results,
+    Metadata = list(PooledScaling = dplyr::bind_rows(scaling_rows),
+      ScalingDefinition = "Slope * SD(predictor) / SD(outcome), pooled fitted-model complete cases",
+      InteractionTest = if (covariate_interactions) "Moderator-specific covariate effects" else "Common covariate effects",
+      PlotPValues = c(Unadjusted = "PValue", FDRCorrected = "PValueFDR"),
+      SimpleSlopeFDRFamily = "Separate from interactions; same fdr_scope",
+      MultilevelContrast = "Largest absolute pairwise slope difference; factor-level order determines comparison minus reference"))
   out$p <- out$Unadjusted
   out$p_fdr <- out$FDRCorrected
   return(out)

@@ -160,9 +160,12 @@ test_that("all interaction terms have intervals while the matrix remains availab
   df_Test <- data.frame(y = rnorm(90), x = rnorm(90), g = factor(rep(c("A", "B", "C"), 30)))
   result <- PlotInteractionEffectsMatrix(df_Test, "g", "y", "x")
   model <- stats::lm(y ~ x * g, data = df_Test)
-  vars_Terms <- grep(":", names(stats::coef(model)), value = TRUE)
-  expect_setequal(result$Results$Term, vars_Terms)
-  expect_equal(result$Results$Estimate, unname(stats::coef(model)[result$Results$Term]))
+  expect_setequal(result$Results$Term, c("Interaction", "Slope: A", "Slope: B", "Slope: C"))
+  df_Slopes <- result$Results[result$Results$Term != "Interaction", ]
+  expect_equal(df_Slopes$Estimate, unname(c(coef(model)["x"],
+    coef(model)["x"] + coef(model)["x:gB"], coef(model)["x"] + coef(model)["x:gC"])))
+  expect_equal(result$Results$PValue[result$Results$Term == "Interaction"],
+    anova(lm(y ~ x + g, data = df_Test), model)$`Pr(>F)`[2])
   expect_true(all(!is.na(result$Results$ConfLow)))
   expect_true(all(!is.na(result$Results$ConfHigh)))
   expect_equal(result$Metadata$ModelCounts$Fit, 1L)
