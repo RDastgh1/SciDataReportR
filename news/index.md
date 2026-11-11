@@ -1,5 +1,7 @@
 # Changelog
 
+## SciDataReportR 21.23.0
+
 ## SciDataReportR 21.22.0
 
 ## SciDataReportR 21.21.0
