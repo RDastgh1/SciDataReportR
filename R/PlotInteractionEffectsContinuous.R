@@ -245,15 +245,21 @@ PlotInteractionEffectsContinuous <- function(data,
       ggplot2::scale_fill_manual(values = palette, name = labels[[interVar]])
   }
   df_Slopes <- inference$Results[inference$Results$Term != "Interaction", ]
-  slope_notes <- paste0(df_Slopes$Level, ": slope (SD/SD) = ", signif(df_Slopes$EstimateStd, 3),
-    " [", signif(df_Slopes$ConfLowStd, 3), ", ", signif(df_Slopes$ConfHighStd, 3), "]; n = ",
+  columns <- if (standardize) c("EstimateStd", "ConfLowStd", "ConfHighStd") else c("Estimate", "ConfLow", "ConfHigh")
+  units <- if (standardize) "SD/SD" else "outcome units per predictor unit"
+  slope_notes <- paste0(df_Slopes$Level, ": slope (", units, ") = ", signif(df_Slopes[[columns[1]]], 3),
+    " [", signif(df_Slopes[[columns[2]]], 3), ", ", signif(df_Slopes[[columns[3]]], 3), "]; n = ",
     if (continuous) df_Slopes$N else df_Slopes$NGroup)
   df_Interaction <- if (is.null(interaction_results)) inference$Results[inference$Results$Term == "Interaction", ] else interaction_results
-  note <- paste(c(slope_notes, paste0("Interaction = ", signif(df_Interaction$Estimate, 3),
-    "; p = ", format.pval(df_Interaction$PValue, digits = 3), "; q = ", format.pval(df_Interaction$PValueFDR, digits = 3))), collapse = "\n")
-  p <- p + ggplot2::annotate("text", x = -Inf, y = Inf, label = note, hjust = -0.02, vjust = 1.1, size = 3) +
-    ggplot2::labs(x = paste0(labels[[predictorVar]], if (standardize) " (SD units)" else ""),
-      y = paste0(labels[[outcomeVar]], if (standardize) " (SD units)" else "")) + ggplot2::theme_minimal()
+  direction <- if (all(c("ComparisonLevel", "ReferenceLevel") %in% names(df_Interaction)) && !is.na(df_Interaction$ComparisonLevel[1])) paste0(" (", df_Interaction$ComparisonLevel[1], " - ", df_Interaction$ReferenceLevel[1], ")") else ""
+  note <- paste(c(slope_notes, paste0("Interaction", direction, ", ", units, " = ", signif(df_Interaction[[columns[1]]], 3),
+    " [", signif(df_Interaction[[columns[2]]], 3), ", ", signif(df_Interaction[[columns[3]]], 3), "]; p = ",
+    format.pval(df_Interaction$PValue, digits = 3), "; q = ", format.pval(df_Interaction$PValueFDR, digits = 3))), collapse = "\n")
+  p <- p + ggplot2::labs(caption = stringr::str_wrap(note, width = 85),
+      x = paste0(labels[[predictorVar]], if (standardize) " (SD units)" else ""),
+      y = paste0(labels[[outcomeVar]], if (standardize) " (SD units)" else "")) +
+    ggplot2::theme_minimal() + ggplot2::theme(plot.title.position = "plot",
+      plot.caption.position = "plot", plot.caption = ggplot2::element_text(hjust = 0))
   p$Results <- inference$Results
   p$Metadata <- inference$Metadata
   p$Metadata$Display <- list(adjust = adjust, standardize = standardize,

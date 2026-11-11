@@ -82,3 +82,36 @@ test_that("continuous moderators use endpoint slopes and continuous point colour
   expect_equal(nrow(single$Results), 3)
   expect_true(is.list(single$Metadata))
 })
+
+test_that("interaction captions use displayed units outside the panel", {
+  df_Test <- SigInteractionFixture()
+  attr(df_Test$moderator, "label") <- "Moderator label"
+  source <- PlotInteractionEffectsMatrix(df_Test, "moderator", "y", "x", "z")
+  row <- source$Results[source$Results$Term == "Interaction", ]
+  for (scaled in c(TRUE, FALSE)) {
+    plot <- plotSigInteractions(df_Test, source, standardize = scaled)[[1]]
+    column <- if (scaled) "EstimateStd" else "Estimate"
+    expect_match(plot$labels$caption, as.character(signif(row[[column]], 3)), fixed = TRUE)
+    expect_false(any(vapply(plot$layers, function(layer) inherits(layer$geom, "GeomText"), logical(1))))
+    expect_equal(plot$scales$get_scales("colour")$name, "Moderator label")
+    expect_no_error(ggplot2::ggplot_build(plot))
+    slopes <- plot$Results[plot$Results$Term != "Interaction", ]
+    expect_equal(diff(slopes[[column]]), row[[column]], tolerance = 1e-8)
+  }
+})
+
+test_that("empty interaction notes render in narrow and wide panels", {
+  df_Test <- SigInteractionFixture()
+  result <- PlotInteractionEffectsMatrix(df_Test, "moderator", "null", "x", "z", Pthresh = 1e-10)
+  plot <- result$FDRCorrected$plot
+  expect_no_error(ggplot2::ggplot_build(plot))
+  expect_equal(plot$coordinates$clip, "off")
+  expect_false(any(vapply(plot$layers, function(layer) inherits(layer$geom, "GeomLabel"), logical(1))))
+  for (dimensions in list(c(5, 6), c(9, 5))) {
+    path <- tempfile(fileext = ".png")
+    grDevices::png(path, width = dimensions[1], height = dimensions[2], units = "in", res = 100)
+    expect_no_error(print(plot))
+    grDevices::dev.off()
+    unlink(path)
+  }
+})

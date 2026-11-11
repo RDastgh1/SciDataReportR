@@ -257,6 +257,7 @@ PlotPointCorrelationsHeatmap <- function(data,
     ggplot2::scale_x_discrete(labels = x_axis_labels) +
     ggplot2::scale_y_discrete(labels = y_axis_labels) +
     ggplot2::theme(
+      plot.subtitle = ggplot2::element_text(size = 7, color = "grey40"),
       axis.title.x = ggplot2::element_blank(),
       axis.title.y = ggplot2::element_blank(),
       axis.text.y  = ggplot2::element_text(size = 7),
@@ -277,6 +278,7 @@ PlotPointCorrelationsHeatmap <- function(data,
     ggplot2::scale_x_discrete(labels = x_axis_labels) +
     ggplot2::scale_y_discrete(labels = y_axis_labels) +
     ggplot2::theme(
+      plot.subtitle = ggplot2::element_text(size = 7, color = "grey40"),
       axis.title.x = ggplot2::element_blank(),
       axis.title.y = ggplot2::element_blank(),
       axis.text.y  = ggplot2::element_text(size = 7),

@@ -423,6 +423,7 @@ PlotMiningMatrix <- function(data,
       "Significance: raw p-values (no multiple-comparison correction)" else ScidrAdjustedSignificanceSubtitle(fdr_scope)) +
     ggplot2::theme_bw() +
     ggplot2::theme(
+      plot.subtitle = ggplot2::element_text(size = 7, color = "grey40"),
       axis.text.x = ggplot2::element_text(angle = 45, hjust = 1),
       axis.title = ggplot2::element_blank()
     )

@@ -416,6 +416,7 @@ PlotAnovaRelationshipsMatrix <- function(data,
     ggplot2::aes(y = YLabel, x = XLabel, shape = `p<.05`, text = PlotText)
   ) +
     ggplot2::theme(
+      plot.subtitle = ggplot2::element_text(size = 7, color = "grey40"),
       axis.text.x = ggplot2::element_text(angle = 90),
       axis.title.x = ggplot2::element_blank(),
       axis.title.y = ggplot2::element_blank()
@@ -449,6 +450,7 @@ PlotAnovaRelationshipsMatrix <- function(data,
     ggplot2::aes(y = YLabel, x = XLabel, shape = p.adj.signif, text = PlotText)
   ) +
     ggplot2::theme(
+      plot.subtitle = ggplot2::element_text(size = 7, color = "grey40"),
       axis.text.x = ggplot2::element_text(angle = 90),
       axis.title.x = ggplot2::element_blank(),
       axis.title.y = ggplot2::element_blank()

@@ -298,6 +298,7 @@ PlotSplitCorrelationHeatmap <- function(
         subtitle = if (star_column == "stars") "Significance: raw p-values (no multiple-comparison correction)" else ScidrAdjustedSignificanceSubtitle(fdr_scope, family = "separately within each stratum")) +
       ggplot2::theme_bw(base_size = 11) +
       ggplot2::theme(
+        plot.subtitle = ggplot2::element_text(size = 7, color = "grey40"),
         panel.grid = ggplot2::element_blank(),
         axis.text.x = ggplot2::element_text(angle = 45, hjust = 1)
       )

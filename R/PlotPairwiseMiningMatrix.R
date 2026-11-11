@@ -164,7 +164,8 @@ PlotPairwiseMiningMatrix <- function(data,
           if (p_adjust_method == "fdr") ScidrAdjustedSignificanceSubtitle(adjust_scope) else
           ScidrAdjustedSignificanceSubtitle(adjust_scope, method = p_adjust_method))) +
       ggplot2::theme_bw() +
-      ggplot2::theme(axis.title = ggplot2::element_blank(), panel.grid = ggplot2::element_blank(), axis.text.x = ggplot2::element_text(angle = x_axis_text_angle, hjust = if (x_axis_text_angle == 0) 0.5 else 1))
+      ggplot2::theme(plot.subtitle = ggplot2::element_text(size = 7, color = "grey40"),
+      axis.title = ggplot2::element_blank(), panel.grid = ggplot2::element_blank(), axis.text.x = ggplot2::element_text(angle = x_axis_text_angle, hjust = if (x_axis_text_angle == 0) 0.5 else 1))
     .AddHeatmapSignificanceLayers(
       plot = plot,
       data = df_Results,

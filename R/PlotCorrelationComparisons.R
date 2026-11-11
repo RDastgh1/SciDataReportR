@@ -1018,6 +1018,7 @@ PlotCorrelationComparisons <- function(
       ggplot2::coord_fixed() +
       ggplot2::theme_bw() +
       ggplot2::theme(
+        plot.subtitle = ggplot2::element_text(size = 7, color = "grey40"),
         panel.grid = ggplot2::element_blank(),
         axis.text.x = ggplot2::element_text(angle = 90, hjust = 1),
         legend.position = "right"

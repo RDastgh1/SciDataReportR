@@ -600,14 +600,14 @@ PlotInteractionEffectsMatrix <- function(data,
     }
     if (!any(display)) {
       note <- paste0("No interactions with ", if (p_column == "P_FDR") "FDR p" else "p", " <= ", Pthresh)
-      plot <- plot + ggplot2::annotate("label", x = (length(levels(df_Plot$PredictorLabel)) + 1)/2,
-        y = (length(levels(df_Plot$OutcomeLabel)) + 1)/2, label = note)
+      plot <- plot + ggplot2::annotate("text", x = (length(levels(df_Plot$PredictorLabel)) + 1)/2,
+        y = (length(levels(df_Plot$OutcomeLabel)) + 1)/2, label = stringr::str_wrap(note, width = 30), lineheight = 0.9)
     }
     plot + ggplot2::geom_text(ggplot2::aes(label = Stars), size = 4) +
       ggplot2::theme_minimal() + ggplot2::theme(
         axis.text.x = ggplot2::element_text(angle = 45, hjust = 1),
-        panel.grid = ggplot2::element_blank()) + ggplot2::labs(x = NULL, y = NULL,
-          subtitle = if (p_column == "P") "Significance: raw p-values (no multiple-comparison correction)" else ScidrAdjustedSignificanceSubtitle(fdr_scope))
+        panel.grid = ggplot2::element_blank(), plot.title.position = "plot", plot.subtitle = ggplot2::element_text(size = 7, color = "grey40", hjust = 0)) + ggplot2::coord_cartesian(clip = "off") + ggplot2::labs(x = NULL, y = NULL,
+          subtitle = stringr::str_wrap(if (p_column == "P") "Significance: raw p-values (no multiple-comparison correction)" else ScidrAdjustedSignificanceSubtitle(fdr_scope), width = 60))
   }
   MakeMatrix <- function(column) {
     matrix(m_G[[column]], nrow = length(outcomeVars), byrow = TRUE,

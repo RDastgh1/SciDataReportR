@@ -294,6 +294,7 @@ PlotChiSqCovar <- function(data,
     ggplot2::geom_point(ggplot2::aes(size = pmin(logp, 5), colour = cramers_v)) +
     ggplot2::theme_bw() +
     ggplot2::theme(
+      plot.subtitle = ggplot2::element_text(size = 7, color = "grey40"),
       axis.text.x = ggplot2::element_text(angle = 90, vjust = 0.5, hjust = 1),
       axis.title.x = ggplot2::element_blank(),
       axis.title.y = ggplot2::element_blank()
@@ -307,6 +308,7 @@ PlotChiSqCovar <- function(data,
     ggplot2::geom_point(ggplot2::aes(size = pmin(logp_FDR, 5), colour = cramers_v)) +
     ggplot2::theme_bw() +
     ggplot2::theme(
+      plot.subtitle = ggplot2::element_text(size = 7, color = "grey40"),
       axis.text.x = ggplot2::element_text(angle = 90, vjust = 0.5, hjust = 1),
       axis.title.x = ggplot2::element_blank(),
       axis.title.y = ggplot2::element_blank()
