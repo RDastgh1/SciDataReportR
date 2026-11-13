@@ -1,3 +1,12 @@
+# SciDataReportR (development version)
+
+* `AnalyzeFeatureDifferentialAbundance()` fits limma moderated linear models
+  across a wide feature matrix (group contrasts or a numeric predictor,
+  covariates, and paired or repeated samples through `block_var`), and
+  `PlotFeatureDifferentialAbundance()` draws the per-contrast volcano plot.
+  This is the shared engine behind the differential abundance functions in
+  ProteomicsAnalyzeR and MetabolomicsAnalyzeR.
+
 # SciDataReportR 21.23.0
 
 # SciDataReportR 21.22.0

@@ -49,6 +49,8 @@ Suggests:
     ggalluvial,
     dynamicTreeCut,
     WGCNA,
+    limma,
+    statmod,
     arrow,
     aweSOM,
     BlandAltmanLeh,
