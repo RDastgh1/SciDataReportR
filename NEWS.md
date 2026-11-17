@@ -1,5 +1,10 @@
 # SciDataReportR (development version)
 
+# SciDataReportR 21.23.1
+
+- Fixed covariate adjustment in `PlotPointCorrelationsHeatmap()` after binary mapping, using pair-specific complete cases and the shared correlation engine.
+- Pearson partial-correlation tests in both correlation heatmaps now use residual degrees of freedom based on design rank, including singular designs.
+
 * `AnalyzeFeatureDifferentialAbundance()` fits limma moderated linear models
   across a wide feature matrix (group contrasts or a numeric predictor,
   covariates, and paired or repeated samples through `block_var`), and

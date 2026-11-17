@@ -6,7 +6,12 @@
 #' @param data A dataframe.
 #' @param CatVars Character vector of binary categorical variables.
 #' @param ContVars Character vector of continuous variables.
-#' @param covariates Optional covariates (reserved).
+#' @param covariates Optional numeric or categorical covariates. After binary-map
+#'   coding, partial Pearson correlations use the same pairwise engine as
+#'   [PlotCorrelationsHeatmap()]. Tests use residual degrees of freedom
+#'   `n - rank(design) - 1`, including the intercept in the design rank.
+#'   Complete cases are selected separately for each pair and its covariates.
+#'   Collapsed or unestimable designs follow the general heatmap fallback rules.
 #' @param Relabel Logical; use sjlabelled variable labels for axes.
 #' @param Ordinal Logical; reserved for future use.
 #' @param binary_map Optional mapping as returned by `createBinaryMapping()`.
@@ -129,6 +134,28 @@ PlotPointCorrelationsHeatmap <- function(data,
     binary_map <- createBinaryMapping(DataSubset, CatVars)
   }
 
+  if (length(Covariates)) {
+    df_Coded <- DataSubset
+    for (cat_var in CatVars) {
+      df_Coded[[cat_var]] <- .to01(DataSubset[[cat_var]], cat_var, binary_map)
+    }
+    stat.test <- tidyr::expand_grid(
+      ContinuousVariable = ContVars, CategoricalVariable = CatVars
+    ) %>%
+      dplyr::rowwise() %>%
+      dplyr::mutate(pair = list(ScidrCorrelationPair(
+        data.frame(
+          x = df_Coded[[ContinuousVariable]],
+          y = df_Coded[[CategoricalVariable]],
+          df_Coded[, Covariates, drop = FALSE], check.names = FALSE
+        ),
+        method = "pearson", min_n = 3, eps = 1e-12,
+        yname = ContinuousVariable, xname = CategoricalVariable
+      ))) %>%
+      dplyr::mutate(nPairs = .data$pair$n, correlation = .data$pair$r, p_value = .data$pair$p) %>%
+      dplyr::ungroup() %>%
+      dplyr::select(-dplyr::all_of("pair"))
+  } else {
   # long format
   mData <- DataSubset %>%
     dplyr::mutate(dplyr::across(dplyr::all_of(CatVars),
@@ -175,6 +202,8 @@ PlotPointCorrelationsHeatmap <- function(data,
       )
     }) %>%
     dplyr::ungroup()
+
+  }
 
   # FDR & stars. For "per_outcome", p-values are grouped by the continuous
   # variable: outcomes are the continuous variables (ContVars), matching the

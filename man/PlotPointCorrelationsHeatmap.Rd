@@ -29,7 +29,12 @@ PlotPointCorrelationsHeatmap(
 
 \item{ContVars}{Character vector of continuous variables.}
 
-\item{covariates}{Optional covariates (reserved).}
+\item{covariates}{Optional numeric or categorical covariates. After binary-map
+coding, partial Pearson correlations use the same pairwise engine as
+\code{\link[=PlotCorrelationsHeatmap]{PlotCorrelationsHeatmap()}}. Tests use residual degrees of freedom
+\code{n - rank(design) - 1}, including the intercept in the design rank.
+Complete cases are selected separately for each pair and its covariates.
+Collapsed or unestimable designs follow the general heatmap fallback rules.}
 
 \item{Relabel}{Logical; use sjlabelled variable labels for axes.}
 

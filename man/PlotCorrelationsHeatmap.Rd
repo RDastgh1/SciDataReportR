@@ -35,7 +35,9 @@ PlotCorrelationsHeatmap(
 
 \item{outcome_vars}{character vector}
 
-\item{covariates}{optional covariates}
+\item{covariates}{Optional numeric or categorical covariates. Pearson partial
+correlations use pair-specific complete cases and residual degrees of
+freedom \code{n - rank(design) - 1} (design includes the intercept).}
 
 \item{method}{pearson/spearman/kendall}
 

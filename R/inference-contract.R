@@ -1246,7 +1246,7 @@ ScidrFinishInference <- function(output, context, frame) {
   if (context$Function == 'PlotBetaProfile') formula_template <- 'scale(outcome) ~ scale(predictor) + covariates'
   if (context$Function == 'PlotMiningMatrix') formula_template <- 'Mixed-type screening: correlation, ANOVA/Kruskal-Wallis, or chi-square; supplied covariates are excluded from tested axes'
   if (context$Function == 'PlotChiSqCovar') formula_template <- 'chisq.test(outcome, predictor), using observations complete for the tested variables and supplied covariates'
-  if (context$Function == 'PlotPointCorrelationsHeatmap') formula_template <- 'cor(continuous outcome, binary predictor), using observations complete for tested variables and supplied covariates'
+  if (context$Function == 'PlotPointCorrelationsHeatmap') formula_template <- 'cor(continuous outcome, mapped 0/1 predictor); residualize both on supplied covariates; pair-specific complete cases; partial Pearson test df = n - rank(design) - 1'
   reference_levels <- list(Models = reference_levels,
     Outcomes = if (!is.null(existing$OutcomeLevels)) existing$OutcomeLevels else existing$Outcomes, Predictors = existing$PredictorLevels,
     BinaryPredictors = existing$BinaryPredictorLevels,
