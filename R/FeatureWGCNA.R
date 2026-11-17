@@ -8,12 +8,24 @@
 #' @param sft_rsq Target scale-free topology fit for automatic power selection.
 #' @param min_module_size Minimum dynamic-tree-cut module size.
 #' @param deep_split Dynamic tree-cut sensitivity from 0 through 4.
-#' @param merge_cut_height Eigengene dissimilarity for module merging.
+#' @param merge_cut_height Eigengene dissimilarity for module merging when
+#'   `n_modules = NULL`.
 #' @param keep_tom Store the topological-overlap matrix.
 #' @param seed Optional random seed.
+#' @param n_modules Optional positive whole number of non-grey modules to return.
+#'   `NULL` retains height-based merging. Otherwise, the dynamic tree cut runs
+#'   first, then its non-grey eigengenes are clustered using Pearson
+#'   dissimilarity (`1 - cor`) and average linkage and cut into `n_modules`
+#'   groups. Grey remains unassigned and is not counted. If too few modules are
+#'   detected, raise `deep_split` or lower `min_module_size`. Final groups use
+#'   the standard WGCNA colors in decreasing size order (largest turquoise,
+#'   second blue), with ties ordered by their alphabetically first original
+#'   module color. `merge_cut_height` is ignored for this merging procedure.
 #'
 #' @return A `feature_wgcna_obj` with module assignments, eigengenes, diagnostics,
-#'   hub statistics, and the matrix used for fitting.
+#'   hub statistics, and the matrix used for fitting. `params$n_modules` stores
+#'   the requested count (or `NULL`), and `n_modules` stores the final non-grey
+#'   module count. Eigengenes and memberships reflect the final assignments.
 #' @export
 BuildFeatureWGCNA <- function(
     data,
@@ -26,7 +38,8 @@ BuildFeatureWGCNA <- function(
     deep_split = 2,
     merge_cut_height = 0.25,
     keep_tom = FALSE,
-    seed = NULL
+    seed = NULL,
+    n_modules = NULL
 ) {
   network_type <- match.arg(network_type)
   if (!requireNamespace("WGCNA", quietly = TRUE) || !requireNamespace("dynamicTreeCut", quietly = TRUE)) {
@@ -51,6 +64,10 @@ BuildFeatureWGCNA <- function(
   }
   if (!is.null(soft_power) && (!is.numeric(soft_power) || length(soft_power) != 1 || !is.finite(soft_power) || soft_power <= 0)) {
     stop("`soft_power` must be NULL or a positive numeric value.", call. = FALSE)
+  }
+  if (!is.null(n_modules) && (!is.numeric(n_modules) || is.complex(n_modules) || length(n_modules) != 1 ||
+      !is.finite(n_modules) || n_modules < 1 || n_modules != floor(n_modules))) {
+    stop("`n_modules` must be NULL or a single finite positive whole number.", call. = FALSE)
   }
   dat_expr <- as.matrix(data[, variables, drop = FALSE])
   if (!is.null(sample_id)) {
@@ -81,8 +98,42 @@ BuildFeatureWGCNA <- function(
     dissimilarity <- 1 - tom
     feature_tree <- stats::hclust(stats::as.dist(dissimilarity), method = "average")
     dynamic <- dynamicTreeCut::cutreeDynamic(feature_tree, distM = dissimilarity, deepSplit = deep_split, pamRespectsDendro = FALSE, minClusterSize = min_module_size)
-    merged <- WGCNA::mergeCloseModules(dat_expr, WGCNA::labels2colors(dynamic), cutHeight = merge_cut_height, verbose = 0)
-    module_colors <- merged$colors
+    if (is.null(n_modules)) {
+      merged <- WGCNA::mergeCloseModules(dat_expr, WGCNA::labels2colors(dynamic), cutHeight = merge_cut_height, verbose = 0)
+      module_colors <- merged$colors
+    } else {
+      module_colors <- WGCNA::labels2colors(dynamic)
+      module_names <- sort(setdiff(unique(module_colors), "grey"))
+      initial_count <- length(module_names)
+      if (initial_count < n_modules) {
+        stop("Dynamic tree cut produced ", initial_count, " non-grey modules, but `n_modules = ",
+             n_modules, "` was requested. Raise `deep_split` or lower `min_module_size`.", call. = FALSE)
+      }
+      initial_eigengenes <- WGCNA::moduleEigengenes(dat_expr, module_colors, excludeGrey = TRUE)$eigengenes
+      initial_eigengenes <- initial_eigengenes[, paste0("ME", module_names), drop = FALSE]
+      if (initial_count == 1L) {
+        module_groups <- stats::setNames(1L, module_names)
+      } else {
+        eigengene_dissimilarity <- 1 - stats::cor(initial_eigengenes)
+        if (any(!is.finite(eigengene_dissimilarity))) {
+          stop("Non-finite eigengene correlations prevent merging to `n_modules`.", call. = FALSE)
+        }
+        eigengene_tree <- stats::hclust(stats::as.dist(eigengene_dissimilarity), method = "average")
+        module_groups <- stats::setNames(stats::cutree(eigengene_tree, k = n_modules), module_names)
+      }
+      initial_sizes <- table(module_colors)
+      group_ids <- sort(unique(module_groups))
+      group_sizes <- vapply(group_ids, function(group_id) {
+        sum(initial_sizes[module_names[module_groups == group_id]])
+      }, numeric(1))
+      group_keys <- vapply(group_ids, function(group_id) {
+        sort(module_names[module_groups == group_id])[1]
+      }, character(1))
+      group_order <- order(-group_sizes, group_keys)
+      group_colors <- stats::setNames(WGCNA::labels2colors(seq_along(group_ids)), group_ids[group_order])
+      assigned <- module_colors != "grey"
+      module_colors[assigned] <- unname(group_colors[as.character(module_groups[module_colors[assigned]])])
+    }
     eigengenes <- WGCNA::moduleEigengenes(dat_expr, module_colors)$eigengenes
     eigengenes <- eigengenes[, order(names(eigengenes)), drop = FALSE]
   })))
@@ -92,7 +143,8 @@ BuildFeatureWGCNA <- function(
   modules <- tibble::tibble(Variable = variables, Module = module_colors, ModuleMembership = as.numeric(kme))
   structure(list(modules = modules, module_sizes = table(module_colors), eigengenes = eigengenes,
                  soft_threshold = list(power = chosen_power, auto_selected = auto_selected, sft_rsq_target = sft_rsq, power_estimate = sft$powerEstimate, fit_indices = sft$fitIndices),
-                 network_type = network_type, params = list(min_module_size = min_module_size, deep_split = deep_split, merge_cut_height = merge_cut_height, seed = seed),
+                 network_type = network_type, params = list(min_module_size = min_module_size, deep_split = deep_split, merge_cut_height = merge_cut_height, seed = seed, n_modules = n_modules),
+                 n_modules = length(setdiff(unique(module_colors), "grey")),
                  datExpr = dat_expr, gene_tree = feature_tree, module_colors = module_colors,
                  tom = if (isTRUE(keep_tom)) tom else NULL), class = "feature_wgcna_obj")
 }

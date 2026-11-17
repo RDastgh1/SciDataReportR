@@ -15,7 +15,8 @@ BuildFeatureWGCNA(
   deep_split = 2,
   merge_cut_height = 0.25,
   keep_tom = FALSE,
-  seed = NULL
+  seed = NULL,
+  n_modules = NULL
 )
 }
 \arguments{
@@ -35,15 +36,28 @@ BuildFeatureWGCNA(
 
 \item{deep_split}{Dynamic tree-cut sensitivity from 0 through 4.}
 
-\item{merge_cut_height}{Eigengene dissimilarity for module merging.}
+\item{merge_cut_height}{Eigengene dissimilarity for module merging when
+\code{n_modules = NULL}.}
 
 \item{keep_tom}{Store the topological-overlap matrix.}
 
 \item{seed}{Optional random seed.}
+
+\item{n_modules}{Optional positive whole number of non-grey modules to return.
+\code{NULL} retains height-based merging. Otherwise, the dynamic tree cut runs
+first, then its non-grey eigengenes are clustered using Pearson
+dissimilarity (\code{1 - cor}) and average linkage and cut into \code{n_modules}
+groups. Grey remains unassigned and is not counted. If too few modules are
+detected, raise \code{deep_split} or lower \code{min_module_size}. Final groups use
+the standard WGCNA colors in decreasing size order (largest turquoise,
+second blue), with ties ordered by their alphabetically first original
+module color. \code{merge_cut_height} is ignored for this merging procedure.}
 }
 \value{
 A \code{feature_wgcna_obj} with module assignments, eigengenes, diagnostics,
-hub statistics, and the matrix used for fitting.
+hub statistics, and the matrix used for fitting. \code{params$n_modules} stores
+the requested count (or \code{NULL}), and \code{n_modules} stores the final non-grey
+module count. Eigengenes and memberships reflect the final assignments.
 }
 \description{
 Build a weighted feature correlation network

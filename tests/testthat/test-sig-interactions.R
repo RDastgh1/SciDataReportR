@@ -83,6 +83,71 @@ test_that("continuous moderators use endpoint slopes and continuous point colour
   expect_true(is.list(single$Metadata))
 })
 
+test_that("continuous interaction colours and line keys share SD anchors", {
+  for (skewed in c(FALSE, TRUE)) {
+    df_Test <- SigInteractionFixture(continuous = TRUE)
+    if (skewed) df_Test$moderator <- exp(df_Test$moderator)
+    attr(df_Test$moderator, "label") <- "Moderator label"
+    for (n_lines in c(2, 3, 5)) {
+      plot <- PlotInteractionEffectsContinuous(df_Test, "moderator", "y", "x", "z",
+        n_lines = n_lines, adjust = !skewed, standardize = n_lines != 3)
+      built <- ggplot2::ggplot_build(plot)
+      colour_scale <- built$plot$scales$get_scales("colour")
+      fill_scale <- built$plot$scales$get_scales("fill")
+      mod_mean <- mean(df_Test$moderator)
+      mod_sd <- sd(df_Test$moderator)
+      anchors <- c(mod_mean - mod_sd, mod_mean, mod_mean + mod_sd)
+      values <- seq(anchors[1], anchors[3], length.out = n_lines)
+      groups <- unique(attr(plot, "LineData")$Group)
+      expect_equal(colour_scale$name, "Moderator label")
+      expect_equal(colour_scale$limits, range(anchors))
+      expect_equal(colour_scale$map(anchors),
+        unname(SciDataPalette()[c("Navy", "DeepTeal", "Orange")]))
+      expect_equal(colour_scale$labels[c(1, 3)],
+        paste0(c("<= ", ">= "), signif(anchors[c(1, 3)], 4)))
+      expect_equal(built$data[[1]]$colour,
+        colour_scale$map(scales::squish(df_Test$moderator, range(anchors))))
+      expect_equal(fill_scale$breaks, groups)
+      expect_equal(fill_scale$map(groups), colour_scale$map(values))
+      expect_equal(fill_scale$guide$params$override.aes$colour, colour_scale$map(values))
+      expect_true(all(vapply(seq_along(values), function(i) {
+        grepl(as.character(signif(values[i], 4)), fill_scale$labels[i], fixed = TRUE)
+      }, logical(1))))
+      expect_match(fill_scale$labels[1], "Mean - 1 SD", fixed = TRUE)
+      expect_match(tail(fill_scale$labels, 1), "Mean + 1 SD", fixed = TRUE)
+      if (n_lines > 2) expect_match(fill_scale$labels[(n_lines + 1) / 2], "Mean (", fixed = TRUE)
+      df_Lines <- built$data[[3]]
+      df_Bands <- built$data[[2]]
+      for (i in seq_along(groups)) {
+        expect_true(all(df_Lines$colour[df_Lines$group == i] ==
+          df_Bands$fill[df_Bands$group == i][1]))
+      }
+      expect_s3_class(ggplot2::ggplotGrob(plot), "gtable")
+      source <- PlotInteractionEffectsMatrix(df_Test, "moderator", "y", "x",
+        covariates = if (!skewed) "z" else NULL)
+      expect_equal(plot$Results, source$Results)
+      expect_equal(attr(plot, "formula"), source$Metadata$Models$Formula[1])
+    }
+  }
+})
+
+test_that("categorical interaction points lines and bands agree in colour", {
+  df_Test <- SigInteractionFixture(c("C", "A", "B"))
+  plot <- PlotInteractionEffectsContinuous(df_Test, "moderator", "y", "x", "z")
+  built <- ggplot2::ggplot_build(plot)
+  groups <- levels(df_Test$moderator)
+  colour_scale <- built$plot$scales$get_scales("colour")
+  fill_scale <- built$plot$scales$get_scales("fill")
+  expect_equal(colour_scale$map(groups), unname(SciDataPalette(3)))
+  expect_equal(fill_scale$map(groups), colour_scale$map(groups))
+  expect_equal(built$data[[1]]$colour, colour_scale$map(df_Test$moderator))
+  for (i in seq_along(groups)) {
+    expect_equal(unique(built$data[[3]]$colour[built$data[[3]]$group == i]),
+      unique(built$data[[2]]$fill[built$data[[2]]$group == i]))
+  }
+  expect_s3_class(ggplot2::ggplotGrob(plot), "gtable")
+})
+
 test_that("interaction captions use displayed units outside the panel", {
   df_Test <- SigInteractionFixture()
   attr(df_Test$moderator, "label") <- "Moderator label"

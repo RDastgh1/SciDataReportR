@@ -17,6 +17,11 @@
 #' @details
 #' For categorical moderators, separate regression lines are plotted for each category.
 #' For continuous moderators, regression lines are plotted at the mean and +/- 1 SD.
+#' Points, lines, and confidence bands share a navy-teal-orange gradient anchored
+#' at the model-sample mean minus one SD, mean, and mean plus one SD. Point
+#' colours saturate beyond these bounds, marked with <= and >= on the colourbar.
+#' A separate fitted-line legend identifies SD offsets and moderator values in
+#' original units, including when the predictor and outcome are standardized.
 #'
 #' Model-based partial residuals preserve the fitted interaction slopes.
 #' Ribbons show 95% confidence intervals for the displayed model component.
@@ -180,6 +185,11 @@ PlotInteractionEffectsContinuous <- function(data,
     mod_sd <- stats::sd(df_Model[[interVar]])
     mod_values <- seq(mod_mean - mod_sd, mod_mean + mod_sd, length.out = n_lines)
     group_labels <- if (n_lines == 2L) c("Mean - 1 SD", "Mean + 1 SD") else paste0("Moderator = ", signif(mod_values, 3))
+    mod_offsets <- seq(-1, 1, length.out = n_lines)
+    line_labels <- ifelse(abs(mod_offsets) < 1e-10, "Mean",
+      paste0("Mean ", ifelse(mod_offsets < 0, "-", "+"), " ",
+        signif(abs(mod_offsets), 3), " SD"))
+    line_labels <- paste0(line_labels, " (", signif(mod_values, 4), ")")
   } else {
     mod_values <- levels(factor(df_Model[[interVar]]))
     group_labels <- mod_values
@@ -226,21 +236,33 @@ PlotInteractionEffectsContinuous <- function(data,
   palette <- stats::setNames(.SciDataColorValues(length(group_labels)), group_labels)
   p <- ggplot2::ggplot(df_Points, ggplot2::aes(x = predictor, y = outcome))
   if (continuous) {
-    # A continuous point colour scale is separate from categorical line colours.
+    mod_anchors <- c(mod_mean - mod_sd, mod_mean, mod_mean + mod_sd)
+    colour_scale <- ggplot2::scale_colour_gradientn(
+      colours = unname(SciDataPalette()[c("Navy", "DeepTeal", "Orange")]),
+      limits = range(mod_anchors), oob = scales::squish,
+      breaks = mod_anchors,
+      labels = paste0(c("<= ", "", ">= "), signif(mod_anchors, 4)),
+      name = labels[[interVar]], guide = ggplot2::guide_colourbar(order = 1))
+    # Derive ribbon and legend colours from the exact same scale as the points.
+    line_colors <- stats::setNames(colour_scale$map(mod_values), group_labels)
+    df_DisplayCurves <- df_Curves
+    df_DisplayCurves$ModeratorValue <- mod_values[match(df_DisplayCurves$Group, group_labels)]
     p <- p + ggplot2::geom_point(ggplot2::aes(colour = moderator), alpha = alpha, size = point_size) +
-      ggplot2::scale_colour_gradient(low = palette[1], high = palette[length(palette)], name = labels[[interVar]])
-    line_colors <- scales::col_numeric(c(palette[1], palette[length(palette)]),
-      domain = range(df_Points$moderator))(mod_values)
-    for (i in seq_along(group_labels)) {
-      df_Curve <- df_Curves[df_Curves$Group == group_labels[i], ]
-      p <- p + ggplot2::geom_ribbon(data = df_Curve, ggplot2::aes(x = predictor, ymin = lower, ymax = upper),
-        inherit.aes = FALSE, fill = line_colors[i], alpha = 0.15) +
-        ggplot2::geom_line(data = df_Curve, ggplot2::aes(x = predictor, y = fit), inherit.aes = FALSE, colour = line_colors[i])
-    }
+      colour_scale +
+      ggplot2::geom_ribbon(data = df_DisplayCurves,
+        ggplot2::aes(x = predictor, ymin = lower, ymax = upper, fill = Group, group = Group),
+        inherit.aes = FALSE, alpha = 0.15, key_glyph = "path") +
+      ggplot2::geom_line(data = df_DisplayCurves,
+        ggplot2::aes(x = predictor, y = fit, colour = ModeratorValue, group = Group),
+        inherit.aes = FALSE, linewidth = 1, show.legend = FALSE) +
+      ggplot2::scale_fill_manual(values = line_colors, breaks = group_labels,
+        labels = line_labels, name = paste0(labels[[interVar]], "\nFitted lines"),
+        guide = ggplot2::guide_legend(order = 2,
+          override.aes = list(colour = unname(line_colors), alpha = 1, linewidth = 1)))
   } else {
     p <- p + ggplot2::geom_point(ggplot2::aes(colour = moderator), alpha = alpha, size = point_size) +
       ggplot2::geom_ribbon(data = df_Curves, ggplot2::aes(x = predictor, ymin = lower, ymax = upper, fill = Group, group = Group), inherit.aes = FALSE, alpha = 0.15) +
-      ggplot2::geom_line(data = df_Curves, ggplot2::aes(x = predictor, y = fit, colour = Group, group = Group), inherit.aes = FALSE) +
+      ggplot2::geom_line(data = df_Curves, ggplot2::aes(x = predictor, y = fit, colour = Group, group = Group), inherit.aes = FALSE, linewidth = 1) +
       ggplot2::scale_colour_manual(values = palette, name = labels[[interVar]]) +
       ggplot2::scale_fill_manual(values = palette, name = labels[[interVar]])
   }

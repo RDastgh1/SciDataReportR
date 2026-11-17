@@ -1,5 +1,12 @@
 # SciDataReportR (development version)
 
+- `BuildFeatureWGCNA()` accepts `n_modules` for an exact non-grey module count
+  using average-linkage eigengene clustering after dynamic tree cutting. Final
+  colors follow module size, and the object records requested and final counts.
+  The default retains height-based merging and existing colors.
+
+- Interaction plots now share a navy-teal-orange gradient across continuous moderator points, fitted lines, and confidence bands, with explicitly marked saturation beyond mean +/- 1 SD. A separate colored line legend identifies each fitted moderator value; categorical fitted lines are also more prominent.
+
 # SciDataReportR 21.23.2
 
 - Restored rectangular `PlotDirectionalHeatmaps()` with `predictor_vars` (columns) and `outcome_vars` (rows), legacy positional character vectors, and deprecated `xVars`/`yVars`. Square mode remains the default; rectangular FDR correction uses only requested pairs.

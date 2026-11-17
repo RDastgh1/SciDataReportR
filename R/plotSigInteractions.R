@@ -24,6 +24,9 @@
 #'   original source inference even when adjust is FALSE. Metadata and source
 #'   formulas are retained as attributes. Continuous moderator lines are at
 #'   the model-sample mean minus/plus one SD; point colours remain continuous.
+#'   Points, lines, and bands share a navy-teal-orange gradient saturated at
+#'   those bounds. A separate fitted-line legend gives SD offsets and actual
+#'   moderator values; the colourbar marks the saturated endpoints.
 #' @export
 plotSigInteractions <- function(data, InteractionObject, PVar = "PValue",
     Pthresh = 0.05, adjust = TRUE, standardize = TRUE, ncol = NULL,
