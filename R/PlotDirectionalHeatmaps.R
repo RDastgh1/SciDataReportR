@@ -4,7 +4,7 @@
 #'  - Continuous~Continuous (Pearson/Spearman)
 #'  - Binary~Binary (Phi; 1 == PositiveLevel)
 #'  - Binary~Continuous (r_pb; 1 == PositiveLevel)
-#' into a single square heatmap with raw and FDR-star overlays.
+#' into a square or rectangular heatmap with raw and FDR-star overlays.
 #'
 #' Constant variables (no variation in the current data) are
 #' automatically excluded before computing any tiles.
@@ -14,24 +14,33 @@
 #'   columns). The analysis is symmetric: every variable is related to every
 #'   other, so a single variable set defines both axes. If NULL, uses all
 #'   detected continuous + binary vars.
+#' @param predictor_vars,outcome_vars Optional column (x-axis) and row (y-axis)
+#'   variable sets, respectively, matching historical `xVars` and `yVars`.
+#'   Supply both for rectangular mode; `variables` (with a warning) and
+#'   `triangle` are ignored. Self-pairs are blank. A single set uses both axes.
+#'   Legacy positional character vectors in arguments two and three mean
+#'   columns and rows; a logical third argument still means `Relabel`.
 #' @param Relabel Logical; use sjlabelled variable labels if present.
 #' @param Ordinal Logical; passed to [PlotPointCorrelationsHeatmap()] for the
 #'   binary~continuous block, where it controls whether ordinal variables are
 #'   treated as continuous. Defaults to `TRUE`.
-#' @param fdr_scope Either `"matrix"` (default) or `"per_outcome"`, threaded
+#' @param fdr_scope One of `"matrix"` (default), `"per_outcome"`, or
+#'   `"per_predictor"`, threaded
 #'   through to the three sub-analyses ([PlotCorrelationsHeatmap()],
 #'   [PlotPhiHeatmap()], [PlotPointCorrelationsHeatmap()]). Correction is
 #'   applied within each sub-analysis block (continuous~continuous,
 #'   binary~binary, binary~continuous), matching historical behavior; each
 #'   sub-function's documented outcome orientation applies within its block.
-#' @param triangle Display `"full"` (default), `"upper"`, or `"lower"` half
+#'   In two-set mode only requested pairs enter these families; point-biserial
+#'   outcomes remain the continuous variables regardless of display axis.
+#' @param triangle Ignored in two-set mode. Display `"full"` (default), `"upper"`, or `"lower"` half
 #'   of a symmetric directional matrix. This affects plots only and is applied
 #'   only when the same variables occur on both axes.
 #' @param Data \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
-#' @param xVars \strong{Deprecated} (since 19.15.0). Use \code{variables}
+#' @param xVars \strong{Deprecated} (since 19.15.0). Use \code{predictor_vars}
 #'   instead.
-#' @param yVars \strong{Deprecated} (since 19.15.0). Use \code{variables}
-#'   instead. If supplied, the old rectangular x-by-y display is still honored.
+#' @param yVars \strong{Deprecated} (since 19.15.0). Use \code{outcome_vars}
+#'   instead.
 #' @return list(Unadjusted, FDRCorrected, Relabel, BinaryMapping, Excluded)
 #' @note
 #' The analysis covers continuous and binary variables. Multi-level categorical
@@ -71,6 +80,13 @@
 #' )
 #' upper$FDRCorrected$plot
 #'
+#' # Different column and row sets (historical xVars/yVars orientation).
+#' rectangular <- PlotDirectionalHeatmaps(
+#'   Labelled, predictor_vars = c("Diagnosis", "age"),
+#'   outcome_vars = c("sex", "AXL", "Leptin")
+#' )
+#' rectangular$Unadjusted$plot
+#'
 #' # How binary variables were coded (which level counts as the positive one)
 #' result$BinaryMapping
 #' @param IncludeTrendSymbol Logical; add a plus sign for `0.05 < p <= 0.10`.
@@ -90,6 +106,8 @@ PlotDirectionalHeatmaps <- function(data,
     IncludeTrendSymbol = FALSE,
     Pthresh = 0.05,
     PVar = "PValue",
+    predictor_vars = NULL,
+    outcome_vars = NULL,
     Data = lifecycle::deprecated(),
     xVars = lifecycle::deprecated(),
     yVars = lifecycle::deprecated()) {
@@ -107,21 +125,41 @@ PlotDirectionalHeatmaps <- function(data,
   }
   if (!missing(data)) Data <- data
   if (lifecycle::is_present(xVars)) {
-    lifecycle::deprecate_warn("19.15.0", "PlotDirectionalHeatmaps(xVars)", "PlotDirectionalHeatmaps(variables)")
+    lifecycle::deprecate_warn("19.15.0", "PlotDirectionalHeatmaps(xVars)", "PlotDirectionalHeatmaps(predictor_vars)")
   } else {
     xVars <- NULL
   }
   if (lifecycle::is_present(yVars)) {
-    lifecycle::deprecate_warn("19.15.0", "PlotDirectionalHeatmaps(yVars)", "PlotDirectionalHeatmaps(variables)")
+    lifecycle::deprecate_warn("19.15.0", "PlotDirectionalHeatmaps(yVars)", "PlotDirectionalHeatmaps(outcome_vars)")
   } else {
     yVars <- NULL
   }
-  if (!is.null(variables)) {
-    if (is.null(xVars)) xVars <- variables
-    if (is.null(yVars)) yVars <- variables
+  # Historical positional calls used (data, xVars, yVars).
+  if (is.character(variables) && is.character(Relabel)) {
+    if (is.null(predictor_vars)) predictor_vars <- variables
+    if (is.null(outcome_vars)) outcome_vars <- Relabel
+    variables <- NULL
+    Relabel <- TRUE
   }
+  if (is.null(predictor_vars)) predictor_vars <- xVars
+  if (is.null(outcome_vars)) outcome_vars <- yVars
+  two_set <- !is.null(predictor_vars) && !is.null(outcome_vars)
+  if (two_set && !is.null(variables)) {
+    warning("`variables` is ignored when both `predictor_vars` and `outcome_vars` are supplied.", call. = FALSE)
+  }
+  if (!is.null(predictor_vars) || !is.null(outcome_vars)) {
+    xVars <- predictor_vars
+    yVars <- outcome_vars
+    if (is.null(xVars)) xVars <- yVars
+    if (is.null(yVars)) yVars <- xVars
+  } else {
+    xVars <- variables
+    yVars <- variables
+  }
+  xVars <- unique(xVars)
+  yVars <- unique(yVars)
   fdr_scope <- match.arg(fdr_scope)
-  triangle <- match.arg(triangle)
+  triangle <- if (two_set) "full" else match.arg(triangle)
   if (!is.logical(cluster_rows) || length(cluster_rows) != 1 || is.na(cluster_rows)) {
     stop("cluster_rows must be TRUE or FALSE.")
   }
@@ -256,6 +294,9 @@ PlotDirectionalHeatmaps <- function(data,
     }
   }
 
+  binary_map_safe <- BinaryMapping
+  if (!is.null(binary_map_safe)) binary_map_safe$Variable <- to_safe(binary_map_safe$Variable)
+
   # ---- 3) Collect tiles from each sub-plotter -----------------------------
   df_Combined <- tibble::tibble(
     XVar        = character(),
@@ -264,6 +305,65 @@ PlotDirectionalHeatmaps <- function(data,
     test        = character()
   )
 
+  if (two_set) {
+    # Compute each requested cell once; no union-by-union matrix is built.
+    df_Pairs <- tidyr::expand_grid(XVar = xVars_safe, YVar = yVars_safe)
+    if (nrow(df_Pairs)) df_Combined <- dplyr::bind_rows(lapply(seq_len(nrow(df_Pairs)), function(i) {
+      column <- df_Pairs$XVar[i]
+      row <- df_Pairs$YVar[i]
+      column_binary <- column %in% CatVars_safe
+      row_binary <- row %in% CatVars_safe
+      test <- if (column_binary && row_binary) "Phi" else if (column_binary || row_binary) "Point Correlation" else "pearson"
+      estimate <- p_value <- NA_real_
+      n_pairs <- sum(stats::complete.cases(Data_safe[, unique(c(column, row)), drop = FALSE]))
+      if (column != row) {
+        if (test == "pearson") {
+          pair <- PlotCorrelationsHeatmap(Data_safe, predictor_vars = column,
+            outcome_vars = row, Relabel = Relabel, IncludeTrendSymbol = IncludeTrendSymbol)
+          estimate <- pair$Unadjusted$r[1, 1]
+          p_value <- pair$Unadjusted$p[1, 1]
+        } else if (test == "Phi") {
+          pair <- PlotPhiHeatmap(Data_safe, c(column, row), Relabel = Relabel,
+            binary_map = binary_map_safe, IncludeTrendSymbol = IncludeTrendSymbol)
+          df_Cell <- pair$Unadjusted$PvalTable
+          df_Cell <- df_Cell[df_Cell$XVar == column & df_Cell$YVar == row, ]
+          estimate <- df_Cell$Phi
+          p_value <- df_Cell$p_value
+        } else {
+          binary <- if (column_binary) column else row
+          continuous <- if (column_binary) row else column
+          pair <- PlotPointCorrelationsHeatmap(Data_safe, binary, continuous,
+            Relabel = Relabel, Ordinal = Ordinal, binary_map = binary_map_safe,
+            IncludeTrendSymbol = IncludeTrendSymbol)
+          df_Cell <- pair$Unadjusted$PvalTable
+          if (nrow(df_Cell)) {
+            estimate <- df_Cell$correlation
+            p_value <- df_Cell$p_value
+          }
+        }
+      }
+      Label <- function(variable) {
+        if (!Relabel) return(variable)
+        label <- sjlabelled::get_label(Data_safe[[variable]])
+        if (is.null(label) || is.na(label) || label == "") variable else label
+      }
+      tibble::tibble(XVar = column, YVar = row, correlation = estimate,
+        test = test, P = p_value, nPairs = n_pairs,
+        XLabel = Label(column), YLabel = Label(row))
+    }))
+    if (nrow(df_Combined)) {
+      df_Combined <- df_Combined %>%
+        dplyr::group_by(test) %>%
+        dplyr::mutate(
+          P_adj = ApplyFDRCorrection(P, fdr_scope = fdr_scope,
+            outcome_ids = ifelse(test == "Point Correlation" & XVar %in% ContVars_safe, XVar, YVar),
+            predictor_ids = ifelse(test == "Point Correlation" & XVar %in% ContVars_safe, YVar, XVar)),
+          stars = .FormatPValueStars(ScidrInferenceP(P, P_adj), IncludeTrendSymbol = IncludeTrendSymbol),
+          stars_FDR = .FormatPValueStars(P_adj, IncludeTrendSymbol = IncludeTrendSymbol)
+        ) %>%
+        dplyr::ungroup()
+    }
+  } else {
   # Continuous ~ Continuous
   if (length(ContVars_safe) > 0) {
     O_ContCont <- PlotCorrelationsHeatmap(Data_safe, ContVars_safe, Relabel = Relabel,
@@ -278,7 +378,7 @@ PlotDirectionalHeatmaps <- function(data,
   # Binary ~ Binary (Phi)
   if (length(CatVars_safe) > 1) {
     O_CatCat <- PlotPhiHeatmap(Data_safe, CatVars_safe, Relabel = Relabel,
-                               binary_map = BinaryMapping, fdr_scope = fdr_scope,
+                               binary_map = binary_map_safe, fdr_scope = fdr_scope,
                                IncludeTrendSymbol = IncludeTrendSymbol)
     df_CatCat <- O_CatCat$Unadjusted$plot$data %>%
       dplyr::mutate(correlation = Phi, test = "Phi")
@@ -290,7 +390,7 @@ PlotDirectionalHeatmaps <- function(data,
   if (length(CatVars_safe) > 0 && length(ContVars_safe) > 0) {
     O_CatCont <- PlotPointCorrelationsHeatmap(
       Data_safe, CatVars_safe, ContVars_safe,
-      Relabel = Relabel, Ordinal = Ordinal, binary_map = BinaryMapping,
+      Relabel = Relabel, Ordinal = Ordinal, binary_map = binary_map_safe,
       fdr_scope = fdr_scope, IncludeTrendSymbol = IncludeTrendSymbol
     )
 
@@ -316,6 +416,8 @@ PlotDirectionalHeatmaps <- function(data,
     df_CatContSquare$test <- "Point Correlation"
 
     df_Combined <- dplyr::bind_rows(df_Combined, df_CatContSquare)
+  }
+
   }
 
   # ---- 4) Map back to original var names and filter to requested axes -----
@@ -367,6 +469,10 @@ PlotDirectionalHeatmaps <- function(data,
   )
   AxisOrder <- triangle_display$AxisOrder
   df_Combined_plot_display <- triangle_display$PlotData
+  if (two_set) {
+    df_Combined_plot_display <- df_Combined_plot_display %>%
+      dplyr::filter(XVar != YVar)
+  }
   x_axis_labels <- stats::setNames(ordered_xlabels, xVars_orig)
   y_axis_labels <- stats::setNames(ordered_ylabels, yVars_orig)
   df_Combined_plot$XOrder <- factor(df_Combined_plot$XVar, levels = AxisOrder$columns)

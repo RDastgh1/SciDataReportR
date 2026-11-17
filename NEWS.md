@@ -1,5 +1,9 @@
 # SciDataReportR (development version)
 
+# SciDataReportR 21.23.2
+
+- Restored rectangular `PlotDirectionalHeatmaps()` with `predictor_vars` (columns) and `outcome_vars` (rows), legacy positional character vectors, and deprecated `xVars`/`yVars`. Square mode remains the default; rectangular FDR correction uses only requested pairs.
+
 # SciDataReportR 21.23.1
 
 - Fixed covariate adjustment in `PlotPointCorrelationsHeatmap()` after binary mapping, using pair-specific complete cases and the shared correlation engine.

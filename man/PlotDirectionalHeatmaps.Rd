@@ -16,6 +16,8 @@ PlotDirectionalHeatmaps(
   IncludeTrendSymbol = FALSE,
   Pthresh = 0.05,
   PVar = "PValue",
+  predictor_vars = NULL,
+  outcome_vars = NULL,
   Data = lifecycle::deprecated(),
   xVars = lifecycle::deprecated(),
   yVars = lifecycle::deprecated()
@@ -35,16 +37,19 @@ detected continuous + binary vars.}
 binary~continuous block, where it controls whether ordinal variables are
 treated as continuous. Defaults to \code{TRUE}.}
 
-\item{fdr_scope}{Either \code{"matrix"} (default) or \code{"per_outcome"}, threaded
+\item{fdr_scope}{One of \code{"matrix"} (default), \code{"per_outcome"}, or
+\code{"per_predictor"}, threaded
 through to the three sub-analyses (\code{\link[=PlotCorrelationsHeatmap]{PlotCorrelationsHeatmap()}},
 \code{\link[=PlotPhiHeatmap]{PlotPhiHeatmap()}}, \code{\link[=PlotPointCorrelationsHeatmap]{PlotPointCorrelationsHeatmap()}}). Correction is
 applied within each sub-analysis block (continuous~continuous,
 binary~binary, binary~continuous), matching historical behavior; each
-sub-function's documented outcome orientation applies within its block.}
+sub-function's documented outcome orientation applies within its block.
+In two-set mode only requested pairs enter these families; point-biserial
+outcomes remain the continuous variables regardless of display axis.}
 
 \item{cluster_rows, cluster_columns}{Logical; cluster heatmap rows and columns.}
 
-\item{triangle}{Display \code{"full"} (default), \code{"upper"}, or \code{"lower"} half
+\item{triangle}{Ignored in two-set mode. Display \code{"full"} (default), \code{"upper"}, or \code{"lower"} half
 of a symmetric directional matrix. This affects plots only and is applied
 only when the same variables occur on both axes.}
 
@@ -64,13 +69,20 @@ its legacy adjustment method unless \code{PVar} is supplied; \code{PVar = "PValu
 always selects BH. \code{star_p = "none"} suppresses legacy pairwise stars.
 Stars retain conventional p-value tiers within the requested cutoff.}
 
+\item{predictor_vars, outcome_vars}{Optional column (x-axis) and row (y-axis)
+variable sets, respectively, matching historical \code{xVars} and \code{yVars}.
+Supply both for rectangular mode; \code{variables} (with a warning) and
+\code{triangle} are ignored. Self-pairs are blank. A single set uses both axes.
+Legacy positional character vectors in arguments two and three mean
+columns and rows; a logical third argument still means \code{Relabel}.}
+
 \item{Data}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
 
-\item{xVars}{\strong{Deprecated} (since 19.15.0). Use \code{variables}
+\item{xVars}{\strong{Deprecated} (since 19.15.0). Use \code{predictor_vars}
 instead.}
 
-\item{yVars}{\strong{Deprecated} (since 19.15.0). Use \code{variables}
-instead. If supplied, the old rectangular x-by-y display is still honored.}
+\item{yVars}{\strong{Deprecated} (since 19.15.0). Use \code{outcome_vars}
+instead.}
 }
 \value{
 list(Unadjusted, FDRCorrected, Relabel, BinaryMapping, Excluded)
@@ -81,7 +93,7 @@ Combines:
 \item Continuous~Continuous (Pearson/Spearman)
 \item Binary~Binary (Phi; 1 == PositiveLevel)
 \item Binary~Continuous (r_pb; 1 == PositiveLevel)
-into a single square heatmap with raw and FDR-star overlays.
+into a square or rectangular heatmap with raw and FDR-star overlays.
 }
 }
 \details{
@@ -130,6 +142,13 @@ upper <- PlotDirectionalHeatmaps(
   triangle = "upper"
 )
 upper$FDRCorrected$plot
+
+# Different column and row sets (historical xVars/yVars orientation).
+rectangular <- PlotDirectionalHeatmaps(
+  Labelled, predictor_vars = c("Diagnosis", "age"),
+  outcome_vars = c("sex", "AXL", "Leptin")
+)
+rectangular$Unadjusted$plot
 
 # How binary variables were coded (which level counts as the positive one)
 result$BinaryMapping
