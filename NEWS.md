@@ -1,4 +1,4 @@
-# SciDataReportR (development version)
+# SciDataReportR 21.24.0
 
 - `BuildFeatureWGCNA()` accepts `n_modules` for an exact non-grey module count
   using average-linkage eigengene clustering after dynamic tree cutting. Final
