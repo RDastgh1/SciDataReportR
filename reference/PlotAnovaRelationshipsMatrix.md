@@ -184,7 +184,6 @@ result$Unadjusted$plot
 
 # FDR-adjusted associations
 result$FDRCorrected$plot
-#> Warning: Using size for a discrete variable is not advised.
 
 
 # The same matrix using Kruskal-Wallis instead of ANOVA
@@ -202,7 +201,6 @@ result_NonParametric <- PlotAnovaRelationshipsMatrix(
 result_NonParametric$Unadjusted$plot
 
 result_NonParametric$FDRCorrected$plot
-#> Warning: Using size for a discrete variable is not advised.
 
 
 # Where the two tests disagree

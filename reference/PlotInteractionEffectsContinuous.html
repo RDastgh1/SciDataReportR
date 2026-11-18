@@ -9,7 +9,7 @@ and outcome variable, moderated by either a continuous or categorical variable."
 
     <a class="navbar-brand me-2" href="../index.html">SciDataReportR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">21.23.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">21.25.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -47,7 +47,7 @@ and outcome variable, moderated by either a continuous or categorical variable."
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Plot Single Interaction Effect</h1>
-      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/v21.23.0/R/PlotInteractionEffectsContinuous.R" class="external-link"><code>R/PlotInteractionEffectsContinuous.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/v21.25.0/R/PlotInteractionEffectsContinuous.R" class="external-link"><code>R/PlotInteractionEffectsContinuous.R</code></a></small>
       <div class="d-none name"><code>PlotInteractionEffectsContinuous.Rd</code></div>
     </div>
 
@@ -184,7 +184,12 @@ supplied model specification and used for adjusted displays.</p></dd>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>For categorical moderators, separate regression lines are plotted for each category.
-For continuous moderators, regression lines are plotted at the mean and +/- 1 SD.</p>
+For continuous moderators, regression lines are plotted at the mean and +/- 1 SD.
+Points, lines, and confidence bands share a navy-teal-orange gradient anchored
+at the model-sample mean minus one SD, mean, and mean plus one SD. Point
+colours saturate beyond these bounds, marked with &lt;= and &gt;= on the colourbar.
+A separate fitted-line legend identifies SD offsets and moderator values in
+original units, including when the predictor and outcome are standardized.</p>
 <p>Model-based partial residuals preserve the fitted interaction slopes.
 Ribbons show 95% confidence intervals for the displayed model component.</p>
 <p>Variable labels are used if available in the data frame.</p>

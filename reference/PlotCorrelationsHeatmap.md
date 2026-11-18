@@ -59,7 +59,9 @@ PlotCorrelationsHeatmap(
 
 - covariates:
 
-  optional covariates
+  Optional numeric or categorical covariates. Pearson partial
+  correlations use pair-specific complete cases and residual degrees of
+  freedom `n - rank(design) - 1` (design includes the intercept).
 
 - method:
 

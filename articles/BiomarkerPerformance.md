@@ -208,8 +208,8 @@ still not external validation in a new population.
     [1] stats     graphics  grDevices utils     datasets  methods   base
 
     other attached packages:
-    [1] plotly_4.12.1          ggplot2_4.0.3          dplyr_1.2.1
-    [4] SciDataReportR_21.23.0
+    [1] plotly_4.12.1          ggplot2_4.0.4          dplyr_1.2.1
+    [4] SciDataReportR_21.25.0
 
     loaded via a namespace (and not attached):
      [1] gtable_0.3.6           xfun_0.62              bayestestR_0.20.0
@@ -222,7 +222,7 @@ still not external validation in a new population.
     [22] compiler_4.6.2         farver_2.1.2           carData_3.0-6
     [25] snakecase_0.11.1       htmltools_0.5.9        yaml_2.3.12
     [28] Formula_1.2-6          pillar_1.11.1          car_3.1-5
-    [31] tidyr_1.3.2            statsExpressions_2.2.1 abind_1.4-8
+    [31] tidyr_1.3.2            statsExpressions_2.2.2 abind_1.4-8
     [34] nlme_3.1-171           tidyselect_1.2.1       sjlabelled_1.2.0
     [37] digest_0.6.39          mvtnorm_1.4-2          gtsummary_2.6.1
     [40] purrr_1.2.2            rematch2_2.1.2         splines_4.6.2

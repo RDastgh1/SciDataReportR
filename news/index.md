@@ -1,5 +1,50 @@
 # Changelog
 
+## SciDataReportR 21.25.0
+
+## SciDataReportR 21.24.0
+
+- [`BuildFeatureWGCNA()`](https://rdastgh1.github.io/SciDataReportR/reference/BuildFeatureWGCNA.md)
+  accepts `n_modules` for an exact non-grey module count using
+  average-linkage eigengene clustering after dynamic tree cutting. Final
+  colors follow module size, and the object records requested and final
+  counts. The default retains height-based merging and existing colors.
+
+- Interaction plots now share a navy-teal-orange gradient across
+  continuous moderator points, fitted lines, and confidence bands, with
+  explicitly marked saturation beyond mean +/- 1 SD. A separate colored
+  line legend identifies each fitted moderator value; categorical fitted
+  lines are also more prominent.
+
+## SciDataReportR 21.23.2
+
+- Restored rectangular
+  [`PlotDirectionalHeatmaps()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotDirectionalHeatmaps.md)
+  with `predictor_vars` (columns) and `outcome_vars` (rows), legacy
+  positional character vectors, and deprecated `xVars`/`yVars`. Square
+  mode remains the default; rectangular FDR correction uses only
+  requested pairs.
+
+## SciDataReportR 21.23.1
+
+- Fixed covariate adjustment in
+  [`PlotPointCorrelationsHeatmap()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotPointCorrelationsHeatmap.md)
+  after binary mapping, using pair-specific complete cases and the
+  shared correlation engine.
+
+- Pearson partial-correlation tests in both correlation heatmaps now use
+  residual degrees of freedom based on design rank, including singular
+  designs.
+
+- [`AnalyzeFeatureDifferentialAbundance()`](https://rdastgh1.github.io/SciDataReportR/reference/AnalyzeFeatureDifferentialAbundance.md)
+  fits limma moderated linear models across a wide feature matrix (group
+  contrasts or a numeric predictor, covariates, and paired or repeated
+  samples through `block_var`), and
+  [`PlotFeatureDifferentialAbundance()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotFeatureDifferentialAbundance.md)
+  draws the per-contrast volcano plot. This is the shared engine behind
+  the differential abundance functions in ProteomicsAnalyzeR and
+  MetabolomicsAnalyzeR.
+
 ## SciDataReportR 21.23.0
 
 ## SciDataReportR 21.22.0

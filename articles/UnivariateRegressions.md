@@ -291,7 +291,7 @@ sessionInfo()
     [1] stats     graphics  grDevices utils     datasets  methods   base
 
     other attached packages:
-    [1] dplyr_1.2.1            SciDataReportR_21.23.0
+    [1] dplyr_1.2.1            SciDataReportR_21.25.0
 
     loaded via a namespace (and not attached):
      [1] gt_1.4.0               sass_0.4.10            generics_0.1.4
@@ -304,9 +304,9 @@ sessionInfo()
     [22] purrr_1.2.2            scales_1.4.0           abind_1.4-8
     [25] cli_3.6.6              labelled_2.16.1        rlang_1.3.0
     [28] withr_3.0.3            yaml_2.3.12            otel_0.3.0
-    [31] statsExpressions_2.2.1 tools_4.6.2            datawizard_1.5.0
+    [31] statsExpressions_2.2.2 tools_4.6.2            datawizard_1.5.0
     [34] rstantools_2.7.1       ggstatsplot_1.1.4      coda_0.19-4.1
-    [37] ggplot2_4.0.3          sjlabelled_1.2.0       bayestestR_0.20.0
+    [37] ggplot2_4.0.4          sjlabelled_1.2.0       bayestestR_0.20.0
     [40] forcats_1.0.1          broom_1.0.13           paletteer_1.7.0
     [43] vctrs_0.7.3            R6_2.6.1               lifecycle_1.0.5
     [46] emmeans_2.0.4          snakecase_0.11.1       fs_2.1.0

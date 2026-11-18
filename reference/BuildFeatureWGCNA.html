@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">SciDataReportR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">21.23.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">21.25.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -45,7 +45,7 @@
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Build a weighted feature correlation network</h1>
-      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/v21.23.0/R/FeatureWGCNA.R" class="external-link"><code>R/FeatureWGCNA.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/v21.25.0/R/FeatureWGCNA.R" class="external-link"><code>R/FeatureWGCNA.R</code></a></small>
       <div class="d-none name"><code>BuildFeatureWGCNA.Rd</code></div>
     </div>
 
@@ -66,7 +66,8 @@
 <span>  deep_split <span class="op">=</span> <span class="fl">2</span>,</span>
 <span>  merge_cut_height <span class="op">=</span> <span class="fl">0.25</span>,</span>
 <span>  keep_tom <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  seed <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  seed <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  n_modules <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -107,7 +108,8 @@
 
 
 <dt id="arg-merge-cut-height">merge_cut_height<a class="anchor" aria-label="anchor" href="#arg-merge-cut-height"></a></dt>
-<dd><p>Eigengene dissimilarity for module merging.</p></dd>
+<dd><p>Eigengene dissimilarity for module merging when
+<code>n_modules = NULL</code>.</p></dd>
 
 
 <dt id="arg-keep-tom">keep_tom<a class="anchor" aria-label="anchor" href="#arg-keep-tom"></a></dt>
@@ -117,11 +119,25 @@
 <dt id="arg-seed">seed<a class="anchor" aria-label="anchor" href="#arg-seed"></a></dt>
 <dd><p>Optional random seed.</p></dd>
 
+
+<dt id="arg-n-modules">n_modules<a class="anchor" aria-label="anchor" href="#arg-n-modules"></a></dt>
+<dd><p>Optional positive whole number of non-grey modules to return.
+<code>NULL</code> retains height-based merging. Otherwise, the dynamic tree cut runs
+first, then its non-grey eigengenes are clustered using Pearson
+dissimilarity (<code>1 - cor</code>) and average linkage and cut into <code>n_modules</code>
+groups. Grey remains unassigned and is not counted. If too few modules are
+detected, raise <code>deep_split</code> or lower <code>min_module_size</code>. Final groups use
+the standard WGCNA colors in decreasing size order (largest turquoise,
+second blue), with ties ordered by their alphabetically first original
+module color. <code>merge_cut_height</code> is ignored for this merging procedure.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A <code>feature_wgcna_obj</code> with module assignments, eigengenes, diagnostics,
-hub statistics, and the matrix used for fitting.</p>
+hub statistics, and the matrix used for fitting. <code>params$n_modules</code> stores
+the requested count (or <code>NULL</code>), and <code>n_modules</code> stores the final non-grey
+module count. Eigengenes and memberships reflect the final assignments.</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

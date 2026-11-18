@@ -92,7 +92,11 @@ reviews candidates; `ModelInfo$plots` holds `response_probabilities`,
 `item_profiles`, `bic`, `entropy`, `posterior_map`, and
 `categorical_composition`; `ProbFit$plots` holds posterior-confidence
 figures; and `Stability$plots` holds cluster-recovery and complementary
-recovery.
+recovery. `ModelInfo$StandardErrors` records whether poLCA standard
+errors are available. If its variance calculation fails with a
+matrix-size error, the same seeded fit is retried without standard
+errors; estimates and posterior membership remain available, with the
+failure reason recorded.
 
 ## Stability output
 

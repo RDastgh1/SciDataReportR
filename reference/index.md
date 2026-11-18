@@ -4,6 +4,8 @@
 
 - [`AddToCodebook()`](https://rdastgh1.github.io/SciDataReportR/reference/AddToCodebook.md)
   : Add a new variable to a codebook
+- [`AnalyzeFeatureDifferentialAbundance()`](https://rdastgh1.github.io/SciDataReportR/reference/AnalyzeFeatureDifferentialAbundance.md)
+  : Analyze differential feature abundance with moderated statistics
 - [`AnalyzeFeatureModuleTraits()`](https://rdastgh1.github.io/SciDataReportR/reference/AnalyzeFeatureModuleTraits.md)
   : Analyze feature module relationships with sample traits
 - [`ApplyFDRCorrection()`](https://rdastgh1.github.io/SciDataReportR/reference/ApplyFDRCorrection.md)
@@ -197,6 +199,8 @@
   : Plot a diagnostic likelihood-ratio heatmap
 - [`PlotDirectionalHeatmaps()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotDirectionalHeatmaps.md)
   : Create directional heatmaps across continuous & binary variables
+- [`PlotFeatureDifferentialAbundance()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotFeatureDifferentialAbundance.md)
+  : Plot differential feature abundance as a volcano plot
 - [`PlotFeatureModuleTraitHeatmap()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotFeatureModuleTraitHeatmap.md)
   : Plot feature module-trait associations
 - [`PlotFeatureWGCNADendrogram()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotFeatureWGCNADendrogram.md)
@@ -349,6 +353,8 @@
   : Plot Significant Correlations
 - [`plotSigInteractions()`](https://rdastgh1.github.io/SciDataReportR/reference/plotSigInteractions.md)
   : Plot significant interaction pairs
+- [`print(`*`<feature_differential_abundance>`*`)`](https://rdastgh1.github.io/SciDataReportR/reference/print.feature_differential_abundance.md)
+  : Print a feature differential abundance object
 - [`removeString()`](https://rdastgh1.github.io/SciDataReportR/reference/removeString.md)
   : Remove Strings from a Vector
 - [`reverseFactorLevels()`](https://rdastgh1.github.io/SciDataReportR/reference/reverseFactorLevels.md)

@@ -6,8 +6,8 @@ Combines:
 
 - Binary~Binary (Phi; 1 == PositiveLevel)
 
-- Binary~Continuous (r_pb; 1 == PositiveLevel) into a single square
-  heatmap with raw and FDR-star overlays.
+- Binary~Continuous (r_pb; 1 == PositiveLevel) into a square or
+  rectangular heatmap with raw and FDR-star overlays.
 
 ## Usage
 
@@ -24,6 +24,8 @@ PlotDirectionalHeatmaps(
   IncludeTrendSymbol = FALSE,
   Pthresh = 0.05,
   PVar = "PValue",
+  predictor_vars = NULL,
+  outcome_vars = NULL,
   Data = lifecycle::deprecated(),
   xVars = lifecycle::deprecated(),
   yVars = lifecycle::deprecated()
@@ -56,15 +58,17 @@ PlotDirectionalHeatmaps(
 
 - fdr_scope:
 
-  Either `"matrix"` (default) or `"per_outcome"`, threaded through to
-  the three sub-analyses
+  One of `"matrix"` (default), `"per_outcome"`, or `"per_predictor"`,
+  threaded through to the three sub-analyses
   ([`PlotCorrelationsHeatmap()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotCorrelationsHeatmap.md),
   [`PlotPhiHeatmap()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotPhiHeatmap.md),
   [`PlotPointCorrelationsHeatmap()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotPointCorrelationsHeatmap.md)).
   Correction is applied within each sub-analysis block
   (continuous~continuous, binary~binary, binary~continuous), matching
   historical behavior; each sub-function's documented outcome
-  orientation applies within its block.
+  orientation applies within its block. In two-set mode only requested
+  pairs enter these families; point-biserial outcomes remain the
+  continuous variables regardless of display axis.
 
 - cluster_rows, cluster_columns:
 
@@ -72,9 +76,9 @@ PlotDirectionalHeatmaps(
 
 - triangle:
 
-  Display `"full"` (default), `"upper"`, or `"lower"` half of a
-  symmetric directional matrix. This affects plots only and is applied
-  only when the same variables occur on both axes.
+  Ignored in two-set mode. Display `"full"` (default), `"upper"`, or
+  `"lower"` half of a symmetric directional matrix. This affects plots
+  only and is applied only when the same variables occur on both axes.
 
 - IncludeTrendSymbol:
 
@@ -99,18 +103,26 @@ PlotDirectionalHeatmaps(
   `star_p = "none"` suppresses legacy pairwise stars. Stars retain
   conventional p-value tiers within the requested cutoff.
 
+- predictor_vars, outcome_vars:
+
+  Optional column (x-axis) and row (y-axis) variable sets, respectively,
+  matching historical `xVars` and `yVars`. Supply both for rectangular
+  mode; `variables` (with a warning) and `triangle` are ignored.
+  Self-pairs are blank. A single set uses both axes. Legacy positional
+  character vectors in arguments two and three mean columns and rows; a
+  logical third argument still means `Relabel`.
+
 - Data:
 
   **Deprecated** (since 19.15.0). Use `data` instead.
 
 - xVars:
 
-  **Deprecated** (since 19.15.0). Use `variables` instead.
+  **Deprecated** (since 19.15.0). Use `predictor_vars` instead.
 
 - yVars:
 
-  **Deprecated** (since 19.15.0). Use `variables` instead. If supplied,
-  the old rectangular x-by-y display is still honored.
+  **Deprecated** (since 19.15.0). Use `outcome_vars` instead.
 
 ## Value
 
@@ -175,6 +187,14 @@ upper <- PlotDirectionalHeatmaps(
 upper$FDRCorrected$plot
 #> Warning: Removed 1 row containing missing values or values outside the scale range
 #> (`geom_text()`).
+
+
+# Different column and row sets (historical xVars/yVars orientation).
+rectangular <- PlotDirectionalHeatmaps(
+  Labelled, predictor_vars = c("Diagnosis", "age"),
+  outcome_vars = c("sex", "AXL", "Leptin")
+)
+rectangular$Unadjusted$plot
 
 
 # How binary variables were coded (which level counts as the positive one)

@@ -43,7 +43,13 @@ PlotPointCorrelationsHeatmap(
 
 - covariates:
 
-  Optional covariates (reserved).
+  Optional numeric or categorical covariates. After binary-map coding,
+  partial Pearson correlations use the same pairwise engine as
+  [`PlotCorrelationsHeatmap()`](https://rdastgh1.github.io/SciDataReportR/reference/PlotCorrelationsHeatmap.md).
+  Tests use residual degrees of freedom `n - rank(design) - 1`,
+  including the intercept in the design rank. Complete cases are
+  selected separately for each pair and its covariates. Collapsed or
+  unestimable designs follow the general heatmap fallback rules.
 
 - Relabel:
 

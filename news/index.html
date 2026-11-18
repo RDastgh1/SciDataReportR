@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">SciDataReportR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">21.23.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">21.25.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -45,9 +45,27 @@
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Changelog</h1>
-      <small>Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/v21.23.0/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
+      <small>Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/v21.25.0/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="21.25.0" id="scidatareportr-21250">SciDataReportR 21.25.0<a class="anchor" aria-label="anchor" href="#scidatareportr-21250"></a></h2>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="21.24.0" id="scidatareportr-21240">SciDataReportR 21.24.0<a class="anchor" aria-label="anchor" href="#scidatareportr-21240"></a></h2>
+<ul><li><p><code><a href="../reference/BuildFeatureWGCNA.html">BuildFeatureWGCNA()</a></code> accepts <code>n_modules</code> for an exact non-grey module count using average-linkage eigengene clustering after dynamic tree cutting. Final colors follow module size, and the object records requested and final counts. The default retains height-based merging and existing colors.</p></li>
+<li><p>Interaction plots now share a navy-teal-orange gradient across continuous moderator points, fitted lines, and confidence bands, with explicitly marked saturation beyond mean +/- 1 SD. A separate colored line legend identifies each fitted moderator value; categorical fitted lines are also more prominent.</p></li>
+</ul></div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="21.23.2" id="scidatareportr-21232">SciDataReportR 21.23.2<a class="anchor" aria-label="anchor" href="#scidatareportr-21232"></a></h2>
+<ul><li>Restored rectangular <code><a href="../reference/PlotDirectionalHeatmaps.html">PlotDirectionalHeatmaps()</a></code> with <code>predictor_vars</code> (columns) and <code>outcome_vars</code> (rows), legacy positional character vectors, and deprecated <code>xVars</code>/<code>yVars</code>. Square mode remains the default; rectangular FDR correction uses only requested pairs.</li>
+</ul></div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="21.23.1" id="scidatareportr-21231">SciDataReportR 21.23.1<a class="anchor" aria-label="anchor" href="#scidatareportr-21231"></a></h2>
+<ul><li><p>Fixed covariate adjustment in <code><a href="../reference/PlotPointCorrelationsHeatmap.html">PlotPointCorrelationsHeatmap()</a></code> after binary mapping, using pair-specific complete cases and the shared correlation engine.</p></li>
+<li><p>Pearson partial-correlation tests in both correlation heatmaps now use residual degrees of freedom based on design rank, including singular designs.</p></li>
+<li><p><code><a href="../reference/AnalyzeFeatureDifferentialAbundance.html">AnalyzeFeatureDifferentialAbundance()</a></code> fits limma moderated linear models across a wide feature matrix (group contrasts or a numeric predictor, covariates, and paired or repeated samples through <code>block_var</code>), and <code><a href="../reference/PlotFeatureDifferentialAbundance.html">PlotFeatureDifferentialAbundance()</a></code> draws the per-contrast volcano plot. This is the shared engine behind the differential abundance functions in ProteomicsAnalyzeR and MetabolomicsAnalyzeR.</p></li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="21.23.0" id="scidatareportr-21230">SciDataReportR 21.23.0<a class="anchor" aria-label="anchor" href="#scidatareportr-21230"></a></h2>
 </div>

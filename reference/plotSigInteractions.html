@@ -9,7 +9,7 @@ PlotInteractionEffectsContinuous() for each single-pair display."><meta property
 
     <a class="navbar-brand me-2" href="../index.html">SciDataReportR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">21.23.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">21.25.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -47,7 +47,7 @@ PlotInteractionEffectsContinuous() for each single-pair display."><meta property
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Plot significant interaction pairs</h1>
-      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/v21.23.0/R/plotSigInteractions.R" class="external-link"><code>R/plotSigInteractions.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/RDastgh1/SciDataReportR/blob/v21.25.0/R/plotSigInteractions.R" class="external-link"><code>R/plotSigInteractions.R</code></a></small>
       <div class="d-none name"><code>plotSigInteractions.Rd</code></div>
     </div>
 
@@ -124,7 +124,10 @@ Empty selections return an empty list with a message.</p>
 intervals and sample sizes. Interaction estimate, p and q retain the
 original source inference even when adjust is FALSE. Metadata and source
 formulas are retained as attributes. Continuous moderator lines are at
-the model-sample mean minus/plus one SD; point colours remain continuous.</p>
+the model-sample mean minus/plus one SD; point colours remain continuous.
+Points, lines, and bands share a navy-teal-orange gradient saturated at
+those bounds. A separate fitted-line legend gives SD offsets and actual
+moderator values; the colourbar marks the saturated endpoints.</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

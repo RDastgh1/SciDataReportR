@@ -16,7 +16,8 @@ BuildFeatureWGCNA(
   deep_split = 2,
   merge_cut_height = 0.25,
   keep_tom = FALSE,
-  seed = NULL
+  seed = NULL,
+  n_modules = NULL
 )
 ```
 
@@ -56,7 +57,7 @@ BuildFeatureWGCNA(
 
 - merge_cut_height:
 
-  Eigengene dissimilarity for module merging.
+  Eigengene dissimilarity for module merging when `n_modules = NULL`.
 
 - keep_tom:
 
@@ -66,7 +67,23 @@ BuildFeatureWGCNA(
 
   Optional random seed.
 
+- n_modules:
+
+  Optional positive whole number of non-grey modules to return. `NULL`
+  retains height-based merging. Otherwise, the dynamic tree cut runs
+  first, then its non-grey eigengenes are clustered using Pearson
+  dissimilarity (`1 - cor`) and average linkage and cut into `n_modules`
+  groups. Grey remains unassigned and is not counted. If too few modules
+  are detected, raise `deep_split` or lower `min_module_size`. Final
+  groups use the standard WGCNA colors in decreasing size order (largest
+  turquoise, second blue), with ties ordered by their alphabetically
+  first original module color. `merge_cut_height` is ignored for this
+  merging procedure.
+
 ## Value
 
 A `feature_wgcna_obj` with module assignments, eigengenes, diagnostics,
-hub statistics, and the matrix used for fitting.
+hub statistics, and the matrix used for fitting. `params$n_modules`
+stores the requested count (or `NULL`), and `n_modules` stores the final
+non-grey module count. Eigengenes and memberships reflect the final
+assignments.

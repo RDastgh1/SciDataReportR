@@ -135,7 +135,12 @@ A ggplot object showing the interaction effect
 
 For categorical moderators, separate regression lines are plotted for
 each category. For continuous moderators, regression lines are plotted
-at the mean and +/- 1 SD.
+at the mean and +/- 1 SD. Points, lines, and confidence bands share a
+navy-teal-orange gradient anchored at the model-sample mean minus one
+SD, mean, and mean plus one SD. Point colours saturate beyond these
+bounds, marked with \<= and \>= on the colourbar. A separate fitted-line
+legend identifies SD offsets and moderator values in original units,
+including when the predictor and outcome are standardized.
 
 Model-based partial residuals preserve the fitted interaction slopes.
 Ribbons show 95% confidence intervals for the displayed model component.
