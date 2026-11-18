@@ -1,3 +1,5 @@
+# SciDataReportR 21.25.0
+
 # SciDataReportR 21.24.0
 
 - `BuildFeatureWGCNA()` accepts `n_modules` for an exact non-grey module count
