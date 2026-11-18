@@ -200,7 +200,7 @@ PlotPairwiseMiningMatrix <- function(data,
       }
       scaled_name <- paste0(".PMM_", v)
       df_Model <- df_Data %>% dplyr::mutate("{scaled_name}" := (.data[[v]] - ref_mean) / ref_sd)
-      formula <- stats::reformulate(c(".PMM_Group", covariates), response = scaled_name)
+      formula <- ScidrRegressionFormula(c(".PMM_Group", covariates), outcome = scaled_name)
       fit <- tryCatch(ScidrObserveInference(stats::lm(formula, data = df_Model)), error = function(e) e)
       if (inherits(fit, "error")) {
         warnings <- c(warnings, paste0(v, ": ", conditionMessage(fit)))

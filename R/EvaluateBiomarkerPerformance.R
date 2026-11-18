@@ -1,6 +1,5 @@
 .BiomarkerFormula <- function(response, terms) {
-  QuoteName <- function(x) paste0("`", gsub("`", "\\\\`", x, fixed = TRUE), "`")
-  stats::as.formula(paste(QuoteName(response), "~", if (length(terms)) paste(QuoteName(terms), collapse = " + ") else "1"))
+  ScidrRegressionFormula(terms, outcome = response)
 }
 
 .BiomarkerLabel <- function(data, variable, codebook, Relabel) {

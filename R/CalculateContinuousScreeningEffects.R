@@ -55,9 +55,9 @@ CalculateContinuousScreeningEffects <- function(data,
 
     model_data$.scidr_y_scaled <- as.numeric(ScidrObserveInference(scale(model_data[[outcome_var]])))
     model_data$.scidr_x_scaled <- as.numeric(ScidrObserveInference(scale(model_data[[this_var]])))
-    model_formula <- stats::reformulate(
+    model_formula <- ScidrRegressionFormula(
       c(".scidr_x_scaled", covariates),
-      response = ".scidr_y_scaled"
+      outcome = ".scidr_y_scaled"
     )
 
     model_error <- NULL

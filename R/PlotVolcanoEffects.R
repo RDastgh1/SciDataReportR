@@ -565,16 +565,8 @@ PlotVolcanoEffects <- function(data,
       )
     }
 
-    model_formula <- stats::as.formula(
-      paste(
-        ".volcano_x_effect ~ .volcano_group",
-        if (!is.null(Covariates)) {
-          paste("+", paste(Covariates, collapse = " + "))
-        } else {
-          ""
-        }
-      )
-    )
+    model_formula <- ScidrRegressionFormula(
+      c(".volcano_group", Covariates), outcome = ".volcano_x_effect")
 
     model_fit <- tryCatch(
       ScidrObserveInference(stats::lm(model_formula, data = model_data)),

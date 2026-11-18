@@ -82,7 +82,7 @@
   mm <- tryCatch(stats::model.matrix(fit), error = function(e) NULL)
   if (is.null(mm)) return(NA_real_)
 
-  group_pos <- match(group_term, attr(stats::terms(fit), "term.labels"))
+  group_pos <- match(ScidrQuoteFormulaNames(group_term), attr(stats::terms(fit), "term.labels"))
   coefficient_index <- which(attr(mm, "assign") == group_pos)
   coefficient_index <- coefficient_index[coefficient_index != 1]
 

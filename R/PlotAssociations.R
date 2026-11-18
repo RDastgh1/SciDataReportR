@@ -68,7 +68,7 @@ PlotAssociations <- function(data,
 
   TestFrame <- na.omit(DataFrame[c(Var1, Var2)])
   if (nrow(TestFrame) == 0) {
-    return(ggplot(DataFrame, aes_string(x = Var1, y = Var2)))
+    return(ggplot(DataFrame, aes(x = .data[[Var1]], y = .data[[Var2]])))
   }
   T1 <- class(DataFrame[[Var1]])
   T2 <- class(DataFrame[[Var2]])

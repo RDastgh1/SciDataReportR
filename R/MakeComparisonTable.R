@@ -458,13 +458,11 @@ MakeComparisonTable <- function(data,
   }
 
   btick <- function(x) {
-    paste0("`", gsub("`", "\\\\`", as.character(x)), "`")
+    ScidrQuoteFormulaNames(as.character(x))
   }
 
   fmla <- function(lhs, rhs_terms) {
-    rhs_terms <- as.character(rhs_terms)
-    rhs <- paste(btick(rhs_terms), collapse = " + ")
-    stats::as.formula(paste(btick(lhs), "~", rhs))
+    ScidrRegressionFormula(as.character(rhs_terms), outcome = lhs)
   }
 
   norm <- function(x) {
@@ -585,7 +583,7 @@ MakeComparisonTable <- function(data,
     if (is.null(mm)) return(NA_real_)
 
     term_labels <- attr(stats::terms(fit_lm), "term.labels")
-    group_pos <- match(group_term, term_labels)
+    group_pos <- match(ScidrQuoteFormulaNames(group_term), term_labels)
 
     if (is.na(group_pos)) return(NA_real_)
 
@@ -1063,7 +1061,7 @@ MakeComparisonTable <- function(data,
           .ScidrDirectedContinuousP(df_cc[[var]], df_cc[[CompVariable]], Parametric, alternative)
         } else {
           tryCatch(
-            summary(stats::aov(fmla(var, CompVariable), data = df_cc))[[1]][CompVariable, "Pr(>F)"],
+            summary(stats::aov(fmla(var, CompVariable), data = df_cc))[[1]][1, "Pr(>F)"],
             error = function(e) NA_real_
           )
         }
@@ -1131,7 +1129,7 @@ MakeComparisonTable <- function(data,
         }
 
         p_un <- tryCatch(
-          summary(stats::aov(fmla(var, CompVariable), data = df_vg))[[1]][CompVariable, "Pr(>F)"],
+          summary(stats::aov(fmla(var, CompVariable), data = df_vg))[[1]][1, "Pr(>F)"],
           error = function(e) NA_real_
         )
 
@@ -1335,9 +1333,9 @@ MakeComparisonTable <- function(data,
 
           if (!is.null(et)) {
             idx <- if ("Parameter" %in% names(et)) {
-              et$Parameter == CompVariable
+              et$Parameter %in% c(CompVariable, btick(CompVariable))
             } else {
-              rownames(et) == CompVariable
+              rownames(et) %in% c(CompVariable, btick(CompVariable))
             }
 
             eta_partial <- suppressWarnings(et$Eta2_partial[idx][1])

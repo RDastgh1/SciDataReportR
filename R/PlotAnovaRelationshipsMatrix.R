@@ -285,9 +285,7 @@ PlotAnovaRelationshipsMatrix <- function(data,
 
   if (nrow(mData) == 0) return(empty_return())
 
-  rhs <- "CategoricalValue"
-  if (length(Covariates) > 0) rhs <- paste(rhs, paste(Covariates, collapse = " + "), sep = " + ")
-  fml <- stats::as.formula(paste("ContinuousValue ~", rhs))
+  fml <- ScidrRegressionFormula(c("CategoricalValue", Covariates), outcome = "ContinuousValue")
 
   safe_test_df <- function(df, keys) {
     WarnTest <- function(e) {
@@ -458,6 +456,7 @@ PlotAnovaRelationshipsMatrix <- function(data,
     ggplot2::scale_shape_manual(values = c(7, 16, 17, 15, 18), drop = FALSE) +
     ggplot2::guides(size = "none") +
     ggplot2::labs(subtitle = ScidrAdjustedSignificanceSubtitle(fdr_scope)) +
+    ggplot2::scale_size_ordinal(guide = "none") +
     ggplot2::xlab("") +
     ggplot2::ylab("")
 

@@ -332,7 +332,7 @@ PlotInteractionEffectsMatrix <- function(data,
 
   # These helpers stay local: contrasts must use this fitted model's design and
   # covariance matrix rather than independently fitted or rescaled groups.
-  QuoteVariable <- function(variable) if (length(variable)) paste0("`", variable, "`") else character()
+  QuoteVariable <- ScidrQuoteFormulaNames
   ContrastSummary <- function(weights, model, scale_factor) {
     estimate <- sum(weights * stats::coef(model))
     se <- sqrt(max(0, as.numeric(t(weights) %*% stats::vcov(model) %*% weights)))

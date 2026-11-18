@@ -94,6 +94,14 @@ PlotSplitViolin <- function(data,
     covars = lifecycle::deprecated(),
     Pthresh = 0.05,
     PVar = "PValue") {
+  # Capture tidy-eval arguments before provenance inspects the calculation frame.
+  if (!missing(Group)) {
+    lifecycle::deprecate_warn("19.15.0", "PlotSplitViolin(Group)", "PlotSplitViolin(group_var)")
+  }
+  Var <- rlang::ensym(Var)
+  Group <- if (!missing(group_var)) rlang::ensym(group_var) else rlang::ensym(Group)
+  group_var <- rlang::as_string(Group)
+
   .scidr_inference <- ScidrStartInference("PlotSplitViolin", match.call(), environment())
   on.exit({
     if (!is.null(returnValue())) {
@@ -102,12 +110,6 @@ PlotSplitViolin <- function(data,
   }, add = TRUE)
 
   # Deprecated argument shims (SciDataReportR 19.15.0)
-  # `group_var` (and the deprecated `Group`) accept bare column names (NSE),
-  # so the deprecated argument is detected with missing() and captured with
-  # ensym() below - it must never be evaluated directly.
-  if (!missing(Group)) {
-    lifecycle::deprecate_warn("19.15.0", "PlotSplitViolin(Group)", "PlotSplitViolin(group_var)")
-  }
   if (lifecycle::is_present(covars)) {
     lifecycle::deprecate_warn("19.15.0", "PlotSplitViolin(covars)", "PlotSplitViolin(covariates)")
     covariates <- covars
@@ -123,9 +125,6 @@ PlotSplitViolin <- function(data,
   alternative <- match.arg(alternative)
 
   if (is.null(covars)) covars <- character(0)
-
-  Var   <- rlang::ensym(Var)
-  Group <- if (!missing(group_var)) rlang::ensym(group_var) else rlang::ensym(Group)
 
   data <- ScidrPrepareCategorical(data, rlang::as_string(Group), "group_var")
   var_nm <- rlang::as_string(Var)
@@ -207,7 +206,7 @@ PlotSplitViolin <- function(data,
         method <- "Wilcoxon rank-sum test"
 
         if (length(covars) > 0) {
-          covariate_formula <- stats::reformulate(covars, response = var_nm)
+          covariate_formula <- ScidrRegressionFormula(covars, outcome = var_nm)
           covariate_fit <- ScidrObserveInference(stats::lm(covariate_formula, data = df))
           test_values <- stats::residuals(covariate_fit)
           method <- "Wilcoxon rank-sum test of covariate-adjusted residuals"
@@ -223,9 +222,9 @@ PlotSplitViolin <- function(data,
           .ScidrDirectedContinuousP(df_Test$TestValue, df_Test$Group, FALSE, alternative)
         }
       } else {
-        model_formula <- stats::reformulate(
+        model_formula <- ScidrRegressionFormula(
           c(".Group", covars),
-          response = var_nm
+          outcome = var_nm
         )
         fit <- ScidrObserveInference(stats::lm(model_formula, data = df))
         p_value <- if (identical(alternative, "two.sided")) {

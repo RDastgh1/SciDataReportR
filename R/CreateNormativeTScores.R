@@ -257,9 +257,9 @@ CreateNormativeTScoreModel <- function(data,
     model_terms <- c(model_terms, count_var)
   }
 
-  model_formula <- stats::reformulate(
-    termlabels = model_terms,
-    response = "NormScaled"
+  model_formula <- ScidrRegressionFormula(
+    model_terms,
+    outcome = "NormScaled"
   )
 
   training_data <- df_prepped %>%

@@ -82,7 +82,7 @@ CreateStatisticsTable <- function(data,
     return(kableExtra::kbl(data.frame(Variable = character(), p_value = double()), format = "html"))
   }
 
-  tab1 <- arsenal::tableby(as.formula(paste(TargetVar, "~ .")), data = Data, digits.pct = 1, digits.count = 1, numeric.stats = c("Nmiss2", "meansd"), cat.test = "chisq")
+  tab1 <- arsenal::tableby(as.formula(paste(ScidrQuoteFormulaNames(TargetVar), "~ .")), data = Data, digits.pct = 1, digits.count = 1, numeric.stats = c("Nmiss2", "meansd"), cat.test = "chisq")
   sd <- as.data.frame(summary(tab1, text = FALSE))
   colnames(sd)[length(colnames(sd))] <- "p_value"
   colnames(sd)[1] <- "Variable"

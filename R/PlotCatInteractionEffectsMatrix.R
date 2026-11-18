@@ -124,7 +124,8 @@ PlotCatInteractionEffectsMatrix <- function(data,
       hadError <- FALSE
 
       tryCatch({
-        fml <- stats::as.formula(paste0("`", yVar, "` ~ `", xVar, "` * `", interVar, "`"))
+        fml <- stats::as.formula(paste(ScidrQuoteFormulaNames(yVar), "~",
+          ScidrQuoteFormulaNames(xVar), "*", ScidrQuoteFormulaNames(interVar)))
         m <- ScidrObserveInference(lm(fml, data = Data))
       }, error = function(err){
         hadError <<- TRUE

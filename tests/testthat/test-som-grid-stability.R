@@ -149,10 +149,14 @@ test_that("occupancy weighting uses participant node counts without changing the
   expect_true(all(!is.na(projected$DataWithClusters$Cluster)))
   expect_true(all(projected$ProbFit$individual$Cluster ==
     projected$ProbFit$individual$NodeCluster))
-  expect_error(CreateClusterModel_SOM_MClust(
-    SampleData, variables = vars_SOM, method = "finalize", final_k = 2,
-    final_model = 6, node_weighting = "occupancy", lpa_timeout_seconds = NULL
-  ), "could not be estimated")
+  expect_warning(
+    expect_error(CreateClusterModel_SOM_MClust(
+      SampleData, variables = vars_SOM, method = "finalize", final_k = 2,
+      final_model = 6, node_weighting = "occupancy", mixture_timeout_seconds = NULL,
+      som_xdim = 4, som_ydim = 4
+    ), "could not be estimated"),
+    "Explicit SOM dimensions.*below the floor"
+  )
 })
 
 test_that("occupancy-weighted stability is deterministic in serial and parallel", {

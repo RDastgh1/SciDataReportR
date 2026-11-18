@@ -113,22 +113,16 @@ calculate_pathway_results <- function(data,
 
     # Run adjusted models and extract p-values
     adjusted_p <- lapply(metabolites, function(metab) {
-      # Create safe metabolite name
-      metab_safe <- paste0("`", metab, "`")
-
-      if (!is.null(covariates)) {
-        formula_str <- paste(metab_safe, "~", comparison_var, "+", paste(covariates, collapse = " + "))
-      } else {
-        formula_str <- paste(metab_safe, "~", comparison_var)
-      }
+      formula <- ScidrRegressionFormula(c(comparison_var, covariates), outcome = metab)
 
       tryCatch({
-        formula <- as.formula(formula_str)
         model <- ScidrObserveInference(stats::lm(formula, data = df_filtered))
 
-        # Get coefficient name
-        coef_names <- names(stats::coef(model))
-        comp_coef <- coef_names[grep(comparison_var, coef_names)][1]
+        # Match the comparison term through the design matrix, not a name regex.
+        model_terms <- stats::terms(model)
+        term_id <- match(ScidrQuoteFormulaNames(comparison_var), attr(model_terms, "term.labels"))
+        design <- stats::model.matrix(model)
+        comp_coef <- colnames(design)[which(attr(design, "assign") == term_id)][1]
 
         if (!is.na(comp_coef) && comp_coef %in% rownames(summary(model)$coefficients)) {
           p_val <- summary(model)$coefficients[comp_coef, "Pr(>|t|)"]
@@ -164,8 +158,8 @@ calculate_pathway_results <- function(data,
       tryCatch({
         if (!is.null(covariates)) {
           # Partial correlation
-          metab_formula <- as.formula(paste0("`", metab, "` ~", paste(covariates, collapse = " + ")))
-          comp_formula <- as.formula(paste("comparison_numeric ~", paste(covariates, collapse = " + ")))
+          metab_formula <- ScidrRegressionFormula(covariates, outcome = metab)
+          comp_formula <- ScidrRegressionFormula(covariates, outcome = "comparison_numeric")
 
           metab_resid <- stats::residuals(ScidrObserveInference(stats::lm(metab_formula, data = df_filtered)))
           comp_resid <- stats::residuals(ScidrObserveInference(stats::lm(comp_formula, data = df_filtered)))
@@ -211,8 +205,8 @@ calculate_pathway_results <- function(data,
       tryCatch({
         if (!is.null(covariates)) {
           # Partial correlation using residuals
-          metab_formula <- as.formula(paste0("`", metab, "` ~", paste(covariates, collapse = " + ")))
-          comp_formula <- as.formula(paste0("`", comparison_var, "` ~", paste(covariates, collapse = " + ")))
+          metab_formula <- ScidrRegressionFormula(covariates, outcome = metab)
+          comp_formula <- ScidrRegressionFormula(covariates, outcome = comparison_var)
 
           metab_resid <- stats::residuals(ScidrObserveInference(stats::lm(metab_formula, data = df_filtered)))
           comp_resid <- stats::residuals(ScidrObserveInference(stats::lm(comp_formula, data = df_filtered)))

@@ -42,6 +42,10 @@
 #'   `bic`, `entropy`, `posterior_map`, and `categorical_composition`; `ProbFit$plots` holds posterior-confidence
 #'   figures; and `Stability$plots` holds cluster-recovery and complementary
 #'   recovery.
+#'   `ModelInfo$StandardErrors` records whether poLCA standard errors are
+#'   available. If its variance calculation fails with a matrix-size error,
+#'   the same seeded fit is retried without standard errors; estimates and
+#'   posterior membership remain available, with the failure reason recorded.
 #' @examples
 #' \donttest{
 #' data("SimulatedPhenotypeData")
@@ -91,28 +95,43 @@ CreateClusterModel_LatentClass <- function(data, variables = NULL,
   levels_used <- lapply(training, function(x) levels(factor(x)))
   training[] <- Map(function(x, lev) as.integer(factor(x, levels = lev)), training, levels_used)
   complete <- stats::complete.cases(training); if (!any(complete)) stop("No complete rows available for latent class analysis.")
-  formula <- stats::as.formula(paste0("cbind(", paste(variables, collapse = ","), ") ~ 1"))
+  formula <- stats::as.formula(paste0("cbind(", paste(ScidrQuoteFormulaNames(variables), collapse = ","), ") ~ 1"))
   method <- .ClusterMethod(method)
   .ValidateClusterLifecycle(method, supplied["k_range"], supplied["final_k"])
   ks <- if (method == "finalize") { if (is.null(final_k)) stop("final_k is required for method = 'finalize'."); final_k } else k_range
+  IsStandardErrorFailure <- function(condition) {
+    grepl("data length differs from size of matrix", conditionMessage(condition), fixed = TRUE) &&
+      grepl("VCE.beta", paste(deparse(conditionCall(condition)), collapse = " "), fixed = TRUE)
+  }
   fits <- lapply(ks, function(k) {
     # poLCA uses random starting values. Retrying once with a fixed alternate
     # seed makes a projectable workflow robust to an occasional singular start
     # without changing the selected model when the primary fit succeeds.
     attempted <- unlist(lapply(c(seed + k, seed + 1000L + k), function(start_seed) {
       lapply(unique(c(nrep, 1L)), function(starts) {
-        set.seed(start_seed)
-        tryCatch(
+        FitCandidate <- function(calc_se) {
+          set.seed(start_seed)
           poLCA::poLCA(formula, training[complete, , drop = FALSE],
-            nclass = k, nrep = starts, verbose = FALSE),
-          error = function(e) e
-        )
+            nclass = k, nrep = starts, verbose = FALSE, calc.se = calc_se)
+        }
+        tryCatch(withCallingHandlers(FitCandidate(TRUE), warning = function(w) {
+          # poLCA drops a 1 x 1 covariance matrix to a scalar. R CMD check
+          # turns the resulting standard-error matrix warning into an error.
+          if (IsStandardErrorFailure(w)) stop(simpleError(conditionMessage(w), call = conditionCall(w)))
+        }), error = function(e) {
+          if (!IsStandardErrorFailure(e)) return(e)
+          fit <- tryCatch(FitCandidate(FALSE), error = function(e) e)
+          if (!inherits(fit, "error")) attr(fit, "StandardErrorFailure") <- conditionMessage(e)
+          fit
+        })
       })
     }), recursive = FALSE)
     successful <- Filter(function(x) !inherits(x, "error"), attempted)
     if (length(successful)) successful[[1]] else attempted[[length(attempted)]]
   })
-  good <- which(!vapply(fits, inherits, logical(1), what = "error")); if (!length(good)) stop("No latent-class candidate could be estimated.")
+  good <- which(!vapply(fits, inherits, logical(1), what = "error"))
+  if (!length(good)) stop("No latent-class candidate could be estimated. ",
+    paste(unique(vapply(fits, conditionMessage, character(1))), collapse = "; "))
   rows <- dplyr::bind_rows(lapply(good, function(i) {
     posterior <- fits[[i]]$posterior
     class_sizes <- tabulate(fits[[i]]$predclass, nbins = ks[[i]])
@@ -195,6 +214,8 @@ CreateClusterModel_LatentClass <- function(data, variables = NULL,
   } else NULL
   ModelInfo <- list(
     lca_model = best, fit_table = rows, levels = levels_used,
+    StandardErrors = list(Available = is.null(attr(best, "StandardErrorFailure")),
+      Reason = attr(best, "StandardErrorFailure")),
     AHP = review$AHP, response_probabilities = response_df,
     final_k = ncol(best$posterior))
   base <- .ClusterOutput(prep, best$predclass, ClusterVariableName, ind,

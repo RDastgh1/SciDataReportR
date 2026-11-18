@@ -775,7 +775,7 @@ ScidrInferenceSource <- function(output, context, frame) {
   }
   if (is.list(output) && !inherits(output, 'ggplot')) {
     for (name in c('Results', 'ResultsTable', 'results')) if (is.data.frame(output[[name]])) return(output[[name]])
-    if (is.data.frame(output$LargeTable)) return(output$LargeTable)
+    if (is.data.frame(output[['LargeTable']])) return(output[['LargeTable']])
   }
   if (is.data.frame(output)) return(output)
   if (inherits(output, 'gtsummary')) {

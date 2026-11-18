@@ -142,11 +142,11 @@ PlotNumInteractionEffectsMatrix <- function(data,
       # dropped and the plain interaction model is fit. The formula is built
       # from column names so any number of covariates is supported.
       rhs <- paste(
-        c(if (length(covars) > 0) paste0("`", covars, "`"),
-          paste0("`", xVar, "` * `", interVar, "`")),
+        c(ScidrQuoteFormulaNames(covars),
+          paste(ScidrQuoteFormulaNames(xVar), "*", ScidrQuoteFormulaNames(interVar))),
         collapse = " + "
       )
-      fml <- stats::as.formula(paste0("`", yVar, "` ~ ", rhs))
+      fml <- stats::as.formula(paste(ScidrQuoteFormulaNames(yVar), "~", rhs))
       m <- tryCatch(ScidrObserveInference(lm(fml, data = Data)), error = function(err) NULL)
 
       if (is.null(m)){

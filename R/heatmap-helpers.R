@@ -450,13 +450,11 @@
 }
 
 .SdrBacktick <- function(x) {
-  paste0("`", gsub("`", "\\\\`", as.character(x)), "`")
+  ScidrQuoteFormulaNames(as.character(x))
 }
 
 .SdrFormula <- function(lhs, rhs_terms) {
-  rhs_terms <- as.character(rhs_terms)
-  rhs <- paste(.SdrBacktick(rhs_terms), collapse = " + ")
-  stats::as.formula(paste(.SdrBacktick(lhs), "~", rhs))
+  ScidrRegressionFormula(as.character(rhs_terms), outcome = lhs)
 }
 
 .SdrLabelOrName <- function(data, variable) {
