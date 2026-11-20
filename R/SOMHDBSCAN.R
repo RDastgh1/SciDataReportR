@@ -2,7 +2,7 @@
 #'
 #' @description Trains the same frozen SOM used by
 #'   [CreateClusterModel_SOM_MClust()],
-#' then applies HDBSCAN to its node codebook. Participants inherit the cluster
+#' then applies HDBSCAN to its node prototypes. Participants inherit the cluster
 #' (or noise) label of their best-matching node. This is a node-based phenotype
 #' model: projected participants are mapped to the original nodes and are not
 #' refit with HDBSCAN.
@@ -71,7 +71,7 @@ CreateClusterModel_SOM_HDBSCAN <- function(data, variables = NULL,
   } else expand.grid(MinPts = minPts_range,
     Epsilon = cluster_selection_epsilon_range)
 
-  # This pipeline clusters the SOM codebook with HDBSCAN, so the SOM's own
+  # This pipeline clusters the SOM node prototypes with HDBSCAN, so the SOM's own
   # latent-profile grid is not just unused, it is the most expensive step in
   # the run. Handing the node clustering to CreateClusterModel_SOM_MClust()
   # keeps its frozen scaling, SOM fit, node-to-individual mapping, and

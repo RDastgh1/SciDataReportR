@@ -65,7 +65,7 @@ diagnostics. Probability fields inherited from the SOM infrastructure are
 missing because hierarchical clustering has no posterior probabilities.
 }
 \description{
-Trains the shared SOM workflow and clusters all node codebook
+Trains the shared SOM workflow and clusters all node prototype
 profiles with equal weight. Participants inherit their best-matching node's
 dendrogram label. New participants map to the frozen SOM without refitting.
 }

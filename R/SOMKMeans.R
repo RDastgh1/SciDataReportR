@@ -11,7 +11,7 @@
   covariance <- stats::cov(codes)
   average_variance <- mean(diag(covariance))
   if (!is.finite(average_variance) || average_variance <= 0) {
-    stop("SOM node codebook has no variation.")
+    stop("SOM node prototypes have no variation.")
   }
   regularized <- (1 - covariance_shrinkage) * covariance +
     covariance_shrinkage * diag(average_variance, ncol(codes))
@@ -246,8 +246,8 @@ CreateClusterModel_SOM_KMeans <- function(data, variables = NULL,
       silhouette = PlotClusterSilhouette(silhouette, title = NULL, observation_unit = "SOM node"),
       silhouette_by_k = .ClusterCandidateCurve(rows, "Silhouette", "", "Average node silhouette width"),
       calinski_harabasz = .ClusterCandidateCurve(rows, "CalinskiHarabasz", ""),
-      centre_heatmap = PlotClusterCentreHeatmap(centers, labels, "", "SOM codebook units"),
-      centre_profile = PlotClusterCentreProfile(centers, labels, "", "SOM codebook units"),
+      centre_heatmap = PlotClusterCentreHeatmap(centers, labels, "", "Node prototype mean"),
+      centre_profile = PlotClusterCentreProfile(centers, labels, "", "Node prototype mean"),
       profiles = PlotClusterProfiles(som$DataWithClusters, ClusterVariableName, som$vars_used))))
   individual <- .SOMKMeansAddDiagnostics(.SOMHardClusterFitClass(som$ProbFit$individual),
     .SOMKMeansFeatures(som, data), ModelInfo)

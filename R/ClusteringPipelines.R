@@ -155,7 +155,7 @@
   weights <- as.numeric(weights)
   if (nrow(X) < k || any(!is.finite(X)) || any(!is.finite(weights)) ||
       any(weights <= 0)) {
-    stop("Weighted SOM mixture requires finite codebook rows and positive node weights.")
+    stop("Weighted SOM mixture requires finite node prototypes and positive node weights.")
   }
   p <- ncol(X)
   total_weight <- sum(weights)

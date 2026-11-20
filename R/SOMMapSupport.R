@@ -2,9 +2,9 @@
 #'
 #' @description `r lifecycle::badge("superseded")`
 #'
-#'   Calculates the competing codebook-node support and participant
+#'   Calculates the competing SOM-node support and participant
 #'   occupancy constraints for a planned SOM + Mclust search. Mclust is fit to
-#'   SOM codebook vectors, so its effective sample size is the number of nodes;
+#'   SOM node prototypes, so its effective sample size is the number of nodes;
 #'   participant count instead limits how sparse a map should become.
 #'
 #'   This k- and model-informed sizing is no longer used by
@@ -17,7 +17,7 @@
 #' @param p Number of post-preprocessing clustering variables entering Mclust.
 #' @param k_range Requested profile counts.
 #' @param models TidyLPA Mclust model IDs (1, 2, 3, or 6).
-#' @param min_nodes_per_parameter Target codebook nodes per estimated mixture
+#' @param min_nodes_per_parameter Target SOM nodes per estimated mixture
 #'   parameter. Default `3`.
 #' @param min_participants_per_node Target complete training participants per
 #'   SOM node. Default `10`; this is an engineering map-health target, not a

@@ -317,7 +317,7 @@ ProjectCluster.Pipeline_Hierarchical <- function(object, data,
 
 #' Fit hierarchical clusters on a frozen self-organizing map
 #'
-#' @description Trains the shared SOM workflow and clusters all node codebook
+#' @description Trains the shared SOM workflow and clusters all node prototype
 #'   profiles with equal weight. Participants inherit their best-matching node's
 #'   dendrogram label. New participants map to the frozen SOM without refitting.
 #' @inheritParams CreateClusterModel_Hierarchical
@@ -441,7 +441,7 @@ CreateClusterModel_SOM_Hierarchical <- function(data, variables = NULL,
     silhouette = best$silhouette, cluster_sizes = cluster_sizes,
     node_fit = node_fit, node_weighting = "uniform",
     FitDiagnostics = som$ModelInfo_SOM$SOMFit,
-    plots = .HierarchicalPlots(fitted, selected, rows, labels, "SOM codebook units"))
+    plots = .HierarchicalPlots(fitted, selected, rows, labels, "Node prototype mean"))
   ModelInfo$plots$silhouette <- PlotClusterSilhouette(best$silhouette,
     title = NULL, observation_unit = "SOM node")
   ModelInfo$plots$profiles <- PlotClusterProfiles(som$DataWithClusters,

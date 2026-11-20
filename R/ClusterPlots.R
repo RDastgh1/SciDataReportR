@@ -65,7 +65,68 @@ NULL
   StabilityARI_P05 = "higher", StabilityARI_NonBoundary = "higher",
   StabilityARI_NonBoundary_P05 = "higher",
   BoundaryParticipantProportion = "lower",
-  MaxClusterBoundaryProportion = "lower")
+  MaxClusterBoundaryProportion = "lower", BoundaryPct = "lower")
+
+# Display names for review panels and table headers. Other metrics fall back on
+# .ClusterMetricLabel(). BoundaryPct is stored as a share and displayed as a
+# percentage; BLRTPValue is displayed as -log10(p).
+.ClusterMetricDisplayNames <- c(
+  BoundaryPct = "Boundary %",
+  StabilityARI_Mean = "Mean ARI across refits",
+  BLRTPValue = "Bootstrap likelihood-ratio test p-value (−log10 scale)")
+
+.ClusterMetricDisplay <- function(metrics) {
+  metrics <- as.character(metrics)
+  labels <- .ClusterMetricLabel(metrics)
+  named <- metrics %in% names(.ClusterMetricDisplayNames)
+  labels[named] <- .ClusterMetricDisplayNames[metrics[named]]
+  labels
+}
+
+# What each candidate review shows by default. SOM + Mclust shows the criteria
+# used to choose k (AIC, BIC, entropy, boundary % and mean ARI); ICL stays in
+# the table because the composite index does not use it and, on SOM nodes, it
+# only adds a classification penalty to BIC. Other pipelines keep the generic
+# list.
+.SOMReviewMetrics <- c("AIC", "BIC", "Entropy", "BoundaryPct",
+  "StabilityARI_Mean", "BLRTPValue")
+.ClusterGenericReviewMetrics <- c(
+  "BIC", "ICL", "AIC", "Entropy", "WSS", "Silhouette",
+  "CalinskiHarabasz", "Persistence", "MeanMembershipProbability",
+  "NoiseProportion", "AverageSilhouette", "MeanMedoidDistance",
+  "MinClusterN", "MinClassN", "SizeBalance", "ReproducibilityScore",
+  "MaxUncertainty")
+
+# A SOM + Mclust candidate table, recognised by its mixture-support columns when
+# it has lost the attributes its pipeline recorded (for example after
+# dplyr::bind_rows() across grids).
+.IsSOMMixtureFitTable <- function(fit_table) {
+  all(c("SupportStatus", "MixtureNodes", "BIC", "Classes") %in% names(fit_table))
+}
+
+.ClusterReviewMetrics <- function(fit_table) {
+  recorded <- attr(fit_table, "ReviewMetrics", exact = TRUE)
+  if (length(recorded)) return(recorded)
+  if (.IsSOMMixtureFitTable(fit_table)) return(.SOMReviewMetrics)
+  .ClusterGenericReviewMetrics
+}
+
+# Fit tables are stored in different places by different pipelines; accept the
+# fitted model wherever a fit table is expected.
+.ClusterFitTableFrom <- function(x) {
+  if (is.data.frame(x)) return(x)
+  if (is.list(x)) {
+    if (identical(class(x)[[1]], "Pipeline_SOM_MClust") &&
+        is.data.frame(x$ModelInfo_MClust$fit_table)) {
+      return(x$ModelInfo_MClust$fit_table)
+    }
+    for (slot in c("ModelInfo", "ModelInfo_MClust")) {
+      if (is.data.frame(x[[slot]]$fit_table)) return(x[[slot]]$fit_table)
+    }
+  }
+  stop("Supply a candidate fit table or a fitted model from a CreateClusterModel_*() function.",
+    call. = FALSE)
+}
 
 .SetClusterMetricDirection <- function(fit_table, higher = character(),
     lower = character()) {
@@ -78,11 +139,15 @@ NULL
 }
 
 # Fixed directions, then the fit table's recorded directions, then any explicit
-# override. Metrics with no known direction return NA.
+# override. Metrics with no known direction return NA. A SOM mixture table
+# without recorded directions still uses tidyLPA's lower-is-better BIC.
 .ClusterMetricDirection <- function(metrics, fit_table = NULL,
     direction = NULL) {
   known <- .ClusterMetricDirections
   recorded <- attr(fit_table, "MetricDirection", exact = TRUE)
+  if (!length(recorded) && .IsSOMMixtureFitTable(fit_table)) {
+    recorded <- c(BIC = "lower")
+  }
   if (length(recorded)) known[names(recorded)] <- recorded
   if (length(direction)) {
     if (is.null(names(direction)) || any(!direction %in% c("higher", "lower"))) {
@@ -97,7 +162,7 @@ NULL
     direction = NULL) {
   metrics <- as.character(metrics)
   preferred <- .ClusterMetricDirection(metrics, fit_table, direction)
-  labels <- .ClusterMetricLabel(metrics)
+  labels <- .ClusterMetricDisplay(metrics)
   ifelse(is.na(preferred), labels,
     paste0(labels, " (", preferred, " is better)"))
 }
@@ -639,11 +704,19 @@ PlotClusterComposition <- function(data, variables, cluster,
 }
 
 #' Plot cluster fit-review metrics
-#' @param fit_table Candidate-model fit table.
-#' @param x Candidate-count column name.
-#' @param metrics Numeric metric columns to display. When `NULL`, a concise
-#'   set of decision-relevant raw metrics is selected automatically.
-#' @param group Optional candidate-family column, such as `"Model"` for
+#'
+#' @description The candidate-model review used to choose the number of
+#' clusters: one panel per criterion, one line per model family, with each
+#' panel labelled by its preferred direction. A clustering model's own
+#' `fit_plot` is this figure, so `PlotClusterFitReview(model)` and
+#' `model$fit_plot` show the same thing.
+#' @param fit_table Candidate-model fit table, or a fitted model from a
+#'   `CreateClusterModel_*()` function (its candidate fit table is used).
+#' @param x Candidate-count column name. Defaults to `"Classes"`, or to
+#'   `"MinPts"` for density-based tables that have no `Classes` column.
+#' @param metrics Numeric metric columns to display, in panel order. When
+#'   `NULL`, the pipeline's review metrics are used (see Details).
+#' @param group Optional candidate-family column, such as `"ModelLabel"` for
 #'   Mclust or `"Epsilon"` for HDBSCAN. When `NULL`, it is inferred when
 #'   possible.
 #' @param title Plot title.
@@ -652,16 +725,41 @@ PlotClusterComposition <- function(data, variables, cluster,
 #'   `c(BIC = "lower")`. It overrides the directions recorded by the
 #'   clustering pipeline in `attr(fit_table, "MetricDirection")` and the
 #'   package defaults.
-#' @details Each panel is labelled with the metric's preferred direction, such
-#'   as "BIC (lower is better)". Directions that do not depend on the backend
-#'   are built in (for example AIC lower, ICL and Entropy higher). BIC's
-#'   direction does: mclust reports it on a higher-is-better scale, while
-#'   tidyLPA (used by [CreateClusterModel_SOM_MClust()]) and poLCA report it on
-#'   a lower-is-better scale. Fit tables returned by the package's clustering
-#'   pipelines record the direction they used; for other tables, supply it via
-#'   `metric_direction`, otherwise the BIC panel is shown without a direction.
-#'   ICL is higher-is-better on both mclust's and tidyLPA's scale, so in a
-#'   tidyLPA fit table BIC and ICL panels point in opposite directions.
+#' @details
+#' **Default panels.** For [CreateClusterModel_SOM_MClust()] the panels are
+#' the criteria used to choose k and the covariance model: AIC, BIC, entropy,
+#' boundary % (`BoundaryPct`, the share of participants flagged as boundary
+#' participants under soft assignment, shown as a percentage), mean ARI
+#' across stability refits (`StabilityARI_Mean`, when stability was run) and,
+#' when tidyLPA bootstraps were requested, the bootstrap likelihood-ratio test
+#' p-value on a \eqn{-\log_{10}}{-log10} scale with a dashed line at p = 0.05. ICL is
+#' kept in the fit table but not plotted by default: the composite index does
+#' not use it, and on SOM nodes it is BIC plus a classification penalty, so
+#' it repeats what BIC and entropy show. Other pipelines show their own
+#' decision metrics. Pass `metrics` to choose panels yourself.
+#'
+#' **Directions.** Each panel is labelled with the metric's preferred
+#' direction, such as "BIC (lower is better)". Directions that do not depend on
+#' the backend are built in (for example AIC lower, ICL and Entropy higher).
+#' BIC's direction does: mclust reports it on a higher-is-better scale, while
+#' tidyLPA (used by [CreateClusterModel_SOM_MClust()]) and poLCA report it on a
+#' lower-is-better scale. Fit tables returned by the package's clustering
+#' pipelines record the direction they used; for other tables, supply it via
+#' `metric_direction`, otherwise the BIC panel is shown without a direction.
+#' ICL is higher-is-better on both mclust's and tidyLPA's scale, so in a
+#' tidyLPA fit table BIC and ICL point in opposite directions.
+#'
+#' **Marked candidates.** The candidate recommended by the composite (AHP)
+#' index is ringed on every panel. For SOM + Mclust, point shape shows mixture
+#' support: candidates with fewer SOM nodes than mixture parameters
+#' ("over-parameterized") and candidates excluded by `min_cluster_prop`
+#' ("ineligible") cannot be recommended.
+#'
+#' **What the criteria describe.** For SOM + Mclust with the default
+#' `node_weighting = "uniform"`, AIC, BIC and ICL describe the mixture fitted
+#' to the SOM nodes, so the sample size in BIC is the number of nodes in the
+#' mixture, not the number of participants. Compare them across candidates on
+#' the same map, never across grid sizes.
 #' @return A `ggplot` object.
 #' @examples
 #' \donttest{
@@ -670,22 +768,20 @@ PlotClusterComposition <- function(data, variables, cluster,
 #' model <- CreateClusterModel_KMeans(
 #'   df_Training, paste0("Var", 1:12), k_range = 2:4
 #' )
-#' PlotClusterFitReview(model$ModelInfo$fit_table)
+#' PlotClusterFitReview(model)
 #' }
 #' @export
 PlotClusterFitReview <- function(fit_table, x = "Classes", metrics = NULL,
     group = NULL, title = "Candidate model review", metric_direction = NULL) {
+  fit_table <- .ClusterFitTableFrom(fit_table)
+  if (missing(x) && !x %in% names(fit_table) && "MinPts" %in% names(fit_table)) {
+    x <- "MinPts"
+  }
   if (!x %in% names(fit_table)) {
     stop("x was not found in fit_table: ", x)
   }
   if (is.null(metrics)) {
-    review_metrics <- c(
-      "BIC", "ICL", "AIC", "Entropy", "WSS", "Silhouette",
-      "CalinskiHarabasz", "Persistence", "MeanMembershipProbability",
-      "NoiseProportion", "AverageSilhouette", "MeanMedoidDistance",
-      "MinClusterN", "MinClassN", "SizeBalance", "ReproducibilityScore",
-      "MaxUncertainty")
-    metrics <- intersect(review_metrics, names(fit_table))
+    metrics <- intersect(.ClusterReviewMetrics(fit_table), names(fit_table))
   }
   metrics <- metrics[metrics %in% names(fit_table)]
   metrics <- metrics[vapply(fit_table[metrics], is.numeric, logical(1))]
@@ -708,57 +804,104 @@ PlotClusterFitReview <- function(fit_table, x = "Classes", metrics = NULL,
     stop("group was not found in fit_table: ", group)
   }
   df_Long <- tidyr::pivot_longer(
-    fit_table, dplyr::all_of(metrics), names_to = "Metric", values_to = "Value")
+    as.data.frame(fit_table), dplyr::all_of(metrics),
+    names_to = "Metric", values_to = "Value")
+  # Panels follow the order of `metrics`, which puts the decision criteria first.
+  df_Long$Metric <- factor(df_Long$Metric, levels = metrics)
+  df_Long$PlotValue <- df_Long$Value
+  is_blrt <- df_Long$Metric == "BLRTPValue"
+  df_Long$PlotValue[is_blrt] <- -log10(pmax(df_Long$Value[is_blrt], .Machine$double.xmin))
+  is_share <- df_Long$Metric == "BoundaryPct"
+  df_Long$PlotValue[is_share] <- 100 * df_Long$Value[is_share]
+
   has_support_status <- "SupportStatus" %in% names(df_Long)
-  if (is.null(group)) {
-    plot <- if (has_support_status) {
-      ggplot2::ggplot(df_Long, ggplot2::aes(
-        x = .data[[x]], y = .data$Value, shape = .data$SupportStatus)) +
-        ggplot2::geom_point()
-    } else {
-      ggplot2::ggplot(
-        df_Long, ggplot2::aes(x = .data[[x]], y = .data$Value)) +
-        ggplot2::geom_point()
+  if (has_support_status) {
+    status <- as.character(df_Long$SupportStatus)
+    if ("Eligible" %in% names(df_Long)) {
+      status[!(df_Long$Eligible %in% TRUE) & status != "over-parameterized"] <- "ineligible"
     }
-    if (nrow(fit_table) > 1) {
-      plot <- plot + ggplot2::geom_line(ggplot2::aes(group = .data$Metric))
-    }
-  } else {
-    plot <- if (has_support_status) {
-      ggplot2::ggplot(
-        df_Long,
-        ggplot2::aes(
-          x = .data[[x]], y = .data$Value, color = factor(.data[[group]]),
-          shape = .data$SupportStatus,
-          group = interaction(.data$Metric, .data[[group]]))) +
-        ggplot2::geom_point()
-    } else {
-      ggplot2::ggplot(
-        df_Long,
-        ggplot2::aes(
-          x = .data[[x]], y = .data$Value, color = factor(.data[[group]]),
-          group = interaction(.data$Metric, .data[[group]]))) +
-        ggplot2::geom_point()
-    }
-    if (nrow(fit_table) > 1) plot <- plot + ggplot2::geom_line()
-    legend_title <- if (identical(group, "ModelLabel")) "Model" else group
-    plot <- plot + .SciDataColourScale() + ggplot2::labs(color = legend_title)
+    df_Long$SupportStatus <- factor(status, levels = c("supported",
+      "under-supported", "over-parameterized",
+      if (any(status == "ineligible", na.rm = TRUE)) "ineligible"))
   }
-  plot <- plot +
+
+  mapping <- ggplot2::aes(x = .data[[x]], y = .data$PlotValue,
+    group = .data$Metric)
+  if (!is.null(group)) {
+    group_values <- as.character(df_Long[[group]])
+    families <- unname(.MclustModelLabels)
+    if (identical(group, "ModelLabel") && all(group_values %in% families)) {
+      # Colours are assigned over every Mclust family, so a family keeps its
+      # colour whether or not the others are in the table.
+      df_Long$Group <- factor(group_values, levels = families)
+      family_colours <- stats::setNames(.SciDataColorValues(length(families)), families)
+      colour_scale <- ggplot2::scale_colour_manual(
+        values = family_colours[families %in% group_values])
+    } else {
+      df_Long$Group <- factor(df_Long[[group]])
+      colour_scale <- .SciDataColourScale()
+    }
+    mapping <- utils::modifyList(mapping, ggplot2::aes(colour = .data$Group,
+      group = interaction(.data$Metric, .data$Group)))
+  }
+  if (has_support_status) {
+    mapping <- utils::modifyList(mapping, ggplot2::aes(shape = .data$SupportStatus))
+  }
+
+  plot <- ggplot2::ggplot(df_Long, mapping) + ggplot2::geom_point()
+  if (nrow(fit_table) > 1) plot <- plot + ggplot2::geom_line()
+  captions <- character()
+  if (nrow(fit_table) > 1 && "Recommended" %in% names(df_Long) &&
+      any(df_Long$Recommended %in% TRUE)) {
+    plot <- plot + ggplot2::geom_point(
+      data = df_Long[df_Long$Recommended %in% TRUE, , drop = FALSE],
+      ggplot2::aes(x = .data[[x]], y = .data$PlotValue), inherit.aes = FALSE,
+      shape = 21, size = 4.5, stroke = 0.8, colour = "black", fill = NA)
+    captions <- c(captions, "Ringed: candidate recommended by the composite (AHP) index")
+  }
+  if (has_support_status && any(df_Long$SupportStatus %in% "over-parameterized")) {
+    captions <- c(captions,
+      "Cross: more mixture parameters than SOM nodes, so it cannot be recommended")
+  }
+  if (has_support_status && any(df_Long$SupportStatus %in% "ineligible")) {
+    captions <- c(captions,
+      "Star: smallest cluster below min_cluster_prop, so it cannot be recommended")
+  }
+  if ("BLRTPValue" %in% metrics) {
+    plot <- plot + ggplot2::geom_hline(
+      data = data.frame(Metric = factor("BLRTPValue", levels = metrics),
+        yintercept = -log10(0.05)),
+      ggplot2::aes(yintercept = .data$yintercept), inherit.aes = FALSE,
+      linetype = "dashed", colour = "grey35")
+  }
+  if (!is.null(group)) {
+    legend_title <- if (identical(group, "ModelLabel")) "Model" else group
+    plot <- plot + colour_scale + ggplot2::labs(colour = legend_title)
+    # Long family labels ("Model 6: varying variance, varying covariance")
+    # overflow a one-row legend above a single-column figure.
+    if (max(nchar(levels(df_Long$Group))) > 25) {
+      plot <- plot + ggplot2::guides(colour = ggplot2::guide_legend(ncol = 2))
+    }
+  }
+  if (has_support_status) {
+    plot <- plot + ggplot2::scale_shape_manual(
+      values = c("supported" = 16, "under-supported" = 1,
+        "over-parameterized" = 4, "ineligible" = 8),
+      name = "SOM mixture support", drop = FALSE)
+  }
+  plot +
     ggplot2::facet_wrap(
       ~Metric, scales = "free_y", ncol = 1,
       labeller = ggplot2::labeller(Metric = function(values)
         .ClusterMetricDirectionLabel(values, fit_table, metric_direction))) +
     ggplot2::theme_bw() +
+    ggplot2::theme(legend.position = "top", legend.box = "vertical",
+      plot.caption = ggplot2::element_text(hjust = 0)) +
     ggplot2::labs(
-      title = title, x = .ClusterMetricLabel(x), y = "Fit metric")
-  if (has_support_status) {
-    plot <- plot + ggplot2::scale_shape_manual(
-      values = c("supported" = 16, "under-supported" = 1,
-        "over-parameterized" = 4),
-      name = "SOM mixture support", drop = FALSE)
-  }
-  plot
+      title = title,
+      x = if (identical(x, "Classes")) "Number of clusters" else .ClusterMetricLabel(x),
+      y = "Fit metric",
+      caption = if (length(captions)) paste(captions, collapse = "\n") else NULL)
 }
 
 # A single-metric raw candidate curve. Used for the elbow, silhouette, BIC,

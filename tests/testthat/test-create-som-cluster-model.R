@@ -55,16 +55,15 @@ test_that("CreateClusterModel_SOM_MClust returns the complete model-review outpu
   expect_true(all(fit_table$MinProfileNodeN == as.integer(fit_table$MinProfileNodeN)))
   expect_true(all(fit_table$MaxProfileNodeN == as.integer(fit_table$MaxProfileNodeN)))
   expect_false(any(c("n_min", "n_max", "BLRT_val", "BLRT_p") %in% names(fit_table)))
-  expect_true("Bootstrap likelihood-ratio test p-value (−log10 scale)" %in%
-    as.character(model$fit_plot$data$name))
-  expect_equal(
-    model$fit_plot$data$PlotValue[model$fit_plot$data$name ==
-      "Bootstrap likelihood-ratio test p-value (−log10 scale)"],
+  blrt_rows <- model$fit_plot$data$Metric == "BLRTPValue"
+  expect_true(any(blrt_rows))
+  expect_equal(model$fit_plot$data$PlotValue[blrt_rows],
     -log10(pmax(fit_table$BLRTPValue, .Machine$double.xmin)))
   expect_identical(.ClusterMetricDirection(c("BIC", "ICL"), fit_table),
     c("lower", "higher"))
-  expect_true("BIC (lower is better)" %in%
-    model$fit_plot$facet$params$labeller(data.frame(name = "BIC"))[[1]])
+  expect_identical(
+    model$fit_plot$facet$params$labeller(data.frame(Metric = c("BIC", "BLRTPValue")))[[1]],
+    c("BIC (lower is better)", "Bootstrap likelihood-ratio test p-value (−log10 scale)"))
   expected_best <- fit_table[which.max(fit_table$ahp_index), , drop = FALSE]
   expect_equal(model$ModelInfo_MClust$AHP$ahp_best_row$Model, expected_best$Model)
   expect_equal(model$ModelInfo_MClust$AHP$ahp_best_row$Classes, expected_best$Classes)
@@ -199,10 +198,8 @@ test_that("SOM Mclust supports tidyLPA model 6", {
   ))
 
   expect_identical(model$ModelInfo_MClust$fit_table$Model, 6L)
-  expect_true(any(grepl(
-    "Model 6: varying variance, varying covariance",
-    levels(model$fit_plot$data$Model), fixed = TRUE
-  )))
+  expect_true("Model 6: varying variance, varying covariance" %in%
+    ggplot2::ggplot_build(model$fit_plot)$plot$scales$get_scales("colour")$get_breaks())
 
   mixed_model <- suppressWarnings(CreateClusterModel_SOM_MClust(
     df_Labelled,
@@ -273,7 +270,7 @@ test_that("CreateClusterModel_SOM_MClust adds deterministic subsample stability 
   expect_false("CAICCLC" %in% names(fit_table))
   expect_true(all(c("CAIC", "CLC") %in% names(fit_table)))
   expect_false(any(grepl("MaxProbBoxplot", names(model_one$ProbFit$plots))))
-  expect_true("ReproducibilityScore" %in% unique(model_one$fit_plot$data$name))
+  expect_true("StabilityARI_Mean" %in% model_one$fit_plot$data$Metric)
   expect_equal(
     model_one$ModelInfo_MClust$Stability$replicates$ARI,
     model_two$ModelInfo_MClust$Stability$replicates$ARI
@@ -591,7 +588,7 @@ test_that("SOM Mclust skips tidyLPA bootstraps by default", {
 
   fit_table <- model$ModelInfo_MClust$fit_table
   expect_true(all(is.na(fit_table$BLRTPValue)))
-  expect_false(any(grepl("likelihood-ratio", as.character(model$fit_plot$data$name))))
+  expect_false("BLRTPValue" %in% model$fit_plot$data$Metric)
   expect_error(CreateClusterModel_SOM_MClust(df_Labelled, "age", lpa_bootstrap_n = -1),
     "mixture_bootstrap_n")
 })

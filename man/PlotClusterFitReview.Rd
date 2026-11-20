@@ -14,14 +14,16 @@ PlotClusterFitReview(
 )
 }
 \arguments{
-\item{fit_table}{Candidate-model fit table.}
+\item{fit_table}{Candidate-model fit table, or a fitted model from a
+\verb{CreateClusterModel_*()} function (its candidate fit table is used).}
 
-\item{x}{Candidate-count column name.}
+\item{x}{Candidate-count column name. Defaults to \code{"Classes"}, or to
+\code{"MinPts"} for density-based tables that have no \code{Classes} column.}
 
-\item{metrics}{Numeric metric columns to display. When \code{NULL}, a concise
-set of decision-relevant raw metrics is selected automatically.}
+\item{metrics}{Numeric metric columns to display, in panel order. When
+\code{NULL}, the pipeline's review metrics are used (see Details).}
 
-\item{group}{Optional candidate-family column, such as \code{"Model"} for
+\item{group}{Optional candidate-family column, such as \code{"ModelLabel"} for
 Mclust or \code{"Epsilon"} for HDBSCAN. When \code{NULL}, it is inferred when
 possible.}
 
@@ -37,19 +39,47 @@ package defaults.}
 A \code{ggplot} object.
 }
 \description{
-Plot cluster fit-review metrics
+The candidate-model review used to choose the number of
+clusters: one panel per criterion, one line per model family, with each
+panel labelled by its preferred direction. A clustering model's own
+\code{fit_plot} is this figure, so \code{PlotClusterFitReview(model)} and
+\code{model$fit_plot} show the same thing.
 }
 \details{
-Each panel is labelled with the metric's preferred direction, such
-as "BIC (lower is better)". Directions that do not depend on the backend
-are built in (for example AIC lower, ICL and Entropy higher). BIC's
-direction does: mclust reports it on a higher-is-better scale, while
-tidyLPA (used by \code{\link[=CreateClusterModel_SOM_MClust]{CreateClusterModel_SOM_MClust()}}) and poLCA report it on
-a lower-is-better scale. Fit tables returned by the package's clustering
+\strong{Default panels.} For \code{\link[=CreateClusterModel_SOM_MClust]{CreateClusterModel_SOM_MClust()}} the panels are
+the criteria used to choose k and the covariance model: AIC, BIC, entropy,
+boundary \% (\code{BoundaryPct}, the share of participants flagged as boundary
+participants under soft assignment, shown as a percentage), mean ARI
+across stability refits (\code{StabilityARI_Mean}, when stability was run) and,
+when tidyLPA bootstraps were requested, the bootstrap likelihood-ratio test
+p-value on a \eqn{-\log_{10}}{-log10} scale with a dashed line at p = 0.05. ICL is
+kept in the fit table but not plotted by default: the composite index does
+not use it, and on SOM nodes it is BIC plus a classification penalty, so
+it repeats what BIC and entropy show. Other pipelines show their own
+decision metrics. Pass \code{metrics} to choose panels yourself.
+
+\strong{Directions.} Each panel is labelled with the metric's preferred
+direction, such as "BIC (lower is better)". Directions that do not depend on
+the backend are built in (for example AIC lower, ICL and Entropy higher).
+BIC's direction does: mclust reports it on a higher-is-better scale, while
+tidyLPA (used by \code{\link[=CreateClusterModel_SOM_MClust]{CreateClusterModel_SOM_MClust()}}) and poLCA report it on a
+lower-is-better scale. Fit tables returned by the package's clustering
 pipelines record the direction they used; for other tables, supply it via
 \code{metric_direction}, otherwise the BIC panel is shown without a direction.
 ICL is higher-is-better on both mclust's and tidyLPA's scale, so in a
-tidyLPA fit table BIC and ICL panels point in opposite directions.
+tidyLPA fit table BIC and ICL point in opposite directions.
+
+\strong{Marked candidates.} The candidate recommended by the composite (AHP)
+index is ringed on every panel. For SOM + Mclust, point shape shows mixture
+support: candidates with fewer SOM nodes than mixture parameters
+("over-parameterized") and candidates excluded by \code{min_cluster_prop}
+("ineligible") cannot be recommended.
+
+\strong{What the criteria describe.} For SOM + Mclust with the default
+\code{node_weighting = "uniform"}, AIC, BIC and ICL describe the mixture fitted
+to the SOM nodes, so the sample size in BIC is the number of nodes in the
+mixture, not the number of participants. Compare them across candidates on
+the same map, never across grid sizes.
 }
 \examples{
 \donttest{
@@ -58,6 +88,6 @@ df_Training <- dplyr::filter(SimulatedPhenotypeData, .data$Cohort == "Training")
 model <- CreateClusterModel_KMeans(
   df_Training, paste0("Var", 1:12), k_range = 2:4
 )
-PlotClusterFitReview(model$ModelInfo$fit_table)
+PlotClusterFitReview(model)
 }
 }

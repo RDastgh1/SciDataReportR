@@ -688,6 +688,7 @@ Obj_ClustReview <- CreateClusterModel_SOM_MClust(
   Relabel = FALSE, min_nodes_per_cluster = NULL
 )
 Obj_ClustReview$ModelInfo_MClust$fit_table
+ClusterModelSelectionTable(Obj_ClustReview)
 Obj_ClustReview$ModelInfo_MClust$AHP$recommendation
 Obj_ClustReview$Stability$summary
 print(Obj_ClustReview$fit_plot)
@@ -706,6 +707,9 @@ Obj_ClustFinal <- CreateClusterModel_SOM_MClust(
   Relabel = FALSE, min_nodes_per_cluster = NULL
 )
 ObjClustProjected <- ProjectCluster(Obj_ClustFinal, df_Projection)
+PlotSOMMap(Obj_ClustFinal)
+PlotSOMMap(Obj_ClustFinal, fill = "Boundary")
+ExplainSOMAssignment(Obj_ClustFinal, row = 1)
 PrintPlots(Obj_ClustFinal$ModelInfo_SOM$plots)
 PrintPlots(Obj_ClustFinal$ModelInfo_SOM$SOMFit$plots)
 PrintPlots(Obj_ClustFinal$ModelInfo_SOM$ProjectionReference$plots)
@@ -723,7 +727,7 @@ PrintPlots(
 ### Interpreting a SOM projection
 
 The SOM map is a frozen phenotype instrument. Each new model uses one seeded,
-full-cohort batch SOM fit from a deterministic initial codebook. This keeps
+full-cohort batch SOM fit from deterministic initial node prototypes. This keeps
 training fast and reproducible while retaining the fitted scaling, prototypes,
 grid, topology, neighbourhood, and node-level mixture for projection. When
 dimensions are omitted, the automatic square grid is k-informed: exploratory
@@ -737,7 +741,7 @@ frozen map is then used for every compared k and all future projections.
 
 Hard projection uses the Mclust class of the best-matching node. Soft
 projection combines Mclust node posterior probabilities from the nearest
-`soft_n_nodes` codebook nodes using normalized inverse-squared standardized
+`soft_n_nodes` SOM nodes using normalized inverse-squared standardized
 feature distances. Both `Cluster_Hard` and `Cluster_Soft` are retained, while
 `assignment` controls which is exposed as canonical `Cluster` (soft-3 by
 default). `SoftEntropy`
@@ -745,10 +749,14 @@ is the normalized entropy of the soft membership probabilities and
 `SoftMargin` is the gap between the two largest probabilities. Boundary status
 (`SoftMargin < boundary_margin_threshold` or
 `SoftEntropy > boundary_entropy_threshold`) is a confidence diagnostic only;
-it never removes or suppresses a participant.
+it never removes or suppresses a participant. `ExplainSOMAssignment()` writes
+out this calculation for chosen participants: their nearest nodes, distances,
+weights, the nodes' Mclust probabilities and the blended result.
+`PlotSOMMap()` draws the map itself, coloured by cluster, participants per
+node, boundary share, U-matrix or one variable, with cluster borders marked.
 
 `ProbFit` answers the assignment question. Its node-level `prob_*` columns
-are Mclust posteriors for codebook nodes; participant-level `SoftProb_*`,
+are Mclust posteriors for SOM nodes; participant-level `SoftProb_*`,
 `SoftEntropy`, and `SoftMargin` are proximity-weighted membership diagnostics.
 Use `ProbFit$individual` for these values and for `Cluster`, `Cluster_Hard`,
 and `Cluster_Soft`.
@@ -1042,7 +1050,7 @@ they cannot make a weak phenotype stable.
 ## SOM + Mclust candidate-table fields
 
 `CreateClusterModel_SOM_MClust()` uses tidyLPA with its mclust backend to fit
-latent profiles to frozen SOM node codebooks. `ShowFitTable()` in its help
+latent profiles to the frozen SOM node prototypes. `ShowFitTable()` in its help
 example is only a local display helper: it rounds a table and displays it with
 a frozen header; it is not a SciDataReportR function.
 
@@ -1093,7 +1101,7 @@ rescaling used to construct its index, not a standalone scientific result.
 | Latent class analysis | Log likelihood (higher), `AIC`/`BIC` (lower), and entropy (higher) from the fitted item-response model [@linzer2011]. |
 | HDBSCAN | `Persistence` (mean cluster persistence; higher), `NoiseProportion` (lower), and the data-derived extracted class count. Membership probability and outlier score are assignment diagnostics, not candidate-selection probabilities [@mcinnes2017]. |
 | SOM + Mclust | The LPA criteria, node allocation, BLRT, and subsample metrics defined in the dedicated SOM + Mclust table below. SOM distances describe map representation, not phenotype probability [@kohonen1982]. |
-| SOM + HDBSCAN | Node-codebook HDBSCAN persistence, noise proportion, extracted node-cluster count, and 90% participant subsample stability. `minPts` and epsilon are requested settings; class count is data-derived. |
+| SOM + HDBSCAN | Node-prototype HDBSCAN persistence, noise proportion, extracted node-cluster count, and 90% participant subsample stability. `minPts` and epsilon are requested settings; class count is data-derived. |
 
 `CreateClusterModel_SOM_MClust()` is the explicit SOM + Mclust API.
 `CreateSOMClusterModel()` remains available for compatibility but is deprecated.

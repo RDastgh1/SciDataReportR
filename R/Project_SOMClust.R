@@ -1,6 +1,6 @@
 
 # Node-level columns that describe an individual's assignment: the node's
-# cluster and its posterior summaries, without the node's codebook vector.
+# cluster and its posterior summaries, without the node's prototype vector.
 .SOMNodeAssignments <- function(node_df) {
   dplyr::select(node_df, dplyr::any_of(c("NodeID", "Cluster", "max_prob",
     "prob_assigned", "uncertainty")), dplyr::matches("^prob_[0-9]+$"))
@@ -40,8 +40,11 @@
   margin <- ordered[, 1] - ordered[, 2]
   reason <- ifelse(margin < margin_threshold & entropy > entropy_threshold, "both",
     ifelse(margin < margin_threshold, "low_margin", ifelse(entropy > entropy_threshold, "high_entropy", NA_character_)))
+  # The nearest nodes, their distances and weights are returned so that
+  # ExplainSOMAssignment() shows exactly the numbers used here.
   list(cluster = max.col(probability, ties.method = "first"), probability = probability, entropy = entropy,
-    margin = margin, boundary = !is.na(reason), reason = reason, bandwidth = soft_bandwidth)
+    margin = margin, boundary = !is.na(reason), reason = reason, bandwidth = soft_bandwidth,
+    nearest = nearest, distance = sqrt(d2), weights = weights)
 }
 
 # Convert candidate-specific node posterior output into the lightweight node

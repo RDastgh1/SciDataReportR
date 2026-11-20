@@ -22,7 +22,7 @@ SOMMapSupport(
 
 \item{models}{TidyLPA Mclust model IDs (1, 2, 3, or 6).}
 
-\item{min_nodes_per_parameter}{Target codebook nodes per estimated mixture
+\item{min_nodes_per_parameter}{Target SOM nodes per estimated mixture
 parameter. Default \code{3}.}
 
 \item{min_participants_per_node}{Target complete training participants per
@@ -37,9 +37,9 @@ diagnostics. \code{SupportStatus} is \code{"supported"}, \code{"under-supported"
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#superseded}{\figure{lifecycle-superseded.svg}{options: alt='[Superseded]'}}}{\strong{[Superseded]}}
 
-Calculates the competing codebook-node support and participant
+Calculates the competing SOM-node support and participant
 occupancy constraints for a planned SOM + Mclust search. Mclust is fit to
-SOM codebook vectors, so its effective sample size is the number of nodes;
+SOM node prototypes, so its effective sample size is the number of nodes;
 participant count instead limits how sparse a map should become.
 
 This k- and model-informed sizing is no longer used by

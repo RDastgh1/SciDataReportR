@@ -27,7 +27,7 @@ test_that("candidate boundary shares use the final soft rule without changing de
   expect_true(all(c("equal", "only_AIC", "only_BIC", "only_Entropy",
     "only_Boundary", "with_Boundary", "without_Boundary") %in%
     model$ModelInfo_MClust$ahp_sensitivity$scheme))
-  expect_true("BoundaryPct" %in% as.character(model$fit_plot$data$name))
+  expect_true("BoundaryPct" %in% model$fit_plot$data$Metric)
   boundary <- SOMOutputFixture(criteria_weights = c(Boundary = 1))
   expect_equal(boundary$ModelInfo_MClust$fit_table$ahp_index,
     boundary$ModelInfo_MClust$fit_table$Boundary_scaled)

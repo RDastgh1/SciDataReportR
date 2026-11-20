@@ -168,18 +168,18 @@ dimensions or \code{map_from} are supplied.}
 \item{som_epochs}{Positive integer batch SOM training epochs, also used
 for grid screening and stability refits. Default 100.}
 
-\item{node_weighting}{Whether codebook nodes enter the mixture with equal
+\item{node_weighting}{Whether SOM nodes enter the mixture with equal
 map-space weight (\code{"uniform"}, default) or their training
 participant occupancy (\code{"occupancy"}). Occupancy weighting supports
 Models 1--3 only.}
 
 \item{assignment}{Participant phenotype definition: \code{"hard"} maps the
 Mclust class of the best-matching SOM node; \code{"soft"} sums the Mclust
-node posterior probabilities across nearby codebook nodes and chooses the
+node posterior probabilities across nearby SOM nodes and chooses the
 largest participant-level probability. Both outputs are always retained;
 the default \code{"soft"} controls the canonical \code{Cluster}.}
 
-\item{soft_n_nodes}{Number of nearest codebook nodes used by soft projection.
+\item{soft_n_nodes}{Number of nearest SOM nodes used by soft projection.
 Their inverse-squared standardized-feature distances are normalized to
 proximity weights. Default \code{3}.}
 
@@ -254,7 +254,7 @@ profile counts with fewer nodes per cluster than this on the chosen map
 are still fitted but trigger one warning listing them. Use NULL to turn
 the warning off.}
 
-\item{min_nodes_per_parameter}{Deprecated; only labels fit-table support. Positive number of codebook nodes per
+\item{min_nodes_per_parameter}{Deprecated; only labels fit-table support. Positive number of SOM nodes per
 estimated free Gaussian-mixture parameter used to label candidates in the
 fit table (\code{SupportStatus}). Default \code{3}. It no longer sizes the
 map; candidates with fewer nodes than parameters are marked ineligible.}
@@ -340,11 +340,11 @@ exceeds that budget. Each worker holds a refit in memory.}
 
 \item{id_col}{\strong{Deprecated} (since 19.15.0). Use \code{id_var} instead.}
 
-\item{.NodeClusterFn}{Internal. A function taking the SOM codebook matrix and
+\item{.NodeClusterFn}{Internal. A function taking the SOM node prototype matrix and
 returning a list with a \code{node_cluster} integer vector (one label per
 SOM node) and, optionally, \code{fit_table}, \code{ahp_best_row},
 \code{recommendation}, \code{best_fit_name}, and \code{fit_plot}. When
-supplied, the SOM codebook is clustered by that function and the
+supplied, the SOM node prototypes are clustered by that function and the
 latent-profile grid is not fitted. Used by
 \code{\link[=CreateClusterModel_SOM_HDBSCAN]{CreateClusterModel_SOM_HDBSCAN()}}; not part of the user-facing API.}
 
@@ -410,8 +410,12 @@ ValidPermutations reports that count).
 \item \code{ModelInfo_MClust$ahp_sensitivity}: weight schemes, normalized weights,
 top candidate and rank of the current recommendation. \code{BoundaryPct} in
 the fit table is the share of complete boundary participants (0--1).
-\item \code{fit_plot}: ggplot of AIC/BIC/Entropy/BLRT p-value vs k and model
-(plus reproducibility when subsample stability is enabled)
+\item \code{fit_plot}: the candidate review drawn by
+\code{\link[=PlotClusterFitReview]{PlotClusterFitReview()}}: AIC, BIC, entropy and boundary \% against
+k by model family, plus mean ARI across refits when stability is
+run and the BLRT p-value when bootstraps are requested. The
+recommended candidate is ringed and ineligible candidates are
+marked.
 \item \code{ModelInfo_SOM}: list with \code{som_model},
 \code{som_codes}, \code{som_grid}, \code{som_grid_info},
 \code{grid_screen} (the \code{\link[=ScreenSOMGrid]{ScreenSOMGrid()}} result when the grid was
@@ -423,9 +427,13 @@ flags), \code{plots} (aweSOM plots)
 for LPA warnings, failures, runtimes, and preprocessing
 \item \code{ModelInfo_MClust$Stability}: subsample replicate, cluster
 recovery, and summary tables when \code{stability_resamples > 0}
-\item \code{ProbFit}: list with \code{node} (node-level posterior
-probabilities), \code{individual} (full-length per-person mapping
-and probabilities), and probability plots
+\item \code{ProbFit}: list with \code{node} (one row per SOM node:
+its prototype, Mclust posterior probabilities \code{prob_*},
+\code{Cluster}, \code{NodeN} training participants, and
+\code{Flag_BorderNode}, TRUE when a neighbouring node on the map
+belongs to another cluster), \code{individual} (full-length
+per-person mapping and probabilities), and probability plots.
+\code{\link[=PlotSOMMap]{PlotSOMMap()}} draws the node table on the map.
 }
 }
 \description{
@@ -436,11 +444,11 @@ Z-score object.
 \item Fit a Self-Organizing Map (SOM; kohonen) on complete cases.
 \item Generate aweSOM visualizations (Circular, Line, Cloud) with optional
 relabeling using variable labels from the original data frame.
-\item Cluster SOM codebook vectors using latent profile analysis (tidyLPA /
-mclust backend).
+\item Cluster the SOM node prototypes (each node's representative profile)
+with Gaussian mixtures (tidyLPA's mclust backend).
 \item In \code{method = "exploratory"}, fit a grid of models and select a
-recommended solution using an Analytic Hierarchy Process (AHP)-style
-index combining AIC, BIC, and Entropy.
+recommended solution with a composite index: AHP-weighted z-scores of
+AIC, BIC, entropy and, when stability is run, reproducibility.
 \item In \code{method = "finalize"}, fit a user-specified model and number
 of profiles.
 \item Map node-level clusters and posterior probabilities back to individuals.
@@ -494,6 +502,18 @@ higher ICL values are preferred: ICL and BIC point in opposite directions,
 and \code{\link[=PlotClusterFitReview]{PlotClusterFitReview()}} labels each panel with its preferred
 direction. ICL is reported for review only and is not part of the composite
 index. Entropy summarizes classification separation (higher is better).
+With the default \code{node_weighting = "uniform"}, these criteria describe
+the mixture fitted to the SOM nodes, so the sample size in BIC is the
+number of nodes in the mixture (\code{MixtureNodes}), not the number of
+participants; compare them across candidates on one map, never across grid
+sizes. With \code{node_weighting = "occupancy"} the nodes are weighted by
+their training participants and the sample size is the participant count.
+\code{BoundaryPct} is the share (0--1) of complete participants flagged as
+boundary participants when the candidate is applied with soft assignment,
+and \code{ClusterSizes} lists the candidate's participant cluster sizes under
+the model's \code{assignment} rule, largest first. \code{ModelName} (EEI, VVI, EEE,
+VVV) and \code{ModelLabel} describe the covariance model.
+\code{\link[=ClusterModelSelectionTable]{ClusterModelSelectionTable()}} formats the decision columns for reports.
 \code{MinProfileNodeN} and \code{MaxProfileNodeN} are integer SOM-node counts in the
 smallest and largest profile; the corresponding \verb{*Proportion} fields divide
 those counts by the total number of SOM nodes. \code{BLRTStatistic} and
@@ -501,9 +521,9 @@ those counts by the total number of SOM nodes. \code{BLRTStatistic} and
 covariance model. A small p-value supports the added profile's statistical
 fit, but does not establish clinical meaning or reproducibility; it is
 unavailable for k = 1.
-The raw \code{BLRTPValue} remains in the table. Its candidate-review panel
-displays \code{-log10(BLRTPValue)} with a dashed \code{0.05} p-value
-reference at \code{-log10(0.05)}.
+The raw \code{BLRTPValue} remains in the table. When bootstraps were
+requested, its candidate-review panel displays \code{-log10(BLRTPValue)}
+with a dashed \code{0.05} p-value reference at \code{-log10(0.05)}.
 
 Lifecycle settings are intentionally strict: \code{k_range} and
 \code{models} are exploratory-only, while \code{final_k} and
@@ -526,10 +546,14 @@ never replace all-participant ARI.
 recovery and is retained as a descriptive diagnostic. \code{ReproducibilityScore}
 equals \code{StabilityARI_Mean}; \code{StabilitySuccessRate} is reported separately.
 \code{Reproducibility_scaled} is
-the candidate-table min-max rescaling used only by the AHP index and is not
+the candidate-table z-score used only by the composite index and is not
 an independently interpretable reproducibility measure.
 
-The composite rank index (stored as \code{ahp_index}) is computed by:
+The composite rank index (stored as \code{ahp_index}) is a weighted mean of
+z-scores. Analytic Hierarchy Process weights can be supplied, but candidates
+are not compared pairwise, and because each z-score is taken across the
+candidates in the table, adding or removing candidates can change the
+ranking. It is computed by:
 \enumerate{
 \item Z-scaling AIC, BIC, Entropy, and (when stability is run)
 reproducibility across candidate solutions (AIC/BIC are negated so
@@ -547,10 +571,11 @@ The chosen weights, their method, and any consistency ratio are returned in
 give the size of the smallest profile in training participants rather than
 SOM nodes.
 
-Phenotypes are learned by Mclust on the SOM codebook. Hard assignment uses
-the best-matching node's Mclust class. Soft assignment uses normalized
-inverse-squared codebook-distance weights across the nearest nodes to
-combine their Mclust posterior probabilities. \code{SoftEntropy} is the
+Phenotypes are learned by Mclust on the SOM node prototypes. Hard
+assignment uses the best-matching node's Mclust class. Soft assignment uses
+normalized inverse-squared distance weights to the nearest node prototypes
+to combine their Mclust posterior probabilities;
+\code{\link[=ExplainSOMAssignment]{ExplainSOMAssignment()}} shows this calculation for chosen participants. \code{SoftEntropy} is the
 normalized entropy of that participant-level probability vector
 (entropy divided by \code{log(k)}) and \code{SoftMargin} is the largest minus
 second-largest probability. \verb{prob_*} columns describe a SOM node's Mclust
@@ -573,9 +598,9 @@ first class deterministically. \code{Flag_NodeDisagreement} compares the canonic
 participant class with the best-matching node's class; unmapped rows are \code{NA}.
 
 Each new fit uses one deterministic, seeded full-cohort batch SOM. Its
-initialization codebook, preprocessing, grid, topology, neighbourhood,
-epochs, codebooks, and node-level mixture are retained so projection is
-completely frozen. Earlier fitted objects remain projectable because
+initial node prototypes, preprocessing, grid, topology, neighbourhood,
+epochs, trained node prototypes, and node-level mixture are retained so
+projection is completely frozen. Earlier fitted objects remain projectable because
 projection uses their frozen map and mixture rather than refitting either
 component.
 

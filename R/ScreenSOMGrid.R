@@ -528,7 +528,7 @@ plot.SOMGridScreen <- function(x, ...) {
 }
 
 # Same training as FitSOMForGrid() in CreateClusterModel_SOM_MClust(): seeded sample of people as the
-# initial codebook, batch supersom.
+# initial node prototypes, batch supersom.
 .FitSOMGridScreen <- function(zmat, side, seed, som_topo, som_neigh, som_epochs) {
   grid <- kohonen::somgrid(xdim = side, ydim = side, topo = som_topo, neighbourhood.fct = som_neigh)
   set.seed(seed)

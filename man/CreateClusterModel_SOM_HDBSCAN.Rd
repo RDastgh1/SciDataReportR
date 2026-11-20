@@ -70,7 +70,7 @@ proportion is lower-is-better, and extracted class count is data-derived.
 \description{
 Trains the same frozen SOM used by
 \code{\link[=CreateClusterModel_SOM_MClust]{CreateClusterModel_SOM_MClust()}},
-then applies HDBSCAN to its node codebook. Participants inherit the cluster
+then applies HDBSCAN to its node prototypes. Participants inherit the cluster
 (or noise) label of their best-matching node. This is a node-based phenotype
 model: projected participants are mapped to the original nodes and are not
 refit with HDBSCAN.
