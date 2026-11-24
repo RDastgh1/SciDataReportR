@@ -2803,8 +2803,7 @@ ProjectCluster.Pipeline_Gower_PAM <- function(object, data, ClusterVariableName 
     lpa_timeout_seconds = "mixture_timeout_seconds", lpa_progress = "mixture_progress",
     lpa_bootstrap_n = "mixture_bootstrap_n", lpa_drop_zero_sd = "mixture_drop_zero_sd",
     lpa_zero_sd_tol = "mixture_zero_sd_tol", lpa_min_node_n = "mixture_min_node_people",
-    min_nodes_per_cluster = "candidate_min_nodes_per_cluster",
-    high_dist_quantile = "far_distance_quantile", low_prob_threshold = "clear_membership_threshold")
+    min_nodes_per_cluster = "candidate_min_nodes_per_cluster")
   for (old in names(aliases)) {
     new <- aliases[[old]]
     if (new %in% names(metadata)) metadata[old] <- metadata[new]

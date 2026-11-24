@@ -1,0 +1,811 @@
+---
+title: "Reviewing unusual combinations and longitudinal records"
+author: "Raha Dastgheyb"
+title-block-banner: true
+date: "last-modified"
+format:
+  html:
+    embed-resources: true
+    toc: true
+    toc-location: left
+    smooth-scroll: true
+    theme: zephyr
+execute:
+  echo: false
+  message: false
+  warning: false
+  cache: false
+vignette: >
+  %\VignetteIndexEntry{Reviewing unusual combinations and longitudinal records}
+  %\VignetteEngine{quarto::html}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r}
+#| label: LoadPackages
+library(SciDataReportR)
+```
+
+# Synthetic review data
+
+```{r}
+#| label: CreateExampleData
+set.seed(2024)
+df_Example <- data.frame(
+  ID = seq_len(200),
+  MeasurementA = rnorm(200),
+  History = factor(rep(c("Absent", "Present"), each = 100))
+)
+df_Example$MeasurementB <- df_Example$MeasurementA + rnorm(200, sd = 0.1)
+df_Example$Response <- df_Example$History
+df_Example$Response[1] <- "Present"
+df_Example$MeasurementB[2] <- 8
+attr(df_Example$MeasurementA, "label") <- "Measurement A"
+attr(df_Example$MeasurementB, "label") <- "Measurement B"
+attr(df_Example$History, "label") <- "Recorded history"
+attr(df_Example$Response, "label") <- "Related response"
+```
+
+::: callout-note
+These are simulated observations, with a rare categorical disagreement and a
+numeric relationship deliberately disrupted. No data file or codebook is loaded.
+In a real analysis, load data and codebook together and run `RevalueData()` first;
+these functions use its attached labels without recoding the data again.
+:::
+
+# Sending a review to collaborators
+
+If the goal is simply to hand someone the problems in their data,
+`CreateDataAnomalyReport()` is the whole workflow in one call. It screens the
+data, builds the review queue, and writes two files:
+
+- a standalone HTML explorer, which opens in any browser with no R, no Quarto
+  and no network connection, and
+- an Excel workbook, which a collaborator works through issue by issue and
+  sends back.
+
+```r
+review <- CreateDataAnomalyReport(
+  df_Example,
+  variables = c("MeasurementA", "MeasurementB", "History", "Response"),
+  id_var = "ID",
+  Title = "Cohort data review"
+)
+review$Files
+```
+
+Everything below is the same workflow in steps, for when you want to choose
+methods, inspect results in the console, or build the queue yourself.
+`CreateDataAnomalyReport()` adds no detection behaviour of its own; it calls
+exactly the functions in the following sections. Once decisions come back,
+`ImportAnomalyReviewDecisions()` copies them into the queue and
+`SummarizeAnomalyDecisions()` reports what reviewers concluded. Nothing is ever
+corrected automatically.
+
+# Choosing a detector
+
+`DetectDataAnomalies()` requires explicit variable names. Identifiers and strata
+are retained for review, not added to the model. `stratify_by` fits completely
+separate detectors; small groups are reported as unavailable, never pooled.
+
+- `conditional` discovers subgroups and returns suspicious values with learned
+  conditions. It supplies native flags, without general record scores.
+- `isolation` scores unusual records using isolation forest.
+- `local` compares density with neighboring records. Numeric inputs use scaled
+  Euclidean distance; mixed inputs use Gower distance, requiring quadratic memory.
+- `distance` uses robust Mahalanobis distances on numeric columns.
+- `cellwise` returns DDC residuals and flags for individual numeric entries.
+
+Backends are optional dependencies. Only install those used by requested methods:
+`outliertree`, `isotree`, `dbscan` (and `cluster` for mixed inputs), `robustbase`,
+and `cellWise`. The `dates` method uses base R. Integer codes stay numeric; convert categories explicitly.
+
+```{r}
+#| label: DetectRecordCombinations
+#| echo: true
+if (requireNamespace("outliertree", quietly = TRUE) &&
+    requireNamespace("isotree", quietly = TRUE)) {
+  anomalies <- DetectDataAnomalies(
+    data = df_Example,
+    variables = c("MeasurementA", "MeasurementB", "History", "Response"),
+    id_var = "ID",
+    methods = c("conditional", "isolation"),
+    method_args = list(isolation = list(ntrees = 100)),
+    seed = 2024
+  )
+  anomalies$Summary
+}
+```
+
+# Dates and relationships between dates
+
+Date and POSIXct inputs are supported directly. The default methods now include
+`dates`, which requires no optional backend. It screens each selected date column
+and all unique date pairs, within each stratum, without guessing their meaning
+from column names. Pair intervals are **second minus first in selected-column
+order**. Negative intervals are not automatically errors.
+
+```{r}
+#| label: DateReviewExample
+#| echo: true
+df_Dates <- data.frame(
+  StudyID = seq_len(40),
+  FirstVisit = as.Date("2020-01-01") + seq_len(40)
+)
+df_Dates$SecondVisit <- df_Dates$FirstVisit + 100
+df_Dates$SecondVisit[1] <- df_Dates$FirstVisit[1] + 1000
+date_anomalies <- DetectDataAnomalies(
+  df_Dates, variables = names(df_Dates), id_var = "StudyID", methods = "dates"
+)
+dplyr::filter(date_anomalies$DateResults, Flag %in% TRUE)
+```
+
+`id_var` is retained for review and automatically removed from model features,
+even when included in `variables`. Without an ID, original row references still
+identify findings. Duplicate or missing IDs are diagnosed; dates are compared
+within a row, never silently combined across participant records.
+
+Date checks use outer Tukey fences (Q1 - 3 IQR, Q3 + 3 IQR) and require 20 observed
+values by default. If the IQR is zero, they flag departures only when at least 95%
+of observed values share a single value. Otherwise the check is unavailable.
+These defaults are configurable with `method_args = list(dates =
+list(min_observations = 20, iqr_multiplier = 3, majority_fraction = 0.95))`.
+
+Use `date_pairs = matrix(c("FirstVisit", "SecondVisit"), ncol = 2)` to limit pairs;
+a zero-row two-column matrix requests column checks only. More than 100 automatically
+selected pairs warns, without dropping comparisons. Large pair sets increase both
+computation and the number of opportunities for false alarms.
+
+`DateResults` contains all checks, readable observed dates, signed intervals in
+days, sample sizes, observed ranges, fences, flags, and evaluation status. Column
+numeric values and fences are elapsed days from the per-column reference recorded
+in `Metadata$DateConversions`; readable date fences are provided too. Pair values
+are actual elapsed days (timestamps use seconds/86400, not calendar-day counting).
+Mixed Date/timestamp pairs treat Date as UTC midnight.
+
+Other methods use numeric local copies of dates, while `ReviewData` retains
+original classes and time zones. Date-like strings are not parsed automatically.
+A consistent but incorrect calendar pattern may escape these empirical checks;
+there are no hard-coded birth/diagnosis/visit rules.
+
+# Scores and flags
+
+Larger scores mean more unusual observations. Scores retain their native scales;
+compare ranks **within a method and stratum**, not scores between methods.
+Score-only methods flag the top 1 percent of scores within each method and
+stratum by default (`flag_percentile = 0.99`), so a screen always produces
+candidates rather than an unclassified column of scores. A named cutoff takes
+precedence, for example `thresholds = c(distance = 4)`, and
+`flag_percentile = NULL` restores unflagged scores ordered by rank alone. Every
+one of these is a review budget chosen for convenience, not an estimated
+probability of entry error, and small strata can legitimately yield no flags. Conditional and DDC methods supply native flags;
+`thresholds = c(cellwise = 4)` overrides DDC flags using absolute residuals.
+
+Missing strata, insufficient data, or failed fits stay `unavailable`. A method
+without applicable variable types is `not applicable`. Neither means normal.
+Native missing-data handling is used for conditional, isolation, and DDC methods;
+LOF and robust distance use complete rows. No automatic imputation occurs.
+
+```{r}
+#| label: DetectNumericInconsistency
+#| echo: true
+if (requireNamespace("robustbase", quietly = TRUE)) {
+  numeric_anomalies <- DetectDataAnomalies(
+    df_Example, c("MeasurementA", "MeasurementB"),
+    id_var = "ID", methods = "distance"
+  )
+  head(numeric_anomalies$Results[order(numeric_anomalies$Results$Rank), ])
+}
+```
+
+# Longitudinal review
+
+```{r}
+#| label: CreateVisitExamples
+set.seed(2024)
+df_Visits <- expand.grid(ID = seq_len(15), Time = c(0, 1, 3, 6))
+df_Visits$Measurement <- df_Visits$Time + rnorm(60)
+df_Visits$State <- factor(ifelse(df_Visits$ID == 1 & df_Visits$Time == 6,
+                               "Changed", "Stable"))
+df_Visits$Measurement[20] <- 20
+attr(df_Visits$Measurement, "label") <- "Repeated measurement"
+attr(df_Visits$State, "label") <- "Recorded state"
+attr(df_Visits$Time, "label") <- "Elapsed months"
+longitudinal <- DetectLongitudinalAnomalies(
+  df_Visits, c("Measurement", "State"), "ID", "Time",
+  methods = c("change", "transition")
+)
+longitudinal$Summary
+```
+
+Change scores describe consecutive observed values divided by actual elapsed time.
+They need ten intervals from five participants and nonzero MAD. Both endpoints
+are linked in `IntervalResults`; a suspicious interval cannot tell us which value
+is wrong. Missing observations are bridged, and the gap remains visible.
+
+Transition scores estimate `1 - P(current | previous)` after excluding **all**
+transitions from the scored participant. They need ten reference transitions from
+five other participants for that preceding category. Rare valid transitions can
+therefore score highly. Visit gaps are displayed but do not condition this model.
+
+Request `methods = "trajectory"` to fit an `nlme` linear-time random-intercept model
+for each numeric variable. Optional `covariates` add fixed effects. Each eligible
+participant needs three complete visits and each stratum needs ten eligible
+participants. Absolute in-sample Pearson residuals are exploratory diagnostics;
+a large anomaly can influence its own fitted trajectory. They are not held-out
+prediction errors or prediction intervals. Model failures are retained in diagnostics.
+
+# Reviewing results
+
+`Results` has one row per original record and method. `CellResults` locates numeric
+or conditional evidence; `IntervalResults` links visit pairs. `ParticipantSummary`
+counts distinct reviewed records and methods with flags, without double-counting
+cells. `Diagnostics` explains excluded variables, missing labels, and skipped fits.
+`Metadata` records settings and provenance. `ReviewData` preserves selected original
+columns and `.Row` references without altering the input.
+
+```{r}
+#| label: ExploreVisitAnomalies
+#| echo: true
+if (requireNamespace("DT", quietly = TRUE)) {
+  ExploreDataAnomalies(longitudinal, TopN = 2)
+}
+```
+
+The explorer keeps full scrollable tables. Select rows to inspect original
+values; details are generated only on selection.
+The record grid searches scores and context, not source values inside details.
+Set `IncludePlots = TRUE` to enable interactive figures on selection, or call
+`PlotDataAnomalyTrajectories()` separately for selected participants. Compare
+highlighted records against complete histories. Unusual biology, rare subgroups, batch effects, and errors
+can all produce flags. Review source records before making any corrections.
+Nothing is automatically corrected, removed, or saved.
+
+# Collaborator decisions in Excel
+
+The explorer now starts with an issue worklist. It converts detection results
+using `CreateAnomalyReviewQueue()` and preserves the original technical tables
+underneath. Study IDs are optional. Without one, source rows identify records
+**within this detection snapshot**, not across reordered or revised datasets.
+
+```{r}
+#| label: CreateCollaboratorQueue
+#| echo: true
+review_queue <- CreateAnomalyReviewQueue(date_anomalies)
+review_queue$Issues
+```
+
+By default, native flags, explicit cutoffs and the default percentile cutoff all
+enter the queue.
+`include_ranked = TRUE, top_n = 10` adds up to ten unclassified finite-scored
+records per method and stratum, labeled exploratory. It does not identify an
+incorrect field. `Priority` starts as `Unassigned` and is set by reviewers;
+method scores are not averaged into an error probability.
+
+If an ID was not passed to detection but is retained in `ReviewData`, add it
+without refitting using `CreateAnomalyReviewQueue(result, id_var = "StudyID")`.
+Missing and duplicate IDs remain separate source rows. Additional
+`context_vars` must name retained columns; time and strata are included automatically.
+
+For several clinical groups, use a named list:
+
+```r
+queue <- CreateAnomalyReviewQueue(
+  list(BodyComposition = body_result, Metabolic = metabolic_result)
+)
+ExploreDataAnomalies(queue)
+```
+
+The analyses retain independent row namespaces. Evidence is consolidated only
+within the same analysis, source row(s), and affected field set. Distinct date
+pairs stay distinct. Multiple methods flagging an issue are not independent
+confirmation. Conditional detection currently exposes at most one finding per
+record, so a broadly flagged dataset is not an estimated error rate.
+
+### Screening everything, reviewing a subset
+
+Narrow what gets *listed* without narrowing what gets *modelled*. Pass the
+columns you want to work through to `variables`:
+
+```r
+queue <- CreateAnomalyReviewQueue(anomalies, variables = c("BMI", "Weight"))
+ExploreDataAnomalies(anomalies, variables = c("BMI", "Weight"))
+CreateDataAnomalyReport(df_Data, review_variables = c("BMI", "Weight"))
+```
+
+Detection is unaffected: the models were fitted on the full selection, so a
+listed finding is still conditioned on every screened column, and the coverage
+summary still describes the whole screen. This is the reason to filter here
+rather than restricting `variables` in `DetectDataAnomalies()`, which removes
+the other columns from the comparison groups and changes the findings
+themselves. Findings with no attributed field concern a whole record and are
+always listed. Naming a column that was not screened is an error. In
+`CreateDataAnomalyReport()`, `review_variables` filters the HTML explorer only;
+the Excel workbook stays the complete record of findings.
+
+Export only when ready, to a location outside the package:
+
+```r
+ExportAnomalyReviewQueue(queue, here::here("review", "AnomalyReview.xlsx"))
+# Optional: keep the exact queue for a later R session.
+# saveRDS(queue, here::here("review", "AnomalyReviewQueue.rds"))
+```
+
+The destination directory must already exist. By default the workbook is a
+single **Review** sheet: one line per finding, about seventeen columns, no
+wrapped paragraphs, built to be scanned and filled in. The long explanations,
+the **Evidence** and **Read me** sheets and the snapshot manifest are not
+written, which also makes the file an order of magnitude smaller.
+
+That default cannot be read back into R. If collaborator decisions need to
+return to the queue through `ImportAnomalyReviewDecisions()`, export with
+`layout = "full"`, which writes every sheet and column as before:
+
+```r
+ExportAnomalyReviewQueue(queue, "AnomalyReview.xlsx", layout = "full")
+``` Yellow review columns
+are editable; original values remain unchanged. Status choices are `Unreviewed`,
+`Confirmed correct`, `Correction needed`, and `Definition clarification`.
+Priority choices are `Unassigned`, `High`, `Medium`, and `Low`. Use
+`ProposedCorrection` for free-text proposed changes, and `SourceChecked`,
+`Reviewer`, `ReviewedOn` (YYYY-MM-DD), and `Notes` for the review trail.
+
+After collaborators edit the workbook:
+
+```r
+queue <- ImportAnomalyReviewDecisions(
+  queue, here::here("review", "AnomalyReview.xlsx")
+)
+ExploreDataAnomalies(queue)
+```
+
+Blank imported reviewer fields leave existing decisions unchanged. An explicit
+`Unreviewed` resets status. A workbook may return a subset of issue rows; omitted
+issues keep their decisions. Keep all headers, the full Evidence sheet, and the
+hidden manifest intact. Sorting is allowed. Changed findings, duplicate or unknown
+issue IDs, and snapshot mismatches are rejected. Changed or reordered source data
+require a new detection snapshot, even if participant IDs remain the same.
+
+## Reading potential data issues
+
+Tables scroll inside a 500-pixel panel instead of using page buttons. Search and
+column filters operate across every retained row. Labels appear above variable
+names, so collaborators can find the corresponding dataframe column. Select a
+row to read its full evidence below the table. `TopN` is retained for compatibility
+with earlier previews; interactive figures are selected individually.
+
+**Conditional pattern** means an unusual value within a learned subgroup, or
+within the whole column when no conditions were learned. The explanation names
+the recorded value, direction or uncommon response, learned conditions, and
+available reference statistics. These comparisons describe this dataset; they
+are not clinical normal ranges or proof of an error. Older results without
+structured statistics retain their original explanation.
+
+```r
+ExploreDataAnomalies(queue, TableHeight = 500, IncludePlots = TRUE)
+```
+
+With optional `plotly` installed, selecting an issue draws an interactive
+numeric/date distribution, categorical frequency plot, signed date-interval
+distribution, or complete retained numeric participant history. Hover for values,
+drag to zoom, and double-click to reset. Red marks identify the reviewed value or
+endpoints. Conditional plots use supported learned conditions when available;
+the caption identifies the displayed population and any difference from the
+backend reference sample. Plots are generated on selection using local
+JavaScript; no external service receives data. `IncludePlots = FALSE` keeps the
+HTML smaller. Record-only findings without an affected variable have no invented
+field plot.
+
+Excel includes the same **Why flagged** and **Comparison details**, with original
+backend explanations retained separately. Variable keys are visible beside
+labels. Existing matching workbooks remain importable; display formatting does
+not change queue fingerprints or reviewer decisions.
+
+The source dataframe is never updated automatically. Confirm corrections and
+apply them through a separate, auditable cleaning workflow.
+
+```{r}
+#| label: Reproducibility
+#| include: false
+# save.image(here::here("DataAnomalyExamples.RData"))
+print(sessionInfo())
+```
+
+
+`DetectDataAnomalies(df_Raw)` selects all supported columns without requiring
+`RevalueData()`. Supply `id_var` and `stratify_by` to keep those columns out of
+model inputs. Without a codebook, labels fall back to column names. Integer
+codes remain numeric; raw character dates must be parsed as Date/POSIXct first.
+List and other unsupported columns are reported and skipped only during automatic
+selection; explicit unsupported selections error.
+
+Plots now default on when `plotly` is installed, and the first issue is selected.
+Use `IncludePlots = FALSE` to disable them. Print output contains the complete
+static issue queue, independently of the current scroll position. Rare coded
+values have their own explorer review category without changing detection flags.
+
+## Suggested review order and exploratory combinations
+
+`CreateAnomalyReviewQueue()` now includes up to ten unclassified scored records
+per analysis, method and stratum by default. Use `include_ranked = FALSE` for a
+flag-only queue, or `top_n` to change the number of exploratory records. These
+candidates have no invented flag or affected field. Existing queue objects retain
+their membership and decisions; rebuilding creates a new queue and does not
+transfer previous decisions automatically.
+
+The explorer and Excel derive suggested order without refitting. Scores are not
+comparable across methods -- a missingness observed fraction and a conditional
+boundary distance measure different things, and several methods emit native flags
+with no record score at all -- so the order is driven by the kind of finding:
+values inconsistent with related fields, then implausible dates and intervals,
+conditional outliers, distribution outliers, changes and transitions, unexpected
+missingness, rare numeric codes confined to -1/0/1, and finally exploratory record
+combinations. Within a kind, findings with thin reference support (fewer than 20
+comparable records) sort after better-supported ones, then available
+within-method/stratum score percentiles (descending), reference counts and
+deterministic issue IDs. Ties use midpoint empirical
+percentiles; missing scores stay unavailable. The strongest supporting evidence
+sets the position; repeated evidence does not increase priority. This is an
+unvalidated review aid, not estimated error probability or clinical urgency.
+
+For exploratory combinations, use the comparison X/Y selectors to inspect the
+selected record against its stratum. The default axes use positive column-screening results when available, otherwise
+the first two usable numeric model inputs. Other selections offer distributions or categorical counts.
+These are descriptive comparisons, not isolation-forest feature attributions.
+Raw scores, method ranks and original evidence remain under Technical details.
+
+## Which columns are worth checking in an isolation record?
+
+Column screening happens during detection while the fitted model is available.
+No model is refit or saved. The default uses fast, batched single-column
+replacements rather than expensive Monte Carlo SHAP:
+
+```r
+anomalies <- DetectDataAnomalies(
+  df_Raw,
+  explanation_args = list(top_n = 10, background_n = 50,
+                          replacements = 3, batch_size = 64)
+)
+ExploreDataAnomalies(anomalies)
+```
+
+Study ID remains optional. `digest` is required for explanation fingerprints;
+`fastshap` is only required for explicit SHAP runs. Set
+`explain_isolation = FALSE` to skip all column explanations.
+`explanation_args = list(rows = c(1, 23))` selects original source rows instead
+of the ten highest-scoring records per stratum. Every actual model input is
+screened, using its actual factor levels and date transformations; excluded
+constants stay excluded. Original values remain unchanged.
+
+The same three reproducibly sampled reference records are used for all columns
+and selected records within a stratum, drawn from a background of up to 50
+eligible records. Increase `replacements` for a broader replacement screen at
+additional cost. `batch_size` controls prediction batches and is automatically
+reduced for very wide inputs.
+
+`FeatureSensitivity` reports **score decrease = original isolation score minus
+mean score after replacing one column**. Positive means that replacing this
+column reduced the anomaly score; negative means it increased the score. These
+are inspection leads, not identified errors or replacement recommendations.
+Effects are not additive. Replacement-score ranges describe only the sampled
+replacements, not confidence intervals or probabilities of error. Reference
+records can contain errors, and replacing correlated/derived values can create
+unrealistic combinations.
+
+The selected-finding panel shows **Columns worth checking**, an interactive
+signed-effect chart, five positive and five negative effects initially, and an
+expandable complete table. Comparison plots start with leading positive effects.
+If none are positive, no problem columns are inferred. Conditional/date/cell
+findings are linked separately as additional evidence, not confirmation.
+
+For slower additive SHAP explanations, request them explicitly:
+
+```r
+anomalies_shap <- DetectDataAnomalies(
+  df_Raw,
+  explanation_args = list(method = "shap", rows = c(1, 23),
+                          background_n = 50, nsim = 64, repeats = 3)
+)
+```
+
+This requires `fastshap >= 0.1.1` and can be expensive for wide datasets.
+`nsim` and `repeats` apply only to SHAP; `replacements` and `batch_size` apply
+only to sensitivity screening. `FeatureContributions` remains exclusively SHAP:
+mean signed additive contributions, Monte Carlo SD/range and positive ranks.
+Positive contributions raise the score relative to the background; negative
+ones lower it. Monte Carlo variability is not confidence that a value is wrong.
+The explorer retains the SHAP contribution waterfall for these results.
+
+`ExplanationSummary` identifies the method and distinguishes **Explained**,
+**Not requested**, and **Unavailable** records. Baseline and additive reconstruction
+fields are unavailable for sensitivity. Failures preserve successful detection
+scores. `ExplanationMetadata` records backgrounds, replacement reference rows,
+seeds, inputs, transformations, elapsed screening time and a separate fingerprint.
+Elapsed time is excluded from the fingerprint. Neither explanation method changes
+flags, suggested review order, human priority, issue identity or queue snapshots.
+
+Excel retains the original workflow and its **Contributions** sheet, with explicit
+explanation-method labels and the appropriate screening or SHAP fields. Explanation
+evidence is separately validated on import; matching older four-sheet workbooks
+remain supported. Old saved results retain their explanations and decisions;
+the explorer never silently refits or computes explanations.
+
+## Review by codebook category
+
+Pass a codebook when detecting anomalies to retain labels and categories for the
+explorer and Excel. Matching uses raw variable names in `Variable`; `Label` and
+`Category` are optional. Study ID is still optional.
+
+```r
+anomalies <- DetectDataAnomalies(df_All, codebook = VariableTypes)
+ExploreDataAnomalies(anomalies)
+queue <- CreateAnomalyReviewQueue(anomalies)
+# ExportAnomalyReviewQueue(queue, "AnomalyReview.xlsx")
+```
+
+Labels and categories supply presentation metadata. Explicit temporal declarations
+(`Type = "clock"` or `"duration"`, with `TimeUnit`/`TimeFormat`) also control local
+modeling transformations. Other codebook types do not trigger conversion or value
+recoding during detection, and detection does not call `RevalueData()`. Use `RevalueData()` separately beforehand when recoding is wanted.
+Explicit nonblank codebook labels take precedence over attached labels, then
+variable names. `Relabel = FALSE` keeps raw names; category filtering still works.
+Missing categories appear as **Uncategorized**. Diagnostics identify unmatched
+retained variables, unused codebook entries and missing labels/categories.
+Identical duplicate entries collapse; conflicting entries for a variable error.
+
+Existing detection results can receive a codebook without running detection again:
+
+```r
+queue <- CreateAnomalyReviewQueue(anomalies, codebook = VariableTypes)
+ExploreDataAnomalies(queue)
+# Or apply a temporary override just to this explorer:
+ExploreDataAnomalies(anomalies, codebook = VariableTypes)
+```
+
+A queue-level codebook persists for subsequent Excel exports. An explorer-only
+override affects that view. Each analysis otherwise keeps its own saved catalog;
+a supplied common codebook overrides matching names across analyses.
+
+Giving the codebook once to `DetectDataAnomalies()` is enough for everything
+downstream: the queue, the saved explorer and the Excel workbook all read the
+resolved catalog stored on the result, so `codebook` need not be repeated. It is
+also the only place where codebook `Type` declarations can change what is
+modelled -- a codebook supplied to a review view cannot alter models already
+fitted, and records a `temporal_declarations_not_applied` diagnostic saying so.
+The compact workbook carries a **Codebook category** column when a codebook
+assigned a category to at least one screened column, and omits it otherwise
+rather than filling it with `Uncategorized`.
+
+Both tables carry a dropdown per categorical column: extreme value, anomaly
+type, severity tier, codebook category, method, and analysis group where there
+is more than one. A column with fewer than two distinct values is omitted.
+
+**Extreme value** marks a record sitting at least ten times further from its
+column median than any other record does, and those findings are listed ahead of
+every tier: the kind of finding is the same whether a value is slightly or
+absurdly out of range, so severity alone can sort an obvious data-entry error
+behind dozens of findings that need judgement. The test is scale free, needs at
+least ten other numeric values in the column, and is not applied to dates, clock
+times or blanks.
+
+**Anomaly type** describes the kind of finding, and **Severity tier** ranks those
+kinds: tier 1 is a value that contradicts related fields in the same record, tier 8
+an exploratory whole-record combination. Both are sortable columns on both tables,
+and the tier is what the suggested review order follows, because scores from
+different methods are not comparable. The page defines every tier and the types in
+it. Above the tables, the **anomaly map** draws one cell per modelled variable and
+record: grey where no anomaly was reported, coloured by kind otherwise, with the
+record, the recorded value and the reason on hover. A cell carrying several
+findings takes the most serious one, and findings with no attributed field are
+counted beneath the map rather than placed on it.
+
+**Codebook category** describes the
+fields involved. A date pair can belong to both dates' categories and appears
+when either category is selected. Category filtering uses exact membership,
+including names containing punctuation or overlapping category names.
+
+For isolation records, **Suggested inspection categories** come from the five
+largest positive replacement-screening effects, or saved SHAP contributions.
+The selected panel lists the supplying columns. These are inspection leads,
+not identified incorrect fields. Without usable positive effects the category
+is **Whole record—category unspecified**. Categories of conditional comparison
+variables appear separately from the affected field's category.
+
+The main **Potential data issues** queue omits review decisions because it is
+read-only. Edit decisions in Excel, import them, and view them in selected-finding
+details. Variable-level evidence means evidence about specific row–column values;
+it supports the issue queue rather than independently confirming an error, and it
+stays on the result object and in the Excel workbook rather than on the shared page.
+**What the methods mean** describes all available detectors and anomaly types,
+with requested methods first. Methods, supporting evidence and isolation column
+screening are different parts of review; none estimates entry-error probability.
+
+## Clock times and elapsed durations
+
+An `hms` column can represent a clock or an elapsed task duration; its storage
+class cannot establish that meaning. Declare it explicitly in codebook `Type`
+as `clock` or `duration` (case-insensitive). Plain `difftime` defaults to duration
+in detection; unclassified `hms` produces an actionable declaration request.
+
+For the four columns discussed here, the supplied mapping is:
+
+```r
+vars_Clock <- c("tox_time", "gna_starttime")
+vars_Duration <- c("gp_dom_time", "gp_nondom_time")
+# QUESTION: The two clock classifications are provisional; confirm their definitions.
+VariableTypes <- VariableTypes %>%
+  dplyr::mutate(Type = dplyr::case_when(
+    Variable %in% vars_Clock ~ "clock",
+    Variable %in% vars_Duration ~ "duration",
+    TRUE ~ Type
+  ))
+
+df_Revalued <- RevalueData(
+  COVID_Database_2026_09_26_09_AM,
+  codebook = VariableTypes
+)$RevaluedData
+
+d <- DetectDataAnomalies(
+  df_Revalued,
+  variables = names(df_Revalued)[1:400],
+  codebook = VariableTypes
+)
+ExploreDataAnomalies(d)
+```
+
+Use names from the same dataframe passed to detection. No temporal meaning is
+inferred from the spelling of these names. The codebook file is never written
+back automatically.
+
+Existing `hms`/`difftime` inputs retain their physical values, classes and unit
+attributes in `RevalueData()`; the output gains `scidr_type` metadata.
+`TimeMetadata` records declarations, provenance, conversion status and errors.
+For numeric inputs declare `TimeUnit`: `secs`, `mins`, `hours`, `days` or `weeks`
+(usual aliases such as seconds/minutes are accepted). Typed objects use their
+own units. Text requires an explicit `TimeFormat`: `HMS`, `HM` or `MS`;
+clock text supports `HMS`/`HM`, while durations support all three. Fractional
+seconds and durations longer than one day are supported. Two-part text is never
+guessed. Numeric HHMM codes are not guessed either.
+
+```r
+# Explicit numeric/text intake, with labels still supplied by your codebook:
+result <- RevalueData(
+  df_Raw,
+  codebook = VariableTypes,
+  time_types = c(assessment_clock = "clock", task_duration = "duration"),
+  time_units = c(task_duration = "mins"),
+  time_formats = c(assessment_clock = "HMS")
+)
+```
+
+The same three named overrides are accepted by `DetectDataAnomalies()` for raw
+inputs. Explicit overrides take precedence over temporal codebook declarations,
+then attached temporal metadata. The detector transforms only local copies;
+its `ReviewData` preserves original inputs and classes. Explorer-only codebook
+overrides remain presentation choices and never refit or reinterpret saved models.
+
+Missing codes are processed before temporal parsing in intake. Invalid components
+are not rolled over. Clock values must lie in `[00:00, 24:00)`; negative/long
+durations can be valid. Default intake errors name the variable and rows;
+`on_error = "warn"` leaves a failed column unchanged and records the error.
+Categorical value-code mappings conflict with a declared temporal conversion.
+Optional `hms` is needed only when creating a clock object.
+
+Detection converts durations to seconds and clock times to paired sine/cosine
+coordinates on a 24-hour circle. Thus 23:59 and 00:01 are close. Clock pairs use
+joint scaling for numeric LOF and circular distance for mixed-data LOF.
+Conditional findings describe clock regions rather than high/low component
+values. Cellwise clock findings retain native component evidence without
+inventing an expected replacement time. Backend support requirements remain in
+force; failures do not trigger another algorithm.
+
+Fast column screening replaces an entire clock field with a reference value,
+updating both coordinates together. Optional SHAP explains original fields
+through the exact encoded prediction wrapper, preserving score reconstruction.
+Neither displays two clock coordinates as independent evidence. Clock plots use
+24-hour circular distributions; their half-hour display bins are not detection
+thresholds. Duration displays identify their units explicitly.
+
+`Metadata$TimeConversions` and `Metadata$FeatureMaps` record temporal processing,
+including excluded components. Invalid clock values remain in the source and are
+diagnosed, not wrapped to another time. Unparseable text is unavailable for the
+affected field/row; other valid rows are retained. Missing parsing configuration
+makes that temporal column unavailable. Native missing-data handling still applies.
+
+Clock-only columns do not enter `date_pairs` and cannot establish elapsed time
+between events on unknown days. Calendar dates/timestamps keep their existing
+handling. Circular longitudinal trajectories and extracting a clock by silently
+stripping a calendar date are outside this release. Older snapshots/workbooks
+remain usable; adding new temporal modeling requires a new detection run.
+
+
+## Review variables and unexpected missingness
+
+`ExploreDataAnomalies()` starts with **Variables to review**. Select a variable
+(label and raw name are shown) to filter the individual findings. **Show all
+findings** resets that selection. Ranking uses the strongest supported finding;
+it is not a probability that the variable contains an error. Findings with no
+attributed field share the same table; filter by **Anomaly type** to list them on
+their own, remembering that isolation screening supplies leads, not attributed errors.
+Miniature distributions show retained values in the same stratum, with review
+values highlighted in red. Detailed plots retain the actual comparison context.
+
+Unexpected missingness is screened automatically, and "unexpected" is judged
+against the rest of the record rather than against the column as a whole. A blank
+is reported only when something in the data explains why it is unexpected, and
+there are exactly two such explanations.
+
+The first is a **rule learned from another column's values**. A small tree learns
+which records are expected to carry a value, so a field collected from only part
+of the sample — menopause status, say — is not reported for the records that
+legitimately skip it, while a blank among the records that should have one is.
+The finding reads "Blank, although 142 of 142 records with Sex = Female have a
+value"; expand it to inspect the full learned condition.
+
+The second is a **group of variables that go missing together**. Wide analysis
+frames are usually merges of separate forms, and a form that was not done leaves
+every one of its fields blank at once. That co-absence is discoverable: columns
+are clustered on how similarly they go blank, which recovers the forms without
+knowing what any column measures. A record carrying most of a group but not all
+of it, where nearly everyone carrying any of that group carries all of it, is a
+finding, and it names the pattern it used:
+
+> Blank, although this record has 7 of the 8 variables in a group that go
+> missing together (WBC, RBC, Hgb, Hct, MCV, Plt, Neut%, Lymph%), and 108 of the
+> 112 records carrying any of that group have all 8.
+
+This is why a column's overall completeness is not a gate. A panel only 40% of
+the cohort completed is still screened, because the comparison group is the
+records who did that panel, not everybody. A record missing *most* of a group has
+skipped the form and is not reported.
+
+A blank that neither mechanism explains is **not reported at all**. There is no
+comparison group for it, and "this column is mostly full and you are blank" is a
+fact about the column rather than an anomaly about the record; such columns are
+listed in the explorer's **Completeness** section with their blank counts
+instead. The discovered groups are listed in their own section on the page and
+returned in `Metadata$Settings$missingness$Blocks` — check the membership before
+trusting what the findings say, and raise `block_similarity` if a group has
+merged variables from unrelated forms. An over-merged group is largely
+self-limiting, since it rarely reaches the completion rate needed to report
+anything.
+
+The evaluated participant is excluded when an ID is available; otherwise the
+evaluated row is excluded. Legitimate skip logic, selective testing, and study
+design can still explain a blank.
+
+```{r}
+#| label: MissingnessScreeningExample
+#| eval: false
+
+d <- DetectDataAnomalies(
+  df_Revalued,
+  codebook = VariableTypes,
+  method_args = list(missingness = list(
+    min_reference = 20,
+    min_observed_fraction = 0.95,
+    maxdepth = 4
+  ))
+)
+ExploreDataAnomalies(d)
+
+# Run only missingness screening, using the same result/explorer workflow.
+d_Missing <- DetectDataAnomalies(df_Revalued, methods = "missingness")
+
+# Keep the previous set of detectors without missingness screening.
+d_Values <- DetectDataAnomalies(
+  df_Revalued,
+  methods = c("conditional", "isolation", "dates")
+)
+```
+
+The screening uses `is.na()` as supplied. It does not reinterpret sentinel codes,
+change values, or impute blanks. Numeric/date/duration groups use quartiles by
+default; clock groups use four six-hour regions; categorical value groups are
+limited to 20 levels. Presence/absence groups remain available for high-cardinality
+fields. Supported reference groups need at least 20 records and 95% observed
+values by default. These are descriptive screening choices across many comparisons,
+not calibrated confidence levels. All-missing variables and insufficient support
+are reported without inventing an expected value. Existing results can use the
+new presentation without refitting, but generating missingness evidence requires
+running detection again.

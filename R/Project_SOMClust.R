@@ -233,12 +233,16 @@
 #' \itemize{
 #'   \item Assigns a SOM node and distance to BMU.
 #'   \item Maps node-level cluster/posterior probabilities to the individual.
-#'   \item Computes an overall SOM-distance z-score and flags:
+#'   \item Scores novelty at three levels (see Details of [ProjectCluster()]):
 #'     \itemize{
-#'       \item \code{Flag_SOMDist_overallHigh} - distance > overall training p95.
-#'       \item \code{Flag_SOMDist_clusterHigh} - distance > cluster-specific
-#'             training p95 for that cluster.
+#'       \item person: \code{NoveltyP}, a conformal p-value (the share of
+#'             training people at least as far from the map), \code{NoveltyQ}
+#'             (Benjamini-Hochberg across the projected cohort) and
+#'             \code{Flag_Outlier} (\code{NoveltyQ <= novelty_fdr});
+#'       \item cohort: \code{ProjectionFit$cohort_shift};
+#'       \item group: \code{NoveltyGroups}, people who are unusual together.
 #'     }
+#'   \item Combines these with membership into \code{FitClass}.
 #' }
 #'
 #' Row alignment is preserved without adding internal identifier columns to
@@ -256,31 +260,22 @@
 #' @param ClusterVariableName Optional name for the cluster column; defaults to
 #'   \code{object$ClusterVariableName}. If that column already exists in \code{data}
 #'   it is overwritten (with a message).
-#' @param novel_group_min_n Minimum far-from-map people in a significant
-#'   concentration group to call it a candidate new phenotype (default 3).
-#'   NoveltyGroups returns groups (including row IDs in Members), neighbourhood
-#'   tests, overall_excess (N, FarN, ExpectedN, P, Excess) and a one-line verdict.
-#'   Each neighbourhood uses its training LOO far rate; fewer than ten training
-#'   people are supplemented to ten with pseudo-people at the calibrated training rate. One-sided
-#'   binomial neighbourhood tests use Holm adjustment; overall excess tests
-#'   the total far count against the calibrated training rate. This test is
-#'   separate from groups. Group labels always include their size.
-#'   FitClass is per person; FitClass_Legacy is deprecated for one release.
-#'   The rough expected rate of unfamiliar profiles is the training share on
-#'   one-person nodes, descriptive only. No inference uses this baseline.
-#' @param distance_reference Distance cutoff reference, LOO by default or training.
-#'   One shared q_star calibrates the overall OR cluster rule on training LOO
-#'   distances to the requested tail rate, within the attainable empirical step.
-#'   The attained training rate is the chance benchmark for novelty tests and
-#'   chance_flag_rate. Report the held-out flag rate: remaining excess comes
-#'   from the map moving without the person and requires refits to remove.
-#'   No further correction factor is applied. Older models recover training
-#'   scores or message a fallback. Explicit training references are uncalibrated.
-#' @param far_distance_quantile Numeric value between 0 and 1 used to define
-#'   high SOM-distance flags from the training distance distribution. Default
-#'   is \code{0.95}.
-#' @param clear_membership_threshold Numeric posterior probability threshold used to
-#'   flag uncertain phenotype membership. Default is \code{0.70}.
+#' @param novelty_fdr False-discovery rate for individual outliers (default
+#'   0.10): a person is an \code{Outlier} when their Benjamini-Hochberg
+#'   adjusted novelty p-value is at most this value. Controlling the FDR means
+#'   a cohort that resembles training yields few or no outliers, instead of a
+#'   fixed share flagged by construction.
+#' @param group_screen_alpha Per-person screen that feeds the group search
+#'   (default 0.05): people with \code{NoveltyP <= group_screen_alpha} are
+#'   \code{Flag_Unusual}. Pooling weakly unusual people is how a group can be
+#'   detected even when no member is an individual outlier.
+#' @param novelty_permutations Random reference groups drawn to judge whether
+#'   a group's members resemble each other (default 999).
+#' @param seed_novelty Seed for the permutation and Monte Carlo tests; the
+#'   caller's random-number stream is left unchanged.
+#' @param clear_membership_threshold Membership probability below which a
+#'   person who is not an outlier is \code{Uncertain membership} (default
+#'   0.70). Membership is not used to judge novelty.
 #'
 #' @return A list of class \code{"Project_SOMClust"} with components:
 #'   \itemize{
@@ -316,40 +311,36 @@
 #' projected <- ProjectCluster(object = model, data = df_Projection)
 #' head(projected$ProbFit$individual)
 #' projected$ProjectionFit$plots$projection_fit_class_bar
+#' projected$ProjectionFit$cohort_shift
+#' projected$NoveltyGroups$verdict
 #' projected$ProjectionFit$plots$som_grid_map
 #' projected$ProbFit$plots$individual_ProbAssignedDensity
 #' }
 #' @rdname ProjectCluster
-#' @param high_dist_quantile Deprecated alias for `far_distance_quantile`.
-#' @param low_prob_threshold Deprecated alias for `clear_membership_threshold`.
 #' @export
 ProjectCluster.Pipeline_SOM_MClust <- function(
     object,
     data,
     ClusterVariableName = NULL,
-    far_distance_quantile = 0.95,
+    novelty_fdr = 0.10,
     clear_membership_threshold = 0.70,
-    high_dist_quantile = lifecycle::deprecated(),
-    low_prob_threshold = lifecycle::deprecated(),
     distance_reference = c("loo", "training"),
+    group_screen_alpha = 0.05,
     novel_group_min_n = 3L,
+    novelty_permutations = 999L,
+    seed_novelty = 1L,
     new_df = lifecycle::deprecated(), ...
 ) {
   if (lifecycle::is_present(new_df)) {
     lifecycle::deprecate_warn("21.18.0", "ProjectCluster(new_df)", "ProjectCluster(data)")
     data <- new_df
   }
-
-  if (lifecycle::is_present(high_dist_quantile)) {
-    lifecycle::deprecate_warn("21.18.0", "ProjectCluster.Pipeline_SOM_MClust(high_dist_quantile)", "ProjectCluster.Pipeline_SOM_MClust(far_distance_quantile)")
-    far_distance_quantile <- high_dist_quantile
+  retired <- intersect(names(list(...)), c("far_distance_quantile", "high_dist_quantile", "low_prob_threshold"))
+  if (length(retired)) {
+    stop(paste(retired, collapse = ", "), " was removed: novelty is now a conformal p-value with ",
+      "false-discovery-rate control. Use novelty_fdr (and clear_membership_threshold for membership).",
+      call. = FALSE)
   }
-  if (lifecycle::is_present(low_prob_threshold)) {
-    lifecycle::deprecate_warn("21.18.0", "ProjectCluster.Pipeline_SOM_MClust(low_prob_threshold)", "ProjectCluster.Pipeline_SOM_MClust(clear_membership_threshold)")
-    clear_membership_threshold <- low_prob_threshold
-  }
-
-
 
   if (!requireNamespace("kohonen", quietly = TRUE)) {
     stop("Package 'kohonen' is required.")
@@ -360,9 +351,11 @@ ProjectCluster.Pipeline_SOM_MClust <- function(
   }
 
 
-  if (!is.numeric(far_distance_quantile) || length(far_distance_quantile) != 1 ||
-      is.na(far_distance_quantile) || far_distance_quantile <= 0 || far_distance_quantile >= 1) {
-    stop("far_distance_quantile must be a single numeric value between 0 and 1.")
+  for (argument in c("novelty_fdr", "group_screen_alpha")) {
+    value <- get(argument)
+    if (!is.numeric(value) || length(value) != 1 || is.na(value) || value <= 0 || value >= 1) {
+      stop(argument, " must be a single numeric value between 0 and 1.")
+    }
   }
   if (!is.numeric(clear_membership_threshold) || length(clear_membership_threshold) != 1 ||
       is.na(clear_membership_threshold) || clear_membership_threshold < 0 || clear_membership_threshold > 1) {
@@ -526,7 +519,6 @@ ProjectCluster.Pipeline_SOM_MClust <- function(
   overall_mean        <- SOMFit_train$overall_mean
   overall_sd          <- SOMFit_train$overall_sd
   dist_by_cluster_tr  <- SOMFit_train$dist_by_cluster
-  flag_by_cluster_tr  <- SOMFit_train$flag_by_cluster
 
   training_individual <- object$ProbFit$individual
   {
@@ -561,37 +553,14 @@ ProjectCluster.Pipeline_SOM_MClust <- function(
     }
     if (distance_reference == "loo") training_individual$SOM_Distance <- training_individual$SOM_Distance_LOO
   }
-  cutoff_quantile <- far_distance_quantile
-  chance_rate <- 1 - far_distance_quantile
-  calibration <- NULL
-  if (distance_reference == "loo") {
-    calibration <- object$ModelInfo_SOM$ProjectionReference$calibration
-    if (is.null(calibration) || !identical(calibration$target_quantile, far_distance_quantile)) {
-      calibration <- .CalibrateSOMFarRule(training_individual$SOM_Distance_LOO,
-        training_individual$Cluster, far_distance_quantile)
-    }
-    cutoff_quantile <- calibration$q_star
-    chance_rate <- calibration$training_rate
-  }
-  train_dist <- training_individual$SOM_Distance[!is.na(training_individual$SOM_Distance)]
-  overall_high_cutoff <- as.numeric(stats::quantile(train_dist, cutoff_quantile, na.rm = TRUE))
-
-  dist_by_cluster_cutoffs <- training_individual %>%
-    dplyr::filter(!is.na(.data$SOM_Distance), !is.na(.data$Cluster)) %>%
-    dplyr::group_by(.data$Cluster) %>%
-    dplyr::summarise(
-      train_cluster_high_cutoff = as.numeric(stats::quantile(.data$SOM_Distance, cutoff_quantile, na.rm = TRUE)),
-      .groups = "drop"
-    )
-
-  if (!"SOM_Distance_LOO" %in% names(training_individual)) {
-    training_individual$SOM_Distance_LOO <- rep(NA_real_, nrow(training_individual))
-  }
-  training_cluster_cutoff <- dist_by_cluster_cutoffs$train_cluster_high_cutoff[
-    match(training_individual$Cluster, dist_by_cluster_cutoffs$Cluster)]
-  training_cluster_cutoff[is.na(training_cluster_cutoff)] <- Inf
-  training_individual$Flag_FarFromMap <- training_individual$SOM_Distance_LOO > overall_high_cutoff |
-    training_individual$SOM_Distance_LOO > training_cluster_cutoff
+  # Reference distances for the conformal p-values. LOO distances treat each
+  # training person as if the map had been trained without them, which is the
+  # position a new person is in; in-sample distances are optimistic.
+  train_dist <- training_individual$SOM_Distance[is.finite(training_individual$SOM_Distance)]
+  chance_rate <- .SOMChanceRate(group_screen_alpha, length(train_dist))
+  training_novelty <- .SOMNoveltyColumns(.SOMTrainingConformalP(training_individual$SOM_Distance),
+    novelty_fdr, group_screen_alpha)
+  training_individual$Flag_Unusual <- training_novelty$Flag_Unusual
   # Map new data to SOM ----------------------------------------------------
 
   mapping <- kohonen::map(som_model, newdata = zmat_new)
@@ -672,8 +641,6 @@ ProjectCluster.Pipeline_SOM_MClust <- function(
       SOMDist_percentile_train = vapply(SOM_Distance, function(x) {
         if (is.na(x) || length(train_dist) == 0) NA_real_ else mean(train_dist <= x, na.rm = TRUE)
       }, numeric(1)),
-      Flag_SOMDist_overallHigh =
-        !is.na(SOM_Distance) & !is.na(overall_high_cutoff) & SOM_Distance > overall_high_cutoff,
       Flag_OutsideTrainingRange = Flag_OutsideTrainingRange
     ) %>%
     dplyr::left_join(
@@ -687,29 +654,28 @@ ProjectCluster.Pipeline_SOM_MClust <- function(
           train_p99       = p99
         ),
       by = "Cluster"
-    ) %>%
-    dplyr::left_join(dist_by_cluster_cutoffs, by = "Cluster") %>%
-    dplyr::mutate(
-      Flag_SOMDist_clusterHigh =
-        !is.na(SOM_Distance) & !is.na(train_cluster_high_cutoff) & SOM_Distance > train_cluster_high_cutoff,
-      Projection_Fit_Class = dplyr::case_when(
-        is.na(SOM_Distance) ~ NA_character_,
-        (Flag_SOMDist_overallHigh | Flag_SOMDist_clusterHigh) &
-          (is.na(max_prob) | max_prob < clear_membership_threshold) ~ "Potential novel phenotype",
-        Flag_SOMDist_overallHigh | Flag_SOMDist_clusterHigh ~ "Poor fit to training structure",
-        !is.na(max_prob) & max_prob < clear_membership_threshold ~ "Uncertain membership",
-        TRUE ~ "Good fit"
-      )
     )
-  individual_tbl$FitClass_Legacy <- individual_tbl$Projection_Fit_Class
-  far <- individual_tbl$Flag_SOMDist_overallHigh | individual_tbl$Flag_SOMDist_clusterHigh
-  clear <- !is.na(individual_tbl$MembershipProbability) & individual_tbl$MembershipProbability >= clear_membership_threshold
-  individual_tbl$Flag_FarFromMap <- far
-  individual_tbl$FitClass <- factor(ifelse(is.na(individual_tbl$SOM_Distance), NA_character_,
-    ifelse(far, ifelse(clear, "Far from map, clear membership", "Far from map, unclear membership"),
-      ifelse(clear, "Good fit", "Uncertain membership"))),
-    levels = c("Good fit", "Uncertain membership", "Far from map, clear membership", "Far from map, unclear membership"))
-  individual_tbl$Projection_Fit_Class <- as.character(individual_tbl$FitClass)
+
+  # Person level: conformal p-value against training distances, BH across the
+  # projected cohort for individual outliers, and a lenient per-person screen
+  # (p <= group_screen_alpha) that feeds the group search.
+  novelty_columns <- .SOMNoveltyColumns(.SOMConformalP(individual_tbl$SOM_Distance, train_dist),
+    novelty_fdr, group_screen_alpha)
+  for (column in names(novelty_columns)) individual_tbl[[column]] <- novelty_columns[[column]]
+
+  # Group level: unusual people concentrated on the map and alike.
+  training_z <- tryCatch(as.matrix(object$ModelInfo_SOM$som_model$data[[1]]), error = function(e) NULL)
+  novelty <- .SOMNoveltyGroups(individual_tbl, zmat_new, complete_rows, object, novel_group_min_n,
+    training_individual, chance_rate, training_z = training_z,
+    permutations = novelty_permutations, seed = seed_novelty)
+  message(novelty$verdict)
+  candidate_members <- unlist(novelty$groups$Members[novelty$groups$Candidate])
+  individual_tbl$Flag_NewGroupMember <- ifelse(is.na(individual_tbl$SOM_Distance), NA,
+    individual_tbl$.row_id %in% candidate_members)
+  clear <- !is.na(individual_tbl$MembershipProbability) &
+    individual_tbl$MembershipProbability >= clear_membership_threshold
+  individual_tbl$FitClass <- .SOMFitClass(!is.na(individual_tbl$SOM_Distance),
+    individual_tbl$Flag_Outlier, individual_tbl$Flag_NewGroupMember, clear)
   individual_tbl <- individual_tbl %>%
     dplyr::left_join(som_residuals$top, by = ".row_id")
   attr(individual_tbl$.row_id, "label") <- "Row ID"
@@ -726,64 +692,17 @@ ProjectCluster.Pipeline_SOM_MClust <- function(
   }
 
   DataWithClusters[[ClusterVariableName]] <- individual_tbl$Cluster
-  projection_columns <- c("NodeN", "Flag_OnePersonNode", "FitClass", "FitClass_Legacy", "Flag_FarFromMap", "Cluster_Hard", "Cluster_Soft", "SoftEntropy", "SoftMargin",
+  projection_columns <- c("NodeN", "Flag_OnePersonNode", "FitClass", "NoveltyP", "NoveltyQ",
+    "Flag_Outlier", "Flag_NewGroupMember", "Cluster_Hard", "Cluster_Soft", "SoftEntropy", "SoftMargin",
     "Flag_BoundaryParticipant", "BoundaryReason", grep("^SoftProb_", names(individual_tbl), value = TRUE))
   for (column in projection_columns) {
     if (column %in% names(individual_tbl)) DataWithClusters[[column]] <- individual_tbl[[column]]
   }
-  DataWithClusters$Projection_Fit_Class <- individual_tbl$Projection_Fit_Class
 
   # Frozen-SOM fit diagnostics for projected cases -------------------------
 
   somproj_tbl    <- individual_tbl
   somproj_non_na <- somproj_tbl[!is.na(somproj_tbl$SOM_Distance), ]
-
-  dist_proj_summary <- stats::quantile(
-    somproj_non_na$SOM_Distance,
-    probs = c(0, 0.25, 0.5, 0.75, 0.95, 1),
-    na.rm = TRUE
-  )
-  names(dist_proj_summary) <- c("min", "q25", "median", "q75", "p95", "max")
-
-  flag_by_cluster_proj <- somproj_non_na %>%
-    dplyr::filter(!is.na(Cluster)) %>%
-    dplyr::group_by(Cluster) %>%
-    dplyr::summarise(
-      n_proj            = dplyr::n(),
-      prop_overall_high = mean(Flag_SOMDist_overallHigh),
-      prop_cluster_high = mean(Flag_SOMDist_clusterHigh),
-      .groups = "drop"
-    )
-
-  distance_flag_comparison <- flag_by_cluster_proj %>%
-    dplyr::left_join(
-      flag_by_cluster_tr %>%
-        dplyr::rename(
-          n_train                 = n,
-          train_prop_overall_high = prop_overall_high
-        ),
-      by = "Cluster"
-    ) %>%
-    dplyr::mutate(
-      diff_prop_overall_high =
-        prop_overall_high - train_prop_overall_high
-    )
-
-  max_train_prop <- max(flag_by_cluster_tr$prop_overall_high, na.rm = TRUE)
-  max_proj_prop  <- max(flag_by_cluster_proj$prop_overall_high, na.rm = TRUE)
-
-  if (is.finite(max_proj_prop) && max_proj_prop > max_train_prop) {
-    warning(
-      "At least one projected cluster has a higher proportion of high-distance ",
-      "cases than any cluster in training (proj max = ",
-      sprintf("%.1f%%", 100 * max_proj_prop),
-      ", train max = ",
-      sprintf("%.1f%%", 100 * max_train_prop),
-      "). Review flags Flag_SOMDist_overallHigh / Flag_SOMDist_clusterHigh ",
-      "in ProjectionFit$individual and ProjectionFit$by_cluster."
-    )
-  }
-
 
   train_node_occupancy <- SOMFit_train$node_occupancy %>%
     dplyr::mutate(cohort = "Training")
@@ -825,11 +744,14 @@ ProjectCluster.Pipeline_SOM_MClust <- function(
   distance_ratio <- projected_mean_distance / training_mean_distance
   phenotype_drift_index <- abs(log(distance_ratio))
 
-  # Representation drift: share of projected participants beyond the training
-  # high-distance cutoff, minus the share expected when the projected cohort
-  # resembles training (the selected chance rate). Near 0 means no excess.
-  high_distance_burden <- mean(somproj_non_na$Flag_SOMDist_overallHigh, na.rm = TRUE)
-  excess_high_distance <- high_distance_burden - chance_rate
+  # Cohort level: is the projected cohort farther from the map, or placed
+  # differently on it, than training?
+  cohort_shift <- .SOMCohortShift(train_dist, somproj_non_na$SOM_Distance,
+    somproj_non_na$NoveltyP, group_screen_alpha,
+    training_individual$SOM_Node[!is.na(training_individual$SOM_Node)],
+    somproj_non_na$SOM_Node, nrow(object$ModelInfo_SOM$som_codes),
+    training_individual$Cluster[!is.na(training_individual$Cluster)],
+    somproj_non_na$Cluster[!is.na(somproj_non_na$Cluster)], seed = seed_novelty)
 
   # Prevalence drift: divergence between training and projected phenotype
   # proportions (0 = identical, 1 = disjoint).
@@ -868,10 +790,11 @@ ProjectCluster.Pipeline_SOM_MClust <- function(
       "training_median_som_distance",
       "projected_median_som_distance",
       "mean_distance_ratio",
-      "high_distance_burden",
-      "cluster_high_distance_burden",
       "phenotype_drift_index",
-      "excess_high_distance",
+      "outlier_n",
+      "outlier_share",
+      "unusual_share",
+      "expected_unusual_share",
       "cluster_occupancy_js_divergence",
       "node_occupancy_js_divergence"
     ),
@@ -884,10 +807,11 @@ ProjectCluster.Pipeline_SOM_MClust <- function(
       training_median_distance,
       projected_median_distance,
       distance_ratio,
-      high_distance_burden,
-      mean(somproj_non_na$Flag_SOMDist_clusterHigh, na.rm = TRUE),
       phenotype_drift_index,
-      excess_high_distance,
+      sum(somproj_non_na$Flag_Outlier, na.rm = TRUE),
+      mean(somproj_non_na$Flag_Outlier, na.rm = TRUE),
+      mean(somproj_non_na$Flag_Unusual, na.rm = TRUE),
+      chance_rate,
       cluster_js,
       node_js
     )
@@ -957,44 +881,24 @@ ProjectCluster.Pipeline_SOM_MClust <- function(
       median_probability = stats::median(.data$prob_assigned, na.rm = TRUE),
       mean_distance_percentile = mean(.data$SOMDist_percentile_train, na.rm = TRUE),
       median_distance_percentile = stats::median(.data$SOMDist_percentile_train, na.rm = TRUE),
-      prop_high_distance = mean(.data$Flag_SOMDist_overallHigh | .data$Flag_SOMDist_clusterHigh, na.rm = TRUE),
-      prop_low_probability = mean(.data$prob_assigned < clear_membership_threshold, na.rm = TRUE),
-      prop_poor_fit = mean(.data$FitClass_Legacy == "Poor fit to training structure", na.rm = TRUE),
-      prop_potential_novel = mean(.data$FitClass_Legacy == "Potential novel phenotype", na.rm = TRUE),
+      median_novelty_p = stats::median(.data$NoveltyP, na.rm = TRUE),
+      prop_outlier = mean(.data$Flag_Outlier, na.rm = TRUE),
+      prop_unusual = mean(.data$Flag_Unusual, na.rm = TRUE),
+      prop_new_group = mean(.data$Flag_NewGroupMember, na.rm = TRUE),
+      prop_uncertain = mean(.data$FitClass == "Uncertain membership", na.rm = TRUE),
       .groups = "drop"
     )
 
-  poor_fit_by_cluster <- cluster_fit_summary %>%
-    dplyr::transmute(
-      Cluster = .data$Cluster,
-      n = .data$n,
-      prop_poor_or_high_dist = .data$prop_high_distance,
-      prop_potential_novel = .data$prop_potential_novel
-    )
-
-  p_projection_fit_class <- ggplot2::ggplot(
-    somproj_non_na %>% dplyr::filter(!is.na(.data$Projection_Fit_Class)),
-    ggplot2::aes(x = .data$Projection_Fit_Class)
-  ) +
-    ggplot2::geom_bar() +
-    ggplot2::theme_bw() +
-    ggplot2::labs(
-      title = "Projected cases by projection fit class",
-      x = "Projection fit class",
-      y = "Count"
-    )
-
-  p_poor_fit_by_cluster <- ggplot2::ggplot(
-    poor_fit_by_cluster,
-    ggplot2::aes(x = factor(Cluster), y = prop_poor_or_high_dist)
-  ) +
+  p_projection_fit_class <- .ClusterFitClassPlot(somproj_non_na$FitClass)
+  p_novelty_p <- .SOMNoveltyPPlot(somproj_non_na$NoveltyP, group_screen_alpha)
+  p_outlier_by_cluster <- ggplot2::ggplot(cluster_fit_summary,
+    ggplot2::aes(x = factor(.data$Cluster), y = .data$prop_unusual)) +
     ggplot2::geom_col() +
+    ggplot2::geom_hline(yintercept = chance_rate, linetype = "dashed") +
     ggplot2::theme_bw() +
-    ggplot2::labs(
-      title = "Poor-fit or high-distance projected cases by cluster",
-      x = "Cluster",
-      y = "Proportion"
-    )
+    ggplot2::labs(title = "Unusual projected profiles by cluster",
+      subtitle = sprintf("Share with novelty p <= %s; dashed line = share expected by chance", group_screen_alpha),
+      x = "Cluster", y = "Proportion")
 
   p_variable_drift <- if ("sq_residual_ratio" %in% names(variable_drift)) {
     ggplot2::ggplot(variable_drift, ggplot2::aes(
@@ -1011,17 +915,21 @@ ProjectCluster.Pipeline_SOM_MClust <- function(
     NULL
   }
 
-  DataWithClusters$Projection_Fit_Class <- individual_tbl$Projection_Fit_Class
   ProjectionFit <- list(
     individual = individual_tbl,
     summary = ProjectionDiagnostics,
     by_cluster = cluster_fit_summary,
+    cohort_shift = cohort_shift,
     variable_drift = variable_drift,
     residuals = som_residuals$residuals,
     out_of_support = out_of_range_summary %>%
       dplyr::filter(!is.na(.data$n_out_of_range), .data$n_out_of_range > 0),
     policy = list(
-    high_distance_quantile = far_distance_quantile,
+    novelty = paste0("Conformal p-value: share of training ",
+      if (distance_reference == "loo") "leave-one-out " else "in-sample ",
+      "distances at least as large; outliers by Benjamini-Hochberg at novelty_fdr"),
+    novelty_fdr = novelty_fdr,
+    group_screen_alpha = group_screen_alpha,
     low_probability_threshold = clear_membership_threshold,
     distance_metric = if (euclidean_distance) {
       "Euclidean distance (Z-score units) to frozen SOM best-matching unit"
@@ -1034,15 +942,17 @@ ProjectCluster.Pipeline_SOM_MClust <- function(
       training_vs_projected_distance_density = p_train_proj_dist_density,
       training_vs_projected_distance_qq = p_train_proj_dist_qq,
       projection_fit_class_bar = p_projection_fit_class,
+      novelty_p_hist = p_novelty_p,
       variable_drift = p_variable_drift,
-      poor_fit_by_cluster = p_poor_fit_by_cluster
+      unusual_by_cluster = p_outlier_by_cluster
     )
   )
 
   # ProbFit for projected cases --------------------------------------------
 
   probability_columns <- unique(c(
-    "NodeN", "Flag_OnePersonNode", "FitClass", "FitClass_Legacy", "Flag_FarFromMap",
+    "NodeN", "Flag_OnePersonNode", "FitClass", "NoveltyP", "NoveltyQ", "Flag_Outlier",
+    "Flag_NewGroupMember",
     ".row_id", object$id_var, "SOM_Node", "model_number", "classes_number",
     grep("^prob_", names(individual_tbl), value = TRUE),
     "Cluster", "NodeCluster", "Flag_NodeDisagreement",
@@ -1105,14 +1015,11 @@ ProjectCluster.Pipeline_SOM_MClust <- function(
       cloudSeed = 93421L)
   }
 
-  novelty <- .SOMNoveltyGroups(individual_tbl, zmat_new, complete_rows, object, novel_group_min_n, training_individual, chance_rate)
-  message(novelty$verdict)
   training_node_n <- tabulate(object$ProbFit$individual$SOM_Node, nrow(node_df))
   training_singleton_share <- sum(training_node_n == 1L) / sum(training_node_n)
   ProjectionFit$summary <- dplyr::bind_rows(ProjectionFit$summary,
-    tibble::tibble(metric = c("one_person_node_share", "rough_expected_rate_unfamiliar_profiles", "chance_flag_rate", "far_from_map_share"),
-      value = c(mean(individual_tbl$Flag_OnePersonNode[complete_rows]), training_singleton_share,
-        chance_rate, mean(far[complete_rows]))))
+    tibble::tibble(metric = c("one_person_node_share", "rough_expected_rate_unfamiliar_profiles"),
+      value = c(mean(individual_tbl$Flag_OnePersonNode[complete_rows]), training_singleton_share)))
   out <- list(
     NoveltyGroups = novelty,
     vars_used        = vars_used,
@@ -1126,8 +1033,9 @@ ProjectCluster.Pipeline_SOM_MClust <- function(
   )
 
   out$Specification <- list(projection = list(distance_reference = distance_reference,
-    far_distance_quantile = far_distance_quantile,
-    cutoff_quantile = cutoff_quantile, chance_flag_rate = chance_rate,
+    novelty_fdr = novelty_fdr, group_screen_alpha = group_screen_alpha,
+    chance_unusual_rate = chance_rate, novelty_permutations = novelty_permutations,
+    seed_novelty = seed_novelty,
     clear_membership_threshold = clear_membership_threshold,
     novel_group_min_n = novel_group_min_n,
     membership_probability = if (projection_assignment == "soft") "max(SoftProb_*)" else "max_prob"))
@@ -1164,95 +1072,17 @@ ProjectSOMCluster <- function(...) {
   }, numeric(1))
 }
 
-.SOMNoveltyGroups <- function(df_Individual, zmat, complete_rows, object, min_n, df_Training, chance_rate) {
-  if (length(min_n) != 1L || !is.finite(min_n) || min_n < 1 || min_n != as.integer(min_n)) stop("novel_group_min_n must be a positive integer.")
-  nodes <- df_Individual$SOM_Node[complete_rows]
-  far <- df_Individual$Flag_FarFromMap[complete_rows]
-  codes <- object$ModelInfo_SOM$som_codes
-  adjacent <- as.matrix(stats::dist(object$ModelInfo_SOM$som_model$grid$pts)) <= 1.01
-  neighbourhoods <- lapply(seq_len(nrow(codes)), function(i) which(adjacent[i, ]))
-  tests <- dplyr::bind_rows(lapply(seq_along(neighbourhoods), function(i) {
-    inside <- nodes %in% neighbourhoods[[i]]
-    observed <- sum(inside & far)
-    training_inside <- df_Training$SOM_Node %in% neighbourhoods[[i]] & !is.na(df_Training$Flag_FarFromMap)
-    training_n <- sum(training_inside)
-    training_far <- sum(df_Training$Flag_FarFromMap[training_inside])
-    probability <- (training_far + max(0, 10 - training_n) * chance_rate) / max(10, training_n)
-    tibble::tibble(NodeID = i, ProjectedN = sum(inside), TrainingN = training_n,
-      TrainingFarN = training_far, TrainingFarRate = probability, FarN = observed, ExpectedN = probability * sum(inside),
-      P = if (sum(far) > 0) stats::pbinom(observed - 1L, sum(inside), probability, lower.tail = FALSE) else 1)
-  }))
-  tests$HolmP <- stats::p.adjust(tests$P, "holm")
-  sets <- neighbourhoods[tests$HolmP < .05]
-  merged <- list()
-  while (length(sets)) {
-    group <- sets[[1]]
-    sets <- sets[-1]
-    repeat {
-      overlaps <- vapply(sets, function(x) length(intersect(x, group)) > 0, logical(1))
-      if (!any(overlaps)) break
-      group <- unique(c(group, unlist(sets[overlaps])))
-      sets <- sets[!overlaps]
-    }
-    merged[[length(merged) + 1L]] <- sort(group)
-  }
-  node_clusters <- object$ProbFit$node$Cluster
-  cluster_profiles <- object$ModelInfo_SOM$ProjectionReference$cluster_profiles
-  if (is.null(cluster_profiles)) {
-    counts <- tabulate(df_Training$SOM_Node, nrow(codes))
-    cluster_profiles <- lapply(split(seq_len(nrow(codes)), node_clusters), function(idx) {
-      if (sum(counts[idx]) == 0) return(colMeans(codes[idx, , drop = FALSE]))
-      colSums(codes[idx, , drop = FALSE] * counts[idx]) / sum(counts[idx])
-    })
-  }
-  groups <- dplyr::bind_rows(lapply(seq_along(merged), function(i) {
-    selected <- far & nodes %in% merged[[i]]
-    profile <- colMeans(zmat[selected, , drop = FALSE])
-    distances <- vapply(cluster_profiles, function(x) sum((x - profile)^2), numeric(1))
-    nearest <- which.min(distances)
-    tibble::tibble(Group = i, Nodes = list(merged[[i]]), N = sum(selected),
-      Members = list(df_Individual$.row_id[complete_rows][selected]),
-      ShareOfFar = sum(selected) / sum(far), Clusters = list(sort(unique(node_clusters[merged[[i]]]))),
-      NearestCluster = as.integer(names(cluster_profiles)[nearest]),
-      MeanZ = list(profile), TrainingClusterMeanZ = list(cluster_profiles[[nearest]]),
-      DifferenceZ = list(profile - cluster_profiles[[nearest]]), Candidate = sum(selected) >= min_n,
-      Label = paste0(if (sum(selected) >= min_n) "candidate new phenotype" else "far-from-map group", " (n=", sum(selected), ")"))
-  }))
-  if (!length(merged)) groups <- tibble::tibble(Group = integer(), Nodes = list(), N = integer(),
-    Members = list(), ShareOfFar = numeric(), Clusters = list(), NearestCluster = integer(),
-    MeanZ = list(), TrainingClusterMeanZ = list(), DifferenceZ = list(), Candidate = logical(), Label = character())
-  candidate <- nrow(groups) > 0 && any(groups$Candidate)
-  excess_p <- stats::pbinom(sum(far) - 1L, length(far), chance_rate, lower.tail = FALSE)
-  overall <- tibble::tibble(N = length(far), FarN = sum(far), ExpectedN = length(far) * chance_rate,
-    P = excess_p, Excess = excess_p < .05)
-  list(groups = groups, neighbourhood_tests = tests, overall_excess = overall,
-    verdict = paste(if (candidate) paste(groups$Label[groups$Candidate], collapse = ", ") else "far-from-map people, no group found",
-      if (overall$Excess) "far-from-map excess" else "no far-from-map excess", sep = "; "))
-}
-
-.CalibrateSOMFarRule <- function(distances, clusters, q) {
-  valid <- is.finite(distances)
-  distances <- distances[valid]
-  clusters <- clusters[valid]
-  if (!length(distances)) stop("No complete training distances available for calibration.")
-  Evaluate <- function(probability) {
-    overall <- unname(stats::quantile(distances, probability))
-    cutoffs <- vapply(split(distances, clusters), function(x) unname(stats::quantile(x, probability)), numeric(1))
-    cluster_cutoff <- cutoffs[as.character(clusters)]
-    cluster_cutoff[is.na(cluster_cutoff)] <- Inf
-    far <- distances > overall | distances > cluster_cutoff
-    list(q_star = probability, training_rate = mean(far), training_n = length(far),
-      far_n = sum(far), target_quantile = q, overall_cutoff = overall, cluster_cutoffs = cutoffs)
-  }
-  lower <- q
-  upper <- 1
-  best <- Evaluate(lower)
-  target <- 1 - q
-  for (iteration in seq_len(60L)) {
-    middle <- (lower + upper) / 2
-    candidate <- Evaluate(middle)
-    if (abs(candidate$training_rate - target) <= abs(best$training_rate - target)) best <- candidate
-    if (candidate$training_rate > target) lower <- middle else upper <- middle
-  }
-  best
+# Histogram of novelty p-values: roughly flat when the projected cohort looks
+# like training, piled up near 0 when it does not.
+.SOMNoveltyPPlot <- function(p, alpha) {
+  df <- dplyr::tibble(NoveltyP = p[!is.na(p)])
+  ggplot2::ggplot(df, ggplot2::aes(x = .data$NoveltyP)) +
+    ggplot2::geom_histogram(breaks = seq(0, 1, by = 0.05), colour = "white") +
+    ggplot2::geom_hline(yintercept = nrow(df) / 20, linetype = "dashed") +
+    ggplot2::geom_vline(xintercept = alpha, colour = "#C92A2A") +
+    ggplot2::coord_cartesian(xlim = c(0, 1)) +
+    ggplot2::theme_bw() +
+    ggplot2::labs(title = "Novelty p-values of projected participants",
+      subtitle = "Flat (dashed line) if the cohort resembles training; a spike near 0 means people far from the map",
+      x = "Novelty p-value (share of training people at least as far from the map)", y = "Count")
 }

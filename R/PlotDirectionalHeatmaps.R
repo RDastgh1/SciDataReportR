@@ -10,6 +10,16 @@
 #' automatically excluded before computing any tiles.
 #'
 #' @param data A dataframe.
+#' @param covariates Optional character vector naming numeric or categorical
+#'   adjustment variables. Covariates are excluded from the heatmap axes;
+#'   explicitly requesting them on an axis produces a warning. Binary variables
+#'   retain their positive-level 0/1 coding. Adjusted estimates are partial
+#'   Pearson correlations, using pair-specific complete cases and residual test
+#'   degrees of freedom `n - rank(design) - 1` (including the intercept).
+#'   Failed adjustments warn and are marked failed in `Results` and `Metadata`;
+#'   fallback estimates do not carry adjusted significance.
+#'   `Unadjusted` refers to raw p-values, including when estimates adjust for
+#'   covariates. Without covariates, existing estimates and tests are unchanged.
 #' @param variables Character vector of variables to include (subset of `data`
 #'   columns). The analysis is symmetric: every variable is related to every
 #'   other, so a single variable set defines both axes. If NULL, uses all
@@ -87,6 +97,13 @@
 #' )
 #' rectangular$Unadjusted$plot
 #'
+#' # Adjust every correlation block for age and sex.
+#' adjusted <- PlotDirectionalHeatmaps(
+#'   Labelled, variables = c("Diagnosis", "AXL", "Leptin"),
+#'   covariates = c("age", "sex")
+#' )
+#' adjusted$FDRCorrected$plot
+#'
 #' # How binary variables were coded (which level counts as the positive one)
 #' result$BinaryMapping
 #' @param IncludeTrendSymbol Logical; add a plus sign for `0.05 < p <= 0.10`.
@@ -110,7 +127,8 @@ PlotDirectionalHeatmaps <- function(data,
     outcome_vars = NULL,
     Data = lifecycle::deprecated(),
     xVars = lifecycle::deprecated(),
-    yVars = lifecycle::deprecated()) {
+    yVars = lifecycle::deprecated(),
+    covariates = NULL) {
   .scidr_inference <- ScidrStartInference("PlotDirectionalHeatmaps", match.call(), environment())
   on.exit({
     if (!is.null(returnValue())) {
@@ -173,6 +191,13 @@ PlotDirectionalHeatmaps <- function(data,
     stop("Data must be a data.frame.", call. = FALSE)
   }
 
+  covariates <- ScidrValidateVariables(Data, covariates, "covariates")
+  vars_Overlap <- intersect(unique(c(xVars, yVars)), covariates)
+  if (length(vars_Overlap)) {
+    warning("Excluding covariates from heatmap axes: ",
+      paste(vars_Overlap, collapse = ", "), call. = FALSE)
+  }
+
   # ---- Prepare data: protect against make.names() behavior downstream -----
   orig_names <- colnames(Data)
   safe_names <- make.names(orig_names, unique = TRUE)
@@ -231,6 +256,9 @@ PlotDirectionalHeatmaps <- function(data,
     yVars_safe <- to_safe(yVars_orig)
   }
 
+  vars_CovariatesSafe <- to_safe(covariates)
+  xVars_safe <- setdiff(xVars_safe, vars_CovariatesSafe)
+  yVars_safe <- setdiff(yVars_safe, vars_CovariatesSafe)
   cand_safe <- unique(c(xVars_safe, yVars_safe))
 
   # Guard against truly missing vars (in either naming universe)
@@ -315,30 +343,33 @@ PlotDirectionalHeatmaps <- function(data,
       row_binary <- row %in% CatVars_safe
       test <- if (column_binary && row_binary) "Phi" else if (column_binary || row_binary) "Point Correlation" else "pearson"
       estimate <- p_value <- NA_real_
-      n_pairs <- sum(stats::complete.cases(Data_safe[, unique(c(column, row)), drop = FALSE]))
+      n_pairs <- sum(stats::complete.cases(Data_safe[, unique(c(column, row, vars_CovariatesSafe)), drop = FALSE]))
       if (column != row) {
         if (test == "pearson") {
           pair <- PlotCorrelationsHeatmap(Data_safe, predictor_vars = column,
-            outcome_vars = row, Relabel = Relabel, IncludeTrendSymbol = IncludeTrendSymbol)
+            outcome_vars = row, Relabel = Relabel, IncludeTrendSymbol = IncludeTrendSymbol, covariates = vars_CovariatesSafe)
           estimate <- pair$Unadjusted$r[1, 1]
           p_value <- pair$Unadjusted$p[1, 1]
+          n_pairs <- pair$Unadjusted$npairs[1, 1]
         } else if (test == "Phi") {
           pair <- PlotPhiHeatmap(Data_safe, c(column, row), Relabel = Relabel,
-            binary_map = binary_map_safe, IncludeTrendSymbol = IncludeTrendSymbol)
+            binary_map = binary_map_safe, IncludeTrendSymbol = IncludeTrendSymbol, covariates = vars_CovariatesSafe)
           df_Cell <- pair$Unadjusted$PvalTable
           df_Cell <- df_Cell[df_Cell$XVar == column & df_Cell$YVar == row, ]
           estimate <- df_Cell$Phi
           p_value <- df_Cell$p_value
+          n_pairs <- df_Cell$nPairs
         } else {
           binary <- if (column_binary) column else row
           continuous <- if (column_binary) row else column
           pair <- PlotPointCorrelationsHeatmap(Data_safe, binary, continuous,
             Relabel = Relabel, Ordinal = Ordinal, binary_map = binary_map_safe,
-            IncludeTrendSymbol = IncludeTrendSymbol)
+            IncludeTrendSymbol = IncludeTrendSymbol, covariates = vars_CovariatesSafe)
           df_Cell <- pair$Unadjusted$PvalTable
           if (nrow(df_Cell)) {
             estimate <- df_Cell$correlation
             p_value <- df_Cell$p_value
+            n_pairs <- df_Cell$nPairs
           }
         }
       }
@@ -368,7 +399,7 @@ PlotDirectionalHeatmaps <- function(data,
   if (length(ContVars_safe) > 0) {
     O_ContCont <- PlotCorrelationsHeatmap(Data_safe, ContVars_safe, Relabel = Relabel,
                                           fdr_scope = fdr_scope,
-                                          IncludeTrendSymbol = IncludeTrendSymbol)
+                                          IncludeTrendSymbol = IncludeTrendSymbol, covariates = vars_CovariatesSafe)
     df_ContCont <- O_ContCont$Unadjusted$plot$data %>%
       dplyr::mutate(correlation = R, test = O_ContCont$method)
 
@@ -379,7 +410,7 @@ PlotDirectionalHeatmaps <- function(data,
   if (length(CatVars_safe) > 1) {
     O_CatCat <- PlotPhiHeatmap(Data_safe, CatVars_safe, Relabel = Relabel,
                                binary_map = binary_map_safe, fdr_scope = fdr_scope,
-                               IncludeTrendSymbol = IncludeTrendSymbol)
+                               IncludeTrendSymbol = IncludeTrendSymbol, covariates = vars_CovariatesSafe)
     df_CatCat <- O_CatCat$Unadjusted$plot$data %>%
       dplyr::mutate(correlation = Phi, test = "Phi")
 
@@ -391,7 +422,8 @@ PlotDirectionalHeatmaps <- function(data,
     O_CatCont <- PlotPointCorrelationsHeatmap(
       Data_safe, CatVars_safe, ContVars_safe,
       Relabel = Relabel, Ordinal = Ordinal, binary_map = binary_map_safe,
-      fdr_scope = fdr_scope, IncludeTrendSymbol = IncludeTrendSymbol
+      fdr_scope = fdr_scope, IncludeTrendSymbol = IncludeTrendSymbol,
+      covariates = vars_CovariatesSafe
     )
 
     df_CatCont <- O_CatCont$Unadjusted$plot$data %>%
@@ -418,6 +450,63 @@ PlotDirectionalHeatmaps <- function(data,
     df_Combined <- dplyr::bind_rows(df_Combined, df_CatContSquare)
   }
 
+  }
+
+  # Child adjustment failures apply to both display orientations. Suppress
+  # fallback inference before drawing stars or forming correction families.
+  if (length(covariates) && nrow(df_Combined)) {
+    df_Failed <- dplyr::bind_rows(lapply(.scidr_inference$Children,
+      function(child) child$Metadata$Failed))
+    if (nrow(df_Failed)) {
+      failed <- rep(FALSE, nrow(df_Combined))
+      for (i in seq_len(nrow(df_Failed))) {
+        failed <- failed |
+          (df_Combined$XVar == df_Failed$Predictor[i] & df_Combined$YVar == df_Failed$Outcome[i]) |
+          (df_Combined$YVar == df_Failed$Predictor[i] & df_Combined$XVar == df_Failed$Outcome[i])
+      }
+      for (column in intersect(c("P", "p_value", "P_adj", "p.adj"), names(df_Combined))) {
+        df_Combined[[column]][failed] <- NA_real_
+      }
+      for (column in c("P_adj", "stars", "stars_FDR")) {
+        if (!column %in% names(df_Combined)) {
+          df_Combined[[column]] <- if (column == "P_adj") {
+            rep(NA_real_, nrow(df_Combined))
+          } else {
+            rep("", nrow(df_Combined))
+          }
+        }
+      }
+      for (block in unique(df_Combined$test)) {
+        indices <- which(df_Combined$test == block)
+        df_Block <- df_Combined[indices, , drop = FALSE]
+        raw_p <- if (two_set || block == "pearson") df_Block$P else df_Block$p_value
+        if (!two_set && block == "pearson") {
+          # Continuous square blocks correct unique symmetric pairs.
+          vars_Block <- unique(c(df_Block$XVar, df_Block$YVar))
+          p_matrix <- matrix(NA_real_, length(vars_Block), length(vars_Block),
+            dimnames = list(vars_Block, vars_Block))
+          coordinates <- cbind(match(df_Block$XVar, vars_Block), match(df_Block$YVar, vars_Block))
+          p_matrix[coordinates] <- raw_p
+          adjusted <- ApplyFDRCorrection(p_matrix, fdr_scope = fdr_scope)[coordinates]
+        } else {
+          outcome <- ifelse(block == "Point Correlation" & df_Block$XVar %in% ContVars_safe,
+            df_Block$XVar, df_Block$YVar)
+          predictor <- ifelse(block == "Point Correlation" & df_Block$XVar %in% ContVars_safe,
+            df_Block$YVar, df_Block$XVar)
+          keys <- paste(predictor, outcome, sep = "\r")
+          keep <- if (!two_set && block == "Point Correlation") !duplicated(keys) else rep(TRUE, length(keys))
+          adjusted <- ApplyFDRCorrection(raw_p[keep], fdr_scope = fdr_scope,
+            outcome_ids = outcome[keep], predictor_ids = predictor[keep])
+          if (!all(keep)) adjusted <- adjusted[match(keys, keys[keep])]
+        }
+        df_Combined$P_adj[indices] <- adjusted
+        df_Combined$stars[indices] <- .FormatPValueStars(
+          ScidrInferenceP(raw_p, adjusted), IncludeTrendSymbol = IncludeTrendSymbol)
+        df_Combined$stars_FDR[indices] <- .FormatPValueStars(adjusted,
+          IncludeTrendSymbol = IncludeTrendSymbol)
+        if ("p.adj" %in% names(df_Combined)) df_Combined$p.adj[indices] <- adjusted
+      }
+    }
   }
 
   # ---- 4) Map back to original var names and filter to requested axes -----
@@ -489,7 +578,7 @@ PlotDirectionalHeatmaps <- function(data,
         data = dplyr::filter(df_Combined_plot_display, test == "pearson"),
         ggplot2::aes(x = XOrder, y = YOrder, fill = correlation)
       ) +
-      ggplot2::scale_fill_gradient2(limits = c(-1, 1), name = "r") +
+      ggplot2::scale_fill_gradient2(limits = c(-1, 1), name = if (length(covariates)) "Partial correlation" else "r") +
       ggnewscale::new_scale_fill()
   }
 
@@ -511,7 +600,7 @@ PlotDirectionalHeatmaps <- function(data,
       ) +
       ggplot2::scale_fill_gradient2(
         limits = c(-1, 1),
-        name   = expression(Phi),  # plotmath: portable under C / non-UTF8 locale
+        name   = if (length(covariates)) "Partial correlation" else expression(Phi),  # plotmath: portable under C / non-UTF8 locale
         low    = scales::muted("purple"),
         high   = scales::muted("green")
       ) +
@@ -526,7 +615,7 @@ PlotDirectionalHeatmaps <- function(data,
       ) +
       ggplot2::scale_fill_gradient2(
         limits = c(-1, 1),
-        name   = expression(r[pb]),
+        name   = if (length(covariates)) "Partial correlation" else expression(r[pb]),
         low    = scales::muted("#FFA500"),
         high   = scales::muted("#008080")
       ) +

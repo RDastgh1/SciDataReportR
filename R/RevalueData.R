@@ -4,10 +4,29 @@
 #'
 #' @param data A data.frame or tibble to be revalued.
 #' @param codebook A data.frame with columns:
-#'   Variable, Recode, Code, Type, Label, MissingCode. Only Variable is required.
+#'   Variable, Recode, Code, Type, Label, MissingCode, TimeUnit, TimeFormat. Only Variable is required.
 #'   (Backward compatible: if MissingCode is absent/NA, will fall back to Missing.)
 #' @param missingVal Default value to treat as missing when VarTypes$MissingCode is absent or NA.
 #' @param splitchar Separator used in VarTypes$Code between pairs (default ";").
+#' @param time_types Optional named character overrides: clock or duration.
+#'   Resolve before codebook Type declarations, then attached scidr_type metadata.
+#' @param time_units Named input-unit overrides for numeric temporal columns:
+#'   secs, mins, hours, days, weeks (usual aliases accepted). Existing typed
+#'   hms/difftime objects retain their own physical values and unit attributes.
+#' @param time_formats Named text-format overrides: HMS, HM or MS. Text durations
+#'   require an explicit format; clock text supports HMS or HM. Fractional seconds
+#'   and signed/long durations are supported. No midnight rollover is inferred.
+#' @details Codebook Type values clock and duration (case-insensitive) declare
+#'   temporal meaning; TimeUnit and TimeFormat supply parsing information. Numeric
+#'   values require units, text requires a format, and existing typed objects retain
+#'   their classes/units. Clock values must be in [00:00, 24:00); durations may be
+#'   negative or exceed one day. MissingCode is handled before validation. Temporal
+#'   conversions are atomic per column under on_error, with failed columns unchanged
+#'   in warn mode. Categorical value-code mappings conflict with temporal conversion.
+#'   Converted columns carry scidr_type = clock/duration and provenance. TimeMetadata
+#'   is appended to the result with declarations, units, formats, status and errors.
+#'   Optional hms is needed only when constructing clock objects. Existing other
+#'   Type behaviors are unchanged. No time semantics are inferred from names.
 #' @param on_error Whether to stop at the first variable-level error (the default)
 #'   or continue and record errors in the returned object.
 #'
@@ -107,7 +126,8 @@ RevalueData <- function(data,
     splitchar = ";",
     on_error = c("stop", "warn"),
     DatatoRevalue = lifecycle::deprecated(),
-    VarTypes = lifecycle::deprecated()) {
+    VarTypes = lifecycle::deprecated(),
+    time_types = NULL, time_units = NULL, time_formats = NULL) {
   # Deprecated argument shims (SciDataReportR 19.15.0)
   if (lifecycle::is_present(DatatoRevalue)) {
     lifecycle::deprecate_warn("19.15.0", "RevalueData(DatatoRevalue)", "RevalueData(data)")
@@ -144,7 +164,7 @@ RevalueData <- function(data,
   VarTypes <- VarTypes[!is.na(VarTypes$Variable) & nzchar(VarTypes$Variable), , drop = FALSE]
 
   # Only Variable is required; absent optional columns are treated as blank.
-  for (cc in c("Recode", "Code", "Type", "Label")) {
+  for (cc in c("Recode", "Code", "Type", "Label", "TimeUnit", "TimeFormat")) {
     if (!cc %in% names(VarTypes)) VarTypes[[cc]] <- NA_character_
   }
 
@@ -158,11 +178,18 @@ RevalueData <- function(data,
   # Collapse duplicate Variable rows
   if (any(duplicated(VarTypes$Variable))) {
     split_list <- split(VarTypes, VarTypes$Variable)
+    for (variable in names(split_list)) {
+      declared <- unique(tolower(trimws(split_list[[variable]]$Type)))
+      declared <- declared[!is.na(declared) & nzchar(declared)]
+      if (any(declared %in% c("clock", "duration")) && length(declared) > 1L) stop("Conflicting temporal Type declarations: ", variable)
+    }
     VarTypes <- do.call(rbind, lapply(split_list, function(df) {
       data.frame(
         Variable    = df$Variable[1],
         Recode      = { v <- df$Recode; v <- v[nzchar(v)]; if (length(v)) v[1] else NA_character_ },
         Code        = { v <- df$Code; v <- v[nzchar(v)]; if (length(v)) paste(unique(v), collapse = splitchar) else NA_character_ },
+        TimeUnit    = { v <- df$TimeUnit; v <- v[!is.na(v) & nzchar(v)]; if (length(unique(v)) > 1L) stop("Conflicting TimeUnit declarations."); if (length(v)) v[1] else NA_character_ },
+        TimeFormat  = { v <- df$TimeFormat; v <- v[!is.na(v) & nzchar(v)]; if (length(unique(v)) > 1L) stop("Conflicting TimeFormat declarations."); if (length(v)) v[1] else NA_character_ },
         Type        = { v <- df$Type; v <- v[nzchar(v)]; if (length(v)) v[1] else NA_character_ },
         Label       = { v <- df$Label; v <- v[nzchar(v)]; if (length(v)) v[1] else NA_character_ },
         MissingCode = { v <- df$MissingCode; v <- v[nzchar(v)]; if (length(v)) paste(unique(v), collapse = ",") else NA_character_ },
@@ -171,6 +198,18 @@ RevalueData <- function(data,
     }))
     rownames(VarTypes) <- NULL
   }
+
+  time_declarations <- ScidrTimeDeclarations(DatatoRevalue, VarTypes, time_types, time_units, time_formats)
+  extra <- setdiff(time_declarations$Variable, VarTypes$Variable)
+  if (length(extra)) {
+    df_Extra <- VarTypes[rep(NA_integer_, length(extra)), , drop = FALSE]
+    df_Extra$Variable <- extra
+    VarTypes <- rbind(VarTypes, df_Extra)
+  }
+  time_metadata <- time_declarations
+  time_metadata$OutputUnit <- rep(NA_character_, nrow(time_metadata))
+  time_metadata$Status <- rep("Not processed", nrow(time_metadata))
+  time_metadata$Reason <- rep(NA_character_, nrow(time_metadata))
 
   ## --- Variables present in data ------------------------------------------
   RevaluedData        <- DatatoRevalue
@@ -212,6 +251,21 @@ RevalueData <- function(data,
     } else {
       x_chr <- trimws(as.character(x))
       if (length(mtok)) x[ x_chr %in% trimws(mtok) ] <- NA
+    }
+    temporal_index <- match(var, time_declarations$Variable)
+    if (!is.na(temporal_index)) {
+      # Work from the original column; commit only after the complete conversion succeeds.
+      codestr <- vt_in$Code[idx]
+      recode <- tolower(trimws(vt_in$Recode[idx]))
+      if (!is.na(recode) && recode %in% c("yes", "y", "1", "true", "t") && !is.na(codestr) && nzchar(codestr))
+        stop("Categorical value-code mappings conflict with a temporal declaration.")
+      converted <- ScidrTimeRevalue(DatatoRevalue[[var]], time_declarations[temporal_index, ], mtok)
+      label <- vt_in$Label[idx]
+      if (!is.na(label) && nzchar(label)) converted <- sjlabelled::set_label(converted, label)
+      RevaluedData[[var]] <- converted
+      time_metadata$OutputUnit[temporal_index] <- attr(converted, "units")
+      time_metadata$Status[temporal_index] <- "Converted"
+      next
     }
     RevaluedData[[var]] <- x
 
@@ -341,6 +395,12 @@ RevalueData <- function(data,
       RevaluedData[[var]] <- x_ordinal
     }
     }, error = function(e) {
+      temporal_index <- match(var, time_declarations$Variable)
+      if (!is.na(temporal_index)) {
+        RevaluedData[[var]] <<- DatatoRevalue[[var]]
+        time_metadata$Status[temporal_index] <<- "Failed"
+        time_metadata$Reason[temporal_index] <<- conditionMessage(e)
+      }
       error_message <- paste0("Error revaluing variable '", var, "': ", conditionMessage(e))
       errorlist <<- rbind(
         errorlist,
@@ -364,6 +424,7 @@ RevalueData <- function(data,
     warninglist  = unique(warninglist),
     recodedvars  = unique(recodedvars),
     not_in_data  = not_in_data,
-    errors       = errorlist
+    errors       = errorlist,
+    TimeMetadata = time_metadata
   )
 }

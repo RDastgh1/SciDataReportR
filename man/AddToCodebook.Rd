@@ -98,6 +98,13 @@ codebook <- AddToCodebook(
   VariableRecode = 4, VariableExclude = 3
 )
 
+# Temporal meaning belongs in Type. Additional parsing fields use ...;
+# the existing schema warnings still apply when these columns/values are new.
+# codebook <- AddToCodebook(codebook, "task_duration", "Task duration",
+#   VariableType = "duration", TimeUnit = "secs")
+# codebook <- AddToCodebook(codebook, "assessment_clock", "Assessment clock",
+#   VariableType = "clock", TimeFormat = "HMS")
+
 # The result as a formatted table
 htmltools::browsable(htmltools::HTML(as.character(
   FreezeTableHeader(codebook, height = "320px", full_width = TRUE)

@@ -195,9 +195,12 @@
 #'   Analytic Hierarchy Process weights from its principal eigenvector and
 #'   reports Saaty's consistency ratio (warning above 0.10).
 #'   \code{"Reproducibility"} requires \code{stability_resamples > 0}.
-#' @param far_distance_quantile Numeric value between 0 and 1 used to define
-#'   high SOM-distance flags from the training distance distribution. Default
-#'   is \code{0.95}.
+#' @param novelty_fdr False-discovery rate for training outliers (default
+#'   0.10). Each training person's leave-one-out distance gets a conformal
+#'   p-value against the other training people (\code{NoveltyP}); people with
+#'   a Benjamini-Hochberg adjusted value at most \code{novelty_fdr} are
+#'   \code{Flag_Outlier}. Projection uses the same scale; see
+#'   [ProjectCluster()].
 #' @param clear_membership_threshold Numeric posterior probability threshold used to
 #'   flag uncertain phenotype membership. Default is \code{0.70}.
 #' @param stability_type `subsample` (default), `seed`, or both. Seed refits
@@ -416,10 +419,11 @@
 #'     \item \code{ProbFit$individual$SOM_Distance_LOO}: distance after removing
 #'       each complete person from their own node mean, allowing the nearest
 #'       other node instead. No map refit. ProjectionReference$loo_distances
-#'       stores these distances with SOM_Node and Cluster for arbitrary quantiles.
-#'       ProjectionReference$calibration stores q_star, training_rate, training_n,
-#'       far_n, target_quantile, overall_cutoff and cluster_cutoffs for the
-#'       combined overall OR cluster LOO rule.
+#'       stores these distances with SOM_Node and Cluster; they are the
+#'       reference for every novelty p-value. \code{ProbFit$individual} also
+#'       holds each training person's \code{NoveltyP}, \code{NoveltyQ},
+#'       \code{Flag_Outlier}, \code{MembershipProbability} and \code{FitClass}
+#'       (Good fit, Uncertain membership, Outlier).
 #'       ProjectionReference$cluster_profiles stores mean training z-score
 #'       vectors by assigned cluster for group profile comparisons.
 #'     \item \code{ProbFit$boundary_summary}: BoundaryReason, N and Share
@@ -558,8 +562,6 @@
 #' @param lpa_zero_sd_tol Deprecated alias for `mixture_zero_sd_tol`.
 #' @param lpa_min_node_n Deprecated alias for `mixture_min_node_people`.
 #' @param min_nodes_per_cluster Deprecated alias for `candidate_min_nodes_per_cluster`.
-#' @param high_dist_quantile Deprecated alias for `far_distance_quantile`.
-#' @param low_prob_threshold Deprecated alias for `clear_membership_threshold`.
 #' @export
 CreateClusterModel_SOM_MClust <- function(data,
     variables = NULL,
@@ -606,7 +608,7 @@ CreateClusterModel_SOM_MClust <- function(data,
     mixture_min_node_people = 0L,
     min_cluster_prop = NULL,
     criteria_weights = NULL,
-    far_distance_quantile = 0.95,
+    novelty_fdr = 0.10,
     clear_membership_threshold = 0.7,
     stability_resamples = 0L,
     stability_type = c("subsample", "seed"),
@@ -630,9 +632,7 @@ CreateClusterModel_SOM_MClust <- function(data,
     lpa_drop_zero_sd = lifecycle::deprecated(),
     lpa_zero_sd_tol = lifecycle::deprecated(),
     lpa_min_node_n = lifecycle::deprecated(),
-    min_nodes_per_cluster = lifecycle::deprecated(),
-    high_dist_quantile = lifecycle::deprecated(),
-    low_prob_threshold = lifecycle::deprecated()) {
+    min_nodes_per_cluster = lifecycle::deprecated()) {
   if (lifecycle::is_present(seed_lpa)) {
     lifecycle::deprecate_warn("21.18.0", "CreateClusterModel_SOM_MClust(seed_lpa)", "CreateClusterModel_SOM_MClust(seed_mixture)")
     seed_mixture <- seed_lpa
@@ -676,14 +676,6 @@ CreateClusterModel_SOM_MClust <- function(data,
   if (lifecycle::is_present(min_nodes_per_cluster)) {
     lifecycle::deprecate_warn("21.18.0", "CreateClusterModel_SOM_MClust(min_nodes_per_cluster)", "CreateClusterModel_SOM_MClust(candidate_min_nodes_per_cluster)")
     candidate_min_nodes_per_cluster <- min_nodes_per_cluster
-  }
-  if (lifecycle::is_present(high_dist_quantile)) {
-    lifecycle::deprecate_warn("21.18.0", "CreateClusterModel_SOM_MClust(high_dist_quantile)", "CreateClusterModel_SOM_MClust(far_distance_quantile)")
-    far_distance_quantile <- high_dist_quantile
-  }
-  if (lifecycle::is_present(low_prob_threshold)) {
-    lifecycle::deprecate_warn("21.18.0", "CreateClusterModel_SOM_MClust(low_prob_threshold)", "CreateClusterModel_SOM_MClust(clear_membership_threshold)")
-    clear_membership_threshold <- low_prob_threshold
   }
 
   if (!missing(min_nodes_per_parameter)) {
@@ -834,9 +826,9 @@ CreateClusterModel_SOM_MClust <- function(data,
     stop("grid_screen_args must be a named list of grid-screen settings: ",
       paste(allowed_screen_args, collapse = ", "), ".")
   }
-  if (!is.numeric(far_distance_quantile) || length(far_distance_quantile) != 1 ||
-      is.na(far_distance_quantile) || far_distance_quantile <= 0 || far_distance_quantile >= 1) {
-    stop("far_distance_quantile must be a single numeric value between 0 and 1.")
+  if (!is.numeric(novelty_fdr) || length(novelty_fdr) != 1 ||
+      is.na(novelty_fdr) || novelty_fdr <= 0 || novelty_fdr >= 1) {
+    stop("novelty_fdr must be a single numeric value between 0 and 1.")
   }
   if (!is.numeric(clear_membership_threshold) || length(clear_membership_threshold) != 1 ||
       is.na(clear_membership_threshold) || clear_membership_threshold < 0 || clear_membership_threshold > 1) {
@@ -925,7 +917,7 @@ CreateClusterModel_SOM_MClust <- function(data,
       mixture_min_node_people = mixture_min_node_people,
       min_cluster_prop = min_cluster_prop,
       criteria_weights = criteria_weights,
-      far_distance_quantile = far_distance_quantile,
+      novelty_fdr = novelty_fdr,
       clear_membership_threshold = clear_membership_threshold,
       stability_resamples = stability_resamples, stability_type = stability_type,
       stability_candidates = stability_candidates,
@@ -1921,7 +1913,7 @@ CreateClusterModel_SOM_MClust <- function(data,
               min_nodes_per_parameter = min_nodes_per_parameter,
               min_participants_per_node = min_participants_per_node,
               mixture_min_node_people = mixture_min_node_people,
-              far_distance_quantile = far_distance_quantile,
+              novelty_fdr = novelty_fdr,
               clear_membership_threshold = clear_membership_threshold,
               stability_resamples = 0L,
               .CandidatePairs = candidate_info[c("Model", "Classes")]
@@ -2818,33 +2810,16 @@ CreateClusterModel_SOM_MClust <- function(data,
 
   overall_p95 <- dist_summary["p95"]
 
-  flag_by_cluster <- som_fit_non_na %>%
-    dplyr::filter(!is.na(Cluster)) %>%
-    dplyr::group_by(Cluster) %>%
-    dplyr::summarise(
-      n                 = dplyr::n(),
-      prop_overall_high = mean(SOM_Distance > overall_p95),
-      .groups = "drop"
-    )
-
-  overall_high_cutoff <- as.numeric(stats::quantile(
-    dist_train,
-    probs = far_distance_quantile,
-    na.rm = TRUE
-  ))
-
-  dist_by_cluster_cutoffs <- som_fit_non_na %>%
-    dplyr::filter(!is.na(.data$SOM_Distance), !is.na(.data$Cluster)) %>%
-    dplyr::group_by(.data$Cluster) %>%
-    dplyr::summarise(
-      train_cluster_high_cutoff = as.numeric(stats::quantile(
-        .data$SOM_Distance,
-        probs = far_distance_quantile,
-        na.rm = TRUE
-      )),
-      .groups = "drop"
-    )
-
+  # Training novelty: each person's LOO distance against the other training
+  # people's, the same conformal p-value a projected person receives.
+  training_novelty <- .SOMNoveltyColumns(.SOMTrainingConformalP(som_fit_tbl$SOM_Distance_LOO),
+    novelty_fdr, 0.05)
+  som_fit_tbl$MembershipProbability <- som_fit_tbl$max_prob
+  soft_columns <- grep("^SoftProb_", names(som_fit_tbl), value = TRUE)
+  if (assignment == "soft" && length(soft_columns)) {
+    som_fit_tbl$MembershipProbability <- apply(as.matrix(som_fit_tbl[, soft_columns]), 1,
+      function(x) if (all(is.na(x))) NA_real_ else max(x, na.rm = TRUE))
+  }
   som_fit_tbl <- som_fit_tbl %>%
     dplyr::mutate(
       SOMDist_z_overall = if (is.finite(overall_sd) && overall_sd > 0) {
@@ -2853,58 +2828,17 @@ CreateClusterModel_SOM_MClust <- function(data,
         NA_real_
       },
       SOMDist_percentile_train = vapply(.data$SOM_Distance, function(x) {
-        if (is.na(x) || length(dist_train) == 0) {
-          NA_real_
-        } else {
-          mean(dist_train <= x, na.rm = TRUE)
-        }
+        if (is.na(x) || length(dist_train) == 0) NA_real_ else mean(dist_train <= x, na.rm = TRUE)
       }, numeric(1)),
-      Flag_SOMDist_overallHigh =
-        !is.na(.data$SOM_Distance) &
-        !is.na(overall_high_cutoff) &
-        .data$SOM_Distance > overall_high_cutoff
-    ) %>%
-    dplyr::left_join(dist_by_cluster_cutoffs, by = "Cluster") %>%
-    dplyr::mutate(
-      Flag_SOMDist_clusterHigh =
-        !is.na(.data$SOM_Distance) &
-        !is.na(.data$train_cluster_high_cutoff) &
-        .data$SOM_Distance > .data$train_cluster_high_cutoff,
-      Projection_Fit_Class = dplyr::case_when(
-        is.na(.data$SOM_Distance) ~ NA_character_,
-        (.data$Flag_SOMDist_overallHigh | .data$Flag_SOMDist_clusterHigh) &
-          (is.na(.data$max_prob) | .data$max_prob < clear_membership_threshold) ~
-          "Potential novel phenotype",
-        .data$Flag_SOMDist_overallHigh | .data$Flag_SOMDist_clusterHigh ~
-          "Poor fit to training structure",
-        !is.na(.data$max_prob) & .data$max_prob < clear_membership_threshold ~
-          "Uncertain membership",
-        TRUE ~ "Good fit"
-      )
+      NoveltyP = training_novelty$NoveltyP,
+      NoveltyQ = training_novelty$NoveltyQ,
+      Flag_Outlier = training_novelty$Flag_Outlier
     )
+  som_fit_tbl$FitClass <- .SOMFitClass(!is.na(som_fit_tbl$SOM_Distance), som_fit_tbl$Flag_Outlier,
+    FALSE, !is.na(som_fit_tbl$MembershipProbability) &
+      som_fit_tbl$MembershipProbability >= clear_membership_threshold)
 
   som_fit_non_na <- som_fit_tbl[!is.na(som_fit_tbl$SOM_Distance), ]
-
-  training_cluster_fit_summary <- som_fit_non_na %>%
-    dplyr::filter(!is.na(.data$Cluster)) %>%
-    dplyr::group_by(.data$Cluster) %>%
-    dplyr::summarise(
-      n = dplyr::n(),
-      mean_distance = mean(.data$SOM_Distance, na.rm = TRUE),
-      median_distance = stats::median(.data$SOM_Distance, na.rm = TRUE),
-      mean_probability = mean(.data$prob_assigned, na.rm = TRUE),
-      median_probability = stats::median(.data$prob_assigned, na.rm = TRUE),
-      mean_distance_percentile = mean(.data$SOMDist_percentile_train, na.rm = TRUE),
-      median_distance_percentile = stats::median(.data$SOMDist_percentile_train, na.rm = TRUE),
-      prop_high_distance = mean(.data$Flag_SOMDist_overallHigh | .data$Flag_SOMDist_clusterHigh, na.rm = TRUE),
-      prop_low_probability = mean(.data$prob_assigned < clear_membership_threshold, na.rm = TRUE),
-      prop_poor_fit = mean(.data$Projection_Fit_Class == "Poor fit to training structure", na.rm = TRUE),
-      prop_potential_novel = mean(.data$Projection_Fit_Class == "Potential novel phenotype", na.rm = TRUE),
-      .groups = "drop"
-    )
-
-  potential_novel_cases <- som_fit_tbl %>%
-    dplyr::filter(.data$Projection_Fit_Class == "Potential novel phenotype")
 
   p_dist_hist <- ggplot2::ggplot(
     som_fit_non_na,
@@ -2919,8 +2853,6 @@ CreateClusterModel_SOM_MClust <- function(data,
     )
 
   ProjectionReference <- list(
-    calibration = .CalibrateSOMFarRule(individual_tbl$SOM_Distance_LOO,
-      individual_tbl$Cluster, far_distance_quantile),
     cluster_profiles = lapply(split(seq_len(nrow(zmat)), individual_tbl$Cluster[complete_rows]),
       function(idx) colMeans(zmat[idx, , drop = FALSE])),
     loo_distances = individual_tbl[, c("SOM_Node", "Cluster", "SOM_Distance_LOO")],
@@ -2932,14 +2864,13 @@ CreateClusterModel_SOM_MClust <- function(data,
       p90 = as.numeric(stats::quantile(dist_train, 0.90, na.rm = TRUE)),
       p95 = as.numeric(stats::quantile(dist_train, 0.95, na.rm = TRUE)),
       p99 = as.numeric(stats::quantile(dist_train, 0.99, na.rm = TRUE)),
-      far_distance_quantile = far_distance_quantile,
-      high_dist_cutoff = overall_high_cutoff
+      novelty_fdr = novelty_fdr
     ),
     node_occupancy = som_node_occupancy,
     distance_scale = "euclidean",
     variable_contribution = som_variable_contribution,
     projection_thresholds = list(
-      far_distance_quantile = far_distance_quantile,
+      novelty_fdr = novelty_fdr,
       clear_membership_threshold = clear_membership_threshold
     ),
     MapHealth = list(
@@ -2960,7 +2891,6 @@ CreateClusterModel_SOM_MClust <- function(data,
     overall_mean      = overall_mean,
     overall_sd        = overall_sd,
     dist_by_cluster   = dist_by_cluster,
-    flag_by_cluster   = flag_by_cluster,
     overall_p95       = overall_p95,
     node_occupancy    = som_node_occupancy,
     occupancy_summary = som_occupancy_summary,

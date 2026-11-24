@@ -20,7 +20,8 @@ PlotDirectionalHeatmaps(
   outcome_vars = NULL,
   Data = lifecycle::deprecated(),
   xVars = lifecycle::deprecated(),
-  yVars = lifecycle::deprecated()
+  yVars = lifecycle::deprecated(),
+  covariates = NULL
 )
 }
 \arguments{
@@ -83,6 +84,17 @@ instead.}
 
 \item{yVars}{\strong{Deprecated} (since 19.15.0). Use \code{outcome_vars}
 instead.}
+
+\item{covariates}{Optional character vector naming numeric or categorical
+adjustment variables. Covariates are excluded from the heatmap axes;
+explicitly requesting them on an axis produces a warning. Binary variables
+retain their positive-level 0/1 coding. Adjusted estimates are partial
+Pearson correlations, using pair-specific complete cases and residual test
+degrees of freedom \code{n - rank(design) - 1} (including the intercept).
+Failed adjustments warn and are marked failed in \code{Results} and \code{Metadata};
+fallback estimates do not carry adjusted significance.
+\code{Unadjusted} refers to raw p-values, including when estimates adjust for
+covariates. Without covariates, existing estimates and tests are unchanged.}
 }
 \value{
 list(Unadjusted, FDRCorrected, Relabel, BinaryMapping, Excluded)
@@ -149,6 +161,13 @@ rectangular <- PlotDirectionalHeatmaps(
   outcome_vars = c("sex", "AXL", "Leptin")
 )
 rectangular$Unadjusted$plot
+
+# Adjust every correlation block for age and sex.
+adjusted <- PlotDirectionalHeatmaps(
+  Labelled, variables = c("Diagnosis", "AXL", "Leptin"),
+  covariates = c("age", "sex")
+)
+adjusted$FDRCorrected$plot
 
 # How binary variables were coded (which level counts as the positive one)
 result$BinaryMapping

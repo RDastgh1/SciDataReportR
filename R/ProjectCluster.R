@@ -8,87 +8,90 @@
 #' @param object A finalized object returned by `CreateClusterModel_*()`.
 #' @param new_df Deprecated alias for data, accepted by every method.
 #' @param data New data to project into the frozen cluster structure.
-#' @param distance_reference SOM distance reference: `loo` (default) or `training`.
-#'   LOO removes each training person from their own node mean, allowing another
-#'   node instead, without refits. Older models recover training scores or
-#'   message a fallback. A shared quantile q_star calibrates the combined overall OR cluster LOO
-#'   rule to 1-q within the attainable empirical step. The stored training
-#'   rate is used by chance_flag_rate and novelty tests. Report the held-out
-#'   flag rate; remaining excess comes from the map moving without the person
-#'   and would need refits to remove. No further correction factor is applied.
-#' @param novel_group_min_n Minimum far people in a significant merged SOM
-#'   neighbourhood group, default 3. Each neighbourhood uses its training LOO
-#'   far rate, supplemented to ten observations at the calibrated training rate if training n < 10.
-#'   One-sided binomial tests use Holm adjustment. Overall excess is a separate
-#'   one-sided binomial test of all far people against the calibrated training rate.
+#' @param distance_reference SOM distance reference for the novelty
+#'   p-values: `loo` (default) or `training`. LOO removes each training person
+#'   from their own node mean, allowing another node instead, without refits,
+#'   so training people are scored as a new person would be. `training` uses
+#'   in-sample distances, which are optimistic. Older models recover training
+#'   scores or message a fallback to `training`.
+#' @param novel_group_min_n Minimum unusual people in a group for it to be a
+#'   candidate new phenotype (default 3).
 #' @param ... Method-specific projection options. SOM + Mclust accepts its
 #'   frozen-distance and posterior-probability threshold overrides.
 #' @return A method-specific projection result with the common `ProjectionFit`
 #'   contract and `ProbFit` assignment table.
 #'
-#' @section SOM + Mclust projection results:
+#' @section SOM + Mclust novelty: three questions, answered separately:
+#' \describe{
+#'   \item{Is this person outside the training data?}{Each projected person's
+#'     distance to their best-matching node is compared with the training
+#'     people's distances (leave-one-out by default). `NoveltyP` is the
+#'     conformal p-value (1 + training people at least as far) / (n + 1),
+#'     which is valid without distributional assumptions. `NoveltyQ` is its
+#'     Benjamini-Hochberg adjustment across the projected cohort, and
+#'     `Flag_Outlier` is `NoveltyQ <= novelty_fdr`. A cohort that resembles
+#'     training therefore gives few or no outliers. `Top_Distance_Variable`
+#'     and `Top_Distance_Share` name the variable that contributes most to
+#'     the distance.}
+#'   \item{Does the cohort as a whole differ from training?}{
+#'     `ProjectionFit$cohort_shift` has one row per test (Test, Question,
+#'     Statistic, StatisticName, Expected, P): a one-sided rank test that
+#'     projected distances are larger (statistic = probability that a
+#'     projected person is farther than a training person; 0.5 = no shift), a
+#'     Kolmogorov-Smirnov test of the distance distribution, a binomial test
+#'     of the share with `NoveltyP <= group_screen_alpha`, and Monte Carlo
+#'     chi-square tests of node occupancy and cluster prevalence against
+#'     training proportions.}
+#'   \item{Do unusual people form a new group?}{People with
+#'     `NoveltyP <= group_screen_alpha` are `Flag_Unusual`. For each map node
+#'     and its neighbours, a one-sided binomial test compares the number of
+#'     unusual projected people with that neighbourhood's own training rate
+#'     (shrunk toward chance with ten pseudo-people, so no neighbourhood has
+#'     an expected rate of zero);
+#'     Holm-significant neighbourhoods are merged into groups. A group's
+#'     `Spread` (mean pairwise distance between members) is compared with
+#'     same-size random sets of training's unusual people (`CoherenceP`). A
+#'     group is a `Candidate` new phenotype when it has at least
+#'     `novel_group_min_n` members and `CoherenceP < 0.05`.}
+#' }
 #' `NoveltyGroups` contains `groups` (Group, Nodes, N, Members row IDs,
-#' ShareOfFar, Clusters, NearestCluster, MeanZ, TrainingClusterMeanZ, DifferenceZ,
-#' Candidate, Label), `neighbourhood_tests` (NodeID, ProjectedN, TrainingN, TrainingFarN,
-#' TrainingFarRate, FarN, ExpectedN, P, HolmP), `overall_excess` (N, FarN,
-#' ExpectedN, P, Excess) and `verdict`. Candidate groups meet novel_group_min_n;
-#' neighbourhood groups below that size remain descriptive. Group evidence and
-#' overall far-from-map excess are separate from each person's Flag_FarFromMap.
-#' Per-person `FitClass` has levels Good fit, Uncertain membership, Far from map,
-#' clear membership, and Far from map, unclear membership. Projection_Fit_Class
-#' mirrors FitClass. FitClass_Legacy is deprecated and retained for one release.
-#' Soft models judge clarity using max(SoftProb_*); hard models use max_prob.
-#' NodeN and Flag_OnePersonNode appear in individual outputs and DataWithClusters.
-#' Specification$projection records distance_reference, far_distance_quantile,
-#' cutoff_quantile (the shared q_star), chance_flag_rate (the attained rate),
-#' clear_membership_threshold, novel_group_min_n and membership_probability.
-#' MembershipProbability in ProjectionFit$individual contains the chosen
-#' per-person clarity probability.
-#' Summary metrics add one_person_node_share, rough_expected_rate_unfamiliar_profiles
-#' (training share on one-person nodes; descriptive only, no inference),
-#' chance_flag_rate and far_from_map_share.
+#' ShareOfUnusual, Clusters, NearestCluster, Spread, ReferenceSpread,
+#' CoherenceP, MeanZ, TrainingClusterMeanZ, DifferenceZ, Candidate, Label),
+#' `neighbourhood_tests`, `overall_excess` and a one-line `verdict`.
 #'
-
-#' SOM + Mclust projections keep assignment certainty and training-space fit
-#' separate. `ProbFit$individual` is full length and contains the assigned
-#' `Cluster`, `SOM_Node`, available node-derived `prob_*` columns,
-#' `prob_assigned`, `max_prob`, and `uncertainty`. It answers: *which
-#' phenotype was assigned, and how certain is that node-derived assignment?*
-#' Models fitted with the hard/soft projection interface also retain
-#' `Cluster_Hard`, `Cluster_Soft`, `SoftProb_*`, `SoftEntropy`, `SoftMargin`,
-#' `Flag_BoundaryParticipant`, and `BoundaryReason`. Node-level `prob_*`
-#' values remain the Mclust posterior for a map node; `SoftProb_*` is a
-#' participant-level proximity-weighted combination of nearby node posteriors.
-#' Boundary flags are confidence diagnostics and never suppress projection.
+#' Per-person `FitClass` has levels Good fit, Uncertain membership (membership
+#' probability below `clear_membership_threshold`: between known clusters),
+#' Outlier, and Member of candidate new group, in increasing precedence.
+#' Membership probability is not used to judge novelty: a Gaussian mixture
+#' gives a confident label even to someone far from every cluster. Soft models
+#' judge clarity using max(SoftProb_*); hard models use max_prob. Hard-label
+#' SOM pipelines (K-means, hierarchical, HDBSCAN) have no membership
+#' probability and use Good fit, Outlier and Member of candidate new group.
 #'
-#' `ProjectionFit$individual` is also full length. It contains the frozen
-#' best-matching-unit `SOM_Node`, `SOM_Distance`,
-#' `SOMDist_percentile_train`, `Flag_SOMDist_overallHigh`,
-#' `Flag_SOMDist_clusterHigh`, `Flag_OutsideTrainingRange`, and
-#' `Projection_Fit_Class`. It answers: *how well does this participant fit the
-#' training phenotype space?* A high-distance flag compares the participant's
-#' BMU distance with the frozen training 95th-percentile reference; it does
-#' not mean the cluster assignment is necessarily wrong.
+#' `ProbFit$individual` is full length and contains the assigned `Cluster`,
+#' `SOM_Node`, node-derived `prob_*`, `prob_assigned`, `max_prob`,
+#' `uncertainty`, the hard/soft assignment columns (`Cluster_Hard`,
+#' `Cluster_Soft`, `SoftProb_*`, `SoftEntropy`, `SoftMargin`,
+#' `Flag_BoundaryParticipant`, `BoundaryReason`) and the novelty columns.
+#' `ProjectionFit$individual` adds `SOM_Distance`, `SOMDist_percentile_train`,
+#' `Flag_OutsideTrainingRange` and `Flag_Unusual`.
 #'
 #' `ProjectionFit$summary` is a metric/value table for cohort size,
-#' completeness, training and projected distance summaries, high-distance
-#' burden, `phenotype_drift_index`, and `node_occupancy_js_divergence`.
-#' The latter is Jensen--Shannon divergence between the training and projected
-#' proportions assigned to each frozen SOM node. It is 0 when the two node
-#' occupancy distributions are identical and increases as their cohort-level
-#' map use differs; it is neither an individual fit score nor proof that the
-#' model failed.
+#' completeness, training and projected distance summaries,
+#' `phenotype_drift_index`, `outlier_n`, `outlier_share`, `unusual_share`,
+#' `expected_unusual_share`, `cluster_occupancy_js_divergence` and
+#' `node_occupancy_js_divergence` (Jensen--Shannon divergences; 0 = identical), `one_person_node_share` and
+#' `rough_expected_rate_unfamiliar_profiles` (training share on one-person
+#' nodes; descriptive only). `ProjectionFit$by_cluster` summarizes distance,
+#' probability, outlier, unusual, new-group and uncertain shares by cluster.
+#' `ProjectionFit$out_of_support` records variables with projected values
+#' beyond the observed training range; these produce a warning but complete
+#' cases are still mapped.
 #'
-#' `ProjectionFit$by_cluster` summarizes projected sample size, BMU distance,
-#' high-distance burden, and assignment probabilities by assigned cluster.
-#' `ProjectionFit$out_of_support` records variables with projected values below
-#' the observed training minimum or above the observed training maximum,
-#' including counts and the training/projected limits. These violations produce
-#' a warning but do not block complete cases from being mapped.
-#'
-#' `ProjectionFit$policy` records the frozen distance and probability
-#' thresholds. `ProjectionFit$plots` contains projected-distance, QQ,
-#' frozen-grid, and fit-class views. `ProbFit$plots$individual_ProbAssignedDensity`
+#' `ProjectionFit$policy` records the novelty and probability settings.
+#' `ProjectionFit$plots` contains projected-distance, QQ, novelty p-value
+#' histogram (flat when the cohort resembles training), unusual share by
+#' cluster, frozen-grid and fit-class views. `ProbFit$plots$individual_ProbAssignedDensity`
 #' uses a 0--1 density when assignment probabilities vary; when they are
 #' essentially constant, it uses an explicit spike/rug display instead of an
 #' uninformative empty density.

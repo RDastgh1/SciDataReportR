@@ -480,17 +480,24 @@ CreateClusterModel_SOM_Hierarchical <- function(data, variables = NULL,
 }
 
 # Hard node clustering provides no membership posterior. Classify map fit
-# from distance alone rather than treating absent probabilities as uncertainty.
+# from novelty alone rather than treating absent probabilities as uncertainty.
 .SOMHardClusterFitClass <- function(individual) {
-  far <- individual$Flag_SOMDist_overallHigh | individual$Flag_SOMDist_clusterHigh
-  individual$Projection_Fit_Class <- ifelse(is.na(individual$SOM_Distance), NA_character_,
-    ifelse(far, "Poor fit to training structure", "Good fit"))
-  individual$FitClass <- factor(individual$Projection_Fit_Class,
-    levels = c("Good fit", "Poor fit to training structure"))
-  if ("FitClass_Legacy" %in% names(individual)) {
-    individual$FitClass_Legacy <- individual$Projection_Fit_Class
-  }
+  individual$FitClass <- .SOMFitClass(!is.na(individual$SOM_Distance),
+    individual$Flag_Outlier, individual$Flag_NewGroupMember)
   individual
+}
+
+# Copy a hard-label SOM projection's FitClass into every projected table and
+# refresh the fit-class summaries that mention membership.
+.SOMHardProjectionFitClass <- function(projected, individual) {
+  projected$ProjectionFit$individual <- individual
+  projected$ProjectionFit$fit_class <- individual$FitClass
+  projected$ProbFit$individual$FitClass <- individual$FitClass
+  projected$DataWithClusters$FitClass <- individual$FitClass
+  projected$ProjectionFit$plots$projection_fit_class_bar <- .ClusterFitClassPlot(individual$FitClass)
+  projected$ProjectionFit$by_cluster$prop_uncertain <- NULL
+  projected$ProjectionFit$policy$low_probability_threshold <- NULL
+  projected
 }
 
 #' @noRd
@@ -505,18 +512,8 @@ ProjectCluster.Pipeline_SOM_Hierarchical <- function(object, data,
   projected$ProjectionFit$policy$assignment <- "frozen SOM best-matching node hierarchical label"
   projected$ProjectionFit$policy$membership_probability <- "unavailable; hierarchical labels have no posterior probabilities"
   projected$ProjectionFit$policy$low_probability_threshold <- NULL
-  individual <- .SOMHardClusterFitClass(projected$ProjectionFit$individual)
-  projected$ProjectionFit$individual <- individual
-  projected$ProjectionFit$fit_class <- individual$Projection_Fit_Class
-  for (column in c("Projection_Fit_Class", "FitClass", "FitClass_Legacy")) {
-    projected$ProbFit$individual[[column]] <- individual[[column]]
-    projected$DataWithClusters[[column]] <- individual[[column]]
-  }
-  projected$ProjectionFit$plots$projection_fit_class_bar <-
-    .ClusterFitClassPlot(individual$Projection_Fit_Class)
-  projected$ProjectionFit$by_cluster$prop_poor_fit <-
-    projected$ProjectionFit$by_cluster$prop_high_distance
-  projected$ProjectionFit$by_cluster$prop_potential_novel <- NA_real_
+  projected <- .SOMHardProjectionFitClass(projected,
+    .SOMHardClusterFitClass(projected$ProjectionFit$individual))
   projected$ModelInfo_MClust <- NULL
   node_fit <- object$ModelInfo_Hierarchical$node_fit
   node <- projected$ProjectionFit$individual$SOM_Node

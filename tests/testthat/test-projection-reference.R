@@ -7,10 +7,9 @@ test_that("soft and hard certainty use the correct probabilities and keep node s
     expect_equal(df_Individual$MembershipProbability, expected)
     expect_equal(df_Individual$NodeN, model$ProbFit$node$NodeN[df_Individual$SOM_Node])
     expect_equal(result$DataWithClusters$Flag_OnePersonNode, df_Individual$NodeN == 1)
-    expect_identical(levels(df_Individual$FitClass), c("Good fit", "Uncertain membership",
-      "Far from map, clear membership", "Far from map, unclear membership"))
+    expect_identical(levels(df_Individual$FitClass), .SOMFitClassLevels)
     expect_false(result$NoveltyGroups$overall_excess$Excess)
-    expect_equal(nrow(result$NoveltyGroups$groups), 0L)
+    expect_false(any(result$NoveltyGroups$groups$Candidate))
   }
 })
 
@@ -20,8 +19,8 @@ test_that("legacy LOO recovery and explicit training references work", {
   legacy <- model
   legacy$ProbFit$individual$SOM_Distance_LOO <- NULL
   recovered <- suppressWarnings(suppressMessages(ProjectCluster(legacy, EmbeddedTestData("Projection"))))
-  expect_equal(recovered$ProjectionFit$individual$Flag_FarFromMap,
-    reference$ProjectionFit$individual$Flag_FarFromMap)
+  expect_equal(recovered$ProjectionFit$individual$NoveltyP,
+    reference$ProjectionFit$individual$NoveltyP)
   legacy$ZScoreObject$ZScores <- NULL
   legacy$DataWithClusters <- NULL
   legacy$ModelInfo_SOM$som_model$data <- NULL
@@ -29,21 +28,17 @@ test_that("legacy LOO recovery and explicit training references work", {
   training <- suppressWarnings(suppressMessages(ProjectCluster(model, EmbeddedTestData("Projection"),
     distance_reference = "training")))
   df_Individual <- training$ProjectionFit$individual
-  expected <- with(df_Individual, ifelse(Flag_FarFromMap,
-    ifelse(is.na(max_prob) | max_prob < .7, "Potential novel phenotype", "Poor fit to training structure"),
-    ifelse(!is.na(max_prob) & max_prob < .7, "Uncertain membership", "Good fit")))
-  expect_identical(df_Individual$FitClass_Legacy, expected)
-  expect_equal(df_Individual$Flag_SOMDist_overallHigh,
-    df_Individual$SOM_Distance > quantile(model$ProbFit$individual$SOM_Distance, .95))
+  expect_equal(df_Individual$NoveltyP,
+    .SOMConformalP(df_Individual$SOM_Distance, model$ProbFit$individual$SOM_Distance))
 })
 
-test_that("same-population held-out flags improve with LOO", {
+test_that("same-population unusual rates are closer to chance with LOO", {
   model <- ProjectionTestModel()
   set.seed(902)
   df_Test <- EmbeddedTestData("Projection")
   rates <- vapply(c("training", "loo"), function(reference) {
     projected <- suppressWarnings(suppressMessages(ProjectCluster(model, df_Test, distance_reference = reference)))
-    mean(projected$ProjectionFit$individual$Flag_FarFromMap)
+    mean(projected$ProjectionFit$individual$Flag_Unusual)
   }, numeric(1))
   expect_lt(abs(rates[["loo"]] - .05), abs(rates[["training"]] - .05))
 })

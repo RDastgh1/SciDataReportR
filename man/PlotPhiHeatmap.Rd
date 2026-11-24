@@ -16,7 +16,8 @@ PlotPhiHeatmap(
   IncludeTrendSymbol = FALSE,
   Data = lifecycle::deprecated(),
   Pthresh = 0.05,
-  PVar = "PValue"
+  PVar = "PValue",
+  covariates = NULL
 )
 }
 \arguments{
@@ -59,13 +60,26 @@ Explicit \code{Pthresh} takes precedence over \code{Alpha}, \code{FDRAlpha}, \co
 its legacy adjustment method unless \code{PVar} is supplied; \code{PVar = "PValueFDR"}
 always selects BH. \code{star_p = "none"} suppresses legacy pairwise stars.
 Stars retain conventional p-value tiers within the requested cutoff.}
+
+\item{covariates}{Optional character vector naming numeric or categorical
+adjustment variables. Covariates are excluded from the heatmap axes;
+explicitly requesting them on an axis produces a warning. Binary variables
+retain their positive-level 0/1 coding. Adjusted estimates are partial
+Pearson correlations, using pair-specific complete cases and residual test
+degrees of freedom \code{n - rank(design) - 1} (including the intercept).
+Failed adjustments warn and are marked failed in \code{Results} and \code{Metadata};
+fallback estimates do not carry adjusted significance.
+\code{Unadjusted} refers to raw p-values, including when estimates adjust for
+covariates. Without covariates, existing estimates and tests are unchanged.}
 }
 \value{
 A list with:
 \itemize{
 \item \code{Unadjusted}: list(PvalTable, plot)
 \item \code{FDRCorrected}: list(PvalTable, plot)
-\item \code{method} = "Phi"
+\item \code{method}: "Phi", or "Partial correlation" with covariates
+\item \code{Covariates}: adjustment variable names
+\item The legacy \code{Phi} column also holds partial correlations when adjusted
 \item \code{Relabel}
 \item \code{BinaryMapping} (used)
 }
@@ -106,6 +120,13 @@ result$Unadjusted$plot
 
 # FDR-adjusted phi heatmap
 result$FDRCorrected$plot
+
+# Adjust for numeric and categorical covariates.
+adjusted <- PlotPhiHeatmap(
+  Labelled, CatVars = c("APOE4", "HighTau", "LowAbeta"),
+  covariates = c("age", "sex")
+)
+adjusted$FDRCorrected$plot
 
 # Show each binary-variable pair once.
 upper <- PlotPhiHeatmap(

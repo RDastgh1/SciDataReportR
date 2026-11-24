@@ -1,4 +1,498 @@
+# SciDataReportR 21.31.0
+
+## Breaking changes
+
+* SOM projection novelty is rebuilt. `ProjectCluster()` on SOM models scores
+  each projected person with a conformal p-value (`NoveltyP`: the share of
+  training people, leave-one-out, at least as far from the map), adjusts it by
+  Benjamini--Hochberg across the cohort (`NoveltyQ`) and flags outliers at
+  `novelty_fdr` (default 0.10), so a cohort that resembles training no longer
+  has 5% flagged by construction. `FitClass` levels are now Good fit,
+  Uncertain membership, Outlier and Member of candidate new group; membership
+  probability no longer decides novelty. Hard-label SOM pipelines use Good
+  fit, Outlier and Member of candidate new group. `Projection_Fit_Class`,
+  `FitClass_Legacy`, `Flag_FarFromMap`, `Flag_SOMDist_overallHigh`,
+  `Flag_SOMDist_clusterHigh`, the per-cluster 95th-percentile cutoffs and
+  `ProjectionReference$calibration` are removed from SOM models, and
+  `far_distance_quantile`, `high_dist_quantile` and `low_prob_threshold` now
+  error with a pointer to `novelty_fdr`. Training people carry the same
+  `NoveltyP`, `NoveltyQ`, `Flag_Outlier` and `FitClass`.
+* New `ProjectionFit$cohort_shift` tests whether a projected cohort sits
+  farther from the map (rank test and Kolmogorov--Smirnov), holds more unusual
+  people than chance, or uses map nodes and clusters in different proportions
+  (Monte Carlo chi-square). New `novelty_p_hist` and `unusual_by_cluster`
+  plots.
+* `NoveltyGroups` now searches on people with `NoveltyP <= group_screen_alpha`
+  and calls a group a candidate new phenotype only when its members are also
+  more alike than same-size sets of training's unusual people (`Spread`,
+  `ReferenceSpread`, `CoherenceP`). Neighbourhood rates are always shrunk
+  toward chance, so a neighbourhood without unusual training people no longer
+  makes two unusual projected people significant. Permutation and Monte Carlo
+  tests use `seed_novelty` and leave the caller's random stream unchanged.
+
+## Improvements
+
+* `DetectDataAnomalies()` and `DetectLongitudinalAnomalies()` now skip
+  requested `variables` and `covariates` that the data frame does not carry,
+  with a warning naming them and an `absent_columns` diagnostic, instead of
+  aborting the run. A selection carried over from another dataset -- a renamed
+  or mis-encoded column name, say -- no longer costs every finding. `id_var`,
+  `time_var` and `stratify_by` still must exist: a missing identifier or
+  stratum changes what every finding means, so those remain an error. A
+  selection in which no requested variable is present is still an error.
+
+## Improvements
+
+* A skipped column name that was mangled by an encoding round trip now names
+  the column it was meant to reach: "IFN-Œ≤ (did you mean IFN-β?)". UTF-8 read
+  back as MacRoman, which is what a CSV opened and resaved in Excel on a Mac
+  produces, is reversed to find the match, in either the request or the data
+  frame's own headers, and a name is only suggested when exactly one column
+  answers to it. Without this a mangled name was skipped silently and its
+  findings were lost without anyone noticing.
+* The identifier column in the explorer's tables is now headed with that
+  column's own label, or its name where no label was supplied, instead of a
+  generic "Study ID" that appears nowhere in the data. A codebook label for the
+  identifier is used when one is given. Analyses that used different identifier
+  columns keep the generic heading, and the review workbook's headers stay
+  fixed, since decisions are read back in by header.
+* Duplicate codebook rows are judged only on the fields a codebook is read for
+  -- `Variable`, `Label`, `Category`, `Type`, `TimeUnit`, `TimeFormat`. Two rows
+  for one variable that differ only in a data dictionary's other columns (value
+  ranges, missing counts, notes) no longer raise "Conflicting duplicate codebook
+  entries", and neither do rows differing only in whitespace or in which of them
+  leaves a field blank: a blank states nothing, so such rows are merged into the
+  row that carries the information. Only genuinely contradictory values are an
+  error, and the message now names the field and both competing values for each
+  variable instead of listing variable names alone.
+
+## Bug fixes
+
+* `ExploreDataAnomalies()` no longer aborts with `cannot have attributes on a
+  CHARSXP` when the conditional backend returns a condition value as a bare
+  CHARSXP -- R's internal string type, which no R-level function can read, so
+  `inherits()`, `format()` and `as.character()` all abort on it. One such value
+  in one condition of one finding took down every page, plot and export built
+  from the whole queue. Backend evidence is now repaired as it enters a finding
+  and again as it enters a review queue, so a result object detected before this
+  fix needs only a new `CreateAnomalyReviewQueue()`, not a new detection run.
+
+* The missingness screen's completion message reported one elapsed time per
+  screened record, pasted into a single unreadable number, whenever a group of
+  variables that go missing together was used as a comparison group. That
+  branch assigned a per-record logical vector to a local name that shadowed the
+  screen's own timer. The timer is now named separately and the message reports
+  one time, as it always should have.
+
+# SciDataReportR 21.30.0
+
+## Bug fixes
+
+* An undeclared `hms` column no longer stops conditional and isolation
+  screening. `outliertree` and `isotree` reject `hms` as an unsupported column
+  type and abort on the whole frame, so a single undeclared time column
+  silently cost **every finding from both methods** -- the run completed, every
+  record was left `unavailable`, and only a diagnostic recorded why. Such a
+  column is now converted to plain seconds before modelling, which is what the
+  existing "compared as plain seconds" warning always promised, and the
+  conversion is recorded in an `ambiguous_temporal_seconds` diagnostic naming
+  the columns and how to declare them. Declaring `Type = clock` still models
+  the column circularly; nothing about declared columns changes.
+* Temporal columns are converted to seconds by their stored units rather than
+  by `as.numeric()`, which returned minutes for a `difftime` in minutes and
+  could rescale such a column silently on the prediction path.
+
+## Review workbook
+
+* The compact review sheet carries a **Codebook category** column, so a
+  reviewer can sort or filter the findings by category as they already could in
+  the explorer. It appears only when a codebook assigned a category to at least
+  one screened column, because an unsupplied codebook would otherwise fill the
+  column with `Uncategorized` throughout. Supply `codebook` to
+  `DetectDataAnomalies()` -- once, at detection -- or to
+  `CreateAnomalyReviewQueue()` as a late override.
+
+# SciDataReportR 21.29.0
+
+## Bug fixes
+
+* Conditional screening no longer loses findings when the detection backend
+  fails to format its own report for one of them. `outliertree` can throw while
+  printing a finding (an invalid decimal count, or a field width beyond
+  sprintf's limit), which aborted the whole method part-way and silently
+  dropped every finding after the first failure. Which findings survived varied
+  from run to run on the same data, so a genuine outlier could appear in one
+  report and vanish from the next. The finding is now kept and described from
+  the same stored evidence the detail panel uses, and a
+  `conditional_explanation_rebuilt` diagnostic names the affected columns.
+* `ExploreDataAnomalies()` states, in a warning above the tables, when a method
+  stopped before finishing and names what stopped it. Technical diagnostics are
+  not on the page, so an incomplete run was previously invisible.
+
+## Behaviour change: unexpected missingness
+
+* Unexpected missingness now means what it says. A blank is reported only when
+  something in the data explains why it is unexpected, which is one of two
+  things: a rule learned from another column's values (the previous behaviour,
+  unchanged), or **a group of variables that go missing together**, where the
+  record carries most of the group but not all of it.
+* Those groups are discovered, not declared. Columns are clustered on how
+  similarly they go blank, which recovers the forms a wide merged frame is built
+  from with no knowledge of what any column measures -- so a CBC panel is found
+  as a panel. The finding names the group's members, so the report states the
+  pattern it used rather than asserting a bare count.
+* **The whole-group fallback is removed.** Previously, when nothing predicted a
+  blank, the comparison fell back to the entire analysis group, so any column at
+  least 95% complete had every one of its blanks reported. That is a statement
+  about the column's completeness, not about the record, and on a real wide
+  dataset it accounted for the overwhelming majority of findings: on one
+  116-record file, 466 reported cells across 196 columns became 71 across 42.
+  A blank explained by neither mechanism now records a
+  `missingness_unexplained` diagnostic and is not reported.
+* The 95%-complete cutoff is no longer a gate on which columns are examined.
+  Membership of a group is what matters, so a form only 40% of the cohort
+  completed is now screened: among the records that did it, a missing item
+  stands out. Columns with blanks that nothing explains are listed in a new
+  **Completeness** section of the explorer, with their blank count and whether
+  they produced a finding.
+* A record missing most of a group has skipped that form and is not reported.
+* A new **Groups of variables that go missing together** section on the explorer
+  page lists each discovered group, its members, how many records carry any of
+  it and how many carry all of it, so the grouping can be checked before its
+  findings are believed. An over-merged group is largely self-limiting: it
+  rarely reaches the completion rate needed to report anything.
+* New `method_args$missingness` settings: `min_block_events` (5),
+  `min_block_size` (3), `block_similarity` (0.8) and `max_block_gap` (0.5).
+  Discovered groups are returned in `Metadata$Settings$missingness$Blocks`.
+* Where both mechanisms apply, a value rule wins only when it actually explains
+  the blank. A spurious value split -- a sequential date that happens to
+  separate the records who skipped a form, for instance -- no longer displaces
+  the group that genuinely explains it.
+
+## Excel workbook
+
+* The exported workbook now defaults to a **compact** layout built for scanning:
+  one visible sheet, one-line rows, and seventeen contiguous columns -- review
+  order, study ID, source row, measure, variable key, recorded value, anomaly
+  type, severity tier, extreme value, why flagged, then the seven editable
+  decision fields. Previously every row was as tall as its longest cell, with
+  41 columns across five visible sheets, several carrying paragraphs of text.
+* A compact workbook is a deliverable, not a round trip: the Evidence, Read me,
+  Contributions and Manifest sheets and the long explanation columns are not
+  written at all, so `ImportAnomalyReviewDecisions()` rejects one with a message
+  saying to export with `layout = "full"`. Use `"full"` whenever decisions must
+  be read back into R; it is the previous layout, unchanged. On one real file
+  the compact workbook is 22 KB against 555 KB.
+* A compact sheet drops a column only when it cannot apply: Study ID with no ID
+  variable, Extreme value when no finding is extreme. The editable decision
+  fields are always written, empty, for the reviewer to fill in.
+* `ExtremeValue`, `ExtremeRatio` and `WeakSupport` now carry readable headers
+  ("Extreme value", "Extreme ratio", "Weak support"); the importer accepts both
+  spellings, so workbooks written before this change still import.
+
+## Explorer
+
+* Removed eight standing caveat paragraphs from the page: the source-row
+  snapshot note, the reviewer-priority note, the conditional-pattern and
+  broad-screening notes, the whole-record and codebook-category notes, the
+  issue-count line and the review-order note. The same information remains in
+  the collapsible method sections and the Excel workbook.
+
+## Review experience
+
+* Screen everything, review a subset. `CreateAnomalyReviewQueue()` and
+  `ExploreDataAnomalies()` take `variables`, and `CreateDataAnomalyReport()`
+  takes `review_variables`, limiting which findings are listed without changing
+  detection. The models stay fitted on the full selection, so a listed finding
+  is still conditioned on every screened column, and the coverage summary still
+  describes the whole screen. Findings with no attributed field concern a whole
+  record and are always listed. In `CreateDataAnomalyReport()` the filter
+  applies to the HTML explorer only; the Excel workbook remains the complete
+  record of findings.
+* Both review tables now carry a dropdown per categorical column: extreme
+  value, anomaly type, severity tier, codebook category, method, analysis group
+  and analysis. "Variables to review" previously offered only anomaly type, so
+  narrowing it to one codebook category meant typing into a column search box.
+  A column with fewer than two distinct values is left out.
+
+* A value at least ten times further from its column median than any other
+  record is marked "Extreme value" and reviewed ahead of every severity tier.
+  The kind of finding is the same whether a value is slightly or absurdly out of
+  range, so severity alone could sort an obvious data-entry error behind dozens
+  of findings that need judgement. The test is scale free, needs at least ten
+  other numeric values in the column, and is not applied to dates, clock times
+  or blanks; the order rationale states the multiple.
+
+* `ExploreDataAnomalies()` draws an interactive anomaly map above the tables:
+  one cell per modelled variable and record, grey where no anomaly was
+  reported and coloured by kind (blank where comparable records have a value,
+  higher than expected, lower than expected, unusual given other fields,
+  unusual change over time, other). Hovering a cell gives the source row, ID
+  and time value where supplied, the recorded value and the reason. Cells
+  carrying several findings take the most serious one; findings with no
+  attributed field are counted beneath the map rather than placed on it.
+* Longitudinal `change`, `trajectory` and `transition` findings are typed from
+  their method rather than from the absence of an attributed field. They were
+  reported as "Uncommon combination" and ranked at the lowest tier alongside
+  exploratory isolation records; they are now "Unexpected change over time" or
+  "Uncommon transition" at tier 5. This changes the suggested review order of
+  longitudinal results.
+* A finding is no longer marked as thinly supported merely for being
+  record-level rather than field-level; thin support now means the reference
+  comparison itself is small or absent.
+* Severity tier is now a visible, sortable column on both tables, and the page
+  defines the tiers, the anomaly types in each and why each tier outranks the
+  next. It was previously computed but hidden, so the suggested review order
+  could not be checked or re-sorted.
+* Backend evidence in a selected finding is rendered as named rows rather than
+  a raw JSON string, with null and duplicated internal fields omitted.
+
+
+
+* Suggested review order is now driven by the kind of finding rather than by a
+  score percentile compared across methods. Previously every scoreless finding
+  sorted last, because `order(..., na.last = TRUE)` pushed methods that emit
+  native flags (conditional pattern, cellwise, dates) below every scored one,
+  while missingness scores are near-constant and collapsed to a percentile of
+  0.5 that still outranked them. An impossible laboratory value could therefore
+  sit behind several hundred blanks. Findings now sort by severity of their
+  anomaly type -- inconsistent with related fields, implausible dates and
+  intervals, conditional outliers, distribution outliers, changes and
+  transitions, unexpected missingness, rare coded values, then exploratory
+  record combinations -- with thin reference support demoting a finding within
+  its own type instead of ahead of a more serious one. `ReviewTier` now holds
+  that severity (1-8) rather than the previous four support-based tiers, and
+  `OrderRationale` states the reason.
+
+## Review experience
+
+* Selecting a row under "Variables to review" now types that measure into the
+  search box above "Potential data issues" instead of applying a hidden filter,
+  so the reason rows disappeared is visible and can be edited or cleared in
+  place. "Show all findings" still clears it.
+* "Variables to review" shows "Common reasons" in place of "Strongest finding":
+  the kinds of finding recorded for that variable, how many records each
+  affects, and one short example of each.
+* Recorded values and learned boundaries are rounded for display, so a reading
+  stored as 4980.49871276928 reads as 4980.5 in the tables, explanations and
+  printed queue. Stored evidence keeps full precision, and text, dates and
+  categories are untouched.
+* An `hms` column that could be a time of day or an elapsed duration now warns
+  instead of stopping the analysis. The column is compared as plain seconds
+  without clock-aware wrap-around handling, which is correct for a duration and
+  merely loses the circular treatment for a clock; declaring `Type` in the
+  codebook or passing `time_types` still gives the exact behaviour.
+
+## Bug fixes
+
+* The interactive panel under a conditional finding no longer renders an empty
+  chart. Learned conditions are carried as text while the plotted columns keep
+  their own types, so a condition on a numeric column (`Statin = 0`) was
+  compared as `0 === "0"` and matched nothing: every record was filtered out and
+  only the marker line remained. Equality and set-membership conditions on
+  numeric columns were affected; relational ones worked because JavaScript
+  coerces those. Both sides are now cast to the column's own type.
+* That panel also draws the learned boundary the finding is stated against, so
+  "above the subgroup boundary of 285" is visible rather than implied, reports
+  how many records meet the conditions instead of a generic caveat about
+  counts, and says plainly when no record meets them.
+
+* Interval findings state the comparison in words instead of a signed day count
+  and a pair of bounds. "`A -> B: -849 days; screening bounds 0 to 0`" now reads
+  "B falls 849 days before A; in comparable records the two dates fall on the
+  same day", which is what bounds of 0 to 0 were trying to say.
+* A missingness finding whose comparison group is wholly complete now reads
+  "Blank, although every other record in this analysis group has a value
+  (114 of 114)" rather than "114 of the 114 other records".
+* `DetectDataAnomalies()` conditional pattern screening no longer flags most of
+  the sample on frames containing zero-inflated counts or rarely-endorsed items.
+  A numeric column with fewer than `min_distinct` distinct values (new setting,
+  default 10) is now compared as a category, because its near-zero spread made
+  every departure from the dominant value read as an extreme conditional
+  outlier. On a 115-record frame of continuous measures plus usually-zero
+  counts the flag rate falls from 64% to under 1%, with a planted impossible
+  value still detected. Date and clock columns are never converted. A
+  `conditional_discrete_as_categorical` diagnostic names the converted columns;
+  `min_distinct = 0` restores the previous behaviour.
+* The printed and PDF view of "Variables to review" now shows the Anomaly type
+  column, which previously appeared only in the interactive tables, and omits
+  columns that are constant in the report.
+## Performance
+
+* `DetectDataAnomalies()` unexpected-missingness screening is far faster on wide
+  frames. The predictor design is now built once per analysis group instead of
+  once per variable, which removed a cost quadratic in the number of variables,
+  and a new `max_predictors` setting (default 200) screens candidate predictors
+  by marginal association before each tree is fitted. On a 1072-variable frame
+  the step drops from roughly five minutes to about thirteen seconds. The step
+  also reports progress on frames with more than 50 variables to screen.
+  Raising `max_predictors` widens the search at a proportional cost; a
+  `missingness_predictors_screened` diagnostic records when the screen engaged.
+- **Behaviour change.** `missingness` screening now judges a blank against the rest
+  of the record instead of against overall column completeness. For each field it
+  fits one small `rpart` tree per analysis group, predicting whether the field is
+  blank from the other selected fields' values and their own missing/observed
+  indicators, and flags a blank only when its leaf holds at least `min_reference`
+  records of which at least `min_observed_fraction` carry a value. A field
+  collected from only part of the sample is therefore no longer reported for the
+  records that legitimately skip it, while a blank among the records that should
+  have a value still is. This replaces the previous search over one-field
+  comparison groups, which kept whichever group scored highest and so fired on
+  groups that were complete by chance. `method_args$missingness` gains `cp` and
+  `maxdepth` and drops `numeric_bins`; `rpart` is a new import, shipped with every
+  R installation.
+- Missingness explanations now name the comparison group:
+  "Blank, although 142 of 142 records with Sex = Female have a value", replacing
+  "Missing; 142 of 142 comparable records have a value". The detection cells and
+  the queue's short reason share one helper, so the two cannot diverge.
+- One canonical anomaly taxonomy, `ScidrAnomalyTypes()`, replaces the overlapping
+  `ReviewCategory` and `FindingType` vocabularies. Every finding carries exactly one
+  of ten types, shown as a sortable **Anomaly type** column with a matching filter on
+  both the variables table and the findings table. Stored category values change;
+  reviewer decisions and queue fingerprints do not.
+- The explorer drops its developer-facing views: "Technical results" (per-record
+  scores, per-cell evidence, date and interval evidence, participant summary) and
+  "Queue diagnostics". All of it remains on the result and queue objects and in the
+  Excel workbook; the coverage summary stays on the page.
+- "Record combinations to review" is merged into "Potential data issues". Whole-record
+  findings are now distinguished by their anomaly type rather than by a separate table.
+- `ExploreDataAnomalies()` no longer emits DT's "data is too big for client-side
+  DataTables" warning, whose advice (server-side processing) a standalone file cannot use.
+
+# SciDataReportR 21.28.0
+
+- Added automatic `missingness` screening with supported, leave-one-participant-out comparisons. Flags are review candidates, not predictions of error; skip logic and study design may explain blanks. Set `methods` explicitly to disable it.
+- The explorer starts with **Variables to review**, ranked by strongest supported evidence, with distinct source-record counts and lightweight miniature distributions. Selecting a variable filters findings.
+- Condensed **Why flagged** text in HTML and Excel, retaining full comparison evidence in details. Added compatibility for previous workbook wording without changing snapshot fingerprints or reviewer decisions.
+
+- New `CreateDataAnomalyReport()` runs anomaly detection, builds the review queue
+  and writes the two files a collaborator needs in one call: a standalone
+  interactive HTML explorer that opens in any browser without R, Quarto or a
+  network connection, and the Excel review workbook. It adds no detection
+  behaviour of its own, forwarding to `DetectDataAnomalies()`,
+  `DetectLongitudinalAnomalies()` (through its `longitudinal` argument),
+  `CreateAnomalyReviewQueue()`, `SaveDataAnomalyExplorer()` and
+  `ExportAnomalyReviewQueue()`. Missing optional packages are reported once
+  before any modelling runs rather than after it.
+
+- New `SaveDataAnomalyExplorer()` writes `ExploreDataAnomalies()` to a single
+  self-contained HTML file, locating pandoc inside a Quarto or RStudio
+  installation when it is not on the PATH. Without pandoc, a sidecar
+  dependency directory is kept and reported instead of failing.
+
+- New `SummarizeAnomalyDecisions()` reports what reviewers concluded after
+  `ImportAnomalyReviewDecisions()`, grouped by status, variable, analysis,
+  priority or reviewer, with proposed corrections and review progress. It is
+  read-only: no corrections are ever applied to source data.
+
+- `print()` and `summary()` methods for `DataAnomalyResult` and
+  `AnomalyReviewQueue` replace printing a bare list, reporting coverage, flags
+  per method and stratum, cutoff provenance and the next step.
+
+- **Behaviour change:** score-only methods now flag the top 1 percent of scores
+  within each method and stratum by default, through the new `flag_percentile`
+  argument on both detectors, so a screen produces review candidates instead of
+  an unclassified column of scores. Explicit `thresholds` and native
+  conditional, date and cellwise flags always take precedence, and
+  `flag_percentile = NULL` restores the previous unflagged behaviour. A
+  percentile cutoff is a review budget, not an estimated error rate.
+  `CreateAnomalyReviewQueue(include_ranked = TRUE)` now also tops a
+  percentile-defaulted method up to `top_n` highest-scoring candidates, so
+  adding a default cutoff never shrinks a review queue. Methods with a native or
+  user cutoff are unchanged.
+
+- The explorer opens with a short "How to read this page" section for readers who
+  have never used the package, and the coverage summary distinguishes a default
+  percentile cutoff from a native or explicit one.
+
+- `digest` moves from Suggests to Imports; it is required by every review queue
+  rather than optional.
+
 # SciDataReportR 21.27.0
+
+- RevalueData and cross-sectional anomaly detection support explicit clock/duration
+  declarations through codebook Type, TimeUnit and TimeFormat or named overrides.
+  Intake retains typed physical values/classes/units and records TimeMetadata;
+  numeric/text conversion is explicit and atomic. Detection uses duration seconds
+  and circular clock pairs, preserving originals and mapping findings/explanations
+  back to source columns. Clock sensitivity replacements and SHAP keep pairs
+  together; interactive 24-hour views and unit-aware evidence are available.
+  Ambiguous hms requires classification, invalid clocks are never wrapped, and
+  old results/workbooks are not refit. Other codebook types remain presentation-only
+  in detection; explicit temporal declarations now control modeling transformations.
+
+- Anomaly detectors, review queues and explorers accept optional `codebook`
+  presentation metadata without recoding data or changing scores, issue IDs or
+  fingerprints. Codebook category filters are distinct from issue types; isolation
+  inspection categories come from the five strongest positive saved column effects.
+  Main and printed queues omit review decisions, retained in finding details and
+  Excel. The explorer explains all methods with readable names and renames Cell
+  evidence to Variable-level evidence. Matching older workbooks remain supported.
+
+- Isolation column explanations now default to fast batched replacement screening
+  (`explanation_args$method = "sensitivity"`), preserving native scores and review
+  decisions. `FeatureSensitivity` reports signed score decreases and replacement
+  ranges, with interactive column-screening charts and Excel method labels.
+  These effects are not additive, error probabilities, or proposed corrections.
+  Explicit `method = "shap"` retains slower adjusted SHAP, its contribution
+  waterfalls and simulation diagnostics. Screening no longer requires fastshap.
+  Explanations use separate fingerprints and retain legacy workbook support.
+
+- Review queues now include top scored-only candidates by default (opt out with
+  `include_ranked = FALSE`). The simplified explorer shows an overview, one queue,
+  and selected evidence, with technical tables collapsed. Suggested review order
+  uses transparent evidence tiers and within-method/stratum score percentiles,
+  not error probabilities. Interactive record comparisons offer selectable
+  variables without claiming model attribution. Excel shares derived ordering,
+  preserves old imports and maps decisions by issue ID after sorting.
+
+- Anomaly detection now defaults to all supported columns without requiring
+  RevalueData(); supplied IDs/strata are excluded from automatic model selection.
+  Explorer plots default on when available and select the first issue. Print
+  output uses complete static review tables; score-only methods are explicitly
+  unclassified. Rare coded values and matching-date patterns get clearer wording.
+
+- Anomaly review now uses scrollable, deferred-rendered DT tables with selected-row
+  evidence panels under **Potential data issues**. Labels and variable names are
+  visible together. Shared HTML/Excel explanations describe direction, learned
+  conditions, reference counts and boundaries without changing snapshot evidence.
+  `IncludePlots = TRUE` enables locally bundled, on-selection interactive
+  distributions, date intervals and retained participant histories.
+
+- Added optional-ID collaborator queues via `CreateAnomalyReviewQueue()`,
+  `ExportAnomalyReviewQueue()` and `ImportAnomalyReviewDecisions()`. Snapshot
+  fingerprints bind decisions to unchanged findings; Excel review supports
+  subsets and blank-preserving updates. `ExploreDataAnomalies()` now starts
+  with the shared worklist and retains the original technical views.
+
+- Fixed literal HTML appearing in expanded anomaly rows. Explorer tables now
+  use a scoped theme, readable review status, prioritized visible columns,
+  technical fields separated from review decisions.
+
+- `ExploreDataAnomalies()` renders row details only on selection and stores
+  retained source values once instead of repeating them in each method grid.
+  History plotting is now opt-in with `IncludePlots = TRUE`.
+
+- `DetectDataAnomalies()` now includes `dates` in its default methods,
+  screening date ranges and learned within-row date intervals. Date/timestamp
+  inputs also work in other detectors via recorded local day conversions.
+  New `date_pairs` controls pair selection; `DateResults` retains readable
+  evidence and study IDs. Selected `id_var` columns are excluded from features.
+
+- Added `covariates` to `PlotPhiHeatmap()` and `PlotDirectionalHeatmaps()`.
+  Adjusted binary associations use partial Pearson correlations with pairwise
+  complete cases and rank-based degrees of freedom. All directional blocks
+  support adjustment; failed adjustments are reported without significance.
+  Existing calls without covariates retain their estimates and tests.
+
+- Added `PlotDataAnomalyTrajectories()` for ggplot histories for selected participants. Nonfinite DDC residuals
+  are now unavailable cells with diagnostics rather than anomaly evidence.
+
+- Added `DetectDataAnomalies()`, `DetectLongitudinalAnomalies()`, and
+  `ExploreDataAnomalies()` for codebook-label-aware review of unusual records,
+  individual values, change rates, trajectories, and categorical transitions.
+  Results retain row alignment, method-specific scores, and explicit diagnostics;
+  source data remain unchanged.
 
 # SciDataReportR 21.26.0
 

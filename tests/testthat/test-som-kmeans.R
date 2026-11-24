@@ -97,7 +97,7 @@ test_that("SOM K-means freezes the map, node transform, and standard outputs", {
     unname(model$ModelInfo$node_cluster[projected$ProbFit$individual$SOM_Node]))
   expect_true(is.na(projected$DataWithClusters$Cluster[[2]]))
   expect_equal(nrow(projected$ProjectionFit$individual), 4L)
-  expect_true(all(c("SOM_Distance", "SOMDist_percentile_train", "Flag_FarFromMap",
+  expect_true(all(c("SOM_Distance", "SOMDist_percentile_train", "Flag_Outlier",
     "DistanceToCentroid", "NodeDistanceToCentroid", "AssignmentMargin",
     "NodeAssignmentMargin", "Flag_ProjectionDisagreement") %in%
     names(projected$ProjectionFit$individual)))

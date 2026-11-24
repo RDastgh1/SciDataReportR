@@ -5,6 +5,16 @@
 #' then renders heatmap-style plots with raw and FDR-adjusted significance.
 #'
 #' @param data A dataframe.
+#' @param covariates Optional character vector naming numeric or categorical
+#'   adjustment variables. Covariates are excluded from the heatmap axes;
+#'   explicitly requesting them on an axis produces a warning. Binary variables
+#'   retain their positive-level 0/1 coding. Adjusted estimates are partial
+#'   Pearson correlations, using pair-specific complete cases and residual test
+#'   degrees of freedom `n - rank(design) - 1` (including the intercept).
+#'   Failed adjustments warn and are marked failed in `Results` and `Metadata`;
+#'   fallback estimates do not carry adjusted significance.
+#'   `Unadjusted` refers to raw p-values, including when estimates adjust for
+#'   covariates. Without covariates, existing estimates and tests are unchanged.
 #' @param CatVars Character vector of binary categorical variable names.
 #' @param Relabel Logical; if TRUE, uses sjlabelled variable labels for axes.
 #' @param binary_map Optional mapping as returned by `createBinaryMapping()`.
@@ -12,7 +22,9 @@
 #' @return A list with:
 #'   - `Unadjusted`: list(PvalTable, plot)
 #'   - `FDRCorrected`: list(PvalTable, plot)
-#'   - `method` = "Phi"
+#'   - `method`: "Phi", or "Partial correlation" with covariates
+#'   - `Covariates`: adjustment variable names
+#'   - The legacy `Phi` column also holds partial correlations when adjusted
 #'   - `Relabel`
 #'   - `BinaryMapping` (used)
 #' @param fdr_scope Either `"matrix"` (default) or `"per_outcome"`, passed to
@@ -53,6 +65,13 @@
 #' # FDR-adjusted phi heatmap
 #' result$FDRCorrected$plot
 #'
+#' # Adjust for numeric and categorical covariates.
+#' adjusted <- PlotPhiHeatmap(
+#'   Labelled, CatVars = c("APOE4", "HighTau", "LowAbeta"),
+#'   covariates = c("age", "sex")
+#' )
+#' adjusted$FDRCorrected$plot
+#'
 #' # Show each binary-variable pair once.
 #' upper <- PlotPhiHeatmap(
 #'   Labelled,
@@ -76,7 +95,8 @@ PlotPhiHeatmap <- function(data,
     IncludeTrendSymbol = FALSE,
     Data = lifecycle::deprecated(),
     Pthresh = 0.05,
-    PVar = "PValue") {
+    PVar = "PValue",
+    covariates = NULL) {
   .scidr_inference <- ScidrStartInference("PlotPhiHeatmap", match.call(), environment())
   on.exit({
     if (!is.null(returnValue())) {
@@ -134,22 +154,28 @@ PlotPhiHeatmap <- function(data,
   # Checked before subsetting, which otherwise fails with base R's
   # "undefined columns selected" and never names the offending variable.
   CatVars <- ScidrValidateVariables(Data, CatVars, "CatVars")
+  covariates <- ScidrValidateVariables(Data, covariates, "covariates")
+  if (length(intersect(CatVars, covariates))) {
+    warning("Excluding covariates from heatmap axes: ",
+      paste(intersect(CatVars, covariates), collapse = ", "), call. = FALSE)
+  }
+  CatVars <- setdiff(CatVars, covariates)
 
   if (length(CatVars) < 2) {
     stop("Need at least two binary variables for a Phi heatmap.")
   }
 
   # keep only requested vars, preserve labels
-  DataSubset <- Data[CatVars]
+  DataSubset <- Data[unique(c(CatVars, covariates))]
   DataSubset <- ReplaceMissingLabels(DataSubset)
 
   vars_Degenerate <- CatVars[vapply(DataSubset[CatVars], function(x) length(unique(stats::na.omit(x))) < 2L, logical(1))]
   CatVars <- setdiff(CatVars, vars_Degenerate)
-  DataSubset <- DataSubset[CatVars]
+  DataSubset <- DataSubset[unique(c(CatVars, covariates))]
   if (length(CatVars) < 2L) return(ScidrEmptyLegacyInference("PlotPhiHeatmap"))
 
   # check all are binary
-  non_binary <- vapply(DataSubset, .is_binary, logical(1))
+  non_binary <- vapply(DataSubset[CatVars], .is_binary, logical(1))
   if (!all(non_binary)) {
     bad <- names(non_binary)[!non_binary]
     stop("The following variables are not binary (exactly 2 unique non-NA values required): ",
@@ -174,10 +200,22 @@ PlotPhiHeatmap <- function(data,
     y01 <- encoded[[vy]]
 
     keep <- stats::complete.cases(x01, y01)
+    if (length(covariates)) {
+      keep <- keep & stats::complete.cases(DataSubset[, covariates, drop = FALSE])
+    }
     x <- x01[keep]; y <- y01[keep]
     nPairs <- length(x)
 
-    if (identical(vx, vy)) {
+    if (length(covariates) && !identical(vx, vy)) {
+      pair <- ScidrCorrelationPair(
+        data.frame(x = x01, y = y01, DataSubset[, covariates, drop = FALSE],
+          check.names = FALSE),
+        method = "pearson", min_n = 3, eps = 1e-12, yname = vy, xname = vx
+      )
+      Phi <- pair$r
+      p <- pair$p
+      nPairs <- pair$n
+    } else if (identical(vx, vy)) {
       # A variable is trivially associated with itself (Phi = 1). Leaving the
       # diagonal in saturates the colour scale and flattens every real
       # off-diagonal value, so it is masked out.
@@ -208,6 +246,16 @@ PlotPhiHeatmap <- function(data,
 
   stat.test <- do.call(rbind, stat.list)
 
+  # Fallback estimates remain inspectable, but do not carry adjusted inference.
+  if (length(covariates) && length(.scidr_inference$Failures)) {
+    df_Failed <- dplyr::bind_rows(.scidr_inference$Failures)
+    for (i in seq_len(nrow(df_Failed))) {
+      failed <- (stat.test$XVar == df_Failed$Predictor[i] & stat.test$YVar == df_Failed$Outcome[i]) |
+        (stat.test$YVar == df_Failed$Predictor[i] & stat.test$XVar == df_Failed$Outcome[i])
+      stat.test$p_value[failed] <- NA_real_
+    }
+  }
+
   # multiple testing (FDR); keep NA as NA
   # The matrix is symmetric; for "per_outcome", p-values are grouped by the
   # y-axis variable (YVar), i.e. each y-variable's row of tiles is one family.
@@ -226,7 +274,7 @@ PlotPhiHeatmap <- function(data,
     IncludeTrendSymbol = IncludeTrendSymbol
   )
 
-  stat.test$test <- "Phi"
+  stat.test$test <- if (length(covariates)) "Partial correlation" else "Phi"
 
   # ---- labels --------------------------------------------------------------
   if (Relabel) {
@@ -268,7 +316,7 @@ PlotPhiHeatmap <- function(data,
     "</br>X Var: ",   stat.test$XVar,
     "</br>Y Label: ", stat.test$YLabel,
     "</br>Y Var: ",   stat.test$YVar,
-    "</br> Phi: ",      signif(stat.test$Phi, 3),
+    "</br> ", if (length(covariates)) "Partial correlation: " else "Phi: ",      signif(stat.test$Phi, 3),
     "</br> P-Value: ", signif(stat.test$p_value, 3), " ", stat.test$`p<.05`,
     "</br> FDR P: ",   signif(stat.test$p.adj, 3),   " ", stat.test$p.adj.signif,
     "</br> nPairs: ",  stat.test$nPairs
@@ -294,7 +342,7 @@ PlotPhiHeatmap <- function(data,
     ggplot2::geom_text(ggplot2::aes(label = `p<.05`), color = "black") +
     ggplot2::scale_fill_gradient2(
       limits = c(-1, 1),
-      name = expression(Phi),                # Phi (plotmath: portable under C locale)
+      name = if (length(covariates)) "Partial correlation" else expression(Phi),                # Phi (plotmath: portable under C locale)
       low  = scales::muted("purple"),
       high = scales::muted("green"),
       na.value = "grey85"
@@ -318,7 +366,7 @@ PlotPhiHeatmap <- function(data,
     ggplot2::geom_text(ggplot2::aes(label = p.adj.signif), color = "black") +
     ggplot2::scale_fill_gradient2(
       limits = c(-1, 1),
-      name = expression(Phi),                # Phi (plotmath: portable under C locale)
+      name = if (length(covariates)) "Partial correlation" else expression(Phi),                # Phi (plotmath: portable under C locale)
       low  = scales::muted("purple"),
       high = scales::muted("green"),
       na.value = "grey85"
@@ -344,7 +392,8 @@ PlotPhiHeatmap <- function(data,
   out <- list(
     Unadjusted    = M,
     FDRCorrected  = M_FDR,
-    method        = "Phi",
+    method        = if (length(covariates)) "Partial correlation" else "Phi",
+    Covariates    = covariates,
     Relabel       = Relabel,
     AxisOrder     = AxisOrder,
     Triangle      = triangle,

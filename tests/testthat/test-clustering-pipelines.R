@@ -555,8 +555,6 @@ test_that("SOM projection separates assignment certainty from frozen-map fit", {
   )
 
   expect_true(any(grepl("ProjectionFit\\$out_of_support", warning_messages)))
-  expect_true(any(grepl("ProjectionFit\\$individual.*ProjectionFit\\$by_cluster",
-    warning_messages)))
   expect_true(all(c("individual", "summary", "by_cluster", "out_of_support",
     "policy", "plots") %in% names(projected$ProjectionFit)))
   expect_false(any(c("SOMProj", "out_of_range_summary") %in% names(projected)))
@@ -565,8 +563,8 @@ test_that("SOM projection separates assignment certainty from frozen-map fit", {
   expect_identical(nrow(projected$ProbFit$individual), nrow(df_Projection))
   expect_identical(nrow(projected$ProjectionFit$individual), nrow(df_Projection))
   expect_false("SOM_Distance" %in% names(projected$ProbFit$individual))
-  expect_true(all(c("SOM_Distance", "Flag_SOMDist_overallHigh",
-    "Flag_OutsideTrainingRange", "Projection_Fit_Class") %in%
+  expect_true(all(c("SOM_Distance", "NoveltyP", "Flag_Outlier",
+    "Flag_OutsideTrainingRange", "FitClass") %in%
     names(projected$ProjectionFit$individual)))
   expect_true(nrow(projected$ProjectionFit$out_of_support) > 0)
   expect_true("node_occupancy_js_divergence" %in%

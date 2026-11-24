@@ -1,6 +1,6 @@
 Package: SciDataReportR
 Title: Workflow Infrastructure for Reproducible Scientific Data Reporting
-Version: 21.27.0
+Version: 21.31.0
 Authors@R: 
     c(person("Raha", "Dastgheyb", , "raha@jhmi.edu", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0002-4992-711X")),
@@ -17,6 +17,7 @@ URL: https://rdastgh1.github.io/SciDataReportR/,
     https://doi.org/10.5281/zenodo.19617868
 BugReports: https://github.com/RDastgh1/SciDataReportR/issues
 Imports:
+    digest,
     dplyr,
     future,
     future.apply,
@@ -40,11 +41,20 @@ Imports:
     purrr,
     ps,
     rlang,
+    rpart,
     scales,
     stringr,
     tidyselect,
     viridisLite
 Suggests:
+    hms,
+    fastshap (>= 0.1.1),
+    svglite,
+    outliertree,
+    isotree,
+    robustbase,
+    cellWise,
+    nlme,
     patchwork,
     ggalluvial,
     dynamicTreeCut,

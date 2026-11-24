@@ -30,6 +30,12 @@ The table includes variable names, labels, types, and additional formatting base
 \details{
 This function requires the \code{gt} and \code{codebook} packages. If either
 is not installed, the function will return an error.
+
+Temporal declarations use Type = clock or duration, with optional
+TimeUnit (numeric input units) and TimeFormat (HMS, HM or MS for text).
+These fields document temporal meaning; displaying this dictionary does not
+convert data. Use RevalueData() for intake or DetectDataAnomalies() for local
+temporal modeling. Calendar dates/timestamps remain distinct from clock times.
 }
 \section{Giving the table room}{
 

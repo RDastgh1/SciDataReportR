@@ -549,7 +549,7 @@ test_that("SOM Mclust summarizes posteriors and core stability per candidate", {
     df_Labelled, c("age", "AXL", "Adiponectin", "Alpha_1_Antitrypsin"),
     method = "exploratory", k_range = 2:3, models = 1,
     som_xdim = 4, som_ydim = 4, min_nodes_per_cluster = NULL,
-    stability_resamples = 2, stability_cores = 1, low_prob_threshold = 0.7,
+    stability_resamples = 2, stability_cores = 1, clear_membership_threshold = 0.7,
     criteria_weights = c(Entropy = 1, Posterior = 1, Reproducibility = 1),
     lpa_timeout_seconds = 30, Relabel = FALSE))
 

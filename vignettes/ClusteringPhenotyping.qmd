@@ -452,8 +452,8 @@ both node counts and participant counts. SOM stability refits preprocessing,
 the map, and the dendrogram with grid dimensions held fixed. Stability results
 accompany the initial candidate recommendation; they do not change the selected
 node labels after map assembly. Projected participants inherit their frozen
-best-matching node's label. Evaluate SOM distance percentiles, high-distance
-flags, range checks, and residuals. `NodeAssignmentMargin` describes the node
+best-matching node's label. Evaluate novelty p-values and outlier flags, range
+checks, and residuals. `NodeAssignmentMargin` describes the node
 profile's separation from other cluster medoids, not a participant probability.
 
 ## PCA followed by clustering
@@ -719,9 +719,11 @@ Obj_ClustFinal$Stability$deletion_curve
 Obj_ClustFinal$Stability$co_membership_by_cluster
 Obj_ClustFinal$Stability$split_merge_reference
 Obj_ClustFinal$Stability$profile_recovery
+ObjClustProjected$ProjectionFit$cohort_shift
+ObjClustProjected$NoveltyGroups$verdict
 PrintPlots(
   ObjClustProjected$ProjectionFit$plots,
-  c("projection_fit_class_bar", "som_grid_map"))
+  c("projection_fit_class_bar", "novelty_p_hist", "som_grid_map"))
 ```
 
 ### Interpreting a SOM projection
@@ -762,11 +764,36 @@ Use `ProbFit$individual` for these values and for `Cluster`, `Cluster_Hard`,
 and `Cluster_Soft`.
 
 `ProjectionFit` answers the transportability question: how well do these new
-participants fit the frozen training SOM? `ProjectionFit$individual` contains
-each participant's best-matching `SOM_Node`, `SOM_Distance`, percentile in the
-training distance distribution, and support flags. A high distance means the
-participant is less well represented by the training map; it does not by
-itself invalidate the assigned cluster.
+participants fit the frozen training SOM? It asks three separate questions.
+
+* **Is this person outside the training data?** Each participant's
+  `SOM_Distance` is compared with the training participants' leave-one-out
+  distances. `NoveltyP` is the conformal p-value, the share of training
+  participants at least as far from the map, which needs no distributional
+  assumption. `NoveltyQ` adjusts it across the projected cohort by
+  Benjamini--Hochberg, and `Flag_Outlier` marks `NoveltyQ <= novelty_fdr`
+  (0.10 by default). Because the false-discovery rate is controlled, a cohort
+  that resembles training gives few or no outliers rather than a fixed 5%.
+  `Top_Distance_Variable` names the variable contributing most to the distance.
+* **Does the cohort as a whole differ?** `ProjectionFit$cohort_shift` tests
+  whether projected distances are larger than training distances, whether more
+  participants are unusual than chance predicts, and whether participants land
+  on the map nodes and clusters in the training proportions. The
+  `novelty_p_hist` plot is flat when the cohort resembles training.
+* **Is there a new phenotype?** One unusual participant is an outlier; a new
+  phenotype is a group of unusual participants who resemble each other.
+  `NoveltyGroups` looks for map neighbourhoods holding more participants with
+  `NoveltyP <= group_screen_alpha` than that neighbourhood held in training,
+  then checks that the group's members are more alike than the same number of
+  training's own unusual participants. Groups passing both checks with at least
+  `novel_group_min_n` members are candidate new phenotypes.
+
+`FitClass` combines these with membership: Good fit, Uncertain membership
+(membership probability below `clear_membership_threshold`, meaning between
+known clusters), Outlier, or Member of candidate new group. Membership
+probability is deliberately not used to judge novelty: a Gaussian mixture can
+give a confident label to someone far from every cluster. A high distance does
+not by itself invalidate the assigned cluster.
 
 `ProjectionFit$out_of_support` lists variables with values below the observed
 training minimum or above the observed training maximum. Projection continues
@@ -1110,8 +1137,9 @@ clusters those node prototypes. A SOM distance is the distance, in this frozen
 scaled feature space, between a participant and their best-matching map node.
 Lower values mean the participant is better represented by the map; they do
 not mean stronger membership in a phenotype. Interpret it against the frozen
-training distribution only: distances above the training p95 flag a case that
-is poorly represented by the training phenotype space.
+training distribution only: `NoveltyP` is the share of training participants
+at least as far from the map, so a small value marks a case that is poorly
+represented by the training phenotype space.
 
 `Specification$rng_kind` is R's `RNGkind()` configuration: the uniform random
 number generator, normal random-number generator, and sampling algorithm in

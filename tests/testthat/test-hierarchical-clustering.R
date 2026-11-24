@@ -127,9 +127,9 @@ test_that("SOM hierarchical labels follow frozen nodes and projection retains ma
   projected <- suppressMessages(suppressWarnings(ProjectCluster(model, df_New)))
   expect_equal(projected$ProbFit$individual$Cluster,
     model$ModelInfo$node_cluster[projected$ProjectionFit$individual$SOM_Node])
-  expect_true(projected$ProjectionFit$individual$Flag_FarFromMap[[1]])
-  expect_equal(projected$DataWithClusters$Projection_Fit_Class[[1]], "Poor fit to training structure")
-  expect_false(any(projected$DataWithClusters$Projection_Fit_Class == "Uncertain membership"))
+  expect_true(projected$ProjectionFit$individual$Flag_Outlier[[1]])
+  expect_equal(as.character(projected$DataWithClusters$FitClass[[1]]), "Outlier")
+  expect_identical(levels(projected$DataWithClusters$FitClass), .SOMHardFitClassLevels)
   expect_true(all(c("SOM_Distance", "SOMDist_percentile_train", "NodeAssignmentMargin") %in%
     names(projected$ProjectionFit$individual)))
   expect_true(all(c("summary", "by_cluster", "out_of_support", "plots") %in% names(projected$ProjectionFit)))

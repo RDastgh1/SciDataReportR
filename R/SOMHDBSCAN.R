@@ -221,13 +221,11 @@ ProjectCluster.Pipeline_SOM_HDBSCAN <- function(object, data,
   projected$ProjectionFit$individual$Cluster <- node_cluster[
     projected$ProjectionFit$individual$SOM_Node]
   projected$ProbFit$individual$Cluster <- projected$ProjectionFit$individual$Cluster
-  projected$ProjectionFit$individual$Projection_Fit_Class <- dplyr::case_when(
-    is.na(projected$ProjectionFit$individual$SOM_Distance) ~ NA_character_,
-    projected$ProjectionFit$individual$Cluster == 0 ~ "Potential novel phenotype",
-    TRUE ~ "Good fit")
   projected$DataWithClusters[[ClusterVariableName]] <- projected$ProbFit$individual$Cluster
-  projected$DataWithClusters$Projection_Fit_Class <-
-    projected$ProjectionFit$individual$Projection_Fit_Class
+  # Cluster 0 is HDBSCAN noise: nodes the density clustering left unlabelled.
+  # It is reported as a cluster, not as novelty; novelty comes from distances.
+  projected <- .SOMHardProjectionFitClass(projected,
+    .SOMHardClusterFitClass(projected$ProjectionFit$individual))
   projected$ProjectionFit$by_cluster <- projected$ProjectionFit$individual %>%
     dplyr::filter(!is.na(.data$Cluster)) %>%
     dplyr::group_by(.data$Cluster) %>%
@@ -235,26 +233,25 @@ ProjectCluster.Pipeline_SOM_HDBSCAN <- function(object, data,
       n = dplyr::n(),
       mean_distance = mean(.data$SOM_Distance, na.rm = TRUE),
       median_distance = stats::median(.data$SOM_Distance, na.rm = TRUE),
-      mean_distance_percentile = mean(.data$SOMDist_percentile_train, na.rm = TRUE),
-      median_distance_percentile = stats::median(.data$SOMDist_percentile_train, na.rm = TRUE),
-      prop_high_distance = mean(.data$Flag_SOMDist_overallHigh |
-        .data$Flag_SOMDist_clusterHigh, na.rm = TRUE),
-      prop_potential_novel = mean(.data$Projection_Fit_Class ==
-        "Potential novel phenotype", na.rm = TRUE),
+      median_novelty_p = stats::median(.data$NoveltyP, na.rm = TRUE),
+      prop_outlier = mean(.data$Flag_Outlier, na.rm = TRUE),
+      prop_unusual = mean(.data$Flag_Unusual, na.rm = TRUE),
+      prop_new_group = mean(.data$Flag_NewGroupMember, na.rm = TRUE),
       .groups = "drop")
   probability_plot_data <- projected$ProbFit$individual %>%
     dplyr::filter(!is.na(.data$Cluster), is.finite(.data$prob_assigned)) %>%
     dplyr::mutate(Cluster = factor(.data$Cluster))
   projected$ProbFit$plots$individual_ProbAssignedDensity <-
     .SOMAssignedProbabilityPlot(probability_plot_data)
-  projected$ProjectionFit$plots$poor_fit_by_cluster <- ggplot2::ggplot(
+  projected$ProjectionFit$plots$unusual_by_cluster <- ggplot2::ggplot(
     projected$ProjectionFit$by_cluster,
-    ggplot2::aes(x = factor(.data$Cluster), y = .data$prop_high_distance)
+    ggplot2::aes(x = factor(.data$Cluster), y = .data$prop_unusual)
   ) +
     ggplot2::geom_col() +
     ggplot2::theme_bw() +
     ggplot2::labs(
-      title = "High-distance projected cases by HDBSCAN cluster",
+      title = "Unusual projected profiles by HDBSCAN cluster",
+      subtitle = "Cluster 0 is HDBSCAN noise",
       x = "HDBSCAN cluster", y = "Proportion"
     )
   projected$ProjectionFit$policy$assignment <-

@@ -97,8 +97,6 @@ utils::globalVariables(c(
   "Field",
   "FillKey",
   "FirstTime",
-  "Flag_SOMDist_clusterHigh",
-  "Flag_SOMDist_overallHigh",
   "Followup",
   "Freq",
   "FunctionTime1",

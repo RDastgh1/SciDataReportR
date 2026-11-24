@@ -54,7 +54,7 @@ CreateClusterModel_SOM_MClust(
   mixture_min_node_people = 0L,
   min_cluster_prop = NULL,
   criteria_weights = NULL,
-  far_distance_quantile = 0.95,
+  novelty_fdr = 0.1,
   clear_membership_threshold = 0.7,
   stability_resamples = 0L,
   stability_type = c("subsample", "seed"),
@@ -78,9 +78,7 @@ CreateClusterModel_SOM_MClust(
   lpa_drop_zero_sd = lifecycle::deprecated(),
   lpa_zero_sd_tol = lifecycle::deprecated(),
   lpa_min_node_n = lifecycle::deprecated(),
-  min_nodes_per_cluster = lifecycle::deprecated(),
-  high_dist_quantile = lifecycle::deprecated(),
-  low_prob_threshold = lifecycle::deprecated()
+  min_nodes_per_cluster = lifecycle::deprecated()
 )
 
 Pipeline_SOM_MClust(...)
@@ -286,9 +284,12 @@ Analytic Hierarchy Process weights from its principal eigenvector and
 reports Saaty's consistency ratio (warning above 0.10).
 \code{"Reproducibility"} requires \code{stability_resamples > 0}.}
 
-\item{far_distance_quantile}{Numeric value between 0 and 1 used to define
-high SOM-distance flags from the training distance distribution. Default
-is \code{0.95}.}
+\item{novelty_fdr}{False-discovery rate for training outliers (default
+0.10). Each training person's leave-one-out distance gets a conformal
+p-value against the other training people (\code{NoveltyP}); people with
+a Benjamini-Hochberg adjusted value at most \code{novelty_fdr} are
+\code{Flag_Outlier}. Projection uses the same scale; see
+\code{\link[=ProjectCluster]{ProjectCluster()}}.}
 
 \item{clear_membership_threshold}{Numeric posterior probability threshold used to
 flag uncertain phenotype membership. Default is \code{0.70}.}
@@ -374,10 +375,6 @@ refits so each resample fits only the shortlisted candidates.}
 
 \item{min_nodes_per_cluster}{Deprecated alias for \code{candidate_min_nodes_per_cluster}.}
 
-\item{high_dist_quantile}{Deprecated alias for \code{far_distance_quantile}.}
-
-\item{low_prob_threshold}{Deprecated alias for \code{clear_membership_threshold}.}
-
 \item{...}{Arguments passed to \code{\link[=CreateClusterModel_SOM_MClust]{CreateClusterModel_SOM_MClust()}}.}
 }
 \value{
@@ -391,10 +388,11 @@ diagnostic columns appended
 \item \code{ProbFit$individual$SOM_Distance_LOO}: distance after removing
 each complete person from their own node mean, allowing the nearest
 other node instead. No map refit. ProjectionReference$loo_distances
-stores these distances with SOM_Node and Cluster for arbitrary quantiles.
-ProjectionReference$calibration stores q_star, training_rate, training_n,
-far_n, target_quantile, overall_cutoff and cluster_cutoffs for the
-combined overall OR cluster LOO rule.
+stores these distances with SOM_Node and Cluster; they are the
+reference for every novelty p-value. \code{ProbFit$individual} also
+holds each training person's \code{NoveltyP}, \code{NoveltyQ},
+\code{Flag_Outlier}, \code{MembershipProbability} and \code{FitClass}
+(Good fit, Uncertain membership, Outlier).
 ProjectionReference$cluster_profiles stores mean training z-score
 vectors by assigned cluster for group profile comparisons.
 \item \code{ProbFit$boundary_summary}: BoundaryReason, N and Share

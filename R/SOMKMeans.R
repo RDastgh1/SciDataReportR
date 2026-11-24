@@ -299,8 +299,7 @@ ProjectCluster.Pipeline_SOM_KMeans <- function(object, data,
   individual <- .SOMKMeansAddDiagnostics(
     .SOMHardClusterFitClass(projected$ProjectionFit$individual),
     .SOMKMeansFeatures(object, data), object$ModelInfo)
-  projected$ProjectionFit$individual <- individual
-  projected$ProjectionFit$fit_class <- individual$Projection_Fit_Class
+  projected <- .SOMHardProjectionFitClass(projected, individual)
   projected$ProbFit$individual <- individual
   projected$ProbFit$plots <- .ClusterConfidencePlots(individual, "AssignmentMargin",
     "Mahalanobis distance margin to alternative centroid", prefix = "Projected", bounded = FALSE)
@@ -313,15 +312,8 @@ ProjectCluster.Pipeline_SOM_KMeans <- function(object, data,
     object$ModelInfo$FitDiagnostics$projection_agreement
   projected$ProjectionFit$plots$centroid_distance_hist <-
     projected$ProjectionFit$centroid_fit$plots$distance_hist
-  projected$ProjectionFit$plots$projection_fit_class_bar <- .ClusterFitClassPlot(individual$Projection_Fit_Class)
-  projected$ProjectionFit$by_cluster$prop_poor_fit <- projected$ProjectionFit$by_cluster$prop_high_distance
-  projected$ProjectionFit$by_cluster$prop_potential_novel <- NA_real_
   projected$ProjectionFit$policy$assignment <- "frozen SOM best-matching node K-means label"
   projected$ProjectionFit$policy$membership_probability <- "unavailable; margins are not posterior probabilities"
-  projected$ProjectionFit$policy$low_probability_threshold <- NULL
-  for (column in c("Projection_Fit_Class", "FitClass", "FitClass_Legacy")) {
-    projected$DataWithClusters[[column]] <- individual[[column]]
-  }
   projected$ModelInfo <- projected$ModelInfo_KMeans <- object$ModelInfo
   projected$ModelInfo_MClust <- NULL
   projection_specification <- projected$Specification$projection

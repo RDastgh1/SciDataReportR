@@ -3,7 +3,8 @@ test_that("ProjectCluster reference documents the SOM projection contract", {
   skip_if_not(file.exists(path))
   text <- paste(readLines(path, warn = FALSE), collapse = "\n")
   fields <- c(
-    "SOM + Mclust projection results", "ProbFit$individual",
+    "SOM + Mclust novelty", "NoveltyP", "NoveltyQ", "novelty_fdr",
+    "cohort_shift", "CoherenceP", "ProbFit$individual",
     "ProjectionFit$individual", "ProjectionFit$summary",
     "ProjectionFit$by_cluster", "ProjectionFit$out_of_support",
     "node_occupancy_js_divergence", "Jensen--Shannon",

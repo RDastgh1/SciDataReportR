@@ -55,6 +55,11 @@
 #'
 #' @param DataFrame \strong{Deprecated} (since 19.15.0). Use \code{data} instead.
 #' @param numdecimals \strong{Deprecated} (since 19.15.0). Use \code{digits} instead.
+#' @details Temporal declarations use Type = clock or duration, with optional
+#'   TimeUnit (numeric input units) and TimeFormat (HMS, HM or MS for text).
+#'   These fields document temporal meaning; displaying this dictionary does not
+#'   convert data. Use RevalueData() for intake or DetectDataAnomalies() for local
+#'   temporal modeling. Calendar dates/timestamps remain distinct from clock times.
 #' @export
 FormattedDataDictionary <- function(data,
     digits = 2,

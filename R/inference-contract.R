@@ -482,6 +482,11 @@ ScidrInferenceAxes <- function(context, frame) {
   if (is.null(vars_Predictors) && context$Function %in% c('PlotMiningMatrix', 'PlotNumInteractionEffectsMatrix')) vars_Predictors <- vars_Outcomes
   if (is.null(vars_Outcomes) && !is.null(vars_Predictors)) vars_Outcomes <- vars_Predictors
   if (is.null(vars_Outcomes) && context$Function == 'CreateStatisticsTable') vars_Outcomes <- setdiff(names(df_Data), group_var)
+  if (context$Function %in% c('PlotPhiHeatmap', 'PlotDirectionalHeatmaps')) {
+    covariates <- ScidrInferenceValue(frame, 'covariates')
+    vars_Outcomes <- setdiff(vars_Outcomes, covariates)
+    vars_Predictors <- setdiff(vars_Predictors, covariates)
+  }
   list(Outcome = as.character(vars_Outcomes), Predictor = as.character(vars_Predictors))
 }
 
@@ -848,7 +853,7 @@ ScidrInferenceRequested <- function(context, frame) {
   if (is.data.frame(strata) && 'Stratum' %in% names(strata) && length(ScidrInferenceValue(frame, 'stratify_by'))) df_Requested <- tidyr::crossing(df_Requested, Group = strata$Stratum)
   if (context$Function == 'PlotSplitCorrelationHeatmap' && length(ScidrInferenceValue(frame, 'split_levels'))) df_Requested <- tidyr::crossing(df_Requested, Group = ScidrInferenceValue(frame, 'split_levels'))
   covariates <- ScidrInferenceValue(frame, c('covariates', 'Covariates', 'Covars', 'covars'))
-  if (context$Function %in% c('PlotMiningMatrix', 'PlotNumInteractionEffectsMatrix', 'PlotCatInteractionEffectsMatrix')) {
+  if (context$Function %in% c('PlotMiningMatrix', 'PlotPhiHeatmap', 'PlotDirectionalHeatmaps', 'PlotNumInteractionEffectsMatrix', 'PlotCatInteractionEffectsMatrix')) {
     df_Requested <- df_Requested[!df_Requested$Outcome %in% covariates & !df_Requested$Predictor %in% covariates, , drop = FALSE]
   }
   df_Requested
@@ -1005,6 +1010,11 @@ ScidrFinishInference <- function(output, context, frame) {
       levels <- ScidrInferenceValue(frame, 'split_levels')
       if (length(levels) >= i) df_Failed$Group <- levels[i]
     }
+    if (context$Function == 'PlotDirectionalHeatmaps') {
+      ToOriginal <- ScidrInferenceValue(frame, 'to_orig')
+      df_Failed$Outcome <- ToOriginal(df_Failed$Outcome)
+      df_Failed$Predictor <- ToOriginal(df_Failed$Predictor)
+    }
     df_Failed$ChildIndex <- i
     df_Failed
   }))
@@ -1064,6 +1074,11 @@ ScidrFinishInference <- function(output, context, frame) {
     if (length(matches)) df_Results$Reason[matches[df_Results$Status[matches] == 'failed']] <- observation$Reason
   }
   df_Results <- ScidrEnrichInference(df_Results, context, frame)
+  if (context$Function %in% c('PlotPhiHeatmap', 'PlotDirectionalHeatmaps') &&
+      length(ScidrInferenceValue(frame, 'covariates'))) {
+    df_Results$EffectType <- rep('Partial correlation', nrow(df_Results))
+    df_Results$AdjustmentStatus <- rep('adjusted', nrow(df_Results))
+  }
   adjustment_issues <- dplyr::bind_rows(context$Failures)
   if (nrow(child_failures)) {
     adjustment_issues <- dplyr::bind_rows(adjustment_issues,
@@ -1073,6 +1088,10 @@ ScidrFinishInference <- function(output, context, frame) {
     df_Results$AdjustmentStatus <- rep('adjusted', nrow(df_Results))
     for (i in which(adjustment_issues$Stage %in% 'adjustment')) {
       index <- which(df_Results$Outcome %in% adjustment_issues$Outcome[i] & df_Results$Predictor %in% adjustment_issues$Predictor[i])
+      if (context$Function %in% c('PlotPhiHeatmap', 'PlotDirectionalHeatmaps')) {
+        index <- union(index, which(df_Results$Predictor %in% adjustment_issues$Outcome[i] &
+          df_Results$Outcome %in% adjustment_issues$Predictor[i]))
+      }
       if (context$Function == 'PlotSplitCorrelationHeatmap' && 'Group' %in% names(adjustment_issues)) index <- index[df_Results$Group[index] %in% adjustment_issues$Group[i]]
       if (!'FallbackEstimate' %in% names(df_Results)) df_Results$FallbackEstimate <- rep(NA_real_, nrow(df_Results))
       if (!'FallbackPValue' %in% names(df_Results)) df_Results$FallbackPValue <- rep(NA_real_, nrow(df_Results))
@@ -1097,6 +1116,10 @@ ScidrFinishInference <- function(output, context, frame) {
   if (nrow(adjustment_issues)) {
     for (i in seq_len(nrow(df_Failed))) {
       index <- which(adjustment_issues$Outcome %in% df_Failed$Outcome[i] & adjustment_issues$Predictor %in% df_Failed$Predictor[i])
+      if (context$Function %in% c('PlotPhiHeatmap', 'PlotDirectionalHeatmaps')) {
+        index <- union(index, which(adjustment_issues$Predictor %in% df_Failed$Outcome[i] &
+          adjustment_issues$Outcome %in% df_Failed$Predictor[i]))
+      }
       if (length(index) && any(adjustment_issues$Stage[index] %in% 'adjustment')) df_Failed$Stage[i] <- 'adjustment'
     }
   }
@@ -1241,6 +1264,8 @@ ScidrFinishInference <- function(output, context, frame) {
   if (context$Function == 'PlotInteractionEffectsMatrix' && isTRUE(arguments$covariate_interactions)) formula_template <- 'outcome ~ predictor * interVar + covariates * interVar'
   if (context$Function == 'MakeCoxRegressionTable') formula_template <- 'survival::Surv(time_var, event_var) ~ predictor + covariates'
   if (context$Function %in% c('PlotCorrelationsHeatmap', 'PlotSplitCorrelationHeatmap', 'PlotCorrelationComparisons', 'calculate_pathway_results')) formula_template <- 'cor(outcome, predictor); residualize both variables on covariates when supplied'
+  if (context$Function %in% c('PlotPhiHeatmap', 'PlotDirectionalHeatmaps')) formula_template <-
+    'Pearson correlation (binary variables mapped to 0/1); residualize both on supplied covariates; pair-specific complete cases; partial Pearson test df = n - rank(design) - 1; unadjusted binary pairs retain phi chi-square tests'
   if (context$Function == 'PlotBlandAltman') formula_template <- 'difference = Variable1 - Variable2; bias and limits of agreement'
   if (context$Function == 'DiagnosticLikelihoodRatioTable') formula_template <- 'P(test result | outcome positive) / P(test result | outcome negative), within each stratum'
   if (context$Function == 'PlotBetaProfile') formula_template <- 'scale(outcome) ~ scale(predictor) + covariates'

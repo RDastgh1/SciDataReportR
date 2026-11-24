@@ -98,8 +98,7 @@ test_that("deprecated SOM arguments warn and reproduce the new names", {
     lpa_timeout_seconds = "mixture_timeout_seconds", lpa_progress = "mixture_progress",
     lpa_bootstrap_n = "mixture_bootstrap_n", lpa_drop_zero_sd = "mixture_drop_zero_sd",
     lpa_zero_sd_tol = "mixture_zero_sd_tol", lpa_min_node_n = "mixture_min_node_people",
-    min_nodes_per_cluster = "candidate_min_nodes_per_cluster",
-    high_dist_quantile = "far_distance_quantile", low_prob_threshold = "clear_membership_threshold")
+    min_nodes_per_cluster = "candidate_min_nodes_per_cluster")
   reference <- suppressWarnings(suppressMessages(do.call(CreateClusterModel_SOM_MClust, arguments)))
   for (old in names(pairs)) {
     new <- pairs[[old]]
@@ -115,20 +114,14 @@ test_that("deprecated SOM arguments warn and reproduce the new names", {
   }
 })
 
-test_that("projection thresholds and retired controls retain warning shims", {
+test_that("retired projection thresholds error and retired controls warn", {
   rlang::local_options(lifecycle_verbosity = "warning")
   model <- SOMOutputFixture()
   data <- EmbeddedAB("Projection")
-  expected <- suppressWarnings(suppressMessages(ProjectCluster(model, data,
-    far_distance_quantile = .90, clear_membership_threshold = .65)))
-  expect_warning(actual <- SuppressOrdinaryWarnings(suppressMessages(ProjectCluster(model, data,
-    high_dist_quantile = .90, clear_membership_threshold = .65))),
-    class = "lifecycle_warning_deprecated")
-  expect_equal(actual$ProbFit$individual, expected$ProbFit$individual)
-  expect_warning(actual <- SuppressOrdinaryWarnings(suppressMessages(ProjectCluster(model, data,
-    far_distance_quantile = .90, low_prob_threshold = .65))),
-    class = "lifecycle_warning_deprecated")
-  expect_equal(actual$ProbFit$individual, expected$ProbFit$individual)
+  for (argument in c("far_distance_quantile", "high_dist_quantile", "low_prob_threshold")) {
+    expect_error(do.call(ProjectCluster, c(list(model, data), stats::setNames(list(.9), argument))),
+      "novelty_fdr")
+  }
   expect_warning(.ClusterMethod("explore"), class = "lifecycle_warning_deprecated")
   for (argument in c("min_nodes_per_parameter", "min_participants_per_node")) {
     expect_warning(expect_error(do.call(CreateClusterModel_SOM_MClust,

@@ -11,14 +11,17 @@ RevalueData(
   splitchar = ";",
   on_error = c("stop", "warn"),
   DatatoRevalue = lifecycle::deprecated(),
-  VarTypes = lifecycle::deprecated()
+  VarTypes = lifecycle::deprecated(),
+  time_types = NULL,
+  time_units = NULL,
+  time_formats = NULL
 )
 }
 \arguments{
 \item{data}{A data.frame or tibble to be revalued.}
 
 \item{codebook}{A data.frame with columns:
-Variable, Recode, Code, Type, Label, MissingCode. Only Variable is required.
+Variable, Recode, Code, Type, Label, MissingCode, TimeUnit, TimeFormat. Only Variable is required.
 (Backward compatible: if MissingCode is absent/NA, will fall back to Missing.)}
 
 \item{missingVal}{Default value to treat as missing when VarTypes$MissingCode is absent or NA.}
@@ -31,6 +34,17 @@ or continue and record errors in the returned object.}
 \item{DatatoRevalue}{\strong{Deprecated} (since 19.15.0). Use \code{data} instead.}
 
 \item{VarTypes}{\strong{Deprecated} (since 19.15.0). Use \code{codebook} instead.}
+
+\item{time_types}{Optional named character overrides: clock or duration.
+Resolve before codebook Type declarations, then attached scidr_type metadata.}
+
+\item{time_units}{Named input-unit overrides for numeric temporal columns:
+secs, mins, hours, days, weeks (usual aliases accepted). Existing typed
+hms/difftime objects retain their own physical values and unit attributes.}
+
+\item{time_formats}{Named text-format overrides: HMS, HM or MS. Text durations
+require an explicit format; clock text supports HMS or HM. Fractional seconds
+and signed/long durations are supported. No midnight rollover is inferred.}
 }
 \value{
 A list with:
@@ -41,6 +55,19 @@ the offending variable and preserves the underlying message.
 }
 \description{
 Revalues variables in a dataset using a VarTypes codebook.
+}
+\details{
+Codebook Type values clock and duration (case-insensitive) declare
+temporal meaning; TimeUnit and TimeFormat supply parsing information. Numeric
+values require units, text requires a format, and existing typed objects retain
+their classes/units. Clock values must be in [00:00, 24:00); durations may be
+negative or exceed one day. MissingCode is handled before validation. Temporal
+conversions are atomic per column under on_error, with failed columns unchanged
+in warn mode. Categorical value-code mappings conflict with temporal conversion.
+Converted columns carry scidr_type = clock/duration and provenance. TimeMetadata
+is appended to the result with declarations, units, formats, status and errors.
+Optional hms is needed only when constructing clock objects. Existing other
+Type behaviors are unchanged. No time semantics are inferred from names.
 }
 \section{What changes}{
 

@@ -35,3 +35,5 @@ conflicted copy
 ^talks$
 ^CITATION\.cff$
 ^\.zenodo\.json$
+
+^DataAnomalyReview_.*\.qmd$

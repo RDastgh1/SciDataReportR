@@ -125,10 +125,10 @@ test_that("valid variables and covariates are unaffected", {
     PlotDirectionalHeatmaps(df_Test, variables = Vars)$Unadjusted$plot, "ggplot")
 })
 
-test_that("PlotDirectionalHeatmaps keeps deprecated formals trailing", {
+test_that("PlotDirectionalHeatmaps appends covariates without moving legacy formals", {
   # yVars used to sit in formal slot 3, so PlotDirectionalHeatmaps(df, vars, TRUE)
   # bound TRUE to yVars instead of Relabel.
   Formals <- names(formals(PlotDirectionalHeatmaps))
   expect_equal(Formals[1:3], c("data", "variables", "Relabel"))
-  expect_equal(tail(Formals, 3), c("Data", "xVars", "yVars"))
+  expect_equal(tail(Formals, 4), c("Data", "xVars", "yVars", "covariates"))
 })
